@@ -11,6 +11,22 @@ docker run -it --gpus all -v /pool/bwjiang/personamem-v3:/workspace personamem-v
 
 For API mode only, copy `.env.example` to `.env` and fill in Azure OpenAI or OpenAI credentials.
 
+## Input Data
+
+Real-world interaction data from Meta, with all user-private and personally identifiable information removed. See `data/test_interactions.csv` for the expected format:
+
+| Column | Description | Example |
+|--------|-------------|---------|
+| `interaction_type` | Type of user engagement | `implicit_positive`, `implicit_negative` |
+| `user_id` | Anonymized user identifier | `2124791` |
+| `object_id` | Anonymized content identifier | `122137823030860919` |
+| `interaction_time` | Unix timestamp of the interaction | `1758690616` |
+| `object_text` | Hashtags associated with the content | `#RelationshipGoals #ChristianLiving ...` |
+| `dataset` | Source dataset label | `synthetic_anonymized` |
+| `ds` | Date partition | `2026-02-12` |
+
+Each row represents one user interacting with one piece of content. `implicit_positive` means the user engaged with the content; `implicit_negative` means the user did not interact (e.g., skipped a promoted post). A single user may have multiple rows across different timestamps.
+
 ## Pipeline
 
 Each user goes through up to 5 steps:
@@ -40,7 +56,7 @@ Claude Code spawns one parallel subagent per user. Each subagent follows the pro
 ```bash
 python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv
 python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv --user_id 2124791
-python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv --model gpt-4o --max_workers 1
+python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv --model gpt-5-chat --max_workers 1
 ```
 
 ## Output
