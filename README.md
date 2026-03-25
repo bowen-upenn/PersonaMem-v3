@@ -1,7 +1,5 @@
 # PersonaMem-v3
 
-Infers user personas from social media interaction data. Given a CSV of user-hashtag interactions, the system back-engineers atomic persona traits per user, cross-references them across interactions, tracks how preferences change over time, and crafts synthetic user profile descriptions with stereotype and overpersonalization annotations.
-
 ## Setup
 
 ```bash
@@ -17,15 +15,13 @@ Real-world interaction data from Meta, with all user-private and personally iden
 
 | Column | Description | Example |
 |--------|-------------|---------|
-| `interaction_type` | Type of user engagement | `implicit_positive`, `implicit_negative` |
+| `interaction_type` | Type of user engagement | `explicit_positive`, `explicit_negative`, `implicit_positive`, `implicit_negative` |
 | `user_id` | Anonymized user identifier | `2124791` |
 | `object_id` | Anonymized content identifier | `122137823030860919` |
 | `interaction_time` | Unix timestamp of the interaction | `1758690616` |
-| `object_text` | Hashtags associated with the content | `#RelationshipGoals #ChristianLiving ...` |
+| `object_text` | Hashtags associated with the content | `#RelationshipGoals #exproblems ...` |
 | `dataset` | Source dataset label | `synthetic_anonymized` |
 | `ds` | Date partition | `2026-02-12` |
-
-Each row represents one user interacting with one piece of content. `implicit_positive` means the user engaged with the content; `implicit_negative` means the user did not interact (e.g., skipped a promoted post). A single user may have multiple rows across different timestamps.
 
 ## Pipeline
 
