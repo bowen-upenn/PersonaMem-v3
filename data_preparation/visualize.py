@@ -1,6 +1,7 @@
 """
 Generates a standalone HTML persona visualization for a user.
 
+Reads {user_id}_preferences.csv and {user_id}_profile.csv from backend/.
 Design: minimalist, Apple/Anthropic-inspired aesthetic.
 No external dependencies — pure HTML/CSS/JS.
 """
@@ -22,55 +23,43 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     base = os.path.join(backend_dir, f"{user_id}")
 
     # Load data
-    atomic_rows = utils.load_rows_from_csv(f"{base}_raw.csv")
-    cross_rows = utils.load_rows_from_csv(f"{base}_cross_referenced.csv")
-    temporal_rows = utils.load_rows_from_csv(f"{base}_temporal.csv")
-
-    # Build temporal groups
-    temporal_groups = {}
-    for row in temporal_rows:
-        topic = row.get("topic", "unknown")
-        if topic not in temporal_groups:
-            temporal_groups[topic] = {
-                "topic": topic,
-                "interpretation": row.get("interpretation", ""),
-                "timeline": [],
-            }
-        temporal_groups[topic]["timeline"].append({
-            "persona_item": row.get("persona_item", ""),
-            "formatted_timestamp": row.get("formatted_timestamp", ""),
-            "confidence_score_init": float(row.get("confidence_score_init", 0)),
-            "confidence_cross_referenced": float(row.get("confidence_cross_referenced", 0)),
-        })
+    pref_rows = utils.load_rows_from_csv(f"{base}_preferences.csv")
+    profile_rows = utils.load_rows_from_csv(f"{base}_profile.csv")
+    profile = profile_rows[0] if profile_rows else None
 
     now_str = datetime.now(tz=timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
-    # Serialize data for JS
-    cross_json = json.dumps([
+    # Serialize for JS
+    prefs_json = json.dumps([
         {
-            "category": r.get("category", "uncategorized"),
             "persona_item": r.get("persona_item", ""),
+            "category": r.get("category", "uncategorized"),
             "confidence_score_init": float(r.get("confidence_score_init", 0)),
             "confidence_cross_referenced": float(r.get("confidence_cross_referenced", 0)),
             "relationship_type": r.get("relationship_type", "none"),
-            "related_personas": json.loads(r.get("related_personas", "[]")) if isinstance(r.get("related_personas", "[]"), str) else r.get("related_personas", []),
-            "formatted_timestamp": r.get("formatted_timestamp", ""),
             "source_interaction_type": r.get("source_interaction_type", ""),
-        }
-        for r in cross_rows
-    ])
-    temporal_json = json.dumps(list(temporal_groups.values()))
-    atomic_json = json.dumps([
-        {
-            "category": r.get("category", "uncategorized"),
-            "persona_item": r.get("persona_item", ""),
-            "confidence_score_init": float(r.get("confidence_score_init", 0)),
+            "interaction_format": r.get("interaction_format", ""),
             "formatted_timestamp": r.get("formatted_timestamp", ""),
-            "source_interaction_type": r.get("source_interaction_type", ""),
-            "source_hashtags": r.get("source_hashtags", "[]"),
+            "stereotype_mark": r.get("stereotype_mark", "neutral"),
+            "overpersonalization": r.get("overpersonalization", "no"),
         }
-        for r in atomic_rows
+        for r in pref_rows
     ])
+
+    profile_json = json.dumps({
+        "name": profile.get("name", "") if profile else "",
+        "gender": profile.get("gender", "") if profile else "",
+        "race_ethnicity": profile.get("race_ethnicity", "") if profile else "",
+        "career": profile.get("career", "") if profile else "",
+        "education": profile.get("education", "") if profile else "",
+        "big_five": json.loads(profile.get("big_five", "{}")) if profile else {},
+        "bio": profile.get("bio", "") if profile else "",
+    }) if profile else "null"
+
+    # Counts
+    n_stereo = sum(1 for r in pref_rows if r.get("stereotype_mark") == "stereotypical")
+    n_anti = sum(1 for r in pref_rows if r.get("stereotype_mark") == "anti-stereotypical")
+    n_holdout = sum(1 for r in pref_rows if r.get("overpersonalization") == "yes")
 
     html = f"""\
 <!DOCTYPE html>
@@ -95,332 +84,118 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
     --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
   }}
-
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{ font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }}
+  .container {{ max-width: 960px; margin: 0 auto; padding: 48px 24px; }}
 
-  body {{
-    font-family: var(--font);
-    background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
-    -webkit-font-smoothing: antialiased;
-  }}
+  .header {{ margin-bottom: 48px; }}
+  .header h1 {{ font-size: 32px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }}
+  .header .meta {{ color: var(--text-secondary); font-size: 14px; }}
+  .header .meta span {{ margin-right: 20px; }}
 
-  .container {{
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 48px 24px;
-  }}
+  .profile-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 48px; box-shadow: var(--shadow); }}
+  .profile-card h2 {{ font-size: 20px; font-weight: 600; margin-bottom: 12px; }}
+  .profile-card .bio {{ font-size: 15px; line-height: 1.6; margin-bottom: 16px; color: var(--text); }}
+  .profile-card .details {{ font-size: 13px; color: var(--text-secondary); }}
+  .profile-card .details span {{ margin-right: 16px; }}
+  .profile-card .big-five {{ display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }}
+  .profile-card .b5-item {{ font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #F0F0EE; color: var(--text-secondary); }}
 
-  /* Header */
-  .header {{
-    margin-bottom: 48px;
-  }}
-  .header h1 {{
-    font-size: 32px;
-    font-weight: 600;
-    letter-spacing: -0.5px;
-    margin-bottom: 8px;
-  }}
-  .header .meta {{
-    color: var(--text-secondary);
-    font-size: 14px;
-  }}
-  .header .meta span {{
-    margin-right: 20px;
-  }}
+  .section {{ margin-bottom: 48px; }}
+  .section-title {{ font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }}
 
-  /* Section */
-  .section {{
-    margin-bottom: 48px;
-  }}
-  .section-title {{
-    font-size: 20px;
-    font-weight: 600;
-    letter-spacing: -0.3px;
-    margin-bottom: 20px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-  }}
+  .persona-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }}
+  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease, transform 0.2s ease; }}
+  .persona-card:hover {{ box-shadow: var(--shadow-hover); transform: translateY(-1px); }}
+  .persona-card .item-text {{ font-size: 15px; font-weight: 500; margin-bottom: 10px; line-height: 1.4; }}
+  .persona-card .meta-line {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }}
 
-  /* Persona Cards */
-  .persona-grid {{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }}
-  .persona-card {{
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-  }}
-  .persona-card:hover {{
-    box-shadow: var(--shadow-hover);
-    transform: translateY(-1px);
-  }}
-  .persona-card .item-text {{
-    font-size: 15px;
-    font-weight: 500;
-    margin-bottom: 12px;
-    line-height: 1.4;
-  }}
-  .persona-card .timestamp {{
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-  }}
+  .confidence-row {{ display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary); }}
+  .confidence-row .label {{ width: 90px; flex-shrink: 0; }}
+  .confidence-bar-track {{ flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 0 8px; }}
+  .confidence-bar-fill {{ height: 100%; border-radius: 2px; transition: width 0.4s ease; }}
+  .confidence-bar-fill.init {{ background: var(--accent); }}
+  .confidence-bar-fill.cross {{ background: var(--accent-similar); }}
+  .confidence-row .value {{ width: 32px; text-align: right; font-variant-numeric: tabular-nums; }}
 
-  /* Confidence bars */
-  .confidence-row {{
-    display: flex;
-    align-items: center;
-    margin-bottom: 6px;
-    font-size: 12px;
-    color: var(--text-secondary);
-  }}
-  .confidence-row .label {{
-    width: 90px;
-    flex-shrink: 0;
-  }}
-  .confidence-bar-track {{
-    flex: 1;
-    height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    overflow: hidden;
-    margin: 0 8px;
-  }}
-  .confidence-bar-fill {{
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.4s ease;
-  }}
-  .confidence-bar-fill.init {{
-    background: var(--accent);
-  }}
-  .confidence-bar-fill.cross {{
-    background: var(--accent-similar);
-  }}
-  .confidence-row .value {{
-    width: 32px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }}
+  .badge {{ display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 20px; margin-top: 6px; margin-right: 4px; }}
+  .badge.category {{ background: #EDE9FE; color: #6D28D9; }}
+  .badge.similar {{ background: #E6F4EE; color: var(--accent-similar); }}
+  .badge.contradictory {{ background: #F8E4EE; color: var(--accent-contradictory); }}
+  .badge.none {{ background: #F0F0EE; color: var(--text-secondary); }}
+  .badge.stereotypical {{ background: #FEF3C7; color: #92400E; }}
+  .badge.anti-stereotypical {{ background: #DBEAFE; color: #1E40AF; }}
+  .badge.holdout {{ background: #FCE7F3; color: #9D174D; }}
+  .badge.platform {{ background: #F0FDF4; color: #166534; }}
 
-  /* Badges */
-  .badge {{
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 500;
-    padding: 2px 10px;
-    border-radius: 20px;
-    margin-top: 8px;
-    margin-right: 4px;
-  }}
-  .badge.similar {{
-    background: #E6F4EE;
-    color: var(--accent-similar);
-  }}
-  .badge.contradictory {{
-    background: #F8E4EE;
-    color: var(--accent-contradictory);
-  }}
-  .badge.none {{
-    background: #F0F0EE;
-    color: var(--text-secondary);
-  }}
-  .badge.category {{
-    background: #EDE9FE;
-    color: #6D28D9;
-  }}
-
-  /* Timeline */
-  .timeline-group {{
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-  }}
-  .timeline-group .topic {{
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 4px;
-  }}
-  .timeline-group .interpretation {{
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-bottom: 16px;
-    font-style: italic;
-  }}
-  .timeline {{
-    position: relative;
-    padding-left: 28px;
-  }}
-  .timeline::before {{
-    content: '';
-    position: absolute;
-    left: 8px;
-    top: 4px;
-    bottom: 4px;
-    width: 2px;
-    background: var(--border);
-    border-radius: 1px;
-  }}
-  .timeline-node {{
-    position: relative;
-    margin-bottom: 20px;
-  }}
-  .timeline-node:last-child {{
-    margin-bottom: 0;
-  }}
-  .timeline-node::before {{
-    content: '';
-    position: absolute;
-    left: -24px;
-    top: 6px;
-    width: 10px;
-    height: 10px;
-    background: var(--accent);
-    border: 2px solid var(--bg-card);
-    border-radius: 50%;
-    box-shadow: 0 0 0 2px var(--accent);
-  }}
-  .timeline-node .node-time {{
-    font-size: 12px;
-    color: var(--text-secondary);
-    margin-bottom: 2px;
-  }}
-  .timeline-node .node-text {{
-    font-size: 14px;
-    font-weight: 500;
-  }}
-  .timeline-node .node-scores {{
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-  }}
-
-  /* Collapsible raw data */
-  .collapsible-header {{
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    user-select: none;
-  }}
-  .collapsible-header .arrow {{
-    transition: transform 0.2s ease;
-    font-size: 12px;
-  }}
-  .collapsible-header.open .arrow {{
-    transform: rotate(90deg);
-  }}
-  .collapsible-body {{
-    display: none;
-    margin-top: 16px;
-  }}
-  .collapsible-body.open {{
-    display: block;
-  }}
-
-  /* Table */
-  .data-table {{
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }}
-  .data-table th {{
-    text-align: left;
-    padding: 8px 12px;
-    border-bottom: 2px solid var(--border);
-    color: var(--text-secondary);
-    font-weight: 500;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }}
-  .data-table td {{
-    padding: 8px 12px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-  }}
-  .data-table tr:last-child td {{
-    border-bottom: none;
-  }}
-  .data-table tr:hover td {{
-    background: var(--accent-light);
-  }}
-
-  /* Empty state */
-  .empty {{
-    text-align: center;
-    padding: 40px;
-    color: var(--text-secondary);
-    font-size: 14px;
-  }}
+  .empty {{ text-align: center; padding: 40px; color: var(--text-secondary); font-size: 14px; }}
 </style>
 </head>
 <body>
 <div class="container">
 
-  <!-- Header -->
   <div class="header">
     <h1>User {user_id}</h1>
     <div class="meta">
-      <span>{len(cross_rows)} personas</span>
-      <span>{len(atomic_rows)} raw inferences</span>
-      <span>{len(temporal_groups)} temporal topics</span>
+      <span>{len(pref_rows)} preferences</span>
+      <span>{n_stereo} stereotypical</span>
+      <span>{n_anti} anti-stereotypical</span>
+      <span>{n_holdout} overpersonalization holdout</span>
       <span>Generated {now_str}</span>
     </div>
   </div>
 
-  <!-- Persona Overview -->
+  <div id="profile-section"></div>
+
   <div class="section">
-    <div class="section-title">Persona Overview</div>
+    <div class="section-title">Preferences</div>
     <div id="persona-grid" class="persona-grid"></div>
-  </div>
-
-  <!-- Temporal Evolution -->
-  <div class="section">
-    <div class="section-title">Temporal Evolution</div>
-    <div id="temporal-container"></div>
-  </div>
-
-  <!-- Raw Data -->
-  <div class="section">
-    <div class="collapsible-header" id="raw-toggle" onclick="toggleRaw()">
-      <span class="arrow">&#9654;</span>
-      <span class="section-title" style="border:none;margin:0;padding:0;">Raw Atomic Personas ({len(atomic_rows)})</span>
-    </div>
-    <div class="collapsible-body" id="raw-body"></div>
   </div>
 
 </div>
 
 <script>
-const crossData = {cross_json};
-const temporalData = {temporal_json};
-const atomicData = {atomic_json};
+const prefsData = {prefs_json};
+const profileData = {profile_json};
 
-// -- Persona cards --
+// -- Profile card --
+const ps = document.getElementById('profile-section');
+if (profileData) {{
+  const b5 = profileData.big_five || {{}};
+  const b5Html = Object.entries(b5).map(([k,v]) => `<span class="b5-item">${{k}}: ${{v}}</span>`).join('');
+  ps.innerHTML = `
+    <div class="profile-card">
+      <h2>${{profileData.name}}</h2>
+      <div class="bio">${{profileData.bio}}</div>
+      <div class="details">
+        <span>${{profileData.gender}}</span>
+        <span>${{profileData.race_ethnicity}}</span>
+        <span>${{profileData.career}}</span>
+        <span>${{profileData.education}}</span>
+      </div>
+      <div class="big-five">${{b5Html}}</div>
+    </div>
+  `;
+}}
+
+// -- Preference cards --
 const grid = document.getElementById('persona-grid');
-if (crossData.length === 0) {{
-  grid.innerHTML = '<div class="empty">No cross-referenced personas available.</div>';
+if (prefsData.length === 0) {{
+  grid.innerHTML = '<div class="empty">No preferences available.</div>';
 }} else {{
-  crossData.sort((a, b) => (b.confidence_score_init + b.confidence_cross_referenced) - (a.confidence_score_init + a.confidence_cross_referenced));
-  crossData.forEach(p => {{
+  prefsData.sort((a, b) => (b.confidence_score_init + b.confidence_cross_referenced) - (a.confidence_score_init + a.confidence_cross_referenced));
+  prefsData.forEach(p => {{
     const card = document.createElement('div');
     card.className = 'persona-card';
-    const badgeClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
+    const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
+    let badges = `<span class="badge category">${{p.category}}</span>`;
+    if (p.relationship_type !== 'none') badges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
+    if (p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
+    if (p.overpersonalization === 'yes') badges += `<span class="badge holdout">holdout</span>`;
+    if (p.interaction_format) badges += `<span class="badge platform">${{p.interaction_format}}</span>`;
     card.innerHTML = `
       <div class="item-text">${{p.persona_item}}</div>
-      <div class="timestamp">${{p.formatted_timestamp}} &middot; ${{p.source_interaction_type}}</div>
-      <span class="badge category">${{p.category}}</span>
+      <div class="meta-line">${{p.formatted_timestamp}} &middot; ${{p.source_interaction_type}}</div>
       <div class="confidence-row">
         <span class="label">Initial</span>
         <div class="confidence-bar-track"><div class="confidence-bar-fill init" style="width:${{(p.confidence_score_init*100).toFixed(0)}}%"></div></div>
@@ -431,67 +206,10 @@ if (crossData.length === 0) {{
         <div class="confidence-bar-track"><div class="confidence-bar-fill cross" style="width:${{Math.min(p.confidence_cross_referenced*100, 100).toFixed(0)}}%"></div></div>
         <span class="value">${{p.confidence_cross_referenced.toFixed(2)}}</span>
       </div>
-      <span class="badge ${{badgeClass}}">${{p.relationship_type}}</span>
+      ${{badges}}
     `;
     grid.appendChild(card);
   }});
-}}
-
-// -- Temporal timeline --
-const tc = document.getElementById('temporal-container');
-if (temporalData.length === 0) {{
-  tc.innerHTML = '<div class="empty">No contradictions detected — no temporal evolution to display.</div>';
-}} else {{
-  temporalData.forEach(group => {{
-    const div = document.createElement('div');
-    div.className = 'timeline-group';
-    let nodesHtml = '';
-    group.timeline.forEach(n => {{
-      nodesHtml += `
-        <div class="timeline-node">
-          <div class="node-time">${{n.formatted_timestamp}}</div>
-          <div class="node-text">${{n.persona_item}}</div>
-          <div class="node-scores">init: ${{n.confidence_score_init.toFixed(2)}} &middot; cross-ref: ${{n.confidence_cross_referenced.toFixed(2)}}</div>
-        </div>`;
-    }});
-    div.innerHTML = `
-      <div class="topic">${{group.topic}}</div>
-      <div class="interpretation">${{group.interpretation}}</div>
-      <div class="timeline">${{nodesHtml}}</div>
-    `;
-    tc.appendChild(div);
-  }});
-}}
-
-// -- Raw data table --
-function toggleRaw() {{
-  const header = document.getElementById('raw-toggle');
-  const body = document.getElementById('raw-body');
-  header.classList.toggle('open');
-  body.classList.toggle('open');
-
-  if (body.innerHTML === '') {{
-    if (atomicData.length === 0) {{
-      body.innerHTML = '<div class="empty">No raw data available.</div>';
-      return;
-    }}
-    let rows = '';
-    atomicData.forEach(r => {{
-      rows += `<tr>
-        <td>${{r.category}}</td>
-        <td>${{r.persona_item}}</td>
-        <td>${{r.confidence_score_init.toFixed(2)}}</td>
-        <td>${{r.formatted_timestamp}}</td>
-        <td>${{r.source_interaction_type}}</td>
-      </tr>`;
-    }});
-    body.innerHTML = `<table class="data-table">
-      <thead><tr>
-        <th>Category</th><th>Persona</th><th>Init</th><th>Timestamp</th><th>Interaction</th>
-      </tr></thead>
-      <tbody>${{rows}}</tbody>
-    </table>`;
-  }}
 }}
 </script>
 </body>
