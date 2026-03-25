@@ -1,6 +1,6 @@
 # PersonaMem-v3
 
-Infers user personas from social media interaction data. Given a CSV of user-hashtag interactions, the system back-engineers atomic persona traits per user, cross-references them, and tracks how preferences change over time.
+Infers user personas from social media interaction data. Given a CSV of user-hashtag interactions, the system back-engineers atomic persona traits per user, cross-references them across interactions, tracks how preferences change over time, and crafts synthetic user profile descriptions with stereotype and overpersonalization annotations.
 
 ## Setup
 
@@ -13,13 +13,15 @@ For API mode only, copy `.env.example` to `.env` and fill in Azure OpenAI or Ope
 
 ## Pipeline
 
-Each user goes through 3 LLM calls:
+Each user goes through up to 5 steps:
 
-1. **Infer** — extract hashtags, guess atomic personas with confidence scores and topical categories
-2. **Cross-reference** — find similar/contradictory pairs, boost confidence for corroborated ones, filter out weak isolated guesses
+1. **Infer** — associate all hashtags in each activity to a randomly assigned platform (Instagram, Facebook, Threads, or Chatbot) and user engagement format, then infer atomic persona traits with confidence scores (0.0-1.0) and topical categories
+2. **Cross-reference** — find similar/contradictory pairs across different interaction rows (not within the same row), boost confidence for corroborated ones (+0.1 per similar), reduce confidence on older contradictory ones (-0.1), filter out weak isolated guesses (init < 0.5 and cross_ref == 0.0)
 3. **Temporal graph** — organize contradictions into a timeline showing how preferences shifted
+4. **User profile** — generate a synthetic user description: name, career, education, Big Five personality, and a 3-5 sentence bio, with demographics (gender, sexual orientation, race/ethnicity) sampled from predefined distributions
+5. **Annotate** — mark each preference as neutral, stereotypical, or anti-stereotypical based on demographics only, then randomly hold out 20% for overpersonalization study
 
-Negative interactions (`implicit_negative`) skip steps 2-3 and are saved separately with low confidence.
+Negative interactions (`implicit_negative`) only go through step 1 with low confidence (0.05-0.15), skip steps 2-5.
 
 ## Usage
 
@@ -28,7 +30,7 @@ Negative interactions (`implicit_negative`) skip steps 2-3 and are saved separat
 Open Claude Code in the project directory and tell it to process the data:
 
 ```
-Process all users in data/test_interactions.csv through the persona pipeline
+Process all users in data/test_interactions.csv through the persona pipeline following skill.md, following the same prompt and result saving formats, with one subagent responsible for one persona in parallel.
 ```
 
 Claude Code spawns one parallel subagent per user. Each subagent follows the prompts in `prompts.py` verbatim and writes CSVs matching the schemas in `persona_agent.py`. See [skill.md](skill.md) for the full specification — this ensures identical output format with API mode for fair comparison.
@@ -47,18 +49,15 @@ Per-user files in `backend/`:
 
 | File | Description |
 |------|-------------|
-| `{uid}_atomic.csv` | Raw inferred personas (positive interactions) |
-| `{uid}_negative.csv` | Negative-interaction personas (standalone, low confidence) |
-| `{uid}_cross_referenced.csv` | Cross-referenced and filtered personas |
-| `{uid}_temporal.csv` | Temporal contradiction timeline |
-| `{uid}_persona.html` | HTML visualization |
+| `{uid}_preferences.csv` | Filtered personas with confidence scores, cross-reference data, platform/interaction format, stereotype marks, and overpersonalization tags |
+| `{uid}_profile.csv` | Synthetic user profile: name, gender, race/ethnicity, career, education, Big Five, bio (positive users only) |
 
 ## Code Structure
 
 | File | Role |
 |------|------|
 | `data_preparation/prompts.py` | All LLM prompt templates |
-| `data_preparation/persona_agent.py` | PersonaAgent class + dataclasses |
+| `data_preparation/persona_agent.py` | PersonaAgent class, dataclasses, demographic distributions, platform mappings |
 | `data_preparation/main.py` | CSV loading, grouping, orchestration |
 | `data_preparation/visualize.py` | HTML visualization generator |
 | `query_llm.py` | Multi-provider LLM client (API mode) |
