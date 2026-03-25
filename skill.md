@@ -16,7 +16,7 @@ Reads a CSV of social media interactions, groups rows by `user_id`, and spawns o
 
 3. **For each user**, determine interaction polarity:
    - `implicit_positive` or `explicit_positive` → full pipeline (infer → cross-reference → filter → profile → stereotype annotation → overpersonalization → save)
-   - `implicit_negative` or `explicit_negative` → standalone low-confidence personas only (no cross-referencing, no profile)
+   - `implicit_negative` or `explicit_negative` → infer low-confidence personas, skip cross-referencing, but still generate profile and stereotype annotations
 
 4. **Read `data_preparation/prompts.py`** before constructing subagent prompts. The prompt rules, confidence calibration scale, category instructions, and JSON output format must be copied verbatim into each subagent prompt — do not paraphrase.
 
@@ -32,7 +32,7 @@ Reads a CSV of social media interactions, groups rows by `user_id`, and spawns o
      - **Step 7 — Save** 2 CSV files to `backend/`.
    - The exact CSV column schemas (2 files per user):
      - `{user_id}_preferences.csv`: persona_item, category, confidence_score_init, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags (JSON array), interaction_format, confidence_cross_referenced, relationship_type, related_personas (JSON array), stereotype_mark, overpersonalization — only rows that passed the filter; for negative users, only rows with confidence > 0.05
-     - `{user_id}_profile.csv`: name, gender, race_ethnicity, career, education, big_five (JSON object), bio — positive users only
+     - `{user_id}_profile.csv`: name, gender, race_ethnicity, career, education, big_five (JSON object), bio — all users
    - Instruction to write the CSV files using the Write tool.
 
 6. **Wait for all subagents** to complete and report a summary table.
@@ -91,7 +91,12 @@ You are running the PersonaMem persona inference pipeline for user {user_id}.
 ## Step 1: Infer Atomic Personas
 [All confidence scores 0.05-0.15, phrase as preferences instead of dislikes]
 
-## Step 2: Save
-[Write 1 file: {user_id}_preferences.csv (only confidence > 0.05, with stereotype_mark=neutral, overpersonalization=no)]
-[No profile for negative-only users]
+## Step 2: Generate User Profile
+[Same as positive users — sample demographics, generate name/career/education/big_five/bio]
+
+## Step 3: Annotate Stereotype Marks
+[Demographics only. Mark each persona as neutral/stereotypical/anti-stereotypical]
+
+## Step 4: Save
+[Write 2 files: {user_id}_preferences.csv (only confidence > 0.05, with stereotype annotations), {user_id}_profile.csv]
 ```
