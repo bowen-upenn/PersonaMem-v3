@@ -473,7 +473,7 @@ class PersonaAgent:
             # Filter: remove items with init < 0.5 and no cross-references
             self.cross_referenced_personas = [
                 p for p in self.cross_referenced_personas
-                if not (p.confidence_score_init < 0.5 and p.confidence_cross_referenced == 0.0)
+                if not (p.confidence_score_init < 0.5 and p.confidence_cross_referenced <= 0.0)
             ]
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Single interaction row — skipping cross-reference. "
@@ -559,11 +559,11 @@ class PersonaAgent:
         for p in all_cross_referenced:
             p.confidence_cross_referenced = max(0.0, round(scores[p.persona_item], 2))
 
-        # Filter: remove items with confidence_score_init < 0.5 AND confidence_cross_referenced == 0.0
+        # Filter: remove items with confidence_score_init < 0.5 AND confidence_cross_referenced <= 0.0
         # But KEEP contradictions regardless (they go into temporal graph)
         self.cross_referenced_personas = [
             p for p in all_cross_referenced
-            if not (p.confidence_score_init < 0.5 and p.confidence_cross_referenced == 0.0)
+            if not (p.confidence_score_init < 0.5 and p.confidence_cross_referenced <= 0.0)
             or p.relationship_type == "contradictory"
         ]
 

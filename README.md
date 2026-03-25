@@ -16,7 +16,7 @@ For API mode only, copy `.env.example` to `.env` and fill in Azure OpenAI or Ope
 Each user goes through up to 5 steps:
 
 1. **Infer** — associate all hashtags in each activity to a randomly assigned platform (Instagram, Facebook, Threads, or Chatbot) and user engagement format, then infer atomic persona traits with confidence scores (0.0-1.0) and topical categories
-2. **Cross-reference** — find similar/contradictory pairs across different interaction rows (not within the same row), boost confidence for corroborated ones (+0.1 per similar), reduce confidence on older contradictory ones (-0.1), filter out weak isolated guesses (init < 0.5 and cross_ref == 0.0)
+2. **Cross-reference** — find similar/contradictory pairs across different interaction rows (not within the same row), boost confidence for corroborated ones (+0.1 per similar), reduce confidence on older contradictory ones (-0.1), filter out weak isolated guesses (init < 0.5 and cross_ref <= 0.0)
 3. **Temporal graph** — organize contradictions into a timeline showing how preferences shifted
 4. **User profile** — generate a synthetic user description: name, career, education, Big Five personality, and a 3-5 sentence bio, with demographics (gender, sexual orientation, race/ethnicity) sampled from predefined distributions
 5. **Annotate** — mark each preference as neutral, stereotypical, or anti-stereotypical based on demographics only, then randomly hold out 20% for overpersonalization study
