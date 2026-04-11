@@ -256,155 +256,247 @@ RACE_ETHNICITY_DISTRIBUTION = {
 
 PLATFORMS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 
-# Per-app action catalog. Each action is an identifier + a human-readable
-# label. The subagent/LLM picks one action from the appropriate polarity
-# bucket when generating an interaction_format for a routed preference.
-# Expanded from the previous 3-4 generic options to reflect realistic
-# modern-day UX affordances on each app.
+# Per-app action catalog — this is the **single source of truth** for every
+# realistic interaction UX affordance on each app. The pipeline does NOT
+# invent new actions or labels at generation time: it picks ONE entry from
+# the appropriate bucket for each routed preference. Subagents MUST copy
+# the `action` identifier and `label` verbatim from this catalog; consistent
+# wording across runs is the point.
+#
+# Each entry also carries a `weight` reflecting real-world relative frequency
+# of the action within its polarity bucket. These are rough numbers based
+# on publicly-reported engagement benchmarks (passive > active; like >
+# comment > share; reactions cluster heavily around 👍 / ❤ on Facebook;
+# @ai comments are still rare at ~0.3 weight; etc.). At sample time each
+# USER gets their own per-user perturbed copy of these weights (lognormal
+# noise, see `_perturb_weights` on PersonaAgent), so different users have
+# visibly different action distributions while still roughly matching the
+# underlying shape.
+#
+# Two categories of actions carry a natural-language `user_message`:
+#
+# 1. `at_ai_*` actions on SOCIAL MEDIA apps (Instagram / Facebook / Threads).
+#    These model the user @-mentioning an in-feed AI assistant in the
+#    comment area of a post. Message starts with `@ai `. They live on the
+#    social apps, NOT on the AI Chatbot app.
+#
+# 2. Conversation-turn actions on the `Chatbot` app (`asked_followup`,
+#    `requested_more_detail`, `continued_topic`, `asked_to_change_topic`,
+#    `edited_prompt_and_retried`, `regenerated`). The `user_message` is
+#    what the user would naturally type — NO `@ai` prefix because the user
+#    is already in an AI conversation.
 PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
     "Instagram": {
         "explicit_positive": [
-            {"action": "liked", "label": "Liked"},
-            {"action": "double_tapped", "label": "Double-tapped to like"},
-            {"action": "reposted", "label": "Reposted"},
-            {"action": "commented", "label": "Commented"},
-            {"action": "saved_to_collection", "label": "Saved to a collection"},
-            {"action": "shared_to_close_friends_story", "label": "Shared to Close Friends story"},
-            {"action": "dm_to_friend", "label": "Sent via DM to a friend"},
-            {"action": "followed_creator", "label": "Followed the creator"},
-            {"action": "reacted_to_story", "label": "Reacted to the story"},
+            {"action": "liked", "label": "Liked", "weight": 50.0},
+            {"action": "double_tapped", "label": "Double-tapped to like", "weight": 22.0},
+            {"action": "saved_to_collection", "label": "Saved to a collection", "weight": 8.0},
+            {"action": "reacted_to_story", "label": "Reacted to the story", "weight": 5.0},
+            {"action": "commented", "label": "Commented", "weight": 4.0},
+            {"action": "followed_creator", "label": "Followed the creator", "weight": 3.0},
+            {"action": "dm_to_friend", "label": "Sent via DM to a friend", "weight": 3.0},
+            {"action": "shared_to_close_friends_story", "label": "Shared to Close Friends story", "weight": 2.0},
+            {"action": "reposted", "label": "Reposted", "weight": 1.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 1.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 1.0},
         ],
         "implicit_positive": [
-            {"action": "viewed_reel_75", "label": "Viewed more than 75% of the reel"},
-            {"action": "rewatched_reel", "label": "Rewatched the reel"},
-            {"action": "lingered_on_image", "label": "Stayed on an image for more than 5 seconds"},
-            {"action": "lingered_on_story", "label": "Stayed on a story for more than 5 seconds"},
-            {"action": "tapped_profile", "label": "Tapped through to the creator's profile"},
-            {"action": "long_pressed_for_options", "label": "Long-pressed to open context menu"},
+            {"action": "viewed_reel_75", "label": "Viewed more than 75% of the reel", "weight": 40.0},
+            {"action": "lingered_on_image", "label": "Stayed on an image for more than 5 seconds", "weight": 25.0},
+            {"action": "lingered_on_story", "label": "Stayed on a story for more than 5 seconds", "weight": 15.0},
+            {"action": "tapped_profile", "label": "Tapped through to the creator's profile", "weight": 10.0},
+            {"action": "rewatched_reel", "label": "Rewatched the reel", "weight": 8.0},
+            {"action": "long_pressed_for_options", "label": "Long-pressed to open context menu", "weight": 2.0},
         ],
         "explicit_negative": [
-            {"action": "not_interested", "label": "Marked Not Interested"},
-            {"action": "hidden", "label": "Hid this post"},
-            {"action": "reported", "label": "Reported"},
-            {"action": "muted_user", "label": "Muted the user"},
-            {"action": "unfollowed", "label": "Unfollowed the creator"},
+            {"action": "not_interested", "label": "Marked Not Interested", "weight": 10.0},
+            {"action": "hidden", "label": "Hid this post", "weight": 5.0},
+            {"action": "muted_user", "label": "Muted the user", "weight": 3.0},
+            {"action": "unfollowed", "label": "Unfollowed the creator", "weight": 2.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 1.0},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 1.0},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 1.0},
+            {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
-            {"action": "skipped_reel", "label": "Skipped the reel with no interaction"},
-            {"action": "skipped_image", "label": "Skipped the image with no interaction"},
-            {"action": "skipped_story", "label": "Skipped the story with no interaction"},
+            {"action": "skipped_reel", "label": "Skipped the reel with no interaction", "weight": 50.0},
+            {"action": "skipped_image", "label": "Skipped the image with no interaction", "weight": 30.0},
+            {"action": "skipped_story", "label": "Skipped the story with no interaction", "weight": 20.0},
         ],
     },
     "Facebook": {
         "explicit_positive": [
-            {"action": "reacted_like", "label": "Liked"},
-            {"action": "reacted_love", "label": "Loved (❤)"},
-            {"action": "reacted_haha", "label": "Hahaha reaction"},
-            {"action": "reacted_wow", "label": "Wow reaction"},
-            {"action": "reacted_sad", "label": "Sad reaction"},
-            {"action": "reacted_care", "label": "Care reaction"},
-            {"action": "commented", "label": "Commented"},
-            {"action": "shared_to_timeline", "label": "Shared to own timeline"},
-            {"action": "shared_to_group", "label": "Shared to a group"},
-            {"action": "tagged_friend", "label": "Tagged a friend in the post"},
-            {"action": "saved_post", "label": "Saved the post"},
-            {"action": "rsvp_event", "label": "Marked Interested / Going on an event"},
+            {"action": "reacted_like", "label": "Liked", "weight": 60.0},
+            {"action": "reacted_love", "label": "Loved (❤)", "weight": 20.0},
+            {"action": "reacted_haha", "label": "Hahaha reaction", "weight": 10.0},
+            {"action": "commented", "label": "Commented", "weight": 8.0},
+            {"action": "reacted_wow", "label": "Wow reaction", "weight": 4.0},
+            {"action": "reacted_sad", "label": "Sad reaction", "weight": 3.0},
+            {"action": "saved_post", "label": "Saved the post", "weight": 3.0},
+            {"action": "reacted_care", "label": "Care reaction", "weight": 2.0},
+            {"action": "shared_to_timeline", "label": "Shared to own timeline", "weight": 2.0},
+            {"action": "tagged_friend", "label": "Tagged a friend in the post", "weight": 2.0},
+            {"action": "shared_to_group", "label": "Shared to a group", "weight": 1.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 1.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 1.0},
+            {"action": "rsvp_event", "label": "Marked Interested / Going on an event", "weight": 0.5},
         ],
         "implicit_positive": [
-            {"action": "viewed_video_75", "label": "Viewed more than 75% of the video"},
-            {"action": "lingered_on_post", "label": "Stayed on a post for more than 5 seconds"},
-            {"action": "expanded_see_more", "label": "Tapped 'See more' to expand the post"},
-            {"action": "viewed_comments", "label": "Opened the comments thread"},
+            {"action": "lingered_on_post", "label": "Stayed on a post for more than 5 seconds", "weight": 40.0},
+            {"action": "viewed_video_75", "label": "Viewed more than 75% of the video", "weight": 30.0},
+            {"action": "expanded_see_more", "label": "Tapped 'See more' to expand the post", "weight": 20.0},
+            {"action": "viewed_comments", "label": "Opened the comments thread", "weight": 10.0},
         ],
         "explicit_negative": [
-            {"action": "reacted_angry", "label": "Angry reaction"},
-            {"action": "hidden", "label": "Hid the post"},
-            {"action": "snoozed_user", "label": "Snoozed the user for 30 days"},
-            {"action": "see_fewer_like_this", "label": "Asked to see fewer posts like this"},
-            {"action": "unfollowed", "label": "Unfollowed the page / user"},
-            {"action": "reported", "label": "Reported"},
+            {"action": "hidden", "label": "Hid the post", "weight": 10.0},
+            {"action": "see_fewer_like_this", "label": "Asked to see fewer posts like this", "weight": 8.0},
+            {"action": "reacted_angry", "label": "Angry reaction", "weight": 5.0},
+            {"action": "snoozed_user", "label": "Snoozed the user for 30 days", "weight": 2.0},
+            {"action": "unfollowed", "label": "Unfollowed the page / user", "weight": 2.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 1.0},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 1.0},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 1.0},
+            {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
-            {"action": "skipped_post", "label": "Skipped the post with no interaction"},
-            {"action": "scrolled_past_video", "label": "Scrolled past the video without watching"},
+            {"action": "skipped_post", "label": "Skipped the post with no interaction", "weight": 60.0},
+            {"action": "scrolled_past_video", "label": "Scrolled past the video without watching", "weight": 40.0},
         ],
     },
     "Threads": {
         "explicit_positive": [
-            {"action": "liked", "label": "Liked"},
-            {"action": "reposted", "label": "Reposted"},
-            {"action": "quote_reposted", "label": "Reposted with a quote"},
-            {"action": "replied", "label": "Replied"},
-            {"action": "followed_author", "label": "Followed the author"},
-            {"action": "shared_externally", "label": "Shared externally (copy link / DM)"},
-            {"action": "saved", "label": "Saved the thread"},
+            {"action": "liked", "label": "Liked", "weight": 60.0},
+            {"action": "replied", "label": "Replied", "weight": 15.0},
+            {"action": "reposted", "label": "Reposted", "weight": 10.0},
+            {"action": "saved", "label": "Saved the thread", "weight": 5.0},
+            {"action": "quote_reposted", "label": "Reposted with a quote", "weight": 4.0},
+            {"action": "followed_author", "label": "Followed the author", "weight": 3.0},
+            {"action": "shared_externally", "label": "Shared externally (copy link / DM)", "weight": 2.0},
+            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 1.0},
+            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 1.0},
         ],
         "implicit_positive": [
-            {"action": "lingered_on_thread", "label": "Stayed on the thread for more than 5 seconds"},
-            {"action": "viewed_video_75", "label": "Viewed more than 75% of the video"},
-            {"action": "expanded_replies", "label": "Expanded the reply thread"},
-            {"action": "tapped_author", "label": "Tapped through to the author's profile"},
+            {"action": "lingered_on_thread", "label": "Stayed on the thread for more than 5 seconds", "weight": 40.0},
+            {"action": "viewed_video_75", "label": "Viewed more than 75% of the video", "weight": 30.0},
+            {"action": "expanded_replies", "label": "Expanded the reply thread", "weight": 20.0},
+            {"action": "tapped_author", "label": "Tapped through to the author's profile", "weight": 10.0},
         ],
         "explicit_negative": [
-            {"action": "not_interested", "label": "Marked Not Interested"},
-            {"action": "muted_author", "label": "Muted the author"},
-            {"action": "hid_replies", "label": "Hid the replies"},
-            {"action": "reported", "label": "Reported"},
+            {"action": "not_interested", "label": "Marked Not Interested", "weight": 10.0},
+            {"action": "muted_author", "label": "Muted the author", "weight": 5.0},
+            {"action": "hid_replies", "label": "Hid the replies", "weight": 3.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 1.0},
+            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 1.0},
+            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 1.0},
+            {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
-            {"action": "skipped_thread", "label": "Skipped the thread with no interaction"},
+            {"action": "skipped_thread", "label": "Skipped the thread with no interaction", "weight": 100.0},
         ],
     },
     "Chatbot": {
         "explicit_positive": [
-            {"action": "thumbs_up", "label": "Thumbs-upped the response"},
-            {"action": "saved_to_library", "label": "Saved the response to library"},
-            {"action": "copied_response", "label": "Copied the response text"},
-            {"action": "asked_followup", "label": "Asked a follow-up question showing interest"},
-            {"action": "requested_more_detail", "label": "Requested more detail on the same topic"},
-            {"action": "shared_conversation", "label": "Shared the conversation externally"},
-            # NEW — `@ai` steering directives. The user_message field on the
-            # final interaction_format object will carry the actual text.
-            {"action": "at_ai_recommend_more", "label": "@ai steering: asked for MORE of this type"},
-            {"action": "at_ai_focus_topic", "label": "@ai steering: asked to focus on this topic"},
+            {"action": "thumbs_up", "label": "Thumbs-upped the response", "weight": 30.0},
+            {"action": "copied_response", "label": "Copied the response text", "weight": 25.0},
+            {"action": "asked_followup", "label": "Asked a follow-up question showing interest", "weight": 20.0},
+            {"action": "requested_more_detail", "label": "Requested more detail on the same topic", "weight": 15.0},
+            {"action": "saved_to_library", "label": "Saved the response to library", "weight": 8.0},
+            {"action": "shared_conversation", "label": "Shared the conversation externally", "weight": 2.0},
         ],
         "implicit_positive": [
-            {"action": "continued_topic", "label": "Continued the conversation on the same topic"},
-            {"action": "read_carefully", "label": "Spent significant time reading the response"},
-            {"action": "referenced_response", "label": "Copied or referenced part of the response"},
-            {"action": "positive_language_next_turn", "label": "Positive language in the next turn"},
+            {"action": "continued_topic", "label": "Continued the conversation on the same topic", "weight": 40.0},
+            {"action": "read_carefully", "label": "Spent significant time reading the response", "weight": 30.0},
+            {"action": "referenced_response", "label": "Copied or referenced part of the response", "weight": 15.0},
+            {"action": "positive_language_next_turn", "label": "Positive language in the next turn", "weight": 15.0},
         ],
         "explicit_negative": [
-            {"action": "thumbs_down", "label": "Thumbs-downed the response"},
-            {"action": "asked_to_change_topic", "label": "Explicitly asked to change topic or stop"},
-            {"action": "edited_prompt_and_retried", "label": "Edited the prompt and retried"},
-            {"action": "reported_response", "label": "Reported / flagged the response"},
-            {"action": "regenerated", "label": "Asked to regenerate the response"},
-            # NEW — `@ai` steering directives (negative side).
-            {"action": "at_ai_stop_recommending", "label": "@ai steering: asked to STOP recommending this"},
-            {"action": "at_ai_not_interested", "label": "@ai steering: said not interested right now"},
-            {"action": "at_ai_feels_off", "label": "@ai steering: said this recommendation feels off-base"},
+            {"action": "regenerated", "label": "Asked to regenerate the response", "weight": 30.0},
+            {"action": "thumbs_down", "label": "Thumbs-downed the response", "weight": 20.0},
+            {"action": "asked_to_change_topic", "label": "Explicitly asked to change topic or stop", "weight": 20.0},
+            {"action": "edited_prompt_and_retried", "label": "Edited the prompt and retried", "weight": 20.0},
+            {"action": "reported_response", "label": "Reported / flagged the response", "weight": 5.0},
         ],
         "implicit_negative": [
-            {"action": "abandoned_conversation", "label": "Abandoned the conversation after the response"},
-            {"action": "changed_topic_immediately", "label": "Immediately changed the topic"},
-            {"action": "dismissive_reply", "label": "Gave a minimal or dismissive reply"},
-            {"action": "no_followup", "label": "No active follow-up or response"},
+            {"action": "no_followup", "label": "No active follow-up or response", "weight": 30.0},
+            {"action": "abandoned_conversation", "label": "Abandoned the conversation after the response", "weight": 25.0},
+            {"action": "changed_topic_immediately", "label": "Immediately changed the topic", "weight": 25.0},
+            {"action": "dismissive_reply", "label": "Gave a minimal or dismissive reply", "weight": 20.0},
         ],
     },
 }
 
 
+def _perturb_weights(base_weights: list[float], rng: random.Random, noise_strength: float = 0.6) -> list[float]:
+    """Perturb a list of action weights with per-user lognormal noise.
+
+    Each weight is multiplied by exp(N(0, noise_strength)), preserving the
+    rough shape of the base distribution while introducing visible per-user
+    variation. Larger `noise_strength` → more deviation from the baseline.
+    Typical range 0.3 (small noise) to 1.0 (large noise). Default 0.6 gives
+    a distinct-but-still-recognizable personalized distribution.
+    """
+    import math
+    perturbed = []
+    for w in base_weights:
+        factor = math.exp(rng.gauss(0.0, noise_strength))
+        perturbed.append(max(0.0, w * factor))
+    total = sum(perturbed)
+    if total <= 0:
+        return list(base_weights)
+    # Renormalize to preserve the original sum — keeps magnitudes comparable
+    scale = sum(base_weights) / total
+    return [w * scale for w in perturbed]
+
+
+def build_user_action_distribution(user_seed: int, noise_strength: float = 0.6) -> dict:
+    """Build a per-user perturbed copy of PLATFORM_INTERACTION_FORMATS.
+
+    Returns a dict with the same structure as PLATFORM_INTERACTION_FORMATS
+    but each entry's `weight` is a per-user lognormally-perturbed version
+    of the base weight. Use this to sample interaction actions for the
+    given user in a way that's consistent across their preferences and
+    distinct from other users.
+    """
+    rng = random.Random(user_seed)
+    out = {}
+    for app, polarities in PLATFORM_INTERACTION_FORMATS.items():
+        out[app] = {}
+        for polarity, bucket in polarities.items():
+            base = [e["weight"] for e in bucket]
+            noisy = _perturb_weights(base, rng, noise_strength)
+            out[app][polarity] = [
+                {**e, "weight": round(w, 3)} for e, w in zip(bucket, noisy)
+            ]
+    return out
+
+
 # Action identifiers that REQUIRE a natural-language `user_message` to be
-# generated by the LLM (chatbot `@ai` directives). The message is first-person,
-# ~1-2 sentences, and grounded in the specific preference the directive acts
-# on (e.g. "@ai show me more authentic Mexican breakfast recipes this week").
+# generated. Two groups:
+#
+# - `AT_AI_ACTIONS`: social-media @ai comment actions (Instagram / Facebook
+#   / Threads only). Message starts with `@ai ` and is first-person,
+#   ~15-35 words, grounded in the specific preference topic. NEVER used
+#   on the Chatbot app.
+#
+# - `CHATBOT_TURN_ACTIONS`: natural-chat turn actions on the AI Chatbot.
+#   The `user_message` is what the user would type next. NO `@ai` prefix —
+#   the user is already conversing with the assistant, there's nothing to
+#   @-mention.
 AT_AI_ACTIONS: set[str] = {
     "at_ai_recommend_more",
     "at_ai_focus_topic",
     "at_ai_stop_recommending",
     "at_ai_not_interested",
     "at_ai_feels_off",
+}
+
+CHATBOT_TURN_ACTIONS: set[str] = {
+    "asked_followup",
+    "requested_more_detail",
+    "continued_topic",
+    "asked_to_change_topic",
+    "edited_prompt_and_retried",
+    "regenerated",
 }
 
 
@@ -480,6 +572,11 @@ class PersonaAgent:
         # Train/test split state populated by build_test_split()
         self.split_labels: dict[str, str] = {}                       # persona_item -> "train" | "test"
         self.test_distractors: dict[str, dict] = {}                  # test persona_item -> {"persona_item": ..., "category": ...}
+
+        # Per-user perturbed action distribution (set lazily on first use).
+        # The seed is deterministic in user_id so the same user gets the
+        # same action distribution across runs.
+        self._user_action_distribution: dict | None = None
 
         os.makedirs(backend_dir, exist_ok=True)
 
@@ -1247,71 +1344,109 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] App routing: {dict(counts)}{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
-    # LLM Call #8: Generate interaction_format objects (with @ai messages
-    # for chatbot steering directives)
+    # LLM Call #8: Generate interaction_format objects
+    #   - action + action_label come from PLATFORM_INTERACTION_FORMATS
+    #     VERBATIM (catalog lookup — no wording regeneration)
+    #   - user_message only for AT_AI_ACTIONS (social-media @ai comments)
+    #     and CHATBOT_TURN_ACTIONS (natural chat turns on the Chatbot app)
     # ------------------------------------------------------------------
 
-    def generate_interaction_formats(self) -> None:
-        """For each routed preference, generate a concrete interaction_format
-        object (action + label + optional user_message).
+    def _ensure_user_action_distribution(self, noise_strength: float = 0.6) -> dict:
+        """Lazily build the per-user perturbed action distribution.
 
-        In API mode this is one LLM call per preference — expensive at scale,
-        so this method is only used when llm_client is set. Subagent mode
-        handles this inline.
+        Seeded deterministically on the user's id so the same user gets
+        the same personal distribution across runs.
         """
-        if not self.cross_referenced_personas or self.llm_client is None:
+        if self._user_action_distribution is None:
+            try:
+                seed = int(str(self.user_id))
+            except (ValueError, TypeError):
+                seed = abs(hash(str(self.user_id))) % (2**31)
+            self._user_action_distribution = build_user_action_distribution(
+                seed, noise_strength=noise_strength
+            )
+        return self._user_action_distribution
+
+    def _sample_action_from_bucket(self, app: str, interaction_type: str, rng: random.Random) -> dict:
+        """Sample a single action entry from this user's perturbed bucket
+        using weighted random choice."""
+        dist = self._ensure_user_action_distribution()
+        bucket = dist.get(app, {}).get(interaction_type)
+        if not bucket:
+            fallback_key = "implicit_positive" if "positive" in interaction_type else "implicit_negative"
+            bucket = dist.get(app, {}).get(fallback_key, [])
+        if not bucket:
+            return {"action": "unknown", "label": "Unknown", "weight": 0.0}
+        weights = [e["weight"] for e in bucket]
+        if sum(weights) <= 0:
+            return bucket[0]
+        return rng.choices(bucket, weights=weights, k=1)[0]
+
+    def generate_interaction_formats(self) -> None:
+        """For each routed preference, sample a concrete interaction_format
+        from this user's perturbed catalog and generate a user_message if
+        the chosen action calls for one.
+
+        Action identifiers and labels always come from
+        `PLATFORM_INTERACTION_FORMATS` — the sampler picks ONE entry by
+        action identifier, never invents new wording. The sampling is
+        weighted by per-user perturbed probabilities (see
+        `_perturb_weights`) so different users show visibly different
+        action distributions while still roughly matching real-world
+        patterns (likes >> comments >> shares, etc).
+
+        If `self.llm_client` is set AND an action that requires a
+        `user_message` is sampled, we call the LLM once per such item to
+        generate the natural-language message. Otherwise user_message is
+        left null and can be filled in later.
+        """
+        if not self.cross_referenced_personas:
             return
         if not self.user_profile or not self.user_profile.app_personas:
             return
 
+        # Seeded RNG for reproducible sampling per user
+        try:
+            sampler_seed = int(str(self.user_id)) * 7919 + 131
+        except (ValueError, TypeError):
+            sampler_seed = abs(hash(str(self.user_id))) % (2**31)
+        rng = random.Random(sampler_seed)
+
         for cr in self.cross_referenced_personas:
             app = cr.assigned_app or random.choice(PLATFORMS)
-            app_persona_dict = self.user_profile.app_personas.get(app, {})
-            app_formats = PLATFORM_INTERACTION_FORMATS.get(app, {})
-            catalog = app_formats.get(cr.source_interaction_type, []) or \
-                      app_formats.get("implicit_positive" if "positive" in cr.source_interaction_type else "implicit_negative", [])
+            entry = self._sample_action_from_bucket(app, cr.source_interaction_type, rng)
+            action_id = entry["action"]
+            canonical_label = entry["label"]
 
-            if not catalog:
-                cr.source_interaction_format = json.dumps({"app": app, "action": "unknown", "action_label": "Unknown", "user_message": None})
-                continue
+            user_message = None
+            needs_msg = action_id in AT_AI_ACTIONS or action_id in CHATBOT_TURN_ACTIONS
+            if needs_msg and self.llm_client is not None:
+                app_persona_dict = self.user_profile.app_personas.get(app, {})
+                prompt = prompts.generate_interaction_format_prompt(
+                    persona_item=cr.persona_item,
+                    category=cr.category,
+                    interaction_type=cr.source_interaction_type,
+                    assigned_app=app,
+                    app_persona=app_persona_dict,
+                    action_catalog=[{"action": action_id, "label": canonical_label}],
+                    requires_user_message=True,
+                )
+                response = self._query_llm_with_retry(prompt)
+                if response:
+                    parsed = utils.extract_json_from_response(response)
+                    if isinstance(parsed, dict):
+                        user_message = parsed.get("user_message")
 
-            # Determine whether an @ai message is required — only for Chatbot
-            # negative actions AND a (deterministic) subset of Chatbot positives.
-            requires_msg = False
-            # We'll let the LLM decide the action first, then check. But the
-            # prompt needs to know upfront. Sidestep: in API mode we ALWAYS ask
-            # for a user_message on Chatbot and never on others; then post-hoc
-            # clear it if the chosen action isn't in AT_AI_ACTIONS.
-            requires_msg = (app == "Chatbot")
-
-            prompt = prompts.generate_interaction_format_prompt(
-                persona_item=cr.persona_item,
-                category=cr.category,
-                interaction_type=cr.source_interaction_type,
-                assigned_app=app,
-                app_persona=app_persona_dict,
-                action_catalog=catalog,
-                requires_user_message=requires_msg,
-            )
-            response = self._query_llm_with_retry(prompt)
-            format_obj = {"app": app, "action": "unknown", "action_label": "Unknown", "user_message": None}
-            if response:
-                parsed = utils.extract_json_from_response(response)
-                if isinstance(parsed, dict):
-                    format_obj = {
-                        "app": app,
-                        "action": parsed.get("action", "unknown"),
-                        "action_label": parsed.get("action_label", ""),
-                        "user_message": parsed.get("user_message") if requires_msg else None,
-                    }
-                    # Only keep user_message for actual @ai actions
-                    if format_obj["action"] not in AT_AI_ACTIONS:
-                        format_obj["user_message"] = None
-
+            format_obj = {
+                "app": app,
+                "action": action_id,
+                "action_label": canonical_label,
+                "user_message": user_message if needs_msg else None,
+            }
             cr.source_interaction_format = json.dumps(format_obj)
 
         if self.verbose:
-            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Interaction formats generated.{utils.Colors.ENDC}")
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Interaction formats sampled from perturbed catalog.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # Train/test split — LLM-gated, with LLM-picked distractors

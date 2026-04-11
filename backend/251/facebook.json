@@ -19,8 +19,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "train",
@@ -74,8 +74,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "commented",
+      "action_label": "Commented",
       "user_message": null
     },
     "split": "train",
@@ -102,9 +102,9 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
-      "user_message": null
+      "action": "at_ai_not_interested",
+      "action_label": "@ai reply: told the in-feed assistant they're not interested",
+      "user_message": "@ai not in the market for a dog right now, we can barely handle the toddler. Please stop showing me adoptable-pet posts for a bit."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -158,8 +158,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "viewed_video_75",
+      "action_label": "Viewed more than 75% of the video",
       "user_message": null
     },
     "split": "train",
@@ -217,8 +217,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "train",
@@ -275,8 +275,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "train",
@@ -330,8 +330,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "saved_post",
+      "action_label": "Saved the post",
       "user_message": null
     },
     "split": "train",
@@ -357,8 +357,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "commented",
+      "action_label": "Commented",
       "user_message": null
     },
     "split": "train",
@@ -385,8 +385,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "test",
@@ -413,8 +413,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "test",
@@ -500,8 +500,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "commented",
+      "action_label": "Commented",
       "user_message": null
     },
     "split": "test",
@@ -528,8 +528,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_wow",
+      "action_label": "Wow reaction",
       "user_message": null
     },
     "split": "test",
@@ -556,8 +556,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_haha",
+      "action_label": "Hahaha reaction",
       "user_message": null
     },
     "split": "test",
