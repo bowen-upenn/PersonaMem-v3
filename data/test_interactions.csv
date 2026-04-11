@@ -1,0 +1,7 @@
+interaction_type,user_id,object_id,interaction_time,object_text,dataset,ds
+implicit_positive,2124791,122137823030860919,1758690616,#RelationshipGoals #ChristianLiving #EmotionalJourney #CookingWithAPurpose #SoulSpark #PersonalGrowth #LoveAndFaith,synthetic_anonymized,2026-02-12
+implicit_positive,3838840,1205270128311194,1758757066,#SONICSmashers #BuyOneGetOneFree #LimitedTimeOffer #SONICApp #FastFoodDeals #FoodiePromos,synthetic_anonymized,2026-02-12
+implicit_positive,2301649,747278854939525,1758116387,#relationshipgoals #heartbreak #exproblems #funny stories #dailydoseofteat #moeyystorys,synthetic_anonymized,2026-02-12
+implicit_negative,1473237,1177396204221091,1758672772,#TidePartner #sportsmom #footballmom #Gameday #LaundryHacks #TideOXI #CleanUniforms #GameDayReady,synthetic_anonymized,2026-02-12
+implicit_positive,2462626,1093159906355326,1758621862,#DetroitLions #OnePride #SonicAndKnuckles #NFL #GamingMeetsFootball #BigWin,synthetic_anonymized,2026-02-12
+implicit_negative,2117998,122137705994805152,1758534008,#MovieMagic #FilmFrenzy #CinephileCommunity #MysteryMonday #SuspenseLovers #FilmEnthusiasts #TheoriesWelcome,synthetic_anonymized,2026-02-12
