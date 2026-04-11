@@ -35,8 +35,6 @@ class InteractionRow:
     object_id: str
     interaction_time: int
     object_text: str
-    dataset: str
-    ds: str
     interaction_format: str = ""  # e.g., "Instagram: liked"
 
 
@@ -106,6 +104,30 @@ class AnnotatedPersona:
     confidence_score_init: float
     confidence_cross_referenced: float
     stereotype_mark: str = "neutral"  # "neutral", "stereotypical", "anti-stereotypical"
+
+
+# ---------------------------------------------------------------------------
+# High-confidence predicate — used for test-split eligibility and
+# distractor shortlisting. Single source of truth; thresholds are tentative
+# and will be tuned empirically once we have real-scale stats.
+# ---------------------------------------------------------------------------
+
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.5
+HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 0.5
+
+
+def is_high_confidence(init_score: float, cross_ref_score: float) -> bool:
+    """Return True if a persona's scores qualify as 'reasonably high confidence'.
+
+    BOTH conditions must hold:
+      - confidence_score_init  >= 0.5  (LLM's raw inference is solid)
+      - confidence_cross_referenced > 0.5  (corroborated by >=6 similar cross-row
+                                            pairs under the +0.1/similar scoring)
+    """
+    return (
+        init_score >= HIGH_CONFIDENCE_INIT_THRESHOLD
+        and cross_ref_score > HIGH_CONFIDENCE_CROSS_REF_THRESHOLD
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -298,7 +320,10 @@ class PersonaAgent:
         self.temporal_graph: list[TemporalContradiction] = []
         self.user_profile: UserProfile | None = None
         self.annotated_personas: list[AnnotatedPersona] = []
-        self.overpersonalization_holdout: list[AnnotatedPersona] = []  # 20% held out for overpersonalization study
+
+        # Train/test split state populated by build_test_split()
+        self.split_labels: dict[str, str] = {}                       # persona_item -> "train" | "test"
+        self.test_distractors: dict[str, dict] = {}                  # test persona_item -> {"persona_item": ..., "category": ...}
 
         os.makedirs(backend_dir, exist_ok=True)
 
@@ -317,8 +342,6 @@ class PersonaAgent:
                 object_id=row.get("object_id", ""),
                 interaction_time=int(row.get("interaction_time", 0)),
                 object_text=row.get("object_text", ""),
-                dataset=row.get("dataset", ""),
-                ds=row.get("ds", ""),
                 interaction_format=row.get("interaction_format") or _assign_interaction_format(itype),
             ))
         self.interactions.sort(key=lambda r: r.interaction_time)
@@ -755,27 +778,201 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Stereotype annotations: {counts}{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
-    # Overpersonalization holdout
+    # Train/test split — LLM-gated, with LLM-picked distractors
     # ------------------------------------------------------------------
 
-    def extract_overpersonalization_holdout(self, fraction: float = 0.2) -> None:
-        """Randomly extract a fraction of annotated personas into a holdout set
-        for overpersonalization study. Removed items are taken out of
-        self.annotated_personas and placed into self.overpersonalization_holdout."""
-        if not self.annotated_personas:
-            self.overpersonalization_holdout = []
+    def build_test_split(self, fraction: float = 0.2, shortlist_size: int = 5) -> None:
+        """Partition positive cross-referenced personas into train/test splits.
+
+        Test eligibility rules:
+          1. Sort positive personas by source_timestamp ascending (early -> latest).
+          2. Scan newest -> oldest collecting items that pass `is_high_confidence`
+             until we have `fraction * total_positives` candidates (or run out).
+             Only truly high-confidence items can be test candidates.
+          3. LLM inferrability gate: ask whether each candidate is reasonably
+             inferrable from the train 80% (ground truth). Candidates the LLM
+             marks as NOT inferrable are REMOVED from self.cross_referenced_personas
+             entirely — they fail the fidelity gate.
+          4. Distractor pairing for each surviving test item:
+               Stage A (Python): randomly shortlist `shortlist_size` train items
+                 passing the high-confidence predicate.
+               Stage B (LLM): picks the one most topically irrelevant and most
+                 annoying/inappropriate as a personalization recommendation.
+             The chosen distractor is stored in self.test_distractors.
+          5. self.split_labels is populated for every surviving positive persona
+             ("train" or "test"). Negative personas are always "train" and are
+             not passed through the gate.
+        """
+        self.split_labels = {}
+        self.test_distractors = {}
+
+        if not self.cross_referenced_personas:
             return
 
-        n = max(1, int(len(self.annotated_personas) * fraction))
-        indices = random.sample(range(len(self.annotated_personas)), min(n, len(self.annotated_personas)))
-        indices_set = set(indices)
+        # Build lookup of source_timestamp from atomic_personas (authoritative)
+        ts_lookup: dict[str, int] = {ap.persona_item: ap.source_timestamp for ap in self.atomic_personas}
 
-        self.overpersonalization_holdout = [self.annotated_personas[i] for i in indices]
-        self.annotated_personas = [p for i, p in enumerate(self.annotated_personas) if i not in indices_set]
+        sorted_positives = sorted(
+            self.cross_referenced_personas,
+            key=lambda p: ts_lookup.get(p.persona_item, 0),
+        )
+
+        total = len(sorted_positives)
+        n_test_target = max(1, int(total * fraction))
+
+        # Collect test candidates from the tail of the timeline, newest first,
+        # only keeping high-confidence items
+        test_candidates: list[CrossReferencedPersona] = []
+        for cr in reversed(sorted_positives):
+            if is_high_confidence(cr.confidence_score_init, cr.confidence_cross_referenced):
+                test_candidates.append(cr)
+                if len(test_candidates) >= n_test_target:
+                    break
+        # Preserve chronological order (oldest-of-selected first)
+        test_candidates.reverse()
+
+        if not test_candidates:
+            # No high-confidence tail — everything stays train
+            for cr in self.cross_referenced_personas:
+                self.split_labels[cr.persona_item] = "train"
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] No high-confidence test candidates — "
+                      f"all {total} positives marked train.{utils.Colors.ENDC}")
+            return
+
+        test_candidate_set = {cr.persona_item for cr in test_candidates}
+
+        # Build the train pool now (everything else among positives)
+        train_pool: list[CrossReferencedPersona] = [
+            cr for cr in sorted_positives if cr.persona_item not in test_candidate_set
+        ]
+
+        # --- LLM inferrability gate ---
+        train_personas_for_prompt = [
+            {
+                "persona_item": cr.persona_item,
+                "category": cr.category,
+                "confidence_score_init": cr.confidence_score_init,
+                "confidence_cross_referenced": cr.confidence_cross_referenced,
+                "formatted_timestamp": cr.formatted_timestamp,
+            }
+            for cr in train_pool
+        ]
+        test_candidates_for_prompt = [
+            {
+                "persona_item": cr.persona_item,
+                "category": cr.category,
+                "confidence_score_init": cr.confidence_score_init,
+                "confidence_cross_referenced": cr.confidence_cross_referenced,
+                "formatted_timestamp": cr.formatted_timestamp,
+            }
+            for cr in test_candidates
+        ]
+
+        inferrable_items: set[str] = set()
+        non_inferrable_items: set[str] = set()
+
+        if self.llm_client is not None:
+            prompt = prompts.test_inferrability_check_prompt(
+                train_personas=train_personas_for_prompt,
+                test_candidates=test_candidates_for_prompt,
+            )
+            response = self._query_llm_with_retry(prompt)
+            if response:
+                parsed = utils.extract_json_from_response(response)
+                if isinstance(parsed, list):
+                    for item in parsed:
+                        if not isinstance(item, dict):
+                            continue
+                        name = item.get("persona_item", "")
+                        if not name:
+                            continue
+                        if bool(item.get("inferrable", False)):
+                            inferrable_items.add(name)
+                        else:
+                            non_inferrable_items.add(name)
+                else:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable test inferrability response — "
+                          f"defaulting to keep all candidates.{utils.Colors.ENDC}")
+                    inferrable_items = set(test_candidate_set)
+            else:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] Inferrability check LLM call failed — "
+                      f"defaulting to keep all candidates.{utils.Colors.ENDC}")
+                inferrable_items = set(test_candidate_set)
+        else:
+            # Claude Code subagent mode: persona_agent runs *without* an llm_client;
+            # subagents perform this step inline per skill.md. In that mode this
+            # method should not normally be called. Fall back to keeping all candidates.
+            inferrable_items = set(test_candidate_set)
+
+        # --- Drop non-inferrable test candidates entirely ---
+        if non_inferrable_items:
+            self.cross_referenced_personas = [
+                cr for cr in self.cross_referenced_personas
+                if cr.persona_item not in non_inferrable_items
+            ]
+
+        kept_test: list[CrossReferencedPersona] = [
+            cr for cr in test_candidates if cr.persona_item in inferrable_items
+        ]
+
+        # --- Distractor pairing ---
+        high_conf_train = [
+            cr for cr in train_pool
+            if is_high_confidence(cr.confidence_score_init, cr.confidence_cross_referenced)
+        ]
+
+        for test_cr in kept_test:
+            self.split_labels[test_cr.persona_item] = "test"
+            if not high_conf_train:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] No high-confidence train items — "
+                          f"test item '{test_cr.persona_item}' has no distractor.{utils.Colors.ENDC}")
+                continue
+
+            n_to_sample = min(shortlist_size, len(high_conf_train))
+            shortlist = random.sample(high_conf_train, n_to_sample)
+            shortlist_for_prompt = [
+                {"persona_item": cr.persona_item, "category": cr.category}
+                for cr in shortlist
+            ]
+
+            chosen_name: str = ""
+            if self.llm_client is not None and shortlist_for_prompt:
+                prompt = prompts.distractor_selection_prompt(
+                    test_persona={"persona_item": test_cr.persona_item, "category": test_cr.category},
+                    candidate_distractors=shortlist_for_prompt,
+                )
+                response = self._query_llm_with_retry(prompt)
+                if response:
+                    parsed = utils.extract_json_from_response(response)
+                    if isinstance(parsed, dict):
+                        chosen_name = parsed.get("chosen_persona_item", "") or ""
+
+            # Fall back: first shortlist item if LLM pick is missing / invalid
+            valid_names = {cr.persona_item for cr in shortlist}
+            if chosen_name not in valid_names:
+                chosen_name = shortlist[0].persona_item
+
+            chosen_cr = next(cr for cr in shortlist if cr.persona_item == chosen_name)
+            self.test_distractors[test_cr.persona_item] = {
+                "persona_item": chosen_cr.persona_item,
+                "category": chosen_cr.category,
+            }
+
+        # --- Everything else that survived the gate is train ---
+        for cr in self.cross_referenced_personas:
+            if cr.persona_item not in self.split_labels:
+                self.split_labels[cr.persona_item] = "train"
 
         if self.verbose:
-            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Overpersonalization holdout: "
-                  f"{len(self.overpersonalization_holdout)} held out, {len(self.annotated_personas)} remaining.{utils.Colors.ENDC}")
+            n_test = sum(1 for v in self.split_labels.values() if v == "test")
+            n_train = sum(1 for v in self.split_labels.values() if v == "train")
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Test split: "
+                  f"{n_train} train, {n_test} test, "
+                  f"{len(non_inferrable_items)} dropped by inferrability gate, "
+                  f"{sum(1 for v in self.test_distractors.values())} distractors assigned."
+                  f"{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # Orchestration
@@ -783,7 +980,7 @@ class PersonaAgent:
 
     def run_pipeline(self) -> dict:
         """Run the full persona inference pipeline:
-        infer -> cross-ref -> temporal -> profile -> stereotype annotation -> holdout -> save."""
+        infer -> cross-ref -> temporal -> profile -> stereotype -> test split -> save."""
         print(f"{utils.Colors.BOLD}[User {self.user_id}] Starting persona pipeline...{utils.Colors.ENDC}")
 
         self.infer_personas_from_hashtags()
@@ -791,8 +988,11 @@ class PersonaAgent:
         self.build_temporal_contradiction_graph()
         self.generate_user_profile()
         self.annotate_stereotype_marks()
-        self.extract_overpersonalization_holdout()
+        self.build_test_split()
         self.save_to_backend()
+
+        n_test = sum(1 for v in self.split_labels.values() if v == "test")
+        n_train = sum(1 for v in self.split_labels.values() if v == "train")
 
         summary = {
             "user_id": self.user_id,
@@ -806,7 +1006,9 @@ class PersonaAgent:
             "temporal_topics": len(self.temporal_graph),
             "profile_generated": self.user_profile is not None,
             "annotated_personas": len(self.annotated_personas),
-            "overpersonalization_holdout": len(self.overpersonalization_holdout),
+            "split_train": n_train,
+            "split_test": n_test,
+            "distractors_assigned": len(self.test_distractors),
         }
         print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Pipeline complete: {summary}{utils.Colors.ENDC}")
         return summary
@@ -821,27 +1023,27 @@ class PersonaAgent:
     def save_to_backend(self) -> str:
         """Persist data to 2 CSV files per user:
 
-        1. {user_id}_preferences.csv — all personas (positive + negative) with both
-           raw columns and cross-reference/annotation columns in a single file
-        2. {user_id}_profile.csv — synthetic user profile
+        1. {user_id}_preferences.csv — all personas (positive + negative) sorted
+           strictly chronologically by source_timestamp. Positive rows carry a
+           `split` label ("train" | "test") from self.split_labels; negative rows
+           are always train. Test rows also carry their paired distractor fields.
+        2. {user_id}_profile.csv — synthetic user profile.
         """
-        # --- (1) Preferences: only personas that passed filtering ---
-        # Positive: only cross-referenced personas (already filtered)
-        # Negative: only those with confidence > 0.05
-        cr_lookup = {p.persona_item: p for p in self.cross_referenced_personas}
-        holdout_items = {ap.persona_item for ap in self.overpersonalization_holdout}
+        # --- Build lookups ---
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
-        all_annotated_items.update({ap.persona_item: ap for ap in self.overpersonalization_holdout})
 
-        # Build lookup from atomic personas for raw columns
+        # Raw per-persona metadata (source_timestamp, hashtags, etc.)
         atomic_lookup = {ap.persona_item: ap for ap in self.atomic_personas}
         atomic_lookup.update({ap.persona_item: ap for ap in self.negative_personas})
 
-        rows = []
-        # Positive personas that survived filtering
+        rows: list[dict] = []
+
+        # Positive personas that survived filtering + test-split gate
         for cr in self.cross_referenced_personas:
             ap = atomic_lookup.get(cr.persona_item)
             ann = all_annotated_items.get(cr.persona_item)
+            split_label = self.split_labels.get(cr.persona_item, "train")
+            distractor = self.test_distractors.get(cr.persona_item, {}) if split_label == "test" else {}
             rows.append({
                 "persona_item": cr.persona_item,
                 "category": cr.category,
@@ -856,29 +1058,36 @@ class PersonaAgent:
                 "relationship_type": cr.relationship_type,
                 "related_personas": json.dumps(cr.related_personas),
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
-                "overpersonalization": "yes" if cr.persona_item in holdout_items else "no",
+                "split": split_label,
+                "distractor_persona_item": distractor.get("persona_item", ""),
+                "distractor_category": distractor.get("category", ""),
             })
 
-        # Negative personas with confidence > 0.05
-        for np in self.negative_personas:
-            if np.confidence_score_init > 0.05:
-                ann = all_annotated_items.get(np.persona_item)
+        # Negative personas with confidence > 0.05 — always train
+        for np_persona in self.negative_personas:
+            if np_persona.confidence_score_init > 0.05:
+                ann = all_annotated_items.get(np_persona.persona_item)
                 rows.append({
-                    "persona_item": np.persona_item,
-                    "category": np.category,
-                    "confidence_score_init": np.confidence_score_init,
-                    "source_interaction_type": np.source_interaction_type,
-                    "source_object_id": np.source_object_id,
-                    "source_timestamp": np.source_timestamp,
-                    "formatted_timestamp": np.formatted_timestamp,
-                    "source_hashtags": json.dumps(np.source_hashtags),
-                    "interaction_format": np.source_interaction_format,
+                    "persona_item": np_persona.persona_item,
+                    "category": np_persona.category,
+                    "confidence_score_init": np_persona.confidence_score_init,
+                    "source_interaction_type": np_persona.source_interaction_type,
+                    "source_object_id": np_persona.source_object_id,
+                    "source_timestamp": np_persona.source_timestamp,
+                    "formatted_timestamp": np_persona.formatted_timestamp,
+                    "source_hashtags": json.dumps(np_persona.source_hashtags),
+                    "interaction_format": np_persona.source_interaction_format,
                     "confidence_cross_referenced": 0.0,
                     "relationship_type": "none",
                     "related_personas": "[]",
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
-                    "overpersonalization": "no",
+                    "split": "train",
+                    "distractor_persona_item": "",
+                    "distractor_category": "",
                 })
+
+        # Sort strictly chronological (early -> latest) across the combined stream
+        rows.sort(key=lambda r: (int(r.get("source_timestamp") or 0), r.get("persona_item", "")))
 
         if rows:
             utils.save_rows_to_csv(rows, self._user_path("preferences"))
@@ -891,7 +1100,7 @@ class PersonaAgent:
 
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Saved to {self.backend_dir}/ "
-                  f"(preferences: {len(all_atomic)}, "
+                  f"(preferences: {len(rows)}, "
                   f"profile: {'yes' if self.user_profile else 'no'}){utils.Colors.ENDC}")
         return self.backend_dir
 
@@ -906,7 +1115,8 @@ class PersonaAgent:
         self.negative_personas = []
         self.cross_referenced_personas = []
         self.annotated_personas = []
-        self.overpersonalization_holdout = []
+        self.split_labels = {}
+        self.test_distractors = {}
 
         for row in pref_rows:
             interaction_type = row.get("source_interaction_type", "")
@@ -951,10 +1161,18 @@ class PersonaAgent:
                     confidence_cross_referenced=float(row.get("confidence_cross_referenced", 0.0)),
                     stereotype_mark=row.get("stereotype_mark", "neutral"),
                 )
-                if row.get("overpersonalization") == "yes":
-                    self.overpersonalization_holdout.append(ann)
-                else:
-                    self.annotated_personas.append(ann)
+                self.annotated_personas.append(ann)
+
+            # Split + distractor state
+            split_label = row.get("split", "train") or "train"
+            self.split_labels[row["persona_item"]] = split_label
+            if split_label == "test":
+                distractor_item = row.get("distractor_persona_item", "") or ""
+                if distractor_item:
+                    self.test_distractors[row["persona_item"]] = {
+                        "persona_item": distractor_item,
+                        "category": row.get("distractor_category", "") or "",
+                    }
 
         # Load user profile
         profile_rows = utils.load_rows_from_csv(self._user_path("profile"))
@@ -973,9 +1191,11 @@ class PersonaAgent:
             self.user_profile = None
 
         if self.verbose:
+            n_test = sum(1 for v in self.split_labels.values() if v == "test")
+            n_train = sum(1 for v in self.split_labels.values() if v == "train")
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Loaded from backend: "
                   f"{len(self.atomic_personas)} positive, "
                   f"{len(self.negative_personas)} negative, "
                   f"{len(self.annotated_personas)} annotated, "
-                  f"{len(self.overpersonalization_holdout)} holdout.{utils.Colors.ENDC}")
+                  f"{n_train} train, {n_test} test.{utils.Colors.ENDC}")
         return True

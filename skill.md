@@ -28,10 +28,12 @@ Reads a CSV of social media interactions, groups rows by `user_id`, and spawns o
      - **Step 3 — Filter**: remove items where `confidence_score_init < 0.5 AND confidence_cross_referenced <= 0.0`, but always keep contradictory items (they go into temporal graph).
      - **Step 4 — Generate user profile**: Randomly sample gender+orientation and race/ethnicity from predefined distributions in `persona_agent.py` (`GENDER_ORIENTATION_DISTRIBUTION`, `RACE_ETHNICITY_DISTRIBUTION`). Then use the profile generation prompt from `prompts.py` to create name, career, education, Big Five personality, and a 3-5 sentence bio. Diverse, avoid stereotypes.
      - **Step 5 — Annotate stereotype marks**: Based on **demographics only** (gender, sexual orientation, race/ethnicity — NOT career or education), annotate each persona as "neutral", "stereotypical", or "anti-stereotypical". Be conservative — most should be "neutral".
-     - **Step 6 — Overpersonalization holdout**: Randomly select 20% of personas and mark them with `overpersonalization: yes`.
-     - **Step 7 — Save** 2 CSV files to `backend/`.
+     - **Step 6 — Sort & select test candidates**: sort ALL positive filtered personas by `source_timestamp` ascending (early → latest). Scan from newest back toward oldest, collecting items that satisfy the **high-confidence predicate** (`confidence_score_init >= 0.5 AND confidence_cross_referenced > 0.5`), until you have `max(1, 20% * total_positives)` candidates — or run out. Everything else is `train`.
+     - **Step 7 — Inferrability gate**: for each test candidate, decide whether it can be reasonably inferred from the train-set preferences (the ground truth). Use the rules in `prompts.py::test_inferrability_check_prompt` verbatim. Be **conservative** — when in doubt, mark as NOT inferrable and **remove it entirely** from the preferences list (not just demote to train).
+     - **Step 8 — Distractor pairing**: for each surviving test item, randomly shortlist **5** high-confidence train items (same high-confidence predicate). From those 5, pick the **one** that is most topically irrelevant to the test preference and would be most annoying/inappropriate as a personalization recommendation if surfaced in that test preference's context. Follow `prompts.py::distractor_selection_prompt` verbatim. Store `distractor_persona_item` and `distractor_category` on the test row only.
+     - **Step 9 — Save** 2 CSV files to `backend/`.
    - The exact CSV column schemas (2 files per user):
-     - `{user_id}_preferences.csv`: persona_item, category, confidence_score_init, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags (JSON array), interaction_format, confidence_cross_referenced, relationship_type, related_personas (JSON array), stereotype_mark, overpersonalization — only rows that passed the filter; for negative users, only rows with confidence > 0.05
+     - `{user_id}_preferences.csv`: persona_item, category, confidence_score_init, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags (JSON array), interaction_format, confidence_cross_referenced, relationship_type, related_personas (JSON array), stereotype_mark, split (`"train"` | `"test"`), distractor_persona_item (test rows only), distractor_category (test rows only). Rows MUST be written in **strict chronological order** by source_timestamp ascending. Negative rows are always `split=train`.
      - `{user_id}_profile.csv`: name, gender, race_ethnicity, career, education, big_five (JSON object), bio — all users
    - Instruction to write the CSV files using the Write tool.
 
@@ -48,11 +50,7 @@ You are running the PersonaMem persona inference pipeline for user {user_id}.
 
 ## User Data
 - user_id: {user_id}
-- interaction_type: implicit_positive
-- object_id: {object_id}
-- interaction_time: {unix_ts} (formatted: {HH:MM, MM/DD/YYYY})
-- object_text: {hashtags}
-- interaction_format: {platform}: {action}
+- All interaction rows (each with interaction_type, object_id, interaction_time (formatted HH:MM, MM/DD/YYYY), object_text, interaction_format)
 - Demographics: {gender_orientation} | {race_ethnicity}
 
 ## Step 1: Infer Atomic Personas
@@ -71,11 +69,25 @@ You are running the PersonaMem persona inference pipeline for user {user_id}.
 ## Step 5: Annotate Stereotype Marks
 [Demographics only. Mark neutral/stereotypical/anti-stereotypical]
 
-## Step 6: Overpersonalization
-[Mark 20% as overpersonalization=yes]
+## Step 6: Sort & Select Test Candidates
+[Sort positives by source_timestamp ascending. From newest backward, collect items passing
+ is_high_confidence (init >= 0.5 AND cross_ref > 0.5) until we have 20% of total or run out.
+ Everything else = train.]
 
-## Step 7: Save
-[Write 2 files: {user_id}_preferences.csv (filtered rows only), {user_id}_profile.csv]
+## Step 7: Inferrability Gate
+[For each test candidate, per prompts.py::test_inferrability_check_prompt, decide yes/no
+ whether it can be reasonably inferred from the train set. Drop any marked "no" entirely —
+ remove them from the preferences list, not just demote to train.]
+
+## Step 8: Distractor Pairing
+[For each surviving test item: randomly shortlist 5 high-confidence train items. Then use
+ prompts.py::distractor_selection_prompt to pick the one most topically irrelevant and most
+ annoying/inappropriate as a personalization recommendation. Record its persona_item and
+ category as distractor fields on the test row.]
+
+## Step 9: Save
+[Write 2 files sorted strictly by source_timestamp ascending:
+ {user_id}_preferences.csv with split + distractor columns, {user_id}_profile.csv]
 ```
 
 ## Example subagent prompt (negative user)
@@ -84,7 +96,8 @@ You are running the PersonaMem persona inference pipeline for user {user_id}.
 You are running the PersonaMem persona inference pipeline for user {user_id}.
 
 ## User Data
-- interaction_type: implicit_negative (user scrolled past promoted content — very weak signal)
+- All interaction rows with interaction_type ∈ {implicit_negative, explicit_negative}
+  (user scrolled past / dismissed — very weak signal)
 - interaction_format: {platform}: {action}
 [...]
 
@@ -98,5 +111,8 @@ You are running the PersonaMem persona inference pipeline for user {user_id}.
 [Demographics only. Mark each persona as neutral/stereotypical/anti-stereotypical]
 
 ## Step 4: Save
-[Write 2 files: {user_id}_preferences.csv (only confidence > 0.05, with stereotype annotations), {user_id}_profile.csv]
+[Negative personas are always split=train (too weak to be test candidates).
+ Write 2 files sorted by source_timestamp ascending:
+ {user_id}_preferences.csv (only confidence > 0.05, with stereotype annotations, split=train,
+  empty distractor fields), {user_id}_profile.csv]
 ```

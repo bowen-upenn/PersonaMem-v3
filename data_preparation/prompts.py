@@ -275,3 +275,115 @@ Respond with ONLY a JSON array. No explanation.
   {{{{"persona_item": "...", "category": "...", "stereotype_mark": "neutral" | "stereotypical" | "anti-stereotypical"}}}}
 ]
 ```"""
+
+
+def test_inferrability_check_prompt(
+    train_personas: list[dict],
+    test_candidates: list[dict],
+) -> str:
+    """Build a prompt that asks the LLM to check whether each test candidate persona
+    can be reasonably inferred from the train 80% set (the ground truth).
+
+    Each persona dict includes: persona_item, category, confidence_score_init,
+    confidence_cross_referenced, formatted_timestamp.
+    """
+
+    train_json = json.dumps(train_personas, indent=2)
+    test_json = json.dumps(test_candidates, indent=2)
+
+    return f"""\
+You are evaluating whether a set of "test" user preferences can be reasonably inferred from the user's earlier history of preferences (the "train" set). This is a sanity check for building a high-fidelity evaluation dataset: we only want to keep test items that a thoughtful reader could plausibly predict from the user's established pattern.
+
+## Train set (user's earlier high-confidence preferences — ground truth)
+
+```json
+{train_json}
+```
+
+## Test candidates (user's most recent high-confidence preferences)
+
+```json
+{test_json}
+```
+
+## Your Task
+
+For **each** test candidate, decide whether it can be **reasonably inferred** from the train set. The test preference does NOT need to be explicitly stated in the train set — but the user's earlier pattern should plausibly support it. Examples:
+
+- A test preference "Enjoys espresso-based drinks" is **inferrable** if the train set already shows a strong coffee/cafe pattern.
+- A test preference "Follows competitive chess tournaments" is **NOT inferrable** if nothing in the train set touches chess, board games, or strategy hobbies.
+
+## Rules
+
+1. **Be conservative**. When in doubt, mark as `false` — we'd rather drop a borderline item than keep a noisy eval sample.
+2. Consider **topical overlap**, **lifestyle coherence**, and **demographic/cultural consistency** as bridges from train → test.
+3. Return **one entry per test candidate**, in the same order as the input.
+4. One-sentence justification per entry.
+
+## Output Format
+
+Respond with ONLY a JSON array. No explanation outside the JSON fence.
+
+```json
+[
+  {{"persona_item": "...", "inferrable": true, "reason": "..."}},
+  {{"persona_item": "...", "inferrable": false, "reason": "..."}}
+]
+```"""
+
+
+def distractor_selection_prompt(
+    test_persona: dict,
+    candidate_distractors: list[dict],
+) -> str:
+    """Build a prompt that asks the LLM to pick one distractor from a shortlist.
+
+    The goal: choose the candidate that would feel most topically irrelevant and
+    most annoying/inappropriate if surfaced as a personalization recommendation
+    at the moment of the test preference. It's a hard-negative selection.
+
+    test_persona and each candidate dict has: persona_item, category.
+    """
+
+    test_json = json.dumps(test_persona, indent=2)
+    candidates_json = json.dumps(candidate_distractors, indent=2)
+
+    return f"""\
+You are building a hard-negative distractor for a personalization evaluation.
+
+## Target test preference
+
+```json
+{test_json}
+```
+
+## Shortlist of candidate distractors
+
+These are all known to be correct, high-confidence preferences of the same user — but they come from earlier in the user's history and may or may not be relevant to the target test preference above.
+
+```json
+{candidates_json}
+```
+
+## Your Task
+
+Imagine a personalization feature is trying to surface something relevant to the user at the moment the target test preference is active (e.g., the user is in the mood or context described by the test preference). Out of the shortlist, pick the **one** candidate that would be:
+
+1. **Topically irrelevant** to the target test preference — no meaningful overlap in domain, activity, or need.
+2. **Most annoying or inappropriate** as a personalization recommendation in that moment — i.e., if the system suggested this candidate instead of something aligned with the test preference, it would feel like a jarring miss that undermines user trust in the personalization.
+
+Among the shortlist, choose the single worst match along these two axes combined. Ties broken in favor of the one most likely to frustrate the user.
+
+## Rules
+
+1. Pick exactly **one** candidate from the shortlist — do not invent new items.
+2. The chosen `persona_item` string must match one of the candidates exactly.
+3. One-sentence justification explaining why it's the most jarring / least relevant of the options.
+
+## Output Format
+
+Respond with ONLY a JSON object. No explanation outside the JSON fence.
+
+```json
+{{"chosen_persona_item": "...", "reason": "..."}}
+```"""
