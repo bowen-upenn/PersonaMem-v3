@@ -1704,6 +1704,62 @@ class PersonaAgent:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(records, f, indent=2, ensure_ascii=False)
 
+        # --- Write aggregated preferences.csv (all apps merged, old-style flat layout) ---
+        # Re-uses the CSV schema from the pre-refactor era so downstream tools
+        # that expect a single-file-per-user view still work. `assigned_app`
+        # and `corroboration_count` are appended as new columns. The
+        # `interaction_format` cell carries the full JSON object serialized
+        # as a string.
+        csv_columns = [
+            "persona_item",
+            "category",
+            "confidence_score_init",
+            "confidence_cross_referenced",
+            "corroboration_count",
+            "source_interaction_type",
+            "source_object_id",
+            "source_timestamp",
+            "formatted_timestamp",
+            "source_hashtags",
+            "assigned_app",
+            "interaction_format",
+            "relationship_type",
+            "related_personas",
+            "stereotype_mark",
+            "split",
+            "distractor_persona_item",
+            "distractor_category",
+        ]
+        csv_rows: list[dict] = []
+        for rec in all_records:
+            csv_rows.append({
+                "persona_item": rec.get("persona_item", ""),
+                "category": rec.get("category", ""),
+                "confidence_score_init": rec.get("confidence_score_init", 0.0),
+                "confidence_cross_referenced": rec.get("confidence_cross_referenced", 0.0),
+                "corroboration_count": rec.get("corroboration_count", 1),
+                "source_interaction_type": rec.get("source_interaction_type", ""),
+                "source_object_id": rec.get("source_object_id", ""),
+                "source_timestamp": rec.get("source_timestamp", 0),
+                "formatted_timestamp": rec.get("formatted_timestamp", ""),
+                "source_hashtags": json.dumps(rec.get("source_hashtags", []), ensure_ascii=False),
+                "assigned_app": rec.get("assigned_app", ""),
+                "interaction_format": json.dumps(rec.get("interaction_format", {}), ensure_ascii=False),
+                "relationship_type": rec.get("relationship_type", "none"),
+                "related_personas": json.dumps(rec.get("related_personas", []), ensure_ascii=False),
+                "stereotype_mark": rec.get("stereotype_mark", "neutral"),
+                "split": rec.get("split", "train"),
+                "distractor_persona_item": rec.get("distractor_persona_item", ""),
+                "distractor_category": rec.get("distractor_category", ""),
+            })
+        if csv_rows:
+            import csv as _csv
+            csv_path = os.path.join(user_dir, "preferences.csv")
+            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+                writer = _csv.DictWriter(f, fieldnames=csv_columns)
+                writer.writeheader()
+                writer.writerows(csv_rows)
+
         # --- Write profile.json ---
         if self.user_profile:
             profile_dict = asdict(self.user_profile)
