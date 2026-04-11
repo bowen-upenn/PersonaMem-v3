@@ -3,7 +3,7 @@
     "persona_item": "Enjoys humor that pokes fun at the chaos of parenting",
     "category": "parenting and child-rearing",
     "confidence_score_init": 0.82,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 4.5,
     "corroboration_count": 46,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "852680",
@@ -25,7 +25,151 @@
       "user_message": null
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Feels validated by content about parenting struggles",
+    "category": "parenting and child-rearing",
+    "confidence_score_init": 0.75,
+    "confidence_cross_referenced": 4.5,
+    "corroboration_count": 46,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "852680",
+    "source_timestamp": 1775284138,
+    "formatted_timestamp": "06:28, 04/04/2026",
+    "source_hashtags": [
+      "#coparent",
+      "#coparenting",
+      "#parentinghacks"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Threads",
+    "interaction_format": {
+      "app": "Threads",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Gravitates toward content that mirrors everyday life experiences",
+    "category": "relatable everyday content",
+    "confidence_score_init": 0.77,
+    "confidence_cross_referenced": 10.3,
+    "corroboration_count": 104,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "852680",
+    "source_timestamp": 1775284138,
+    "formatted_timestamp": "06:28, 04/04/2026",
+    "source_hashtags": [
+      "#relatable"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Threads",
+    "interaction_format": {
+      "app": "Threads",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Follows comedy creators and prank content",
+    "category": "comedy and humor content",
+    "confidence_score_init": 0.7,
+    "confidence_cross_referenced": 13.7,
+    "corroboration_count": 138,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "666394",
+    "source_timestamp": 1775284233,
+    "formatted_timestamp": "06:30, 04/04/2026",
+    "source_hashtags": [
+      "#ComedyGold",
+      "#ComedyShow",
+      "#LaughOutLoud"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Threads",
+    "interaction_format": {
+      "app": "Threads",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Finds humor in everyday couple dynamics",
+    "category": "romantic couple relationships",
+    "confidence_score_init": 0.75,
+    "confidence_cross_referenced": 11.5,
+    "corroboration_count": 116,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "660847",
+    "source_timestamp": 1775561196,
+    "formatted_timestamp": "11:26, 04/07/2026",
+    "source_hashtags": [
+      "#couplelife",
+      "#loveinthelittlethings",
+      "#relationshipgoals",
+      "#skincarelove"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Threads",
+    "interaction_format": {
+      "app": "Threads",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Follows mom-oriented lifestyle content creators",
+    "category": "motherhood and parenting",
+    "confidence_score_init": 0.85,
+    "confidence_cross_referenced": 17.5,
+    "corroboration_count": 176,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "562132",
+    "source_timestamp": 1775562389,
+    "formatted_timestamp": "11:46, 04/07/2026",
+    "source_hashtags": [
+      "#DanceMom",
+      "#MomLife",
+      "#ProtectiveMom"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Threads",
+    "interaction_format": {
+      "app": "Threads",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "test",
+    "over_personalization_irrelevant": "Enjoys seasonal Halloween and fall-themed content",
+    "over_personalization_irrelevant_category": "Halloween and seasonal fall content"
   }
 ]

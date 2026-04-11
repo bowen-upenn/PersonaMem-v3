@@ -141,20 +141,23 @@ class AnnotatedPersona:
 # and will be tuned empirically once we have real-scale stats.
 # ---------------------------------------------------------------------------
 
-# Strict floor on confidence_score_init. Personas below this are dropped
-# after cross-ref regardless of cross-ref score or relationship type. This
-# is the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.8
+# Floor on confidence_score_init. Personas below this are dropped after
+# cross-ref regardless of cross-ref score or relationship type. This is
+# the main knob for preference-list size. Tuneable.
+MIN_PERSONA_INIT_CONFIDENCE = 0.5
 
 # High-confidence predicate — used for test-split eligibility and distractor
-# shortlisting. Stricter than the filter: init must be well above the floor,
-# cross_ref must show at least some independent corroboration.
-HIGH_CONFIDENCE_INIT_THRESHOLD = 0.8
+# shortlisting. init threshold matches the filter floor so "high-confidence"
+# at minimum means the persona survived the init filter AND is corroborated
+# by more than a handful of other rows.
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.5
 HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 0.5
 
-# Hard ceiling on confidence_cross_referenced. Even with many similar pairs
-# the score cannot exceed 1.0.
-CROSS_REF_CAP = 1.0
+# NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
+# side. A preference corroborated by 200 distinct rows should be strictly
+# more confident than one corroborated by 10 — they can't both be 1.0. Only
+# the lower bound (0.0 floor) is enforced. This makes cross_ref a
+# distinguishing signal at scale.
 
 
 def is_high_confidence(init_score: float, cross_ref_score: float) -> bool:
@@ -163,8 +166,12 @@ def is_high_confidence(init_score: float, cross_ref_score: float) -> bool:
     BOTH conditions must hold:
       - confidence_score_init  >= MIN_PERSONA_INIT_CONFIDENCE (the filter floor)
       - confidence_cross_referenced > HIGH_CONFIDENCE_CROSS_REF_THRESHOLD
-        (the persona is independently corroborated by other distinct interaction rows
-         OR by other semantically-related but distinct personas)
+        (the persona is independently corroborated by at least ~6 distinct
+         interaction rows OR by other semantically-related but distinct personas)
+
+    Because cross_ref is uncapped, corroboration_count >= ~6 easily clears
+    this bar, and heavily-corroborated preferences get much higher scores
+    that stay distinguishable from each other.
     """
     return (
         init_score >= HIGH_CONFIDENCE_INIT_THRESHOLD
@@ -627,13 +634,14 @@ class PersonaAgent:
            Python-side additive scoring on top of the merge base:
            - Each `similar` pair adds +0.1 to BOTH personas
            - Each `contradictory` pair subtracts -0.1 from the OLDER persona only
-           - Score is floored at 0.0 and capped at CROSS_REF_CAP (1.0)
+           - Score is floored at 0.0; there is NO upper cap. A preference
+             corroborated by 200 rows will end up with a much larger score
+             than one corroborated by 10.
 
-        3. **Strict filter**: drop canonicals with `confidence_score_init <
-           MIN_PERSONA_INIT_CONFIDENCE` (0.8). This is a hard gate — even
+        3. **Filter**: drop canonicals with `confidence_score_init <
+           MIN_PERSONA_INIT_CONFIDENCE` (0.5). This is a hard gate — even
            contradictions and high-cross-ref items below the init floor are
-           removed. Rationale: at real-world scale we only want strong-signal
-           preferences.
+           removed.
         """
         if not self.atomic_personas:
             self.cross_referenced_personas = []
@@ -680,11 +688,11 @@ class PersonaAgent:
 
         # Seed confidence_cross_referenced from corroboration count:
         # +0.1 per distinct additional row that produced the same persona.
+        # Intentionally UNCAPPED — a preference corroborated by 200 distinct
+        # rows should be strictly more confident than one corroborated by 10.
         for key, canonical in canonical_by_key.items():
             merge_boost = 0.1 * max(0, canonical.corroboration_count - 1)
-            canonical.confidence_cross_referenced = round(
-                min(CROSS_REF_CAP, merge_boost), 2
-            )
+            canonical.confidence_cross_referenced = round(merge_boost, 2)
 
         canonicals: list[CrossReferencedPersona] = [canonical_by_key[k] for k in canonical_order]
 
@@ -780,12 +788,10 @@ class PersonaAgent:
                         # I am older — I get penalized
                         scores[c.persona_item] -= 0.1
 
-        # Apply scores (floor at 0.0, ceiling at CROSS_REF_CAP)
+        # Apply scores (floor at 0.0, NO upper cap — cross_ref is a
+        # magnitude of corroboration strength, not a probability).
         for c in canonicals:
-            c.confidence_cross_referenced = round(
-                max(0.0, min(CROSS_REF_CAP, scores[c.persona_item])),
-                2,
-            )
+            c.confidence_cross_referenced = round(max(0.0, scores[c.persona_item]), 2)
 
         # --- Step 3: Strict filter on init confidence ---
         # Drop anything with init < MIN_PERSONA_INIT_CONFIDENCE, regardless of
@@ -1513,7 +1519,7 @@ class PersonaAgent:
 
         Order:
           1. infer atomic personas
-          2. dedupe (lexical) + cross-reference + init>=0.8 filter
+          2. dedupe (lexical) + cross-reference + init>=0.5 filter
           3. remove semantic redundancies among survivors (LLM clustering)
           4. temporal contradiction graph (on surviving canonicals)
           5. generate user profile (demographics + big_five + bio)
@@ -1646,8 +1652,8 @@ class PersonaAgent:
                 "related_personas": cr.related_personas,
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                 "split": split_label,
-                "distractor_persona_item": distractor.get("persona_item", ""),
-                "distractor_category": distractor.get("category", ""),
+                "over_personalization_irrelevant": distractor.get("persona_item", ""),
+                "over_personalization_irrelevant_category": distractor.get("category", ""),
                 "source_interaction_type": ap.source_interaction_type if ap else cr.source_interaction_type,
                 "source_object_id": ap.source_object_id if ap else "",
                 "source_timestamp": ap.source_timestamp if ap else 0,
@@ -1674,8 +1680,8 @@ class PersonaAgent:
                 "related_personas": [],
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                 "split": "train",
-                "distractor_persona_item": "",
-                "distractor_category": "",
+                "over_personalization_irrelevant": "",
+                "over_personalization_irrelevant_category": "",
                 "source_interaction_type": np_persona.source_interaction_type,
                 "source_object_id": np_persona.source_object_id,
                 "source_timestamp": np_persona.source_timestamp,
@@ -1727,8 +1733,8 @@ class PersonaAgent:
             "related_personas",
             "stereotype_mark",
             "split",
-            "distractor_persona_item",
-            "distractor_category",
+            "over_personalization_irrelevant",
+            "over_personalization_irrelevant_category",
         ]
         csv_rows: list[dict] = []
         for rec in all_records:
@@ -1749,8 +1755,8 @@ class PersonaAgent:
                 "related_personas": json.dumps(rec.get("related_personas", []), ensure_ascii=False),
                 "stereotype_mark": rec.get("stereotype_mark", "neutral"),
                 "split": rec.get("split", "train"),
-                "distractor_persona_item": rec.get("distractor_persona_item", ""),
-                "distractor_category": rec.get("distractor_category", ""),
+                "over_personalization_irrelevant": rec.get("over_personalization_irrelevant", ""),
+                "over_personalization_irrelevant_category": rec.get("over_personalization_irrelevant_category", ""),
             })
         if csv_rows:
             import csv as _csv
@@ -1857,11 +1863,11 @@ class PersonaAgent:
             split_label = rec.get("split", "train") or "train"
             self.split_labels[rec["persona_item"]] = split_label
             if split_label == "test":
-                distractor_item = rec.get("distractor_persona_item", "") or ""
+                distractor_item = rec.get("over_personalization_irrelevant", "") or ""
                 if distractor_item:
                     self.test_distractors[rec["persona_item"]] = {
                         "persona_item": distractor_item,
-                        "category": rec.get("distractor_category", "") or "",
+                        "category": rec.get("over_personalization_irrelevant_category", "") or "",
                     }
 
         # --- Load profile.json ---

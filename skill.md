@@ -35,18 +35,18 @@ backend/
     preferences.csv     # flat single-file view of ALL preferences across ALL apps (time-sorted)
 ```
 
-The aggregated `preferences.csv` carries every preference the user has, regardless of which app it was routed to, in one strictly chronological table. Columns: `persona_item, category, confidence_score_init, confidence_cross_referenced, corroboration_count, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags, assigned_app, interaction_format, relationship_type, related_personas, stereotype_mark, split, distractor_persona_item, distractor_category`. `source_hashtags`, `related_personas`, and `interaction_format` are JSON-encoded into a single cell each.
+The aggregated `preferences.csv` carries every preference the user has, regardless of which app it was routed to, in one strictly chronological table. Columns: `persona_item, category, confidence_score_init, confidence_cross_referenced, corroboration_count, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags, assigned_app, interaction_format, relationship_type, related_personas, stereotype_mark, split, over_personalization_irrelevant, over_personalization_irrelevant_category`. `source_hashtags`, `related_personas`, and `interaction_format` are JSON-encoded into a single cell each.
 
 The four supported apps are **Instagram, Facebook, Threads, Chatbot** — see `PLATFORMS` in `data_preparation/persona_agent.py`.
 
 ## Key rules the subagent MUST obey
 
 1. **Read `data_preparation/prompts.py` and `data_preparation/persona_agent.py` first.** Copy the rules, scoring thresholds, and JSON output schemas **verbatim** — do not paraphrase.
-2. **Init-confidence floor is strict**: `MIN_PERSONA_INIT_CONFIDENCE = 0.8`. After cross-reference, any canonical persona below 0.8 is dropped entirely. This is the main knob for dataset size.
-3. **High-confidence predicate** (`is_high_confidence`): `confidence_score_init >= 0.8 AND confidence_cross_referenced > 0.5`. Used for test-split eligibility and distractor shortlisting.
-4. **Cross-ref is capped at 1.0**. Never allow `confidence_cross_referenced` to exceed 1.0.
-5. **Dedupe by text BEFORE cross-referencing**. If two rows produce the exact same persona_item string, merge them into one canonical persona and record the merge in `corroboration_count` (= number of distinct rows that produced it). `confidence_cross_referenced` starts at `0.1 * (corroboration_count - 1)` capped at 1.0 — this is the base "merge boost". The cross-reference LLM call then adds on top for *semantically related but distinct* personas. Identical persona_items must NEVER be marked as "similar" to each other.
-6. **Remove semantic redundancy AFTER the 0.8 filter.** Cluster the survivors: personas that describe the same preference in different words are collapsed into one representative (the one with highest `init + cross_ref`). Related-persona links are rewritten to point at the representative.
+2. **Init-confidence floor**: `MIN_PERSONA_INIT_CONFIDENCE = 0.5`. After cross-reference, any canonical persona below 0.5 is dropped entirely. This is the main knob for dataset size.
+3. **High-confidence predicate** (`is_high_confidence`): `confidence_score_init >= 0.5 AND confidence_cross_referenced > 0.5`. Used for test-split eligibility and over-personalization-irrelevant shortlisting.
+4. **Cross-ref is UNCAPPED on the upper side**. It's a magnitude of corroboration strength, not a probability. A preference corroborated by 200 distinct rows will legitimately score much higher than one corroborated by 10 — they MUST NOT both collapse to the same ceiling. The score is floored at 0.0 only.
+5. **Dedupe by text BEFORE cross-referencing**. If two rows produce the exact same persona_item string, merge them into one canonical persona and record the merge in `corroboration_count` (= number of distinct rows that produced it). `confidence_cross_referenced` starts at `0.1 * (corroboration_count - 1)` (UNCAPPED) — this is the base "merge boost". The cross-reference LLM call then adds on top for *semantically related but distinct* personas. Identical persona_items must NEVER be marked as "similar" to each other.
+6. **Remove semantic redundancy AFTER the 0.5 filter.** Cluster the survivors: personas that describe the same preference in different words are collapsed into one representative (the one with highest `init + cross_ref`). Related-persona links are rewritten to point at the representative.
 7. **App assignment is NOT random.** Each preference is routed to **exactly one primary app** based on the user's per-app sub-personas. Then a deterministic 8% noise rate reassigns a fraction of preferences to a random different app to simulate real-world cross-app leakage.
 8. **Train/test split is CROSS-APP and time-based.** Sort ALL positive survivors (across all apps) by `source_timestamp` ascending. Take the latest 20% that pass `is_high_confidence` as test candidates, run the inferrability gate, drop failures, pair each survivor with a distractor. The resulting `split` label is stored on each preference regardless of which app it lives in.
 9. **Chatbot `@ai` actions need a natural-language `user_message`.** For any preference routed to Chatbot whose chosen action is in `AT_AI_ACTIONS` (see `persona_agent.py`), the subagent generates a short first-person message (1–2 sentences, starting with `@ai `) grounded in the specific preference topic.
@@ -57,7 +57,7 @@ For each user, the subagent executes these steps in order. Each step's rules com
 
 1. **Infer atomic personas** — rules from `prompts.py::hashtag_to_persona_prompt`. 3–5 personas per hashtag, specific topical category, per-persona source hashtags, confidence 0.0–1.0. Negative interactions capped at 0.05–0.15.
 
-2. **Dedupe + cross-reference + 0.8 filter** — rules from `prompts.py::summarize_and_cross_reference_prompt`. First merge lexically-identical persona_items across rows into canonicals (recording `corroboration_count`). Then find `similar`/`contradictory` pairs between DISTINCT canonicals only (cross-row only, same-row relationships skipped). Python-side scoring: `+0.1` per similar pair to both sides, `-0.1` per contradictory pair to the older side only, floor `0.0`, cap `1.0`. Then strict filter: drop everything with `confidence_score_init < 0.8`.
+2. **Dedupe + cross-reference + 0.5 filter** — rules from `prompts.py::summarize_and_cross_reference_prompt`. First merge lexically-identical persona_items across rows into canonicals (recording `corroboration_count`). Then find `similar`/`contradictory` pairs between DISTINCT canonicals only (cross-row only, same-row relationships skipped). Python-side scoring: `+0.1` per similar pair to both sides, `-0.1` per contradictory pair to the older side only, **floor `0.0`, NO upper cap**. Then filter: drop everything with `confidence_score_init < 0.5`.
 
 3. **Remove semantic redundancy** — rules from `prompts.py::remove_redundant_personas_prompt`. Cluster the survivors into groups of semantically-equivalent preferences (different wording, same meaning). Keep the representative (highest `init + cross_ref`) from each group, drop the rest. Rewrite `related_personas` links on survivors so they don't point at dropped items.
 
@@ -75,9 +75,9 @@ For each user, the subagent executes these steps in order. Each step's rules com
 
 10. **Build test split** — rules from `prompts.py::test_inferrability_check_prompt` + `prompts.py::distractor_selection_prompt`.
     - Sort all surviving positives by `source_timestamp` ascending.
-    - Scan newest → oldest collecting items that pass `is_high_confidence` (`init >= 0.8 AND cross_ref > 0.5`) until you have `max(1, 0.2 * total_positives)` candidates. Everything else is `train`. Negatives are always `train`.
+    - Scan newest → oldest collecting items that pass `is_high_confidence` (`init >= 0.5 AND cross_ref > 0.5`) until you have `max(1, 0.2 * total_positives)` candidates. Everything else is `train`. Negatives are always `train`.
     - For each candidate, run the inferrability gate. Drop any marked NOT inferrable **entirely from the preferences list**.
-    - For each surviving test item: randomly shortlist 5 high-confidence train items, then pick the one most topically irrelevant AND most annoying/inappropriate as a personalization recommendation. Store `distractor_persona_item` + `distractor_category` on the test row only.
+    - For each surviving test item: randomly shortlist 5 high-confidence train items, then pick the one most topically irrelevant AND most annoying/inappropriate as a personalization recommendation. Store `over_personalization_irrelevant` + `over_personalization_irrelevant_category` on the test row only.
 
 11. **Save** — write 5 JSON files + 1 aggregated CSV to `backend/{user_id}/`:
     - `profile.json`: UserProfile dataclass + `app_personas` dict
@@ -97,8 +97,8 @@ For each user, the subagent executes these steps in order. Each step's rules com
   "related_personas": [{"persona_item": "...", "type": "similar"}],
   "stereotype_mark": "neutral",
   "split": "train" | "test",
-  "distractor_persona_item": "",
-  "distractor_category": "",
+  "over_personalization_irrelevant": "",
+  "over_personalization_irrelevant_category": "",
   "source_interaction_type": "implicit_positive",
   "source_object_id": "691531",
   "source_timestamp": 1775235998,
@@ -143,6 +143,6 @@ Each subagent must follow the **exact same prompts** defined in `data_preparatio
 
 ## Important scale caveats
 
-- Large users (3k–6k interaction rows) produce tens of thousands of atomic personas. The subagent MUST dedupe by lexical identity in Step 2 and cluster by semantic redundancy in Step 3 aggressively — those two steps are what keep the preference list at a usable size. The 0.8 filter is the third main size lever.
+- Large users (3k–6k interaction rows) produce tens of thousands of atomic personas. The subagent MUST dedupe by lexical identity in Step 2 and cluster by semantic redundancy in Step 3 aggressively — those two steps are what keep the preference list at a usable size. The 0.5 init filter is the third main size lever.
 - For very large users, batched per-preference prompts (like Step 8 generating interaction formats one at a time) are prohibitively expensive. The subagent should **batch** these inline — one LLM reasoning pass over all (persona, app) pairs at once, not one reasoning pass per preference.
 - Chatbot-routed preferences that end up as `@ai` actions need a unique `user_message` each; these should be generated as a batch where the subagent reasons about all of them together rather than per-item.
