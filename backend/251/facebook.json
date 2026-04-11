@@ -3,8 +3,8 @@
     "persona_item": "Enjoys wholesome, heartwarming feel-good content",
     "category": "heartwarming and feel-good content",
     "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 1.0,
-    "corroboration_count": 48,
+    "confidence_cross_referenced": 9.5,
+    "corroboration_count": 96,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "458878",
     "source_timestamp": 1775282215,
@@ -24,15 +24,15 @@
       "user_message": null
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   },
   {
     "persona_item": "Cherishes the bond between mothers and daughters",
     "category": "mother-daughter relationships",
     "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 0.7,
-    "corroboration_count": 8,
+    "confidence_cross_referenced": 1.5,
+    "corroboration_count": 16,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "7306",
     "source_timestamp": 1775283894,
@@ -47,19 +47,74 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_care",
-      "action_label": "Care reaction",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Enjoys seasonal Halloween and fall-themed content",
+    "category": "Halloween and seasonal fall content",
+    "confidence_score_init": 0.55,
+    "confidence_cross_referenced": 0.8,
+    "corroboration_count": 9,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "378709",
+    "source_timestamp": 1775283922,
+    "formatted_timestamp": "06:25, 04/04/2026",
+    "source_hashtags": [
+      "#SpookySeason"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Likely has or loves dogs as part of the family",
+    "category": "pets and dog ownership",
+    "confidence_score_init": 0.66,
+    "confidence_cross_referenced": 0.8,
+    "corroboration_count": 9,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "363237",
+    "source_timestamp": 1775284026,
+    "formatted_timestamp": "06:27, 04/04/2026",
+    "source_hashtags": [
+      "#dogmom",
+      "#dogsofinstagram"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   },
   {
     "persona_item": "Looks for relatable everyday parenting stories",
     "category": "parenting and child-rearing",
     "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 4.5,
     "corroboration_count": 46,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "852680",
@@ -76,19 +131,134 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "commented",
-      "action_label": "Commented",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "May have a partner who is currently incarcerated",
+    "category": "prison wife and long-distance relationships",
+    "confidence_score_init": 0.55,
+    "confidence_cross_referenced": 0.2,
+    "corroboration_count": 3,
+    "source_interaction_type": "implicit_positive",
+    "source_object_id": "653868",
+    "source_timestamp": 1775309271,
+    "formatted_timestamp": "13:27, 04/04/2026",
+    "source_hashtags": [
+      "#prisonwife"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Values a sense of local community and belonging",
+    "category": "community and local belonging",
+    "confidence_score_init": 0.63,
+    "confidence_cross_referenced": 1.3,
+    "corroboration_count": 14,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "639773",
+    "source_timestamp": 1775398782,
+    "formatted_timestamp": "14:19, 04/05/2026",
+    "source_hashtags": [
+      "#communityfirst"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Interested in protective natural hair styles like braids and weaves",
+    "category": "hair care and styling",
+    "confidence_score_init": 0.8,
+    "confidence_cross_referenced": 10.1,
+    "corroboration_count": 102,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "351857",
+    "source_timestamp": 1775425071,
+    "formatted_timestamp": "21:37, 04/05/2026",
+    "source_hashtags": [
+      "#BraidingCommunity",
+      "#BraidsByTiara",
+      "#CrownBraid",
+      "#HairBraiding",
+      "#HairInspo",
+      "#HairTutorial"
+    ],
+    "stereotype_mark": "anti-stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Appreciates food content that feels homemade and wholesome",
+    "category": "home cooking and food",
+    "confidence_score_init": 0.78,
+    "confidence_cross_referenced": 6.5,
+    "corroboration_count": 66,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "800862",
+    "source_timestamp": 1775498866,
+    "formatted_timestamp": "18:07, 04/06/2026",
+    "source_hashtags": [
+      "#cookingtutorial",
+      "#foodie",
+      "#homcooking"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   },
   {
     "persona_item": "Enjoys home cooking and preparing family meals",
     "category": "home cooking and food",
     "confidence_score_init": 0.88,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 6.5,
     "corroboration_count": 66,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "800862",
@@ -110,23 +280,21 @@
       "user_message": null
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   },
   {
-    "persona_item": "Follows mom-oriented lifestyle content creators",
-    "category": "motherhood and parenting",
-    "confidence_score_init": 0.85,
-    "confidence_cross_referenced": 1.0,
-    "corroboration_count": 176,
+    "persona_item": "Enjoys content celebrating involved fatherhood",
+    "category": "fatherhood and dad culture",
+    "confidence_score_init": 0.6,
+    "confidence_cross_referenced": 1.2,
+    "corroboration_count": 13,
     "source_interaction_type": "explicit_positive",
-    "source_object_id": "562132",
-    "source_timestamp": 1775562389,
-    "formatted_timestamp": "11:46, 04/07/2026",
+    "source_object_id": "187608",
+    "source_timestamp": 1775499610,
+    "formatted_timestamp": "18:20, 04/06/2026",
     "source_hashtags": [
-      "#DanceMom",
-      "#MomLife",
-      "#ProtectiveMom"
+      "#DadLife"
     ],
     "stereotype_mark": "neutral",
     "relationship_type": "none",
@@ -134,19 +302,130 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "quote_reposted",
-      "action_label": "Reposted with a quote",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Looks for motivational and personal-growth content",
+    "category": "self-care and personal wellness",
+    "confidence_score_init": 0.68,
+    "confidence_cross_referenced": 4.5,
+    "corroboration_count": 46,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "707030",
+    "source_timestamp": 1775560709,
+    "formatted_timestamp": "11:18, 04/07/2026",
+    "source_hashtags": [
+      "#Motivation",
+      "#PersonalGrowth"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Either runs or supports a small creator/service business",
+    "category": "small-business and creator entrepreneurship",
+    "confidence_score_init": 0.63,
+    "confidence_cross_referenced": 1.5,
+    "corroboration_count": 16,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "746144",
+    "source_timestamp": 1775562010,
+    "formatted_timestamp": "11:40, 04/07/2026",
+    "source_hashtags": [
+      "#Collaboration"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Engages with content celebrating friendship milestones",
+    "category": "friendship and squad dynamics",
+    "confidence_score_init": 0.7,
+    "confidence_cross_referenced": 2.6,
+    "corroboration_count": 27,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "488900",
+    "source_timestamp": 1775562339,
+    "formatted_timestamp": "11:45, 04/07/2026",
+    "source_hashtags": [
+      "#friendshipgoals",
+      "#squadgoals"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "test",
-    "distractor_persona_item": "Follows hairstylists and salon professionals",
-    "distractor_category": "hair care and styling"
+    "over_personalization_irrelevant": "Either runs or supports a small creator/service business",
+    "over_personalization_irrelevant_category": "small-business and creator entrepreneurship"
   },
   {
-    "persona_item": "Centers family togetherness as a core value",
+    "persona_item": "Values close female friendships and squad bonding",
+    "category": "friendship and squad dynamics",
+    "confidence_score_init": 0.76,
+    "confidence_cross_referenced": 2.6,
+    "corroboration_count": 27,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "488900",
+    "source_timestamp": 1775562339,
+    "formatted_timestamp": "11:45, 04/07/2026",
+    "source_hashtags": [
+      "#friendshipgoals",
+      "#squadgoals"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "test",
+    "over_personalization_irrelevant": "Looks for motivational and personal-growth content",
+    "over_personalization_irrelevant_category": "self-care and personal wellness"
+  },
+  {
+    "persona_item": "Aspires to strong family traditions and shared routines",
     "category": "family bonding and togetherness",
-    "confidence_score_init": 0.9,
-    "confidence_cross_referenced": 1.0,
+    "confidence_score_init": 0.78,
+    "confidence_cross_referenced": 4.1,
     "corroboration_count": 42,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "604072",
@@ -163,19 +442,48 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "shared_to_timeline",
-      "action_label": "Shared to own timeline",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "test",
-    "distractor_persona_item": "Uses humor content as a mood-lifter throughout the day",
-    "distractor_category": "comedy and humor content"
+    "over_personalization_irrelevant": "Invested in romantic relationship content",
+    "over_personalization_irrelevant_category": "romantic couple relationships"
+  },
+  {
+    "persona_item": "Centers family togetherness as a core value",
+    "category": "family bonding and togetherness",
+    "confidence_score_init": 0.9,
+    "confidence_cross_referenced": 4.1,
+    "corroboration_count": 42,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "604072",
+    "source_timestamp": 1775795013,
+    "formatted_timestamp": "04:23, 04/10/2026",
+    "source_hashtags": [
+      "#FamilyFun",
+      "#FamilyGoals",
+      "#FamilyPhotoshoot"
+    ],
+    "stereotype_mark": "stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "test",
+    "over_personalization_irrelevant": "Values presenting a polished, put-together look",
+    "over_personalization_irrelevant_category": "beauty, nails, and personal style"
   },
   {
     "persona_item": "Enjoys wholesome family-activity content",
     "category": "family bonding and togetherness",
     "confidence_score_init": 0.82,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 4.1,
     "corroboration_count": 42,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "604072",
@@ -192,12 +500,95 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "saved_post",
-      "action_label": "Saved the post",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "test",
-    "distractor_persona_item": "Looks for relatable everyday parenting stories",
-    "distractor_category": "parenting and child-rearing"
+    "over_personalization_irrelevant": "Appreciates dad-oriented humor and family interplay",
+    "over_personalization_irrelevant_category": "fatherhood and dad culture"
+  },
+  {
+    "persona_item": "Enjoys nostalgic throwback content from earlier eras",
+    "category": "nostalgia and throwback memories",
+    "confidence_score_init": 0.7,
+    "confidence_cross_referenced": 2.1,
+    "corroboration_count": 22,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "451648",
+    "source_timestamp": 1775795716,
+    "formatted_timestamp": "04:35, 04/10/2026",
+    "source_hashtags": [
+      "#nostalgia",
+      "#throwback"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "test",
+    "over_personalization_irrelevant": "Looks for relatable everyday parenting stories",
+    "over_personalization_irrelevant_category": "parenting and child-rearing"
+  },
+  {
+    "persona_item": "Values memory-keeping and shared cultural references",
+    "category": "nostalgia and throwback memories",
+    "confidence_score_init": 0.66,
+    "confidence_cross_referenced": 2.1,
+    "corroboration_count": 22,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "451648",
+    "source_timestamp": 1775795716,
+    "formatted_timestamp": "04:35, 04/10/2026",
+    "source_hashtags": [
+      "#nostalgia",
+      "#throwback"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "test",
+    "over_personalization_irrelevant": "Follows hairstylists and salon professionals",
+    "over_personalization_irrelevant_category": "hair care and styling"
+  },
+  {
+    "persona_item": "Navigating back-to-school routines with school-age children",
+    "category": "back-to-school routines",
+    "confidence_score_init": 0.57,
+    "confidence_cross_referenced": 0.2,
+    "corroboration_count": 3,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "1012890",
+    "source_timestamp": 1775796506,
+    "formatted_timestamp": "04:48, 04/10/2026",
+    "source_hashtags": [
+      "#BackToSchool"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   }
 ]

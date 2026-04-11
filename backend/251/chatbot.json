@@ -3,7 +3,7 @@
     "persona_item": "Seeks practical parenting tips and hacks",
     "category": "parenting and child-rearing",
     "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 4.5,
     "corroboration_count": 46,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "852680",
@@ -25,14 +25,127 @@
       "user_message": "@ai can you keep pulling together quick practical toddler parenting hacks for single-income households — especially time-savers for mornings and bath time? I want things I can do tonight, not theory."
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Engages with prison-wife / incarcerated-partner support content",
+    "category": "prison wife and long-distance relationships",
+    "confidence_score_init": 0.6,
+    "confidence_cross_referenced": 0.2,
+    "corroboration_count": 3,
+    "source_interaction_type": "implicit_positive",
+    "source_object_id": "653868",
+    "source_timestamp": 1775309271,
+    "formatted_timestamp": "13:27, 04/04/2026",
+    "source_hashtags": [
+      "#prisonwife"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "at_ai_recommend_more",
+      "action_label": "@ai steering: asked for MORE of this type",
+      "user_message": "@ai keep pulling support-group posts from other prison wives — commissary tips, visitation prep, how people handle birthdays. I don't want news or legal takes, I want other women's voices."
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Looks for cleaning hacks and home-organization tips",
+    "category": "home cleaning and organization",
+    "confidence_score_init": 0.55,
+    "confidence_cross_referenced": 0.3,
+    "corroboration_count": 4,
+    "source_interaction_type": "implicit_positive",
+    "source_object_id": "533767",
+    "source_timestamp": 1775309552,
+    "formatted_timestamp": "13:32, 04/04/2026",
+    "source_hashtags": [
+      "#cleaninghacks",
+      "#cleaningmotivation"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "at_ai_focus_topic",
+      "action_label": "@ai steering: asked to focus on this topic",
+      "user_message": "@ai tonight just help me power through my cleaning list — small-bathroom tips, tackling a toddler-toy avalanche, stuff that works in under 15 minutes per task."
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Uses humor as a coping mechanism for healthcare work",
+    "category": "CNA and healthcare worker culture",
+    "confidence_score_init": 0.67,
+    "confidence_cross_referenced": 0.3,
+    "corroboration_count": 4,
+    "source_interaction_type": "implicit_positive",
+    "source_object_id": "17803",
+    "source_timestamp": 1775396722,
+    "formatted_timestamp": "13:45, 04/05/2026",
+    "source_hashtags": [
+      "#CNAlife",
+      "#cnalife",
+      "#healthcarehumor"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "thumbs_up",
+      "action_label": "Thumbs-upped the response",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Works in or is connected to healthcare (likely CNA or nursing)",
+    "category": "CNA and healthcare worker culture",
+    "confidence_score_init": 0.73,
+    "confidence_cross_referenced": 0.3,
+    "corroboration_count": 4,
+    "source_interaction_type": "implicit_positive",
+    "source_object_id": "17803",
+    "source_timestamp": 1775396722,
+    "formatted_timestamp": "13:45, 04/05/2026",
+    "source_hashtags": [
+      "#CNAlife",
+      "#cnalife",
+      "#healthcarehumor"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "thumbs_up",
+      "action_label": "Thumbs-upped the response",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   },
   {
     "persona_item": "Seeks easy recipe inspiration online",
     "category": "home cooking and food",
     "confidence_score_init": 0.82,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 6.5,
     "corroboration_count": 66,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "800862",
@@ -54,14 +167,98 @@
       "user_message": "@ai for the rest of tonight can you just focus on easy 30-minute weeknight dinners a toddler will eat — Mexican-leaning flavors if possible, nothing that needs fancy appliances or a Whole Foods run."
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Values cooking as an act of love and family care",
+    "category": "home cooking and food",
+    "confidence_score_init": 0.76,
+    "confidence_cross_referenced": 6.5,
+    "corroboration_count": 66,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "800862",
+    "source_timestamp": 1775498866,
+    "formatted_timestamp": "18:07, 04/06/2026",
+    "source_hashtags": [
+      "#cookingtutorial",
+      "#foodie",
+      "#homcooking"
+    ],
+    "stereotype_mark": "stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "thumbs_up",
+      "action_label": "Thumbs-upped the response",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Appreciates dad-oriented humor and family interplay",
+    "category": "fatherhood and dad culture",
+    "confidence_score_init": 0.63,
+    "confidence_cross_referenced": 1.2,
+    "corroboration_count": 13,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "187608",
+    "source_timestamp": 1775499610,
+    "formatted_timestamp": "18:20, 04/06/2026",
+    "source_hashtags": [
+      "#DadLife"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "thumbs_up",
+      "action_label": "Thumbs-upped the response",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Believes confidence and positivity are important daily practices",
+    "category": "self-care and personal wellness",
+    "confidence_score_init": 0.7,
+    "confidence_cross_referenced": 4.5,
+    "corroboration_count": 46,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "707030",
+    "source_timestamp": 1775560709,
+    "formatted_timestamp": "11:18, 04/07/2026",
+    "source_hashtags": [
+      "#Motivation",
+      "#PersonalGrowth"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "thumbs_up",
+      "action_label": "Thumbs-upped the response",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
   },
   {
     "persona_item": "Values long-term committed partnerships",
     "category": "romantic couple relationships",
     "confidence_score_init": 0.82,
-    "confidence_cross_referenced": 1.0,
+    "confidence_cross_referenced": 11.5,
     "corroboration_count": 116,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "660847",
@@ -84,7 +281,36 @@
       "user_message": "@ai pull up more stuff on what long-haul commitment looks like when one partner is going through a really hard stretch — real-people essays or therapist takes, not self-help cheese."
     },
     "split": "train",
-    "distractor_persona_item": "",
-    "distractor_category": ""
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Values sharing candid, real-life parenting moments",
+    "category": "motherhood and parenting",
+    "confidence_score_init": 0.78,
+    "confidence_cross_referenced": 8.7,
+    "corroboration_count": 88,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "562132",
+    "source_timestamp": 1775562389,
+    "formatted_timestamp": "11:46, 04/07/2026",
+    "source_hashtags": [
+      "#DanceMom",
+      "#MomLife",
+      "#ProtectiveMom"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Chatbot",
+    "interaction_format": {
+      "app": "Chatbot",
+      "action": "thumbs_up",
+      "action_label": "Thumbs-upped the response",
+      "user_message": null
+    },
+    "split": "test",
+    "over_personalization_irrelevant": "Invested in self-care routines and self-expression",
+    "over_personalization_irrelevant_category": "self-care and personal wellness"
   }
 ]

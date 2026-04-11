@@ -70,8 +70,8 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
             "source_timestamp": int(r.get("source_timestamp") or 0),
             "stereotype_mark": r.get("stereotype_mark", "neutral"),
             "split": r.get("split", "train") or "train",
-            "distractor_persona_item": r.get("distractor_persona_item", ""),
-            "distractor_category": r.get("distractor_category", ""),
+            "over_personalization_irrelevant": r.get("over_personalization_irrelevant", ""),
+            "over_personalization_irrelevant_category": r.get("over_personalization_irrelevant_category", ""),
             "assigned_app": r.get("assigned_app", ""),
         }
         for r in pref_rows
@@ -283,8 +283,8 @@ if (prefsData.length === 0) {{
       }}
 
       let distractorLine = '';
-      if (p.split === 'test' && p.distractor_persona_item) {{
-        distractorLine = `<div class="meta-line" style="margin-top:10px;"><span class="badge distractor">distractor</span> ${{p.distractor_persona_item}} <span style="opacity:0.6;">(${{p.distractor_category}})</span></div>`;
+      if (p.split === 'test' && p.over_personalization_irrelevant) {{
+        distractorLine = `<div class="meta-line" style="margin-top:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}} <span style="opacity:0.6;">(${{p.over_personalization_irrelevant_category}})</span></div>`;
       }}
 
       card.innerHTML = `
