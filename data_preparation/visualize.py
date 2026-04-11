@@ -40,8 +40,11 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
             "source_interaction_type": r.get("source_interaction_type", ""),
             "interaction_format": r.get("interaction_format", ""),
             "formatted_timestamp": r.get("formatted_timestamp", ""),
+            "source_timestamp": int(r.get("source_timestamp") or 0),
             "stereotype_mark": r.get("stereotype_mark", "neutral"),
-            "overpersonalization": r.get("overpersonalization", "no"),
+            "split": r.get("split", "train") or "train",
+            "distractor_persona_item": r.get("distractor_persona_item", ""),
+            "distractor_category": r.get("distractor_category", ""),
         }
         for r in pref_rows
     ])
@@ -59,7 +62,8 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     # Counts
     n_stereo = sum(1 for r in pref_rows if r.get("stereotype_mark") == "stereotypical")
     n_anti = sum(1 for r in pref_rows if r.get("stereotype_mark") == "anti-stereotypical")
-    n_holdout = sum(1 for r in pref_rows if r.get("overpersonalization") == "yes")
+    n_test = sum(1 for r in pref_rows if r.get("split") == "test")
+    n_train = sum(1 for r in pref_rows if (r.get("split") or "train") == "train")
 
     html = f"""\
 <!DOCTYPE html>
@@ -125,7 +129,9 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.none {{ background: #F0F0EE; color: var(--text-secondary); }}
   .badge.stereotypical {{ background: #FEF3C7; color: #92400E; }}
   .badge.anti-stereotypical {{ background: #DBEAFE; color: #1E40AF; }}
-  .badge.holdout {{ background: #FCE7F3; color: #9D174D; }}
+  .badge.test {{ background: #FCE7F3; color: #9D174D; }}
+  .badge.train {{ background: #EFF6FF; color: #1D4ED8; }}
+  .badge.distractor {{ background: #FEE2E2; color: #991B1B; }}
   .badge.platform {{ background: #F0FDF4; color: #166534; }}
 
   .empty {{ text-align: center; padding: 40px; color: var(--text-secondary); font-size: 14px; }}
@@ -138,9 +144,10 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     <h1>User {user_id}</h1>
     <div class="meta">
       <span>{len(pref_rows)} preferences</span>
+      <span>{n_train} train</span>
+      <span>{n_test} test</span>
       <span>{n_stereo} stereotypical</span>
       <span>{n_anti} anti-stereotypical</span>
-      <span>{n_holdout} overpersonalization holdout</span>
       <span>Generated {now_str}</span>
     </div>
   </div>
@@ -183,16 +190,22 @@ const grid = document.getElementById('persona-grid');
 if (prefsData.length === 0) {{
   grid.innerHTML = '<div class="empty">No preferences available.</div>';
 }} else {{
-  prefsData.sort((a, b) => (b.confidence_score_init + b.confidence_cross_referenced) - (a.confidence_score_init + a.confidence_cross_referenced));
+  // Preferences already persisted in chronological order; keep that order.
   prefsData.forEach(p => {{
     const card = document.createElement('div');
     card.className = 'persona-card';
     const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
     let badges = `<span class="badge category">${{p.category}}</span>`;
+    badges += `<span class="badge ${{p.split}}">${{p.split}}</span>`;
     if (p.relationship_type !== 'none') badges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
     if (p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
-    if (p.overpersonalization === 'yes') badges += `<span class="badge holdout">holdout</span>`;
     if (p.interaction_format) badges += `<span class="badge platform">${{p.interaction_format}}</span>`;
+
+    let distractorLine = '';
+    if (p.split === 'test' && p.distractor_persona_item) {{
+      distractorLine = `<div class="meta-line" style="margin-top:10px;"><span class="badge distractor">distractor</span> ${{p.distractor_persona_item}} <span style="opacity:0.6;">(${{p.distractor_category}})</span></div>`;
+    }}
+
     card.innerHTML = `
       <div class="item-text">${{p.persona_item}}</div>
       <div class="meta-line">${{p.formatted_timestamp}} &middot; ${{p.source_interaction_type}}</div>
@@ -207,6 +220,7 @@ if (prefsData.length === 0) {{
         <span class="value">${{p.confidence_cross_referenced.toFixed(2)}}</span>
       </div>
       ${{badges}}
+      ${{distractorLine}}
     `;
     grid.appendChild(card);
   }});
