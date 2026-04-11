@@ -77,35 +77,44 @@ Respond with ONLY a JSON array. No explanation, no markdown outside the JSON fen
 
 
 def summarize_and_cross_reference_prompt(atomic_personas: list[dict]) -> str:
-    """Build a prompt that asks the LLM to cross-reference and score all atomic personas."""
+    """Build a prompt that asks the LLM to cross-reference and score all atomic personas.
+
+    NOTE: The input list has ALREADY been deduplicated by the caller. Each entry
+    is a *canonical* persona — personas with identical text from multiple rows
+    have been merged into one entry and their `corroboration_count` reflects how
+    many independent rows produced them. The LLM must treat each entry as a
+    unique preference.
+    """
 
     personas_json = json.dumps(atomic_personas, indent=2)
 
     return f"""\
 You are an expert at synthesizing behavioral signals into a coherent user profile.
 
-Below is a list of atomic persona traits/preferences inferred from a single user's social media interactions over time. Each entry includes the category, persona item, an initial confidence score, the source interaction type, the timestamp, and the `source_object_id` identifying which interaction row it came from.
+Below is a list of canonical persona traits/preferences for a single user. These have already been deduplicated — if two interaction rows produced the exact same persona text, they were merged into one canonical entry, and `corroboration_count` records how many distinct rows contributed. Each entry includes the category, persona item, initial confidence score, corroboration count, and source interaction metadata.
 
 ```json
 {personas_json}
 ```
 
-## Your Task
+## Your Task — Find cross-persona relationships
 
-1. **Cross-reference** every persona item against personas **from different interaction rows only** (different `source_object_id`). Personas inferred from the same row (same `source_object_id`) must NOT be marked as related to each other — they share the same evidence and cannot validate each other.
-   - If two personas (from different rows) are **similar** (reinforce each other), mark them as related with relationship_type "similar".
-   - If two personas (from different rows) **contradict** each other, mark them as related with relationship_type "contradictory".
-   - If a persona has no meaningful cross-row relationship, mark it as "none".
+1. **Cross-reference DISTINCT canonical personas** against each other. Because the input is already deduplicated, you will NEVER see two entries with identical `persona_item` text — so you must NEVER mark a persona as `similar` or `contradictory` to itself.
+   - If two **different** personas are **similar** (reinforce each other — e.g. "Enjoys home cooking" and "Buys fresh produce weekly"), mark them as related with `"type": "similar"`.
+   - If two **different** personas **contradict** each other (e.g. "Prefers vegan meals" and "Loves BBQ ribs"), mark them as related with `"type": "contradictory"`.
+   - If a persona has no meaningful cross-persona relationship, set `relationship_type` to `"none"` with an empty `related_personas` list.
 
-2. **Do NOT compute confidence scores** — set `confidence_cross_referenced` to 0.0 for every item. Scoring is computed downstream.
+2. **Do NOT mark identical persona_items as similar to each other.** Identical-text preferences are the same preference corroborated by multiple rows — that corroboration is already captured in `corroboration_count` and scored upstream. Marking them as "similar" would double-count.
 
-3. **Keep the original `confidence_score_init` unchanged** — do not modify it.
+3. **Do NOT compute confidence scores** — the `confidence_cross_referenced` field is computed downstream from your relationships. Do not include it in your output.
 
-4. **Do NOT filter anything out** — return every persona item, even contradictions. Filtering happens downstream.
+4. **Keep the original `confidence_score_init` unchanged.**
 
-5. **For each persona, list all related personas** in the `related_personas` array. Each entry must include the persona text AND its relationship type as an object: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
+5. **Return EVERY canonical persona** — one entry per input, even if its `relationship_type` is `"none"`.
 
-6. **Preserve the `category`** from the input for each persona item.
+6. **For each persona, list all related personas** in the `related_personas` array. Each entry must include the other persona's text AND its relationship type as an object: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
+
+7. **Preserve the `category`** from the input for each persona item.
 
 ## Output Format
 
@@ -117,7 +126,6 @@ Respond with ONLY a JSON array. No explanation.
     "category": "...",
     "persona_item": "...",
     "confidence_score_init": 0.XX,
-    "confidence_cross_referenced": 0.0,
     "relationship_type": "similar" | "contradictory" | "none",
     "related_personas": [{{"persona_item": "...", "type": "similar"}}, {{"persona_item": "...", "type": "contradictory"}}],
     "formatted_timestamp": "...",
@@ -387,3 +395,285 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
 ```json
 {{"chosen_persona_item": "...", "reason": "..."}}
 ```"""
+
+
+def remove_redundant_personas_prompt(candidates: list[dict]) -> str:
+    """Build a prompt that asks the LLM to cluster semantically-redundant personas.
+
+    The caller has already filtered the candidates to only those above the
+    init-confidence floor. The LLM's job is to find GROUPS of personas that
+    convey essentially the same preference in different words, so downstream
+    code can keep one representative per group and drop the rest.
+    """
+
+    candidates_json = json.dumps(candidates, indent=2)
+
+    return f"""\
+You are reducing redundancy in a user's preference list. The entries below have already passed a confidence threshold, but some of them almost certainly describe the SAME underlying preference with different wording.
+
+## Candidates
+
+```json
+{candidates_json}
+```
+
+## Your Task
+
+Cluster the candidates into **redundancy groups**. Each group is a set of two or more persona_items that describe the SAME preference. Downstream code will keep the strongest one from each group and drop the rest.
+
+## Rules
+
+1. **Only group items that truly mean the same thing.** Err on the side of NOT grouping — if two personas are related but describe different aspects, keep them separate. Example:
+   - ✅ Group together: `"Enjoys home cooking"` + `"Likes preparing meals at home"` (same preference, different wording)
+   - ✅ Group together: `"Follows Detroit Lions"` + `"Supports Detroit NFL team"` (same preference)
+   - ❌ Do NOT group: `"Enjoys home cooking"` + `"Owns multiple cast iron pans"` (related but distinct)
+   - ❌ Do NOT group: `"Follows Detroit Lions"` + `"Is an NFL fan"` (the NFL one is broader)
+
+2. **Every group has 2 or more items.** Singletons are not redundancies — they don't need to appear in the output.
+
+3. **Each persona_item appears in AT MOST ONE group.** No overlapping clusters.
+
+4. **Skip personas that have no redundant counterpart.** They simply stay as-is — just don't include them in your output.
+
+5. **Return ONLY the groups that have redundancies.** Do not return every input persona.
+
+## Output Format
+
+Respond with ONLY a JSON array of arrays. Each inner array lists the persona_item strings of one redundancy group. No explanation outside the JSON fence.
+
+```json
+[
+  ["persona_item A", "persona_item B", "persona_item C"],
+  ["persona_item D", "persona_item E"]
+]
+```"""
+
+
+def generate_app_personas_prompt(
+    profile: dict,
+    top_personas: list[str],
+    chatbot_contexts: list[str],
+) -> str:
+    """Build a prompt that generates per-app sub-personas for a user.
+
+    Inputs:
+      profile: dict with name, gender, race_ethnicity, career, education, big_five, bio
+      top_personas: up to ~20 persona_item strings sampled from the user's strongest preferences
+      chatbot_contexts: the full CHATBOT_CONTEXTS list from persona_agent.py
+    """
+
+    profile_json = json.dumps(profile, indent=2)
+    personas_text = "\n".join(f"- {p}" for p in top_personas)
+    chatbot_contexts_str = ", ".join(chatbot_contexts)
+
+    return f"""\
+You are designing four distinct "app sub-personas" for a single synthetic user. The user already has a base profile and a set of preferences inferred from their social media activity. Your job is to describe how THIS specific user presents themselves and engages differently on each of four apps: **Instagram, Facebook, Threads, and AI Chatbot**.
+
+## Base profile
+
+```json
+{profile_json}
+```
+
+## Sample of the user's strongest inferred preferences
+
+{personas_text}
+
+## Your Task
+
+Write four distinct `AppPersona` entries — one per app. Each should describe how the user uses that app specifically, including which audiences they interact with, what they use it for, and how their engagement style varies.
+
+## Rules
+
+1. **Be noticeably different across apps.** Real people compartmentalize their online presence. For example, the same user might:
+   - Use **Facebook** mostly for family updates, marketplace, and event planning with older relatives
+   - Use **Instagram** for lifestyle aesthetic, close friends, and inspiration browsing
+   - Use **Threads** for news, snark, quick opinions, and following public figures
+   - Use **AI Chatbot** for work tasks, knowledge exploration, and private reflection
+
+2. **Allow some overlap.** Real users aren't perfectly compartmentalized. A couple of shared topics across apps is realistic. Do not force uniqueness.
+
+3. **Ground everything in the base profile and preferences.** A conservative rural parent and a young urban creative should get *very* different app personas. Use the profile's career, age clues from education/bio, demographics, and Big Five personality as guiding signals.
+
+4. **Audience types must be realistic**:
+   - **Facebook**: usually `mixed` leaning toward family/longtime friends
+   - **Instagram**: usually `mixed` (close friends + public creators followed)
+   - **Threads**: usually `public`
+   - **AI Chatbot**: always `private`
+
+5. **Posting frequency** must be one of: `"daily"`, `"weekly"`, `"rarely"`, `"passive viewer only"`. Pick what's realistic for this user on this app — most users post rarely on most apps and are mainly consumers.
+
+6. **Topical focus** is 3–5 broad domains (e.g., `"food and home cooking"`, `"local community news"`, `"parenting"`, `"crafts"`, `"fitness"`). These should be a subset of the domains the user actually shows interest in (from the sample above), not invented ones.
+
+7. **Chatbot only**: populate `chatbot_contexts` with 2–3 items chosen from this exact list: {chatbot_contexts_str}. Pick the contexts that best match this user's profile (e.g., a student → `"knowledge exploration"`, `"composing chat messages"`; a therapist-curious user → `"therapy and reflection"`). Leave `chatbot_contexts` as an empty array for non-Chatbot apps.
+
+8. **Use purposes** should be a list of 2–4 short phrases describing what the user gets out of this app (e.g., `["keep up with extended family", "marketplace deals", "event planning"]`).
+
+9. **Friend zones** should be a list of 2–4 short phrases describing which social circles they interact with (e.g., `["close friends", "acquaintances", "extended family", "strangers / public"]`).
+
+10. **Style description** is 2–3 sentences describing the tone, aesthetic, or cadence of the user on THIS app (e.g., `"Warm, family-centric, and nostalgic. Shares birthday photos and milestone announcements. Rarely posts opinions."`).
+
+## Output Format
+
+Respond with ONLY a JSON object. No explanation outside the JSON fence.
+
+```json
+{{
+  "Instagram": {{
+    "app_name": "Instagram",
+    "use_purposes": ["..."],
+    "friend_zones": ["..."],
+    "audience_type": "private" | "public" | "mixed",
+    "style_description": "...",
+    "posting_frequency": "daily" | "weekly" | "rarely" | "passive viewer only",
+    "topical_focus": ["..."],
+    "chatbot_contexts": []
+  }},
+  "Facebook": {{ ... }},
+  "Threads": {{ ... }},
+  "Chatbot": {{
+    "app_name": "Chatbot",
+    "use_purposes": ["..."],
+    "friend_zones": ["..."],
+    "audience_type": "private",
+    "style_description": "...",
+    "posting_frequency": "...",
+    "topical_focus": ["..."],
+    "chatbot_contexts": ["..."]
+  }}
+}}
+```"""
+
+
+def assign_personas_to_apps_prompt(
+    app_personas: dict,
+    preferences: list[dict],
+) -> str:
+    """Build a prompt asking the LLM to route each preference to ONE primary app.
+
+    Inputs:
+      app_personas: the dict output of generate_app_personas_prompt
+      preferences: list of {persona_item, category, confidence_score_init,
+                            confidence_cross_referenced, source_interaction_type}
+    """
+
+    app_personas_json = json.dumps(app_personas, indent=2)
+    preferences_json = json.dumps(preferences, indent=2)
+
+    return f"""\
+You are routing a user's individual preferences to the app where they most naturally belong, based on how this user uses each app.
+
+## The user's per-app sub-personas
+
+```json
+{app_personas_json}
+```
+
+## Preferences to route
+
+```json
+{preferences_json}
+```
+
+## Your Task
+
+For EACH preference in the list above, pick exactly **one primary app** (from "Instagram", "Facebook", "Threads", "Chatbot") where a real person with these sub-personas would most plausibly encounter and engage with that preference. The assignment should:
+
+1. **Maintain topical consistency within each app.** If the user's Facebook persona is about family & marketplace, preferences about parenting, Costco deals, and birthday parties should mostly land on Facebook. Don't scatter topically-coherent preferences across random apps.
+
+2. **Reflect the per-app persona's use_purposes and topical_focus.** Route a preference to the app whose declared purposes best cover it. E.g. if the Chatbot persona lists `"therapy and reflection"` and a preference is `"Values emotional vulnerability in close relationships"`, Chatbot is a natural home.
+
+3. **Allow NATURAL variation, not randomness.** Two closely related preferences should almost always land on the same app. If one belongs on Instagram, its partner almost certainly does too. Do not split tightly-coupled preferences for variety.
+
+4. **Prefer the app the user is more active on for that domain.** Use `posting_frequency` and `audience_type` as tie-breakers.
+
+5. **Be decisive.** Every preference gets exactly one app. No "both Facebook and Instagram" assignments — the downstream code expects a single app per item. (Noise / cross-posting is handled separately by the code.)
+
+## Output Format
+
+Respond with ONLY a JSON array of the same length as the input, in the same order. One entry per preference.
+
+```json
+[
+  {{"persona_item": "...", "assigned_app": "Instagram" | "Facebook" | "Threads" | "Chatbot", "reason": "one sentence"}},
+  ...
+]
+```"""
+
+
+def generate_interaction_format_prompt(
+    persona_item: str,
+    category: str,
+    interaction_type: str,
+    assigned_app: str,
+    app_persona: dict,
+    action_catalog: list[dict],
+    requires_user_message: bool,
+) -> str:
+    """Build a prompt that picks an action for one preference on its assigned app.
+
+    If `requires_user_message` is True (i.e. the caller already decided this is
+    an @ai steering directive), the model also returns a short natural-language
+    message grounded in the specific preference.
+    """
+
+    app_persona_json = json.dumps(app_persona, indent=2)
+    action_catalog_json = json.dumps(action_catalog, indent=2)
+
+    message_clause = (
+        "\n7. **Generate a `user_message`** — a short, natural-language first-person message "
+        "(1–2 sentences, ~15–35 words) that the user might actually type to the AI assistant "
+        "in this situation. The message must reference the specific topic of `persona_item` — "
+        "not the persona_item string verbatim, but the underlying subject. Example: for the "
+        "persona 'Enjoys cooking Mexican food' with action 'at_ai_recommend_more', a good "
+        "message is '@ai can you show me more weeknight-friendly authentic Mexican recipes? "
+        "I want something quick but with real flavor, not gringo versions.' "
+        "Start the message with '@ai ' if it's a steering directive."
+        if requires_user_message else ""
+    )
+
+    return f"""\
+You are choosing a realistic interaction for a single user preference on a specific app.
+
+## The preference
+- `persona_item`: {persona_item}
+- `category`: {category}
+- `source_interaction_type`: {interaction_type}
+- `assigned_app`: {assigned_app}
+
+## The user's AppPersona for {assigned_app}
+
+```json
+{app_persona_json}
+```
+
+## Available actions for {assigned_app} / {interaction_type}
+
+```json
+{action_catalog_json}
+```
+
+## Your Task
+
+1. Pick EXACTLY ONE action from the available actions that would be realistic for this user, on this app, for this specific preference.
+
+2. The action must match the polarity of `source_interaction_type` — if it's a positive interaction you must pick from the positive actions; if negative, from the negative actions. The catalog above is already filtered to the right bucket.
+
+3. Consider the AppPersona's `style_description` and `posting_frequency`. A "passive viewer only" user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
+
+4. Prefer implicit actions unless the interaction_type is explicit_*.
+
+5. Output the `action` identifier (short code) AND the `action_label` (human-readable).{message_clause}
+
+## Output Format
+
+Respond with ONLY a JSON object. No explanation outside the JSON fence.
+
+```json
+{{
+  "action": "chosen_action_identifier",
+  "action_label": "Human-readable label",
+  "user_message": {"\"...\"" if requires_user_message else "null"}
+}}
+```"""
+

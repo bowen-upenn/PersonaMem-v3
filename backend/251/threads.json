@@ -1,0 +1,31 @@
+[
+  {
+    "persona_item": "Enjoys humor that pokes fun at the chaos of parenting",
+    "category": "parenting and child-rearing",
+    "confidence_score_init": 0.82,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 46,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "852680",
+    "source_timestamp": 1775284138,
+    "formatted_timestamp": "06:28, 04/04/2026",
+    "source_hashtags": [
+      "#coparent",
+      "#coparenting",
+      "#parentinghacks"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Threads",
+    "interaction_format": {
+      "app": "Threads",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  }
+]
