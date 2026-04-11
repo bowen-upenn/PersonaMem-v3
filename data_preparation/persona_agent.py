@@ -642,14 +642,15 @@ class PersonaAgent:
 
     def generate_user_profile(self) -> None:
         """Generate a synthetic user profile (name, gender, race, career, education,
-        Big Five personality, bio) from the final set of cross-referenced personas.
+        Big Five personality, bio) from all available personas (positive + negative).
 
         Gender and race/ethnicity are randomly sampled from predefined distributions
         and passed to the LLM as constraints. The LLM generates everything else to
         be consistent with the personas — but is explicitly told to be diverse and
         avoid satisfying every persona to prevent stereotyping.
         """
-        if not self.cross_referenced_personas:
+        all_personas = list(self.cross_referenced_personas) + list(self.negative_personas)
+        if not all_personas:
             self.user_profile = None
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] No personas — skipping profile generation.{utils.Colors.ENDC}")
@@ -659,7 +660,7 @@ class PersonaAgent:
         sampled_gender_orientation = _sample_from_distribution(GENDER_ORIENTATION_DISTRIBUTION)
         sampled_race = _sample_from_distribution(RACE_ETHNICITY_DISTRIBUTION)
 
-        personas_summary = [p.persona_item for p in self.cross_referenced_personas]
+        personas_summary = [p.persona_item for p in all_personas]
         prompt = prompts.generate_user_profile_prompt(
             personas=personas_summary,
             gender_orientation=sampled_gender_orientation,
@@ -697,15 +698,16 @@ class PersonaAgent:
     # ------------------------------------------------------------------
 
     def annotate_stereotype_marks(self) -> None:
-        """For each cross-referenced persona, annotate whether it is neutral,
-        stereotypical, or anti-stereotypical relative to the user profile."""
-        if not self.user_profile or not self.cross_referenced_personas:
+        """For each persona (positive and negative), annotate whether it is neutral,
+        stereotypical, or anti-stereotypical relative to the user's demographics."""
+        all_personas = list(self.cross_referenced_personas) + list(self.negative_personas)
+        if not self.user_profile or not all_personas:
             self.annotated_personas = []
             return
 
         personas_for_prompt = [
             {"persona_item": p.persona_item, "category": p.category}
-            for p in self.cross_referenced_personas
+            for p in all_personas
         ]
 
         prompt = prompts.annotate_stereotype_prompt(
@@ -726,19 +728,23 @@ class PersonaAgent:
             self.annotated_personas = []
             return
 
-        # Build lookup from cross-referenced personas for confidence scores
-        cr_lookup = {p.persona_item: p for p in self.cross_referenced_personas}
+        # Build lookup from all personas for confidence scores
+        all_lookup: dict[str, any] = {}
+        for p in self.cross_referenced_personas:
+            all_lookup[p.persona_item] = (p.confidence_score_init, p.confidence_cross_referenced, p.category)
+        for p in self.negative_personas:
+            all_lookup[p.persona_item] = (p.confidence_score_init, 0.0, p.category)
 
         self.annotated_personas = []
         for item in parsed:
             if not isinstance(item, dict) or "persona_item" not in item:
                 continue
-            cr = cr_lookup.get(item["persona_item"])
+            scores = all_lookup.get(item["persona_item"], (0.0, 0.0, "uncategorized"))
             self.annotated_personas.append(AnnotatedPersona(
                 persona_item=item["persona_item"],
-                category=item.get("category", cr.category if cr else "uncategorized"),
-                confidence_score_init=cr.confidence_score_init if cr else 0.0,
-                confidence_cross_referenced=cr.confidence_cross_referenced if cr else 0.0,
+                category=item.get("category", scores[2]),
+                confidence_score_init=scores[0],
+                confidence_cross_referenced=scores[1],
                 stereotype_mark=item.get("stereotype_mark", "neutral"),
             ))
 
@@ -856,6 +862,7 @@ class PersonaAgent:
         # Negative personas with confidence > 0.05
         for np in self.negative_personas:
             if np.confidence_score_init > 0.05:
+                ann = all_annotated_items.get(np.persona_item)
                 rows.append({
                     "persona_item": np.persona_item,
                     "category": np.category,
@@ -869,7 +876,7 @@ class PersonaAgent:
                     "confidence_cross_referenced": 0.0,
                     "relationship_type": "none",
                     "related_personas": "[]",
-                    "stereotype_mark": "neutral",
+                    "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                     "overpersonalization": "no",
                 })
 

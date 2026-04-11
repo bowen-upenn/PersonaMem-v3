@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Persona — User 1473237</title>
+<style>
+  :root {
+    --bg: #FAFAF9;
+    --bg-card: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --accent: #D97757;
+    --accent-light: #F4E8E2;
+    --accent-contradictory: #B8336A;
+    --accent-similar: #2D936C;
+    --border: #E8E8E6;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  .container { max-width: 960px; margin: 0 auto; padding: 48px 24px; }
+
+  .header { margin-bottom: 48px; }
+  .header h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }
+  .header .meta { color: var(--text-secondary); font-size: 14px; }
+  .header .meta span { margin-right: 20px; }
+
+  .profile-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 48px; box-shadow: var(--shadow); }
+  .profile-card h2 { font-size: 20px; font-weight: 600; margin-bottom: 12px; }
+  .profile-card .bio { font-size: 15px; line-height: 1.6; margin-bottom: 16px; color: var(--text); }
+  .profile-card .details { font-size: 13px; color: var(--text-secondary); }
+  .profile-card .details span { margin-right: 16px; }
+  .profile-card .big-five { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+  .profile-card .b5-item { font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #F0F0EE; color: var(--text-secondary); }
+
+  .section { margin-bottom: 48px; }
+  .section-title { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+  .persona-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .persona-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease, transform 0.2s ease; }
+  .persona-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-1px); }
+  .persona-card .item-text { font-size: 15px; font-weight: 500; margin-bottom: 10px; line-height: 1.4; }
+  .persona-card .meta-line { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+
+  .confidence-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary); }
+  .confidence-row .label { width: 90px; flex-shrink: 0; }
+  .confidence-bar-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 0 8px; }
+  .confidence-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+  .confidence-bar-fill.init { background: var(--accent); }
+  .confidence-bar-fill.cross { background: var(--accent-similar); }
+  .confidence-row .value { width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 20px; margin-top: 6px; margin-right: 4px; }
+  .badge.category { background: #EDE9FE; color: #6D28D9; }
+  .badge.similar { background: #E6F4EE; color: var(--accent-similar); }
+  .badge.contradictory { background: #F8E4EE; color: var(--accent-contradictory); }
+  .badge.none { background: #F0F0EE; color: var(--text-secondary); }
+  .badge.stereotypical { background: #FEF3C7; color: #92400E; }
+  .badge.anti-stereotypical { background: #DBEAFE; color: #1E40AF; }
+  .badge.holdout { background: #FCE7F3; color: #9D174D; }
+  .badge.platform { background: #F0FDF4; color: #166534; }
+
+  .empty { text-align: center; padding: 40px; color: var(--text-secondary); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>User 1473237</h1>
+    <div class="meta">
+      <span>21 preferences</span>
+      <span>1 stereotypical</span>
+      <span>1 anti-stereotypical</span>
+      <span>0 overpersonalization holdout</span>
+      <span>Generated March 25, 2026 at 06:12 UTC</span>
+    </div>
+  </div>
+
+  <div id="profile-section"></div>
+
+  <div class="section">
+    <div class="section-title">Preferences</div>
+    <div id="persona-grid" class="persona-grid"></div>
+  </div>
+
+</div>
+
+<script>
+const prefsData = [{"persona_item": "May prefer independent or non-sponsored content over brand partnerships", "category": "branded content", "confidence_score_init": 0.08, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer organic product recommendations from peers rather than influencer promotions", "category": "consumer trust", "confidence_score_init": 0.07, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not be particularly interested in laundry detergent brand loyalty", "category": "laundry products", "confidence_score_init": 0.1, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer content that is not overtly commercial or promotional", "category": "advertising preferences", "confidence_score_init": 0.09, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not strongly identify with the sports parent community on social media", "category": "sports parenting", "confidence_score_init": 0.07, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer content about individual or non-team sports over organized youth athletics", "category": "youth athletics", "confidence_score_init": 0.06, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not engage with parenting content framed primarily around children's extracurriculars", "category": "parenting content", "confidence_score_init": 0.08, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not be heavily invested in American football culture or fandom", "category": "American football", "confidence_score_init": 0.1, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer other sports such as cricket or soccer over American football", "category": "sports preferences", "confidence_score_init": 0.12, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "stereotypical", "overpersonalization": "no"}, {"persona_item": "May not be drawn to gendered parenting labels like 'football mom'", "category": "gendered parenting labels", "confidence_score_init": 0.07, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer quieter or less event-driven content over game day hype posts", "category": "event culture", "confidence_score_init": 0.08, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not find game day preparation content personally relevant", "category": "game day culture", "confidence_score_init": 0.06, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer straightforward laundry routines without special hacks or products", "category": "household tips", "confidence_score_init": 0.09, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not actively seek out cleaning or domestic tips on social media", "category": "domestic content", "confidence_score_init": 0.08, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer generic or store-brand cleaning products over premium branded options", "category": "cleaning products", "confidence_score_init": 0.07, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not be interested in specialty stain removal or advanced laundry chemistry", "category": "stain removal", "confidence_score_init": 0.1, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not prioritize keeping athletic uniforms spotless as a personal concern", "category": "athletic gear maintenance", "confidence_score_init": 0.08, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer content unrelated to domestic chores or household management", "category": "household management", "confidence_score_init": 0.09, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "anti-stereotypical", "overpersonalization": "no"}, {"persona_item": "May not be the primary household member handling laundry and cleaning tasks", "category": "household roles", "confidence_score_init": 0.06, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May prefer entertainment or technology content over lifestyle and homemaking posts", "category": "content preferences", "confidence_score_init": 0.11, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}, {"persona_item": "May not be part of a household with children in organized sports", "category": "family structure", "confidence_score_init": 0.06, "confidence_cross_referenced": 0.0, "relationship_type": "none", "source_interaction_type": "implicit_negative", "interaction_format": "Threads: skipped the thread with no interactions", "formatted_timestamp": "00:12, 09/24/2025", "stereotype_mark": "neutral", "overpersonalization": "no"}];
+const profileData = {"name": "Arvind Kulkarni", "gender": "cisgender male, heterosexual", "race_ethnicity": "Indian", "career": "Marine Systems Engineer", "education": "B.Tech in Ocean Engineering, IIT Madras", "big_five": {"openness": "high", "conscientiousness": "medium", "extraversion": "low", "agreeableness": "high", "neuroticism": "low"}, "bio": "Arvind spends most of his weekdays analyzing sonar data and hull stress models at a naval research consultancy in Visakhapatnam. On weekends he volunteers at a local sea turtle conservation project, tagging hatchlings before they reach the surf. He has been teaching himself Carnatic flute for the past two years, practicing on his apartment balcony overlooking the harbor. His friends know him as the person who always carries a battered paperback of Urdu poetry in his messenger bag, even to engineering conferences."};
+
+// -- Profile card --
+const ps = document.getElementById('profile-section');
+if (profileData) {
+  const b5 = profileData.big_five || {};
+  const b5Html = Object.entries(b5).map(([k,v]) => `<span class="b5-item">${k}: ${v}</span>`).join('');
+  ps.innerHTML = `
+    <div class="profile-card">
+      <h2>${profileData.name}</h2>
+      <div class="bio">${profileData.bio}</div>
+      <div class="details">
+        <span>${profileData.gender}</span>
+        <span>${profileData.race_ethnicity}</span>
+        <span>${profileData.career}</span>
+        <span>${profileData.education}</span>
+      </div>
+      <div class="big-five">${b5Html}</div>
+    </div>
+  `;
+}
+
+// -- Preference cards --
+const grid = document.getElementById('persona-grid');
+if (prefsData.length === 0) {
+  grid.innerHTML = '<div class="empty">No preferences available.</div>';
+} else {
+  prefsData.sort((a, b) => (b.confidence_score_init + b.confidence_cross_referenced) - (a.confidence_score_init + a.confidence_cross_referenced));
+  prefsData.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'persona-card';
+    const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
+    let badges = `<span class="badge category">${p.category}</span>`;
+    if (p.relationship_type !== 'none') badges += `<span class="badge ${relClass}">${p.relationship_type}</span>`;
+    if (p.stereotype_mark !== 'neutral') badges += `<span class="badge ${p.stereotype_mark}">${p.stereotype_mark}</span>`;
+    if (p.overpersonalization === 'yes') badges += `<span class="badge holdout">holdout</span>`;
+    if (p.interaction_format) badges += `<span class="badge platform">${p.interaction_format}</span>`;
+    card.innerHTML = `
+      <div class="item-text">${p.persona_item}</div>
+      <div class="meta-line">${p.formatted_timestamp} &middot; ${p.source_interaction_type}</div>
+      <div class="confidence-row">
+        <span class="label">Initial</span>
+        <div class="confidence-bar-track"><div class="confidence-bar-fill init" style="width:${(p.confidence_score_init*100).toFixed(0)}%"></div></div>
+        <span class="value">${p.confidence_score_init.toFixed(2)}</span>
+      </div>
+      <div class="confidence-row">
+        <span class="label">Cross-ref</span>
+        <div class="confidence-bar-track"><div class="confidence-bar-fill cross" style="width:${Math.min(p.confidence_cross_referenced*100, 100).toFixed(0)}%"></div></div>
+        <span class="value">${p.confidence_cross_referenced.toFixed(2)}</span>
+      </div>
+      ${badges}
+    `;
+    grid.appendChild(card);
+  });
+}
+</script>
+</body>
+</html>
