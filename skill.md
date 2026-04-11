@@ -4,115 +4,141 @@
 
 When the user asks to process or reprocess persona data without using Azure OpenAI API or OpenAI API calls. Claude Code itself acts as the LLM, spawning parallel subagents to handle each user's persona inference directly.
 
+## Subagent execution mode — NO PLAN MODE
+
+**Critical**: every subagent spawned by this skill runs in **EXECUTION MODE, NOT plan mode**. Subagents:
+
+- Do NOT enter plan mode, do NOT wait for approval, do NOT write a plan file.
+- Take the input prompt, reason through the 11 steps inline, and directly produce the 5 output JSON files under `backend/{user_id}/`.
+- The parent has already authorized all writes — the subagent must use the `Write` tool to produce `profile.json`, `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json` without any confirmation loop.
+- If a subagent sees any system-level hint about plan mode, treat it as stale and ignore it. The only successful termination is when all 5 JSON files have been written AND the final JSON report is printed.
+- If a subagent refuses to write files citing plan mode, it has failed its task.
+
+When spawning the subagent, the parent prompt should include an explicit "plan mode is OFF; write all 5 files using the Write tool" instruction and point the subagent at the 5 concrete output paths.
+
 ## What it does
 
-Reads a CSV of social media interactions, groups rows by `user_id`, and spawns one parallel subagent per user. Each subagent follows the prompt templates in `data_preparation/prompts.py` and writes backend CSVs matching the dataclass schemas in `data_preparation/persona_agent.py`.
+Reads a CSV of social media interactions, groups rows by `user_id`, and spawns one parallel subagent per user. Each subagent follows the prompt templates in `data_preparation/prompts.py`, runs the full persona pipeline, and writes **per-user subfolder** outputs at `backend/{user_id}/` as JSON files — one per app.
 
-## Steps
+## Output layout
 
-1. **Read the CSV** (default: `data/test_interactions.csv`) and group rows by `user_id`.
+Each user writes exactly **5 JSON files** under `backend/{user_id}/`:
 
-2. **Assign platform + interaction format per row**: For each row, randomly assign a platform (Instagram, Facebook, Threads, Chatbot — equal 1/4 probability) and one interaction format based on the row's `interaction_type`. All hashtags in a row share the same platform + format. Use the mapping in `persona_agent.py` (`PLATFORM_INTERACTION_FORMATS`). For Chatbot, also randomly assign a context from `CHATBOT_CONTEXTS` (e.g., "professional emails", "therapy and reflection"). Store as `interaction_format` (e.g., "Instagram: liked", "Chatbot (therapy and reflection): asked follow-up questions showing interest").
+```
+backend/
+  {user_id}/
+    profile.json        # UserProfile + AppPersonas (all 4 apps)
+    instagram.json      # preferences routed to Instagram (time-sorted)
+    facebook.json       # preferences routed to Facebook (time-sorted)
+    threads.json        # preferences routed to Threads (time-sorted)
+    chatbot.json        # preferences routed to Chatbot (time-sorted, with @ai messages)
+```
 
-3. **For each user**, determine interaction polarity:
-   - `implicit_positive` or `explicit_positive` → full pipeline (infer → cross-reference → filter → profile → stereotype annotation → overpersonalization → save)
-   - `implicit_negative` or `explicit_negative` → infer low-confidence personas, skip cross-referencing, but still generate profile and stereotype annotations
+The four supported apps are **Instagram, Facebook, Threads, Chatbot** — see `PLATFORMS` in `data_preparation/persona_agent.py`.
 
-4. **Read `data_preparation/prompts.py`** before constructing subagent prompts. The prompt rules, confidence calibration scale, category instructions, and JSON output format must be copied verbatim into each subagent prompt — do not paraphrase.
+## Key rules the subagent MUST obey
 
-5. **Spawn parallel subagents** (one per user, all in background). Each subagent prompt must include:
-   - The user's data (user_id, interaction_type, object_id, interaction_time converted to `HH:MM, MM/DD/YYYY` UTC, object_text, interaction_format)
-   - The exact instructions from `prompts.py` (read the file, do not improvise):
-     - **Step 1 — Infer atomic personas**: 3-5 per hashtag, specific topical category (NOT generic like "interests"/"values"), per-persona source hashtags, confidence on the full 0.0-1.0 scale. For negative interactions, all scores capped at 0.05-0.15.
-     - **Step 2 — Cross-reference** (positive only, **cross-row only**): find similar/contradictory pairs ONLY between personas from **different interaction rows** (different `source_object_id`). Personas from the same row share the same evidence and cannot validate each other. If a user has only 1 interaction row, skip cross-referencing entirely (all confidence_cross_referenced = 0.0). Scoring: **+0.1 per similar** to both sides, **-0.1 per contradictory** to the **older** persona only.
-     - **Step 3 — Filter**: remove items where `confidence_score_init < 0.5 AND confidence_cross_referenced <= 0.0`, but always keep contradictory items (they go into temporal graph).
-     - **Step 4 — Generate user profile**: Randomly sample gender+orientation and race/ethnicity from predefined distributions in `persona_agent.py` (`GENDER_ORIENTATION_DISTRIBUTION`, `RACE_ETHNICITY_DISTRIBUTION`). Then use the profile generation prompt from `prompts.py` to create name, career, education, Big Five personality, and a 3-5 sentence bio. Diverse, avoid stereotypes.
-     - **Step 5 — Annotate stereotype marks**: Based on **demographics only** (gender, sexual orientation, race/ethnicity — NOT career or education), annotate each persona as "neutral", "stereotypical", or "anti-stereotypical". Be conservative — most should be "neutral".
-     - **Step 6 — Sort & select test candidates**: sort ALL positive filtered personas by `source_timestamp` ascending (early → latest). Scan from newest back toward oldest, collecting items that satisfy the **high-confidence predicate** (`confidence_score_init >= 0.5 AND confidence_cross_referenced > 0.5`), until you have `max(1, 20% * total_positives)` candidates — or run out. Everything else is `train`.
-     - **Step 7 — Inferrability gate**: for each test candidate, decide whether it can be reasonably inferred from the train-set preferences (the ground truth). Use the rules in `prompts.py::test_inferrability_check_prompt` verbatim. Be **conservative** — when in doubt, mark as NOT inferrable and **remove it entirely** from the preferences list (not just demote to train).
-     - **Step 8 — Distractor pairing**: for each surviving test item, randomly shortlist **5** high-confidence train items (same high-confidence predicate). From those 5, pick the **one** that is most topically irrelevant to the test preference and would be most annoying/inappropriate as a personalization recommendation if surfaced in that test preference's context. Follow `prompts.py::distractor_selection_prompt` verbatim. Store `distractor_persona_item` and `distractor_category` on the test row only.
-     - **Step 9 — Save** 2 CSV files to `backend/`.
-   - The exact CSV column schemas (2 files per user):
-     - `{user_id}_preferences.csv`: persona_item, category, confidence_score_init, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags (JSON array), interaction_format, confidence_cross_referenced, relationship_type, related_personas (JSON array), stereotype_mark, split (`"train"` | `"test"`), distractor_persona_item (test rows only), distractor_category (test rows only). Rows MUST be written in **strict chronological order** by source_timestamp ascending. Negative rows are always `split=train`.
-     - `{user_id}_profile.csv`: name, gender, race_ethnicity, career, education, big_five (JSON object), bio — all users
-   - Instruction to write the CSV files using the Write tool.
+1. **Read `data_preparation/prompts.py` and `data_preparation/persona_agent.py` first.** Copy the rules, scoring thresholds, and JSON output schemas **verbatim** — do not paraphrase.
+2. **Init-confidence floor is strict**: `MIN_PERSONA_INIT_CONFIDENCE = 0.8`. After cross-reference, any canonical persona below 0.8 is dropped entirely. This is the main knob for dataset size.
+3. **High-confidence predicate** (`is_high_confidence`): `confidence_score_init >= 0.8 AND confidence_cross_referenced > 0.5`. Used for test-split eligibility and distractor shortlisting.
+4. **Cross-ref is capped at 1.0**. Never allow `confidence_cross_referenced` to exceed 1.0.
+5. **Dedupe by text BEFORE cross-referencing**. If two rows produce the exact same persona_item string, merge them into one canonical persona and record the merge in `corroboration_count` (= number of distinct rows that produced it). `confidence_cross_referenced` starts at `0.1 * (corroboration_count - 1)` capped at 1.0 — this is the base "merge boost". The cross-reference LLM call then adds on top for *semantically related but distinct* personas. Identical persona_items must NEVER be marked as "similar" to each other.
+6. **Remove semantic redundancy AFTER the 0.8 filter.** Cluster the survivors: personas that describe the same preference in different words are collapsed into one representative (the one with highest `init + cross_ref`). Related-persona links are rewritten to point at the representative.
+7. **App assignment is NOT random.** Each preference is routed to **exactly one primary app** based on the user's per-app sub-personas. Then a deterministic 8% noise rate reassigns a fraction of preferences to a random different app to simulate real-world cross-app leakage.
+8. **Train/test split is CROSS-APP and time-based.** Sort ALL positive survivors (across all apps) by `source_timestamp` ascending. Take the latest 20% that pass `is_high_confidence` as test candidates, run the inferrability gate, drop failures, pair each survivor with a distractor. The resulting `split` label is stored on each preference regardless of which app it lives in.
+9. **Chatbot `@ai` actions need a natural-language `user_message`.** For any preference routed to Chatbot whose chosen action is in `AT_AI_ACTIONS` (see `persona_agent.py`), the subagent generates a short first-person message (1–2 sentences, starting with `@ai `) grounded in the specific preference topic.
 
-6. **Wait for all subagents** to complete and report a summary table.
+## The 11-step pipeline
+
+For each user, the subagent executes these steps in order. Each step's rules come from `prompts.py` verbatim — the subagent is the LLM, so it applies those rules inline rather than making API calls.
+
+1. **Infer atomic personas** — rules from `prompts.py::hashtag_to_persona_prompt`. 3–5 personas per hashtag, specific topical category, per-persona source hashtags, confidence 0.0–1.0. Negative interactions capped at 0.05–0.15.
+
+2. **Dedupe + cross-reference + 0.8 filter** — rules from `prompts.py::summarize_and_cross_reference_prompt`. First merge lexically-identical persona_items across rows into canonicals (recording `corroboration_count`). Then find `similar`/`contradictory` pairs between DISTINCT canonicals only (cross-row only, same-row relationships skipped). Python-side scoring: `+0.1` per similar pair to both sides, `-0.1` per contradictory pair to the older side only, floor `0.0`, cap `1.0`. Then strict filter: drop everything with `confidence_score_init < 0.8`.
+
+3. **Remove semantic redundancy** — rules from `prompts.py::remove_redundant_personas_prompt`. Cluster the survivors into groups of semantically-equivalent preferences (different wording, same meaning). Keep the representative (highest `init + cross_ref`) from each group, drop the rest. Rewrite `related_personas` links on survivors so they don't point at dropped items.
+
+4. **Temporal contradiction graph** — rules from `prompts.py::temporal_contradiction_graph_prompt`. Group contradictions into topical timelines (optional; skip if no contradictions).
+
+5. **Generate user profile** — rules from `prompts.py::generate_user_profile_prompt`. Sample `gender_orientation` + `race_ethnicity` from the Python distributions in `persona_agent.py`, then generate name/career/education/Big Five/bio. Deliberately avoid stereotypes.
+
+6. **Generate per-app sub-personas** — rules from `prompts.py::generate_app_personas_prompt`. Produce **four distinct** AppPersona objects (one per app) describing how this specific user uses each app: `use_purposes`, `friend_zones`, `audience_type`, `style_description`, `posting_frequency`, `topical_focus`. For Chatbot, also populate `chatbot_contexts` with 2–3 entries from `CHATBOT_CONTEXTS` in `persona_agent.py` that match the user.
+
+7. **Route preferences to apps** — rules from `prompts.py::assign_personas_to_apps_prompt`. For each surviving preference, pick exactly one primary app driven by the per-app use_purposes and topical_focus. Maintain topical consistency within an app. After the LLM assignment, apply **8% deterministic noise**: for each preference, with probability 0.08 reassign it to a random different app.
+
+8. **Generate interaction_format per preference** — rules from `prompts.py::generate_interaction_format_prompt`. For each preference, pick one action from `PLATFORM_INTERACTION_FORMATS[assigned_app][interaction_type]`. If the chosen action is in `AT_AI_ACTIONS` (Chatbot only), also generate a natural-language `user_message` (first-person, ~15–35 words, starts with `@ai `) grounded in the specific preference. The final `interaction_format` is a JSON object: `{"app": ..., "action": ..., "action_label": ..., "user_message": ... | null}`.
+
+9. **Annotate stereotype marks** — rules from `prompts.py::annotate_stereotype_prompt`. Demographics-only (gender, sexual orientation, race/ethnicity — NOT career/education). Most should be `neutral`. Be conservative.
+
+10. **Build test split** — rules from `prompts.py::test_inferrability_check_prompt` + `prompts.py::distractor_selection_prompt`.
+    - Sort all surviving positives by `source_timestamp` ascending.
+    - Scan newest → oldest collecting items that pass `is_high_confidence` (`init >= 0.8 AND cross_ref > 0.5`) until you have `max(1, 0.2 * total_positives)` candidates. Everything else is `train`. Negatives are always `train`.
+    - For each candidate, run the inferrability gate. Drop any marked NOT inferrable **entirely from the preferences list**.
+    - For each surviving test item: randomly shortlist 5 high-confidence train items, then pick the one most topically irrelevant AND most annoying/inappropriate as a personalization recommendation. Store `distractor_persona_item` + `distractor_category` on the test row only.
+
+11. **Save** — write 5 JSON files to `backend/{user_id}/`:
+    - `profile.json`: UserProfile dataclass + `app_personas` dict
+    - `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json`: list of preference objects **sorted strictly by `source_timestamp` ascending**
+
+## Preference object shape (used in all per-app JSONs)
+
+```json
+{
+  "persona_item": "Enjoys home cooking and preparing family meals",
+  "category": "home cooking and food",
+  "confidence_score_init": 0.85,
+  "confidence_cross_referenced": 0.4,
+  "corroboration_count": 12,
+  "relationship_type": "similar" | "contradictory" | "none",
+  "related_personas": [{"persona_item": "...", "type": "similar"}],
+  "stereotype_mark": "neutral",
+  "split": "train" | "test",
+  "distractor_persona_item": "",
+  "distractor_category": "",
+  "source_interaction_type": "implicit_positive",
+  "source_object_id": "691531",
+  "source_timestamp": 1775235998,
+  "formatted_timestamp": "17:06, 04/03/2026",
+  "source_hashtags": ["#dessertlover", "#foodie"],
+  "assigned_app": "Instagram",
+  "interaction_format": {
+    "app": "Instagram",
+    "action": "saved_to_collection",
+    "action_label": "Saved to a collection",
+    "user_message": null
+  }
+}
+```
+
+For Chatbot preferences where the chosen action is in `AT_AI_ACTIONS`, `user_message` is a short first-person string like `"@ai can you show me more authentic Mexican home cooking recipes? Weeknight-friendly ones that still feel traditional."`
+
+## Profile object shape (profile.json)
+
+```json
+{
+  "user_id": "251",
+  "name": "...",
+  "gender": "...",
+  "race_ethnicity": "...",
+  "career": "...",
+  "education": "...",
+  "big_five": {"openness": "medium", "conscientiousness": "high", ...},
+  "bio": "...",
+  "app_personas": {
+    "Instagram": {"app_name": "Instagram", "use_purposes": [...], "friend_zones": [...], "audience_type": "mixed", "style_description": "...", "posting_frequency": "weekly", "topical_focus": [...], "chatbot_contexts": []},
+    "Facebook":  {...},
+    "Threads":   {...},
+    "Chatbot":   {"app_name": "Chatbot", ..., "chatbot_contexts": ["therapy and reflection", "knowledge exploration"]}
+  }
+}
+```
 
 ## Output consistency
 
-**Critical**: Each subagent must follow the **exact same prompts** defined in `data_preparation/prompts.py` and produce output matching the **exact same dataclass schemas** in `data_preparation/persona_agent.py`. Do NOT paraphrase, simplify, or improvise the prompts — copy the rules, confidence calibration scale, output JSON format, and filtering logic verbatim from those files. This ensures a fair apples-to-apples comparison with API mode (where the same prompts are sent to GPT-5 or other models). The only variable between modes should be which LLM does the reasoning — everything else (prompt wording, output schema, filtering thresholds) must be identical.
+Each subagent must follow the **exact same prompts** defined in `data_preparation/prompts.py` and produce output matching the **exact same dataclass schemas** in `data_preparation/persona_agent.py`. Do NOT paraphrase, simplify, or improvise the prompts — copy the rules, confidence calibration scale, output JSON format, thresholds, and filtering logic verbatim. This ensures fair apples-to-apples comparison with API mode.
 
-## Example subagent prompt (positive user)
+## Important scale caveats
 
-```
-You are running the PersonaMem persona inference pipeline for user {user_id}.
-
-## User Data
-- user_id: {user_id}
-- All interaction rows (each with interaction_type, object_id, interaction_time (formatted HH:MM, MM/DD/YYYY), object_text, interaction_format)
-- Demographics: {gender_orientation} | {race_ethnicity}
-
-## Step 1: Infer Atomic Personas
-[Rules from prompts.py: comprehensive, specific, topical categories, per-persona hashtags, confidence 0.0-1.0]
-
-## Step 2: Cross-Reference
-[Cross-row only. If single row, skip. Scoring: +0.1 similar both sides, -0.1 contradictory older only]
-
-## Step 3: Filter
-[Remove where init < 0.5 AND cross_ref <= 0.0. Keep contradictions.]
-
-## Step 4: Generate User Profile
-[Sample from GENDER_ORIENTATION_DISTRIBUTION and RACE_ETHNICITY_DISTRIBUTION]
-[Output: name, career, education, big_five, bio]
-
-## Step 5: Annotate Stereotype Marks
-[Demographics only. Mark neutral/stereotypical/anti-stereotypical]
-
-## Step 6: Sort & Select Test Candidates
-[Sort positives by source_timestamp ascending. From newest backward, collect items passing
- is_high_confidence (init >= 0.5 AND cross_ref > 0.5) until we have 20% of total or run out.
- Everything else = train.]
-
-## Step 7: Inferrability Gate
-[For each test candidate, per prompts.py::test_inferrability_check_prompt, decide yes/no
- whether it can be reasonably inferred from the train set. Drop any marked "no" entirely —
- remove them from the preferences list, not just demote to train.]
-
-## Step 8: Distractor Pairing
-[For each surviving test item: randomly shortlist 5 high-confidence train items. Then use
- prompts.py::distractor_selection_prompt to pick the one most topically irrelevant and most
- annoying/inappropriate as a personalization recommendation. Record its persona_item and
- category as distractor fields on the test row.]
-
-## Step 9: Save
-[Write 2 files sorted strictly by source_timestamp ascending:
- {user_id}_preferences.csv with split + distractor columns, {user_id}_profile.csv]
-```
-
-## Example subagent prompt (negative user)
-
-```
-You are running the PersonaMem persona inference pipeline for user {user_id}.
-
-## User Data
-- All interaction rows with interaction_type ∈ {implicit_negative, explicit_negative}
-  (user scrolled past / dismissed — very weak signal)
-- interaction_format: {platform}: {action}
-[...]
-
-## Step 1: Infer Atomic Personas
-[All confidence scores 0.05-0.15, phrase as preferences instead of dislikes]
-
-## Step 2: Generate User Profile
-[Same as positive users — sample demographics, generate name/career/education/big_five/bio]
-
-## Step 3: Annotate Stereotype Marks
-[Demographics only. Mark each persona as neutral/stereotypical/anti-stereotypical]
-
-## Step 4: Save
-[Negative personas are always split=train (too weak to be test candidates).
- Write 2 files sorted by source_timestamp ascending:
- {user_id}_preferences.csv (only confidence > 0.05, with stereotype annotations, split=train,
-  empty distractor fields), {user_id}_profile.csv]
-```
+- Large users (3k–6k interaction rows) produce tens of thousands of atomic personas. The subagent MUST dedupe by lexical identity in Step 2 and cluster by semantic redundancy in Step 3 aggressively — those two steps are what keep the preference list at a usable size. The 0.8 filter is the third main size lever.
+- For very large users, batched per-preference prompts (like Step 8 generating interaction formats one at a time) are prohibitively expensive. The subagent should **batch** these inline — one LLM reasoning pass over all (persona, app) pairs at once, not one reasoning pass per preference.
+- Chatbot-routed preferences that end up as `@ai` actions need a unique `user_message` each; these should be generated as a batch where the subagent reasons about all of them together rather than per-item.

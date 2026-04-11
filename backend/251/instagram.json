@@ -1,0 +1,304 @@
+[
+  {
+    "persona_item": "Enjoys beauty and nail-art content",
+    "category": "beauty, nails, and personal style",
+    "confidence_score_init": 0.8,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 79,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "378709",
+    "source_timestamp": 1775283922,
+    "formatted_timestamp": "06:25, 04/04/2026",
+    "source_hashtags": [
+      "#BeautyInspo",
+      "#BloodSplatterNails",
+      "#HalloweenNails",
+      "#LansingNailTech",
+      "#NailArt",
+      "#NailTech"
+    ],
+    "stereotype_mark": "stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "saved_to_collection",
+      "action_label": "Saved to a collection",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Enjoys short-form comedy reels and viral funny clips",
+    "category": "comedy and humor content",
+    "confidence_score_init": 0.88,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 138,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "666394",
+    "source_timestamp": 1775284233,
+    "formatted_timestamp": "06:30, 04/04/2026",
+    "source_hashtags": [
+      "#ComedyGold",
+      "#ComedyShow",
+      "#LaughOutLoud"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Uses humor content as a mood-lifter throughout the day",
+    "category": "comedy and humor content",
+    "confidence_score_init": 0.9,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 138,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "666394",
+    "source_timestamp": 1775284233,
+    "formatted_timestamp": "06:30, 04/04/2026",
+    "source_hashtags": [
+      "#ComedyGold",
+      "#ComedyShow",
+      "#LaughOutLoud"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "rewatched_reel",
+      "action_label": "Rewatched the reel",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Deeply invested in hair care and styling routines",
+    "category": "hair care and styling",
+    "confidence_score_init": 0.9,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 51,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "351857",
+    "source_timestamp": 1775425071,
+    "formatted_timestamp": "21:37, 04/05/2026",
+    "source_hashtags": [
+      "#BraidingCommunity",
+      "#BraidsByTiara",
+      "#CrownBraid",
+      "#HairBraiding",
+      "#HairInspo",
+      "#HairTutorial"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "saved_to_collection",
+      "action_label": "Saved to a collection",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Follows hairstylists and salon professionals",
+    "category": "hair care and styling",
+    "confidence_score_init": 0.85,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 51,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "351857",
+    "source_timestamp": 1775425071,
+    "formatted_timestamp": "21:37, 04/05/2026",
+    "source_hashtags": [
+      "#BraidingCommunity",
+      "#BraidsByTiara",
+      "#CrownBraid",
+      "#HairBraiding",
+      "#HairInspo",
+      "#HairTutorial"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "followed_creator",
+      "action_label": "Followed the creator",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Interested in protective natural hair styles like braids and weaves",
+    "category": "hair care and styling",
+    "confidence_score_init": 0.8,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 51,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "351857",
+    "source_timestamp": 1775425071,
+    "formatted_timestamp": "21:37, 04/05/2026",
+    "source_hashtags": [
+      "#BraidingCommunity",
+      "#BraidsByTiara",
+      "#CrownBraid",
+      "#HairBraiding",
+      "#HairInspo",
+      "#HairTutorial"
+    ],
+    "stereotype_mark": "anti-stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "viewed_reel_75",
+      "action_label": "Viewed more than 75% of the reel",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Invested in romantic relationship content",
+    "category": "romantic couple relationships",
+    "confidence_score_init": 0.88,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 116,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "660847",
+    "source_timestamp": 1775561196,
+    "formatted_timestamp": "11:26, 04/07/2026",
+    "source_hashtags": [
+      "#couplelife",
+      "#loveinthelittlethings",
+      "#relationshipgoals",
+      "#skincarelove"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "viewed_reel_75",
+      "action_label": "Viewed more than 75% of the reel",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Spends time scrolling trending short-form video content",
+    "category": "viral and trending social content",
+    "confidence_score_init": 0.8,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 68,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "674520",
+    "source_timestamp": 1775561218,
+    "formatted_timestamp": "11:26, 04/07/2026",
+    "source_hashtags": [
+      "#ComingSoon",
+      "#NewEpisode"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "lingered_on_image",
+      "action_label": "Stayed on an image for more than 5 seconds",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Actively engaged in daily motherhood experiences",
+    "category": "motherhood and parenting",
+    "confidence_score_init": 0.92,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 260,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "562132",
+    "source_timestamp": 1775562389,
+    "formatted_timestamp": "11:46, 04/07/2026",
+    "source_hashtags": [
+      "#DanceMom",
+      "#MomLife",
+      "#ProtectiveMom"
+    ],
+    "stereotype_mark": "stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "shared_to_close_friends_story",
+      "action_label": "Shared to Close Friends story",
+      "user_message": null
+    },
+    "split": "train",
+    "distractor_persona_item": "",
+    "distractor_category": ""
+  },
+  {
+    "persona_item": "Likely identifies as a woman and connects with empowerment messaging",
+    "category": "women's empowerment",
+    "confidence_score_init": 0.85,
+    "confidence_cross_referenced": 1.0,
+    "corroboration_count": 46,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "944568",
+    "source_timestamp": 1775796095,
+    "formatted_timestamp": "04:41, 04/10/2026",
+    "source_hashtags": [
+      "#EmpoweredWomenEmpowerWomen",
+      "#GirlPower",
+      "#WomenSupportingWomen"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Instagram",
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "followed_creator",
+      "action_label": "Followed the creator",
+      "user_message": null
+    },
+    "split": "test",
+    "distractor_persona_item": "Enjoys beauty and nail-art content",
+    "distractor_category": "beauty, nails, and personal style"
+  }
+]
