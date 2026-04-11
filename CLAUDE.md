@@ -9,8 +9,8 @@
 ## Persona Pipeline
 - Default mode is Claude Code subagents (not API). See skill.md for the full 11-step specification.
 - When asked to "reprocess persona data", spawn one subagent per user in parallel.
-- **Cross-referencing** only applies across different interaction rows (different source_object_id), never within the same row. Identical persona_items are merged into a canonical with `corroboration_count` BEFORE cross-referencing — they must NEVER be marked as "similar" to themselves.
-- Scoring: `+0.1` per similar pair (both sides), `-0.1` per contradictory pair (older side only). Floor `0.0`, **NO upper cap** — cross_ref is a magnitude of corroboration strength, not a probability. Base cross_ref starts at `0.1 * (corroboration_count - 1)` from the lexical merge.
+- **Cross-referencing** only applies across different interaction rows (different source_object_id), never within the same row. Identical persona_items are merged into a canonical BEFORE cross-referencing.
+- **`confidence_cross_referenced`** = count of distinct source rows that independently produced this canonical AND individually passed `MIN_PERSONA_INIT_CONFIDENCE`. Computed AFTER the init filter. The LLM cross-ref step discovers `similar`/`contradictory` relationships but does NOT change this score.
 - **Init filter**: `MIN_PERSONA_INIT_CONFIDENCE = 0.5`. Anything below 0.5 is dropped after cross-ref, regardless of cross_ref score or relationship type.
 - **Semantic redundancy removal** runs after the 0.5 filter: LLM-clusters same-meaning-different-wording preferences; keeps the highest-scored representative per cluster; drops the rest.
 - **High-confidence predicate** (for test-split + distractor eligibility): `init >= 0.5 AND cross_ref > 0.5`. Single source of truth is `is_high_confidence` in persona_agent.py. Thresholds are tentative; retune empirically once real-scale stats land.
