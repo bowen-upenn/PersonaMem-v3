@@ -22,7 +22,7 @@ Reads a CSV of social media interactions, groups rows by `user_id`, and spawns o
 
 ## Output layout
 
-Each user writes exactly **5 JSON files** under `backend/{user_id}/`:
+Each user writes **5 JSON files + 1 aggregated CSV** under `backend/{user_id}/`:
 
 ```
 backend/
@@ -32,7 +32,10 @@ backend/
     facebook.json       # preferences routed to Facebook (time-sorted)
     threads.json        # preferences routed to Threads (time-sorted)
     chatbot.json        # preferences routed to Chatbot (time-sorted, with @ai messages)
+    preferences.csv     # flat single-file view of ALL preferences across ALL apps (time-sorted)
 ```
+
+The aggregated `preferences.csv` carries every preference the user has, regardless of which app it was routed to, in one strictly chronological table. Columns: `persona_item, category, confidence_score_init, confidence_cross_referenced, corroboration_count, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags, assigned_app, interaction_format, relationship_type, related_personas, stereotype_mark, split, distractor_persona_item, distractor_category`. `source_hashtags`, `related_personas`, and `interaction_format` are JSON-encoded into a single cell each.
 
 The four supported apps are **Instagram, Facebook, Threads, Chatbot** — see `PLATFORMS` in `data_preparation/persona_agent.py`.
 
@@ -76,9 +79,10 @@ For each user, the subagent executes these steps in order. Each step's rules com
     - For each candidate, run the inferrability gate. Drop any marked NOT inferrable **entirely from the preferences list**.
     - For each surviving test item: randomly shortlist 5 high-confidence train items, then pick the one most topically irrelevant AND most annoying/inappropriate as a personalization recommendation. Store `distractor_persona_item` + `distractor_category` on the test row only.
 
-11. **Save** — write 5 JSON files to `backend/{user_id}/`:
+11. **Save** — write 5 JSON files + 1 aggregated CSV to `backend/{user_id}/`:
     - `profile.json`: UserProfile dataclass + `app_personas` dict
     - `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json`: list of preference objects **sorted strictly by `source_timestamp` ascending**
+    - `preferences.csv`: the same preferences merged across all apps, flat CSV format, strictly chronologically sorted. Columns listed in "Output layout" above.
 
 ## Preference object shape (used in all per-app JSONs)
 
