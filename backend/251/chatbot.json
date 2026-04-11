@@ -20,9 +20,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "at_ai_recommend_more",
-      "action_label": "@ai steering: asked for MORE of this type",
-      "user_message": "@ai can you keep pulling together quick practical toddler parenting hacks for single-income households — especially time-savers for mornings and bath time? I want things I can do tonight, not theory."
+      "action": "asked_followup",
+      "action_label": "Asked a follow-up question showing interest",
+      "user_message": "Can you keep pulling together quick practical toddler parenting hacks for single-income households? Especially morning-routine and bath-time time-savers — stuff I can try tonight, not theory."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -47,9 +47,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "at_ai_recommend_more",
-      "action_label": "@ai steering: asked for MORE of this type",
-      "user_message": "@ai keep pulling support-group posts from other prison wives — commissary tips, visitation prep, how people handle birthdays. I don't want news or legal takes, I want other women's voices."
+      "action": "asked_followup",
+      "action_label": "Asked a follow-up question showing interest",
+      "user_message": "Pull more from other prison wives — commissary tips, visitation prep, how people handle birthdays alone. I want other women's voices, not news pieces or legal takes."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -75,9 +75,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "at_ai_focus_topic",
-      "action_label": "@ai steering: asked to focus on this topic",
-      "user_message": "@ai tonight just help me power through my cleaning list — small-bathroom tips, tackling a toddler-toy avalanche, stuff that works in under 15 minutes per task."
+      "action": "requested_more_detail",
+      "action_label": "Requested more detail on the same topic",
+      "user_message": "Help me power through my cleaning list tonight — small-bathroom tricks and tackling a toddler-toy avalanche. Stuff that works in under 15 minutes per task, please."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -104,9 +104,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "thumbs_up",
-      "action_label": "Thumbs-upped the response",
-      "user_message": null
+      "action": "asked_followup",
+      "action_label": "Asked a follow-up question showing interest",
+      "user_message": "Got any short dark-humor med-surg bits I can show my charge nurse tomorrow? Nothing mean, just the 'you had to be there' kind of stuff."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -133,9 +133,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "thumbs_up",
-      "action_label": "Thumbs-upped the response",
-      "user_message": null
+      "action": "continued_topic",
+      "action_label": "Continued the conversation on the same topic",
+      "user_message": "While we're on this, any advice on how CNAs typically transition into LPN bridge programs while working full night shifts and raising two kids?"
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -162,9 +162,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "at_ai_focus_topic",
-      "action_label": "@ai steering: asked to focus on this topic",
-      "user_message": "@ai for the rest of tonight can you just focus on easy 30-minute weeknight dinners a toddler will eat — Mexican-leaning flavors if possible, nothing that needs fancy appliances or a Whole Foods run."
+      "action": "requested_more_detail",
+      "action_label": "Requested more detail on the same topic",
+      "user_message": "For the rest of tonight just help me with easy 30-minute weeknight dinners a toddler will eat — Mexican-leaning flavors if possible, nothing that needs fancy appliances."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -191,8 +191,8 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "thumbs_up",
-      "action_label": "Thumbs-upped the response",
+      "action": "copied_response",
+      "action_label": "Copied the response text",
       "user_message": null
     },
     "split": "train",
@@ -218,8 +218,8 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "thumbs_up",
-      "action_label": "Thumbs-upped the response",
+      "action": "asked_followup",
+      "action_label": "Asked a follow-up question showing interest",
       "user_message": null
     },
     "split": "train",
@@ -246,9 +246,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "thumbs_up",
-      "action_label": "Thumbs-upped the response",
-      "user_message": null
+      "action": "asked_followup",
+      "action_label": "Asked a follow-up question showing interest",
+      "user_message": "Can you draft me a short daily affirmation I can actually say with a straight face before a night shift? Something grounded, not girlboss energy."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -276,9 +276,9 @@
     "assigned_app": "Chatbot",
     "interaction_format": {
       "app": "Chatbot",
-      "action": "at_ai_recommend_more",
-      "action_label": "@ai steering: asked for MORE of this type",
-      "user_message": "@ai pull up more stuff on what long-haul commitment looks like when one partner is going through a really hard stretch — real-people essays or therapist takes, not self-help cheese."
+      "action": "continued_topic",
+      "action_label": "Continued the conversation on the same topic",
+      "user_message": "Keep going on what long-haul commitment looks like when one partner is in a really hard stretch. Real-people essays or therapist takes, not self-help cheese."
     },
     "split": "train",
     "over_personalization_irrelevant": "",

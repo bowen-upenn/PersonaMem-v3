@@ -23,8 +23,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -55,8 +55,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "reacted_to_story",
+      "action_label": "Reacted to the story",
       "user_message": null
     },
     "split": "train",
@@ -87,8 +87,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -116,8 +116,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -145,8 +145,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -174,8 +174,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -206,8 +206,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "dm_to_friend",
+      "action_label": "Sent via DM to a friend",
       "user_message": null
     },
     "split": "train",
@@ -238,8 +238,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -299,8 +299,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -328,8 +328,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "viewed_reel_75",
+      "action_label": "Viewed more than 75% of the reel",
       "user_message": null
     },
     "split": "train",
@@ -357,8 +357,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "lingered_on_image",
+      "action_label": "Stayed on an image for more than 5 seconds",
       "user_message": null
     },
     "split": "train",
@@ -385,8 +385,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "at_ai_recommend_more",
+      "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
       "user_message": null
     },
     "split": "train",
@@ -414,8 +414,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "commented",
+      "action_label": "Commented",
       "user_message": null
     },
     "split": "train",
@@ -443,8 +443,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "followed_creator",
+      "action_label": "Followed the creator",
       "user_message": null
     },
     "split": "train",
@@ -473,9 +473,9 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
+      "action": "at_ai_feels_off",
+      "action_label": "@ai reply: told the in-feed assistant this feels off-base",
+      "user_message": "@ai the couple reels you've been pushing feel off — we're not that kind of couple right now, please pull back on the honeymoon-era content for a while."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -531,8 +531,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "shared_to_close_friends_story",
+      "action_label": "Shared to Close Friends story",
       "user_message": null
     },
     "split": "train",
@@ -559,8 +559,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -586,8 +586,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "train",
@@ -613,9 +613,9 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
+      "action": "at_ai_recommend_more",
+      "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
+      "user_message": "@ai show me more small-business beauty accounts with easy in-caption booking — I'm trying to benchmark how other solo stylists set up their DMs."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
@@ -642,8 +642,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "test",
@@ -669,8 +669,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "lingered_on_image",
+      "action_label": "Stayed on an image for more than 5 seconds",
       "user_message": null
     },
     "split": "train",
@@ -698,8 +698,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "test",
@@ -727,8 +727,8 @@
     "assigned_app": "Instagram",
     "interaction_format": {
       "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
     "split": "test",

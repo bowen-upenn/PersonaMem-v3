@@ -612,23 +612,34 @@ def generate_interaction_format_prompt(
 ) -> str:
     """Build a prompt that picks an action for one preference on its assigned app.
 
-    If `requires_user_message` is True (i.e. the caller already decided this is
-    an @ai steering directive), the model also returns a short natural-language
-    message grounded in the specific preference.
+    The action and action_label MUST come from the predefined catalog — the
+    caller looks up the canonical label from `action` after the LLM picks.
+    A `user_message` is generated only when the chosen action is in one of
+    two groups (social-media `@ai` comment actions, or AI Chatbot natural
+    chat-turn actions).
     """
 
     app_persona_json = json.dumps(app_persona, indent=2)
     action_catalog_json = json.dumps(action_catalog, indent=2)
 
     message_clause = (
-        "\n7. **Generate a `user_message`** — a short, natural-language first-person message "
-        "(1–2 sentences, ~15–35 words) that the user might actually type to the AI assistant "
-        "in this situation. The message must reference the specific topic of `persona_item` — "
-        "not the persona_item string verbatim, but the underlying subject. Example: for the "
-        "persona 'Enjoys cooking Mexican food' with action 'at_ai_recommend_more', a good "
-        "message is '@ai can you show me more weeknight-friendly authentic Mexican recipes? "
-        "I want something quick but with real flavor, not gringo versions.' "
-        "Start the message with '@ai ' if it's a steering directive."
+        "\n6. **Generate a `user_message`** IF the chosen action implies the user said something. "
+        "Two cases trigger a message:\n"
+        "   (a) **Social-media `@ai` comment actions** (`at_ai_recommend_more`, `at_ai_focus_topic`, "
+        "`at_ai_stop_recommending`, `at_ai_not_interested`, `at_ai_feels_off`). These model the user "
+        "typing an `@ai` comment on a post's comment section to steer the in-feed AI. Message MUST "
+        "start with `@ai ` and be first-person, ~15–35 words, grounded in the specific preference "
+        "topic (not the persona_item verbatim). Example for 'Enjoys cooking Mexican food' + "
+        "`at_ai_recommend_more` on Instagram: `\"@ai can you show me more weeknight-friendly "
+        "authentic Mexican recipes? I want something quick but with real flavor, not gringo versions.\"`\n"
+        "   (b) **AI Chatbot natural-chat-turn actions** (`asked_followup`, `requested_more_detail`, "
+        "`continued_topic`, `asked_to_change_topic`, `edited_prompt_and_retried`, `regenerated`). "
+        "These model the user's next chat turn in an ongoing AI conversation. Message is a natural "
+        "first-person utterance, ~15–35 words, grounded in the specific preference topic. "
+        "**Do NOT prefix with `@ai `** — the user is already conversing with the AI, no mention is needed. "
+        "Example for 'Enjoys cooking Mexican food' + `asked_followup` on Chatbot: "
+        "`\"Can you give me a few weeknight Mexican recipes that work for a toddler? Under 30 minutes, no specialty ingredients.\"`\n"
+        "   Otherwise, `user_message` is `null`."
         if requires_user_message else ""
     )
 
@@ -647,7 +658,7 @@ You are choosing a realistic interaction for a single user preference on a speci
 {app_persona_json}
 ```
 
-## Available actions for {assigned_app} / {interaction_type}
+## Predefined action catalog for {assigned_app} / {interaction_type}
 
 ```json
 {action_catalog_json}
@@ -655,15 +666,15 @@ You are choosing a realistic interaction for a single user preference on a speci
 
 ## Your Task
 
-1. Pick EXACTLY ONE action from the available actions that would be realistic for this user, on this app, for this specific preference.
+1. Pick EXACTLY ONE action from the catalog above. Copy the `action` identifier VERBATIM from the catalog. **Do not invent new actions or new wording.** The catalog is the single source of truth for action identifiers and labels — consistent wording across runs is critical.
 
 2. The action must match the polarity of `source_interaction_type` — if it's a positive interaction you must pick from the positive actions; if negative, from the negative actions. The catalog above is already filtered to the right bucket.
 
 3. Consider the AppPersona's `style_description` and `posting_frequency`. A "passive viewer only" user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
 
-4. Prefer implicit actions unless the interaction_type is explicit_*.
+4. Prefer implicit actions unless the interaction_type is `explicit_*`.
 
-5. Output the `action` identifier (short code) AND the `action_label` (human-readable).{message_clause}
+5. In the output you ONLY need to return the `action` identifier — the caller will look up the canonical `action_label` from the catalog. (You may echo the label back as a hint, but the caller overrides it with the catalog value.){message_clause}
 
 ## Output Format
 
@@ -671,8 +682,7 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
 
 ```json
 {{
-  "action": "chosen_action_identifier",
-  "action_label": "Human-readable label",
+  "action": "chosen_action_identifier_verbatim_from_catalog",
   "user_message": {"\"...\"" if requires_user_message else "null"}
 }}
 ```"""

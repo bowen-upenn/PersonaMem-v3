@@ -20,8 +20,8 @@
     "assigned_app": "Threads",
     "interaction_format": {
       "app": "Threads",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "reposted",
+      "action_label": "Reposted",
       "user_message": null
     },
     "split": "train",
@@ -49,8 +49,8 @@
     "assigned_app": "Threads",
     "interaction_format": {
       "app": "Threads",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "reposted",
+      "action_label": "Reposted",
       "user_message": null
     },
     "split": "train",
@@ -76,8 +76,8 @@
     "assigned_app": "Threads",
     "interaction_format": {
       "app": "Threads",
-      "action": "liked",
-      "action_label": "Liked",
+      "action": "followed_author",
+      "action_label": "Followed the author",
       "user_message": null
     },
     "split": "train",
@@ -135,9 +135,9 @@
     "assigned_app": "Threads",
     "interaction_format": {
       "app": "Threads",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
+      "action": "at_ai_recommend_more",
+      "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
+      "user_message": "@ai keep bringing these long-suffering-wife-at-midnight takes — they are the funniest part of my week."
     },
     "split": "train",
     "over_personalization_irrelevant": "",
