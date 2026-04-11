@@ -81,8 +81,9 @@ def summarize_and_cross_reference_prompt(atomic_personas: list[dict]) -> str:
 
     NOTE: The input list has ALREADY been deduplicated by the caller. Each entry
     is a *canonical* persona — personas with identical text from multiple rows
-    have been merged into one entry and their `corroboration_count` reflects how
-    many independent rows produced them. The LLM must treat each entry as a
+    have been merged into one entry. `confidence_cross_referenced` reflects the
+    count of distinct source rows that independently produced them AND passed
+    the init-confidence threshold. The LLM must treat each entry as a
     unique preference.
     """
 
@@ -91,7 +92,7 @@ def summarize_and_cross_reference_prompt(atomic_personas: list[dict]) -> str:
     return f"""\
 You are an expert at synthesizing behavioral signals into a coherent user profile.
 
-Below is a list of canonical persona traits/preferences for a single user. These have already been deduplicated — if two interaction rows produced the exact same persona text, they were merged into one canonical entry, and `corroboration_count` records how many distinct rows contributed. Each entry includes the category, persona item, initial confidence score, corroboration count, and source interaction metadata.
+Below is a list of canonical persona traits/preferences for a single user. These have already been deduplicated — if two interaction rows produced the exact same persona text, they were merged into one canonical entry. `confidence_cross_referenced` records the number of distinct high-confidence source rows that produced each entry. Each entry includes the category, persona item, initial confidence score, cross-reference count, and source interaction metadata.
 
 ```json
 {personas_json}
@@ -104,7 +105,7 @@ Below is a list of canonical persona traits/preferences for a single user. These
    - If two **different** personas **contradict** each other (e.g. "Prefers vegan meals" and "Loves BBQ ribs"), mark them as related with `"type": "contradictory"`.
    - If a persona has no meaningful cross-persona relationship, set `relationship_type` to `"none"` with an empty `related_personas` list.
 
-2. **Do NOT mark identical persona_items as similar to each other.** Identical-text preferences are the same preference corroborated by multiple rows — that corroboration is already captured in `corroboration_count` and scored upstream. Marking them as "similar" would double-count.
+2. **Do NOT mark identical persona_items as similar to each other.** Identical-text preferences are the same preference corroborated by multiple rows — that corroboration is already captured in `confidence_cross_referenced`. Marking them as "similar" would double-count.
 
 3. **Do NOT compute confidence scores** — the `confidence_cross_referenced` field is computed downstream from your relationships. Do not include it in your output.
 

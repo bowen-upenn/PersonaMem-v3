@@ -62,7 +62,6 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
             "category": r.get("category", "uncategorized"),
             "confidence_score_init": float(r.get("confidence_score_init", 0) or 0),
             "confidence_cross_referenced": float(r.get("confidence_cross_referenced", 0) or 0),
-            "corroboration_count": int(r.get("corroboration_count", 1) or 1),
             "relationship_type": r.get("relationship_type", "none"),
             "source_interaction_type": r.get("source_interaction_type", ""),
             "interaction_format": r.get("interaction_format", {}) or {},
@@ -275,7 +274,6 @@ if (prefsData.length === 0) {{
 
       const fmt = p.interaction_format || {{}};
       if (fmt.action_label) badges += `<span class="badge action">${{fmt.action_label}}</span>`;
-      if (p.corroboration_count && p.corroboration_count > 1) badges += `<span class="badge platform">×${{p.corroboration_count}}</span>`;
 
       let userMsgBlock = '';
       if (fmt.user_message) {{

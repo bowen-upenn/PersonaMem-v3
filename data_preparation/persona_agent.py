@@ -58,17 +58,18 @@ class CrossReferencedPersona:
     persona_item: str
     category: str
     confidence_score_init: float
+    # confidence_cross_referenced = the number of distinct source interaction
+    # rows (distinct source_object_id) that independently inferred THIS
+    # canonical persona AND whose individual confidence_score_init >= the
+    # MIN_PERSONA_INIT_CONFIDENCE threshold. Computed AFTER the init filter
+    # on canonicals but BEFORE semantic-redundancy removal. An integer
+    # stored as float for schema compatibility.
     confidence_cross_referenced: float
     relationship_type: str = "none"          # "similar", "contradictory", "none"
     related_personas: list = field(default_factory=list)  # list of {"persona_item": str, "type": str}
     formatted_timestamp: str = ""
     source_interaction_type: str = ""
     source_interaction_format: str = ""
-    # Number of DISTINCT interaction rows (distinct source_object_id) that produced
-    # this canonical persona — i.e. how many independent rows independently inferred
-    # the same preference. `corroboration_count` starts at 1 (the row that first
-    # produced it) and grows as duplicate rows are merged in.
-    corroboration_count: int = 1
     # Which app the router assigned this preference to.
     assigned_app: str = ""
 
@@ -169,9 +170,9 @@ def is_high_confidence(init_score: float, cross_ref_score: float) -> bool:
         (the persona is independently corroborated by at least ~6 distinct
          interaction rows OR by other semantically-related but distinct personas)
 
-    Because cross_ref is uncapped, corroboration_count >= ~6 easily clears
-    this bar, and heavily-corroborated preferences get much higher scores
-    that stay distinguishable from each other.
+    Since cross_ref is the filtered corroboration count (an integer),
+    `> 0.5` means "at least 1 qualifying source row". Most multi-row
+    canonicals easily clear this bar.
     """
     return (
         init_score >= HIGH_CONFIDENCE_INIT_THRESHOLD
@@ -710,124 +711,127 @@ class PersonaAgent:
     # ------------------------------------------------------------------
 
     def summarize_and_cross_reference(self) -> None:
-        """Dedupe atomic personas by semantic equivalence, then cross-reference.
+        """Dedupe, filter, count corroboration, then cross-reference.
 
-        This method performs three distinct operations in order:
+        Pipeline order:
 
-        1. **Merge duplicates**: If multiple atomic personas share the same
-           normalized persona_item text, they represent the SAME preference
-           corroborated by different interaction rows — not distinct
-           preferences similar to each other. Collapse them into one canonical
-           persona whose `confidence_score_init` is the max across dupes and
-           whose `corroboration_count` records how many distinct rows
-           contributed. Corroboration gives a base `confidence_cross_referenced`
-           of `0.1 * (corroboration_count - 1)`.
+        1. **Merge duplicates**: Lexically-identical persona_item texts
+           across rows collapse into one canonical. `confidence_score_init`
+           = max across duplicates.
 
-        2. **Cross-reference distinct canonicals** via LLM for `similar` /
-           `contradictory` pairs (cross-row only; personas from the same row
-           cannot validate each other). The LLM MUST NOT mark identical
-           persona_items as similar — those are already merged.
+        2. **Init filter**: Drop canonicals with max `confidence_score_init
+           < MIN_PERSONA_INIT_CONFIDENCE` (0.5).
 
-           Python-side additive scoring on top of the merge base:
-           - Each `similar` pair adds +0.1 to BOTH personas
-           - Each `contradictory` pair subtracts -0.1 from the OLDER persona only
-           - Score is floored at 0.0; there is NO upper cap. A preference
-             corroborated by 200 rows will end up with a much larger score
-             than one corroborated by 10.
+        3. **Count corroboration → confidence_cross_referenced**: For each
+           surviving canonical, count the number of distinct source rows
+           (source_object_id) that independently produced this persona
+           AND whose individual `confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE`.
+           That integer count IS `confidence_cross_referenced`. This is
+           done AFTER init filtering so only quality-passing rows count.
 
-        3. **Filter**: drop canonicals with `confidence_score_init <
-           MIN_PERSONA_INIT_CONFIDENCE` (0.5). This is a hard gate — even
-           contradictions and high-cross-ref items below the init floor are
-           removed.
+        4. **Cross-reference distinct canonicals** via LLM for `similar` /
+           `contradictory` relationship discovery. The LLM output populates
+           `relationship_type` and `related_personas` but does NOT alter
+           `confidence_cross_referenced` — the score is purely the
+           filtered corroboration count from step 3.
         """
         if not self.atomic_personas:
             self.cross_referenced_personas = []
             return
 
         # --- Step 1: Merge duplicates ---
-        # Group atomic personas by normalized persona_item text. For each group,
-        # build a canonical CrossReferencedPersona with max init, corroboration
-        # count, and the earliest/most-recent metadata preserved.
-        canonical_by_key: dict[str, CrossReferencedPersona] = {}
-        canonical_source_objects: dict[str, set[str]] = {}  # key -> set of source_object_ids
-        canonical_order: list[str] = []  # preserve first-seen order
+        # Group by normalized text. For each group, track:
+        #   - max init (for the canonical's confidence_score_init)
+        #   - all individual (source_object_id, individual_init) pairs
+        #     (for the post-filter corroboration count)
+        #   - earliest metadata (timestamps etc.)
+        from collections import defaultdict as _defaultdict
+
+        groups: dict[str, list] = {}  # normalized_key -> list of AtomicPersona
+        canonical_order: list[str] = []
 
         for ap in self.atomic_personas:
             key = _normalize_persona_text(ap.persona_item)
             if not key:
                 continue
-            if key not in canonical_by_key:
-                canonical_by_key[key] = CrossReferencedPersona(
-                    persona_item=ap.persona_item,
-                    category=ap.category,
-                    confidence_score_init=ap.confidence_score_init,
-                    confidence_cross_referenced=0.0,
-                    relationship_type="none",
-                    related_personas=[],
-                    formatted_timestamp=ap.formatted_timestamp,
-                    source_interaction_type=ap.source_interaction_type,
-                    source_interaction_format=ap.source_interaction_format,
-                    corroboration_count=1,
-                )
-                canonical_source_objects[key] = {ap.source_object_id} if ap.source_object_id else set()
+            if key not in groups:
+                groups[key] = []
                 canonical_order.append(key)
-            else:
-                canonical = canonical_by_key[key]
-                # Bump init to max across duplicates
-                if ap.confidence_score_init > canonical.confidence_score_init:
-                    canonical.confidence_score_init = ap.confidence_score_init
-                # Count distinct source rows contributing to this canonical
-                if ap.source_object_id and ap.source_object_id not in canonical_source_objects[key]:
-                    canonical_source_objects[key].add(ap.source_object_id)
-                    canonical.corroboration_count += 1
-                # Update earliest timestamp (which is just the first-seen one since atomic_personas are sorted early→late)
-                # — do nothing; the first one is oldest.
+            groups[key].append(ap)
 
-        # Seed confidence_cross_referenced from corroboration count:
-        # +0.1 per distinct additional row that produced the same persona.
-        # Intentionally UNCAPPED — a preference corroborated by 200 distinct
-        # rows should be strictly more confident than one corroborated by 10.
-        for key, canonical in canonical_by_key.items():
-            merge_boost = 0.1 * max(0, canonical.corroboration_count - 1)
-            canonical.confidence_cross_referenced = round(merge_boost, 2)
-
-        canonicals: list[CrossReferencedPersona] = [canonical_by_key[k] for k in canonical_order]
+        # Build canonicals: max init, earliest timestamp, etc.
+        canonicals: list[CrossReferencedPersona] = []
+        for key in canonical_order:
+            atoms = groups[key]
+            best = max(atoms, key=lambda a: a.confidence_score_init)
+            canonicals.append(CrossReferencedPersona(
+                persona_item=best.persona_item,
+                category=best.category,
+                confidence_score_init=best.confidence_score_init,
+                confidence_cross_referenced=0.0,  # set after init filter
+                relationship_type="none",
+                related_personas=[],
+                formatted_timestamp=atoms[0].formatted_timestamp,  # earliest
+                source_interaction_type=best.source_interaction_type,
+                source_interaction_format=best.source_interaction_format,
+            ))
 
         if self.verbose:
             n_merged = len(self.atomic_personas) - len(canonicals)
-            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged} duplicate atomic personas — "
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged} duplicate atomic personas → "
                   f"{len(canonicals)} distinct canonicals.{utils.Colors.ENDC}")
 
-        # Serialize for the cross-ref prompt (only the canonicals, already merged)
-        personas_for_prompt = []
-        for c in canonicals:
-            personas_for_prompt.append({
+        # --- Step 2: Init filter ---
+        survivors = [
+            c for c in canonicals
+            if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
+        ]
+
+        if self.verbose:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] After init >= {MIN_PERSONA_INIT_CONFIDENCE} filter: "
+                  f"{len(survivors)} canonicals.{utils.Colors.ENDC}")
+
+        # --- Step 3: Count corroboration → confidence_cross_referenced ---
+        # For each surviving canonical, count distinct source_object_ids
+        # from atomic personas whose individual init >= threshold.
+        for c in survivors:
+            key = _normalize_persona_text(c.persona_item)
+            atoms = groups.get(key, [])
+            qualified_sources: set[str] = set()
+            for ap in atoms:
+                if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE and ap.source_object_id:
+                    qualified_sources.add(ap.source_object_id)
+            c.confidence_cross_referenced = float(len(qualified_sources))
+
+        # --- Step 4: LLM cross-reference for relationship discovery ---
+        # (relationship_type + related_personas only; no score changes)
+
+        # Short-circuit: single-row users have nothing to cross-reference.
+        unique_objects_all = {ap.source_object_id for ap in self.atomic_personas}
+        if len(unique_objects_all) <= 1:
+            self.cross_referenced_personas = survivors
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Single interaction row — "
+                      f"skipping cross-reference.{utils.Colors.ENDC}")
+            return
+
+        personas_for_prompt = [
+            {
                 "persona_item": c.persona_item,
                 "category": c.category,
                 "confidence_score_init": c.confidence_score_init,
-                "corroboration_count": c.corroboration_count,
+                "confidence_cross_referenced": c.confidence_cross_referenced,
                 "formatted_timestamp": c.formatted_timestamp,
                 "source_interaction_type": c.source_interaction_type,
                 "source_interaction_format": c.source_interaction_format,
-            })
-
-        # If all canonicals came from a single row, there's nothing to cross-reference
-        # (canonicals already reflect same-row merges). Short-circuit.
-        unique_objects_all = {ap.source_object_id for ap in self.atomic_personas}
-        if len(unique_objects_all) <= 1:
-            self.cross_referenced_personas = [
-                c for c in canonicals if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
-            ]
-            if self.verbose:
-                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Single interaction row — skipping cross-reference. "
-                      f"{len(self.cross_referenced_personas)} canonicals kept after init>={MIN_PERSONA_INIT_CONFIDENCE} filter.{utils.Colors.ENDC}")
-            return
+            }
+            for c in survivors
+        ]
 
         prompt = prompts.summarize_and_cross_reference_prompt(personas_for_prompt)
         response = self._query_llm_with_retry(prompt)
 
-        # Index canonicals by normalized key for fast relationship lookups
-        canonical_by_norm = {_normalize_persona_text(c.persona_item): c for c in canonicals}
+        canonical_by_norm = {_normalize_persona_text(c.persona_item): c for c in survivors}
 
         if not response:
             print(f"{utils.Colors.WARNING}[User {self.user_id}] Cross-reference LLM call failed.{utils.Colors.ENDC}")
@@ -843,7 +847,6 @@ class PersonaAgent:
                     if my_key not in canonical_by_norm:
                         continue
                     canonical = canonical_by_norm[my_key]
-                    # Update relationship metadata + related list on the canonical
                     canonical.relationship_type = item.get("relationship_type", canonical.relationship_type)
                     raw_related = item.get("related_personas", [])
                     related = []
@@ -854,56 +857,14 @@ class PersonaAgent:
                             related.append({"persona_item": r, "type": item.get("relationship_type", "similar")})
                     canonical.related_personas = related
 
-        # --- Compute additive confidence_cross_referenced on top of the merge base ---
-        # Index-based ordering: earlier index = older canonical (atomic_personas were
-        # sorted early→late, and canonical_order preserves first-seen order)
-        persona_order = {canonical.persona_item: idx for idx, canonical in enumerate(canonicals)}
-        # Keep the merge-base scores from Step 1 and add on top
-        scores: dict[str, float] = {c.persona_item: c.confidence_cross_referenced for c in canonicals}
-
-        for c in canonicals:
-            for rel in c.related_personas:
-                if not isinstance(rel, dict):
-                    continue
-                other_item = rel.get("persona_item", "")
-                other_key = _normalize_persona_text(other_item)
-                rel_type = rel.get("type", "similar")
-                if other_key not in canonical_by_norm:
-                    continue
-                # Guard against self-reference (identical persona_items would be merged —
-                # if the LLM still emits a self-loop, ignore it rather than counting it).
-                if other_key == _normalize_persona_text(c.persona_item):
-                    continue
-
-                if rel_type == "similar":
-                    scores[c.persona_item] += 0.1
-                elif rel_type == "contradictory":
-                    my_idx = persona_order.get(c.persona_item, 0)
-                    other_canonical = canonical_by_norm[other_key]
-                    other_idx = persona_order.get(other_canonical.persona_item, 0)
-                    if my_idx <= other_idx:
-                        # I am older — I get penalized
-                        scores[c.persona_item] -= 0.1
-
-        # Apply scores (floor at 0.0, NO upper cap — cross_ref is a
-        # magnitude of corroboration strength, not a probability).
-        for c in canonicals:
-            c.confidence_cross_referenced = round(max(0.0, scores[c.persona_item]), 2)
-
-        # --- Step 3: Strict filter on init confidence ---
-        # Drop anything with init < MIN_PERSONA_INIT_CONFIDENCE, regardless of
-        # cross-ref score or relationship_type.
-        self.cross_referenced_personas = [
-            c for c in canonicals
-            if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
-        ]
+        self.cross_referenced_personas = survivors
 
         if self.verbose:
-            removed = len(canonicals) - len(self.cross_referenced_personas)
-            n_contradictions = sum(1 for p in self.cross_referenced_personas if p.relationship_type == "contradictory")
-            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] After cross-ref + init>={MIN_PERSONA_INIT_CONFIDENCE} filter: "
-                  f"{len(self.cross_referenced_personas)} kept, {removed} dropped, "
-                  f"{n_contradictions} contradictory.{utils.Colors.ENDC}")
+            n_contradictions = sum(1 for p in survivors if p.relationship_type == "contradictory")
+            cr_vals = [c.confidence_cross_referenced for c in survivors]
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] {len(survivors)} survivors, "
+                  f"{n_contradictions} contradictory, "
+                  f"cross_ref range {min(cr_vals):.0f}..{max(cr_vals):.0f}{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # Post-filter redundancy removal
@@ -968,18 +929,18 @@ class PersonaAgent:
             known = [lookup[name] for name in group if name in lookup]
             if len(known) < 2:
                 continue
-            # Pick the representative: highest (init + cross_ref), ties broken by corroboration_count
+            # Pick the representative: highest (init + cross_ref)
             rep = max(
                 known,
                 key=lambda cr: (
                     cr.confidence_score_init + cr.confidence_cross_referenced,
-                    cr.corroboration_count,
+                    cr.confidence_cross_referenced,
                 ),
             )
-            # Also bump the representative's corroboration_count by the dropped ones'
-            # counts, so the cumulative row-backing is preserved.
-            extra_corroboration = sum(cr.corroboration_count for cr in known if cr is not rep)
-            rep.corroboration_count += extra_corroboration
+            # Bump the representative's cross_ref by the sum of the dropped
+            # items' cross_ref values — the combined corroboration is preserved.
+            extra = sum(cr.confidence_cross_referenced for cr in known if cr is not rep)
+            rep.confidence_cross_referenced += extra
 
             for cr in known:
                 if cr is rep:
@@ -1782,7 +1743,6 @@ class PersonaAgent:
                 "category": cr.category,
                 "confidence_score_init": cr.confidence_score_init,
                 "confidence_cross_referenced": cr.confidence_cross_referenced,
-                "corroboration_count": cr.corroboration_count,
                 "relationship_type": cr.relationship_type,
                 "related_personas": cr.related_personas,
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
@@ -1810,7 +1770,6 @@ class PersonaAgent:
                 "category": np_persona.category,
                 "confidence_score_init": np_persona.confidence_score_init,
                 "confidence_cross_referenced": 0.0,
-                "corroboration_count": 1,
                 "relationship_type": "none",
                 "related_personas": [],
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
@@ -1848,7 +1807,7 @@ class PersonaAgent:
         # --- Write aggregated preferences.csv (all apps merged, old-style flat layout) ---
         # Re-uses the CSV schema from the pre-refactor era so downstream tools
         # that expect a single-file-per-user view still work. `assigned_app`
-        # and `corroboration_count` are appended as new columns. The
+        # The
         # `interaction_format` cell carries the full JSON object serialized
         # as a string.
         csv_columns = [
@@ -1856,7 +1815,6 @@ class PersonaAgent:
             "category",
             "confidence_score_init",
             "confidence_cross_referenced",
-            "corroboration_count",
             "source_interaction_type",
             "source_object_id",
             "source_timestamp",
@@ -1878,7 +1836,6 @@ class PersonaAgent:
                 "category": rec.get("category", ""),
                 "confidence_score_init": rec.get("confidence_score_init", 0.0),
                 "confidence_cross_referenced": rec.get("confidence_cross_referenced", 0.0),
-                "corroboration_count": rec.get("corroboration_count", 1),
                 "source_interaction_type": rec.get("source_interaction_type", ""),
                 "source_object_id": rec.get("source_object_id", ""),
                 "source_timestamp": rec.get("source_timestamp", 0),
@@ -1981,7 +1938,6 @@ class PersonaAgent:
                     formatted_timestamp=rec.get("formatted_timestamp", ""),
                     source_interaction_type=interaction_type,
                     source_interaction_format=interaction_format_str,
-                    corroboration_count=int(rec.get("corroboration_count", 1)),
                     assigned_app=rec.get("assigned_app", ""),
                 )
                 self.cross_referenced_personas.append(cr)
