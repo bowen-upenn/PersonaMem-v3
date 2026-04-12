@@ -907,3 +907,55 @@ Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JS
 ]
 ```"""
 
+
+def preference_evolution_prompt(categories_data: list[dict]) -> str:
+    """Build a prompt asking the LLM to describe how preferences evolved within
+    and across categories over time.
+
+    Each entry in categories_data has:
+      - category: str
+      - preferences: list of {persona_item, first_timestamp, last_timestamp,
+                              formatted_first, formatted_last, occurrence_count}
+    """
+
+    data_json = json.dumps(categories_data, indent=2)
+
+    return f"""\
+You are an expert at analyzing how a person's interests and preferences evolve over time.
+
+Below are groups of related preferences for the SAME user, organized by category. Each preference shows its first and last appearance timestamps and how many times it was observed.
+
+```json
+{data_json}
+```
+
+## Your Task
+
+For each category with 2+ preferences, describe how the user's interest evolved over time. Consider:
+
+1. **Deepening**: Did a general interest become more specific? (e.g., "Likes cooking" -> "Follows advanced baking techniques")
+2. **Branching**: Did interest expand into new sub-directions? (e.g., "Hair styling" -> also "Hair product reviews")
+3. **Shifting**: Did focus move from one aspect to another? (e.g., "Comedy reels" -> "Wholesome family humor")
+4. **Intensifying**: Did engagement grow stronger over time (higher occurrence counts in later preferences)?
+
+Also look for **cross-category evolution** -- patterns that span different categories (e.g., "cooking" category + "kitchen equipment" category = lifestyle deepening).
+
+## Output Format
+
+Respond with ONLY a JSON array. Each entry describes one evolution pattern:
+
+```json
+[
+  {{
+    "category": "the primary category (or 'cross-category' for spanning patterns)",
+    "source_preference": "the earlier or more general preference",
+    "target_preference": "the later or more specific preference",
+    "update_type": "deepened | branched | shifted | intensified",
+    "description": "One sentence describing the evolution"
+  }}
+]
+```
+
+If no meaningful evolution patterns exist, return an empty array `[]`.
+Return ONLY the JSON -- no explanation."""
+
