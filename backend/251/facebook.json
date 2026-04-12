@@ -1,10 +1,5 @@
 [
   {
-    "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-    "category": "heartwarming and feel-good content",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 48.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "458878",
     "source_timestamp": 1775282215,
     "formatted_timestamp": "05:56, 04/04/2026",
@@ -12,47 +7,39 @@
       "#heartwarmingmoments",
       "#love"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_like",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
+        "category": "heartwarming and feel-good content",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 48.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Responds emotionally to touching or inspirational stories",
+        "category": "heartwarming and feel-good content",
+        "confidence_score_init": 0.66,
+        "confidence_cross_referenced": 48.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Responds emotionally to touching or inspirational stories",
-    "category": "heartwarming and feel-good content",
-    "confidence_score_init": 0.66,
-    "confidence_cross_referenced": 48.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "458878",
-    "source_timestamp": 1775282215,
-    "formatted_timestamp": "05:56, 04/04/2026",
-    "source_hashtags": [
-      "#heartwarmingmoments",
-      "#love"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Cherishes the bond between mothers and daughters",
-    "category": "mother-daughter relationships",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 8.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "7306",
     "source_timestamp": 1775283894,
     "formatted_timestamp": "06:24, 04/04/2026",
@@ -60,70 +47,105 @@
       "#daughterlove",
       "#motherdaughter"
     ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_like",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Cherishes the bond between mothers and daughters",
+        "category": "mother-daughter relationships",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 8.0,
+        "stereotype_mark": "stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Likely has a daughter or close maternal-female relationship",
+        "category": "mother-daughter relationships",
+        "confidence_score_init": 0.68,
+        "confidence_cross_referenced": 8.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Likely has a daughter or close maternal-female relationship",
-    "category": "mother-daughter relationships",
-    "confidence_score_init": 0.68,
-    "confidence_cross_referenced": 8.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "7306",
-    "source_timestamp": 1775283894,
-    "formatted_timestamp": "06:24, 04/04/2026",
-    "source_hashtags": [
-      "#daughterlove",
-      "#motherdaughter"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_haha",
-      "action_label": "Hahaha reaction",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys seasonal Halloween and fall-themed content",
-    "category": "Halloween and seasonal fall content",
-    "confidence_score_init": 0.55,
-    "confidence_cross_referenced": 8.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "378709",
     "source_timestamp": 1775283922,
     "formatted_timestamp": "06:25, 04/04/2026",
     "source_hashtags": [
-      "#SpookySeason"
+      "#BeautyInspo",
+      "#BloodSplatterNails",
+      "#HalloweenNails",
+      "#LansingNailTech",
+      "#NailArt",
+      "#NailTech"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_haha",
-      "action_label": "Hahaha reaction",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Enjoys beauty and nail-art content",
+        "category": "beauty, nails, and personal style",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 79.0,
+        "stereotype_mark": "stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Keeps up with fashion and personal style inspiration",
+        "category": "beauty, nails, and personal style",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 79.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Values presenting a polished, put-together look",
+        "category": "beauty, nails, and personal style",
+        "confidence_score_init": 0.68,
+        "confidence_cross_referenced": 79.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Enjoys seasonal Halloween and fall-themed content",
+        "category": "Halloween and seasonal fall content",
+        "confidence_score_init": 0.55,
+        "confidence_cross_referenced": 8.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Likely has or loves dogs as part of the family",
-    "category": "pets and dog ownership",
-    "confidence_score_init": 0.66,
-    "confidence_cross_referenced": 9.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "363237",
     "source_timestamp": 1775284026,
     "formatted_timestamp": "06:27, 04/04/2026",
@@ -131,23 +153,28 @@
       "#dogmom",
       "#dogsofinstagram"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "at_ai_not_interested",
       "action_label": "@ai reply: told the in-feed assistant they're not interested",
       "user_message": "@ai not in the market for a dog right now, we can barely handle the toddler. Please stop showing me adoptable-pet posts for a bit."
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Likely has or loves dogs as part of the family",
+        "category": "pets and dog ownership",
+        "confidence_score_init": 0.66,
+        "confidence_cross_referenced": 9.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Looks for relatable everyday parenting stories",
-    "category": "parenting and child-rearing",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 45.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "852680",
     "source_timestamp": 1775284138,
     "formatted_timestamp": "06:28, 04/04/2026",
@@ -156,23 +183,146 @@
       "#coparenting",
       "#parentinghacks"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_like",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Looks for relatable everyday parenting stories",
+        "category": "parenting and child-rearing",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 45.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Enjoys humor that pokes fun at the chaos of parenting",
+        "category": "parenting and child-rearing",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 45.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Feels validated by content about parenting struggles",
+        "category": "parenting and child-rearing",
+        "confidence_score_init": 0.75,
+        "confidence_cross_referenced": 45.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Finds comfort in 'that's so me' style posts",
+        "category": "relatable everyday content",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 52.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Gravitates toward content that mirrors everyday life experiences",
+        "category": "relatable everyday content",
+        "confidence_score_init": 0.77,
+        "confidence_cross_referenced": 52.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Seeks practical parenting tips and hacks",
+        "category": "parenting and child-rearing",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 45.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Enjoys home cooking and preparing family meals",
-    "category": "home cooking and food",
-    "confidence_score_init": 0.88,
-    "confidence_cross_referenced": 66.0,
+    "source_object_id": "666394",
+    "source_timestamp": 1775284233,
+    "formatted_timestamp": "06:30, 04/04/2026",
+    "source_hashtags": [
+      "#ComedyGold",
+      "#ComedyShow",
+      "#LaughOutLoud"
+    ],
     "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_to_story",
+      "action_label": "Reacted to the story",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Enjoys short-form comedy reels and viral funny clips",
+        "category": "comedy and humor content",
+        "confidence_score_init": 0.88,
+        "confidence_cross_referenced": 138.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Uses humor content as a mood-lifter throughout the day",
+        "category": "comedy and humor content",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 138.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Appreciates wholesome, light-hearted humor over edgy comedy",
+        "category": "comedy and humor content",
+        "confidence_score_init": 0.72,
+        "confidence_cross_referenced": 138.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Follows comedy creators and prank content",
+        "category": "comedy and humor content",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 138.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
+  },
+  {
     "source_object_id": "800862",
     "source_timestamp": 1775498866,
     "formatted_timestamp": "18:07, 04/06/2026",
@@ -181,71 +331,308 @@
       "#foodie",
       "#homcooking"
     ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Has a sweet tooth and enjoys desserts",
+        "category": "home cooking and food",
+        "confidence_score_init": 0.65,
+        "confidence_cross_referenced": 66.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Enjoys home cooking and preparing family meals",
+        "category": "home cooking and food",
+        "confidence_score_init": 0.88,
+        "confidence_cross_referenced": 66.0,
+        "stereotype_mark": "stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Values cooking as an act of love and family care",
+        "category": "home cooking and food",
+        "confidence_score_init": 0.76,
+        "confidence_cross_referenced": 66.0,
+        "stereotype_mark": "stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Appreciates food content that feels homemade and wholesome",
+        "category": "home cooking and food",
+        "confidence_score_init": 0.78,
+        "confidence_cross_referenced": 66.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Seeks easy recipe inspiration online",
+        "category": "home cooking and food",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 66.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Values cooking as an act of love and family care",
-    "category": "home cooking and food",
-    "confidence_score_init": 0.76,
-    "confidence_cross_referenced": 66.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "800862",
-    "source_timestamp": 1775498866,
-    "formatted_timestamp": "18:07, 04/06/2026",
-    "source_hashtags": [
-      "#cookingtutorial",
-      "#foodie",
-      "#homcooking"
-    ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_like",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys content celebrating involved fatherhood",
-    "category": "fatherhood and dad culture",
-    "confidence_score_init": 0.6,
-    "confidence_cross_referenced": 13.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "187608",
     "source_timestamp": 1775499610,
     "formatted_timestamp": "18:20, 04/06/2026",
     "source_hashtags": [
       "#DadLife"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "shared_to_group",
       "action_label": "Shared to a group",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Enjoys content celebrating involved fatherhood",
+        "category": "fatherhood and dad culture",
+        "confidence_score_init": 0.6,
+        "confidence_cross_referenced": 13.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Appreciates dad-oriented humor and family interplay",
+        "category": "fatherhood and dad culture",
+        "confidence_score_init": 0.63,
+        "confidence_cross_referenced": 13.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Active across Instagram Reels, Threads, and similar platforms",
-    "category": "viral and trending social content",
-    "confidence_score_init": 0.76,
-    "confidence_cross_referenced": 68.0,
+    "source_object_id": "512530",
+    "source_timestamp": 1775528364,
+    "formatted_timestamp": "02:19, 04/07/2026",
+    "source_hashtags": [
+      "#DIY",
+      "#DIYBFF",
+      "#HomeDecor"
+    ],
+    "source_interaction_type": "implicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "lingered_on_story",
+      "action_label": "Stayed on a story for more than 5 seconds",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Occasionally interested in DIY and handmade home projects",
+        "category": "home decor and DIY crafts",
+        "confidence_score_init": 0.53,
+        "confidence_cross_referenced": 7.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Appreciates home decor and interior inspiration",
+        "category": "home decor and DIY crafts",
+        "confidence_score_init": 0.6,
+        "confidence_cross_referenced": 15.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
+  },
+  {
+    "source_object_id": "707030",
+    "source_timestamp": 1775560709,
+    "formatted_timestamp": "11:18, 04/07/2026",
+    "source_hashtags": [
+      "#Motivation",
+      "#PersonalGrowth"
+    ],
     "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Invested in self-care routines and self-expression",
+        "category": "self-care and personal wellness",
+        "confidence_score_init": 0.76,
+        "confidence_cross_referenced": 46.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Believes confidence and positivity are important daily practices",
+        "category": "self-care and personal wellness",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 46.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Looks for motivational and personal-growth content",
+        "category": "self-care and personal wellness",
+        "confidence_score_init": 0.68,
+        "confidence_cross_referenced": 46.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
+  },
+  {
+    "source_object_id": "144093",
+    "source_timestamp": 1775560953,
+    "formatted_timestamp": "11:22, 04/07/2026",
+    "source_hashtags": [
+      "#countrymusic",
+      "#musicpromotion",
+      "#newmusic"
+    ],
+    "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Enjoys dance content and casual music videos",
+        "category": "dance and dance-music content",
+        "confidence_score_init": 0.75,
+        "confidence_cross_referenced": 40.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Likely dances at home, at parties, or with family",
+        "category": "dance and dance-music content",
+        "confidence_score_init": 0.65,
+        "confidence_cross_referenced": 40.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
+  },
+  {
+    "source_object_id": "660847",
+    "source_timestamp": 1775561196,
+    "formatted_timestamp": "11:26, 04/07/2026",
+    "source_hashtags": [
+      "#couplelife",
+      "#loveinthelittlethings",
+      "#relationshipgoals",
+      "#skincarelove"
+    ],
+    "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "at_ai_feels_off",
+      "action_label": "@ai reply: told the in-feed assistant this feels off-base",
+      "user_message": "@ai the couple reels you've been pushing feel off — we're not that kind of couple right now, please pull back on the honeymoon-era content for a while."
+    },
+    "preferences": [
+      {
+        "persona_item": "Enjoys aspirational couple imagery and moments",
+        "category": "romantic couple relationships",
+        "confidence_score_init": 0.76,
+        "confidence_cross_referenced": 115.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Invested in romantic relationship content",
+        "category": "romantic couple relationships",
+        "confidence_score_init": 0.88,
+        "confidence_cross_referenced": 115.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Finds humor in everyday couple dynamics",
+        "category": "romantic couple relationships",
+        "confidence_score_init": 0.75,
+        "confidence_cross_referenced": 115.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Values long-term committed partnerships",
+        "category": "romantic couple relationships",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 115.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
+  },
+  {
     "source_object_id": "674520",
     "source_timestamp": 1775561218,
     "formatted_timestamp": "11:26, 04/07/2026",
@@ -253,46 +640,106 @@
       "#ComingSoon",
       "#NewEpisode"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_like",
+      "action": "commented",
+      "action_label": "Commented",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Spends time scrolling trending short-form video content",
+        "category": "viral and trending social content",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 68.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Active across Instagram Reels, Threads, and similar platforms",
+        "category": "viral and trending social content",
+        "confidence_score_init": 0.76,
+        "confidence_cross_referenced": 68.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
+  },
+  {
+    "source_object_id": "362389",
+    "source_timestamp": 1775561622,
+    "formatted_timestamp": "11:33, 04/07/2026",
+    "source_hashtags": [
+      "#twinning"
+    ],
+    "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "liked",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Enjoys matching-outfit and 'twinning' content with family",
+        "category": "matching outfits and twinning moments",
+        "confidence_score_init": 0.6,
+        "confidence_cross_referenced": 7.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Either runs or supports a small creator/service business",
-    "category": "small-business and creator entrepreneurship",
-    "confidence_score_init": 0.63,
-    "confidence_cross_referenced": 16.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "746144",
     "source_timestamp": 1775562010,
     "formatted_timestamp": "11:40, 04/07/2026",
     "source_hashtags": [
       "#Collaboration"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_like",
-      "action_label": "Liked",
-      "user_message": null
+      "action": "at_ai_recommend_more",
+      "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
+      "user_message": "@ai show me more small-business beauty accounts with easy in-caption booking — I'm trying to benchmark how other solo stylists set up their DMs."
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Follows content with 'book now' appointment calls-to-action",
+        "category": "small-business and creator entrepreneurship",
+        "confidence_score_init": 0.6,
+        "confidence_cross_referenced": 16.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Either runs or supports a small creator/service business",
+        "category": "small-business and creator entrepreneurship",
+        "confidence_score_init": 0.63,
+        "confidence_cross_referenced": 16.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Engages with content celebrating friendship milestones",
-    "category": "friendship and squad dynamics",
-    "confidence_score_init": 0.7,
-    "confidence_cross_referenced": 27.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "488900",
     "source_timestamp": 1775562339,
     "formatted_timestamp": "11:45, 04/07/2026",
@@ -300,23 +747,117 @@
       "#friendshipgoals",
       "#squadgoals"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_like",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Engages with content celebrating friendship milestones",
+        "category": "friendship and squad dynamics",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 27.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Values close female friendships and squad bonding",
+        "category": "friendship and squad dynamics",
+        "confidence_score_init": 0.76,
+        "confidence_cross_referenced": 27.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Aspires to strong family traditions and shared routines",
-    "category": "family bonding and togetherness",
-    "confidence_score_init": 0.78,
-    "confidence_cross_referenced": 41.0,
+    "source_object_id": "562132",
+    "source_timestamp": 1775562389,
+    "formatted_timestamp": "11:46, 04/07/2026",
+    "source_hashtags": [
+      "#DanceMom",
+      "#MomLife",
+      "#ProtectiveMom"
+    ],
     "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "double_tapped",
+      "action_label": "Double-tapped to like",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Actively engaged in daily motherhood experiences",
+        "category": "motherhood and parenting",
+        "confidence_score_init": 0.92,
+        "confidence_cross_referenced": 88.0,
+        "stereotype_mark": "stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Parenting young children at home",
+        "category": "motherhood and parenting",
+        "confidence_score_init": 0.88,
+        "confidence_cross_referenced": 88.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Values sharing candid, real-life parenting moments",
+        "category": "motherhood and parenting",
+        "confidence_score_init": 0.78,
+        "confidence_cross_referenced": 88.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Appreciates food content that feels homemade and wholesome",
+        "over_personalization_irrelevant_category": "home cooking and food"
+      },
+      {
+        "persona_item": "Follows mom-oriented lifestyle content creators",
+        "category": "motherhood and parenting",
+        "confidence_score_init": 0.85,
+        "confidence_cross_referenced": 88.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Identifies strongly with a community of mothers online",
+        "category": "motherhood and parenting",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 88.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Deeply invested in hair care and styling routines",
+        "over_personalization_irrelevant_category": "hair care and styling"
+      }
+    ]
+  },
+  {
     "source_object_id": "604072",
     "source_timestamp": 1775795013,
     "formatted_timestamp": "04:23, 04/10/2026",
@@ -325,79 +866,56 @@
       "#FamilyGoals",
       "#FamilyPhotoshoot"
     ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_love",
       "action_label": "Loved (❤)",
       "user_message": null
     },
-    "split": "test",
-    "over_personalization_irrelevant": "Enjoys home cooking and preparing family meals",
-    "over_personalization_irrelevant_category": "home cooking and food",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Aspires to strong family traditions and shared routines",
+        "category": "family bonding and togetherness",
+        "confidence_score_init": 0.78,
+        "confidence_cross_referenced": 41.0,
+        "stereotype_mark": "stereotypical",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Enjoys home cooking and preparing family meals",
+        "over_personalization_irrelevant_category": "home cooking and food"
+      },
+      {
+        "persona_item": "Centers family togetherness as a core value",
+        "category": "family bonding and togetherness",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 41.0,
+        "stereotype_mark": "stereotypical",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Deeply invested in hair care and styling routines",
+        "over_personalization_irrelevant_category": "hair care and styling"
+      },
+      {
+        "persona_item": "Enjoys wholesome family-activity content",
+        "category": "family bonding and togetherness",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 41.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Either runs or supports a small creator/service business",
+        "over_personalization_irrelevant_category": "small-business and creator entrepreneurship"
+      }
+    ]
   },
   {
-    "persona_item": "Centers family togetherness as a core value",
-    "category": "family bonding and togetherness",
-    "confidence_score_init": 0.9,
-    "confidence_cross_referenced": 41.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "604072",
-    "source_timestamp": 1775795013,
-    "formatted_timestamp": "04:23, 04/10/2026",
-    "source_hashtags": [
-      "#FamilyFun",
-      "#FamilyGoals",
-      "#FamilyPhotoshoot"
-    ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_haha",
-      "action_label": "Hahaha reaction",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Deeply invested in hair care and styling routines",
-    "over_personalization_irrelevant_category": "hair care and styling",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys wholesome family-activity content",
-    "category": "family bonding and togetherness",
-    "confidence_score_init": 0.82,
-    "confidence_cross_referenced": 41.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "604072",
-    "source_timestamp": 1775795013,
-    "formatted_timestamp": "04:23, 04/10/2026",
-    "source_hashtags": [
-      "#FamilyFun",
-      "#FamilyGoals",
-      "#FamilyPhotoshoot"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Either runs or supports a small creator/service business",
-    "over_personalization_irrelevant_category": "small-business and creator entrepreneurship",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys nostalgic throwback content from earlier eras",
-    "category": "nostalgia and throwback memories",
-    "confidence_score_init": 0.7,
-    "confidence_cross_referenced": 22.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "451648",
     "source_timestamp": 1775795716,
     "formatted_timestamp": "04:35, 04/10/2026",
@@ -405,68 +923,173 @@
       "#nostalgia",
       "#throwback"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_like",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "test",
-    "over_personalization_irrelevant": "Enjoys beauty and nail-art content",
-    "over_personalization_irrelevant_category": "beauty, nails, and personal style",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Enjoys nostalgic throwback content from earlier eras",
+        "category": "nostalgia and throwback memories",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 22.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Enjoys beauty and nail-art content",
+        "over_personalization_irrelevant_category": "beauty, nails, and personal style"
+      },
+      {
+        "persona_item": "Values memory-keeping and shared cultural references",
+        "category": "nostalgia and throwback memories",
+        "confidence_score_init": 0.66,
+        "confidence_cross_referenced": 22.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Values a sense of local community and belonging",
+        "over_personalization_irrelevant_category": "community and local belonging"
+      }
+    ]
   },
   {
-    "persona_item": "Values memory-keeping and shared cultural references",
-    "category": "nostalgia and throwback memories",
-    "confidence_score_init": 0.66,
-    "confidence_cross_referenced": 22.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "451648",
-    "source_timestamp": 1775795716,
-    "formatted_timestamp": "04:35, 04/10/2026",
+    "source_object_id": "674071",
+    "source_timestamp": 1775795890,
+    "formatted_timestamp": "04:38, 04/10/2026",
     "source_hashtags": [
-      "#nostalgia",
-      "#throwback"
+      "#kidsofinstagram",
+      "#toddlerfashion",
+      "#toddlersoftiktok"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "saved_to_collection",
+      "action_label": "Saved to a collection",
       "user_message": null
     },
-    "split": "test",
-    "over_personalization_irrelevant": "Values a sense of local community and belonging",
-    "over_personalization_irrelevant_category": "community and local belonging",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Finds joy in sharing everyday moments of toddlers",
+        "category": "babies and young children",
+        "confidence_score_init": 0.75,
+        "confidence_cross_referenced": 42.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Likely has a daughter or close maternal-female relationship",
+        "over_personalization_irrelevant_category": "mother-daughter relationships"
+      },
+      {
+        "persona_item": "Has or is close to young children and infants",
+        "category": "babies and young children",
+        "confidence_score_init": 0.86,
+        "confidence_cross_referenced": 42.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Uses humor content as a mood-lifter throughout the day",
+        "over_personalization_irrelevant_category": "comedy and humor content"
+      },
+      {
+        "persona_item": "Likely a parent navigating the early-childhood years",
+        "category": "babies and young children",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 42.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Occasionally interested in DIY and handmade home projects",
+        "over_personalization_irrelevant_category": "home decor and DIY crafts"
+      }
+    ]
   },
   {
-    "persona_item": "Navigating back-to-school routines with school-age children",
-    "category": "back-to-school routines",
-    "confidence_score_init": 0.57,
-    "confidence_cross_referenced": 3.0,
+    "source_object_id": "944568",
+    "source_timestamp": 1775796095,
+    "formatted_timestamp": "04:41, 04/10/2026",
+    "source_hashtags": [
+      "#EmpoweredWomenEmpowerWomen",
+      "#GirlPower",
+      "#WomenSupportingWomen"
+    ],
     "source_interaction_type": "explicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "liked",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Likely identifies as a woman and connects with empowerment messaging",
+        "category": "women's empowerment",
+        "confidence_score_init": 0.85,
+        "confidence_cross_referenced": 23.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Looks for relatable everyday parenting stories",
+        "over_personalization_irrelevant_category": "parenting and child-rearing"
+      },
+      {
+        "persona_item": "Supports women empowerment themes and female-centric content",
+        "category": "women's empowerment",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 23.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Invested in romantic relationship content",
+        "over_personalization_irrelevant_category": "romantic couple relationships"
+      }
+    ]
+  },
+  {
     "source_object_id": "1012890",
     "source_timestamp": 1775796506,
     "formatted_timestamp": "04:48, 04/10/2026",
     "source_hashtags": [
       "#BackToSchool"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Facebook",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Facebook",
       "action": "shared_to_timeline",
       "action_label": "Shared to own timeline",
       "user_message": null
     },
-    "split": "test",
-    "over_personalization_irrelevant": "Responds emotionally to touching or inspirational stories",
-    "over_personalization_irrelevant_category": "heartwarming and feel-good content",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Navigating back-to-school routines with school-age children",
+        "category": "back-to-school routines",
+        "confidence_score_init": 0.57,
+        "confidence_cross_referenced": 3.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Responds emotionally to touching or inspirational stories",
+        "over_personalization_irrelevant_category": "heartwarming and feel-good content"
+      }
+    ]
   }
 ]

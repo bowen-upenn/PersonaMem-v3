@@ -4,6 +4,9 @@ Generates a standalone HTML persona visualization for a user.
 Reads backend/{user_id}/profile.json plus the four per-app JSON files
 (instagram.json, facebook.json, threads.json, chatbot.json).
 
+Supports both the new interaction-event format (nested preferences per
+event) and the legacy flat format (one record per preference).
+
 Design: minimalist, Apple/Anthropic-inspired aesthetic.
 No external dependencies — pure HTML/CSS/JS.
 """
@@ -20,14 +23,20 @@ from data_preparation import utils
 APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 
 
-def _load_app_prefs(user_dir: str) -> list[dict]:
-    """Load the per-app JSON files and return a flat list of preferences
-    tagged with the app they came from.
+def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
+    """Load per-app JSON files and return (events, flat_prefs).
 
-    Supports both the new interaction-event format (nested ``preferences``
-    list per event) and the legacy flat format (one dict per preference).
+    ``events`` is the interaction-event list (new format). Each event
+    has event-level fields + a ``preferences`` list.
+
+    ``flat_prefs`` is the flattened preference list (for backwards-compat
+    counts and profile serialization).
+
+    Both lists are sorted by source_timestamp ascending.
     """
-    all_rows: list[dict] = []
+    all_events: list[dict] = []
+    flat_prefs: list[dict] = []
+
     for app in APPS:
         path = os.path.join(user_dir, app.lower() + ".json")
         if not os.path.exists(path):
@@ -36,7 +45,9 @@ def _load_app_prefs(user_dir: str) -> list[dict]:
             entries = json.load(f)
         for entry in entries:
             if "preferences" in entry:
-                # New interaction-event format: flatten nested preferences
+                # New interaction-event format
+                entry["_app"] = app
+                all_events.append(entry)
                 for pref in entry["preferences"]:
                     flat = dict(pref)
                     flat["assigned_app"] = app
@@ -46,13 +57,48 @@ def _load_app_prefs(user_dir: str) -> list[dict]:
                     flat["source_hashtags"] = entry.get("source_hashtags", [])
                     flat["source_interaction_type"] = entry.get("source_interaction_type", "")
                     flat["interaction_format"] = entry.get("interaction_format", {})
-                    all_rows.append(flat)
+                    flat_prefs.append(flat)
             else:
-                # Legacy flat format
+                # Legacy flat format — wrap as single-pref event
                 entry.setdefault("assigned_app", app)
-                all_rows.append(entry)
-    all_rows.sort(key=lambda r: (int(r.get("source_timestamp") or 0), r.get("persona_item", "")))
-    return all_rows
+                event = {
+                    "source_object_id": entry.get("source_object_id", ""),
+                    "source_timestamp": entry.get("source_timestamp", 0),
+                    "formatted_timestamp": entry.get("formatted_timestamp", ""),
+                    "source_hashtags": entry.get("source_hashtags", []),
+                    "source_interaction_type": entry.get("source_interaction_type", ""),
+                    "interaction_format": entry.get("interaction_format", {}),
+                    "_app": app,
+                    "preferences": [{
+                        "persona_item": entry.get("persona_item", ""),
+                        "category": entry.get("category", ""),
+                        "confidence_score_init": entry.get("confidence_score_init", 0),
+                        "confidence_cross_referenced": entry.get("confidence_cross_referenced", 0),
+                        "stereotype_mark": entry.get("stereotype_mark", "neutral"),
+                        "split": entry.get("split", "train"),
+                        "update_history": entry.get("update_history", []),
+                        "relationship_type": entry.get("relationship_type", "none"),
+                        "related_personas": entry.get("related_personas", []),
+                        "over_personalization_irrelevant": entry.get("over_personalization_irrelevant", ""),
+                        "over_personalization_irrelevant_category": entry.get("over_personalization_irrelevant_category", ""),
+                    }],
+                    "conversation": entry.get("conversation"),
+                    "conversation_type": entry.get("conversation_type"),
+                    "ask_to_forget": entry.get("ask_to_forget", False),
+                }
+                all_events.append(event)
+                flat_prefs.append(entry)
+
+    all_events.sort(key=lambda e: (int(e.get("source_timestamp") or 0), e.get("source_object_id", "")))
+    flat_prefs.sort(key=lambda r: (int(r.get("source_timestamp") or 0), r.get("persona_item", "")))
+    return all_events, flat_prefs
+
+
+# Keep legacy loader for any external callers
+def _load_app_prefs(user_dir: str) -> list[dict]:
+    """Load per-app JSONs and return a flat list of preferences (legacy compat)."""
+    _, flat = _load_app_events(user_dir)
+    return flat
 
 
 def _load_profile(user_dir: str) -> dict | None:
@@ -68,45 +114,25 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     user_dir = os.path.join(backend_dir, str(user_id))
 
     profile = _load_profile(user_dir)
-    pref_rows = _load_app_prefs(user_dir)
+    events, flat_prefs = _load_app_events(user_dir)
 
     now_str = datetime.now(tz=timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
-    # Serialize for JS
-    prefs_json = json.dumps([
-        {
-            "persona_item": r.get("persona_item", ""),
-            "category": r.get("category", "uncategorized"),
-            "confidence_score_init": float(r.get("confidence_score_init", 0) or 0),
-            "confidence_cross_referenced": float(r.get("confidence_cross_referenced", 0) or 0),
-            "relationship_type": r.get("relationship_type", "none"),
-            "source_interaction_type": r.get("source_interaction_type", ""),
-            "interaction_format": r.get("interaction_format", {}) or {},
-            "formatted_timestamp": r.get("formatted_timestamp", ""),
-            "source_timestamp": int(r.get("source_timestamp") or 0),
-            "stereotype_mark": r.get("stereotype_mark", "neutral"),
-            "split": r.get("split", "train") or "train",
-            "over_personalization_irrelevant": r.get("over_personalization_irrelevant", ""),
-            "over_personalization_irrelevant_category": r.get("over_personalization_irrelevant_category", ""),
-            "assigned_app": r.get("assigned_app", ""),
-            "source_hashtags": r.get("source_hashtags", []),
-            "conversation": r.get("conversation"),
-            "conversation_type": r.get("conversation_type"),
-            "ask_to_forget": r.get("ask_to_forget", False),
-        }
-        for r in pref_rows
-    ])
-
+    # Serialize events for JS
+    events_json = json.dumps(events)
     profile_json = json.dumps(profile) if profile else "null"
 
     # Counts
-    n_stereo = sum(1 for r in pref_rows if r.get("stereotype_mark") == "stereotypical")
-    n_anti = sum(1 for r in pref_rows if r.get("stereotype_mark") == "anti-stereotypical")
-    n_test = sum(1 for r in pref_rows if r.get("split") == "test")
-    n_train = sum(1 for r in pref_rows if (r.get("split") or "train") == "train")
+    n_events = len(events)
+    n_prefs = len(flat_prefs)
+    n_unique = len(set(r.get("persona_item", "") for r in flat_prefs))
+    n_stereo = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "stereotypical")
+    n_anti = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "anti-stereotypical")
+    n_test = sum(1 for r in flat_prefs if r.get("split") == "test")
+    n_train = sum(1 for r in flat_prefs if (r.get("split") or "train") == "train")
     per_app_counts = {}
     for app in APPS:
-        per_app_counts[app] = sum(1 for r in pref_rows if r.get("assigned_app") == app)
+        per_app_counts[app] = sum(1 for e in events if e.get("_app") == app)
 
     html = f"""\
 <!DOCTYPE html>
@@ -130,7 +156,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   }}
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
   body {{ font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }}
-  .container {{ max-width: 820px; margin: 0 auto; padding: 56px 24px; }}
+  .container {{ max-width: 860px; margin: 0 auto; padding: 56px 24px; }}
 
   .header {{ margin-bottom: 40px; }}
   .header h1 {{ font-size: 28px; font-weight: 600; letter-spacing: -0.4px; margin-bottom: 6px; color: var(--text); }}
@@ -147,21 +173,39 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .section {{ margin-bottom: 40px; }}
   .section-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
 
-  .persona-grid {{ display: flex; flex-direction: column; gap: 8px; }}
-  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; box-shadow: var(--shadow); transition: box-shadow 0.15s ease; border-left: 3px solid var(--border); }}
-  .persona-card:hover {{ box-shadow: var(--shadow-hover); }}
-  /* Muted, elegant tints per app */
-  .persona-card.app-Instagram {{ border-left-color: #C13584; background: #FDFAFE; }}
-  .persona-card.app-Facebook {{ border-left-color: #4A6FA5; background: #F8FAFD; }}
-  .persona-card.app-Threads {{ border-left-color: #636366; background: #FAFAFA; }}
-  .persona-card.app-Chatbot {{ border-left-color: #C8956C; background: #FDFCFA; }}
-  .persona-card .item-text {{ font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.45; color: var(--text); }}
-  .persona-card .meta-line {{ font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; }}
+  .event-grid {{ display: flex; flex-direction: column; gap: 12px; }}
+  .event-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; box-shadow: var(--shadow); transition: box-shadow 0.15s ease; border-left: 3px solid var(--border); }}
+  .event-card:hover {{ box-shadow: var(--shadow-hover); }}
+  .event-card.app-Instagram {{ border-left-color: #C13584; }}
+  .event-card.app-Facebook {{ border-left-color: #4A6FA5; }}
+  .event-card.app-Threads {{ border-left-color: #636366; }}
+  .event-card.app-Chatbot {{ border-left-color: #C8956C; }}
 
-  .conf-inline {{ font-size: 10px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; margin-bottom: 6px; }}
-  .conf-inline span {{ margin-right: 12px; }}
+  .event-header {{ margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #F2F2F7; }}
+  .event-header .event-meta {{ font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }}
+  .event-header .hashtags {{ font-size: 12px; color: var(--text); margin-top: 4px; line-height: 1.5; }}
 
-  .badge {{ display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 4px; margin-right: 3px; letter-spacing: 0.1px; }}
+  .pref-list {{ display: flex; flex-direction: column; gap: 8px; }}
+  .pref-item {{ padding: 10px 14px; border-radius: 8px; background: #FAFAFA; border: 1px solid #F2F2F7; }}
+  .pref-item .item-text {{ font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--text); margin-bottom: 4px; }}
+  .pref-item .pref-meta {{ font-size: 10px; color: var(--text-secondary); }}
+
+  .update-history {{ margin-top: 6px; padding-left: 10px; border-left: 2px solid #E8E8ED; }}
+  .update-entry {{ font-size: 10px; color: var(--text-secondary); margin-bottom: 2px; }}
+  .update-entry .ut-type {{ font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }}
+  .ut-reinforced {{ color: #2D6A4F; }}
+  .ut-deepened {{ color: #1D4ED8; }}
+  .ut-branched {{ color: #7C3AED; }}
+  .ut-shifted {{ color: #B45309; }}
+  .ut-intensified {{ color: #047857; }}
+  .ut-contradicted {{ color: #B04050; }}
+  .ut-faded {{ color: var(--text-tertiary); }}
+  .ut-expanded {{ color: #1D4ED8; }}
+
+  .conf-inline {{ font-size: 10px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }}
+  .conf-inline span {{ margin-right: 10px; }}
+
+  .badge {{ display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-right: 3px; letter-spacing: 0.1px; }}
   .badge.category {{ background: #F2F2F7; color: #636366; }}
   .badge.similar {{ background: #F2F2F7; color: #48854A; }}
   .badge.contradictory {{ background: #F2F2F7; color: #B04050; }}
@@ -183,16 +227,16 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.interaction-type.explicit_negative {{ background: #FEE2E2; color: #991B1B; }}
   .badge.interaction-type.implicit_negative {{ background: #FEF3C7; color: #92400E; }}
 
-  .user-message {{ margin-top: 10px; padding: 10px 12px; background: #F2F2F7; border-left: 2px solid var(--text-tertiary); border-radius: 4px; font-size: 12px; color: var(--text); font-style: italic; }}
+  .user-message {{ margin-top: 8px; padding: 8px 12px; background: #F2F2F7; border-left: 2px solid var(--text-tertiary); border-radius: 4px; font-size: 12px; color: var(--text); font-style: italic; }}
 
-  .chat-thread {{ margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }}
+  .chat-thread {{ margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }}
   .chat-bubble {{ max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
   .chat-bubble.user-bubble {{ align-self: flex-end; background: #1B72E8; color: #fff; border-bottom-right-radius: 4px; }}
   .chat-bubble.assistant-bubble {{ align-self: flex-start; background: #E4E6EB; color: var(--text); border-bottom-left-radius: 4px; }}
   .chat-role {{ font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }}
   .chat-bubble.user-bubble .chat-role {{ color: rgba(255,255,255,0.55); }}
   .chat-bubble.assistant-bubble .chat-role {{ color: var(--text-tertiary); }}
-  .chat-conv-label {{ font-size: 10px; color: var(--text-tertiary); margin-top: 8px; margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }}
+  .chat-conv-label {{ font-size: 10px; color: var(--text-tertiary); margin-top: 6px; margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }}
 
   .empty {{ text-align: center; padding: 40px; color: var(--text-secondary); font-size: 13px; }}
 </style>
@@ -203,11 +247,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   <div class="header">
     <h1>User {user_id}</h1>
     <div class="meta">
-      <span>{len(pref_rows)} preferences</span>
+      <span>{n_events} events</span>
+      <span>{n_prefs} pref instances</span>
+      <span>{n_unique} unique</span>
       <span>{n_train} train</span>
       <span>{n_test} test</span>
-      <span>{n_stereo} stereotypical</span>
-      <span>{n_anti} anti-stereotypical</span>
+      <span>{n_stereo} stereo</span>
+      <span>{n_anti} anti-stereo</span>
       <span>IG: {per_app_counts.get("Instagram", 0)}</span>
       <span>FB: {per_app_counts.get("Facebook", 0)}</span>
       <span>TH: {per_app_counts.get("Threads", 0)}</span>
@@ -219,17 +265,15 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   <div id="profile-section"></div>
 
   <div class="section">
-    <div class="section-title">All Preferences (earliest &rarr; latest)</div>
+    <div class="section-title">Interaction Events (earliest &rarr; latest)</div>
     <div id="timeline-section"></div>
   </div>
 
 </div>
 
 <script>
-const prefsData = {prefs_json};
+const eventsData = {events_json};
 const profileData = {profile_json};
-
-const APPS = ['Instagram', 'Facebook', 'Threads', 'Chatbot'];
 
 // -- Profile card --
 const ps = document.getElementById('profile-section');
@@ -251,60 +295,99 @@ if (profileData) {{
   `;
 }}
 
-// -- Chronological timeline --
+// -- Render update history --
+function renderUpdateHistory(history) {{
+  if (!history || !history.length) return '';
+  const entries = history.map(h => {{
+    const cls = 'ut-' + (h.update_type || 'expanded');
+    let text = `<span class="ut-type ${{cls}}">${{h.update_type}}</span>`;
+    if (h.preference) text += ` ${{h.preference}}`;
+    if (h.description) text += ` — ${{h.description}}`;
+    if (h.formatted_timestamp) text += ` <span style="opacity:0.6">(${{h.formatted_timestamp}})</span>`;
+    if (h.total_occurrences) text += ` <span style="opacity:0.6">[occ ${{h.occurrence}}/${{h.total_occurrences}}]</span>`;
+    return `<div class="update-entry">${{text}}</div>`;
+  }}).join('');
+  return `<div class="update-history">${{entries}}</div>`;
+}}
+
+// -- Chronological timeline of interaction events --
 const timeline = document.getElementById('timeline-section');
-if (prefsData.length === 0) {{
-  timeline.innerHTML = '<div class="empty">No preferences available.</div>';
+if (eventsData.length === 0) {{
+  timeline.innerHTML = '<div class="empty">No interaction events available.</div>';
 }} else {{
-  // prefsData is already sorted by source_timestamp ascending
   const grid = document.createElement('div');
-  grid.className = 'persona-grid';
+  grid.className = 'event-grid';
 
-  prefsData.forEach((p, idx) => {{
+  eventsData.forEach((ev, idx) => {{
+    const app = ev._app || 'Instagram';
     const card = document.createElement('div');
-    card.className = `persona-card app-${{p.assigned_app}}`;
-    const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
-    const fmt = p.interaction_format || {{}};
+    card.className = `event-card app-${{app}}`;
 
-    // Primary badges: app, interaction type, action — these are the most important
-    let primaryBadges = `<span class="badge platform p-${{p.assigned_app}}">${{p.assigned_app}}</span>`;
-    primaryBadges += `<span class="badge interaction-type ${{p.source_interaction_type}}">${{p.source_interaction_type.replace(/_/g, ' ')}}</span>`;
-    if (fmt.action_label) primaryBadges += `<span class="badge action">${{fmt.action_label}}</span>`;
+    const fmt = ev.interaction_format || {{}};
+    const prefs = ev.preferences || [];
+    const hashtags = ev.source_hashtags || [];
+    const itype = ev.source_interaction_type || '';
 
-    // Secondary badges: category, split, etc.
-    let secondaryBadges = `<span class="badge category">${{p.category}}</span>`;
-    secondaryBadges += `<span class="badge ${{p.split}}">${{p.split}}</span>`;
-    if (p.relationship_type !== 'none') secondaryBadges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
-    if (p.stereotype_mark !== 'neutral') secondaryBadges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
+    // Event header
+    let headerHtml = `
+      <div class="event-header">
+        <div class="event-meta">
+          <span style="font-weight:600;color:var(--text);">Event #${{idx+1}}</span> &middot;
+          ${{ev.formatted_timestamp || ''}} &middot;
+          ${{prefs.length}} preference${{prefs.length !== 1 ? 's' : ''}}
+        </div>
+        <div>
+          <span class="badge platform p-${{app}}">${{app}}</span>
+          <span class="badge interaction-type ${{itype}}">${{itype.replace(/_/g, ' ')}}</span>
+          ${{fmt.action_label ? `<span class="badge action">${{fmt.action_label}}</span>` : ''}}
+        </div>
+        ${{hashtags.length ? `<div class="hashtags">${{hashtags.join('  ')}}</div>` : ''}}
+      </div>
+    `;
 
-    let userMsgBlock = '';
-    if (p.conversation && p.conversation.length > 0) {{
-      let convLabel = p.conversation_type ? `<div class="chat-conv-label">${{p.conversation_type.replace(/_/g, ' ')}}${{p.ask_to_forget ? ' · ask-to-forget' : ''}}</div>` : '';
-      let bubbles = p.conversation.map(t => {{
+    // Preferences list
+    let prefsHtml = '<div class="pref-list">';
+    prefs.forEach(p => {{
+      const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
+      let badges = `<span class="badge category">${{p.category || ''}}</span>`;
+      badges += `<span class="badge ${{p.split || 'train'}}">${{p.split || 'train'}}</span>`;
+      if (p.relationship_type && p.relationship_type !== 'none') badges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
+      if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
+
+      let distractorLine = '';
+      if (p.split === 'test' && p.over_personalization_irrelevant) {{
+        distractorLine = `<div style="margin-top:4px;font-size:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}}</div>`;
+      }}
+
+      const historyHtml = renderUpdateHistory(p.update_history);
+
+      prefsHtml += `
+        <div class="pref-item">
+          <div class="item-text">${{p.persona_item || ''}}</div>
+          <div class="conf-inline"><span>init ${{(p.confidence_score_init || 0).toFixed(2)}}</span><span>xref ${{(p.confidence_cross_referenced || 0).toFixed(1)}}</span></div>
+          <div class="pref-meta">${{badges}}</div>
+          ${{historyHtml}}
+          ${{distractorLine}}
+        </div>
+      `;
+    }});
+    prefsHtml += '</div>';
+
+    // Chatbot conversation
+    let convHtml = '';
+    if (ev.conversation && ev.conversation.length > 0) {{
+      let convLabel = ev.conversation_type ? `<div class="chat-conv-label">${{ev.conversation_type.replace(/_/g, ' ')}}${{ev.ask_to_forget ? ' &middot; ask-to-forget' : ''}}</div>` : '';
+      let bubbles = ev.conversation.map(t => {{
         const cls = t.role === 'user' ? 'user-bubble' : 'assistant-bubble';
         const label = t.role === 'user' ? 'You' : 'AI';
         return `<div class="chat-bubble ${{cls}}"><div class="chat-role">${{label}}</div>${{t.content}}</div>`;
       }}).join('');
-      userMsgBlock = `${{convLabel}}<div class="chat-thread">${{bubbles}}</div>`;
+      convHtml = `${{convLabel}}<div class="chat-thread">${{bubbles}}</div>`;
     }} else if (fmt.user_message) {{
-      userMsgBlock = `<div class="user-message">${{fmt.user_message}}</div>`;
+      convHtml = `<div class="user-message">${{fmt.user_message}}</div>`;
     }}
 
-    let distractorLine = '';
-    if (p.split === 'test' && p.over_personalization_irrelevant) {{
-      distractorLine = `<div class="meta-line" style="margin-top:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}} <span style="opacity:0.6;">(${{p.over_personalization_irrelevant_category}})</span></div>`;
-    }}
-
-    card.innerHTML = `
-      <div class="meta-line" style="margin-bottom:4px;"><span style="font-weight:600;color:var(--text);">#${{idx+1}}</span> &middot; ${{p.formatted_timestamp}}</div>
-      <div class="item-text">${{p.persona_item}}</div>
-      ${{p.source_hashtags && p.source_hashtags.length ? `<div class="meta-line" style="color:var(--text);margin-bottom:4px;">${{p.source_hashtags.join('  ')}}</div>` : ''}}
-      <div style="margin-bottom:6px;">${{primaryBadges}}</div>
-      <div class="conf-inline"><span>init ${{p.confidence_score_init.toFixed(2)}}</span><span>xref ${{p.confidence_cross_referenced.toFixed(0)}}</span></div>
-      <div>${{secondaryBadges}}</div>
-      ${{userMsgBlock}}
-      ${{distractorLine}}
-    `;
+    card.innerHTML = headerHtml + prefsHtml + convHtml;
     grid.appendChild(card);
   }});
 

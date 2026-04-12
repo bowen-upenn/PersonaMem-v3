@@ -1,167 +1,33 @@
 [
   {
-    "persona_item": "Enjoys beauty and nail-art content",
-    "category": "beauty, nails, and personal style",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 79.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "378709",
-    "source_timestamp": 1775283922,
-    "formatted_timestamp": "06:25, 04/04/2026",
-    "source_hashtags": [
-      "#BeautyInspo",
-      "#BloodSplatterNails",
-      "#HalloweenNails",
-      "#LansingNailTech",
-      "#NailArt",
-      "#NailTech"
-    ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Keeps up with fashion and personal style inspiration",
-    "category": "beauty, nails, and personal style",
-    "confidence_score_init": 0.7,
-    "confidence_cross_referenced": 79.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "378709",
-    "source_timestamp": 1775283922,
-    "formatted_timestamp": "06:25, 04/04/2026",
-    "source_hashtags": [
-      "#BeautyInspo",
-      "#BloodSplatterNails",
-      "#HalloweenNails",
-      "#LansingNailTech",
-      "#NailArt",
-      "#NailTech"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "followed_creator",
-      "action_label": "Followed the creator",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Values presenting a polished, put-together look",
-    "category": "beauty, nails, and personal style",
-    "confidence_score_init": 0.68,
-    "confidence_cross_referenced": 79.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "378709",
-    "source_timestamp": 1775283922,
-    "formatted_timestamp": "06:25, 04/04/2026",
-    "source_hashtags": [
-      "#BeautyInspo",
-      "#BloodSplatterNails",
-      "#HalloweenNails",
-      "#LansingNailTech",
-      "#NailArt",
-      "#NailTech"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "followed_creator",
-      "action_label": "Followed the creator",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys short-form comedy reels and viral funny clips",
-    "category": "comedy and humor content",
-    "confidence_score_init": 0.88,
-    "confidence_cross_referenced": 138.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "666394",
-    "source_timestamp": 1775284233,
-    "formatted_timestamp": "06:30, 04/04/2026",
-    "source_hashtags": [
-      "#ComedyGold",
-      "#ComedyShow",
-      "#LaughOutLoud"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "reacted_to_story",
-      "action_label": "Reacted to the story",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Uses humor content as a mood-lifter throughout the day",
-    "category": "comedy and humor content",
-    "confidence_score_init": 0.9,
-    "confidence_cross_referenced": 138.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "666394",
-    "source_timestamp": 1775284233,
-    "formatted_timestamp": "06:30, 04/04/2026",
-    "source_hashtags": [
-      "#ComedyGold",
-      "#ComedyShow",
-      "#LaughOutLoud"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Values a sense of local community and belonging",
-    "category": "community and local belonging",
-    "confidence_score_init": 0.63,
-    "confidence_cross_referenced": 14.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "639773",
     "source_timestamp": 1775398782,
     "formatted_timestamp": "14:19, 04/05/2026",
     "source_hashtags": [
       "#communityfirst"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Instagram",
       "action": "liked",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Values a sense of local community and belonging",
+        "category": "community and local belonging",
+        "confidence_score_init": 0.63,
+        "confidence_cross_referenced": 14.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Deeply invested in hair care and styling routines",
-    "category": "hair care and styling",
-    "confidence_score_init": 0.9,
-    "confidence_cross_referenced": 51.0,
-    "source_interaction_type": "explicit_positive",
     "source_object_id": "351857",
     "source_timestamp": 1775425071,
     "formatted_timestamp": "21:37, 04/05/2026",
@@ -173,555 +39,99 @@
       "#HairInspo",
       "#HairTutorial"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
+    "source_interaction_type": "explicit_positive",
     "interaction_format": {
       "app": "Instagram",
       "action": "liked",
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Deeply invested in hair care and styling routines",
+        "category": "hair care and styling",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 51.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Follows hairstylists and salon professionals",
+        "category": "hair care and styling",
+        "confidence_score_init": 0.85,
+        "confidence_cross_referenced": 51.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Interested in protective natural hair styles like braids and weaves",
+        "category": "hair care and styling",
+        "confidence_score_init": 0.8,
+        "confidence_cross_referenced": 51.0,
+        "stereotype_mark": "anti-stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Likely wears or appreciates Black hair styling traditions",
+        "category": "hair care and styling",
+        "confidence_score_init": 0.7,
+        "confidence_cross_referenced": 51.0,
+        "stereotype_mark": "anti-stereotypical",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      },
+      {
+        "persona_item": "Sees hair styling as a form of self-expression",
+        "category": "hair care and styling",
+        "confidence_score_init": 0.78,
+        "confidence_cross_referenced": 51.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": []
+      }
+    ]
   },
   {
-    "persona_item": "Follows hairstylists and salon professionals",
-    "category": "hair care and styling",
-    "confidence_score_init": 0.85,
-    "confidence_cross_referenced": 51.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "351857",
-    "source_timestamp": 1775425071,
-    "formatted_timestamp": "21:37, 04/05/2026",
-    "source_hashtags": [
-      "#BraidingCommunity",
-      "#BraidsByTiara",
-      "#CrownBraid",
-      "#HairBraiding",
-      "#HairInspo",
-      "#HairTutorial"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Interested in protective natural hair styles like braids and weaves",
-    "category": "hair care and styling",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 51.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "351857",
-    "source_timestamp": 1775425071,
-    "formatted_timestamp": "21:37, 04/05/2026",
-    "source_hashtags": [
-      "#BraidingCommunity",
-      "#BraidsByTiara",
-      "#CrownBraid",
-      "#HairBraiding",
-      "#HairInspo",
-      "#HairTutorial"
-    ],
-    "stereotype_mark": "anti-stereotypical",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Likely wears or appreciates Black hair styling traditions",
-    "category": "hair care and styling",
-    "confidence_score_init": 0.7,
-    "confidence_cross_referenced": 51.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "351857",
-    "source_timestamp": 1775425071,
-    "formatted_timestamp": "21:37, 04/05/2026",
-    "source_hashtags": [
-      "#BraidingCommunity",
-      "#BraidsByTiara",
-      "#CrownBraid",
-      "#HairBraiding",
-      "#HairInspo",
-      "#HairTutorial"
-    ],
-    "stereotype_mark": "anti-stereotypical",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Has a sweet tooth and enjoys desserts",
-    "category": "home cooking and food",
-    "confidence_score_init": 0.65,
-    "confidence_cross_referenced": 66.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "800862",
-    "source_timestamp": 1775498866,
-    "formatted_timestamp": "18:07, 04/06/2026",
-    "source_hashtags": [
-      "#cookingtutorial",
-      "#foodie",
-      "#homcooking"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Occasionally interested in DIY and handmade home projects",
-    "category": "home decor and DIY crafts",
-    "confidence_score_init": 0.53,
-    "confidence_cross_referenced": 7.0,
-    "source_interaction_type": "implicit_positive",
-    "source_object_id": "512530",
-    "source_timestamp": 1775528364,
-    "formatted_timestamp": "02:19, 04/07/2026",
-    "source_hashtags": [
-      "#DIY",
-      "#DIYBFF",
-      "#HomeDecor"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "lingered_on_story",
-      "action_label": "Stayed on a story for more than 5 seconds",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Invested in self-care routines and self-expression",
-    "category": "self-care and personal wellness",
-    "confidence_score_init": 0.76,
-    "confidence_cross_referenced": 46.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "707030",
-    "source_timestamp": 1775560709,
-    "formatted_timestamp": "11:18, 04/07/2026",
-    "source_hashtags": [
-      "#Motivation",
-      "#PersonalGrowth"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys dance content and casual music videos",
-    "category": "dance and dance-music content",
-    "confidence_score_init": 0.75,
-    "confidence_cross_referenced": 40.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "144093",
-    "source_timestamp": 1775560953,
-    "formatted_timestamp": "11:22, 04/07/2026",
-    "source_hashtags": [
-      "#countrymusic",
-      "#musicpromotion",
-      "#newmusic"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Likely dances at home, at parties, or with family",
-    "category": "dance and dance-music content",
-    "confidence_score_init": 0.65,
-    "confidence_cross_referenced": 40.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "144093",
-    "source_timestamp": 1775560953,
-    "formatted_timestamp": "11:22, 04/07/2026",
-    "source_hashtags": [
-      "#countrymusic",
-      "#musicpromotion",
-      "#newmusic"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "shared_to_close_friends_story",
-      "action_label": "Shared to Close Friends story",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys aspirational couple imagery and moments",
-    "category": "romantic couple relationships",
-    "confidence_score_init": 0.76,
-    "confidence_cross_referenced": 115.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "660847",
-    "source_timestamp": 1775561196,
-    "formatted_timestamp": "11:26, 04/07/2026",
-    "source_hashtags": [
-      "#couplelife",
-      "#loveinthelittlethings",
-      "#relationshipgoals",
-      "#skincarelove"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "at_ai_feels_off",
-      "action_label": "@ai reply: told the in-feed assistant this feels off-base",
-      "user_message": "@ai the couple reels you've been pushing feel off — we're not that kind of couple right now, please pull back on the honeymoon-era content for a while."
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Invested in romantic relationship content",
-    "category": "romantic couple relationships",
-    "confidence_score_init": 0.88,
-    "confidence_cross_referenced": 115.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "660847",
-    "source_timestamp": 1775561196,
-    "formatted_timestamp": "11:26, 04/07/2026",
-    "source_hashtags": [
-      "#couplelife",
-      "#loveinthelittlethings",
-      "#relationshipgoals",
-      "#skincarelove"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Spends time scrolling trending short-form video content",
-    "category": "viral and trending social content",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 68.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "674520",
-    "source_timestamp": 1775561218,
-    "formatted_timestamp": "11:26, 04/07/2026",
-    "source_hashtags": [
-      "#ComingSoon",
-      "#NewEpisode"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "commented",
-      "action_label": "Commented",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Enjoys matching-outfit and 'twinning' content with family",
-    "category": "matching outfits and twinning moments",
-    "confidence_score_init": 0.6,
-    "confidence_cross_referenced": 7.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "362389",
-    "source_timestamp": 1775561622,
-    "formatted_timestamp": "11:33, 04/07/2026",
-    "source_hashtags": [
-      "#twinning"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Follows content with 'book now' appointment calls-to-action",
-    "category": "small-business and creator entrepreneurship",
-    "confidence_score_init": 0.6,
-    "confidence_cross_referenced": 16.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "746144",
-    "source_timestamp": 1775562010,
-    "formatted_timestamp": "11:40, 04/07/2026",
-    "source_hashtags": [
-      "#Collaboration"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "at_ai_recommend_more",
-      "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
-      "user_message": "@ai show me more small-business beauty accounts with easy in-caption booking — I'm trying to benchmark how other solo stylists set up their DMs."
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Actively engaged in daily motherhood experiences",
-    "category": "motherhood and parenting",
-    "confidence_score_init": 0.92,
-    "confidence_cross_referenced": 88.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "562132",
-    "source_timestamp": 1775562389,
-    "formatted_timestamp": "11:46, 04/07/2026",
-    "source_hashtags": [
-      "#DanceMom",
-      "#MomLife",
-      "#ProtectiveMom"
-    ],
-    "stereotype_mark": "stereotypical",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Parenting young children at home",
-    "category": "motherhood and parenting",
-    "confidence_score_init": 0.88,
-    "confidence_cross_referenced": 88.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "562132",
-    "source_timestamp": 1775562389,
-    "formatted_timestamp": "11:46, 04/07/2026",
-    "source_hashtags": [
-      "#DanceMom",
-      "#MomLife",
-      "#ProtectiveMom"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "train",
-    "update_history": []
-  },
-  {
-    "persona_item": "Values sharing candid, real-life parenting moments",
-    "category": "motherhood and parenting",
-    "confidence_score_init": 0.78,
-    "confidence_cross_referenced": 88.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "562132",
-    "source_timestamp": 1775562389,
-    "formatted_timestamp": "11:46, 04/07/2026",
-    "source_hashtags": [
-      "#DanceMom",
-      "#MomLife",
-      "#ProtectiveMom"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "double_tapped",
-      "action_label": "Double-tapped to like",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Appreciates food content that feels homemade and wholesome",
-    "over_personalization_irrelevant_category": "home cooking and food",
-    "update_history": []
-  },
-  {
-    "persona_item": "Follows niche individual creators by handle",
-    "category": "specific creator followings",
-    "confidence_score_init": 0.5,
-    "confidence_cross_referenced": 3.0,
-    "source_interaction_type": "implicit_positive",
     "source_object_id": "968564",
     "source_timestamp": 1775641601,
     "formatted_timestamp": "09:46, 04/08/2026",
     "source_hashtags": [
       "#ItsMarionique"
     ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
+    "source_interaction_type": "implicit_positive",
     "interaction_format": {
       "app": "Instagram",
       "action": "lingered_on_image",
       "action_label": "Stayed on an image for more than 5 seconds",
       "user_message": null
     },
-    "split": "test",
-    "over_personalization_irrelevant": "Follows content with 'book now' appointment calls-to-action",
-    "over_personalization_irrelevant_category": "small-business and creator entrepreneurship",
-    "update_history": []
-  },
-  {
-    "persona_item": "Finds joy in sharing everyday moments of toddlers",
-    "category": "babies and young children",
-    "confidence_score_init": 0.75,
-    "confidence_cross_referenced": 42.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "674071",
-    "source_timestamp": 1775795890,
-    "formatted_timestamp": "04:38, 04/10/2026",
-    "source_hashtags": [
-      "#kidsofinstagram",
-      "#toddlerfashion",
-      "#toddlersoftiktok"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "saved_to_collection",
-      "action_label": "Saved to a collection",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Likely has a daughter or close maternal-female relationship",
-    "over_personalization_irrelevant_category": "mother-daughter relationships",
-    "update_history": []
-  },
-  {
-    "persona_item": "Has or is close to young children and infants",
-    "category": "babies and young children",
-    "confidence_score_init": 0.86,
-    "confidence_cross_referenced": 42.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "674071",
-    "source_timestamp": 1775795890,
-    "formatted_timestamp": "04:38, 04/10/2026",
-    "source_hashtags": [
-      "#kidsofinstagram",
-      "#toddlerfashion",
-      "#toddlersoftiktok"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "at_ai_recommend_more",
-      "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Uses humor content as a mood-lifter throughout the day",
-    "over_personalization_irrelevant_category": "comedy and humor content",
-    "update_history": []
-  },
-  {
-    "persona_item": "Likely a parent navigating the early-childhood years",
-    "category": "babies and young children",
-    "confidence_score_init": 0.82,
-    "confidence_cross_referenced": 42.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "674071",
-    "source_timestamp": 1775795890,
-    "formatted_timestamp": "04:38, 04/10/2026",
-    "source_hashtags": [
-      "#kidsofinstagram",
-      "#toddlerfashion",
-      "#toddlersoftiktok"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "commented",
-      "action_label": "Commented",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Occasionally interested in DIY and handmade home projects",
-    "over_personalization_irrelevant_category": "home decor and DIY crafts",
-    "update_history": []
-  },
-  {
-    "persona_item": "Likely identifies as a woman and connects with empowerment messaging",
-    "category": "women's empowerment",
-    "confidence_score_init": 0.85,
-    "confidence_cross_referenced": 23.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "944568",
-    "source_timestamp": 1775796095,
-    "formatted_timestamp": "04:41, 04/10/2026",
-    "source_hashtags": [
-      "#EmpoweredWomenEmpowerWomen",
-      "#GirlPower",
-      "#WomenSupportingWomen"
-    ],
-    "stereotype_mark": "neutral",
-    "assigned_app": "Instagram",
-    "interaction_format": {
-      "app": "Instagram",
-      "action": "liked",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "test",
-    "over_personalization_irrelevant": "Looks for relatable everyday parenting stories",
-    "over_personalization_irrelevant_category": "parenting and child-rearing",
-    "update_history": []
+    "preferences": [
+      {
+        "persona_item": "Follows niche individual creators by handle",
+        "category": "specific creator followings",
+        "confidence_score_init": 0.5,
+        "confidence_cross_referenced": 3.0,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [],
+        "relationship_type": "none",
+        "related_personas": [],
+        "over_personalization_irrelevant": "Follows content with 'book now' appointment calls-to-action",
+        "over_personalization_irrelevant_category": "small-business and creator entrepreneurship"
+      }
+    ]
   }
 ]
