@@ -3,7 +3,7 @@
     "persona_item": "Enjoys wholesome, heartwarming feel-good content",
     "category": "heartwarming and feel-good content",
     "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 96.0,
+    "confidence_cross_referenced": 48.0,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "458878",
     "source_timestamp": 1775282215,
@@ -27,10 +27,37 @@
     "over_personalization_irrelevant_category": ""
   },
   {
+    "persona_item": "Responds emotionally to touching or inspirational stories",
+    "category": "heartwarming and feel-good content",
+    "confidence_score_init": 0.66,
+    "confidence_cross_referenced": 48.0,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "458878",
+    "source_timestamp": 1775282215,
+    "formatted_timestamp": "05:56, 04/04/2026",
+    "source_hashtags": [
+      "#heartwarmingmoments",
+      "#love"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
     "persona_item": "Cherishes the bond between mothers and daughters",
     "category": "mother-daughter relationships",
     "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 16.0,
+    "confidence_cross_referenced": 8.0,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "7306",
     "source_timestamp": 1775283894,
@@ -45,8 +72,35 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_like",
+      "action_label": "Liked",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Likely has a daughter or close maternal-female relationship",
+    "category": "mother-daughter relationships",
+    "confidence_score_init": 0.68,
+    "confidence_cross_referenced": 8.0,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "7306",
+    "source_timestamp": 1775283894,
+    "formatted_timestamp": "06:24, 04/04/2026",
+    "source_hashtags": [
+      "#daughterlove",
+      "#motherdaughter"
+    ],
+    "stereotype_mark": "neutral",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_haha",
+      "action_label": "Hahaha reaction",
       "user_message": null
     },
     "split": "train",
@@ -71,8 +125,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "commented",
-      "action_label": "Commented",
+      "action": "reacted_haha",
+      "action_label": "Hahaha reaction",
       "user_message": null
     },
     "split": "train",
@@ -126,119 +180,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
-      "user_message": null
-    },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
-  },
-  {
-    "persona_item": "May have a partner who is currently incarcerated",
-    "category": "prison wife and long-distance relationships",
-    "confidence_score_init": 0.55,
-    "confidence_cross_referenced": 3.0,
-    "source_interaction_type": "implicit_positive",
-    "source_object_id": "653868",
-    "source_timestamp": 1775309271,
-    "formatted_timestamp": "13:27, 04/04/2026",
-    "source_hashtags": [
-      "#prisonwife"
-    ],
-    "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
-  },
-  {
-    "persona_item": "Values a sense of local community and belonging",
-    "category": "community and local belonging",
-    "confidence_score_init": 0.63,
-    "confidence_cross_referenced": 14.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "639773",
-    "source_timestamp": 1775398782,
-    "formatted_timestamp": "14:19, 04/05/2026",
-    "source_hashtags": [
-      "#communityfirst"
-    ],
-    "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
-      "user_message": null
-    },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
-  },
-  {
-    "persona_item": "Interested in protective natural hair styles like braids and weaves",
-    "category": "hair care and styling",
-    "confidence_score_init": 0.8,
-    "confidence_cross_referenced": 102.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "351857",
-    "source_timestamp": 1775425071,
-    "formatted_timestamp": "21:37, 04/05/2026",
-    "source_hashtags": [
-      "#BraidingCommunity",
-      "#BraidsByTiara",
-      "#CrownBraid",
-      "#HairBraiding",
-      "#HairInspo",
-      "#HairTutorial"
-    ],
-    "stereotype_mark": "anti-stereotypical",
-    "relationship_type": "none",
-    "related_personas": [],
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
       "action": "reacted_like",
       "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
-  },
-  {
-    "persona_item": "Appreciates food content that feels homemade and wholesome",
-    "category": "home cooking and food",
-    "confidence_score_init": 0.78,
-    "confidence_cross_referenced": 66.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "800862",
-    "source_timestamp": 1775498866,
-    "formatted_timestamp": "18:07, 04/06/2026",
-    "source_hashtags": [
-      "#cookingtutorial",
-      "#foodie",
-      "#homcooking"
-    ],
-    "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "train",
@@ -249,6 +192,34 @@
     "persona_item": "Enjoys home cooking and preparing family meals",
     "category": "home cooking and food",
     "confidence_score_init": 0.88,
+    "confidence_cross_referenced": 66.0,
+    "source_interaction_type": "explicit_positive",
+    "source_object_id": "800862",
+    "source_timestamp": 1775498866,
+    "formatted_timestamp": "18:07, 04/06/2026",
+    "source_hashtags": [
+      "#cookingtutorial",
+      "#foodie",
+      "#homcooking"
+    ],
+    "stereotype_mark": "stereotypical",
+    "relationship_type": "none",
+    "related_personas": [],
+    "assigned_app": "Facebook",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
+      "user_message": null
+    },
+    "split": "train",
+    "over_personalization_irrelevant": "",
+    "over_personalization_irrelevant_category": ""
+  },
+  {
+    "persona_item": "Values cooking as an act of love and family care",
+    "category": "home cooking and food",
+    "confidence_score_init": 0.76,
     "confidence_cross_referenced": 66.0,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "800862",
@@ -291,8 +262,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "shared_to_group",
+      "action_label": "Shared to a group",
       "user_message": null
     },
     "split": "train",
@@ -300,17 +271,17 @@
     "over_personalization_irrelevant_category": ""
   },
   {
-    "persona_item": "Looks for motivational and personal-growth content",
-    "category": "self-care and personal wellness",
-    "confidence_score_init": 0.68,
-    "confidence_cross_referenced": 46.0,
+    "persona_item": "Active across Instagram Reels, Threads, and similar platforms",
+    "category": "viral and trending social content",
+    "confidence_score_init": 0.76,
+    "confidence_cross_referenced": 68.0,
     "source_interaction_type": "explicit_positive",
-    "source_object_id": "707030",
-    "source_timestamp": 1775560709,
-    "formatted_timestamp": "11:18, 04/07/2026",
+    "source_object_id": "674520",
+    "source_timestamp": 1775561218,
+    "formatted_timestamp": "11:26, 04/07/2026",
     "source_hashtags": [
-      "#Motivation",
-      "#PersonalGrowth"
+      "#ComingSoon",
+      "#NewEpisode"
     ],
     "stereotype_mark": "neutral",
     "relationship_type": "none",
@@ -318,8 +289,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "saved_post",
-      "action_label": "Saved the post",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "train",
@@ -344,8 +315,8 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "commented",
-      "action_label": "Commented",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "train",
@@ -356,33 +327,6 @@
     "persona_item": "Engages with content celebrating friendship milestones",
     "category": "friendship and squad dynamics",
     "confidence_score_init": 0.7,
-    "confidence_cross_referenced": 27.0,
-    "source_interaction_type": "explicit_positive",
-    "source_object_id": "488900",
-    "source_timestamp": 1775562339,
-    "formatted_timestamp": "11:45, 04/07/2026",
-    "source_hashtags": [
-      "#friendshipgoals",
-      "#squadgoals"
-    ],
-    "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
-    "assigned_app": "Facebook",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_like",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
-  },
-  {
-    "persona_item": "Values close female friendships and squad bonding",
-    "category": "friendship and squad dynamics",
-    "confidence_score_init": 0.76,
     "confidence_cross_referenced": 27.0,
     "source_interaction_type": "explicit_positive",
     "source_object_id": "488900",
@@ -431,8 +375,8 @@
       "user_message": null
     },
     "split": "test",
-    "over_personalization_irrelevant": "Looks for motivational and personal-growth content",
-    "over_personalization_irrelevant_category": "self-care and personal wellness"
+    "over_personalization_irrelevant": "Enjoys home cooking and preparing family meals",
+    "over_personalization_irrelevant_category": "home cooking and food"
   },
   {
     "persona_item": "Centers family togetherness as a core value",
@@ -454,13 +398,13 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "reacted_haha",
+      "action_label": "Hahaha reaction",
       "user_message": null
     },
     "split": "test",
-    "over_personalization_irrelevant": "Enjoys aspirational couple imagery and moments",
-    "over_personalization_irrelevant_category": "romantic couple relationships"
+    "over_personalization_irrelevant": "Deeply invested in hair care and styling routines",
+    "over_personalization_irrelevant_category": "hair care and styling"
   },
   {
     "persona_item": "Enjoys wholesome family-activity content",
@@ -482,13 +426,13 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "commented",
-      "action_label": "Commented",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "test",
-    "over_personalization_irrelevant": "Enjoys wholesome, heartwarming feel-good content",
-    "over_personalization_irrelevant_category": "heartwarming and feel-good content"
+    "over_personalization_irrelevant": "Either runs or supports a small creator/service business",
+    "over_personalization_irrelevant_category": "small-business and creator entrepreneurship"
   },
   {
     "persona_item": "Enjoys nostalgic throwback content from earlier eras",
@@ -509,13 +453,13 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_wow",
-      "action_label": "Wow reaction",
+      "action": "reacted_like",
+      "action_label": "Liked",
       "user_message": null
     },
     "split": "test",
-    "over_personalization_irrelevant": "Feels validated by content about parenting struggles",
-    "over_personalization_irrelevant_category": "parenting and child-rearing"
+    "over_personalization_irrelevant": "Enjoys beauty and nail-art content",
+    "over_personalization_irrelevant_category": "beauty, nails, and personal style"
   },
   {
     "persona_item": "Values memory-keeping and shared cultural references",
@@ -536,13 +480,13 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_haha",
-      "action_label": "Hahaha reaction",
+      "action": "reacted_love",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "split": "test",
-    "over_personalization_irrelevant": "Appreciates home decor and interior inspiration",
-    "over_personalization_irrelevant_category": "home decor and DIY crafts"
+    "over_personalization_irrelevant": "Values a sense of local community and belonging",
+    "over_personalization_irrelevant_category": "community and local belonging"
   },
   {
     "persona_item": "Navigating back-to-school routines with school-age children",
@@ -562,12 +506,12 @@
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
+      "action": "shared_to_timeline",
+      "action_label": "Shared to own timeline",
       "user_message": null
     },
     "split": "test",
-    "over_personalization_irrelevant": "Seeks easy recipe inspiration online",
-    "over_personalization_irrelevant_category": "home cooking and food"
+    "over_personalization_irrelevant": "Responds emotionally to touching or inspirational stories",
+    "over_personalization_irrelevant_category": "heartwarming and feel-good content"
   }
 ]

@@ -32,7 +32,8 @@ backend/
     facebook.json       # preferences routed to Facebook (time-sorted)
     threads.json        # preferences routed to Threads (time-sorted)
     chatbot.json        # preferences routed to Chatbot (time-sorted, with @ai messages)
-    preferences.csv     # flat single-file view of ALL preferences across ALL apps (time-sorted)
+    preferences_full.csv # flat ALL preferences across ALL apps (no redundancy removal, time-sorted)
+    preferences.csv      # redundancy-removed subset (near-synonyms collapsed, time-sorted)
 ```
 
 The aggregated `preferences.csv` carries every preference the user has, regardless of which app it was routed to, in one strictly chronological table. Columns: `persona_item, category, confidence_score_init, confidence_cross_referenced, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags, assigned_app, interaction_format, relationship_type, related_personas, stereotype_mark, split, over_personalization_irrelevant, over_personalization_irrelevant_category`. `source_hashtags`, `related_personas`, and `interaction_format` are JSON-encoded into a single cell each.
