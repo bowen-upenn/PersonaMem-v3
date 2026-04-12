@@ -72,6 +72,9 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
             "over_personalization_irrelevant": r.get("over_personalization_irrelevant", ""),
             "over_personalization_irrelevant_category": r.get("over_personalization_irrelevant_category", ""),
             "assigned_app": r.get("assigned_app", ""),
+            "conversation": r.get("conversation"),
+            "conversation_type": r.get("conversation_type"),
+            "ask_to_forget": r.get("ask_to_forget", False),
         }
         for r in pref_rows
     ])
@@ -168,6 +171,15 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .app-persona-block .ap-title {{ font-weight: 600; color: var(--text); margin-bottom: 4px; }}
   .user-message {{ margin-top: 10px; padding: 10px 12px; background: #EEF2FF; border-left: 3px solid #6366F1; border-radius: 6px; font-size: 13px; color: #1E1B4B; font-style: italic; }}
 
+  .chat-thread {{ margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }}
+  .chat-bubble {{ max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.55; word-wrap: break-word; }}
+  .chat-bubble.user-bubble {{ align-self: flex-end; background: #3B82F6; color: #fff; border-bottom-right-radius: 4px; }}
+  .chat-bubble.assistant-bubble {{ align-self: flex-start; background: #F3F4F6; color: var(--text); border-bottom-left-radius: 4px; }}
+  .chat-role {{ font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; opacity: 0.7; }}
+  .chat-bubble.user-bubble .chat-role {{ color: rgba(255,255,255,0.8); }}
+  .chat-bubble.assistant-bubble .chat-role {{ color: var(--text-secondary); }}
+  .chat-conv-label {{ font-size: 11px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 4px; font-weight: 500; }}
+
   .empty {{ text-align: center; padding: 40px; color: var(--text-secondary); font-size: 14px; }}
 </style>
 </head>
@@ -248,7 +260,15 @@ if (prefsData.length === 0) {{
     if (fmt.action_label) badges += `<span class="badge action">${{fmt.action_label}}</span>`;
 
     let userMsgBlock = '';
-    if (fmt.user_message) {{
+    if (p.conversation && p.conversation.length > 0) {{
+      let convLabel = p.conversation_type ? `<div class="chat-conv-label">${{p.conversation_type.replace(/_/g, ' ')}}${{p.ask_to_forget ? ' · ask-to-forget' : ''}}</div>` : '';
+      let bubbles = p.conversation.map(t => {{
+        const cls = t.role === 'user' ? 'user-bubble' : 'assistant-bubble';
+        const label = t.role === 'user' ? 'You' : 'AI';
+        return `<div class="chat-bubble ${{cls}}"><div class="chat-role">${{label}}</div>${{t.content}}</div>`;
+      }}).join('');
+      userMsgBlock = `${{convLabel}}<div class="chat-thread">${{bubbles}}</div>`;
+    }} else if (fmt.user_message) {{
       userMsgBlock = `<div class="user-message">${{fmt.user_message}}</div>`;
     }}
 
