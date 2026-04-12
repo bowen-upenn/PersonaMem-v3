@@ -99,88 +99,80 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 <title>Persona — User {user_id}</title>
 <style>
   :root {{
-    --bg: #FAFAF9;
+    --bg: #F7F7F5;
     --bg-card: #FFFFFF;
-    --text: #1A1A1A;
-    --text-secondary: #6B6B6B;
-    --accent: #D97757;
-    --accent-light: #F4E8E2;
-    --accent-contradictory: #B8336A;
-    --accent-similar: #2D936C;
-    --border: #E8E8E6;
-    --radius: 12px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.06);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.08);
-    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, sans-serif;
+    --text: #1D1D1F;
+    --text-secondary: #86868B;
+    --text-tertiary: #AEAEB2;
+    --border: #E5E5EA;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-hover: 0 2px 8px rgba(0,0,0,0.07);
+    --font: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
   }}
   * {{ margin: 0; padding: 0; box-sizing: border-box; }}
   body {{ font-family: var(--font); background: var(--bg); color: var(--text); line-height: 1.6; -webkit-font-smoothing: antialiased; }}
-  .container {{ max-width: 960px; margin: 0 auto; padding: 48px 24px; }}
+  .container {{ max-width: 820px; margin: 0 auto; padding: 56px 24px; }}
 
-  .header {{ margin-bottom: 48px; }}
-  .header h1 {{ font-size: 32px; font-weight: 600; letter-spacing: -0.5px; margin-bottom: 8px; }}
-  .header .meta {{ color: var(--text-secondary); font-size: 14px; }}
-  .header .meta span {{ margin-right: 20px; }}
+  .header {{ margin-bottom: 40px; }}
+  .header h1 {{ font-size: 28px; font-weight: 600; letter-spacing: -0.4px; margin-bottom: 6px; color: var(--text); }}
+  .header .meta {{ color: var(--text-secondary); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 18px; }}
 
-  .profile-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 48px; box-shadow: var(--shadow); }}
-  .profile-card h2 {{ font-size: 20px; font-weight: 600; margin-bottom: 12px; }}
-  .profile-card .bio {{ font-size: 15px; line-height: 1.6; margin-bottom: 16px; color: var(--text); }}
-  .profile-card .details {{ font-size: 13px; color: var(--text-secondary); }}
-  .profile-card .details span {{ margin-right: 16px; }}
-  .profile-card .big-five {{ display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; }}
-  .profile-card .b5-item {{ font-size: 12px; padding: 4px 10px; border-radius: 20px; background: #F0F0EE; color: var(--text-secondary); }}
+  .profile-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 40px; box-shadow: var(--shadow); }}
+  .profile-card h2 {{ font-size: 18px; font-weight: 600; margin-bottom: 10px; letter-spacing: -0.2px; }}
+  .profile-card .bio {{ font-size: 14px; line-height: 1.65; margin-bottom: 14px; color: var(--text); }}
+  .profile-card .details {{ font-size: 12px; color: var(--text-secondary); }}
+  .profile-card .details span {{ margin-right: 14px; }}
+  .profile-card .big-five {{ display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }}
+  .profile-card .b5-item {{ font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #F2F2F7; color: var(--text-secondary); }}
 
-  .section {{ margin-bottom: 48px; }}
-  .section-title {{ font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }}
+  .section {{ margin-bottom: 40px; }}
+  .section-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
 
-  .persona-grid {{ display: flex; flex-direction: column; gap: 12px; }}
-  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease; border-left: 4px solid var(--border); }}
+  .persona-grid {{ display: flex; flex-direction: column; gap: 8px; }}
+  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; box-shadow: var(--shadow); transition: box-shadow 0.15s ease; border-left: 3px solid var(--border); }}
   .persona-card:hover {{ box-shadow: var(--shadow-hover); }}
-  .persona-card.app-Instagram {{ border-left-color: #E1306C; background: #FFF5F7; }}
-  .persona-card.app-Facebook {{ border-left-color: #1877F2; background: #F0F6FF; }}
-  .persona-card.app-Threads {{ border-left-color: #000000; background: #F5F5F5; }}
-  .persona-card.app-Chatbot {{ border-left-color: #D97757; background: #FFF8F5; }}
-  .persona-card .item-text {{ font-size: 15px; font-weight: 500; margin-bottom: 10px; line-height: 1.4; }}
-  .persona-card .meta-line {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }}
+  /* Muted, elegant tints per app */
+  .persona-card.app-Instagram {{ border-left-color: #C13584; background: #FDFAFE; }}
+  .persona-card.app-Facebook {{ border-left-color: #4A6FA5; background: #F8FAFD; }}
+  .persona-card.app-Threads {{ border-left-color: #636366; background: #FAFAFA; }}
+  .persona-card.app-Chatbot {{ border-left-color: #C8956C; background: #FDFCFA; }}
+  .persona-card .item-text {{ font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.45; color: var(--text); }}
+  .persona-card .meta-line {{ font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; }}
 
-  .confidence-row {{ display: flex; align-items: center; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary); }}
-  .confidence-row .label {{ width: 90px; flex-shrink: 0; }}
-  .confidence-bar-track {{ flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin: 0 8px; }}
+  .confidence-row {{ display: flex; align-items: center; margin-bottom: 4px; font-size: 11px; color: var(--text-tertiary); }}
+  .confidence-row .label {{ width: 70px; flex-shrink: 0; }}
+  .confidence-bar-track {{ flex: 1; height: 3px; background: #EDEDF0; border-radius: 2px; overflow: hidden; margin: 0 8px; }}
   .confidence-bar-fill {{ height: 100%; border-radius: 2px; transition: width 0.4s ease; }}
-  .confidence-bar-fill.init {{ background: var(--accent); }}
-  .confidence-bar-fill.cross {{ background: var(--accent-similar); }}
-  .confidence-row .value {{ width: 32px; text-align: right; font-variant-numeric: tabular-nums; }}
+  .confidence-bar-fill.init {{ background: #86868B; }}
+  .confidence-bar-fill.cross {{ background: #636366; }}
+  .confidence-row .value {{ width: 28px; text-align: right; font-variant-numeric: tabular-nums; font-size: 10px; }}
 
-  .badge {{ display: inline-block; font-size: 11px; font-weight: 500; padding: 2px 10px; border-radius: 20px; margin-top: 6px; margin-right: 4px; }}
-  .badge.category {{ background: #EDE9FE; color: #6D28D9; }}
-  .badge.similar {{ background: #E6F4EE; color: var(--accent-similar); }}
-  .badge.contradictory {{ background: #F8E4EE; color: var(--accent-contradictory); }}
-  .badge.none {{ background: #F0F0EE; color: var(--text-secondary); }}
-  .badge.stereotypical {{ background: #FEF3C7; color: #92400E; }}
-  .badge.anti-stereotypical {{ background: #DBEAFE; color: #1E40AF; }}
-  .badge.test {{ background: #FCE7F3; color: #9D174D; }}
-  .badge.train {{ background: #EFF6FF; color: #1D4ED8; }}
-  .badge.distractor {{ background: #FEE2E2; color: #991B1B; }}
-  .badge.platform {{ background: #F0FDF4; color: #166534; }}
-  .badge.action {{ background: #FEF3C7; color: #78350F; }}
-  .badge.ai-msg {{ background: #E0E7FF; color: #3730A3; }}
+  .badge {{ display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 6px; margin-right: 3px; letter-spacing: 0.1px; }}
+  .badge.category {{ background: #F2F2F7; color: #636366; }}
+  .badge.similar {{ background: #F2F2F7; color: #48854A; }}
+  .badge.contradictory {{ background: #F2F2F7; color: #B04050; }}
+  .badge.none {{ display: none; }}
+  .badge.stereotypical {{ background: #FFF8E1; color: #8B6914; }}
+  .badge.anti-stereotypical {{ background: #EEF2FF; color: #4A5DA8; }}
+  .badge.test {{ background: #FDF2F8; color: #9B3068; }}
+  .badge.train {{ background: #F2F2F7; color: var(--text-secondary); }}
+  .badge.distractor {{ background: #FEF2F2; color: #9B2C2C; }}
+  .badge.platform {{ background: #F2F2F7; color: var(--text-secondary); font-weight: 600; }}
+  .badge.action {{ background: #F2F2F7; color: var(--text-secondary); }}
 
-  .app-section {{ margin-bottom: 36px; }}
-  .app-section h3 {{ font-size: 16px; font-weight: 600; margin-bottom: 14px; color: var(--text); }}
-  .app-persona-block {{ background: var(--accent-light); border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; }}
-  .app-persona-block .ap-title {{ font-weight: 600; color: var(--text); margin-bottom: 4px; }}
-  .user-message {{ margin-top: 10px; padding: 10px 12px; background: #EEF2FF; border-left: 3px solid #6366F1; border-radius: 6px; font-size: 13px; color: #1E1B4B; font-style: italic; }}
+  .user-message {{ margin-top: 10px; padding: 10px 12px; background: #F2F2F7; border-left: 2px solid var(--text-tertiary); border-radius: 4px; font-size: 12px; color: var(--text); font-style: italic; }}
 
-  .chat-thread {{ margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }}
-  .chat-bubble {{ max-width: 88%; padding: 10px 14px; border-radius: 16px; font-size: 13px; line-height: 1.55; word-wrap: break-word; }}
-  .chat-bubble.user-bubble {{ align-self: flex-end; background: #3B82F6; color: #fff; border-bottom-right-radius: 4px; }}
-  .chat-bubble.assistant-bubble {{ align-self: flex-start; background: #F3F4F6; color: var(--text); border-bottom-left-radius: 4px; }}
-  .chat-role {{ font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; opacity: 0.7; }}
-  .chat-bubble.user-bubble .chat-role {{ color: rgba(255,255,255,0.8); }}
-  .chat-bubble.assistant-bubble .chat-role {{ color: var(--text-secondary); }}
-  .chat-conv-label {{ font-size: 11px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 4px; font-weight: 500; }}
+  .chat-thread {{ margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }}
+  .chat-bubble {{ max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
+  .chat-bubble.user-bubble {{ align-self: flex-end; background: var(--text); color: #fff; border-bottom-right-radius: 4px; }}
+  .chat-bubble.assistant-bubble {{ align-self: flex-start; background: #F2F2F7; color: var(--text); border-bottom-left-radius: 4px; }}
+  .chat-role {{ font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }}
+  .chat-bubble.user-bubble .chat-role {{ color: rgba(255,255,255,0.55); }}
+  .chat-bubble.assistant-bubble .chat-role {{ color: var(--text-tertiary); }}
+  .chat-conv-label {{ font-size: 10px; color: var(--text-tertiary); margin-top: 8px; margin-bottom: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }}
 
-  .empty {{ text-align: center; padding: 40px; color: var(--text-secondary); font-size: 14px; }}
+  .empty {{ text-align: center; padding: 40px; color: var(--text-secondary); font-size: 13px; }}
 </style>
 </head>
 <body>
