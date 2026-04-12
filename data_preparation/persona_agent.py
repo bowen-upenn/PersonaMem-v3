@@ -2433,6 +2433,7 @@ class PersonaAgent:
             fmt = _parse_format(fmt_raw, app)
             fmt["app"] = app  # ensure consistency with session-routed app
 
+            # Build event dict with preferences LAST for readability
             event = {
                 "source_object_id": oid,
                 "source_timestamp": rep.source_timestamp,
@@ -2440,10 +2441,9 @@ class PersonaAgent:
                 "source_hashtags": event_hashtags,
                 "source_interaction_type": rep.source_interaction_type,
                 "interaction_format": fmt,
-                "preferences": preferences,
             }
 
-            # Merge chatbot conversation data if this is a Chatbot event
+            # Merge chatbot conversation data before preferences
             if app == "Chatbot":
                 for ap in atoms:
                     key = _normalize_persona_text(ap.persona_item)
@@ -2459,6 +2459,8 @@ class PersonaAgent:
                             if action in ("asked_to_forget", "corrected_assumption"):
                                 event["interaction_format"] = override
                         break  # one conversation per event
+
+            event["preferences"] = preferences  # always last
 
             all_events.append(event)
 
