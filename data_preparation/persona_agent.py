@@ -941,23 +941,22 @@ class PersonaAgent:
         """Build update_history for each surviving canonical preference.
 
         Examines how each preference's evidence evolved over time by looking
-        at the raw atomic personas (self.atomic_personas). For each canonical,
-        the history tracks:
+        at the raw atomic personas (self.atomic_personas). The history only
+        records *changes* — not the baseline state:
 
-        - "new": first qualified occurrence (timestamp of first atomic persona
-          with init >= MIN_PERSONA_INIT_CONFIDENCE for this canonical)
-        - "reinforced": if the preference appeared in a distinctly later time
-          period (> 24h after first occurrence) with continued strong signal,
-          indicating sustained interest
-        - "contradicted": if a preference marked as contradictory by the LLM
-          cross-ref step appeared for this canonical (uses relationship_type
-          and related_personas from the cross-ref output)
-        - "faded": if the preference's last qualified occurrence is
-          significantly earlier than the user's overall last interaction,
-          suggesting the interest waned
+        - "contradicted": a contradictory preference appeared (with the
+          contradicting preference text and its timestamp)
+        - "faded": the preference's last qualified occurrence is well before
+          the user's overall last interaction, suggesting interest waned
+
+        "new" and "reinforced" entries are NOT stored because they're
+        redundant: the item's own position in the time-sorted list and its
+        confidence_cross_referenced count already convey when it appeared
+        and how frequently it was corroborated.
 
         The history is stored on each CrossReferencedPersona.update_history
-        as a list of dicts sorted by timestamp ascending.
+        as a list of dicts sorted by timestamp ascending. Most preferences
+        will have an empty list (stable, no changes).
         """
         if not self.cross_referenced_personas or not self.atomic_personas:
             return
@@ -975,7 +974,6 @@ class PersonaAgent:
             return
         user_last_ts = max(all_timestamps)
         FADE_THRESHOLD_SECONDS = 48 * 3600  # 48 hours before end of window = "faded"
-        REINFORCE_GAP_SECONDS = 24 * 3600   # need 24h gap for a "reinforced" entry
 
         # Build contradictions lookup from cross-ref results
         contradicted_by: dict[str, list] = _ddict(list)
@@ -991,13 +989,7 @@ class PersonaAgent:
             key = _normalize_persona_text(cr.persona_item)
             atoms = groups.get(key, [])
             if not atoms:
-                # No qualified atoms — single "new" entry from the canonical's own timestamp
-                cr.update_history = [{
-                    "preference": cr.persona_item,
-                    "update_type": "new",
-                    "timestamp": cr.source_timestamp if hasattr(cr, 'source_timestamp') else 0,
-                    "formatted_timestamp": cr.formatted_timestamp,
-                }]
+                cr.update_history = []
                 continue
 
             atoms_sorted = sorted(atoms, key=lambda a: a.source_timestamp)
@@ -1005,27 +997,6 @@ class PersonaAgent:
             last = atoms_sorted[-1]
 
             history = []
-
-            # "new" at first occurrence
-            history.append({
-                "preference": cr.persona_item,
-                "update_type": "new",
-                "timestamp": first.source_timestamp,
-                "formatted_timestamp": utils.unix_to_formatted(first.source_timestamp),
-            })
-
-            # "reinforced" if there are occurrences > 24h after first AND the preference
-            # is still active (not just a single burst)
-            late_atoms = [a for a in atoms_sorted if a.source_timestamp - first.source_timestamp >= REINFORCE_GAP_SECONDS]
-            if late_atoms:
-                # Pick the midpoint occurrence as the reinforcement marker
-                mid = late_atoms[len(late_atoms) // 2]
-                history.append({
-                    "preference": cr.persona_item,
-                    "update_type": "reinforced",
-                    "timestamp": mid.source_timestamp,
-                    "formatted_timestamp": utils.unix_to_formatted(mid.source_timestamp),
-                })
 
             # "contradicted" if any contradictory relationship exists
             if cr.persona_item in contradicted_by:
