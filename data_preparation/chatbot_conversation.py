@@ -202,119 +202,127 @@ def generate_chatbot_conversations(
     chatbot_persona: dict,
     llm_query_fn: Callable[[str], str | None],
     user_seed: int,
+    max_workers: int = 20,
 ) -> list[dict]:
     """Generate multi-turn conversations for chatbot preference records.
 
+    Uses ThreadPoolExecutor with ``max_workers`` parallel LLM calls.
+    Deterministic RNG decisions are pre-computed sequentially, then LLM
+    calls are fanned out in parallel.
+
     Args:
-        chatbot_records: list of preference dicts already routed to Chatbot
-            (loaded from chatbot.json or built in-memory).
+        chatbot_records: list of preference dicts already routed to Chatbot.
         user_profile: the user's profile dict (name, bio, career, etc.)
-        chatbot_persona: the Chatbot AppPersona dict (use_purposes,
-            style_description, chatbot_contexts, etc.)
+        chatbot_persona: the Chatbot AppPersona dict.
         llm_query_fn: callable that takes a prompt string and returns the
-            LLM response text (or None on failure).  This is typically
-            PersonaAgent._query_llm_with_retry or a Claude Code subagent
-            wrapper.
+            LLM response text (or None on failure).
         user_seed: deterministic seed derived from user_id.
+        max_workers: number of parallel LLM API calls.
 
     Returns:
         The same chatbot_records list, with ``conversation``,
         ``conversation_type``, and ``ask_to_forget`` added to each record.
     """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     rng = random.Random(user_seed * 1301 + 7)
     user_contexts = chatbot_persona.get("chatbot_contexts", [])
 
-    for rec in chatbot_records:
+    # --- Phase 1: Sequential RNG decisions + prompt building ---
+    # (Must be sequential to keep RNG deterministic)
+    work_items: list[tuple[int, str, str, str | None]] = []
+    # work_items: (record_index, prompt, conv_type, variant)
+
+    for i, rec in enumerate(chatbot_records):
         interaction_type = rec.get("source_interaction_type", "implicit_positive")
         persona_item = rec.get("persona_item", "")
         category = rec.get("category", "")
 
-        # Default: no conversation
         rec["conversation"] = None
         rec["conversation_type"] = None
         rec["ask_to_forget"] = False
 
         if not should_generate_multiturn(rng):
-            # ~20%: keep existing single-action format, no conversation
             continue
 
-        # --- Decide conversation variant ---
         conv_type = select_conversation_type(user_contexts, rng)
-        variant: str | None = None  # "ask_to_forget", "correction", or None
+        variant: str | None = None
 
         if interaction_type == "explicit_negative":
             variant = pick_explicit_neg_variant(rng)
             if variant == "ask_to_forget" and not is_self_preference(persona_item):
-                # ask-to-forget only makes sense for self-referencing prefs;
-                # fall back to correction instead
                 variant = "correction"
 
-        # --- Build prompt ---
         if variant == "ask_to_forget":
             prompt = prompts.generate_ask_to_forget_conversation_prompt(
-                persona_item=persona_item,
-                category=category,
-                user_profile=user_profile,
-                chatbot_persona=chatbot_persona,
+                persona_item=persona_item, category=category,
+                user_profile=user_profile, chatbot_persona=chatbot_persona,
             )
         elif variant == "correction":
             prompt = prompts.generate_correction_conversation_prompt(
-                persona_item=persona_item,
-                category=category,
-                user_profile=user_profile,
-                chatbot_persona=chatbot_persona,
+                persona_item=persona_item, category=category,
+                user_profile=user_profile, chatbot_persona=chatbot_persona,
             )
         else:
             num_turns = select_num_turns(interaction_type, rng)
             prompt = prompts.generate_chatbot_conversation_prompt(
-                persona_item=persona_item,
-                category=category,
+                persona_item=persona_item, category=category,
                 conversation_type=conv_type,
                 conversation_type_description=CHATBOT_CONVERSATION_TYPES[conv_type]["description"],
-                user_profile=user_profile,
-                chatbot_persona=chatbot_persona,
-                interaction_type=interaction_type,
-                num_turns=num_turns,
+                user_profile=user_profile, chatbot_persona=chatbot_persona,
+                interaction_type=interaction_type, num_turns=num_turns,
             )
 
-        # --- Call LLM ---
+        work_items.append((i, prompt, conv_type, variant))
+
+    # --- Phase 2: Parallel LLM calls ---
+    def _call_llm(item):
+        idx, prompt, conv_type, variant = item
         response = llm_query_fn(prompt)
-        if not response:
-            continue
+        return idx, response, conv_type, variant
 
-        parsed = utils.extract_json_from_response(response)
-        if not isinstance(parsed, list):
-            continue
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_call_llm, item): item for item in work_items}
+        for future in as_completed(futures):
+            try:
+                idx, response, conv_type, variant = future.result()
+            except Exception:
+                continue
 
-        # Validate conversation structure
-        valid = True
-        for turn in parsed:
-            if not isinstance(turn, dict) or "role" not in turn or "content" not in turn:
-                valid = False
-                break
-            if turn["role"] not in ("user", "assistant"):
-                valid = False
-                break
-        if not valid or len(parsed) < 2:
-            continue
+            if not response:
+                continue
 
-        # --- Attach to record ---
-        rec["conversation"] = parsed
-        rec["conversation_type"] = conv_type
-        rec["ask_to_forget"] = (variant == "ask_to_forget")
+            parsed = utils.extract_json_from_response(response)
+            if not isinstance(parsed, list):
+                continue
 
-        # Update interaction_format action for special variants
-        if variant == "ask_to_forget":
-            rec["interaction_format"]["action"] = "asked_to_forget"
-            rec["interaction_format"]["action_label"] = (
-                "Asked the assistant to forget a specific preference"
-            )
-            rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
-        elif variant == "correction":
-            rec["interaction_format"]["action"] = "corrected_assumption"
-            rec["interaction_format"]["action_label"] = (
-                "Corrected the assistant's wrong assumption about a preference"
-            )
-            rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
+            valid = True
+            for turn in parsed:
+                if not isinstance(turn, dict) or "role" not in turn or "content" not in turn:
+                    valid = False
+                    break
+                if turn["role"] not in ("user", "assistant"):
+                    valid = False
+                    break
+            if not valid or len(parsed) < 2:
+                continue
+
+            rec = chatbot_records[idx]
+            rec["conversation"] = parsed
+            rec["conversation_type"] = conv_type
+            rec["ask_to_forget"] = (variant == "ask_to_forget")
+
+            if variant == "ask_to_forget":
+                rec["interaction_format"]["action"] = "asked_to_forget"
+                rec["interaction_format"]["action_label"] = (
+                    "Asked the assistant to forget a specific preference"
+                )
+                rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
+            elif variant == "correction":
+                rec["interaction_format"]["action"] = "corrected_assumption"
+                rec["interaction_format"]["action_label"] = (
+                    "Corrected the assistant's wrong assumption about a preference"
+                )
+                rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
 
     return chatbot_records

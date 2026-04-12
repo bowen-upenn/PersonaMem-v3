@@ -40,6 +40,7 @@ def process_single_user(
     llm_client,
     backend_dir: str = "backend",
     verbose: bool = False,
+    max_workers: int = 20,
 ) -> dict:
     """Create a PersonaAgent for one user and run the full pipeline."""
     agent = PersonaAgent(
@@ -47,6 +48,7 @@ def process_single_user(
         llm_client=llm_client,
         backend_dir=backend_dir,
         verbose=verbose,
+        max_workers=max_workers,
     )
     agent.load_interactions(rows)
     return agent.run_pipeline()

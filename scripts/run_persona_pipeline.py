@@ -27,7 +27,8 @@ def main():
     parser.add_argument("--input_csv", default="data/test_interactions.csv", help="Path to interactions CSV file (default: data/test_interactions.csv)")
     parser.add_argument("--backend_dir", default="backend", help="Directory for output CSVs (default: backend)")
     parser.add_argument("--user_id", default=None, help="Process only this user_id (default: all users)")
-    parser.add_argument("--max_workers", type=int, default=4, help="Max parallel workers (default: 4)")
+    parser.add_argument("--max_workers", type=int, default=4, help="Max parallel user workers (default: 4)")
+    parser.add_argument("--parallel", type=int, default=20, help="Parallel LLM API calls per user (default: 20)")
     parser.add_argument("--model", default="gpt-5-chat", help="LLM model name (default: gpt-5-chat)")
     parser.add_argument("--rate_limit", type=int, default=50, help="API rate limit per minute (default: 50)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
@@ -43,7 +44,8 @@ def main():
     print(f"{utils.Colors.BOLD}PersonaMem Persona Pipeline{utils.Colors.ENDC}")
     print(f"  Input: {args.input_csv}")
     print(f"  Backend: {args.backend_dir}")
-    print(f"  Workers: {args.max_workers}")
+    print(f"  User workers: {args.max_workers}")
+    print(f"  Parallel API calls: {args.parallel}")
     print(f"  Model: {args.model}")
     print()
 
@@ -58,13 +60,13 @@ def main():
     results = []
     if len(grouped) == 1:
         uid, rows = next(iter(grouped.items()))
-        result = process_single_user(uid, rows, llm_client, args.backend_dir, args.verbose)
+        result = process_single_user(uid, rows, llm_client, args.backend_dir, args.verbose, args.parallel)
         results.append(result)
     else:
         with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
             futures = {
                 executor.submit(
-                    process_single_user, uid, rows, llm_client, args.backend_dir, args.verbose
+                    process_single_user, uid, rows, llm_client, args.backend_dir, args.verbose, args.parallel
                 ): uid
                 for uid, rows in grouped.items()
             }
