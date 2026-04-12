@@ -76,8 +76,8 @@
 
   .chat-thread { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
   .chat-bubble { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; word-wrap: break-word; }
-  .chat-bubble.user-bubble { align-self: flex-end; background: #4A6FA5; color: #fff; border-bottom-right-radius: 4px; }
-  .chat-bubble.assistant-bubble { align-self: flex-start; background: #F2F2F7; color: var(--text); border-bottom-left-radius: 4px; }
+  .chat-bubble.user-bubble { align-self: flex-end; background: #0084FF; color: #fff; border-bottom-right-radius: 4px; }
+  .chat-bubble.assistant-bubble { align-self: flex-start; background: #E4E6EB; color: var(--text); border-bottom-left-radius: 4px; }
   .chat-role { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
   .chat-bubble.user-bubble .chat-role { color: rgba(255,255,255,0.55); }
   .chat-bubble.assistant-bubble .chat-role { color: var(--text-tertiary); }
@@ -101,7 +101,7 @@
       <span>FB: 19</span>
       <span>TH: 11</span>
       <span>AI: 14</span>
-      <span>Generated April 12, 2026 at 07:23 UTC</span>
+      <span>Generated April 12, 2026 at 07:28 UTC</span>
     </div>
   </div>
 
@@ -187,7 +187,7 @@ if (prefsData.length === 0) {
     card.innerHTML = `
       <div class="meta-line" style="margin-bottom:4px;"><span style="font-weight:600;color:var(--text);">#${idx+1}</span> &middot; ${p.formatted_timestamp}</div>
       <div class="item-text">${p.persona_item}</div>
-      ${p.source_hashtags && p.source_hashtags.length ? `<div class="meta-line" style="color:var(--text-tertiary);margin-bottom:4px;">${p.source_hashtags.join('  ')}</div>` : ''}
+      ${p.source_hashtags && p.source_hashtags.length ? `<div class="meta-line" style="color:var(--text);margin-bottom:4px;">${p.source_hashtags.join('  ')}</div>` : ''}
       <div style="margin-bottom:6px;">${primaryBadges}</div>
       <div class="conf-inline"><span>init ${p.confidence_score_init.toFixed(2)}</span><span>xref ${p.confidence_cross_referenced.toFixed(0)}</span></div>
       <div>${secondaryBadges}</div>
