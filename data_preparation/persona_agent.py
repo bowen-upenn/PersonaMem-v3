@@ -17,6 +17,13 @@ import sys
 from dataclasses import dataclass, field, asdict
 from typing import Optional, List, Dict
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    # Minimal fallback when tqdm is not installed
+    def tqdm(iterable, **kwargs):  # type: ignore[misc]
+        return iterable
+
 # Add repo root to path so query_llm can be imported from any working directory
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -678,7 +685,14 @@ class PersonaAgent:
         self.atomic_personas = []
         self.negative_personas = []
 
-        for idx, interaction in enumerate(self.interactions):
+        interaction_iter = tqdm(
+            enumerate(self.interactions),
+            total=len(self.interactions),
+            desc=f"[User {self.user_id}] Step 1: Inferring personas",
+            unit="row",
+            disable=not self.verbose,
+        )
+        for idx, interaction in interaction_iter:
             hashtags = self._extract_hashtags(interaction.object_text)
             if not hashtags:
                 continue
@@ -1785,7 +1799,13 @@ class PersonaAgent:
             sampler_seed = abs(hash(str(self.user_id))) % (2**31)
         rng = random.Random(sampler_seed)
 
-        for cr in self.cross_referenced_personas:
+        fmt_iter = tqdm(
+            self.cross_referenced_personas,
+            desc=f"[User {self.user_id}] Step 8: Interaction formats",
+            unit="pref",
+            disable=not self.verbose,
+        )
+        for cr in fmt_iter:
             app = cr.assigned_app or random.choice(PLATFORMS)
             entry = self._sample_action_from_bucket(app, cr.source_interaction_type, rng)
             action_id = entry["action"]
@@ -2151,21 +2171,32 @@ class PersonaAgent:
          11. save to backend/{uid}/ subfolder
         """
         print(f"{utils.Colors.BOLD}[User {self.user_id}] Starting persona pipeline...{utils.Colors.ENDC}")
+        pipeline_start = time.time()
 
-        self.infer_personas_from_hashtags()
-        self.summarize_and_cross_reference()
-        self.build_temporal_contradiction_graph()
-        self.build_update_histories()
-        self.generate_user_profile()
-        self.generate_app_personas()
-        self._build_sessions()
-        self.route_personas_to_apps()
-        self._assign_rows_to_apps()
-        self.generate_interaction_formats()
-        self.generate_chatbot_conversations()
-        self.annotate_stereotype_marks()
-        self.build_test_split()
-        self.save_to_backend()
+        steps = [
+            ("1.  Infer atomic personas",        self.infer_personas_from_hashtags),
+            ("2.  Cross-reference & filter",      self.summarize_and_cross_reference),
+            ("3.  Temporal contradiction graph",   self.build_temporal_contradiction_graph),
+            ("4.  Build update histories",         self.build_update_histories),
+            ("5.  Generate user profile",          self.generate_user_profile),
+            ("6.  Generate app personas",          self.generate_app_personas),
+            ("6b. Build sessions",                 self._build_sessions),
+            ("7.  Route preferences to apps",      self.route_personas_to_apps),
+            ("7b. Assign rows to apps",            self._assign_rows_to_apps),
+            ("8.  Generate interaction formats",   self.generate_interaction_formats),
+            ("8.5 Generate chatbot conversations", self.generate_chatbot_conversations),
+            ("9.  Annotate stereotype marks",      self.annotate_stereotype_marks),
+            ("10. Build test split",               self.build_test_split),
+            ("11. Save to backend",                self.save_to_backend),
+        ]
+
+        for step_name, step_fn in steps:
+            step_start = time.time()
+            step_fn()
+            elapsed = time.time() - step_start
+            total_elapsed = time.time() - pipeline_start
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] {step_name}: "
+                  f"{elapsed:.1f}s (total: {total_elapsed:.1f}s){utils.Colors.ENDC}")
 
         n_test = sum(1 for v in self.split_labels.values() if v == "test")
         n_train = sum(1 for v in self.split_labels.values() if v == "train")
@@ -2190,8 +2221,11 @@ class PersonaAgent:
             "split_train": n_train,
             "split_test": n_test,
             "distractors_assigned": len(self.test_distractors),
+            "total_time_seconds": round(time.time() - pipeline_start, 1),
         }
-        print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Pipeline complete: {summary}{utils.Colors.ENDC}")
+        total_time = time.time() - pipeline_start
+        mins, secs = divmod(total_time, 60)
+        print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Pipeline complete in {int(mins)}m {secs:.0f}s: {summary}{utils.Colors.ENDC}")
         return summary
 
     # ------------------------------------------------------------------
