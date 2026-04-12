@@ -32,8 +32,7 @@ backend/
     facebook.json       # preferences routed to Facebook (time-sorted)
     threads.json        # preferences routed to Threads (time-sorted)
     chatbot.json        # preferences routed to Chatbot (time-sorted, with @ai messages)
-    preferences_full.csv # flat ALL preferences across ALL apps (no redundancy removal, time-sorted)
-    preferences.csv      # redundancy-removed subset (near-synonyms collapsed, time-sorted)
+    preferences.csv     # flat single-file view of ALL preferences across ALL apps (time-sorted)
 ```
 
 The aggregated `preferences.csv` carries every preference the user has, regardless of which app it was routed to, in one strictly chronological table. Columns: `persona_item, category, confidence_score_init, confidence_cross_referenced, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags, assigned_app, interaction_format, relationship_type, related_personas, stereotype_mark, split, over_personalization_irrelevant, over_personalization_irrelevant_category`. `source_hashtags`, `related_personas`, and `interaction_format` are JSON-encoded into a single cell each.
@@ -47,7 +46,6 @@ The four supported apps are **Instagram, Facebook, Threads, Chatbot** — see `P
 3. **High-confidence predicate** (`is_high_confidence`): `confidence_score_init >= 0.5 AND confidence_cross_referenced > 0.5`. Used for test-split eligibility and over-personalization-irrelevant shortlisting.
 4. **Cross-ref is UNCAPPED on the upper side**. It's a magnitude of corroboration strength, not a probability. A preference corroborated by 200 distinct rows will legitimately score much higher than one corroborated by 10 — they MUST NOT both collapse to the same ceiling. The score is floored at 0.0 only.
 5. **Dedupe by text BEFORE cross-referencing**. If two rows produce the exact same persona_item string, merge them into one canonical persona. After the init filter, count the distinct source rows that passed the threshold — that count IS `confidence_cross_referenced`. The cross-reference LLM call finds `similar`/`contradictory` relationships between distinct canonicals but does NOT alter the cross_ref score. Identical persona_items must NEVER be marked as "similar" to each other.
-6. **Remove semantic redundancy AFTER the 0.5 filter.** Cluster the survivors: personas that describe the same preference in different words are collapsed into one representative (the one with highest `init + cross_ref`). Related-persona links are rewritten to point at the representative.
 7. **App assignment is NOT random.** Each preference is routed to **exactly one primary app** based on the user's per-app sub-personas. Then a deterministic 8% noise rate reassigns a fraction of preferences to a random different app to simulate real-world cross-app leakage.
 8. **Train/test split is CROSS-APP and time-based.** Sort ALL positive survivors (across all apps) by `source_timestamp` ascending. Take the latest 20% that pass `is_high_confidence` as test candidates, run the inferrability gate, drop failures, pair each survivor with a distractor. The resulting `split` label is stored on each preference regardless of which app it lives in.
 9. **`user_message` is required for two action groups** (see `persona_agent.py` for the exact sets):
@@ -66,8 +64,6 @@ For each user, the subagent executes these steps in order. Each step's rules com
 1. **Infer atomic personas** — rules from `prompts.py::hashtag_to_persona_prompt`. 3–5 personas per hashtag, specific topical category, per-persona source hashtags, confidence 0.0–1.0. Negative interactions capped at 0.05–0.15.
 
 2. **Dedupe + init filter + count corroboration + cross-reference** — rules from `prompts.py::summarize_and_cross_reference_prompt`. First merge lexically-identical persona_items across rows. Then apply `confidence_score_init < 0.5` filter. Then for each survivor, count the distinct source rows whose individual init also passed the threshold — that count IS `confidence_cross_referenced` (an integer). Then find `similar`/`contradictory` pairs between DISTINCT canonicals via LLM for relationship discovery only (no score changes).
-
-3. **Remove semantic redundancy** — rules from `prompts.py::remove_redundant_personas_prompt`. Cluster the survivors into groups of semantically-equivalent preferences (different wording, same meaning). Keep the representative (highest `init + cross_ref`) from each group, drop the rest. Rewrite `related_personas` links on survivors so they don't point at dropped items.
 
 4. **Temporal contradiction graph** — rules from `prompts.py::temporal_contradiction_graph_prompt`. Group contradictions into topical timelines (optional; skip if no contradictions).
 
@@ -153,6 +149,6 @@ Each subagent must follow the **exact same prompts** defined in `data_preparatio
 
 ## Important scale caveats
 
-- Large users (3k–6k interaction rows) produce tens of thousands of atomic personas. The subagent MUST dedupe by lexical identity in Step 2 and cluster by semantic redundancy in Step 3 aggressively — those two steps are what keep the preference list at a usable size. The 0.5 init filter is the third main size lever.
+- Large users (3k–6k interaction rows) produce tens of thousands of atomic personas. The subagent MUST dedupe by lexical identity in Step 2 to collapse identical strings. The 0.5 init filter is the other main size lever. No semantic redundancy removal is applied — repeated real-world signals and `confidence_cross_referenced` (the filtered corroboration count) capture frequency.
 - For very large users, batched per-preference prompts (like Step 8 generating interaction formats one at a time) are prohibitively expensive. The subagent should **batch** these inline — one LLM reasoning pass over all (persona, app) pairs at once, not one reasoning pass per preference.
 - Chatbot-routed preferences that end up as `@ai` actions need a unique `user_message` each; these should be generated as a batch where the subagent reasons about all of them together rather than per-item.
