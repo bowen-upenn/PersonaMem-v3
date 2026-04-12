@@ -2377,6 +2377,9 @@ class PersonaAgent:
                     h_ts = raw.pop("timestamp", 0)
                     if h_ts and h_ts > event_ts:
                         continue  # skip future entries — causality
+                    # Drop self-referencing preference (same as parent persona_item)
+                    if raw.get("preference") == cr.persona_item:
+                        raw.pop("preference")
                     ordered = {k: raw[k] for k in _HISTORY_KEY_ORDER if k in raw}
                     merged_history.append(ordered)
                 for rel in (cr.related_personas or []):
