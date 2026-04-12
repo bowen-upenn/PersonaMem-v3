@@ -13,8 +13,6 @@
       "#love"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -22,7 +20,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Enjoys wholesome, heartwarming feel-good content",
+        "update_type": "new",
+        "timestamp": 1775239894,
+        "formatted_timestamp": "18:11, 04/03/2026"
+      },
+      {
+        "preference": "Enjoys wholesome, heartwarming feel-good content",
+        "update_type": "reinforced",
+        "timestamp": 1775540689,
+        "formatted_timestamp": "05:44, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Responds emotionally to touching or inspirational stories",
@@ -38,8 +50,6 @@
       "#love"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -47,7 +57,21 @@
       "action_label": "Loved (❤)",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Responds emotionally to touching or inspirational stories",
+        "update_type": "new",
+        "timestamp": 1775239894,
+        "formatted_timestamp": "18:11, 04/03/2026"
+      },
+      {
+        "preference": "Responds emotionally to touching or inspirational stories",
+        "update_type": "reinforced",
+        "timestamp": 1775540689,
+        "formatted_timestamp": "05:44, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Cherishes the bond between mothers and daughters",
@@ -63,8 +87,6 @@
       "#motherdaughter"
     ],
     "stereotype_mark": "stereotypical",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -72,7 +94,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Cherishes the bond between mothers and daughters",
+        "update_type": "new",
+        "timestamp": 1775282209,
+        "formatted_timestamp": "05:56, 04/04/2026"
+      },
+      {
+        "preference": "Cherishes the bond between mothers and daughters",
+        "update_type": "reinforced",
+        "timestamp": 1775590877,
+        "formatted_timestamp": "19:41, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Likely has a daughter or close maternal-female relationship",
@@ -88,8 +124,6 @@
       "#motherdaughter"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -97,7 +131,21 @@
       "action_label": "Hahaha reaction",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Likely has a daughter or close maternal-female relationship",
+        "update_type": "new",
+        "timestamp": 1775282209,
+        "formatted_timestamp": "05:56, 04/04/2026"
+      },
+      {
+        "preference": "Likely has a daughter or close maternal-female relationship",
+        "update_type": "reinforced",
+        "timestamp": 1775590877,
+        "formatted_timestamp": "19:41, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Enjoys seasonal Halloween and fall-themed content",
@@ -112,8 +160,6 @@
       "#SpookySeason"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -121,7 +167,21 @@
       "action_label": "Hahaha reaction",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Enjoys seasonal Halloween and fall-themed content",
+        "update_type": "new",
+        "timestamp": 1775283922,
+        "formatted_timestamp": "06:25, 04/04/2026"
+      },
+      {
+        "preference": "Enjoys seasonal Halloween and fall-themed content",
+        "update_type": "reinforced",
+        "timestamp": 1775499903,
+        "formatted_timestamp": "18:25, 04/06/2026"
+      }
+    ]
   },
   {
     "persona_item": "Likely has or loves dogs as part of the family",
@@ -137,8 +197,6 @@
       "#dogsofinstagram"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -146,7 +204,21 @@
       "action_label": "@ai reply: told the in-feed assistant they're not interested",
       "user_message": "@ai not in the market for a dog right now, we can barely handle the toddler. Please stop showing me adoptable-pet posts for a bit."
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Likely has or loves dogs as part of the family",
+        "update_type": "new",
+        "timestamp": 1775284026,
+        "formatted_timestamp": "06:27, 04/04/2026"
+      },
+      {
+        "preference": "Likely has or loves dogs as part of the family",
+        "update_type": "reinforced",
+        "timestamp": 1775540593,
+        "formatted_timestamp": "05:43, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Looks for relatable everyday parenting stories",
@@ -163,8 +235,6 @@
       "#parentinghacks"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -172,7 +242,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Looks for relatable everyday parenting stories",
+        "update_type": "new",
+        "timestamp": 1775239894,
+        "formatted_timestamp": "18:11, 04/03/2026"
+      },
+      {
+        "preference": "Looks for relatable everyday parenting stories",
+        "update_type": "reinforced",
+        "timestamp": 1775636933,
+        "formatted_timestamp": "08:28, 04/08/2026"
+      }
+    ]
   },
   {
     "persona_item": "Enjoys home cooking and preparing family meals",
@@ -189,8 +273,6 @@
       "#homcooking"
     ],
     "stereotype_mark": "stereotypical",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -198,7 +280,21 @@
       "action_label": "Loved (❤)",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Enjoys home cooking and preparing family meals",
+        "update_type": "new",
+        "timestamp": 1775235998,
+        "formatted_timestamp": "17:06, 04/03/2026"
+      },
+      {
+        "preference": "Enjoys home cooking and preparing family meals",
+        "update_type": "reinforced",
+        "timestamp": 1775540673,
+        "formatted_timestamp": "05:44, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Values cooking as an act of love and family care",
@@ -215,8 +311,6 @@
       "#homcooking"
     ],
     "stereotype_mark": "stereotypical",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -224,7 +318,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Values cooking as an act of love and family care",
+        "update_type": "new",
+        "timestamp": 1775235998,
+        "formatted_timestamp": "17:06, 04/03/2026"
+      },
+      {
+        "preference": "Values cooking as an act of love and family care",
+        "update_type": "reinforced",
+        "timestamp": 1775540673,
+        "formatted_timestamp": "05:44, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Enjoys content celebrating involved fatherhood",
@@ -239,8 +347,6 @@
       "#DadLife"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -248,7 +354,21 @@
       "action_label": "Shared to a group",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Enjoys content celebrating involved fatherhood",
+        "update_type": "new",
+        "timestamp": 1775309440,
+        "formatted_timestamp": "13:30, 04/04/2026"
+      },
+      {
+        "preference": "Enjoys content celebrating involved fatherhood",
+        "update_type": "reinforced",
+        "timestamp": 1775640912,
+        "formatted_timestamp": "09:35, 04/08/2026"
+      }
+    ]
   },
   {
     "persona_item": "Active across Instagram Reels, Threads, and similar platforms",
@@ -264,8 +384,6 @@
       "#NewEpisode"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -273,7 +391,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Active across Instagram Reels, Threads, and similar platforms",
+        "update_type": "new",
+        "timestamp": 1775246708,
+        "formatted_timestamp": "20:05, 04/03/2026"
+      },
+      {
+        "preference": "Active across Instagram Reels, Threads, and similar platforms",
+        "update_type": "reinforced",
+        "timestamp": 1775560747,
+        "formatted_timestamp": "11:19, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Either runs or supports a small creator/service business",
@@ -288,8 +420,6 @@
       "#Collaboration"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -297,7 +427,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Either runs or supports a small creator/service business",
+        "update_type": "new",
+        "timestamp": 1775383727,
+        "formatted_timestamp": "10:08, 04/05/2026"
+      },
+      {
+        "preference": "Either runs or supports a small creator/service business",
+        "update_type": "reinforced",
+        "timestamp": 1775795963,
+        "formatted_timestamp": "04:39, 04/10/2026"
+      }
+    ]
   },
   {
     "persona_item": "Engages with content celebrating friendship milestones",
@@ -313,8 +457,6 @@
       "#squadgoals"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -322,7 +464,21 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train"
+    "split": "train",
+    "update_history": [
+      {
+        "preference": "Engages with content celebrating friendship milestones",
+        "update_type": "new",
+        "timestamp": 1775243159,
+        "formatted_timestamp": "19:05, 04/03/2026"
+      },
+      {
+        "preference": "Engages with content celebrating friendship milestones",
+        "update_type": "reinforced",
+        "timestamp": 1775562664,
+        "formatted_timestamp": "11:51, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Aspires to strong family traditions and shared routines",
@@ -339,8 +495,6 @@
       "#FamilyPhotoshoot"
     ],
     "stereotype_mark": "stereotypical",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -350,7 +504,21 @@
     },
     "split": "test",
     "over_personalization_irrelevant": "Enjoys home cooking and preparing family meals",
-    "over_personalization_irrelevant_category": "home cooking and food"
+    "over_personalization_irrelevant_category": "home cooking and food",
+    "update_history": [
+      {
+        "preference": "Aspires to strong family traditions and shared routines",
+        "update_type": "new",
+        "timestamp": 1775239894,
+        "formatted_timestamp": "18:11, 04/03/2026"
+      },
+      {
+        "preference": "Aspires to strong family traditions and shared routines",
+        "update_type": "reinforced",
+        "timestamp": 1775561463,
+        "formatted_timestamp": "11:31, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Centers family togetherness as a core value",
@@ -367,8 +535,6 @@
       "#FamilyPhotoshoot"
     ],
     "stereotype_mark": "stereotypical",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -378,7 +544,21 @@
     },
     "split": "test",
     "over_personalization_irrelevant": "Deeply invested in hair care and styling routines",
-    "over_personalization_irrelevant_category": "hair care and styling"
+    "over_personalization_irrelevant_category": "hair care and styling",
+    "update_history": [
+      {
+        "preference": "Centers family togetherness as a core value",
+        "update_type": "new",
+        "timestamp": 1775239894,
+        "formatted_timestamp": "18:11, 04/03/2026"
+      },
+      {
+        "preference": "Centers family togetherness as a core value",
+        "update_type": "reinforced",
+        "timestamp": 1775561463,
+        "formatted_timestamp": "11:31, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Enjoys wholesome family-activity content",
@@ -395,8 +575,6 @@
       "#FamilyPhotoshoot"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -406,7 +584,21 @@
     },
     "split": "test",
     "over_personalization_irrelevant": "Either runs or supports a small creator/service business",
-    "over_personalization_irrelevant_category": "small-business and creator entrepreneurship"
+    "over_personalization_irrelevant_category": "small-business and creator entrepreneurship",
+    "update_history": [
+      {
+        "preference": "Enjoys wholesome family-activity content",
+        "update_type": "new",
+        "timestamp": 1775239894,
+        "formatted_timestamp": "18:11, 04/03/2026"
+      },
+      {
+        "preference": "Enjoys wholesome family-activity content",
+        "update_type": "reinforced",
+        "timestamp": 1775561463,
+        "formatted_timestamp": "11:31, 04/07/2026"
+      }
+    ]
   },
   {
     "persona_item": "Enjoys nostalgic throwback content from earlier eras",
@@ -422,8 +614,6 @@
       "#throwback"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -433,7 +623,21 @@
     },
     "split": "test",
     "over_personalization_irrelevant": "Enjoys beauty and nail-art content",
-    "over_personalization_irrelevant_category": "beauty, nails, and personal style"
+    "over_personalization_irrelevant_category": "beauty, nails, and personal style",
+    "update_history": [
+      {
+        "preference": "Enjoys nostalgic throwback content from earlier eras",
+        "update_type": "new",
+        "timestamp": 1775236018,
+        "formatted_timestamp": "17:06, 04/03/2026"
+      },
+      {
+        "preference": "Enjoys nostalgic throwback content from earlier eras",
+        "update_type": "reinforced",
+        "timestamp": 1775641601,
+        "formatted_timestamp": "09:46, 04/08/2026"
+      }
+    ]
   },
   {
     "persona_item": "Values memory-keeping and shared cultural references",
@@ -449,8 +653,6 @@
       "#throwback"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -460,7 +662,21 @@
     },
     "split": "test",
     "over_personalization_irrelevant": "Values a sense of local community and belonging",
-    "over_personalization_irrelevant_category": "community and local belonging"
+    "over_personalization_irrelevant_category": "community and local belonging",
+    "update_history": [
+      {
+        "preference": "Values memory-keeping and shared cultural references",
+        "update_type": "new",
+        "timestamp": 1775236018,
+        "formatted_timestamp": "17:06, 04/03/2026"
+      },
+      {
+        "preference": "Values memory-keeping and shared cultural references",
+        "update_type": "reinforced",
+        "timestamp": 1775641601,
+        "formatted_timestamp": "09:46, 04/08/2026"
+      }
+    ]
   },
   {
     "persona_item": "Navigating back-to-school routines with school-age children",
@@ -475,8 +691,6 @@
       "#BackToSchool"
     ],
     "stereotype_mark": "neutral",
-    "relationship_type": "none",
-    "related_personas": [],
     "assigned_app": "Facebook",
     "interaction_format": {
       "app": "Facebook",
@@ -486,6 +700,20 @@
     },
     "split": "test",
     "over_personalization_irrelevant": "Responds emotionally to touching or inspirational stories",
-    "over_personalization_irrelevant_category": "heartwarming and feel-good content"
+    "over_personalization_irrelevant_category": "heartwarming and feel-good content",
+    "update_history": [
+      {
+        "preference": "Navigating back-to-school routines with school-age children",
+        "update_type": "new",
+        "timestamp": 1775539778,
+        "formatted_timestamp": "05:29, 04/07/2026"
+      },
+      {
+        "preference": "Navigating back-to-school routines with school-age children",
+        "update_type": "reinforced",
+        "timestamp": 1775796506,
+        "formatted_timestamp": "04:48, 04/10/2026"
+      }
+    ]
   }
 ]

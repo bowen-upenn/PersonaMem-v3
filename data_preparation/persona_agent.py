@@ -65,13 +65,17 @@ class CrossReferencedPersona:
     # on canonicals. An integer
     # stored as float for schema compatibility.
     confidence_cross_referenced: float
-    relationship_type: str = "none"          # "similar", "contradictory", "none"
-    related_personas: list = field(default_factory=list)  # list of {"persona_item": str, "type": str}
+    relationship_type: str = "none"          # internal: "similar", "contradictory", "none"
+    related_personas: list = field(default_factory=list)  # internal: list of {"persona_item": str, "type": str}
     formatted_timestamp: str = ""
     source_interaction_type: str = ""
     source_interaction_format: str = ""
     # Which app the router assigned this preference to.
     assigned_app: str = ""
+    # Temporal update history — how this preference evolved over time.
+    # Each entry: {"preference": str, "update_type": str, "timestamp": int, "formatted_timestamp": str}
+    # update_type values: "new", "reinforced", "contradicted", "faded"
+    update_history: list = field(default_factory=list)
 
 
 @dataclass
@@ -930,6 +934,132 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Temporal graph: {len(self.temporal_graph)} topics, {total_nodes} nodes.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
+    # Build temporal update histories per preference
+    # ------------------------------------------------------------------
+
+    def build_update_histories(self) -> None:
+        """Build update_history for each surviving canonical preference.
+
+        Examines how each preference's evidence evolved over time by looking
+        at the raw atomic personas (self.atomic_personas). For each canonical,
+        the history tracks:
+
+        - "new": first qualified occurrence (timestamp of first atomic persona
+          with init >= MIN_PERSONA_INIT_CONFIDENCE for this canonical)
+        - "reinforced": if the preference appeared in a distinctly later time
+          period (> 24h after first occurrence) with continued strong signal,
+          indicating sustained interest
+        - "contradicted": if a preference marked as contradictory by the LLM
+          cross-ref step appeared for this canonical (uses relationship_type
+          and related_personas from the cross-ref output)
+        - "faded": if the preference's last qualified occurrence is
+          significantly earlier than the user's overall last interaction,
+          suggesting the interest waned
+
+        The history is stored on each CrossReferencedPersona.update_history
+        as a list of dicts sorted by timestamp ascending.
+        """
+        if not self.cross_referenced_personas or not self.atomic_personas:
+            return
+
+        # Group raw atomic personas by normalized key, filtered to init >= threshold
+        from collections import defaultdict as _ddict
+        groups: dict[str, list] = _ddict(list)
+        for ap in self.atomic_personas:
+            if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE:
+                groups[_normalize_persona_text(ap.persona_item)].append(ap)
+
+        # Overall user activity window
+        all_timestamps = [ap.source_timestamp for ap in self.atomic_personas if ap.source_timestamp]
+        if not all_timestamps:
+            return
+        user_last_ts = max(all_timestamps)
+        FADE_THRESHOLD_SECONDS = 48 * 3600  # 48 hours before end of window = "faded"
+        REINFORCE_GAP_SECONDS = 24 * 3600   # need 24h gap for a "reinforced" entry
+
+        # Build contradictions lookup from cross-ref results
+        contradicted_by: dict[str, list] = _ddict(list)
+        for cr in self.cross_referenced_personas:
+            if cr.relationship_type == "contradictory":
+                for rel in cr.related_personas:
+                    if isinstance(rel, dict) and rel.get("type") == "contradictory":
+                        other = rel.get("persona_item", "")
+                        if other:
+                            contradicted_by[cr.persona_item].append(other)
+
+        for cr in self.cross_referenced_personas:
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = groups.get(key, [])
+            if not atoms:
+                # No qualified atoms — single "new" entry from the canonical's own timestamp
+                cr.update_history = [{
+                    "preference": cr.persona_item,
+                    "update_type": "new",
+                    "timestamp": cr.source_timestamp if hasattr(cr, 'source_timestamp') else 0,
+                    "formatted_timestamp": cr.formatted_timestamp,
+                }]
+                continue
+
+            atoms_sorted = sorted(atoms, key=lambda a: a.source_timestamp)
+            first = atoms_sorted[0]
+            last = atoms_sorted[-1]
+
+            history = []
+
+            # "new" at first occurrence
+            history.append({
+                "preference": cr.persona_item,
+                "update_type": "new",
+                "timestamp": first.source_timestamp,
+                "formatted_timestamp": utils.unix_to_formatted(first.source_timestamp),
+            })
+
+            # "reinforced" if there are occurrences > 24h after first AND the preference
+            # is still active (not just a single burst)
+            late_atoms = [a for a in atoms_sorted if a.source_timestamp - first.source_timestamp >= REINFORCE_GAP_SECONDS]
+            if late_atoms:
+                # Pick the midpoint occurrence as the reinforcement marker
+                mid = late_atoms[len(late_atoms) // 2]
+                history.append({
+                    "preference": cr.persona_item,
+                    "update_type": "reinforced",
+                    "timestamp": mid.source_timestamp,
+                    "formatted_timestamp": utils.unix_to_formatted(mid.source_timestamp),
+                })
+
+            # "contradicted" if any contradictory relationship exists
+            if cr.persona_item in contradicted_by:
+                for other_item in contradicted_by[cr.persona_item]:
+                    # Find the timestamp of the contradicting preference's first appearance
+                    other_key = _normalize_persona_text(other_item)
+                    other_atoms = groups.get(other_key, [])
+                    if other_atoms:
+                        other_first = min(a.source_timestamp for a in other_atoms)
+                        history.append({
+                            "preference": other_item,
+                            "update_type": "contradicted",
+                            "timestamp": other_first,
+                            "formatted_timestamp": utils.unix_to_formatted(other_first),
+                        })
+
+            # "faded" if last occurrence is well before the user's last activity
+            if (user_last_ts - last.source_timestamp) >= FADE_THRESHOLD_SECONDS:
+                history.append({
+                    "preference": cr.persona_item,
+                    "update_type": "faded",
+                    "timestamp": last.source_timestamp,
+                    "formatted_timestamp": utils.unix_to_formatted(last.source_timestamp),
+                })
+
+            history.sort(key=lambda h: h["timestamp"])
+            cr.update_history = history
+
+        if self.verbose:
+            n_multi = sum(1 for cr in self.cross_referenced_personas if len(cr.update_history) > 1)
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Update histories built: "
+                  f"{n_multi} preferences have multi-entry histories.{utils.Colors.ENDC}")
+
+    # ------------------------------------------------------------------
     # LLM Call #4: Generate synthetic user profile
     # ------------------------------------------------------------------
 
@@ -1523,6 +1653,7 @@ class PersonaAgent:
         self.infer_personas_from_hashtags()
         self.summarize_and_cross_reference()
         self.build_temporal_contradiction_graph()
+        self.build_update_histories()
         self.generate_user_profile()
         self.generate_app_personas()
         self.route_personas_to_apps()
@@ -1638,8 +1769,7 @@ class PersonaAgent:
                 "category": cr.category,
                 "confidence_score_init": cr.confidence_score_init,
                 "confidence_cross_referenced": cr.confidence_cross_referenced,
-                "relationship_type": cr.relationship_type,
-                "related_personas": cr.related_personas,
+                "update_history": cr.update_history,
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                 "split": split_label,
                 "source_interaction_type": ap.source_interaction_type if ap else cr.source_interaction_type,
@@ -1666,8 +1796,12 @@ class PersonaAgent:
                 "category": np_persona.category,
                 "confidence_score_init": np_persona.confidence_score_init,
                 "confidence_cross_referenced": 0.0,
-                "relationship_type": "none",
-                "related_personas": [],
+                "update_history": [{
+                    "preference": np_persona.persona_item,
+                    "update_type": "new",
+                    "timestamp": np_persona.source_timestamp,
+                    "formatted_timestamp": np_persona.formatted_timestamp,
+                }],
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                 "split": "train",
                 "source_interaction_type": np_persona.source_interaction_type,
