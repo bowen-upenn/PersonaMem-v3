@@ -26,9 +26,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Keeps up with fashion and personal style inspiration",
@@ -57,9 +55,7 @@
       "action_label": "Followed the creator",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Values presenting a polished, put-together look",
@@ -88,9 +84,7 @@
       "action_label": "Followed the creator",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys short-form comedy reels and viral funny clips",
@@ -116,9 +110,7 @@
       "action_label": "Reacted to the story",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Uses humor content as a mood-lifter throughout the day",
@@ -144,9 +136,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Values a sense of local community and belonging",
@@ -170,9 +160,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Deeply invested in hair care and styling routines",
@@ -201,9 +189,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Follows hairstylists and salon professionals",
@@ -232,9 +218,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Interested in protective natural hair styles like braids and weaves",
@@ -263,9 +247,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Likely wears or appreciates Black hair styling traditions",
@@ -294,9 +276,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Has a sweet tooth and enjoys desserts",
@@ -322,9 +302,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Occasionally interested in DIY and handmade home projects",
@@ -350,9 +328,7 @@
       "action_label": "Stayed on a story for more than 5 seconds",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Invested in self-care routines and self-expression",
@@ -377,9 +353,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys dance content and casual music videos",
@@ -405,9 +379,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Likely dances at home, at parties, or with family",
@@ -433,9 +405,7 @@
       "action_label": "Shared to Close Friends story",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys aspirational couple imagery and moments",
@@ -462,9 +432,7 @@
       "action_label": "@ai reply: told the in-feed assistant this feels off-base",
       "user_message": "@ai the couple reels you've been pushing feel off — we're not that kind of couple right now, please pull back on the honeymoon-era content for a while."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Invested in romantic relationship content",
@@ -491,9 +459,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Spends time scrolling trending short-form video content",
@@ -518,9 +484,7 @@
       "action_label": "Commented",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys matching-outfit and 'twinning' content with family",
@@ -544,9 +508,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Follows content with 'book now' appointment calls-to-action",
@@ -570,9 +532,7 @@
       "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
       "user_message": "@ai show me more small-business beauty accounts with easy in-caption booking — I'm trying to benchmark how other solo stylists set up their DMs."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Actively engaged in daily motherhood experiences",
@@ -598,9 +558,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Parenting young children at home",
@@ -626,9 +584,7 @@
       "action_label": "Double-tapped to like",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Values sharing candid, real-life parenting moments",

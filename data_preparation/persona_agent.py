@@ -1642,8 +1642,6 @@ class PersonaAgent:
                 "related_personas": cr.related_personas,
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                 "split": split_label,
-                "over_personalization_irrelevant": distractor.get("persona_item", ""),
-                "over_personalization_irrelevant_category": distractor.get("category", ""),
                 "source_interaction_type": ap.source_interaction_type if ap else cr.source_interaction_type,
                 "source_object_id": ap.source_object_id if ap else "",
                 "source_timestamp": ap.source_timestamp if ap else 0,
@@ -1652,6 +1650,9 @@ class PersonaAgent:
                 "assigned_app": app,
                 "interaction_format": fmt,
             }
+            if split_label == "test":
+                record["over_personalization_irrelevant"] = distractor.get("persona_item", "")
+                record["over_personalization_irrelevant_category"] = distractor.get("category", "")
             all_records.append(record)
 
         for np_persona in self.negative_personas:
@@ -1669,8 +1670,6 @@ class PersonaAgent:
                 "related_personas": [],
                 "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                 "split": "train",
-                "over_personalization_irrelevant": "",
-                "over_personalization_irrelevant_category": "",
                 "source_interaction_type": np_persona.source_interaction_type,
                 "source_object_id": np_persona.source_object_id,
                 "source_timestamp": np_persona.source_timestamp,

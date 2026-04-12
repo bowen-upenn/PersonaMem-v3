@@ -23,9 +23,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": "Can you keep pulling together quick practical toddler parenting hacks for single-income households? Especially morning-routine and bath-time time-savers — stuff I can try tonight, not theory."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Engages with prison-wife / incarcerated-partner support content",
@@ -49,9 +47,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": "Pull more from other prison wives — commissary tips, visitation prep, how people handle birthdays alone. I want other women's voices, not news pieces or legal takes."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "May have a partner who is currently incarcerated",
@@ -75,9 +71,7 @@
       "action_label": "Continued the conversation on the same topic",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Looks for cleaning hacks and home-organization tips",
@@ -102,9 +96,7 @@
       "action_label": "Requested more detail on the same topic",
       "user_message": "Help me power through my cleaning list tonight — small-bathroom tricks and tackling a toddler-toy avalanche. Stuff that works in under 15 minutes per task, please."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Uses humor as a coping mechanism for healthcare work",
@@ -130,9 +122,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": "Got any short dark-humor med-surg bits I can show my charge nurse tomorrow? Nothing mean, just the 'you had to be there' kind of stuff."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Works in or is connected to healthcare (likely CNA or nursing)",
@@ -158,9 +148,7 @@
       "action_label": "Continued the conversation on the same topic",
       "user_message": "While we're on this, any advice on how CNAs typically transition into LPN bridge programs while working full night shifts and raising two kids?"
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Sees hair styling as a form of self-expression",
@@ -189,9 +177,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Appreciates food content that feels homemade and wholesome",
@@ -217,9 +203,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Seeks easy recipe inspiration online",
@@ -245,9 +229,7 @@
       "action_label": "Requested more detail on the same topic",
       "user_message": "For the rest of tonight just help me with easy 30-minute weeknight dinners a toddler will eat — Mexican-leaning flavors if possible, nothing that needs fancy appliances."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Believes confidence and positivity are important daily practices",
@@ -272,9 +254,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": "Can you draft me a short daily affirmation I can actually say with a straight face before a night shift? Something grounded, not girlboss energy."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Looks for motivational and personal-growth content",
@@ -299,9 +279,7 @@
       "action_label": "Edited the prompt and retried",
       "user_message": "Let me rephrase — find me personal-growth essays written by working moms dealing with real financial stress, not lifestyle influencer takes."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Values long-term committed partnerships",
@@ -328,9 +306,7 @@
       "action_label": "Continued the conversation on the same topic",
       "user_message": "Keep going on what long-haul commitment looks like when one partner is in a really hard stretch. Real-people essays or therapist takes, not self-help cheese."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Values close female friendships and squad bonding",
@@ -355,9 +331,7 @@
       "action_label": "Asked a follow-up question showing interest",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Supports women empowerment themes and female-centric content",

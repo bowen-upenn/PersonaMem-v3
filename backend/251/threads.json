@@ -23,9 +23,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Feels validated by content about parenting struggles",
@@ -51,9 +49,7 @@
       "action_label": "Followed the author",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Finds comfort in 'that's so me' style posts",
@@ -77,9 +73,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Gravitates toward content that mirrors everyday life experiences",
@@ -103,9 +97,7 @@
       "action_label": "Replied",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Appreciates wholesome, light-hearted humor over edgy comedy",
@@ -131,9 +123,7 @@
       "action_label": "Replied",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Follows comedy creators and prank content",
@@ -159,9 +149,7 @@
       "action_label": "Reposted",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Appreciates dad-oriented humor and family interplay",
@@ -185,9 +173,7 @@
       "action_label": "Saved the thread",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Appreciates home decor and interior inspiration",
@@ -213,9 +199,7 @@
       "action_label": "Stayed on the thread for more than 5 seconds",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Finds humor in everyday couple dynamics",
@@ -242,9 +226,7 @@
       "action_label": "@ai reply: asked the in-feed assistant for MORE like this",
       "user_message": "@ai keep bringing these long-suffering-wife-at-midnight takes — they are the funniest part of my week."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Follows mom-oriented lifestyle content creators",
@@ -270,9 +252,7 @@
       "action_label": "Reposted",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Identifies strongly with a community of mothers online",
