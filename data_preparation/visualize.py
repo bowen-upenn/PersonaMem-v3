@@ -131,8 +131,12 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .section-title {{ font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }}
 
   .persona-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }}
-  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease, transform 0.2s ease; }}
+  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease, transform 0.2s ease; border-top: 3px solid var(--border); }}
   .persona-card:hover {{ box-shadow: var(--shadow-hover); transform: translateY(-1px); }}
+  .persona-card.app-Instagram {{ border-top-color: #E1306C; background: #FFF5F7; }}
+  .persona-card.app-Facebook {{ border-top-color: #1877F2; background: #F0F6FF; }}
+  .persona-card.app-Threads {{ border-top-color: #000000; background: #F5F5F5; }}
+  .persona-card.app-Chatbot {{ border-top-color: #D97757; background: #FFF8F5; }}
   .persona-card .item-text {{ font-size: 15px; font-weight: 500; margin-bottom: 10px; line-height: 1.4; }}
   .persona-card .meta-line {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }}
 
@@ -189,8 +193,8 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   <div id="profile-section"></div>
 
   <div class="section">
-    <div class="section-title">Preferences (grouped by app)</div>
-    <div id="app-sections"></div>
+    <div class="section-title">All Preferences (earliest &rarr; latest)</div>
+    <div id="timeline-section"></div>
   </div>
 
 </div>
@@ -221,92 +225,60 @@ if (profileData) {{
   `;
 }}
 
-// -- Per-app sections --
-const appsContainer = document.getElementById('app-sections');
+// -- Chronological timeline --
+const timeline = document.getElementById('timeline-section');
 if (prefsData.length === 0) {{
-  appsContainer.innerHTML = '<div class="empty">No preferences available.</div>';
+  timeline.innerHTML = '<div class="empty">No preferences available.</div>';
 }} else {{
-  const byApp = {{}};
-  APPS.forEach(a => byApp[a] = []);
-  prefsData.forEach(p => {{
-    const a = p.assigned_app || 'Instagram';
-    if (!byApp[a]) byApp[a] = [];
-    byApp[a].push(p);
-  }});
+  // prefsData is already sorted by source_timestamp ascending
+  const grid = document.createElement('div');
+  grid.className = 'persona-grid';
 
-  const appPersonas = (profileData && profileData.app_personas) || {{}};
+  prefsData.forEach((p, idx) => {{
+    const card = document.createElement('div');
+    card.className = `persona-card app-${{p.assigned_app}}`;
+    const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
+    let badges = `<span class="badge platform">${{p.assigned_app}}</span>`;
+    badges += `<span class="badge category">${{p.category}}</span>`;
+    badges += `<span class="badge ${{p.split}}">${{p.split}}</span>`;
+    if (p.relationship_type !== 'none') badges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
+    if (p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
 
-  APPS.forEach(app => {{
-    const rows = byApp[app] || [];
-    if (rows.length === 0) return;
-    const section = document.createElement('div');
-    section.className = 'app-section';
+    const fmt = p.interaction_format || {{}};
+    if (fmt.action_label) badges += `<span class="badge action">${{fmt.action_label}}</span>`;
 
-    // Header + app persona block
-    let personaBlock = '';
-    const ap = appPersonas[app];
-    if (ap) {{
-      const purposes = (ap.use_purposes || []).join(' · ');
-      const zones = (ap.friend_zones || []).join(' · ');
-      const topics = (ap.topical_focus || []).join(' · ');
-      personaBlock = `
-        <div class="app-persona-block">
-          <div class="ap-title">${{app}} persona — ${{ap.audience_type || ''}}, posts ${{ap.posting_frequency || ''}}</div>
-          <div>${{ap.style_description || ''}}</div>
-          <div style="margin-top:6px;"><b>Uses:</b> ${{purposes}}</div>
-          <div><b>Audience:</b> ${{zones}}</div>
-          <div><b>Topics:</b> ${{topics}}</div>
-        </div>
-      `;
+    let userMsgBlock = '';
+    if (fmt.user_message) {{
+      userMsgBlock = `<div class="user-message">${{fmt.user_message}}</div>`;
     }}
 
-    section.innerHTML = `<h3>${{app}} · ${{rows.length}} preferences</h3>${{personaBlock}}<div class="persona-grid"></div>`;
-    const grid = section.querySelector('.persona-grid');
+    let distractorLine = '';
+    if (p.split === 'test' && p.over_personalization_irrelevant) {{
+      distractorLine = `<div class="meta-line" style="margin-top:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}} <span style="opacity:0.6;">(${{p.over_personalization_irrelevant_category}})</span></div>`;
+    }}
 
-    rows.forEach(p => {{
-      const card = document.createElement('div');
-      card.className = 'persona-card';
-      const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
-      let badges = `<span class="badge category">${{p.category}}</span>`;
-      badges += `<span class="badge ${{p.split}}">${{p.split}}</span>`;
-      if (p.relationship_type !== 'none') badges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
-      if (p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
-
-      const fmt = p.interaction_format || {{}};
-      if (fmt.action_label) badges += `<span class="badge action">${{fmt.action_label}}</span>`;
-
-      let userMsgBlock = '';
-      if (fmt.user_message) {{
-        userMsgBlock = `<div class="user-message">${{fmt.user_message}}</div>`;
-      }}
-
-      let distractorLine = '';
-      if (p.split === 'test' && p.over_personalization_irrelevant) {{
-        distractorLine = `<div class="meta-line" style="margin-top:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}} <span style="opacity:0.6;">(${{p.over_personalization_irrelevant_category}})</span></div>`;
-      }}
-
-      card.innerHTML = `
-        <div class="item-text">${{p.persona_item}}</div>
-        <div class="meta-line">${{p.formatted_timestamp}} &middot; ${{p.source_interaction_type}}</div>
-        <div class="confidence-row">
-          <span class="label">Initial</span>
-          <div class="confidence-bar-track"><div class="confidence-bar-fill init" style="width:${{(p.confidence_score_init*100).toFixed(0)}}%"></div></div>
-          <span class="value">${{p.confidence_score_init.toFixed(2)}}</span>
-        </div>
-        <div class="confidence-row">
-          <span class="label">Cross-ref</span>
-          <div class="confidence-bar-track"><div class="confidence-bar-fill cross" style="width:${{Math.min(p.confidence_cross_referenced*100, 100).toFixed(0)}}%"></div></div>
-          <span class="value">${{p.confidence_cross_referenced.toFixed(2)}}</span>
-        </div>
-        ${{badges}}
-        ${{userMsgBlock}}
-        ${{distractorLine}}
-      `;
-      grid.appendChild(card);
-    }});
-
-    appsContainer.appendChild(section);
+    card.innerHTML = `
+      <div class="meta-line" style="font-weight:600;color:var(--accent);margin-bottom:6px;">#${{idx+1}} &middot; ${{p.formatted_timestamp}}</div>
+      <div class="item-text">${{p.persona_item}}</div>
+      <div class="meta-line">${{p.source_interaction_type}}</div>
+      <div class="confidence-row">
+        <span class="label">Initial</span>
+        <div class="confidence-bar-track"><div class="confidence-bar-fill init" style="width:${{(p.confidence_score_init*100).toFixed(0)}}%"></div></div>
+        <span class="value">${{p.confidence_score_init.toFixed(2)}}</span>
+      </div>
+      <div class="confidence-row">
+        <span class="label">Cross-ref</span>
+        <div class="confidence-bar-track"><div class="confidence-bar-fill cross" style="width:${{Math.min(p.confidence_cross_referenced*100, 100).toFixed(0)}}%"></div></div>
+        <span class="value">${{p.confidence_cross_referenced.toFixed(2)}}</span>
+      </div>
+      ${{badges}}
+      ${{userMsgBlock}}
+      ${{distractorLine}}
+    `;
+    grid.appendChild(card);
   }});
+
+  timeline.appendChild(grid);
 }}
 </script>
 </body>
