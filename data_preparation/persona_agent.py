@@ -2363,6 +2363,22 @@ class PersonaAgent:
                 split_label = self.split_labels.get(cr.persona_item, "train")
                 distractor = self.test_distractors.get(cr.persona_item, {}) if split_label == "test" else {}
 
+                # Build merged update_history: temporal entries (no raw timestamp)
+                # + related_personas folded in as similar/contradictory entries
+                merged_history = []
+                for h in (cr.update_history or []):
+                    entry = dict(h)
+                    entry.pop("timestamp", None)
+                    merged_history.append(entry)
+                for rel in (cr.related_personas or []):
+                    if isinstance(rel, dict) and rel.get("persona_item"):
+                        rel_cr = canonical_lookup.get(_normalize_persona_text(rel["persona_item"]))
+                        merged_history.append({
+                            "update_type": rel.get("type", "similar"),
+                            "preference": rel["persona_item"],
+                            "formatted_timestamp": rel_cr.formatted_timestamp if rel_cr else "",
+                        })
+
                 pref = {
                     "persona_item": cr.persona_item,
                     "category": cr.category,
@@ -2370,9 +2386,7 @@ class PersonaAgent:
                     "confidence_cross_referenced": cr.confidence_cross_referenced,
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                     "split": split_label,
-                    "update_history": cr.update_history,
-                    "relationship_type": cr.relationship_type,
-                    "related_personas": cr.related_personas,
+                    "update_history": merged_history,
                 }
                 if split_label == "test":
                     pref["over_personalization_irrelevant"] = distractor.get("persona_item", "")

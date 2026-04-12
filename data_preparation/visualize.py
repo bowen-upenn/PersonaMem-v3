@@ -77,8 +77,6 @@ def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
                         "stereotype_mark": entry.get("stereotype_mark", "neutral"),
                         "split": entry.get("split", "train"),
                         "update_history": entry.get("update_history", []),
-                        "relationship_type": entry.get("relationship_type", "none"),
-                        "related_personas": entry.get("related_personas", []),
                         "over_personalization_irrelevant": entry.get("over_personalization_irrelevant", ""),
                         "over_personalization_irrelevant_category": entry.get("over_personalization_irrelevant_category", ""),
                     }],
@@ -348,10 +346,8 @@ if (eventsData.length === 0) {{
     // Preferences list
     let prefsHtml = '<div class="pref-list">';
     prefs.forEach(p => {{
-      const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
       badges += `<span class="badge ${{p.split || 'train'}}">${{p.split || 'train'}}</span>`;
-      if (p.relationship_type && p.relationship_type !== 'none') badges += `<span class="badge ${{relClass}}">${{p.relationship_type}}</span>`;
       if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
 
       let distractorLine = '';
