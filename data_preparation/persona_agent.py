@@ -1567,12 +1567,12 @@ class PersonaAgent:
     def save_to_backend(self) -> str:
         """Persist data to backend/{user_id}/:
 
-          - profile.json          — UserProfile + AppPersonas (all 4 apps)
-          - instagram.json        — preferences routed to Instagram (time-sorted, FULL set)
-          - facebook.json         — preferences routed to Facebook (time-sorted, FULL set)
-          - threads.json          — preferences routed to Threads (time-sorted, FULL set)
-          - chatbot.json          — preferences routed to Chatbot (time-sorted, FULL set)
-          - preferences.csv       — ALL preferences across all apps (flat CSV)
+          - profile.json    — UserProfile + AppPersonas + all preferences
+                              (merged as a "preferences" key, time-sorted)
+          - instagram.json  — preferences routed to Instagram (time-sorted)
+          - facebook.json   — preferences routed to Facebook (time-sorted)
+          - threads.json    — preferences routed to Threads (time-sorted)
+          - chatbot.json    — preferences routed to Chatbot (time-sorted)
 
         No semantic redundancy removal is applied — repeated real-world
         signals are meaningful frequency data, and confidence_cross_referenced
@@ -1699,67 +1699,11 @@ class PersonaAgent:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(records, f, indent=2, ensure_ascii=False)
 
-        # --- Write aggregated preferences.csv (all apps merged, old-style flat layout) ---
-        # Re-uses the CSV schema from the pre-refactor era so downstream tools
-        # that expect a single-file-per-user view still work. `assigned_app`
-        # --- Write aggregated preferences.csv ---
-        csv_columns = [
-            "persona_item",
-            "category",
-            "confidence_score_init",
-            "confidence_cross_referenced",
-            "source_interaction_type",
-            "source_object_id",
-            "source_timestamp",
-            "formatted_timestamp",
-            "source_hashtags",
-            "assigned_app",
-            "interaction_format",
-            "relationship_type",
-            "related_personas",
-            "stereotype_mark",
-            "split",
-            "over_personalization_irrelevant",
-            "over_personalization_irrelevant_category",
-        ]
-
-        def _records_to_csv_rows(records: list[dict]) -> list[dict]:
-            return [{
-                "persona_item": rec.get("persona_item", ""),
-                "category": rec.get("category", ""),
-                "confidence_score_init": rec.get("confidence_score_init", 0.0),
-                "confidence_cross_referenced": rec.get("confidence_cross_referenced", 0.0),
-                "source_interaction_type": rec.get("source_interaction_type", ""),
-                "source_object_id": rec.get("source_object_id", ""),
-                "source_timestamp": rec.get("source_timestamp", 0),
-                "formatted_timestamp": rec.get("formatted_timestamp", ""),
-                "source_hashtags": json.dumps(rec.get("source_hashtags", []), ensure_ascii=False),
-                "assigned_app": rec.get("assigned_app", ""),
-                "interaction_format": json.dumps(rec.get("interaction_format", {}), ensure_ascii=False),
-                "relationship_type": rec.get("relationship_type", "none"),
-                "related_personas": json.dumps(rec.get("related_personas", []), ensure_ascii=False),
-                "stereotype_mark": rec.get("stereotype_mark", "neutral"),
-                "split": rec.get("split", "train"),
-                "over_personalization_irrelevant": rec.get("over_personalization_irrelevant", ""),
-                "over_personalization_irrelevant_category": rec.get("over_personalization_irrelevant_category", ""),
-            } for rec in records]
-
-        def _write_csv(rows: list[dict], path: str) -> None:
-            if not rows:
-                return
-            import csv as _csv
-            with open(path, "w", newline="", encoding="utf-8") as f:
-                writer = _csv.DictWriter(f, fieldnames=csv_columns)
-                writer.writeheader()
-                writer.writerows(rows)
-
-        # Aggregated CSV — same data as per-app JSONs merged into one flat file
-        _write_csv(_records_to_csv_rows(all_records), os.path.join(user_dir, "preferences.csv"))
-
-        # --- Write profile.json ---
+        # --- Write profile.json (includes all preferences as a "preferences" key) ---
         if self.user_profile:
             profile_dict = asdict(self.user_profile)
             profile_dict["user_id"] = str(self.user_id)
+            profile_dict["preferences"] = all_records  # all prefs across all apps, time-sorted
             profile_path = os.path.join(user_dir, "profile.json")
             with open(profile_path, "w", encoding="utf-8") as f:
                 json.dump(profile_dict, f, indent=2, ensure_ascii=False)
