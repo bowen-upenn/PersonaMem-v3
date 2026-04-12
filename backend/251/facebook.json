@@ -31,37 +31,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -78,30 +73,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -138,24 +127,19 @@
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "new",
-            "timestamp": 1775239971,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "reinforced",
-            "timestamp": 1775943174,
             "formatted_timestamp": "21:32, 04/11/2026"
           },
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "reinforced",
-            "timestamp": 1775943285,
             "formatted_timestamp": "21:34, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -192,30 +176,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -230,18 +208,14 @@
           {
             "preference": "Appreciates Disney magic and childhood wonder",
             "update_type": "new",
-            "timestamp": 1775243159,
             "formatted_timestamp": "19:05, 04/03/2026"
           },
           {
             "preference": "Appreciates Disney magic and childhood wonder",
             "update_type": "reinforced",
-            "timestamp": 1775561456,
             "formatted_timestamp": "11:30, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -279,27 +253,22 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -316,24 +285,19 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -370,30 +334,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -431,27 +389,22 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -468,24 +421,19 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -522,24 +470,19 @@
           {
             "preference": "Likely has or loves dogs as part of the family",
             "update_type": "new",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Likely has or loves dogs as part of the family",
             "update_type": "reinforced",
-            "timestamp": 1775396911,
             "formatted_timestamp": "13:48, 04/05/2026"
           },
           {
             "preference": "Likely has or loves dogs as part of the family",
             "update_type": "reinforced",
-            "timestamp": 1775396921,
             "formatted_timestamp": "13:48, 04/05/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -576,27 +519,22 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -613,24 +551,19 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -667,30 +600,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -728,30 +655,24 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -790,30 +711,24 @@
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "new",
-            "timestamp": 1775307571,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775307585,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775308148,
             "formatted_timestamp": "13:09, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -852,24 +767,19 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -906,30 +816,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -967,30 +871,24 @@
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "new",
-            "timestamp": 1775246643,
             "formatted_timestamp": "20:04, 04/03/2026"
           },
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "reinforced",
-            "timestamp": 1775396877,
             "formatted_timestamp": "13:47, 04/05/2026"
           },
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -1005,37 +903,32 @@
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "new",
-            "timestamp": 1775308105,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775396627,
             "formatted_timestamp": "13:43, 04/05/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540315,
             "formatted_timestamp": "05:38, 04/07/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540328,
             "formatted_timestamp": "05:38, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Interested in relationship trust and loyalty dynamics",
-            "type": "similar"
           },
           {
-            "persona_item": "Finds humor in dating struggles and relationship dynamics",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Interested in relationship trust and loyalty dynamics",
+            "formatted_timestamp": "13:15, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1074,37 +967,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1121,24 +1009,19 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -1153,24 +1036,19 @@
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "new",
-            "timestamp": 1775307571,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775307585,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775308148,
             "formatted_timestamp": "13:09, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1207,24 +1085,19 @@
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "new",
-            "timestamp": 1775307571,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775307585,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Enjoys relatable sibling dynamics content",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1261,30 +1134,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -1299,24 +1166,19 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1353,45 +1215,42 @@
           {
             "preference": "Enjoys short-form comedy reels and viral funny clips",
             "update_type": "new",
-            "timestamp": 1775239934,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys short-form comedy reels and viral funny clips",
             "update_type": "reinforced",
-            "timestamp": 1775383351,
             "formatted_timestamp": "10:02, 04/05/2026"
           },
           {
             "preference": "Enjoys short-form comedy reels and viral funny clips",
             "update_type": "reinforced",
-            "timestamp": 1775645844,
             "formatted_timestamp": "10:57, 04/08/2026"
           },
           {
             "preference": "Enjoys short-form comedy reels and viral funny clips",
             "update_type": "reinforced",
-            "timestamp": 1775796732,
             "formatted_timestamp": "04:52, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Follows comedy creators and prank content",
-            "type": "similar"
           },
           {
-            "persona_item": "Follows Black comedy creators like 85 South Show",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Follows comedy creators and prank content",
+            "formatted_timestamp": "20:05, 04/03/2026"
           },
           {
-            "persona_item": "Finds humor in dating struggles and relationship dynamics",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Follows Black comedy creators like 85 South Show",
+            "formatted_timestamp": "06:30, 04/04/2026"
           },
           {
-            "persona_item": "Enjoys humor about the chaos of parenting",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1431,30 +1290,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1493,30 +1346,24 @@
           {
             "preference": "Engages with diverse social media content",
             "update_type": "new",
-            "timestamp": 1775308985,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775561853,
             "formatted_timestamp": "11:37, 04/07/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775561882,
             "formatted_timestamp": "11:38, 04/07/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775645142,
             "formatted_timestamp": "10:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1554,24 +1401,19 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1609,30 +1451,24 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -1670,37 +1506,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1717,33 +1548,27 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1782,30 +1607,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1842,37 +1661,32 @@
           {
             "preference": "Invested in self-care routines and personal growth",
             "update_type": "new",
-            "timestamp": 1775316877,
             "formatted_timestamp": "15:34, 04/04/2026"
           },
           {
             "preference": "Invested in self-care routines and personal growth",
             "update_type": "reinforced",
-            "timestamp": 1775528509,
             "formatted_timestamp": "02:21, 04/07/2026"
           },
           {
             "preference": "Invested in self-care routines and personal growth",
             "update_type": "reinforced",
-            "timestamp": 1775552556,
             "formatted_timestamp": "09:02, 04/07/2026"
           },
           {
             "preference": "Invested in self-care routines and personal growth",
             "update_type": "reinforced",
-            "timestamp": 1775690567,
             "formatted_timestamp": "23:22, 04/08/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Believes confidence and positivity are important daily practices",
-            "type": "similar"
           },
           {
-            "persona_item": "Supports women empowerment themes",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Believes confidence and positivity are important daily practices",
+            "formatted_timestamp": "20:04, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Supports women empowerment themes",
+            "formatted_timestamp": "13:06, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
@@ -1913,33 +1727,27 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1978,30 +1786,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -2037,37 +1839,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2106,30 +1903,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -2144,24 +1935,19 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -2176,24 +1962,19 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -2230,37 +2011,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2300,37 +2076,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2347,30 +2118,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -2407,37 +2172,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2454,30 +2214,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -2516,24 +2270,19 @@
           {
             "preference": "Follows content with salon booking calls-to-action",
             "update_type": "new",
-            "timestamp": 1775383727,
             "formatted_timestamp": "10:08, 04/05/2026"
           },
           {
             "preference": "Follows content with salon booking calls-to-action",
             "update_type": "reinforced",
-            "timestamp": 1775818501,
             "formatted_timestamp": "10:55, 04/10/2026"
           },
           {
             "preference": "Follows content with salon booking calls-to-action",
             "update_type": "reinforced",
-            "timestamp": 1775819618,
             "formatted_timestamp": "11:13, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
         "over_personalization_irrelevant_category": "sibling dynamics"
       }
@@ -2571,37 +2320,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2642,24 +2386,19 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -2697,37 +2436,32 @@
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "new",
-            "timestamp": 1775308105,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775396627,
             "formatted_timestamp": "13:43, 04/05/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540315,
             "formatted_timestamp": "05:38, 04/07/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540328,
             "formatted_timestamp": "05:38, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Interested in relationship trust and loyalty dynamics",
-            "type": "similar"
           },
           {
-            "persona_item": "Finds humor in dating struggles and relationship dynamics",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Interested in relationship trust and loyalty dynamics",
+            "formatted_timestamp": "13:15, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2766,30 +2500,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -2826,24 +2554,19 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -2858,30 +2581,24 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -2919,30 +2636,24 @@
           {
             "preference": "Engages with diverse social media content",
             "update_type": "new",
-            "timestamp": 1775308985,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775561853,
             "formatted_timestamp": "11:37, 04/07/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775561882,
             "formatted_timestamp": "11:38, 04/07/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775645142,
             "formatted_timestamp": "10:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2980,41 +2691,37 @@
           {
             "preference": "Actively follows food content creators and recipes online",
             "update_type": "new",
-            "timestamp": 1775235998,
             "formatted_timestamp": "17:06, 04/03/2026"
           },
           {
             "preference": "Actively follows food content creators and recipes online",
             "update_type": "reinforced",
-            "timestamp": 1775239944,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Actively follows food content creators and recipes online",
             "update_type": "reinforced",
-            "timestamp": 1775307571,
             "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
             "preference": "Actively follows food content creators and recipes online",
             "update_type": "reinforced",
-            "timestamp": 1775528446,
             "formatted_timestamp": "02:20, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys home cooking and preparing family meals",
-            "type": "similar"
           },
           {
-            "persona_item": "Has a sweet tooth and enjoys dessert content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys home cooking and preparing family meals",
+            "formatted_timestamp": "18:20, 04/06/2026"
           },
           {
-            "persona_item": "Enjoys seafood recipes and Italian-inspired home cooking",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Has a sweet tooth and enjoys dessert content",
+            "formatted_timestamp": "17:06, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys seafood recipes and Italian-inspired home cooking",
+            "formatted_timestamp": "04:19, 04/11/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3053,30 +2760,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3113,37 +2814,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3182,37 +2878,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3237,7 +2928,7 @@
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_love",
-      "action_label": "Loved (\u2764)",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "preferences": [
@@ -3252,30 +2943,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -3290,30 +2975,24 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3350,30 +3029,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3410,53 +3083,52 @@
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "new",
-            "timestamp": 1775243159,
             "formatted_timestamp": "19:05, 04/03/2026"
           },
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "reinforced",
-            "timestamp": 1775879435,
             "formatted_timestamp": "03:50, 04/11/2026"
           },
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Seeks practical parenting tips and hacks",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys humor about the chaos of parenting",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Seeks practical parenting tips and hacks",
+            "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
-            "persona_item": "Cherishes the bond between mothers and daughters",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
-            "persona_item": "Finds joy in sharing everyday moments of toddlers",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Cherishes the bond between mothers and daughters",
+            "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
-            "persona_item": "Navigating single motherhood or co-parenting",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Finds joy in sharing everyday moments of toddlers",
+            "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
-            "persona_item": "Takes pride in milestones and growth of her children",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Navigating single motherhood or co-parenting",
+            "formatted_timestamp": "05:56, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Takes pride in milestones and growth of her children",
+            "formatted_timestamp": "05:56, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3495,37 +3167,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3542,24 +3209,19 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -3596,30 +3258,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3656,30 +3312,24 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -3694,30 +3344,24 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3754,24 +3398,19 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -3786,30 +3425,24 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -3846,30 +3479,24 @@
           {
             "preference": "Engages with diverse social media content",
             "update_type": "new",
-            "timestamp": 1775308985,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775561853,
             "formatted_timestamp": "11:37, 04/07/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775561882,
             "formatted_timestamp": "11:38, 04/07/2026"
           },
           {
             "preference": "Engages with diverse social media content",
             "update_type": "reinforced",
-            "timestamp": 1775645142,
             "formatted_timestamp": "10:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -3907,30 +3534,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3966,30 +3587,24 @@
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "new",
-            "timestamp": 1775246643,
             "formatted_timestamp": "20:04, 04/03/2026"
           },
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "reinforced",
-            "timestamp": 1775396877,
             "formatted_timestamp": "13:47, 04/05/2026"
           },
           {
             "preference": "Gravitates toward content that mirrors everyday life experiences",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4026,37 +3641,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4073,30 +3683,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4133,30 +3737,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4193,30 +3791,24 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -4253,37 +3845,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4322,30 +3909,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -4360,24 +3941,19 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4415,24 +3991,19 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4469,37 +4040,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4516,30 +4082,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4577,33 +4137,27 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4620,30 +4174,24 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4682,37 +4230,32 @@
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "new",
-            "timestamp": 1775308105,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775396627,
             "formatted_timestamp": "13:43, 04/05/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540315,
             "formatted_timestamp": "05:38, 04/07/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540328,
             "formatted_timestamp": "05:38, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Interested in relationship trust and loyalty dynamics",
-            "type": "similar"
           },
           {
-            "persona_item": "Finds humor in dating struggles and relationship dynamics",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Interested in relationship trust and loyalty dynamics",
+            "formatted_timestamp": "13:15, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4752,31 +4295,27 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4816,30 +4355,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -4877,37 +4410,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4924,30 +4452,24 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -4985,18 +4507,14 @@
           {
             "preference": "Appreciates Disney magic and childhood wonder",
             "update_type": "new",
-            "timestamp": 1775243159,
             "formatted_timestamp": "19:05, 04/03/2026"
           },
           {
             "preference": "Appreciates Disney magic and childhood wonder",
             "update_type": "reinforced",
-            "timestamp": 1775243159,
             "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5034,37 +4552,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5104,30 +4617,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5165,30 +4672,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5225,37 +4726,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5295,30 +4791,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5356,53 +4846,52 @@
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "new",
-            "timestamp": 1775243159,
             "formatted_timestamp": "19:05, 04/03/2026"
           },
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "reinforced",
-            "timestamp": 1775879435,
             "formatted_timestamp": "03:50, 04/11/2026"
           },
           {
             "preference": "Actively engaged in daily motherhood experiences",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Seeks practical parenting tips and hacks",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys humor about the chaos of parenting",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Seeks practical parenting tips and hacks",
+            "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
-            "persona_item": "Cherishes the bond between mothers and daughters",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
-            "persona_item": "Finds joy in sharing everyday moments of toddlers",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Cherishes the bond between mothers and daughters",
+            "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
-            "persona_item": "Navigating single motherhood or co-parenting",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Finds joy in sharing everyday moments of toddlers",
+            "formatted_timestamp": "12:59, 04/04/2026"
           },
           {
-            "persona_item": "Takes pride in milestones and growth of her children",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Navigating single motherhood or co-parenting",
+            "formatted_timestamp": "05:56, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Takes pride in milestones and growth of her children",
+            "formatted_timestamp": "05:56, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5441,30 +4930,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5501,30 +4984,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5562,30 +5039,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5623,33 +5094,27 @@
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Navigating single motherhood or co-parenting",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
+          },
           {
-            "persona_item": "Actively engaged in daily motherhood experiences",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively engaged in daily motherhood experiences",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5688,24 +5153,19 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -5743,30 +5203,24 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5804,37 +5258,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5874,24 +5323,19 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -5929,37 +5373,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5999,30 +5438,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6060,30 +5493,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6121,30 +5548,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6181,30 +5602,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6242,30 +5657,24 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6288,7 +5697,7 @@
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_love",
-      "action_label": "Loved (\u2764)",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "preferences": [
@@ -6303,30 +5712,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -6341,30 +5744,24 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775880172,
             "formatted_timestamp": "04:02, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -6402,30 +5799,24 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6464,31 +5855,27 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -6505,30 +5892,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6565,37 +5946,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -6636,30 +6012,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6696,30 +6066,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -6734,30 +6098,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6795,37 +6153,32 @@
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "new",
-            "timestamp": 1775308105,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775396627,
             "formatted_timestamp": "13:43, 04/05/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540315,
             "formatted_timestamp": "05:38, 04/07/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540328,
             "formatted_timestamp": "05:38, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Interested in relationship trust and loyalty dynamics",
-            "type": "similar"
           },
           {
-            "persona_item": "Finds humor in dating struggles and relationship dynamics",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Interested in relationship trust and loyalty dynamics",
+            "formatted_timestamp": "13:15, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -6865,30 +6218,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6926,30 +6273,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -6971,7 +6312,7 @@
     "interaction_format": {
       "app": "Facebook",
       "action": "reacted_love",
-      "action_label": "Loved (\u2764)",
+      "action_label": "Loved (❤)",
       "user_message": null
     },
     "preferences": [
@@ -6986,24 +6327,19 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -7018,30 +6354,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7079,30 +6409,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7139,37 +6463,32 @@
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "new",
-            "timestamp": 1775308105,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775396627,
             "formatted_timestamp": "13:43, 04/05/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540315,
             "formatted_timestamp": "05:38, 04/07/2026"
           },
           {
             "preference": "Enjoys aspirational couple imagery and moments",
             "update_type": "reinforced",
-            "timestamp": 1775540328,
             "formatted_timestamp": "05:38, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Interested in relationship trust and loyalty dynamics",
-            "type": "similar"
           },
           {
-            "persona_item": "Finds humor in dating struggles and relationship dynamics",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Interested in relationship trust and loyalty dynamics",
+            "formatted_timestamp": "13:15, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -7210,37 +6529,32 @@
           {
             "preference": "Interested in protective natural hair styles like braids and weaves",
             "update_type": "new",
-            "timestamp": 1775306945,
             "formatted_timestamp": "12:49, 04/04/2026"
           },
           {
             "preference": "Interested in protective natural hair styles like braids and weaves",
             "update_type": "reinforced",
-            "timestamp": 1775425071,
             "formatted_timestamp": "21:37, 04/05/2026"
           },
           {
             "preference": "Interested in protective natural hair styles like braids and weaves",
             "update_type": "reinforced",
-            "timestamp": 1775425295,
             "formatted_timestamp": "21:41, 04/05/2026"
           },
           {
             "preference": "Interested in protective natural hair styles like braids and weaves",
             "update_type": "reinforced",
-            "timestamp": 1775879845,
             "formatted_timestamp": "03:57, 04/11/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Deeply invested in hair care and styling routines",
-            "type": "similar"
           },
           {
-            "persona_item": "Follows hairstylists and salon professionals",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Deeply invested in hair care and styling routines",
+            "formatted_timestamp": "05:57, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows hairstylists and salon professionals",
+            "formatted_timestamp": "05:57, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -7281,30 +6595,24 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775819676,
             "formatted_timestamp": "11:14, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7341,24 +6649,19 @@
           {
             "preference": "Supports women empowerment themes",
             "update_type": "new",
-            "timestamp": 1775308005,
             "formatted_timestamp": "13:06, 04/04/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Supports women empowerment themes",
             "update_type": "reinforced",
-            "timestamp": 1775552383,
             "formatted_timestamp": "08:59, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7395,30 +6698,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7455,41 +6752,37 @@
           {
             "preference": "Enjoys home cooking and preparing family meals",
             "update_type": "new",
-            "timestamp": 1775239944,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys home cooking and preparing family meals",
             "update_type": "reinforced",
-            "timestamp": 1775239944,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys home cooking and preparing family meals",
             "update_type": "reinforced",
-            "timestamp": 1775284468,
             "formatted_timestamp": "06:34, 04/04/2026"
           },
           {
             "preference": "Enjoys home cooking and preparing family meals",
             "update_type": "reinforced",
-            "timestamp": 1775528446,
             "formatted_timestamp": "02:20, 04/07/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Actively follows food content creators and recipes online",
-            "type": "similar"
           },
           {
-            "persona_item": "Has a sweet tooth and enjoys dessert content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Actively follows food content creators and recipes online",
+            "formatted_timestamp": "04:19, 04/11/2026"
           },
           {
-            "persona_item": "Enjoys seafood recipes and Italian-inspired home cooking",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Has a sweet tooth and enjoys dessert content",
+            "formatted_timestamp": "17:06, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys seafood recipes and Italian-inspired home cooking",
+            "formatted_timestamp": "04:19, 04/11/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -7528,30 +6821,24 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7588,30 +6875,24 @@
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "new",
-            "timestamp": 1775307538,
             "formatted_timestamp": "12:58, 04/04/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775396496,
             "formatted_timestamp": "13:41, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775398782,
             "formatted_timestamp": "14:19, 04/05/2026"
           },
           {
             "preference": "Values local community, diversity, and inclusion",
             "update_type": "reinforced",
-            "timestamp": 1775796095,
             "formatted_timestamp": "04:41, 04/10/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7648,37 +6929,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -7718,24 +6994,19 @@
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "new",
-            "timestamp": 1775309552,
             "formatted_timestamp": "13:32, 04/04/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775539858,
             "formatted_timestamp": "05:30, 04/07/2026"
           },
           {
             "preference": "Looks for cleaning hacks and home-organization tips",
             "update_type": "reinforced",
-            "timestamp": 1775636908,
             "formatted_timestamp": "08:28, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
       }
@@ -7773,37 +7044,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -7842,30 +7108,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7904,30 +7164,24 @@
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775284026,
             "formatted_timestamp": "06:27, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775309010,
             "formatted_timestamp": "13:23, 04/04/2026"
           },
           {
             "preference": "Enjoys wholesome, heartwarming feel-good content",
             "update_type": "reinforced",
-            "timestamp": 1775539987,
             "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -7964,24 +7218,19 @@
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "new",
-            "timestamp": 1775239971,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "reinforced",
-            "timestamp": 1775239971,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "reinforced",
-            "timestamp": 1775943285,
             "formatted_timestamp": "21:34, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -8019,37 +7268,32 @@
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "new",
-            "timestamp": 1775239894,
             "formatted_timestamp": "18:11, 04/03/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775413946,
             "formatted_timestamp": "18:32, 04/05/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775552706,
             "formatted_timestamp": "09:05, 04/07/2026"
           },
           {
             "preference": "Centers family togetherness as a core value",
             "update_type": "reinforced",
-            "timestamp": 1775794997,
             "formatted_timestamp": "04:23, 04/10/2026"
-          }
-        ],
-        "relationship_type": "similar",
-        "related_personas": [
-          {
-            "persona_item": "Enjoys content celebrating involved fatherhood",
-            "type": "similar"
           },
           {
-            "persona_item": "Enjoys relatable sibling dynamics content",
-            "type": "similar"
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -8066,30 +7310,24 @@
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "new",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282209,
             "formatted_timestamp": "05:56, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775282288,
             "formatted_timestamp": "05:58, 04/04/2026"
           },
           {
             "preference": "Values Christian faith and spiritual growth",
             "update_type": "reinforced",
-            "timestamp": 1775307575,
             "formatted_timestamp": "12:59, 04/04/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -8127,30 +7365,24 @@
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "new",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775284138,
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775482278,
             "formatted_timestamp": "13:31, 04/06/2026"
           },
           {
             "preference": "Seeks practical parenting tips and hacks",
             "update_type": "reinforced",
-            "timestamp": 1775641549,
             "formatted_timestamp": "09:45, 04/08/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -8165,30 +7397,24 @@
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "new",
-            "timestamp": 1775307221,
             "formatted_timestamp": "12:53, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308136,
             "formatted_timestamp": "13:08, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775308252,
             "formatted_timestamp": "13:10, 04/04/2026"
           },
           {
             "preference": "Enjoys humor about the chaos of parenting",
             "update_type": "reinforced",
-            "timestamp": 1775540689,
             "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -8226,24 +7452,19 @@
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "new",
-            "timestamp": 1775239971,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "reinforced",
-            "timestamp": 1775239971,
             "formatted_timestamp": "18:12, 04/03/2026"
           },
           {
             "preference": "Enjoys social gatherings and party culture",
             "update_type": "reinforced",
-            "timestamp": 1775943174,
             "formatted_timestamp": "21:32, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -8258,18 +7479,14 @@
           {
             "preference": "Supports Black-owned and women-owned businesses",
             "update_type": "new",
-            "timestamp": 1775881162,
             "formatted_timestamp": "04:19, 04/11/2026"
           },
           {
             "preference": "Supports Black-owned and women-owned businesses",
             "update_type": "reinforced",
-            "timestamp": 1775881162,
             "formatted_timestamp": "04:19, 04/11/2026"
           }
         ],
-        "relationship_type": "none",
-        "related_personas": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
