@@ -574,6 +574,13 @@ class PersonaAgent:
         self.split_labels: dict[str, str] = {}                       # persona_item -> "train" | "test"
         self.test_distractors: dict[str, dict] = {}                  # test persona_item -> {"persona_item": ..., "category": ...}
 
+        # Reduced (redundancy-removed) preferences list — a strict subset of
+        # self.cross_referenced_personas, produced by remove_redundant_personas().
+        # Used ONLY for preferences.csv. Per-app JSONs and preferences_full.csv
+        # use the full self.cross_referenced_personas (no redundancy removal)
+        # because repeated real-world signals are valuable for frequency analysis.
+        self._reduced_preferences: list | None = None
+
         # Per-user perturbed action distribution (set lazily on first use).
         # The seed is deterministic in user_id so the same user gets the
         # same action distribution across runs.
@@ -871,29 +878,27 @@ class PersonaAgent:
     # ------------------------------------------------------------------
 
     def remove_redundant_personas(self) -> None:
-        """Collapse semantically-redundant canonical personas after the
-        confidence filter has run.
+        """Build a redundancy-removed subset of preferences for preferences.csv.
 
-        The merge step in `summarize_and_cross_reference` only combined
-        LEXICALLY identical persona_items (e.g. "Enjoys home cooking" ==
-        "Enjoys home cooking"). This method operates on the stronger,
-        SEMANTIC notion of redundancy: two distinct-wording personas that
-        convey essentially the same preference should be collapsed into one.
+        IMPORTANT: this method does NOT modify self.cross_referenced_personas.
+        The full set (with all real-world frequency preserved) is kept intact
+        for per-app JSONs and preferences_full.csv. Only preferences.csv gets
+        the deduplicated view.
 
-        Examples of redundant groups:
-          - "Enjoys home cooking" + "Likes preparing meals at home" + "Values
-             cooking as an act of love and family care"
-          - "Follows Detroit Lions" + "Is an NFL fan" + "Supports Detroit
-             sports teams" (if the context is clearly Lions-centric)
+        Two preferences that came from different interaction rows (different
+        source_object_id) are NEVER merged — repeated real-world signals are
+        meaningful frequency data. Only preferences with different wording
+        that describe the exact same underlying preference should be collapsed.
 
-        The LLM is asked to cluster the surviving personas into redundancy
-        groups; Python keeps the *representative* (highest combined score)
-        from each group and drops the rest. Related-persona links are
-        rewritten to point at the kept representative.
+        The reduced list is stored in self._reduced_preferences.
 
         Subagent mode: the method no-ops here; skill.md instructs the subagent
-        to do the equivalent clustering inline before it writes files.
+        to do the equivalent clustering inline.
         """
+        # Default: reduced = full (no redundancy removal)
+        import copy
+        self._reduced_preferences = copy.deepcopy(list(self.cross_referenced_personas))
+
         if self.llm_client is None or not self.cross_referenced_personas:
             return
 
@@ -914,22 +919,15 @@ class PersonaAgent:
         if not isinstance(parsed, list):
             return
 
-        # parsed is expected to be a list of groups, each group is a list of
-        # persona_item strings that are semantically redundant. We keep the
-        # highest-combined-score item per group, drop the rest, and forward
-        # related_personas links from dropped items onto the kept item.
-        lookup = {cr.persona_item: cr for cr in self.cross_referenced_personas}
+        lookup = {cr.persona_item: cr for cr in self._reduced_preferences}
         to_remove: set[str] = set()
-        redirect: dict[str, str] = {}  # dropped item -> kept item
 
         for group in parsed:
             if not isinstance(group, list) or len(group) < 2:
                 continue
-            # Keep the valid, known ones
             known = [lookup[name] for name in group if name in lookup]
             if len(known) < 2:
                 continue
-            # Pick the representative: highest (init + cross_ref)
             rep = max(
                 known,
                 key=lambda cr: (
@@ -937,43 +935,24 @@ class PersonaAgent:
                     cr.confidence_cross_referenced,
                 ),
             )
-            # Bump the representative's cross_ref by the sum of the dropped
-            # items' cross_ref values — the combined corroboration is preserved.
+            # Bump the representative's cross_ref by the dropped items' values
             extra = sum(cr.confidence_cross_referenced for cr in known if cr is not rep)
             rep.confidence_cross_referenced += extra
 
             for cr in known:
-                if cr is rep:
-                    continue
-                to_remove.add(cr.persona_item)
-                redirect[cr.persona_item] = rep.persona_item
+                if cr is not rep:
+                    to_remove.add(cr.persona_item)
 
-        if not to_remove:
-            if self.verbose:
-                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] No semantic redundancies found.{utils.Colors.ENDC}")
-            return
-
-        # Rewrite related_personas links on survivors so they don't point at
-        # dropped items.
-        survivors = [cr for cr in self.cross_referenced_personas if cr.persona_item not in to_remove]
-        for cr in survivors:
-            new_related = []
-            for rel in cr.related_personas:
-                if not isinstance(rel, dict):
-                    continue
-                other = rel.get("persona_item", "")
-                if other in to_remove:
-                    other = redirect.get(other, "")
-                if not other or other == cr.persona_item:
-                    continue
-                new_related.append({"persona_item": other, "type": rel.get("type", "similar")})
-            cr.related_personas = new_related
-
-        self.cross_referenced_personas = survivors
+        if to_remove:
+            self._reduced_preferences = [
+                cr for cr in self._reduced_preferences
+                if cr.persona_item not in to_remove
+            ]
 
         if self.verbose:
-            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Removed {len(to_remove)} semantically "
-                  f"redundant personas; {len(survivors)} remain.{utils.Colors.ENDC}")
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Redundancy-removed subset: "
+                  f"{len(self._reduced_preferences)} (from {len(self.cross_referenced_personas)} full, "
+                  f"dropped {len(to_remove)} near-synonyms).{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM Call #3: Temporal contradiction graph
@@ -1615,23 +1594,24 @@ class PersonaAgent:
 
         Order:
           1. infer atomic personas
-          2. dedupe (lexical) + cross-reference + init>=0.5 filter
-          3. remove semantic redundancies among survivors (LLM clustering)
+          2. dedupe (lexical) + init filter + count corroboration → cross_ref
+          3. LLM cross-reference for relationship discovery (no score changes)
           4. temporal contradiction graph (on surviving canonicals)
           5. generate user profile (demographics + big_five + bio)
           6. generate per-app sub-personas
           7. route preferences to apps (LLM + 8% noise)
-          8. generate interaction_format objects per preference (with @ai
-             messages for Chatbot steering directives)
+          8. generate interaction_format objects per preference (weighted
+             sampling from catalog + @ai / chat-turn user_messages)
           9. annotate stereotype marks
          10. build test split (cross-app, global latest-20% high-conf by time)
-         11. save to backend/{uid}/ subfolder as per-app JSON files
+         11. build redundancy-removed subset (for preferences.csv only —
+              per-app JSONs + preferences_full.csv keep the full set)
+         12. save to backend/{uid}/ subfolder
         """
         print(f"{utils.Colors.BOLD}[User {self.user_id}] Starting persona pipeline...{utils.Colors.ENDC}")
 
         self.infer_personas_from_hashtags()
         self.summarize_and_cross_reference()
-        self.remove_redundant_personas()
         self.build_temporal_contradiction_graph()
         self.generate_user_profile()
         self.generate_app_personas()
@@ -1639,6 +1619,7 @@ class PersonaAgent:
         self.generate_interaction_formats()
         self.annotate_stereotype_marks()
         self.build_test_split()
+        self.remove_redundant_personas()
         self.save_to_backend()
 
         n_test = sum(1 for v in self.split_labels.values() if v == "test")
@@ -1675,13 +1656,20 @@ class PersonaAgent:
         return os.path.join(self.backend_dir, str(self.user_id))
 
     def save_to_backend(self) -> str:
-        """Persist data to 5 JSON files under backend/{user_id}/:
+        """Persist data to backend/{user_id}/:
 
-          - profile.json   — UserProfile + AppPersonas (all 4 apps)
-          - instagram.json — preferences routed to Instagram (time-sorted)
-          - facebook.json  — preferences routed to Facebook (time-sorted)
-          - threads.json   — preferences routed to Threads (time-sorted)
-          - chatbot.json   — preferences routed to Chatbot (time-sorted, with @ai messages)
+          - profile.json          — UserProfile + AppPersonas (all 4 apps)
+          - instagram.json        — preferences routed to Instagram (time-sorted, FULL set)
+          - facebook.json         — preferences routed to Facebook (time-sorted, FULL set)
+          - threads.json          — preferences routed to Threads (time-sorted, FULL set)
+          - chatbot.json          — preferences routed to Chatbot (time-sorted, FULL set)
+          - preferences_full.csv  — ALL preferences across all apps (no redundancy removal)
+          - preferences.csv       — Redundancy-removed subset (from self._reduced_preferences)
+
+        Per-app JSONs and preferences_full.csv preserve the FULL set of
+        preferences (no semantic redundancy removal) because repeated
+        real-world signals are meaningful — they show frequency patterns.
+        preferences.csv is the deduplicated view for modeling.
 
         Each app JSON is a list of preference objects. Train/test split is
         global/cross-app (the latest 20% high-confidence items by time carry
@@ -1807,9 +1795,8 @@ class PersonaAgent:
         # --- Write aggregated preferences.csv (all apps merged, old-style flat layout) ---
         # Re-uses the CSV schema from the pre-refactor era so downstream tools
         # that expect a single-file-per-user view still work. `assigned_app`
-        # The
-        # `interaction_format` cell carries the full JSON object serialized
-        # as a string.
+        # --- Write preferences_full.csv (all records, no redundancy removal) ---
+        # and preferences.csv (redundancy-removed subset).
         csv_columns = [
             "persona_item",
             "category",
@@ -1829,9 +1816,9 @@ class PersonaAgent:
             "over_personalization_irrelevant",
             "over_personalization_irrelevant_category",
         ]
-        csv_rows: list[dict] = []
-        for rec in all_records:
-            csv_rows.append({
+
+        def _records_to_csv_rows(records: list[dict]) -> list[dict]:
+            return [{
                 "persona_item": rec.get("persona_item", ""),
                 "category": rec.get("category", ""),
                 "confidence_score_init": rec.get("confidence_score_init", 0.0),
@@ -1849,14 +1836,28 @@ class PersonaAgent:
                 "split": rec.get("split", "train"),
                 "over_personalization_irrelevant": rec.get("over_personalization_irrelevant", ""),
                 "over_personalization_irrelevant_category": rec.get("over_personalization_irrelevant_category", ""),
-            })
-        if csv_rows:
+            } for rec in records]
+
+        def _write_csv(rows: list[dict], path: str) -> None:
+            if not rows:
+                return
             import csv as _csv
-            csv_path = os.path.join(user_dir, "preferences.csv")
-            with open(csv_path, "w", newline="", encoding="utf-8") as f:
+            with open(path, "w", newline="", encoding="utf-8") as f:
                 writer = _csv.DictWriter(f, fieldnames=csv_columns)
                 writer.writeheader()
-                writer.writerows(csv_rows)
+                writer.writerows(rows)
+
+        # Full CSV (no redundancy removal) — same data as per-app JSONs merged
+        _write_csv(_records_to_csv_rows(all_records), os.path.join(user_dir, "preferences_full.csv"))
+
+        # Reduced CSV (redundancy-removed subset)
+        if self._reduced_preferences is not None:
+            reduced_items = {cr.persona_item for cr in self._reduced_preferences}
+            reduced_records = [rec for rec in all_records if rec.get("persona_item") in reduced_items]
+            _write_csv(_records_to_csv_rows(reduced_records), os.path.join(user_dir, "preferences.csv"))
+        else:
+            # Fallback: no redundancy removal ran — write same as full
+            _write_csv(_records_to_csv_rows(all_records), os.path.join(user_dir, "preferences.csv"))
 
         # --- Write profile.json ---
         if self.user_profile:
