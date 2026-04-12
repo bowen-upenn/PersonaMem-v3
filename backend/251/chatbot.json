@@ -43,12 +43,7 @@
         "confidence_cross_referenced": 3.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -60,10 +55,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Has a sweet tooth and enjoys dessert content",
@@ -124,10 +115,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
           }
@@ -184,10 +171,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Has a sweet tooth and enjoys dessert content",
             "formatted_timestamp": "17:06, 04/03/2026"
@@ -203,12 +186,7 @@
         "confidence_cross_referenced": 3.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
@@ -220,10 +198,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Has a sweet tooth and enjoys dessert content",
@@ -282,10 +256,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -306,10 +276,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -371,10 +337,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -395,10 +357,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -460,10 +418,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -483,12 +437,7 @@
         "confidence_cross_referenced": 2.5,
         "stereotype_mark": "stereotypical",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "06:26, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -544,10 +493,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -568,10 +513,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -637,10 +578,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -661,10 +598,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -731,10 +664,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
           }
@@ -750,10 +679,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -815,10 +740,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -877,12 +798,7 @@
         "confidence_cross_referenced": 4.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Follows boxing events and fight night content",
         "over_personalization_irrelevant_category": "boxing"
       }
@@ -931,12 +847,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -985,12 +896,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1039,12 +945,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1093,12 +994,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1135,10 +1031,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Believes confidence and positivity are important daily practices",
@@ -1197,12 +1089,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1254,10 +1141,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Believes confidence and positivity are important daily practices",
             "formatted_timestamp": "20:04, 04/03/2026"
@@ -1303,12 +1186,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1359,10 +1237,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
@@ -1419,10 +1293,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
           },
@@ -1442,10 +1312,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -1495,12 +1361,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1537,12 +1398,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1579,12 +1435,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -1635,10 +1486,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -1702,10 +1549,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -1773,10 +1616,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -1801,10 +1640,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -1847,10 +1682,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -1916,10 +1747,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -1982,12 +1809,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2023,12 +1845,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2081,10 +1898,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "06:25, 04/04/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Enjoys nail art and beauty content",
             "formatted_timestamp": "06:25, 04/04/2026"
@@ -2106,10 +1919,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "12:49, 04/04/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Deeply invested in hair care and styling routines",
@@ -2172,10 +1981,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -2200,10 +2005,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -2269,10 +2070,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
           },
@@ -2292,10 +2089,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -2359,12 +2152,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2403,10 +2191,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:11, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Enjoys content celebrating involved fatherhood",
             "formatted_timestamp": ""
@@ -2428,10 +2212,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:11, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:27, 04/04/2026"
@@ -2489,12 +2269,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2543,12 +2318,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2599,10 +2369,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -2667,10 +2433,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -2695,10 +2457,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -2766,12 +2524,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2824,10 +2577,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -2852,10 +2601,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -2922,12 +2667,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -2978,10 +2718,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3046,10 +2782,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3074,10 +2806,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3148,10 +2876,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3176,10 +2900,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3232,10 +2952,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3260,10 +2976,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3329,10 +3041,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3357,10 +3065,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3424,12 +3128,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -3469,10 +3168,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3502,10 +3197,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3555,12 +3246,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -3610,12 +3296,7 @@
         "confidence_cross_referenced": 4.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Follows boxing events and fight night content",
         "over_personalization_irrelevant_category": "boxing"
       }
@@ -3654,10 +3335,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3688,10 +3365,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3711,10 +3384,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3766,12 +3435,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -3823,10 +3487,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -3856,10 +3516,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -3924,10 +3580,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
           },
@@ -3948,10 +3600,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Appreciates home decor and interior inspiration",
@@ -4013,10 +3661,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -4045,10 +3689,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
@@ -4111,10 +3751,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -4144,10 +3780,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -4217,10 +3849,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Believes confidence and positivity are important daily practices",
             "formatted_timestamp": "20:04, 04/03/2026"
@@ -4283,10 +3911,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -4320,10 +3944,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -4396,12 +4016,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -4452,10 +4067,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -4530,12 +4141,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -4585,12 +4191,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -4640,10 +4241,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
@@ -4708,10 +4305,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -4786,10 +4379,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -4862,10 +4451,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
           },
@@ -4931,10 +4516,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -5009,10 +4590,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
           },
@@ -5076,12 +4653,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5136,10 +4708,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -5213,12 +4781,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5269,10 +4832,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -5329,10 +4888,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -5401,12 +4956,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5455,12 +5005,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5510,10 +5055,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -5586,12 +5127,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5628,12 +5164,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5683,12 +5214,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5737,12 +5263,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5791,12 +5312,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5845,12 +5361,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5899,12 +5410,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "neutral",
         "split": "test",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
       }
@@ -5955,10 +5461,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           }
@@ -6001,10 +5503,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           }
@@ -6045,10 +5543,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6110,10 +5604,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -6158,10 +5648,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6219,10 +5705,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6283,10 +5765,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -6341,10 +5819,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6403,10 +5877,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6467,10 +5937,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -6530,10 +5996,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
           },
@@ -6580,10 +6042,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6644,10 +6102,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -6707,10 +6161,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -6744,10 +6194,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -6818,10 +6264,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -6880,10 +6322,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -6947,10 +6385,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -7011,10 +6445,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "17:06, 04/03/2026"
           },
@@ -7034,10 +6464,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7072,10 +6498,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7148,10 +6570,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -7201,10 +6619,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -7238,10 +6652,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -7311,10 +6721,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -7379,10 +6785,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
           },
@@ -7437,10 +6839,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -7504,10 +6902,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -7541,10 +6935,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7614,10 +7004,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -7651,10 +7037,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7723,10 +7105,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -7777,10 +7155,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7850,10 +7224,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -7887,10 +7257,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7958,10 +7324,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -8039,10 +7401,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -8105,10 +7463,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -8189,10 +7543,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
           },
@@ -8269,10 +7619,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -8321,10 +7667,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
@@ -8375,10 +7717,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -8451,10 +7789,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -8533,10 +7867,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "19:05, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -8626,10 +7956,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -8680,10 +8006,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -8717,10 +8039,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -8790,10 +8108,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "14:19, 04/05/2026"
@@ -8875,10 +8189,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -8912,10 +8222,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -8971,10 +8277,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
@@ -9036,10 +8338,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -9073,10 +8371,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -9151,10 +8445,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:37, 04/07/2026"
           },
@@ -9204,10 +8494,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Appreciates home decor and interior inspiration",
@@ -9265,10 +8551,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
           },
@@ -9289,10 +8571,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Appreciates home decor and interior inspiration",
@@ -9349,10 +8627,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -9415,10 +8689,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
           },
@@ -9443,10 +8713,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Appreciates home decor and interior inspiration",
@@ -9491,10 +8757,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:22, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:25, 04/06/2026"
           },
@@ -9523,10 +8785,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -9606,10 +8864,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -9644,10 +8898,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -9667,10 +8917,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -9739,10 +8985,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:17, 04/10/2026"
           },
@@ -9802,10 +9044,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -9839,10 +9077,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -9916,10 +9150,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:17, 04/10/2026"
           },
@@ -9970,10 +9200,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "06:25, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "14:19, 04/05/2026"
@@ -10038,10 +9264,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
@@ -10114,10 +9336,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -10198,10 +9416,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -10240,10 +9454,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -10327,10 +9537,6 @@
         "stereotype_mark": "neutral",
         "split": "test",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "15:34, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:21, 04/07/2026"
