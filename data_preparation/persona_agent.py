@@ -2365,19 +2365,30 @@ class PersonaAgent:
 
                 # Build merged update_history: temporal entries (no raw timestamp)
                 # + related_personas folded in as similar/contradictory entries.
-                # Key order is always: update_type, preference, formatted_timestamp,
-                # then any extras (occurrence, total_occurrences, description).
+                # Causality: only keep entries whose timestamp <= this event's time.
+                # Key order: update_type, preference, formatted_timestamp, then extras.
                 _HISTORY_KEY_ORDER = ["update_type", "preference", "formatted_timestamp",
                                       "occurrence", "total_occurrences", "description"]
+                event_ts = ap.source_timestamp  # this atomic's source row timestamp
+
                 merged_history = []
                 for h in (cr.update_history or []):
                     raw = dict(h)
-                    raw.pop("timestamp", None)
+                    h_ts = raw.pop("timestamp", 0)
+                    if h_ts and h_ts > event_ts:
+                        continue  # skip future entries — causality
                     ordered = {k: raw[k] for k in _HISTORY_KEY_ORDER if k in raw}
                     merged_history.append(ordered)
                 for rel in (cr.related_personas or []):
                     if isinstance(rel, dict) and rel.get("persona_item"):
                         rel_cr = canonical_lookup.get(_normalize_persona_text(rel["persona_item"]))
+                        # Only include if the related preference appeared before this event
+                        if rel_cr:
+                            rel_atoms = self._canonical_groups.get(
+                                _normalize_persona_text(rel["persona_item"]), [])
+                            rel_first_ts = min((a.source_timestamp for a in rel_atoms), default=0) if rel_atoms else 0
+                            if rel_first_ts > event_ts:
+                                continue  # skip future relationships — causality
                         merged_history.append({
                             "update_type": rel.get("type", "similar"),
                             "preference": rel["persona_item"],
