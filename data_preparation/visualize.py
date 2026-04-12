@@ -157,9 +157,9 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.platform {{ font-weight: 600; font-size: 11px; padding: 2px 10px; }}
   .badge.platform.p-Instagram {{ background: #C13584; color: #fff; }}
   .badge.platform.p-Facebook {{ background: #4A6FA5; color: #fff; }}
-  .badge.platform.p-Threads {{ background: #636366; color: #fff; }}
+  .badge.platform.p-Threads {{ background: #8E8E93; color: #fff; }}
   .badge.platform.p-Chatbot {{ background: #C8956C; color: #fff; }}
-  .badge.action {{ background: var(--text); color: #fff; font-weight: 500; }}
+  .badge.action {{ background: #E8E8ED; color: #48484A; font-weight: 500; }}
   .badge.interaction-type {{ font-weight: 600; padding: 2px 10px; }}
   .badge.interaction-type.explicit_positive {{ background: #D1FAE5; color: #065F46; }}
   .badge.interaction-type.implicit_positive {{ background: #EDF5E1; color: #3F6212; }}
@@ -170,7 +170,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
   .chat-thread {{ margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }}
   .chat-bubble {{ max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
-  .chat-bubble.user-bubble {{ align-self: flex-end; background: var(--text); color: #fff; border-bottom-right-radius: 4px; }}
+  .chat-bubble.user-bubble {{ align-self: flex-end; background: #4A6FA5; color: #fff; border-bottom-right-radius: 4px; }}
   .chat-bubble.assistant-bubble {{ align-self: flex-start; background: #F2F2F7; color: var(--text); border-bottom-left-radius: 4px; }}
   .chat-role {{ font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }}
   .chat-bubble.user-bubble .chat-role {{ color: rgba(255,255,255,0.55); }}
