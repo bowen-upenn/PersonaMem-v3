@@ -1,0 +1,194 @@
+{
+  "user_id": "251",
+  "name": "Marisol Vega",
+  "gender": "cisgender female, heterosexual",
+  "race_ethnicity": "Mexican American",
+  "career": "Certified Nursing Assistant on a hospital med-surg floor; runs a home-based braiding studio on weekends",
+  "education": "High school diploma plus a state cosmetology license; currently enrolled part-time in an LPN bridge program",
+  "big_five": {
+    "openness": "medium",
+    "conscientiousness": "high",
+    "extraversion": "high",
+    "agreeableness": "high",
+    "neuroticism": "medium"
+  },
+  "bio": "Marisol is a thirty-one-year-old CNA in San Antonio raising two young kids while her husband finishes a long sentence upstate, and she keeps the household running on coffee, comedy reels, and color-coded planners. Most weekends she turns her dining room into a salon, braiding clients' hair while a Selena album plays in the background and her toddler critiques her playlist. She is quietly building toward an LPN credential and dreams of one day opening a community wellness clinic that also rents booth space to local stylists. Almost no one at work knows she writes long, surprisingly vulnerable poetry on her phone during her overnight breaks.",
+  "app_personas": {
+    "Instagram": {
+      "app_name": "Instagram",
+      "use_purposes": [
+        "sharing family and kid moments with close friends",
+        "salon/braiding portfolio and client booking",
+        "aesthetic inspiration browsing",
+        "trending reels for mood lift between shifts"
+      ],
+      "friend_zones": [
+        "close friends",
+        "extended family",
+        "salon clients",
+        "hair/beauty creators"
+      ],
+      "audience_type": "mixed",
+      "style_description": "Warm, colorful, family-centric with a side of beauty-portfolio polish. Shares toddler-milestone reels and finished braid photos alongside reels she laughed at on a night shift. Close Friends story is mostly private kid moments; main feed is the salon-and-self face of her.",
+      "posting_frequency": "weekly",
+      "topical_focus": [
+        "motherhood & kids",
+        "hair and beauty",
+        "family moments",
+        "short-form comedy",
+        "romantic couple content"
+      ],
+      "chatbot_contexts": []
+    },
+    "Facebook": {
+      "app_name": "Facebook",
+      "use_purposes": [
+        "keep up with extended family (abuela, tias, cousins)",
+        "share milestones with older relatives",
+        "parenting community groups and local school events",
+        "marketplace for used baby gear"
+      ],
+      "friend_zones": [
+        "extended family",
+        "older relatives",
+        "neighbors",
+        "parenting groups"
+      ],
+      "audience_type": "mixed",
+      "style_description": "Quieter and more practical than her Instagram. Birthday announcements in Spanglish, wholesome family-activity photos, occasional prayer requests in a small support group, and the rare marketplace post. Rarely posts opinions — this feed is for the aunts.",
+      "posting_frequency": "weekly",
+      "topical_focus": [
+        "family milestones",
+        "parenting community",
+        "feel-good/heartwarming content",
+        "wholesome values",
+        "local community"
+      ],
+      "chatbot_contexts": []
+    },
+    "Threads": {
+      "app_name": "Threads",
+      "use_purposes": [
+        "passive browsing of mom-humor creators and Latina lifestyle pros",
+        "following salon/beauty pros for industry chatter",
+        "occasional reply in mom-humor threads",
+        "quick reactions to viral takes"
+      ],
+      "friend_zones": [
+        "strangers / public",
+        "creators she follows"
+      ],
+      "audience_type": "public",
+      "style_description": "Almost purely a lurker. When she does engage it's a short reply in a mom-humor thread or a repost of an especially funny reel. She doesn't post originals — she doesn't have the bandwidth for engagement that public.",
+      "posting_frequency": "passive viewer only",
+      "topical_focus": [
+        "mom humor",
+        "short-form comedy",
+        "hair/beauty creators",
+        "viral trending content"
+      ],
+      "chatbot_contexts": []
+    },
+    "Chatbot": {
+      "app_name": "Chatbot",
+      "use_purposes": [
+        "late-night personal reflection and journaling during overnight breaks",
+        "quick practical lookups (recipes, toddler health, hair chemistry)",
+        "writing help for salon captions and client follow-ups",
+        "poetry drafting"
+      ],
+      "friend_zones": [
+        "just herself (private)"
+      ],
+      "audience_type": "private",
+      "style_description": "Treats the assistant like a tired, knowledgeable friend. Vulnerable in reflection, quick and practical when asking lookups, bossy when iterating on captions. Rarely asks fluffy questions — she values time and speed.",
+      "posting_frequency": "daily",
+      "topical_focus": [
+        "personal reflection",
+        "toddler/parenting questions",
+        "recipes",
+        "hair/salon chemistry",
+        "poetry and caption writing"
+      ],
+      "chatbot_contexts": [
+        "therapy and reflection",
+        "knowledge exploration",
+        "composing social media posts"
+      ]
+    }
+  },
+  "preferences": [
+    "Enjoys wholesome, heartwarming feel-good content",
+    "Responds emotionally to touching or inspirational stories",
+    "Cherishes the bond between mothers and daughters",
+    "Likely has a daughter or close maternal-female relationship",
+    "Enjoys beauty and nail-art content",
+    "Enjoys seasonal Halloween and fall-themed content",
+    "Keeps up with fashion and personal style inspiration",
+    "Values presenting a polished, put-together look",
+    "Likely has or loves dogs as part of the family",
+    "Enjoys humor that pokes fun at the chaos of parenting",
+    "Feels validated by content about parenting struggles",
+    "Finds comfort in 'that's so me' style posts",
+    "Gravitates toward content that mirrors everyday life experiences",
+    "Looks for relatable everyday parenting stories",
+    "Seeks practical parenting tips and hacks",
+    "Appreciates wholesome, light-hearted humor over edgy comedy",
+    "Enjoys short-form comedy reels and viral funny clips",
+    "Follows comedy creators and prank content",
+    "Uses humor content as a mood-lifter throughout the day",
+    "Engages with prison-wife / incarcerated-partner support content",
+    "May have a partner who is currently incarcerated",
+    "Looks for cleaning hacks and home-organization tips",
+    "Uses humor as a coping mechanism for healthcare work",
+    "Works in or is connected to healthcare (likely CNA or nursing)",
+    "Values a sense of local community and belonging",
+    "Deeply invested in hair care and styling routines",
+    "Follows hairstylists and salon professionals",
+    "Interested in protective natural hair styles like braids and weaves",
+    "Likely wears or appreciates Black hair styling traditions",
+    "Sees hair styling as a form of self-expression",
+    "Appreciates food content that feels homemade and wholesome",
+    "Enjoys home cooking and preparing family meals",
+    "Has a sweet tooth and enjoys desserts",
+    "Seeks easy recipe inspiration online",
+    "Values cooking as an act of love and family care",
+    "Appreciates dad-oriented humor and family interplay",
+    "Enjoys content celebrating involved fatherhood",
+    "Appreciates home decor and interior inspiration",
+    "Occasionally interested in DIY and handmade home projects",
+    "Believes confidence and positivity are important daily practices",
+    "Invested in self-care routines and self-expression",
+    "Looks for motivational and personal-growth content",
+    "Enjoys dance content and casual music videos",
+    "Likely dances at home, at parties, or with family",
+    "Enjoys aspirational couple imagery and moments",
+    "Finds humor in everyday couple dynamics",
+    "Invested in romantic relationship content",
+    "Values long-term committed partnerships",
+    "Active across Instagram Reels, Threads, and similar platforms",
+    "Spends time scrolling trending short-form video content",
+    "Enjoys matching-outfit and 'twinning' content with family",
+    "Either runs or supports a small creator/service business",
+    "Follows content with 'book now' appointment calls-to-action",
+    "Engages with content celebrating friendship milestones",
+    "Values close female friendships and squad bonding",
+    "Actively engaged in daily motherhood experiences",
+    "Follows mom-oriented lifestyle content creators",
+    "Identifies strongly with a community of mothers online",
+    "Parenting young children at home",
+    "Values sharing candid, real-life parenting moments",
+    "Follows niche individual creators by handle",
+    "Aspires to strong family traditions and shared routines",
+    "Centers family togetherness as a core value",
+    "Enjoys wholesome family-activity content",
+    "Enjoys nostalgic throwback content from earlier eras",
+    "Values memory-keeping and shared cultural references",
+    "Finds joy in sharing everyday moments of toddlers",
+    "Has or is close to young children and infants",
+    "Likely a parent navigating the early-childhood years",
+    "Likely identifies as a woman and connects with empowerment messaging",
+    "Supports women empowerment themes and female-centric content",
+    "Navigating back-to-school routines with school-age children"
+  ]
+}

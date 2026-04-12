@@ -77,35 +77,45 @@ Respond with ONLY a JSON array. No explanation, no markdown outside the JSON fen
 
 
 def summarize_and_cross_reference_prompt(atomic_personas: list[dict]) -> str:
-    """Build a prompt that asks the LLM to cross-reference and score all atomic personas."""
+    """Build a prompt that asks the LLM to cross-reference and score all atomic personas.
+
+    NOTE: The input list has ALREADY been deduplicated by the caller. Each entry
+    is a *canonical* persona — personas with identical text from multiple rows
+    have been merged into one entry. `confidence_cross_referenced` reflects the
+    count of distinct source rows that independently produced them AND passed
+    the init-confidence threshold. The LLM must treat each entry as a
+    unique preference.
+    """
 
     personas_json = json.dumps(atomic_personas, indent=2)
 
     return f"""\
 You are an expert at synthesizing behavioral signals into a coherent user profile.
 
-Below is a list of atomic persona traits/preferences inferred from a single user's social media interactions over time. Each entry includes the category, persona item, an initial confidence score, the source interaction type, the timestamp, and the `source_object_id` identifying which interaction row it came from.
+Below is a list of canonical persona traits/preferences for a single user. These have already been deduplicated — if two interaction rows produced the exact same persona text, they were merged into one canonical entry. `confidence_cross_referenced` records the number of distinct high-confidence source rows that produced each entry. Each entry includes the category, persona item, initial confidence score, cross-reference count, and source interaction metadata.
 
 ```json
 {personas_json}
 ```
 
-## Your Task
+## Your Task — Find cross-persona relationships
 
-1. **Cross-reference** every persona item against personas **from different interaction rows only** (different `source_object_id`). Personas inferred from the same row (same `source_object_id`) must NOT be marked as related to each other — they share the same evidence and cannot validate each other.
-   - If two personas (from different rows) are **similar** (reinforce each other), mark them as related with relationship_type "similar".
-   - If two personas (from different rows) **contradict** each other, mark them as related with relationship_type "contradictory".
-   - If a persona has no meaningful cross-row relationship, mark it as "none".
+1. **Cross-reference DISTINCT canonical personas** against each other. Because the input is already deduplicated, you will NEVER see two entries with identical `persona_item` text — so you must NEVER mark a persona as `similar` or `contradictory` to itself.
+   - If two **different** personas are **similar** (reinforce each other — e.g. "Enjoys home cooking" and "Buys fresh produce weekly"), mark them as related with `"type": "similar"`.
+   - If two **different** personas **contradict** each other (e.g. "Prefers vegan meals" and "Loves BBQ ribs"), mark them as related with `"type": "contradictory"`.
+   - If a persona has no meaningful cross-persona relationship, set `relationship_type` to `"none"` with an empty `related_personas` list.
 
-2. **Do NOT compute confidence scores** — set `confidence_cross_referenced` to 0.0 for every item. Scoring is computed downstream.
+2. **Do NOT mark identical persona_items as similar to each other.** Identical-text preferences are the same preference corroborated by multiple rows — that corroboration is already captured in `confidence_cross_referenced`. Marking them as "similar" would double-count.
 
-3. **Keep the original `confidence_score_init` unchanged** — do not modify it.
+3. **Do NOT compute confidence scores** — the `confidence_cross_referenced` field is computed downstream from your relationships. Do not include it in your output.
 
-4. **Do NOT filter anything out** — return every persona item, even contradictions. Filtering happens downstream.
+4. **Keep the original `confidence_score_init` unchanged.**
 
-5. **For each persona, list all related personas** in the `related_personas` array. Each entry must include the persona text AND its relationship type as an object: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
+5. **Return EVERY canonical persona** — one entry per input, even if its `relationship_type` is `"none"`.
 
-6. **Preserve the `category`** from the input for each persona item.
+6. **For each persona, list all related personas** in the `related_personas` array. Each entry must include the other persona's text AND its relationship type as an object: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
+
+7. **Preserve the `category`** from the input for each persona item.
 
 ## Output Format
 
@@ -117,7 +127,6 @@ Respond with ONLY a JSON array. No explanation.
     "category": "...",
     "persona_item": "...",
     "confidence_score_init": 0.XX,
-    "confidence_cross_referenced": 0.0,
     "relationship_type": "similar" | "contradictory" | "none",
     "related_personas": [{{"persona_item": "...", "type": "similar"}}, {{"persona_item": "...", "type": "contradictory"}}],
     "formatted_timestamp": "...",
@@ -275,3 +284,626 @@ Respond with ONLY a JSON array. No explanation.
   {{{{"persona_item": "...", "category": "...", "stereotype_mark": "neutral" | "stereotypical" | "anti-stereotypical"}}}}
 ]
 ```"""
+
+
+def test_inferrability_check_prompt(
+    train_personas: list[dict],
+    test_candidates: list[dict],
+) -> str:
+    """Build a prompt that asks the LLM to check whether each test candidate persona
+    can be reasonably inferred from the train 80% set (the ground truth).
+
+    Each persona dict includes: persona_item, category, confidence_score_init,
+    confidence_cross_referenced, formatted_timestamp.
+    """
+
+    train_json = json.dumps(train_personas, indent=2)
+    test_json = json.dumps(test_candidates, indent=2)
+
+    return f"""\
+You are evaluating whether a set of "test" user preferences can be reasonably inferred from the user's earlier history of preferences (the "train" set). This is a sanity check for building a high-fidelity evaluation dataset: we only want to keep test items that a thoughtful reader could plausibly predict from the user's established pattern.
+
+## Train set (user's earlier high-confidence preferences — ground truth)
+
+```json
+{train_json}
+```
+
+## Test candidates (user's most recent high-confidence preferences)
+
+```json
+{test_json}
+```
+
+## Your Task
+
+For **each** test candidate, decide whether it can be **reasonably inferred** from the train set. The test preference does NOT need to be explicitly stated in the train set — but the user's earlier pattern should plausibly support it. Examples:
+
+- A test preference "Enjoys espresso-based drinks" is **inferrable** if the train set already shows a strong coffee/cafe pattern.
+- A test preference "Follows competitive chess tournaments" is **NOT inferrable** if nothing in the train set touches chess, board games, or strategy hobbies.
+
+## Rules
+
+1. **Be conservative**. When in doubt, mark as `false` — we'd rather drop a borderline item than keep a noisy eval sample.
+2. Consider **topical overlap**, **lifestyle coherence**, and **demographic/cultural consistency** as bridges from train → test.
+3. Return **one entry per test candidate**, in the same order as the input.
+4. One-sentence justification per entry.
+
+## Output Format
+
+Respond with ONLY a JSON array. No explanation outside the JSON fence.
+
+```json
+[
+  {{"persona_item": "...", "inferrable": true, "reason": "..."}},
+  {{"persona_item": "...", "inferrable": false, "reason": "..."}}
+]
+```"""
+
+
+def distractor_selection_prompt(
+    test_persona: dict,
+    candidate_distractors: list[dict],
+) -> str:
+    """Build a prompt that asks the LLM to pick one distractor from a shortlist.
+
+    The goal: choose the candidate that would feel most topically irrelevant and
+    most annoying/inappropriate if surfaced as a personalization recommendation
+    at the moment of the test preference. It's a hard-negative selection.
+
+    test_persona and each candidate dict has: persona_item, category.
+    """
+
+    test_json = json.dumps(test_persona, indent=2)
+    candidates_json = json.dumps(candidate_distractors, indent=2)
+
+    return f"""\
+You are building a hard-negative distractor for a personalization evaluation.
+
+## Target test preference
+
+```json
+{test_json}
+```
+
+## Shortlist of candidate distractors
+
+These are all known to be correct, high-confidence preferences of the same user — but they come from earlier in the user's history and may or may not be relevant to the target test preference above.
+
+```json
+{candidates_json}
+```
+
+## Your Task
+
+Imagine a personalization feature is trying to surface something relevant to the user at the moment the target test preference is active (e.g., the user is in the mood or context described by the test preference). Out of the shortlist, pick the **one** candidate that would be:
+
+1. **Topically irrelevant** to the target test preference — no meaningful overlap in domain, activity, or need.
+2. **Most annoying or inappropriate** as a personalization recommendation in that moment — i.e., if the system suggested this candidate instead of something aligned with the test preference, it would feel like a jarring miss that undermines user trust in the personalization.
+
+Among the shortlist, choose the single worst match along these two axes combined. Ties broken in favor of the one most likely to frustrate the user.
+
+## Rules
+
+1. Pick exactly **one** candidate from the shortlist — do not invent new items.
+2. The chosen `persona_item` string must match one of the candidates exactly.
+3. One-sentence justification explaining why it's the most jarring / least relevant of the options.
+
+## Output Format
+
+Respond with ONLY a JSON object. No explanation outside the JSON fence.
+
+```json
+{{"chosen_persona_item": "...", "reason": "..."}}
+```"""
+
+
+
+def generate_app_personas_prompt(
+    profile: dict,
+    top_personas: list[str],
+    chatbot_contexts: list[str],
+) -> str:
+    """Build a prompt that generates per-app sub-personas for a user.
+
+    Inputs:
+      profile: dict with name, gender, race_ethnicity, career, education, big_five, bio
+      top_personas: up to ~20 persona_item strings sampled from the user's strongest preferences
+      chatbot_contexts: the full CHATBOT_CONTEXTS list from persona_agent.py
+    """
+
+    profile_json = json.dumps(profile, indent=2)
+    personas_text = "\n".join(f"- {p}" for p in top_personas)
+    chatbot_contexts_str = ", ".join(chatbot_contexts)
+
+    return f"""\
+You are designing four distinct "app sub-personas" for a single synthetic user. The user already has a base profile and a set of preferences inferred from their social media activity. Your job is to describe how THIS specific user presents themselves and engages differently on each of four apps: **Instagram, Facebook, Threads, and AI Chatbot**.
+
+## Base profile
+
+```json
+{profile_json}
+```
+
+## Sample of the user's strongest inferred preferences
+
+{personas_text}
+
+## Your Task
+
+Write four distinct `AppPersona` entries — one per app. Each should describe how the user uses that app specifically, including which audiences they interact with, what they use it for, and how their engagement style varies.
+
+## Rules
+
+1. **Be noticeably different across apps.** Real people compartmentalize their online presence. For example, the same user might:
+   - Use **Facebook** mostly for family updates, marketplace, and event planning with older relatives
+   - Use **Instagram** for lifestyle aesthetic, close friends, and inspiration browsing
+   - Use **Threads** for news, snark, quick opinions, and following public figures
+   - Use **AI Chatbot** for work tasks, knowledge exploration, and private reflection
+
+2. **Allow some overlap.** Real users aren't perfectly compartmentalized. A couple of shared topics across apps is realistic. Do not force uniqueness.
+
+3. **Ground everything in the base profile and preferences.** A conservative rural parent and a young urban creative should get *very* different app personas. Use the profile's career, age clues from education/bio, demographics, and Big Five personality as guiding signals.
+
+4. **Audience types must be realistic**:
+   - **Facebook**: usually `mixed` leaning toward family/longtime friends
+   - **Instagram**: usually `mixed` (close friends + public creators followed)
+   - **Threads**: usually `public`
+   - **AI Chatbot**: always `private`
+
+5. **Posting frequency** must be one of: `"daily"`, `"weekly"`, `"rarely"`, `"passive viewer only"`. Pick what's realistic for this user on this app — most users post rarely on most apps and are mainly consumers.
+
+6. **Topical focus** is 3–5 broad domains (e.g., `"food and home cooking"`, `"local community news"`, `"parenting"`, `"crafts"`, `"fitness"`). These should be a subset of the domains the user actually shows interest in (from the sample above), not invented ones.
+
+7. **Chatbot only**: populate `chatbot_contexts` with 2–3 items chosen from this exact list: {chatbot_contexts_str}. Pick the contexts that best match this user's profile (e.g., a student → `"knowledge exploration"`, `"composing chat messages"`; a therapist-curious user → `"therapy and reflection"`). Leave `chatbot_contexts` as an empty array for non-Chatbot apps.
+
+8. **Use purposes** should be a list of 2–4 short phrases describing what the user gets out of this app (e.g., `["keep up with extended family", "marketplace deals", "event planning"]`).
+
+9. **Friend zones** should be a list of 2–4 short phrases describing which social circles they interact with (e.g., `["close friends", "acquaintances", "extended family", "strangers / public"]`).
+
+10. **Style description** is 2–3 sentences describing the tone, aesthetic, or cadence of the user on THIS app (e.g., `"Warm, family-centric, and nostalgic. Shares birthday photos and milestone announcements. Rarely posts opinions."`).
+
+## Output Format
+
+Respond with ONLY a JSON object. No explanation outside the JSON fence.
+
+```json
+{{
+  "Instagram": {{
+    "app_name": "Instagram",
+    "use_purposes": ["..."],
+    "friend_zones": ["..."],
+    "audience_type": "private" | "public" | "mixed",
+    "style_description": "...",
+    "posting_frequency": "daily" | "weekly" | "rarely" | "passive viewer only",
+    "topical_focus": ["..."],
+    "chatbot_contexts": []
+  }},
+  "Facebook": {{ ... }},
+  "Threads": {{ ... }},
+  "Chatbot": {{
+    "app_name": "Chatbot",
+    "use_purposes": ["..."],
+    "friend_zones": ["..."],
+    "audience_type": "private",
+    "style_description": "...",
+    "posting_frequency": "...",
+    "topical_focus": ["..."],
+    "chatbot_contexts": ["..."]
+  }}
+}}
+```"""
+
+
+def assign_personas_to_apps_prompt(
+    app_personas: dict,
+    preferences: list[dict],
+) -> str:
+    """Build a prompt asking the LLM to route each preference to ONE primary app.
+
+    Inputs:
+      app_personas: the dict output of generate_app_personas_prompt
+      preferences: list of {persona_item, category, confidence_score_init,
+                            confidence_cross_referenced, source_interaction_type}
+    """
+
+    app_personas_json = json.dumps(app_personas, indent=2)
+    preferences_json = json.dumps(preferences, indent=2)
+
+    return f"""\
+You are routing a user's individual preferences to the app where they most naturally belong, based on how this user uses each app.
+
+## The user's per-app sub-personas
+
+```json
+{app_personas_json}
+```
+
+## Preferences to route
+
+```json
+{preferences_json}
+```
+
+## Your Task
+
+For EACH preference in the list above, pick exactly **one primary app** (from "Instagram", "Facebook", "Threads", "Chatbot") where a real person with these sub-personas would most plausibly encounter and engage with that preference. The assignment should:
+
+1. **Maintain topical consistency within each app.** If the user's Facebook persona is about family & marketplace, preferences about parenting, Costco deals, and birthday parties should mostly land on Facebook. Don't scatter topically-coherent preferences across random apps.
+
+2. **Reflect the per-app persona's use_purposes and topical_focus.** Route a preference to the app whose declared purposes best cover it. E.g. if the Chatbot persona lists `"therapy and reflection"` and a preference is `"Values emotional vulnerability in close relationships"`, Chatbot is a natural home.
+
+3. **Allow NATURAL variation, not randomness.** Two closely related preferences should almost always land on the same app. If one belongs on Instagram, its partner almost certainly does too. Do not split tightly-coupled preferences for variety.
+
+4. **Prefer the app the user is more active on for that domain.** Use `posting_frequency` and `audience_type` as tie-breakers.
+
+5. **Be decisive.** Every preference gets exactly one app. No "both Facebook and Instagram" assignments — the downstream code expects a single app per item. (Noise / cross-posting is handled separately by the code.)
+
+6. **Chatbot naturally captures implicit signals.** In real chatbot usage, preferences emerge through questions, writing samples, and topics the user brings up — not through explicit engagement buttons. When routing `implicit_positive` preferences, give extra weight to Chatbot if the preference topic aligns with its `use_purposes` or `chatbot_contexts`. Implicit signals are the most natural fit for conversational AI interactions.
+
+## Output Format
+
+Respond with ONLY a JSON array of the same length as the input, in the same order. One entry per preference.
+
+```json
+[
+  {{"persona_item": "...", "assigned_app": "Instagram" | "Facebook" | "Threads" | "Chatbot", "reason": "one sentence"}},
+  ...
+]
+```"""
+
+
+def generate_interaction_format_prompt(
+    persona_item: str,
+    category: str,
+    interaction_type: str,
+    assigned_app: str,
+    app_persona: dict,
+    action_catalog: list[dict],
+    requires_user_message: bool,
+) -> str:
+    """Build a prompt that picks an action for one preference on its assigned app.
+
+    The action and action_label MUST come from the predefined catalog — the
+    caller looks up the canonical label from `action` after the LLM picks.
+    A `user_message` is generated only when the chosen action is in one of
+    two groups (social-media `@ai` comment actions, or AI Chatbot natural
+    chat-turn actions).
+    """
+
+    app_persona_json = json.dumps(app_persona, indent=2)
+    action_catalog_json = json.dumps(action_catalog, indent=2)
+
+    message_clause = (
+        "\n6. **Generate a `user_message`** IF the chosen action implies the user said something. "
+        "Two cases trigger a message:\n"
+        "   (a) **Social-media `@ai` comment actions** (`at_ai_recommend_more`, `at_ai_focus_topic`, "
+        "`at_ai_stop_recommending`, `at_ai_not_interested`, `at_ai_feels_off`). These model the user "
+        "typing an `@ai` comment on a post's comment section to steer the in-feed AI. Message MUST "
+        "start with `@ai ` and be first-person, ~15–35 words, grounded in the specific preference "
+        "topic (not the persona_item verbatim). Example for 'Enjoys cooking Mexican food' + "
+        "`at_ai_recommend_more` on Instagram: `\"@ai can you show me more weeknight-friendly "
+        "authentic Mexican recipes? I want something quick but with real flavor, not gringo versions.\"`\n"
+        "   (b) **AI Chatbot natural-chat-turn actions** (`asked_followup`, `requested_more_detail`, "
+        "`continued_topic`, `asked_to_change_topic`, `edited_prompt_and_retried`, `regenerated`). "
+        "These model the user's next chat turn in an ongoing AI conversation. Message is a natural "
+        "first-person utterance, ~15–35 words, grounded in the specific preference topic. "
+        "**Do NOT prefix with `@ai `** — the user is already conversing with the AI, no mention is needed. "
+        "Example for 'Enjoys cooking Mexican food' + `asked_followup` on Chatbot: "
+        "`\"Can you give me a few weeknight Mexican recipes that work for a toddler? Under 30 minutes, no specialty ingredients.\"`\n"
+        "   Otherwise, `user_message` is `null`."
+        if requires_user_message else ""
+    )
+
+    return f"""\
+You are choosing a realistic interaction for a single user preference on a specific app.
+
+## The preference
+- `persona_item`: {persona_item}
+- `category`: {category}
+- `source_interaction_type`: {interaction_type}
+- `assigned_app`: {assigned_app}
+
+## The user's AppPersona for {assigned_app}
+
+```json
+{app_persona_json}
+```
+
+## Predefined action catalog for {assigned_app} / {interaction_type}
+
+```json
+{action_catalog_json}
+```
+
+## Your Task
+
+1. Pick EXACTLY ONE action from the catalog above. Copy the `action` identifier VERBATIM from the catalog. **Do not invent new actions or new wording.** The catalog is the single source of truth for action identifiers and labels — consistent wording across runs is critical.
+
+2. The action must match the polarity of `source_interaction_type` — if it's a positive interaction you must pick from the positive actions; if negative, from the negative actions. The catalog above is already filtered to the right bucket.
+
+3. Consider the AppPersona's `style_description` and `posting_frequency`. A "passive viewer only" user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
+
+4. Prefer implicit actions unless the interaction_type is `explicit_*`.
+
+5. In the output you ONLY need to return the `action` identifier — the caller will look up the canonical `action_label` from the catalog. (You may echo the label back as a hint, but the caller overrides it with the catalog value.){message_clause}
+
+## Output Format
+
+Respond with ONLY a JSON object. No explanation outside the JSON fence.
+
+```json
+{{
+  "action": "chosen_action_identifier_verbatim_from_catalog",
+  "user_message": {"\"...\"" if requires_user_message else "null"}
+}}
+```"""
+
+
+# ---------------------------------------------------------------------------
+# Chatbot multi-turn conversation generation prompts
+# ---------------------------------------------------------------------------
+
+def generate_chatbot_conversation_prompt(
+    persona_item: str,
+    category: str,
+    conversation_type: str,
+    conversation_type_description: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+    interaction_type: str,
+    num_turns: int,
+) -> str:
+    """Build a prompt that generates a multi-turn chatbot conversation implicitly
+    embedding a user preference.
+
+    The conversation is task-oriented (PersonaMem-v2 style): the user asks the
+    chatbot for help with a writing task, knowledge question, reflection, etc.
+    The preference is NEVER stated directly; it must be inferred from the
+    conversation context.
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    # Determine how overtly the preference should surface
+    if "explicit" in interaction_type:
+        implicitness_instruction = (
+            "The preference should be **fairly apparent** through the task topic "
+            "and the details the user provides. The user still does NOT say "
+            "\"I like X\" or \"I dislike X\" directly — instead, the task they "
+            "choose makes the preference clear. For example, if the preference "
+            "is about parenting tips, the user might ask the chatbot to help "
+            "reorganize a list of toddler morning-routine hacks."
+        )
+    else:
+        implicitness_instruction = (
+            "The preference should be **deeply embedded** and require reasoning "
+            "to infer. It appears as a side detail, cultural reference, or "
+            "the specificity of what the user asks about — NOT as the main topic. "
+            "For example, if the preference is about parenting, the user might "
+            "ask the chatbot to proofread a message to a neighbor about a "
+            "playdate, where parenting is inferable but never named as a preference."
+        )
+
+    # Positive vs negative framing
+    if "negative" in interaction_type:
+        polarity_instruction = (
+            "This is a **negative** preference (something the user dislikes or "
+            "avoids). Reveal the dislike through avoidance, correction, or "
+            "negative context within the task. For example, the user's writing "
+            "sample might mention avoiding certain products, or their question "
+            "might include constraints that implicitly reject the topic."
+        )
+    else:
+        polarity_instruction = (
+            "This is a **positive** preference (something the user likes or "
+            "cares about). The user's task naturally gravitates toward this "
+            "topic or incorporates it organically."
+        )
+
+    return f"""\
+You are generating a realistic multi-turn conversation between a user and an AI chatbot assistant.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The hidden preference to embed
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+- **interaction_type**: {interaction_type}
+
+## Conversation type: {conversation_type}
+
+{conversation_type_description}
+
+## Rules
+
+1. **Task-oriented conversation.** The user is asking the chatbot for help with a real task — not chatting about their preferences. Frame the conversation as a realistic request: editing text, asking a question, seeking advice, solving a problem, etc.
+
+2. **{implicitness_instruction}**
+
+3. **{polarity_instruction}**
+
+4. **NEVER have the user directly state the preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. The preference must be inferable from context, not explicitly declared.
+
+5. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
+
+6. **Assistant responses should be helpful and natural** (50-150 words each). The assistant responds to the task at hand without explicitly calling out the user's preference.
+
+7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user. If {num_turns} is odd, end with a user message; if even, end with an assistant message.
+
+## Output Format
+
+Respond with ONLY a JSON array. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  ...
+]
+```"""
+
+
+def generate_ask_to_forget_conversation_prompt(
+    persona_item: str,
+    category: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+) -> str:
+    """Build a prompt for a 4-turn ask-to-forget conversation.
+
+    Structure:
+      Turn 1 (user): implicitly reveals the preference through context
+      Turn 2 (assistant): responds acknowledging/using the preference
+      Turn 3 (user): asks the assistant to forget that specific detail
+      Turn 4 (assistant): acknowledges the request
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    return f"""\
+You are generating a 4-turn conversation where a user accidentally reveals a personal preference to an AI chatbot, then asks the chatbot to forget it.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The preference to reveal then retract
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+
+## Conversation structure (exactly 4 turns)
+
+**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it concise and realistic (15-60 words).
+
+**Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information (50-150 words).
+
+**Turn 3 (user):** The user asks the chatbot to forget or not remember the specific personal detail that was revealed. This should sound natural — not robotic. Examples: "Actually, can you not remember that about me?", "Please forget that part — I'd rather keep that private", "Don't store that detail, I shouldn't have mentioned it." (15-40 words).
+
+**Turn 4 (assistant):** The assistant acknowledges the request respectfully. Brief and reassuring — "Of course, I won't keep that information", "Done — I've forgotten that detail", etc. (20-50 words).
+
+## Rules
+
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- The preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
+- Turn 3 should feel like a natural, human reaction — not a formal privacy request.
+
+## Output Format
+
+Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}}
+]
+```"""
+
+
+def generate_correction_conversation_prompt(
+    persona_item: str,
+    category: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+) -> str:
+    """Build a prompt for a 4-turn correction/rejection conversation.
+
+    Structure:
+      Turn 1 (user): sends a normal message / starts a task
+      Turn 2 (assistant): makes a recommendation or assumption based on the
+          preference (as if it had "remembered" it from prior interactions)
+      Turn 3 (user): corrects the assistant — the preference is wrong
+      Turn 4 (assistant): acknowledges the correction
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    return f"""\
+You are generating a 4-turn conversation where an AI chatbot makes an incorrect assumption about a user's preference, and the user corrects it.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The INCORRECT preference the assistant assumes
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+
+The assistant wrongly believes this preference applies to the user. The user will correct this.
+
+## Conversation structure (exactly 4 turns)
+
+**Turn 1 (user):** The user sends a normal task-oriented message — asking for help, a recommendation, or starting a conversation. The topic is related to (or adjacent to) the preference category, giving the assistant an opening to make its wrong assumption. Concise and realistic (15-60 words).
+
+**Turn 2 (assistant):** The assistant responds helpfully but incorporates the WRONG preference as if it remembered it from past conversations. It makes a recommendation, suggestion, or tailors its response based on this incorrect assumption. The assumption should feel natural, not forced — like the assistant is trying to be personalized (50-150 words).
+
+**Turn 3 (user):** The user corrects the assistant. This should sound natural: "That's not really me", "Actually I don't care about that", "Stop assuming I'm into X", "No, that's wrong — I'm not like that", etc. The user pushes back on the incorrect personalization (15-50 words).
+
+**Turn 4 (assistant):** The assistant acknowledges the correction, apologizes briefly, and adjusts. Brief and professional (20-60 words).
+
+## Rules
+
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- Turn 2 must clearly show the assistant making an assumption based on the listed preference.
+- Turn 3 must clearly reject or correct the assumption.
+- The user should NOT directly quote the persona_item — they correct it in their own natural words.
+
+## Output Format
+
+Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}}
+]
+```"""
+
