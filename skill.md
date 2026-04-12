@@ -27,15 +27,14 @@ Each user writes **5 JSON files + 1 aggregated CSV** under `backend/{user_id}/`:
 ```
 backend/
   {user_id}/
-    profile.json        # UserProfile + AppPersonas (all 4 apps)
+    profile.json        # UserProfile + AppPersonas + all preferences (merged)
     instagram.json      # preferences routed to Instagram (time-sorted)
     facebook.json       # preferences routed to Facebook (time-sorted)
     threads.json        # preferences routed to Threads (time-sorted)
     chatbot.json        # preferences routed to Chatbot (time-sorted, with @ai messages)
-    preferences.csv     # flat single-file view of ALL preferences across ALL apps (time-sorted)
+
 ```
 
-The aggregated `preferences.csv` carries every preference the user has, regardless of which app it was routed to, in one strictly chronological table. Columns: `persona_item, category, confidence_score_init, confidence_cross_referenced, source_interaction_type, source_object_id, source_timestamp, formatted_timestamp, source_hashtags, assigned_app, interaction_format, relationship_type, related_personas, stereotype_mark, split, over_personalization_irrelevant, over_personalization_irrelevant_category`. `source_hashtags`, `related_personas`, and `interaction_format` are JSON-encoded into a single cell each.
 
 The four supported apps are **Instagram, Facebook, Threads, Chatbot** — see `PLATFORMS` in `data_preparation/persona_agent.py`.
 
