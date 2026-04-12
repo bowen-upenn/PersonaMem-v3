@@ -940,29 +940,27 @@ class PersonaAgent:
     def build_update_histories(self) -> None:
         """Build update_history for each surviving canonical preference.
 
-        Examines how each preference's evidence evolved over time by looking
-        at the raw atomic personas (self.atomic_personas). The history only
-        records *changes* — not the baseline state:
+        Examines how each preference's evidence evolved over time. The
+        history only records *changes and expansions* — not the baseline:
 
+        - "expanded": a more fine-grained or new-direction preference appeared
+          later under the same topical category. Recorded on the EARLIEST
+          preference in that category, pointing to the later, more specific
+          one. Shows the user's interest deepening from general to specific.
         - "contradicted": a contradictory preference appeared (with the
-          contradicting preference text and its timestamp)
+          contradicting preference text and its timestamp).
         - "faded": the preference's last qualified occurrence is well before
-          the user's overall last interaction, suggesting interest waned
+          the user's overall last interaction, suggesting interest waned.
 
-        "new" and "reinforced" entries are NOT stored because they're
-        redundant: the item's own position in the time-sorted list and its
-        confidence_cross_referenced count already convey when it appeared
-        and how frequently it was corroborated.
-
-        The history is stored on each CrossReferencedPersona.update_history
-        as a list of dicts sorted by timestamp ascending. Most preferences
-        will have an empty list (stable, no changes).
+        "new" and "reinforced" are NOT stored — the item's own timestamp
+        and confidence_cross_referenced already convey those.
         """
         if not self.cross_referenced_personas or not self.atomic_personas:
             return
 
-        # Group raw atomic personas by normalized key, filtered to init >= threshold
         from collections import defaultdict as _ddict
+
+        # Group raw atomic personas by normalized key, filtered to init >= threshold
         groups: dict[str, list] = _ddict(list)
         for ap in self.atomic_personas:
             if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE:
@@ -973,7 +971,8 @@ class PersonaAgent:
         if not all_timestamps:
             return
         user_last_ts = max(all_timestamps)
-        FADE_THRESHOLD_SECONDS = 48 * 3600  # 48 hours before end of window = "faded"
+        FADE_THRESHOLD_SECONDS = 48 * 3600
+        EXPAND_GAP_SECONDS = 6 * 3600  # 6h gap → treat as a later expansion
 
         # Build contradictions lookup from cross-ref results
         contradicted_by: dict[str, list] = _ddict(list)
@@ -985,23 +984,55 @@ class PersonaAgent:
                         if other:
                             contradicted_by[cr.persona_item].append(other)
 
+        # --- Build "expanded" entries ---
+        # Within each category, the earliest-appearing preference gets
+        # "expanded" entries pointing to later preferences in the same
+        # category. This captures "general interest → specific details"
+        # and "same topic → new angles" over time.
+        by_category: dict[str, list] = _ddict(list)
+        first_ts_cache: dict[str, int] = {}
         for cr in self.cross_referenced_personas:
             key = _normalize_persona_text(cr.persona_item)
             atoms = groups.get(key, [])
-            if not atoms:
-                cr.update_history = []
-                continue
+            if atoms:
+                first_ts = min(a.source_timestamp for a in atoms)
+            else:
+                first_ts = 0
+            first_ts_cache[cr.persona_item] = first_ts
+            by_category[cr.category].append(cr)
 
-            atoms_sorted = sorted(atoms, key=lambda a: a.source_timestamp)
-            first = atoms_sorted[0]
-            last = atoms_sorted[-1]
+        # For each category, sort by first appearance; the earliest gets
+        # "expanded" entries for each later one that appeared >EXPAND_GAP after it.
+        expand_entries: dict[str, list] = _ddict(list)  # persona_item -> list of expand dicts
+        for cat, items in by_category.items():
+            if len(items) < 2:
+                continue
+            items_sorted = sorted(items, key=lambda c: first_ts_cache[c.persona_item])
+            earliest = items_sorted[0]
+            earliest_ts = first_ts_cache[earliest.persona_item]
+            for later in items_sorted[1:]:
+                later_ts = first_ts_cache[later.persona_item]
+                if later_ts - earliest_ts >= EXPAND_GAP_SECONDS:
+                    expand_entries[earliest.persona_item].append({
+                        "preference": later.persona_item,
+                        "update_type": "expanded",
+                        "timestamp": later_ts,
+                        "formatted_timestamp": utils.unix_to_formatted(later_ts),
+                    })
+
+        # --- Assemble update_history per preference ---
+        for cr in self.cross_referenced_personas:
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = groups.get(key, [])
 
             history = []
 
-            # "contradicted" if any contradictory relationship exists
+            # "expanded" entries (only on the earliest preference per category)
+            history.extend(expand_entries.get(cr.persona_item, []))
+
+            # "contradicted"
             if cr.persona_item in contradicted_by:
                 for other_item in contradicted_by[cr.persona_item]:
-                    # Find the timestamp of the contradicting preference's first appearance
                     other_key = _normalize_persona_text(other_item)
                     other_atoms = groups.get(other_key, [])
                     if other_atoms:
@@ -1013,22 +1044,32 @@ class PersonaAgent:
                             "formatted_timestamp": utils.unix_to_formatted(other_first),
                         })
 
-            # "faded" if last occurrence is well before the user's last activity
-            if (user_last_ts - last.source_timestamp) >= FADE_THRESHOLD_SECONDS:
-                history.append({
-                    "preference": cr.persona_item,
-                    "update_type": "faded",
-                    "timestamp": last.source_timestamp,
-                    "formatted_timestamp": utils.unix_to_formatted(last.source_timestamp),
-                })
+            # "faded"
+            if atoms:
+                last_ts = max(a.source_timestamp for a in atoms)
+                if (user_last_ts - last_ts) >= FADE_THRESHOLD_SECONDS:
+                    history.append({
+                        "update_type": "faded",
+                        "timestamp": last_ts,
+                        "formatted_timestamp": utils.unix_to_formatted(last_ts),
+                    })
 
             history.sort(key=lambda h: h["timestamp"])
             cr.update_history = history
 
         if self.verbose:
-            n_multi = sum(1 for cr in self.cross_referenced_personas if len(cr.update_history) > 1)
-            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Update histories built: "
-                  f"{n_multi} preferences have multi-entry histories.{utils.Colors.ENDC}")
+            n_with_history = sum(1 for cr in self.cross_referenced_personas if cr.update_history)
+            n_expanded = sum(
+                sum(1 for h in cr.update_history if h["update_type"] == "expanded")
+                for cr in self.cross_referenced_personas
+            )
+            n_faded = sum(
+                sum(1 for h in cr.update_history if h["update_type"] == "faded")
+                for cr in self.cross_referenced_personas
+            )
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Update histories: "
+                  f"{n_with_history} prefs with entries, "
+                  f"{n_expanded} expanded, {n_faded} faded.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM Call #4: Generate synthetic user profile

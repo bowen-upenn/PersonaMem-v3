@@ -191,7 +191,14 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": []
+    "update_history": [
+      {
+        "preference": "Occasionally interested in DIY and handmade home projects",
+        "update_type": "expanded",
+        "timestamp": 1775499624,
+        "formatted_timestamp": "18:20, 04/06/2026"
+      }
+    ]
   },
   {
     "persona_item": "Finds humor in everyday couple dynamics",
