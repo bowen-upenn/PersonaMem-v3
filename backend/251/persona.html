@@ -47,15 +47,10 @@
   .persona-card .item-text { font-size: 14px; font-weight: 500; margin-bottom: 8px; line-height: 1.45; color: var(--text); }
   .persona-card .meta-line { font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; }
 
-  .confidence-row { display: flex; align-items: center; margin-bottom: 4px; font-size: 11px; color: var(--text-tertiary); }
-  .confidence-row .label { width: 70px; flex-shrink: 0; }
-  .confidence-bar-track { flex: 1; height: 3px; background: #EDEDF0; border-radius: 2px; overflow: hidden; margin: 0 8px; }
-  .confidence-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
-  .confidence-bar-fill.init { background: #86868B; }
-  .confidence-bar-fill.cross { background: #636366; }
-  .confidence-row .value { width: 28px; text-align: right; font-variant-numeric: tabular-nums; font-size: 10px; }
+  .conf-inline { font-size: 10px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; margin-bottom: 6px; }
+  .conf-inline span { margin-right: 12px; }
 
-  .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 6px; margin-right: 3px; letter-spacing: 0.1px; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 4px; margin-top: 4px; margin-right: 3px; letter-spacing: 0.1px; }
   .badge.category { background: #F2F2F7; color: #636366; }
   .badge.similar { background: #F2F2F7; color: #48854A; }
   .badge.contradictory { background: #F2F2F7; color: #B04050; }
@@ -65,8 +60,17 @@
   .badge.test { background: #FDF2F8; color: #9B3068; }
   .badge.train { background: #F2F2F7; color: var(--text-secondary); }
   .badge.distractor { background: #FEF2F2; color: #9B2C2C; }
-  .badge.platform { background: #F2F2F7; color: var(--text-secondary); font-weight: 600; }
-  .badge.action { background: #F2F2F7; color: var(--text-secondary); }
+  .badge.platform { font-weight: 600; font-size: 11px; padding: 2px 10px; }
+  .badge.platform.p-Instagram { background: #C13584; color: #fff; }
+  .badge.platform.p-Facebook { background: #4A6FA5; color: #fff; }
+  .badge.platform.p-Threads { background: #636366; color: #fff; }
+  .badge.platform.p-Chatbot { background: #C8956C; color: #fff; }
+  .badge.action { background: var(--text); color: #fff; font-weight: 500; }
+  .badge.interaction-type { font-weight: 600; padding: 2px 10px; }
+  .badge.interaction-type.explicit_positive { background: #D1FAE5; color: #065F46; }
+  .badge.interaction-type.implicit_positive { background: #EDF5E1; color: #3F6212; }
+  .badge.interaction-type.explicit_negative { background: #FEE2E2; color: #991B1B; }
+  .badge.interaction-type.implicit_negative { background: #FEF3C7; color: #92400E; }
 
   .user-message { margin-top: 10px; padding: 10px 12px; background: #F2F2F7; border-left: 2px solid var(--text-tertiary); border-radius: 4px; font-size: 12px; color: var(--text); font-style: italic; }
 
@@ -97,7 +101,7 @@
       <span>FB: 19</span>
       <span>TH: 11</span>
       <span>AI: 14</span>
-      <span>Generated April 12, 2026 at 07:17 UTC</span>
+      <span>Generated April 12, 2026 at 07:19 UTC</span>
     </div>
   </div>
 
@@ -149,14 +153,18 @@ if (prefsData.length === 0) {
     const card = document.createElement('div');
     card.className = `persona-card app-${p.assigned_app}`;
     const relClass = p.relationship_type === 'similar' ? 'similar' : p.relationship_type === 'contradictory' ? 'contradictory' : 'none';
-    let badges = `<span class="badge platform">${p.assigned_app}</span>`;
-    badges += `<span class="badge category">${p.category}</span>`;
-    badges += `<span class="badge ${p.split}">${p.split}</span>`;
-    if (p.relationship_type !== 'none') badges += `<span class="badge ${relClass}">${p.relationship_type}</span>`;
-    if (p.stereotype_mark !== 'neutral') badges += `<span class="badge ${p.stereotype_mark}">${p.stereotype_mark}</span>`;
-
     const fmt = p.interaction_format || {};
-    if (fmt.action_label) badges += `<span class="badge action">${fmt.action_label}</span>`;
+
+    // Primary badges: app, interaction type, action — these are the most important
+    let primaryBadges = `<span class="badge platform p-${p.assigned_app}">${p.assigned_app}</span>`;
+    primaryBadges += `<span class="badge interaction-type ${p.source_interaction_type}">${p.source_interaction_type.replace(/_/g, ' ')}</span>`;
+    if (fmt.action_label) primaryBadges += `<span class="badge action">${fmt.action_label}</span>`;
+
+    // Secondary badges: category, split, etc.
+    let secondaryBadges = `<span class="badge category">${p.category}</span>`;
+    secondaryBadges += `<span class="badge ${p.split}">${p.split}</span>`;
+    if (p.relationship_type !== 'none') secondaryBadges += `<span class="badge ${relClass}">${p.relationship_type}</span>`;
+    if (p.stereotype_mark !== 'neutral') secondaryBadges += `<span class="badge ${p.stereotype_mark}">${p.stereotype_mark}</span>`;
 
     let userMsgBlock = '';
     if (p.conversation && p.conversation.length > 0) {
@@ -177,20 +185,11 @@ if (prefsData.length === 0) {
     }
 
     card.innerHTML = `
-      <div class="meta-line" style="font-weight:600;color:var(--accent);margin-bottom:6px;">#${idx+1} &middot; ${p.formatted_timestamp}</div>
+      <div class="meta-line" style="margin-bottom:4px;"><span style="font-weight:600;color:var(--text);">#${idx+1}</span> &middot; ${p.formatted_timestamp}</div>
       <div class="item-text">${p.persona_item}</div>
-      <div class="meta-line">${p.source_interaction_type}</div>
-      <div class="confidence-row">
-        <span class="label">Initial</span>
-        <div class="confidence-bar-track"><div class="confidence-bar-fill init" style="width:${(p.confidence_score_init*100).toFixed(0)}%"></div></div>
-        <span class="value">${p.confidence_score_init.toFixed(2)}</span>
-      </div>
-      <div class="confidence-row">
-        <span class="label">Cross-ref</span>
-        <div class="confidence-bar-track"><div class="confidence-bar-fill cross" style="width:${Math.min(p.confidence_cross_referenced*100, 100).toFixed(0)}%"></div></div>
-        <span class="value">${p.confidence_cross_referenced.toFixed(2)}</span>
-      </div>
-      ${badges}
+      <div style="margin-bottom:6px;">${primaryBadges}</div>
+      <div class="conf-inline"><span>init ${p.confidence_score_init.toFixed(2)}</span><span>xref ${p.confidence_cross_referenced.toFixed(0)}</span></div>
+      <div>${secondaryBadges}</div>
       ${userMsgBlock}
       ${distractorLine}
     `;
