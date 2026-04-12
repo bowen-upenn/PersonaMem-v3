@@ -574,11 +574,13 @@ class PersonaAgent:
         llm_client=None,
         backend_dir: str = "backend",
         verbose: bool = False,
+        max_workers: int = 20,
     ):
         self.user_id = user_id
         self.llm_client = llm_client  # QueryLLM instance (None in Claude Code mode)
         self.backend_dir = backend_dir
         self.verbose = verbose
+        self.max_workers = max_workers  # parallel LLM API calls
 
         # Instance variables populated by pipeline or load_from_backend
         self.interactions: list[InteractionRow] = []
@@ -675,72 +677,86 @@ class PersonaAgent:
     # LLM Call #1: Per-interaction persona inference
     # ------------------------------------------------------------------
 
+    def _infer_one_interaction(self, idx: int, interaction: InteractionRow) -> list[AtomicPersona]:
+        """Infer atomic personas from a single interaction row (thread-safe)."""
+        hashtags = self._extract_hashtags(interaction.object_text)
+        if not hashtags:
+            return []
+
+        formatted_ts = self._format_timestamp(interaction.interaction_time)
+        prompt = prompts.hashtag_to_persona_prompt(
+            object_text=interaction.object_text,
+            interaction_type=interaction.interaction_type,
+            interaction_format=interaction.interaction_format,
+            formatted_timestamp=formatted_ts,
+            hashtags=hashtags,
+        )
+
+        response = self._query_llm_with_retry(prompt)
+        if not response:
+            return []
+
+        parsed = utils.extract_json_from_response(response)
+        if not isinstance(parsed, list):
+            return []
+
+        results: list[AtomicPersona] = []
+        for item in parsed:
+            if not isinstance(item, dict) or "persona_item" not in item:
+                continue
+            raw_confidence = float(item.get("confidence_score_init", 0.3))
+            item_hashtags = item.get("source_hashtags", hashtags)
+            if not isinstance(item_hashtags, list):
+                item_hashtags = hashtags
+            results.append(AtomicPersona(
+                persona_item=item["persona_item"],
+                category=item.get("category", "uncategorized"),
+                confidence_score_init=raw_confidence,
+                source_interaction_type=interaction.interaction_type,
+                source_interaction_format=interaction.interaction_format,
+                source_object_id=interaction.object_id,
+                source_timestamp=interaction.interaction_time,
+                formatted_timestamp=formatted_ts,
+                source_hashtags=item_hashtags,
+            ))
+        return results
+
     def infer_personas_from_hashtags(self) -> None:
         """For each interaction, call the LLM to infer atomic persona traits from hashtags.
 
-        Negative interactions (implicit_negative) represent content the user did not click on
-        (e.g. promoted content). These are weak signals — their personas are stored separately
-        in self.negative_personas and excluded from cross-referencing and temporal analysis.
+        Uses ThreadPoolExecutor with self.max_workers parallel API calls.
         """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
         self.atomic_personas = []
         self.negative_personas = []
 
-        interaction_iter = tqdm(
-            enumerate(self.interactions),
+        pbar = tqdm(
             total=len(self.interactions),
             desc=f"[User {self.user_id}] Step 1: Inferring personas",
             unit="row",
             disable=not self.verbose,
         )
-        for idx, interaction in interaction_iter:
-            hashtags = self._extract_hashtags(interaction.object_text)
-            if not hashtags:
-                continue
 
-            is_negative = "negative" in interaction.interaction_type
-
-            formatted_ts = self._format_timestamp(interaction.interaction_time)
-            prompt = prompts.hashtag_to_persona_prompt(
-                object_text=interaction.object_text,
-                interaction_type=interaction.interaction_type,
-                interaction_format=interaction.interaction_format,
-                formatted_timestamp=formatted_ts,
-                hashtags=hashtags,
-            )
-
-            response = self._query_llm_with_retry(prompt)
-            if not response:
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] Skipping interaction {idx} (no LLM response).{utils.Colors.ENDC}")
-                continue
-
-            parsed = utils.extract_json_from_response(response)
-            if not isinstance(parsed, list):
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] Skipping interaction {idx} (unparseable JSON).{utils.Colors.ENDC}")
-                continue
-
-            target_list = self.negative_personas if is_negative else self.atomic_personas
-
-            for item in parsed:
-                if not isinstance(item, dict) or "persona_item" not in item:
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {
+                executor.submit(self._infer_one_interaction, idx, interaction): (idx, interaction)
+                for idx, interaction in enumerate(self.interactions)
+            }
+            for future in as_completed(futures):
+                idx, interaction = futures[future]
+                pbar.update(1)
+                try:
+                    results = future.result()
+                except Exception as e:
+                    if self.verbose:
+                        print(f"\n{utils.Colors.WARNING}[User {self.user_id}] Interaction {idx} error: {e}{utils.Colors.ENDC}")
                     continue
-                raw_confidence = float(item.get("confidence_score_init", 0.3))
-                # No confidence cap — negatives are now cross-referenced
-                # and filtered by the bottom-20% gate like positives.
-                # Use LLM-tagged source hashtags if provided, fall back to full list
-                item_hashtags = item.get("source_hashtags", hashtags)
-                if not isinstance(item_hashtags, list):
-                    item_hashtags = hashtags
-                target_list.append(AtomicPersona(
-                    persona_item=item["persona_item"],
-                    category=item.get("category", "uncategorized"),
-                    confidence_score_init=raw_confidence,
-                    source_interaction_type=interaction.interaction_type,
-                    source_interaction_format=interaction.interaction_format,
-                    source_object_id=interaction.object_id,
-                    source_timestamp=interaction.interaction_time,
-                    formatted_timestamp=formatted_ts,
-                    source_hashtags=item_hashtags,
-                ))
+                is_negative = "negative" in interaction.interaction_type
+                target_list = self.negative_personas if is_negative else self.atomic_personas
+                target_list.extend(results)
+
+        pbar.close()
 
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(self.atomic_personas)} positive atomic personas, "
@@ -1799,20 +1815,22 @@ class PersonaAgent:
             sampler_seed = abs(hash(str(self.user_id))) % (2**31)
         rng = random.Random(sampler_seed)
 
-        fmt_iter = tqdm(
-            self.cross_referenced_personas,
-            desc=f"[User {self.user_id}] Step 8: Interaction formats",
-            unit="pref",
-            disable=not self.verbose,
-        )
-        for cr in fmt_iter:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        # Pre-sample actions (deterministic, seeded RNG — must be sequential)
+        action_plan: list[tuple[CrossReferencedPersona, str, str, str, bool]] = []
+        for cr in self.cross_referenced_personas:
             app = cr.assigned_app or random.choice(PLATFORMS)
             entry = self._sample_action_from_bucket(app, cr.source_interaction_type, rng)
             action_id = entry["action"]
             canonical_label = entry["label"]
-
-            user_message = None
             needs_msg = action_id in AT_AI_ACTIONS or action_id in CHATBOT_TURN_ACTIONS
+            action_plan.append((cr, app, action_id, canonical_label, needs_msg))
+
+        # Parallel LLM calls for user_message generation
+        def _gen_format(item):
+            cr, app, action_id, canonical_label, needs_msg = item
+            user_message = None
             if needs_msg and self.llm_client is not None:
                 app_persona_dict = self.user_profile.app_personas.get(app, {})
                 prompt = prompts.generate_interaction_format_prompt(
@@ -1829,14 +1847,29 @@ class PersonaAgent:
                     parsed = utils.extract_json_from_response(response)
                     if isinstance(parsed, dict):
                         user_message = parsed.get("user_message")
-
             format_obj = {
                 "app": app,
                 "action": action_id,
                 "action_label": canonical_label,
                 "user_message": user_message if needs_msg else None,
             }
-            cr.source_interaction_format = json.dumps(format_obj)
+            return cr, json.dumps(format_obj)
+
+        pbar = tqdm(total=len(action_plan),
+                    desc=f"[User {self.user_id}] Step 8: Interaction formats",
+                    unit="pref", disable=not self.verbose)
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {executor.submit(_gen_format, item): item for item in action_plan}
+            for future in as_completed(futures):
+                pbar.update(1)
+                try:
+                    cr, fmt_json = future.result()
+                    cr.source_interaction_format = fmt_json
+                except Exception:
+                    pass
+
+        pbar.close()
 
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Interaction formats sampled from perturbed catalog.{utils.Colors.ENDC}")
@@ -1925,6 +1958,7 @@ class PersonaAgent:
             chatbot_persona=chatbot_persona_dict,
             llm_query_fn=self._query_llm_with_retry,
             user_seed=user_seed,
+            max_workers=self.max_workers,
         )
 
         # Store results keyed by persona_item
