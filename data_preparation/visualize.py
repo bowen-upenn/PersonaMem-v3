@@ -170,7 +170,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
   .chat-thread {{ margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }}
   .chat-bubble {{ max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
-  .chat-bubble.user-bubble {{ align-self: flex-end; background: #0084FF; color: #fff; border-bottom-right-radius: 4px; }}
+  .chat-bubble.user-bubble {{ align-self: flex-end; background: #1B72E8; color: #fff; border-bottom-right-radius: 4px; }}
   .chat-bubble.assistant-bubble {{ align-self: flex-start; background: #E4E6EB; color: var(--text); border-bottom-left-radius: 4px; }}
   .chat-role {{ font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }}
   .chat-bubble.user-bubble .chat-role {{ color: rgba(255,255,255,0.55); }}
