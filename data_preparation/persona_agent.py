@@ -1567,8 +1567,8 @@ class PersonaAgent:
     def save_to_backend(self) -> str:
         """Persist data to backend/{user_id}/:
 
-          - profile.json    — UserProfile + AppPersonas + all preferences
-                              (merged as a "preferences" key, time-sorted)
+          - profile.json    — UserProfile + AppPersonas + flat list of all
+                              persona_item strings under "preferences"
           - instagram.json  — preferences routed to Instagram (time-sorted)
           - facebook.json   — preferences routed to Facebook (time-sorted)
           - threads.json    — preferences routed to Threads (time-sorted)
@@ -1699,11 +1699,11 @@ class PersonaAgent:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(records, f, indent=2, ensure_ascii=False)
 
-        # --- Write profile.json (includes all preferences as a "preferences" key) ---
+        # --- Write profile.json (includes a flat list of persona_item strings) ---
         if self.user_profile:
             profile_dict = asdict(self.user_profile)
             profile_dict["user_id"] = str(self.user_id)
-            profile_dict["preferences"] = all_records  # all prefs across all apps, time-sorted
+            profile_dict["preferences"] = [rec["persona_item"] for rec in all_records]
             profile_path = os.path.join(user_dir, "profile.json")
             with open(profile_path, "w", encoding="utf-8") as f:
                 json.dump(profile_dict, f, indent=2, ensure_ascii=False)
