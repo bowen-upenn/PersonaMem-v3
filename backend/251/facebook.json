@@ -22,9 +22,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Responds emotionally to touching or inspirational stories",
@@ -49,9 +47,7 @@
       "action_label": "Loved (❤)",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Cherishes the bond between mothers and daughters",
@@ -76,9 +72,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Likely has a daughter or close maternal-female relationship",
@@ -103,9 +97,7 @@
       "action_label": "Hahaha reaction",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys seasonal Halloween and fall-themed content",
@@ -129,9 +121,7 @@
       "action_label": "Hahaha reaction",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Likely has or loves dogs as part of the family",
@@ -156,9 +146,7 @@
       "action_label": "@ai reply: told the in-feed assistant they're not interested",
       "user_message": "@ai not in the market for a dog right now, we can barely handle the toddler. Please stop showing me adoptable-pet posts for a bit."
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Looks for relatable everyday parenting stories",
@@ -184,9 +172,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys home cooking and preparing family meals",
@@ -212,9 +198,7 @@
       "action_label": "Loved (❤)",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Values cooking as an act of love and family care",
@@ -240,9 +224,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Enjoys content celebrating involved fatherhood",
@@ -266,9 +248,7 @@
       "action_label": "Shared to a group",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Active across Instagram Reels, Threads, and similar platforms",
@@ -293,9 +273,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Either runs or supports a small creator/service business",
@@ -319,9 +297,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Engages with content celebrating friendship milestones",
@@ -346,9 +322,7 @@
       "action_label": "Liked",
       "user_message": null
     },
-    "split": "train",
-    "over_personalization_irrelevant": "",
-    "over_personalization_irrelevant_category": ""
+    "split": "train"
   },
   {
     "persona_item": "Aspires to strong family traditions and shared routines",
