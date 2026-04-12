@@ -77,6 +77,8 @@ For each user, the subagent executes these steps in order. Each step's rules com
    - in `CHATBOT_TURN_ACTIONS` (natural chat turns on the Chatbot app) — message does NOT start with `@ai ` because the user is already talking to the AI.
    In both cases the message is first-person, ~15–35 words, grounded in the specific preference topic. The final `interaction_format` is a JSON object: `{"app": ..., "action": ..., "action_label": ..., "user_message": ... | null}`.
 
+8.5. **Generate chatbot conversations** — rules from `chatbot_conversation.py` and `prompts.py::generate_chatbot_conversation_prompt`, `generate_ask_to_forget_conversation_prompt`, `generate_correction_conversation_prompt`. For each Chatbot-routed preference, with ~80% probability generate a multi-turn (2–4 turns) task-oriented conversation that **implicitly** embeds the preference (PersonaMem-v2 style). The conversation type is selected from `CHATBOT_CONVERSATION_TYPES` based on the user's `chatbot_contexts`. For `explicit_negative` chatbot preferences, ~70% get special 4-turn ask-to-forget or correction conversations. The remaining ~20% of chatbot preferences and ~30% of explicit_negative keep the existing single-action format. New fields added to chatbot records: `conversation` (array of `{role, content}`), `conversation_type`, `ask_to_forget` (bool).
+
 9. **Annotate stereotype marks** — rules from `prompts.py::annotate_stereotype_prompt`. Demographics-only (gender, sexual orientation, race/ethnicity — NOT career/education). Most should be `neutral`. Be conservative.
 
 10. **Build test split** — rules from `prompts.py::test_inferrability_check_prompt` + `prompts.py::distractor_selection_prompt`.
@@ -120,6 +122,29 @@ For each user, the subagent executes these steps in order. Each step's rules com
 ```
 
 For Chatbot preferences where the chosen action is in `AT_AI_ACTIONS`, `user_message` is a short first-person string like `"@ai can you show me more authentic Mexican home cooking recipes? Weeknight-friendly ones that still feel traditional."`
+
+### Chatbot-specific fields (added by step 8.5)
+
+Chatbot records gain three additional fields not present on social media app records:
+
+```json
+{
+  "...all standard fields above...",
+  "conversation_type": "knowledge_query",
+  "conversation": [
+    {"role": "user", "content": "..."},
+    {"role": "assistant", "content": "..."},
+    {"role": "user", "content": "..."}
+  ],
+  "ask_to_forget": false
+}
+```
+
+- `conversation_type`: one of `writing_help`, `knowledge_query`, `therapy_reflection`, `troubleshooting`, `casual_chat`, `translation`, `health_consultation` — or `null` if no multi-turn conversation was generated (~20% of records).
+- `conversation`: array of `{role, content}` turns, or `null`. Preferences are embedded implicitly — the user never directly states "I like/dislike X".
+- `ask_to_forget`: `true` if the conversation ends with the user asking the chatbot to forget a personal detail.
+- For ask-to-forget records: `interaction_format.action` = `"asked_to_forget"`.
+- For correction records: `interaction_format.action` = `"corrected_assumption"`.
 
 ## Profile object shape (profile.json)
 

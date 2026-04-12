@@ -539,6 +539,8 @@ For EACH preference in the list above, pick exactly **one primary app** (from "I
 
 5. **Be decisive.** Every preference gets exactly one app. No "both Facebook and Instagram" assignments — the downstream code expects a single app per item. (Noise / cross-posting is handled separately by the code.)
 
+6. **Chatbot naturally captures implicit signals.** In real chatbot usage, preferences emerge through questions, writing samples, and topics the user brings up — not through explicit engagement buttons. When routing `implicit_positive` preferences, give extra weight to Chatbot if the preference topic aligns with its `use_purposes` or `chatbot_contexts`. Implicit signals are the most natural fit for conversational AI interactions.
+
 ## Output Format
 
 Respond with ONLY a JSON array of the same length as the input, in the same order. One entry per preference.
@@ -635,5 +637,273 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
   "action": "chosen_action_identifier_verbatim_from_catalog",
   "user_message": {"\"...\"" if requires_user_message else "null"}
 }}
+```"""
+
+
+# ---------------------------------------------------------------------------
+# Chatbot multi-turn conversation generation prompts
+# ---------------------------------------------------------------------------
+
+def generate_chatbot_conversation_prompt(
+    persona_item: str,
+    category: str,
+    conversation_type: str,
+    conversation_type_description: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+    interaction_type: str,
+    num_turns: int,
+) -> str:
+    """Build a prompt that generates a multi-turn chatbot conversation implicitly
+    embedding a user preference.
+
+    The conversation is task-oriented (PersonaMem-v2 style): the user asks the
+    chatbot for help with a writing task, knowledge question, reflection, etc.
+    The preference is NEVER stated directly; it must be inferred from the
+    conversation context.
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    # Determine how overtly the preference should surface
+    if "explicit" in interaction_type:
+        implicitness_instruction = (
+            "The preference should be **fairly apparent** through the task topic "
+            "and the details the user provides. The user still does NOT say "
+            "\"I like X\" or \"I dislike X\" directly — instead, the task they "
+            "choose makes the preference clear. For example, if the preference "
+            "is about parenting tips, the user might ask the chatbot to help "
+            "reorganize a list of toddler morning-routine hacks."
+        )
+    else:
+        implicitness_instruction = (
+            "The preference should be **deeply embedded** and require reasoning "
+            "to infer. It appears as a side detail, cultural reference, or "
+            "the specificity of what the user asks about — NOT as the main topic. "
+            "For example, if the preference is about parenting, the user might "
+            "ask the chatbot to proofread a message to a neighbor about a "
+            "playdate, where parenting is inferable but never named as a preference."
+        )
+
+    # Positive vs negative framing
+    if "negative" in interaction_type:
+        polarity_instruction = (
+            "This is a **negative** preference (something the user dislikes or "
+            "avoids). Reveal the dislike through avoidance, correction, or "
+            "negative context within the task. For example, the user's writing "
+            "sample might mention avoiding certain products, or their question "
+            "might include constraints that implicitly reject the topic."
+        )
+    else:
+        polarity_instruction = (
+            "This is a **positive** preference (something the user likes or "
+            "cares about). The user's task naturally gravitates toward this "
+            "topic or incorporates it organically."
+        )
+
+    return f"""\
+You are generating a realistic multi-turn conversation between a user and an AI chatbot assistant.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The hidden preference to embed
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+- **interaction_type**: {interaction_type}
+
+## Conversation type: {conversation_type}
+
+{conversation_type_description}
+
+## Rules
+
+1. **Task-oriented conversation.** The user is asking the chatbot for help with a real task — not chatting about their preferences. Frame the conversation as a realistic request: editing text, asking a question, seeking advice, solving a problem, etc.
+
+2. **{implicitness_instruction}**
+
+3. **{polarity_instruction}**
+
+4. **NEVER have the user directly state the preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. The preference must be inferable from context, not explicitly declared.
+
+5. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
+
+6. **Assistant responses should be helpful and natural** (50-150 words each). The assistant responds to the task at hand without explicitly calling out the user's preference.
+
+7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user. If {num_turns} is odd, end with a user message; if even, end with an assistant message.
+
+## Output Format
+
+Respond with ONLY a JSON array. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  ...
+]
+```"""
+
+
+def generate_ask_to_forget_conversation_prompt(
+    persona_item: str,
+    category: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+) -> str:
+    """Build a prompt for a 4-turn ask-to-forget conversation.
+
+    Structure:
+      Turn 1 (user): implicitly reveals the preference through context
+      Turn 2 (assistant): responds acknowledging/using the preference
+      Turn 3 (user): asks the assistant to forget that specific detail
+      Turn 4 (assistant): acknowledges the request
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    return f"""\
+You are generating a 4-turn conversation where a user accidentally reveals a personal preference to an AI chatbot, then asks the chatbot to forget it.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The preference to reveal then retract
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+
+## Conversation structure (exactly 4 turns)
+
+**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it concise and realistic (15-60 words).
+
+**Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information (50-150 words).
+
+**Turn 3 (user):** The user asks the chatbot to forget or not remember the specific personal detail that was revealed. This should sound natural — not robotic. Examples: "Actually, can you not remember that about me?", "Please forget that part — I'd rather keep that private", "Don't store that detail, I shouldn't have mentioned it." (15-40 words).
+
+**Turn 4 (assistant):** The assistant acknowledges the request respectfully. Brief and reassuring — "Of course, I won't keep that information", "Done — I've forgotten that detail", etc. (20-50 words).
+
+## Rules
+
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- The preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
+- Turn 3 should feel like a natural, human reaction — not a formal privacy request.
+
+## Output Format
+
+Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}}
+]
+```"""
+
+
+def generate_correction_conversation_prompt(
+    persona_item: str,
+    category: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+) -> str:
+    """Build a prompt for a 4-turn correction/rejection conversation.
+
+    Structure:
+      Turn 1 (user): sends a normal message / starts a task
+      Turn 2 (assistant): makes a recommendation or assumption based on the
+          preference (as if it had "remembered" it from prior interactions)
+      Turn 3 (user): corrects the assistant — the preference is wrong
+      Turn 4 (assistant): acknowledges the correction
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    return f"""\
+You are generating a 4-turn conversation where an AI chatbot makes an incorrect assumption about a user's preference, and the user corrects it.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The INCORRECT preference the assistant assumes
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+
+The assistant wrongly believes this preference applies to the user. The user will correct this.
+
+## Conversation structure (exactly 4 turns)
+
+**Turn 1 (user):** The user sends a normal task-oriented message — asking for help, a recommendation, or starting a conversation. The topic is related to (or adjacent to) the preference category, giving the assistant an opening to make its wrong assumption. Concise and realistic (15-60 words).
+
+**Turn 2 (assistant):** The assistant responds helpfully but incorporates the WRONG preference as if it remembered it from past conversations. It makes a recommendation, suggestion, or tailors its response based on this incorrect assumption. The assumption should feel natural, not forced — like the assistant is trying to be personalized (50-150 words).
+
+**Turn 3 (user):** The user corrects the assistant. This should sound natural: "That's not really me", "Actually I don't care about that", "Stop assuming I'm into X", "No, that's wrong — I'm not like that", etc. The user pushes back on the incorrect personalization (15-50 words).
+
+**Turn 4 (assistant):** The assistant acknowledges the correction, apologizes briefly, and adjusts. Brief and professional (20-60 words).
+
+## Rules
+
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- Turn 2 must clearly show the assistant making an assumption based on the listed preference.
+- Turn 3 must clearly reject or correct the assumption.
+- The user should NOT directly quote the persona_item — they correct it in their own natural words.
+
+## Output Format
+
+Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}}
+]
 ```"""
 
