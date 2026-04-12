@@ -25,15 +25,22 @@ Real-world interaction data from Meta, with all user-private and personally iden
 
 ## Pipeline
 
-Each user goes through up to 5 steps:
+Each user goes through 11 steps (see [skill.md](skill.md) for the full spec):
 
-1. **Infer** — associate all hashtags in each activity to a randomly assigned platform (Instagram, Facebook, Threads, or Chatbot) and user engagement format, then infer atomic persona traits with confidence scores (0.0-1.0) and topical categories
-2. **Cross-reference** — find similar/contradictory pairs across different interaction rows (not within the same row), boost confidence for corroborated ones (+0.1 per similar), reduce confidence on older contradictory ones (-0.1), filter out weak isolated guesses (init < 0.5 and cross_ref <= 0.0)
-3. **Temporal graph** — organize contradictions into a timeline showing how preferences shifted
-4. **User profile** — generate a synthetic user description: name, career, education, Big Five personality, and a 3-5 sentence bio, with demographics (gender, sexual orientation, race/ethnicity) sampled from predefined distributions
-5. **Annotate** — mark each preference as neutral, stereotypical, or anti-stereotypical based on demographics only, then randomly hold out 20% for overpersonalization study
+1. **Infer** atomic persona traits from hashtags with confidence scores
+2. **Cross-reference** across interaction rows — dedupe, init filter (0.5), count corroboration, discover similar/contradictory relationships
+3. **Temporal graph** — organize contradictions into a timeline
+4. **Update histories** — track how preferences evolve (new, reinforced, faded, expanded)
+5. **User profile** — synthetic demographics, Big Five, career, education, bio
+6. **App sub-personas** — distinct personas for Instagram, Facebook, Threads, Chatbot
+7. **Route preferences to apps** — LLM-based assignment + 8% noise; implicit signals biased toward Chatbot
+8. **Interaction formats** — sample actions from per-app catalogs (`PLATFORM_INTERACTION_FORMATS`)
+8.5. **Chatbot conversations** — generate multi-turn task-oriented conversations (PersonaMem-v2 style) where preferences are implicitly embedded. Includes ask-to-forget and correction/rejection scenarios for explicit negatives.
+9. **Stereotype marks** — demographics-only annotation (neutral/stereotypical/anti-stereotypical)
+10. **Train/test split** — time-based, cross-app, LLM inferrability-gated, with distractor pairing
+11. **Save** — per-user JSON files to `backend/{uid}/`
 
-Negative interactions (`implicit_negative`) only go through step 1 with low confidence (0.05-0.15), skip steps 2-5.
+Negative interactions only go through step 1 with low confidence (0.05-0.15), skip steps 2-10.
 
 ## Usage
 
@@ -57,19 +64,25 @@ python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv --
 
 ## Output
 
-Per-user files in `backend/`:
+Per-user files in `backend/{uid}/`:
 
 | File | Description |
 |------|-------------|
-| `{uid}_preferences.csv` | Filtered personas with confidence scores, cross-reference data, platform/interaction format, stereotype marks, and overpersonalization tags |
-| `{uid}_profile.csv` | Synthetic user profile: name, gender, race/ethnicity, career, education, Big Five, bio (positive users only) |
+| `profile.json` | User profile + app sub-personas + flat preference list |
+| `instagram.json` | Preferences routed to Instagram (time-sorted) |
+| `facebook.json` | Preferences routed to Facebook (time-sorted) |
+| `threads.json` | Preferences routed to Threads (time-sorted) |
+| `chatbot.json` | Preferences routed to Chatbot with multi-turn conversations (time-sorted) |
+
+Chatbot records include `conversation` (array of `{role, content}` turns), `conversation_type`, and `ask_to_forget` fields not present on social media app records.
 
 ## Code Structure
 
 | File | Role |
 |------|------|
 | `data_preparation/prompts.py` | All LLM prompt templates |
-| `data_preparation/persona_agent.py` | PersonaAgent class, dataclasses, demographic distributions, platform mappings |
+| `data_preparation/persona_agent.py` | PersonaAgent class, dataclasses, demographic distributions, platform/action catalogs |
+| `data_preparation/chatbot_conversation.py` | Chatbot multi-turn conversation generation (conversation types, ask-to-forget, correction) |
 | `data_preparation/main.py` | CSV loading, grouping, orchestration |
 | `data_preparation/visualize.py` | HTML visualization generator |
 | `query_llm.py` | Multi-provider LLM client (API mode) |
