@@ -133,13 +133,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .section {{ margin-bottom: 48px; }}
   .section-title {{ font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }}
 
-  .persona-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }}
-  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease, transform 0.2s ease; border-top: 3px solid var(--border); }}
-  .persona-card:hover {{ box-shadow: var(--shadow-hover); transform: translateY(-1px); }}
-  .persona-card.app-Instagram {{ border-top-color: #E1306C; background: #FFF5F7; }}
-  .persona-card.app-Facebook {{ border-top-color: #1877F2; background: #F0F6FF; }}
-  .persona-card.app-Threads {{ border-top-color: #000000; background: #F5F5F5; }}
-  .persona-card.app-Chatbot {{ border-top-color: #D97757; background: #FFF8F5; }}
+  .persona-grid {{ display: flex; flex-direction: column; gap: 12px; }}
+  .persona-card {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; box-shadow: var(--shadow); transition: box-shadow 0.2s ease; border-left: 4px solid var(--border); }}
+  .persona-card:hover {{ box-shadow: var(--shadow-hover); }}
+  .persona-card.app-Instagram {{ border-left-color: #E1306C; background: #FFF5F7; }}
+  .persona-card.app-Facebook {{ border-left-color: #1877F2; background: #F0F6FF; }}
+  .persona-card.app-Threads {{ border-left-color: #000000; background: #F5F5F5; }}
+  .persona-card.app-Chatbot {{ border-left-color: #D97757; background: #FFF8F5; }}
   .persona-card .item-text {{ font-size: 15px; font-weight: 500; margin-bottom: 10px; line-height: 1.4; }}
   .persona-card .meta-line {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }}
 
