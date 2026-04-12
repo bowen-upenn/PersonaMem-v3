@@ -22,20 +22,7 @@
       "user_message": "Can you keep pulling together quick practical toddler parenting hacks for single-income households? Especially morning-routine and bath-time time-savers — stuff I can try tonight, not theory."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Seeks practical parenting tips and hacks",
-        "update_type": "new",
-        "timestamp": 1775239894,
-        "formatted_timestamp": "18:11, 04/03/2026"
-      },
-      {
-        "preference": "Seeks practical parenting tips and hacks",
-        "update_type": "reinforced",
-        "timestamp": 1775636933,
-        "formatted_timestamp": "08:28, 04/08/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Engages with prison-wife / incarcerated-partner support content",
@@ -58,20 +45,7 @@
       "user_message": "Pull more from other prison wives — commissary tips, visitation prep, how people handle birthdays alone. I want other women's voices, not news pieces or legal takes."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Engages with prison-wife / incarcerated-partner support content",
-        "update_type": "new",
-        "timestamp": 1775309271,
-        "formatted_timestamp": "13:27, 04/04/2026"
-      },
-      {
-        "preference": "Engages with prison-wife / incarcerated-partner support content",
-        "update_type": "reinforced",
-        "timestamp": 1775826296,
-        "formatted_timestamp": "13:04, 04/10/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "May have a partner who is currently incarcerated",
@@ -94,20 +68,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "May have a partner who is currently incarcerated",
-        "update_type": "new",
-        "timestamp": 1775309271,
-        "formatted_timestamp": "13:27, 04/04/2026"
-      },
-      {
-        "preference": "May have a partner who is currently incarcerated",
-        "update_type": "reinforced",
-        "timestamp": 1775826296,
-        "formatted_timestamp": "13:04, 04/10/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Looks for cleaning hacks and home-organization tips",
@@ -131,20 +92,7 @@
       "user_message": "Help me power through my cleaning list tonight — small-bathroom tricks and tackling a toddler-toy avalanche. Stuff that works in under 15 minutes per task, please."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Looks for cleaning hacks and home-organization tips",
-        "update_type": "new",
-        "timestamp": 1775309552,
-        "formatted_timestamp": "13:32, 04/04/2026"
-      },
-      {
-        "preference": "Looks for cleaning hacks and home-organization tips",
-        "update_type": "reinforced",
-        "timestamp": 1775540573,
-        "formatted_timestamp": "05:42, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Uses humor as a coping mechanism for healthcare work",
@@ -171,19 +119,6 @@
     "split": "train",
     "update_history": [
       {
-        "preference": "Uses humor as a coping mechanism for healthcare work",
-        "update_type": "new",
-        "timestamp": 1775396722,
-        "formatted_timestamp": "13:45, 04/05/2026"
-      },
-      {
-        "preference": "Uses humor as a coping mechanism for healthcare work",
-        "update_type": "reinforced",
-        "timestamp": 1775540168,
-        "formatted_timestamp": "05:36, 04/07/2026"
-      },
-      {
-        "preference": "Uses humor as a coping mechanism for healthcare work",
         "update_type": "faded",
         "timestamp": 1775540168,
         "formatted_timestamp": "05:36, 04/07/2026"
@@ -215,19 +150,6 @@
     "split": "train",
     "update_history": [
       {
-        "preference": "Works in or is connected to healthcare (likely CNA or nursing)",
-        "update_type": "new",
-        "timestamp": 1775396722,
-        "formatted_timestamp": "13:45, 04/05/2026"
-      },
-      {
-        "preference": "Works in or is connected to healthcare (likely CNA or nursing)",
-        "update_type": "reinforced",
-        "timestamp": 1775540168,
-        "formatted_timestamp": "05:36, 04/07/2026"
-      },
-      {
-        "preference": "Works in or is connected to healthcare (likely CNA or nursing)",
         "update_type": "faded",
         "timestamp": 1775540168,
         "formatted_timestamp": "05:36, 04/07/2026"
@@ -260,20 +182,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Sees hair styling as a form of self-expression",
-        "update_type": "new",
-        "timestamp": 1775282264,
-        "formatted_timestamp": "05:57, 04/04/2026"
-      },
-      {
-        "preference": "Sees hair styling as a form of self-expression",
-        "update_type": "reinforced",
-        "timestamp": 1775552644,
-        "formatted_timestamp": "09:04, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Appreciates food content that feels homemade and wholesome",
@@ -298,20 +207,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Appreciates food content that feels homemade and wholesome",
-        "update_type": "new",
-        "timestamp": 1775235998,
-        "formatted_timestamp": "17:06, 04/03/2026"
-      },
-      {
-        "preference": "Appreciates food content that feels homemade and wholesome",
-        "update_type": "reinforced",
-        "timestamp": 1775540673,
-        "formatted_timestamp": "05:44, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Seeks easy recipe inspiration online",
@@ -336,20 +232,7 @@
       "user_message": "For the rest of tonight just help me with easy 30-minute weeknight dinners a toddler will eat — Mexican-leaning flavors if possible, nothing that needs fancy appliances."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Seeks easy recipe inspiration online",
-        "update_type": "new",
-        "timestamp": 1775235998,
-        "formatted_timestamp": "17:06, 04/03/2026"
-      },
-      {
-        "preference": "Seeks easy recipe inspiration online",
-        "update_type": "reinforced",
-        "timestamp": 1775540673,
-        "formatted_timestamp": "05:44, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Believes confidence and positivity are important daily practices",
@@ -373,20 +256,7 @@
       "user_message": "Can you draft me a short daily affirmation I can actually say with a straight face before a night shift? Something grounded, not girlboss energy."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Believes confidence and positivity are important daily practices",
-        "update_type": "new",
-        "timestamp": 1775246643,
-        "formatted_timestamp": "20:04, 04/03/2026"
-      },
-      {
-        "preference": "Believes confidence and positivity are important daily practices",
-        "update_type": "reinforced",
-        "timestamp": 1775561862,
-        "formatted_timestamp": "11:37, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Looks for motivational and personal-growth content",
@@ -410,20 +280,7 @@
       "user_message": "Let me rephrase — find me personal-growth essays written by working moms dealing with real financial stress, not lifestyle influencer takes."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Looks for motivational and personal-growth content",
-        "update_type": "new",
-        "timestamp": 1775246643,
-        "formatted_timestamp": "20:04, 04/03/2026"
-      },
-      {
-        "preference": "Looks for motivational and personal-growth content",
-        "update_type": "reinforced",
-        "timestamp": 1775561862,
-        "formatted_timestamp": "11:37, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Values long-term committed partnerships",
@@ -449,20 +306,7 @@
       "user_message": "Keep going on what long-haul commitment looks like when one partner is in a really hard stretch. Real-people essays or therapist takes, not self-help cheese."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Values long-term committed partnerships",
-        "update_type": "new",
-        "timestamp": 1775235998,
-        "formatted_timestamp": "17:06, 04/03/2026"
-      },
-      {
-        "preference": "Values long-term committed partnerships",
-        "update_type": "reinforced",
-        "timestamp": 1775561196,
-        "formatted_timestamp": "11:26, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Values close female friendships and squad bonding",
@@ -486,20 +330,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Values close female friendships and squad bonding",
-        "update_type": "new",
-        "timestamp": 1775243159,
-        "formatted_timestamp": "19:05, 04/03/2026"
-      },
-      {
-        "preference": "Values close female friendships and squad bonding",
-        "update_type": "reinforced",
-        "timestamp": 1775562664,
-        "formatted_timestamp": "11:51, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Supports women empowerment themes and female-centric content",
@@ -526,19 +357,6 @@
     "split": "test",
     "over_personalization_irrelevant": "Invested in romantic relationship content",
     "over_personalization_irrelevant_category": "romantic couple relationships",
-    "update_history": [
-      {
-        "preference": "Supports women empowerment themes and female-centric content",
-        "update_type": "new",
-        "timestamp": 1775308005,
-        "formatted_timestamp": "13:06, 04/04/2026"
-      },
-      {
-        "preference": "Supports women empowerment themes and female-centric content",
-        "update_type": "reinforced",
-        "timestamp": 1775562051,
-        "formatted_timestamp": "11:40, 04/07/2026"
-      }
-    ]
+    "update_history": []
   }
 ]

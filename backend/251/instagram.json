@@ -25,20 +25,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Enjoys beauty and nail-art content",
-        "update_type": "new",
-        "timestamp": 1775246662,
-        "formatted_timestamp": "20:04, 04/03/2026"
-      },
-      {
-        "preference": "Enjoys beauty and nail-art content",
-        "update_type": "reinforced",
-        "timestamp": 1775562091,
-        "formatted_timestamp": "11:41, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Keeps up with fashion and personal style inspiration",
@@ -66,20 +53,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Keeps up with fashion and personal style inspiration",
-        "update_type": "new",
-        "timestamp": 1775246662,
-        "formatted_timestamp": "20:04, 04/03/2026"
-      },
-      {
-        "preference": "Keeps up with fashion and personal style inspiration",
-        "update_type": "reinforced",
-        "timestamp": 1775562091,
-        "formatted_timestamp": "11:41, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Values presenting a polished, put-together look",
@@ -107,20 +81,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Values presenting a polished, put-together look",
-        "update_type": "new",
-        "timestamp": 1775246662,
-        "formatted_timestamp": "20:04, 04/03/2026"
-      },
-      {
-        "preference": "Values presenting a polished, put-together look",
-        "update_type": "reinforced",
-        "timestamp": 1775562091,
-        "formatted_timestamp": "11:41, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Enjoys short-form comedy reels and viral funny clips",
@@ -145,20 +106,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Enjoys short-form comedy reels and viral funny clips",
-        "update_type": "new",
-        "timestamp": 1775239934,
-        "formatted_timestamp": "18:12, 04/03/2026"
-      },
-      {
-        "preference": "Enjoys short-form comedy reels and viral funny clips",
-        "update_type": "reinforced",
-        "timestamp": 1775561362,
-        "formatted_timestamp": "11:29, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Uses humor content as a mood-lifter throughout the day",
@@ -183,20 +131,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Uses humor content as a mood-lifter throughout the day",
-        "update_type": "new",
-        "timestamp": 1775239934,
-        "formatted_timestamp": "18:12, 04/03/2026"
-      },
-      {
-        "preference": "Uses humor content as a mood-lifter throughout the day",
-        "update_type": "reinforced",
-        "timestamp": 1775561362,
-        "formatted_timestamp": "11:29, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Values a sense of local community and belonging",
@@ -219,20 +154,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Values a sense of local community and belonging",
-        "update_type": "new",
-        "timestamp": 1775307538,
-        "formatted_timestamp": "12:58, 04/04/2026"
-      },
-      {
-        "preference": "Values a sense of local community and belonging",
-        "update_type": "reinforced",
-        "timestamp": 1775591510,
-        "formatted_timestamp": "19:51, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Deeply invested in hair care and styling routines",
@@ -260,20 +182,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Deeply invested in hair care and styling routines",
-        "update_type": "new",
-        "timestamp": 1775282264,
-        "formatted_timestamp": "05:57, 04/04/2026"
-      },
-      {
-        "preference": "Deeply invested in hair care and styling routines",
-        "update_type": "reinforced",
-        "timestamp": 1775552644,
-        "formatted_timestamp": "09:04, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Follows hairstylists and salon professionals",
@@ -301,20 +210,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Follows hairstylists and salon professionals",
-        "update_type": "new",
-        "timestamp": 1775282264,
-        "formatted_timestamp": "05:57, 04/04/2026"
-      },
-      {
-        "preference": "Follows hairstylists and salon professionals",
-        "update_type": "reinforced",
-        "timestamp": 1775552644,
-        "formatted_timestamp": "09:04, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Interested in protective natural hair styles like braids and weaves",
@@ -342,20 +238,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Interested in protective natural hair styles like braids and weaves",
-        "update_type": "new",
-        "timestamp": 1775282264,
-        "formatted_timestamp": "05:57, 04/04/2026"
-      },
-      {
-        "preference": "Interested in protective natural hair styles like braids and weaves",
-        "update_type": "reinforced",
-        "timestamp": 1775552644,
-        "formatted_timestamp": "09:04, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Likely wears or appreciates Black hair styling traditions",
@@ -383,20 +266,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Likely wears or appreciates Black hair styling traditions",
-        "update_type": "new",
-        "timestamp": 1775282264,
-        "formatted_timestamp": "05:57, 04/04/2026"
-      },
-      {
-        "preference": "Likely wears or appreciates Black hair styling traditions",
-        "update_type": "reinforced",
-        "timestamp": 1775552644,
-        "formatted_timestamp": "09:04, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Has a sweet tooth and enjoys desserts",
@@ -421,20 +291,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Has a sweet tooth and enjoys desserts",
-        "update_type": "new",
-        "timestamp": 1775235998,
-        "formatted_timestamp": "17:06, 04/03/2026"
-      },
-      {
-        "preference": "Has a sweet tooth and enjoys desserts",
-        "update_type": "reinforced",
-        "timestamp": 1775540673,
-        "formatted_timestamp": "05:44, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Occasionally interested in DIY and handmade home projects",
@@ -459,20 +316,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Occasionally interested in DIY and handmade home projects",
-        "update_type": "new",
-        "timestamp": 1775499624,
-        "formatted_timestamp": "18:20, 04/06/2026"
-      },
-      {
-        "preference": "Occasionally interested in DIY and handmade home projects",
-        "update_type": "reinforced",
-        "timestamp": 1775819576,
-        "formatted_timestamp": "11:12, 04/10/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Invested in self-care routines and self-expression",
@@ -496,20 +340,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Invested in self-care routines and self-expression",
-        "update_type": "new",
-        "timestamp": 1775246643,
-        "formatted_timestamp": "20:04, 04/03/2026"
-      },
-      {
-        "preference": "Invested in self-care routines and self-expression",
-        "update_type": "reinforced",
-        "timestamp": 1775561862,
-        "formatted_timestamp": "11:37, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Enjoys dance content and casual music videos",
@@ -534,20 +365,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Enjoys dance content and casual music videos",
-        "update_type": "new",
-        "timestamp": 1775239934,
-        "formatted_timestamp": "18:12, 04/03/2026"
-      },
-      {
-        "preference": "Enjoys dance content and casual music videos",
-        "update_type": "reinforced",
-        "timestamp": 1775540428,
-        "formatted_timestamp": "05:40, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Likely dances at home, at parties, or with family",
@@ -572,20 +390,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Likely dances at home, at parties, or with family",
-        "update_type": "new",
-        "timestamp": 1775239934,
-        "formatted_timestamp": "18:12, 04/03/2026"
-      },
-      {
-        "preference": "Likely dances at home, at parties, or with family",
-        "update_type": "reinforced",
-        "timestamp": 1775540428,
-        "formatted_timestamp": "05:40, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Enjoys aspirational couple imagery and moments",
@@ -611,20 +416,7 @@
       "user_message": "@ai the couple reels you've been pushing feel off — we're not that kind of couple right now, please pull back on the honeymoon-era content for a while."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Enjoys aspirational couple imagery and moments",
-        "update_type": "new",
-        "timestamp": 1775235998,
-        "formatted_timestamp": "17:06, 04/03/2026"
-      },
-      {
-        "preference": "Enjoys aspirational couple imagery and moments",
-        "update_type": "reinforced",
-        "timestamp": 1775561196,
-        "formatted_timestamp": "11:26, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Invested in romantic relationship content",
@@ -650,20 +442,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Invested in romantic relationship content",
-        "update_type": "new",
-        "timestamp": 1775235998,
-        "formatted_timestamp": "17:06, 04/03/2026"
-      },
-      {
-        "preference": "Invested in romantic relationship content",
-        "update_type": "reinforced",
-        "timestamp": 1775561196,
-        "formatted_timestamp": "11:26, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Spends time scrolling trending short-form video content",
@@ -687,20 +466,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Spends time scrolling trending short-form video content",
-        "update_type": "new",
-        "timestamp": 1775246708,
-        "formatted_timestamp": "20:05, 04/03/2026"
-      },
-      {
-        "preference": "Spends time scrolling trending short-form video content",
-        "update_type": "reinforced",
-        "timestamp": 1775560747,
-        "formatted_timestamp": "11:19, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Enjoys matching-outfit and 'twinning' content with family",
@@ -723,20 +489,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Enjoys matching-outfit and 'twinning' content with family",
-        "update_type": "new",
-        "timestamp": 1775539778,
-        "formatted_timestamp": "05:29, 04/07/2026"
-      },
-      {
-        "preference": "Enjoys matching-outfit and 'twinning' content with family",
-        "update_type": "reinforced",
-        "timestamp": 1775795013,
-        "formatted_timestamp": "04:23, 04/10/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Follows content with 'book now' appointment calls-to-action",
@@ -759,20 +512,7 @@
       "user_message": "@ai show me more small-business beauty accounts with easy in-caption booking — I'm trying to benchmark how other solo stylists set up their DMs."
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Follows content with 'book now' appointment calls-to-action",
-        "update_type": "new",
-        "timestamp": 1775383727,
-        "formatted_timestamp": "10:08, 04/05/2026"
-      },
-      {
-        "preference": "Follows content with 'book now' appointment calls-to-action",
-        "update_type": "reinforced",
-        "timestamp": 1775795963,
-        "formatted_timestamp": "04:39, 04/10/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Actively engaged in daily motherhood experiences",
@@ -797,20 +537,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Actively engaged in daily motherhood experiences",
-        "update_type": "new",
-        "timestamp": 1775239894,
-        "formatted_timestamp": "18:11, 04/03/2026"
-      },
-      {
-        "preference": "Actively engaged in daily motherhood experiences",
-        "update_type": "reinforced",
-        "timestamp": 1775582950,
-        "formatted_timestamp": "17:29, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Parenting young children at home",
@@ -835,20 +562,7 @@
       "user_message": null
     },
     "split": "train",
-    "update_history": [
-      {
-        "preference": "Parenting young children at home",
-        "update_type": "new",
-        "timestamp": 1775239894,
-        "formatted_timestamp": "18:11, 04/03/2026"
-      },
-      {
-        "preference": "Parenting young children at home",
-        "update_type": "reinforced",
-        "timestamp": 1775582950,
-        "formatted_timestamp": "17:29, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Values sharing candid, real-life parenting moments",
@@ -875,20 +589,7 @@
     "split": "test",
     "over_personalization_irrelevant": "Appreciates food content that feels homemade and wholesome",
     "over_personalization_irrelevant_category": "home cooking and food",
-    "update_history": [
-      {
-        "preference": "Values sharing candid, real-life parenting moments",
-        "update_type": "new",
-        "timestamp": 1775239894,
-        "formatted_timestamp": "18:11, 04/03/2026"
-      },
-      {
-        "preference": "Values sharing candid, real-life parenting moments",
-        "update_type": "reinforced",
-        "timestamp": 1775582950,
-        "formatted_timestamp": "17:29, 04/07/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Follows niche individual creators by handle",
@@ -913,20 +614,7 @@
     "split": "test",
     "over_personalization_irrelevant": "Follows content with 'book now' appointment calls-to-action",
     "over_personalization_irrelevant_category": "small-business and creator entrepreneurship",
-    "update_history": [
-      {
-        "preference": "Follows niche individual creators by handle",
-        "update_type": "new",
-        "timestamp": 1775641601,
-        "formatted_timestamp": "09:46, 04/08/2026"
-      },
-      {
-        "preference": "Follows niche individual creators by handle",
-        "update_type": "reinforced",
-        "timestamp": 1775795565,
-        "formatted_timestamp": "04:32, 04/10/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Finds joy in sharing everyday moments of toddlers",
@@ -953,20 +641,7 @@
     "split": "test",
     "over_personalization_irrelevant": "Likely has a daughter or close maternal-female relationship",
     "over_personalization_irrelevant_category": "mother-daughter relationships",
-    "update_history": [
-      {
-        "preference": "Finds joy in sharing everyday moments of toddlers",
-        "update_type": "new",
-        "timestamp": 1775308905,
-        "formatted_timestamp": "13:21, 04/04/2026"
-      },
-      {
-        "preference": "Finds joy in sharing everyday moments of toddlers",
-        "update_type": "reinforced",
-        "timestamp": 1775636908,
-        "formatted_timestamp": "08:28, 04/08/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Has or is close to young children and infants",
@@ -993,20 +668,7 @@
     "split": "test",
     "over_personalization_irrelevant": "Uses humor content as a mood-lifter throughout the day",
     "over_personalization_irrelevant_category": "comedy and humor content",
-    "update_history": [
-      {
-        "preference": "Has or is close to young children and infants",
-        "update_type": "new",
-        "timestamp": 1775308905,
-        "formatted_timestamp": "13:21, 04/04/2026"
-      },
-      {
-        "preference": "Has or is close to young children and infants",
-        "update_type": "reinforced",
-        "timestamp": 1775636908,
-        "formatted_timestamp": "08:28, 04/08/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Likely a parent navigating the early-childhood years",
@@ -1033,20 +695,7 @@
     "split": "test",
     "over_personalization_irrelevant": "Occasionally interested in DIY and handmade home projects",
     "over_personalization_irrelevant_category": "home decor and DIY crafts",
-    "update_history": [
-      {
-        "preference": "Likely a parent navigating the early-childhood years",
-        "update_type": "new",
-        "timestamp": 1775308905,
-        "formatted_timestamp": "13:21, 04/04/2026"
-      },
-      {
-        "preference": "Likely a parent navigating the early-childhood years",
-        "update_type": "reinforced",
-        "timestamp": 1775636908,
-        "formatted_timestamp": "08:28, 04/08/2026"
-      }
-    ]
+    "update_history": []
   },
   {
     "persona_item": "Likely identifies as a woman and connects with empowerment messaging",
@@ -1073,19 +722,6 @@
     "split": "test",
     "over_personalization_irrelevant": "Looks for relatable everyday parenting stories",
     "over_personalization_irrelevant_category": "parenting and child-rearing",
-    "update_history": [
-      {
-        "preference": "Likely identifies as a woman and connects with empowerment messaging",
-        "update_type": "new",
-        "timestamp": 1775308005,
-        "formatted_timestamp": "13:06, 04/04/2026"
-      },
-      {
-        "preference": "Likely identifies as a woman and connects with empowerment messaging",
-        "update_type": "reinforced",
-        "timestamp": 1775562051,
-        "formatted_timestamp": "11:40, 04/07/2026"
-      }
-    ]
+    "update_history": []
   }
 ]
