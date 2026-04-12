@@ -160,7 +160,7 @@ HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 0.5
 
 # Session grouping: source rows with timestamp gaps <= this threshold are
 # considered part of the same scrolling session on one app.
-SESSION_GAP_SECONDS = 300  # 5 minutes
+SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 
 # NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
 # side. A preference corroborated by 200 distinct rows should be strictly
