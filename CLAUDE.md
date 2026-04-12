@@ -12,7 +12,6 @@
 - **Cross-referencing** only applies across different interaction rows (different source_object_id), never within the same row. Identical persona_items are merged into a canonical BEFORE cross-referencing.
 - **`confidence_cross_referenced`** = count of distinct source rows that independently produced this canonical AND individually passed `MIN_PERSONA_INIT_CONFIDENCE`. Computed AFTER the init filter. The LLM cross-ref step discovers `similar`/`contradictory` relationships but does NOT change this score.
 - **Init filter**: `MIN_PERSONA_INIT_CONFIDENCE = 0.5`. Anything below 0.5 is dropped after cross-ref, regardless of cross_ref score or relationship type.
-- **Semantic redundancy removal** runs after the 0.5 filter: LLM-clusters same-meaning-different-wording preferences; keeps the highest-scored representative per cluster; drops the rest.
 - **High-confidence predicate** (for test-split + distractor eligibility): `init >= 0.5 AND cross_ref > 0.5`. Single source of truth is `is_high_confidence` in persona_agent.py. Thresholds are tentative; retune empirically once real-scale stats land.
 - Stereotype marks are based on demographics only (gender, sexual orientation, race/ethnicity) — not career or education.
 - **Per-user AppPersonas**: each user gets four distinct sub-personas (one per app — Instagram, Facebook, Threads, Chatbot) describing their use purposes, friend zones, audience type, style, posting frequency, and topical focus. Chatbot also carries 2–3 `chatbot_contexts`.

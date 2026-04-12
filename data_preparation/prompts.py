@@ -398,57 +398,6 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
 ```"""
 
 
-def remove_redundant_personas_prompt(candidates: list[dict]) -> str:
-    """Build a prompt that asks the LLM to cluster semantically-redundant personas.
-
-    The caller has already filtered the candidates to only those above the
-    init-confidence floor. The LLM's job is to find GROUPS of personas that
-    convey essentially the same preference in different words, so downstream
-    code can keep one representative per group and drop the rest.
-    """
-
-    candidates_json = json.dumps(candidates, indent=2)
-
-    return f"""\
-You are reducing redundancy in a user's preference list. The entries below have already passed a confidence threshold, but some of them almost certainly describe the SAME underlying preference with different wording.
-
-## Candidates
-
-```json
-{candidates_json}
-```
-
-## Your Task
-
-Cluster the candidates into **redundancy groups**. Each group is a set of two or more persona_items that describe the SAME preference. Downstream code will keep the strongest one from each group and drop the rest.
-
-## Rules
-
-1. **Only group items that truly mean the same thing.** Err on the side of NOT grouping — if two personas are related but describe different aspects, keep them separate. Example:
-   - ✅ Group together: `"Enjoys home cooking"` + `"Likes preparing meals at home"` (same preference, different wording)
-   - ✅ Group together: `"Follows Detroit Lions"` + `"Supports Detroit NFL team"` (same preference)
-   - ❌ Do NOT group: `"Enjoys home cooking"` + `"Owns multiple cast iron pans"` (related but distinct)
-   - ❌ Do NOT group: `"Follows Detroit Lions"` + `"Is an NFL fan"` (the NFL one is broader)
-
-2. **Every group has 2 or more items.** Singletons are not redundancies — they don't need to appear in the output.
-
-3. **Each persona_item appears in AT MOST ONE group.** No overlapping clusters.
-
-4. **Skip personas that have no redundant counterpart.** They simply stay as-is — just don't include them in your output.
-
-5. **Return ONLY the groups that have redundancies.** Do not return every input persona.
-
-## Output Format
-
-Respond with ONLY a JSON array of arrays. Each inner array lists the persona_item strings of one redundancy group. No explanation outside the JSON fence.
-
-```json
-[
-  ["persona_item A", "persona_item B", "persona_item C"],
-  ["persona_item D", "persona_item E"]
-]
-```"""
-
 
 def generate_app_personas_prompt(
     profile: dict,
