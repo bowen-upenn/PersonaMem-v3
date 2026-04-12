@@ -72,6 +72,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
             "over_personalization_irrelevant": r.get("over_personalization_irrelevant", ""),
             "over_personalization_irrelevant_category": r.get("over_personalization_irrelevant_category", ""),
             "assigned_app": r.get("assigned_app", ""),
+            "source_hashtags": r.get("source_hashtags", []),
             "conversation": r.get("conversation"),
             "conversation_type": r.get("conversation_type"),
             "ask_to_forget": r.get("ask_to_forget", False),
@@ -280,6 +281,7 @@ if (prefsData.length === 0) {{
     card.innerHTML = `
       <div class="meta-line" style="margin-bottom:4px;"><span style="font-weight:600;color:var(--text);">#${{idx+1}}</span> &middot; ${{p.formatted_timestamp}}</div>
       <div class="item-text">${{p.persona_item}}</div>
+      ${{p.source_hashtags && p.source_hashtags.length ? `<div class="meta-line" style="color:var(--text-tertiary);margin-bottom:4px;">${{p.source_hashtags.join('  ')}}</div>` : ''}}
       <div style="margin-bottom:6px;">${{primaryBadges}}</div>
       <div class="conf-inline"><span>init ${{p.confidence_score_init.toFixed(2)}}</span><span>xref ${{p.confidence_cross_referenced.toFixed(0)}}</span></div>
       <div>${{secondaryBadges}}</div>
