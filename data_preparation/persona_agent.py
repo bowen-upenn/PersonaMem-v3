@@ -2364,12 +2364,17 @@ class PersonaAgent:
                 distractor = self.test_distractors.get(cr.persona_item, {}) if split_label == "test" else {}
 
                 # Build merged update_history: temporal entries (no raw timestamp)
-                # + related_personas folded in as similar/contradictory entries
+                # + related_personas folded in as similar/contradictory entries.
+                # Key order is always: update_type, preference, formatted_timestamp,
+                # then any extras (occurrence, total_occurrences, description).
+                _HISTORY_KEY_ORDER = ["update_type", "preference", "formatted_timestamp",
+                                      "occurrence", "total_occurrences", "description"]
                 merged_history = []
                 for h in (cr.update_history or []):
-                    entry = dict(h)
-                    entry.pop("timestamp", None)
-                    merged_history.append(entry)
+                    raw = dict(h)
+                    raw.pop("timestamp", None)
+                    ordered = {k: raw[k] for k in _HISTORY_KEY_ORDER if k in raw}
+                    merged_history.append(ordered)
                 for rel in (cr.related_personas or []):
                     if isinstance(rel, dict) and rel.get("persona_item"):
                         rel_cr = canonical_lookup.get(_normalize_persona_text(rel["persona_item"]))
