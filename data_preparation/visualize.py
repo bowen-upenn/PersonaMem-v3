@@ -22,18 +22,35 @@ APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 
 def _load_app_prefs(user_dir: str) -> list[dict]:
     """Load the per-app JSON files and return a flat list of preferences
-    tagged with the app they came from."""
+    tagged with the app they came from.
+
+    Supports both the new interaction-event format (nested ``preferences``
+    list per event) and the legacy flat format (one dict per preference).
+    """
     all_rows: list[dict] = []
     for app in APPS:
         path = os.path.join(user_dir, app.lower() + ".json")
         if not os.path.exists(path):
             continue
         with open(path, "r", encoding="utf-8") as f:
-            rows = json.load(f)
-        for r in rows:
-            # Ensure assigned_app is present
-            r.setdefault("assigned_app", app)
-            all_rows.append(r)
+            entries = json.load(f)
+        for entry in entries:
+            if "preferences" in entry:
+                # New interaction-event format: flatten nested preferences
+                for pref in entry["preferences"]:
+                    flat = dict(pref)
+                    flat["assigned_app"] = app
+                    flat["source_object_id"] = entry.get("source_object_id", "")
+                    flat["source_timestamp"] = entry.get("source_timestamp", 0)
+                    flat["formatted_timestamp"] = entry.get("formatted_timestamp", "")
+                    flat["source_hashtags"] = entry.get("source_hashtags", [])
+                    flat["source_interaction_type"] = entry.get("source_interaction_type", "")
+                    flat["interaction_format"] = entry.get("interaction_format", {})
+                    all_rows.append(flat)
+            else:
+                # Legacy flat format
+                entry.setdefault("assigned_app", app)
+                all_rows.append(entry)
     all_rows.sort(key=lambda r: (int(r.get("source_timestamp") or 0), r.get("persona_item", "")))
     return all_rows
 
