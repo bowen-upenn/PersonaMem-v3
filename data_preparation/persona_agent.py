@@ -2377,6 +2377,8 @@ class PersonaAgent:
                     h_ts = raw.pop("timestamp", 0)
                     if h_ts and h_ts > event_ts:
                         continue  # skip future entries — causality
+                    if raw.get("update_type") == "new":
+                        continue  # redundant — event timestamp already shows first appearance
                     # Drop self-referencing preference (same as parent persona_item)
                     if raw.get("preference") == cr.persona_item:
                         raw.pop("preference")

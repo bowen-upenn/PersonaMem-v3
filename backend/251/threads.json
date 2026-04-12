@@ -26,12 +26,7 @@
         "confidence_cross_referenced": 1.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "11:17, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -65,12 +60,7 @@
         "confidence_cross_referenced": 7.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -103,12 +93,7 @@
         "confidence_cross_referenced": 48.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -142,12 +127,7 @@
         "confidence_cross_referenced": 1.5,
         "stereotype_mark": "anti-stereotypical",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -181,12 +161,7 @@
         "confidence_cross_referenced": 48.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -219,12 +194,7 @@
         "confidence_cross_referenced": 31.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -260,10 +230,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -279,12 +245,7 @@
         "confidence_cross_referenced": 3.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -320,10 +281,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Appreciates Disney magic and childhood wonder",
             "formatted_timestamp": "19:05, 04/03/2026"
@@ -339,12 +296,7 @@
         "confidence_cross_referenced": 2.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -377,12 +329,7 @@
         "confidence_cross_referenced": 16.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:11, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -416,10 +363,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -458,12 +401,7 @@
         "confidence_cross_referenced": 31.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -500,10 +438,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -524,12 +458,7 @@
         "confidence_cross_referenced": 2.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "06:30, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -564,10 +493,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -589,10 +514,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -633,10 +554,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -658,10 +575,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -703,10 +616,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -728,10 +637,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Enjoys short-form comedy reels and viral funny clips",
@@ -775,12 +680,7 @@
         "confidence_cross_referenced": 2.0,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -814,10 +714,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -857,10 +753,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:11, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Enjoys content celebrating involved fatherhood",
@@ -906,10 +798,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           }
@@ -947,10 +835,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1002,10 +886,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           }
@@ -1043,10 +923,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1095,12 +971,7 @@
         "confidence_cross_referenced": 1.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:15, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1134,10 +1005,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Interested in relationship trust and loyalty dynamics",
@@ -1178,10 +1045,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1233,10 +1096,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -1263,10 +1122,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -1305,10 +1160,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1360,10 +1211,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Interested in relationship trust and loyalty dynamics",
             "formatted_timestamp": "13:15, 04/04/2026"
@@ -1402,10 +1249,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1455,10 +1298,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1511,10 +1350,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
             "formatted_timestamp": "20:05, 04/03/2026"
@@ -1563,10 +1398,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1617,10 +1448,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "similar",
             "preference": "Follows comedy creators and prank content",
@@ -1673,10 +1500,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           }
@@ -1714,10 +1537,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -1775,10 +1594,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           }
@@ -1816,10 +1631,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -1860,10 +1671,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           }
@@ -1878,12 +1685,7 @@
         "confidence_cross_referenced": 1.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:46, 04/05/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -1918,10 +1720,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -1961,10 +1759,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2024,10 +1818,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2089,10 +1879,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Interested in protective natural hair styles like braids and weaves",
             "formatted_timestamp": "12:49, 04/04/2026"
@@ -2147,10 +1933,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2211,10 +1993,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -2272,10 +2050,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2336,10 +2110,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -2382,10 +2152,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2444,10 +2210,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2508,10 +2270,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -2554,10 +2312,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2618,10 +2372,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "14:19, 04/05/2026"
           },
@@ -2657,10 +2407,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "12:49, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "21:37, 04/05/2026"
@@ -2714,10 +2460,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -2753,10 +2495,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -2801,10 +2539,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -2834,10 +2568,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -2885,10 +2615,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -2949,10 +2675,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -3011,10 +2733,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -3056,10 +2774,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -3103,10 +2817,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -3166,10 +2876,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -3205,10 +2911,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "12:59, 04/04/2026"
@@ -3258,10 +2960,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -3305,10 +3003,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -3345,10 +3039,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -3367,12 +3057,7 @@
         "confidence_cross_referenced": 2.5,
         "stereotype_mark": "neutral",
         "split": "train",
-        "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          }
-        ],
+        "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       }
@@ -3407,10 +3092,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -3470,10 +3151,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -3531,10 +3208,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -3594,10 +3267,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -3633,10 +3302,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -3680,10 +3345,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -3725,10 +3386,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -3773,10 +3430,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -3820,10 +3473,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -3884,10 +3533,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -3946,10 +3591,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -3992,10 +3633,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "05:36, 04/07/2026"
           }
@@ -4035,10 +3672,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -4074,10 +3707,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "12:59, 04/04/2026"
@@ -4127,10 +3756,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -4173,10 +3798,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -4237,10 +3858,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -4276,10 +3893,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -4323,10 +3936,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -4362,10 +3971,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -4408,10 +4013,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -4456,10 +4057,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -4502,10 +4099,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -4566,10 +4159,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -4612,10 +4201,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:15, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "13:15, 04/04/2026"
           }
@@ -4654,10 +4239,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "05:36, 04/07/2026"
@@ -4700,10 +4281,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -4763,10 +4340,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           }
@@ -4805,10 +4378,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -4869,10 +4438,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -4908,10 +4473,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "06:30, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:30, 04/04/2026"
@@ -4951,10 +4512,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5015,10 +4572,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -5060,10 +4613,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5125,10 +4674,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -5164,10 +4709,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -5211,10 +4752,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5275,10 +4812,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -5336,10 +4869,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5400,10 +4929,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "similar",
             "preference": "Cherishes the bond between mothers and daughters",
             "formatted_timestamp": "05:56, 04/04/2026"
@@ -5443,10 +4968,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5505,10 +5026,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5569,10 +5086,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -5616,10 +5129,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -5661,10 +5170,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5725,10 +5230,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
           },
@@ -5772,10 +5273,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -5835,10 +5332,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
           },
@@ -5881,10 +5374,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
@@ -5933,10 +5422,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
           },
@@ -5984,10 +5469,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -6023,10 +5504,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -6070,10 +5547,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -6137,10 +5610,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -6183,10 +5652,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "12:59, 04/04/2026"
@@ -6236,10 +5701,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -6283,10 +5744,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -6326,10 +5783,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -6372,10 +5825,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -6438,10 +5887,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -6506,10 +5951,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -6552,10 +5993,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -6600,10 +6037,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -6643,10 +6076,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -6691,10 +6120,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
           },
@@ -6719,10 +6144,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -6765,10 +6186,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -6833,10 +6250,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -6880,10 +6293,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -6924,10 +6333,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -6947,10 +6352,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "13:46, 04/05/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "13:46, 04/05/2026"
@@ -6991,10 +6392,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
           },
@@ -7023,10 +6420,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -7091,10 +6484,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
           },
@@ -7147,10 +6536,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -7193,10 +6578,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "09:03, 04/07/2026"
@@ -7249,10 +6630,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -7292,10 +6669,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -7339,10 +6712,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -7406,10 +6775,6 @@
         "split": "test",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:32, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "05:30, 04/07/2026"
           },
@@ -7452,10 +6817,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -7522,10 +6883,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -7594,10 +6951,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -7641,10 +6994,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -7690,10 +7039,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -7736,10 +7081,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "11:17, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "11:17, 04/03/2026"
           }
@@ -7777,10 +7118,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
@@ -7838,10 +7175,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -7886,10 +7219,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -7932,10 +7261,6 @@
         "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "06:25, 04/04/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "02:16, 04/07/2026"
@@ -7985,10 +7310,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -8032,10 +7353,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "12:59, 04/04/2026"
@@ -8085,10 +7402,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -8133,10 +7446,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "05:36, 04/07/2026"
           },
@@ -8180,10 +7489,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "13:46, 04/05/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "13:46, 04/05/2026"
           },
@@ -8225,10 +7530,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
@@ -8273,10 +7574,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -8325,10 +7622,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -8370,10 +7663,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -8422,10 +7711,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
           },
@@ -8471,10 +7756,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "10:02, 04/05/2026"
           },
@@ -8518,10 +7799,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
@@ -8569,10 +7846,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "06:28, 04/04/2026"
           },
@@ -8619,10 +7892,6 @@
         "split": "train",
         "update_history": [
           {
-            "update_type": "new",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
             "update_type": "reinforced",
             "formatted_timestamp": "05:36, 04/07/2026"
           },
@@ -8664,10 +7933,6 @@
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
-          {
-            "update_type": "new",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
           {
             "update_type": "reinforced",
             "formatted_timestamp": "12:59, 04/04/2026"
