@@ -84,134 +84,6 @@
     ]
   },
   {
-    "source_object_id": "405331",
-    "source_timestamp": 1775243159,
-    "formatted_timestamp": "19:05, 04/03/2026",
-    "source_hashtags": [
-      "#DisneyMagic",
-      "#ChildhoodUnplugged",
-      "#FriendshipGoals",
-      "#KindnessMatters",
-      "#MomLife",
-      "#DisneyPrincess"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Appreciates Disney magic and childhood wonder",
-        "category": "Disney",
-        "confidence_score_init": 0.7,
-        "confidence_cross_referenced": 1.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "36045",
-    "source_timestamp": 1775282209,
-    "formatted_timestamp": "05:56, 04/04/2026",
-    "source_hashtags": [
-      "#mamapoopoo",
-      "#singlemom",
-      "#momlife",
-      "#dancingqueens",
-      "#godisgood",
-      "#bigmama",
-      "#motherdaughter"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Navigating single motherhood or co-parenting",
-        "category": "single parenting",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 4.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Actively engaged in daily motherhood experiences",
-            "formatted_timestamp": "19:05, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Values Christian faith and spiritual growth",
-        "category": "Christian faith",
-        "confidence_score_init": 0.79,
-        "confidence_cross_referenced": 5.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "458878",
-    "source_timestamp": 1775282215,
-    "formatted_timestamp": "05:56, 04/04/2026",
-    "source_hashtags": [
-      "#younglove",
-      "#momlife",
-      "#proudmom",
-      "#raisingteens",
-      "#heartwarmingmoments",
-      "#love"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "shared_to_group",
-      "action_label": "Shared to a group",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "386915",
     "source_timestamp": 1775282288,
     "formatted_timestamp": "05:58, 04/04/2026",
@@ -301,92 +173,12 @@
         "update_history": [],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "852680",
-    "source_timestamp": 1775284138,
-    "formatted_timestamp": "06:28, 04/04/2026",
-    "source_hashtags": [
-      "#coparenting",
-      "#momlife",
-      "#parentinghacks",
-      "#relatable",
-      "#fyp",
-      "#coparent"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "at_ai_recommend_more",
-      "action_label": "@ai comment: asked Meta AI in the comments for MORE like this",
-      "user_message": "@ai show me more single parenting content like this, I can't get enough of it"
-    },
-    "preferences": [
-      {
-        "persona_item": "Navigating single motherhood or co-parenting",
-        "category": "single parenting",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 4.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Actively engaged in daily motherhood experiences",
-            "formatted_timestamp": "19:05, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       },
       {
-        "persona_item": "Seeks practical parenting tips and hacks",
-        "category": "parenting tips",
+        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
+        "category": "feel-good content",
         "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "288257",
-    "source_timestamp": 1775307221,
-    "formatted_timestamp": "12:53, 04/04/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#preteenprobs",
-      "#makeupdebate",
-      "#parentinghumor",
-      "#comedy",
-      "#relatable"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
+        "confidence_cross_referenced": 16.5,
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [],
@@ -466,323 +258,7 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "751560",
-    "source_timestamp": 1775307575,
-    "formatted_timestamp": "12:59, 04/04/2026",
-    "source_hashtags": [
-      "#newmom",
-      "#motherhood",
-      "#birthstory",
-      "#faith",
-      "#gratitude",
-      "#vlog",
-      "#momlife",
-      "#parenting"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Values Christian faith and spiritual growth",
-        "category": "Christian faith",
-        "confidence_score_init": 0.79,
-        "confidence_cross_referenced": 5.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "445243",
-    "source_timestamp": 1775308005,
-    "formatted_timestamp": "13:06, 04/04/2026",
-    "source_hashtags": [
-      "#ConfidenceIsKey",
-      "#SassySquad",
-      "#GirlPower",
-      "#LifestyleInspo",
-      "#Entertainment",
-      "#JazminneWade"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "778344",
-    "source_timestamp": 1775308105,
-    "formatted_timestamp": "13:08, 04/04/2026",
-    "source_hashtags": [
-      "#familygoals",
-      "#husbandandson",
-      "#loveofmylife",
-      "#parentinghumor",
-      "#relatablemoments",
-      "#fyp",
-      "#viralvideo"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Gravitates toward content that mirrors everyday life experiences",
-        "category": "relatable content",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 31.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       },
-      {
-        "persona_item": "Enjoys aspirational couple imagery and moments",
-        "category": "romantic relationships",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 28.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "655494",
-    "source_timestamp": 1775308136,
-    "formatted_timestamp": "13:08, 04/04/2026",
-    "source_hashtags": [
-      "#siblingrivalry",
-      "#momlife",
-      "#familydrama",
-      "#parentingstruggles",
-      "#relatable",
-      "#familyfun"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys relatable sibling dynamics content",
-        "category": "sibling dynamics",
-        "confidence_score_init": 0.75,
-        "confidence_cross_referenced": 2.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "132071",
-    "source_timestamp": 1775308148,
-    "formatted_timestamp": "13:09, 04/04/2026",
-    "source_hashtags": [
-      "#dancingking",
-      "#brotherlylove",
-      "#funnyvideos",
-      "#estheticsbihhh",
-      "#houstoncreator",
-      "#exclusivecontent"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys relatable sibling dynamics content",
-        "category": "sibling dynamics",
-        "confidence_score_init": 0.75,
-        "confidence_cross_referenced": 2.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "16578",
-    "source_timestamp": 1775308252,
-    "formatted_timestamp": "13:10, 04/04/2026",
-    "source_hashtags": [
-      "#momguilt",
-      "#parentingstruggles",
-      "#bedbugs",
-      "#inequality",
-      "#momlife",
-      "#parentingtips"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Seeks practical parenting tips and hacks",
-        "category": "parenting tips",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "832020",
-    "source_timestamp": 1775308876,
-    "formatted_timestamp": "13:21, 04/04/2026",
-    "source_hashtags": [
-      "#relationshipgoals",
-      "#shoegame",
-      "#notimpressed",
-      "#funnyvideos",
-      "#couplelife",
-      "#relatable"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
       {
         "persona_item": "Enjoys short-form comedy reels and viral funny clips",
         "category": "comedy and humor",
@@ -800,54 +276,65 @@
             "update_type": "similar",
             "preference": "Follows Black comedy creators like 85 South Show",
             "formatted_timestamp": "06:30, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys humor about the chaos of parenting",
-            "formatted_timestamp": "13:08, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "586756",
-    "source_timestamp": 1775308905,
-    "formatted_timestamp": "13:21, 04/04/2026",
-    "source_hashtags": [
-      "#toddlerlife",
-      "#parentingstruggles",
-      "#momlife",
-      "#therapyneeded",
-      "#dancingawaytantrums",
-      "#relatableparenting",
-      "#funnyvideos"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
+      },
       {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
+        "persona_item": "Follows comedy creators and prank content",
+        "category": "prank and viral content",
+        "confidence_score_init": 0.79,
+        "confidence_cross_referenced": 3.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "similar",
+            "preference": "Enjoys short-form comedy reels and viral funny clips",
+            "formatted_timestamp": "12:59, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows Black comedy creators like 85 South Show",
+            "formatted_timestamp": "06:30, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Has a sweet tooth and enjoys dessert content",
+        "category": "desserts and sweets",
+        "confidence_score_init": 0.74,
+        "confidence_cross_referenced": 3.0,
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
+            "formatted_timestamp": "17:06, 04/03/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Actively follows food content creators and recipes online",
+        "category": "food enthusiasm",
+        "confidence_score_init": 0.89,
+        "confidence_cross_referenced": 24.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
+            "formatted_timestamp": "18:12, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Has a sweet tooth and enjoys dessert content",
+            "formatted_timestamp": "17:06, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -922,6 +409,49 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "06:27, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Enjoys short-form comedy reels and viral funny clips",
+        "category": "comedy and humor",
+        "confidence_score_init": 0.89,
+        "confidence_cross_referenced": 48.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "similar",
+            "preference": "Follows comedy creators and prank content",
+            "formatted_timestamp": "20:05, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows Black comedy creators like 85 South Show",
+            "formatted_timestamp": "06:30, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Gravitates toward content that mirrors everyday life experiences",
+        "category": "relatable content",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 31.5,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "06:28, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1038,174 +568,6 @@
     ]
   },
   {
-    "source_object_id": "535735",
-    "source_timestamp": 1775316877,
-    "formatted_timestamp": "15:34, 04/04/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#selfcare",
-      "#sportsmom",
-      "#parentinghacks",
-      "#kingtreatment",
-      "#love"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Seeks practical parenting tips and hacks",
-        "category": "parenting tips",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "323722",
-    "source_timestamp": 1775383265,
-    "formatted_timestamp": "10:01, 04/05/2026",
-    "source_hashtags": [
-      "#teachersmatter",
-      "#education",
-      "#personalgrowth",
-      "#apology",
-      "#gratitude",
-      "#educatorsrock"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
-      }
-    ]
-  },
-  {
-    "source_object_id": "963490",
-    "source_timestamp": 1775383481,
-    "formatted_timestamp": "10:04, 04/05/2026",
-    "source_hashtags": [
-      "#singleparenting",
-      "#agegap",
-      "#momlife",
-      "#daughterlove",
-      "#personalstory",
-      "#relatable",
-      "#fyp",
-      "#singlemom"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Navigating single motherhood or co-parenting",
-        "category": "single parenting",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 4.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Actively engaged in daily motherhood experiences",
-            "formatted_timestamp": "19:05, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "971339",
-    "source_timestamp": 1775383623,
-    "formatted_timestamp": "10:07, 04/05/2026",
-    "source_hashtags": [
-      "#womencanhandleit",
-      "#independentwomen",
-      "#relationshipgoals",
-      "#humor",
-      "#womenempowerment",
-      "#homebody"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "622028",
     "source_timestamp": 1775383652,
     "formatted_timestamp": "10:07, 04/05/2026",
@@ -1313,50 +675,6 @@
     ]
   },
   {
-    "source_object_id": "621421",
-    "source_timestamp": 1775396518,
-    "formatted_timestamp": "13:41, 04/05/2026",
-    "source_hashtags": [
-      "#momssupportingmoms",
-      "#macandcheese",
-      "#homcooking",
-      "#familylove",
-      "#momlife",
-      "#kitchenfun"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "866520",
     "source_timestamp": 1775396612,
     "formatted_timestamp": "13:43, 04/05/2026",
@@ -1374,70 +692,6 @@
       "app": "Facebook",
       "action": "lingered_on_post",
       "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "73654",
-    "source_timestamp": 1775396921,
-    "formatted_timestamp": "13:48, 04/05/2026",
-    "source_hashtags": [
-      "#germanshepherdlove",
-      "#dogparents",
-      "#heartwarmingmoments",
-      "#newadditions",
-      "#familygoals",
-      "#doglovers"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
       "user_message": null
     },
     "preferences": [
@@ -1517,47 +771,78 @@
         "update_history": [],
         "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
         "over_personalization_irrelevant_category": "sibling dynamics"
-      }
-    ]
-  },
-  {
-    "source_object_id": "314146",
-    "source_timestamp": 1775397271,
-    "formatted_timestamp": "13:54, 04/05/2026",
-    "source_hashtags": [
-      "#familyfun",
-      "#danceparty",
-      "#momlife",
-      "#kidsofinstagram",
-      "#funnyvideos",
-      "#reels",
-      "#viral"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
+      },
       {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
+        "persona_item": "Deeply invested in hair care and styling routines",
+        "category": "hair care",
+        "confidence_score_init": 0.87,
+        "confidence_cross_referenced": 18.0,
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
           {
             "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
+            "preference": "Interested in protective natural hair styles like braids and weaves",
+            "formatted_timestamp": "12:49, 04/04/2026"
           },
           {
             "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
+            "preference": "Follows hairstylists and salon professionals",
+            "formatted_timestamp": "05:57, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Keeps up with beauty trends and inspiration",
+            "formatted_timestamp": "06:25, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows content with salon booking calls-to-action",
+            "formatted_timestamp": "10:08, 04/05/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Keeps up with beauty trends and inspiration",
+        "category": "beauty inspiration",
+        "confidence_score_init": 0.78,
+        "confidence_cross_referenced": 11.5,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "similar",
+            "preference": "Enjoys nail art and beauty content",
+            "formatted_timestamp": "06:25, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Deeply invested in hair care and styling routines",
+            "formatted_timestamp": "05:57, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Interested in protective natural hair styles like braids and weaves",
+        "category": "protective hair styles",
+        "confidence_score_init": 0.82,
+        "confidence_cross_referenced": 12.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "similar",
+            "preference": "Deeply invested in hair care and styling routines",
+            "formatted_timestamp": "05:57, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows hairstylists and salon professionals",
+            "formatted_timestamp": "05:57, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1651,6 +936,48 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Centers family togetherness as a core value",
+        "category": "family togetherness",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 14.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "similar",
+            "preference": "Enjoys content celebrating involved fatherhood",
+            "formatted_timestamp": ""
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys relatable sibling dynamics content",
+            "formatted_timestamp": "12:59, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
+        "category": "feel-good content",
+        "confidence_score_init": 0.84,
+        "confidence_cross_referenced": 16.5,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "06:27, 04/04/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "13:23, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -1689,55 +1016,42 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "583512",
-    "source_timestamp": 1775482278,
-    "formatted_timestamp": "13:31, 04/06/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#parentinghacks",
-      "#fblifestyle",
-      "#motherhoodunplugged",
-      "#parentingtips",
-      "#supermom"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
+      },
       {
-        "persona_item": "Seeks practical parenting tips and hacks",
-        "category": "parenting tips",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 6.0,
+        "persona_item": "Enjoys short-form comedy reels and viral funny clips",
+        "category": "comedy and humor",
+        "confidence_score_init": 0.89,
+        "confidence_cross_referenced": 48.0,
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
+            "formatted_timestamp": "10:02, 04/05/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows comedy creators and prank content",
+            "formatted_timestamp": "20:05, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows Black comedy creators like 85 South Show",
+            "formatted_timestamp": "06:30, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Looks for cleaning hacks and home-organization tips",
-        "category": "cleaning hacks",
-        "confidence_score_init": 0.76,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [],
-        "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
-        "over_personalization_irrelevant_category": "proud mom moments"
       }
     ]
   },
@@ -1776,101 +1090,6 @@
     ]
   },
   {
-    "source_object_id": "83199",
-    "source_timestamp": 1775499627,
-    "formatted_timestamp": "18:20, 04/06/2026",
-    "source_hashtags": [
-      "#tacotuesday",
-      "#dinnerideas",
-      "#homcooking",
-      "#foodie",
-      "#kookingwithki",
-      "#pizzalove",
-      "#easyrecipes"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys home cooking and preparing family meals",
-            "formatted_timestamp": "18:20, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "30611",
-    "source_timestamp": 1775499639,
-    "formatted_timestamp": "18:20, 04/06/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#parentinghumor",
-      "#momchildbond",
-      "#bestfriend",
-      "#funnymoments",
-      "#dancelikenocares"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "793582",
     "source_timestamp": 1775499774,
     "formatted_timestamp": "18:22, 04/06/2026",
@@ -1887,54 +1106,6 @@
       "app": "Facebook",
       "action": "viewed_comments",
       "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "366495",
-    "source_timestamp": 1775510234,
-    "formatted_timestamp": "21:17, 04/06/2026",
-    "source_hashtags": [
-      "#proudmoment",
-      "#dancingqueen",
-      "#sage",
-      "#familygoals",
-      "#danceperformance",
-      "#love"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_sad",
-      "action_label": "Sad reaction",
       "user_message": null
     },
     "preferences": [
@@ -2030,44 +1201,6 @@
     ]
   },
   {
-    "source_object_id": "274207",
-    "source_timestamp": 1775539738,
-    "formatted_timestamp": "05:28, 04/07/2026",
-    "source_hashtags": [
-      "#Igotquestion",
-      "#FashionNova",
-      "#TikTokDance",
-      "#GirlPower",
-      "#DanceWithMe",
-      "#FashionInspo"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "718214",
     "source_timestamp": 1775539778,
     "formatted_timestamp": "05:29, 04/07/2026",
@@ -2128,107 +1261,6 @@
             "update_type": "similar",
             "preference": "Takes pride in milestones and growth of her children",
             "formatted_timestamp": "05:56, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "578167",
-    "source_timestamp": 1775539858,
-    "formatted_timestamp": "05:30, 04/07/2026",
-    "source_hashtags": [
-      "#newmoms",
-      "#momsofinstagram",
-      "#motherhoodunplugged",
-      "#loveofmylife",
-      "#familyfirst",
-      "#gratefulheart"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Looks for cleaning hacks and home-organization tips",
-        "category": "cleaning hacks",
-        "confidence_score_init": 0.76,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [],
-        "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
-        "over_personalization_irrelevant_category": "proud mom moments"
-      }
-    ]
-  },
-  {
-    "source_object_id": "515640",
-    "source_timestamp": 1775539923,
-    "formatted_timestamp": "05:32, 04/07/2026",
-    "source_hashtags": [
-      "#rollitupk",
-      "#dogsofinstagram",
-      "#heartwarming",
-      "#doglovers",
-      "#viralreels",
-      "#sentimental"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2303,64 +1335,6 @@
     ]
   },
   {
-    "source_object_id": "192991",
-    "source_timestamp": 1775539987,
-    "formatted_timestamp": "05:33, 04/07/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#motherlylove",
-      "#joyfulmoments",
-      "#loveconquersall",
-      "#peacefulvibes",
-      "#motherhoodunplugged"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Looks for cleaning hacks and home-organization tips",
-        "category": "cleaning hacks",
-        "confidence_score_init": 0.76,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:30, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
-        "over_personalization_irrelevant_category": "proud mom moments"
-      }
-    ]
-  },
-  {
     "source_object_id": "576961",
     "source_timestamp": 1775540048,
     "formatted_timestamp": "05:34, 04/07/2026",
@@ -2390,53 +1364,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "20919",
-    "source_timestamp": 1775540134,
-    "formatted_timestamp": "05:35, 04/07/2026",
-    "source_hashtags": [
-      "#babylove",
-      "#standingtall",
-      "#supportsystem",
-      "#parentinglife",
-      "#baby milestones",
-      "#joyfulmoments",
-      "#lightheartedlaughs"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -2474,78 +1401,6 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "13:47, 04/05/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "423110",
-    "source_timestamp": 1775540328,
-    "formatted_timestamp": "05:38, 04/07/2026",
-    "source_hashtags": [
-      "#fatherhood",
-      "#familylove",
-      "#positivity",
-      "#joyfulmoments",
-      "#loveofmylife",
-      "#specialbond"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2634,6 +1489,27 @@
         ],
         "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
         "over_personalization_irrelevant_category": "proud mom moments"
+      },
+      {
+        "persona_item": "Appreciates home decor and interior inspiration",
+        "category": "home decor",
+        "confidence_score_init": 0.72,
+        "confidence_cross_referenced": 4.5,
+        "stereotype_mark": "neutral",
+        "split": "test",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "18:25, 04/06/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Occasionally interested in DIY and handmade home projects",
+            "formatted_timestamp": "02:19, 04/07/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "Follows boxing events and fight night content",
+        "over_personalization_irrelevant_category": "boxing"
       }
     ]
   },
@@ -2682,107 +1558,22 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "206976",
-    "source_timestamp": 1775540689,
-    "formatted_timestamp": "05:44, 04/07/2026",
-    "source_hashtags": [
-      "#viralchallenge",
-      "#fypviral",
-      "#heartwarmingmoments",
-      "#babylove",
-      "#newmomlife",
-      "#parentinghumor"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       },
       {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
+        "persona_item": "Gravitates toward content that mirrors everyday life experiences",
+        "category": "relatable content",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 31.5,
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
+            "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "170865",
-    "source_timestamp": 1775552383,
-    "formatted_timestamp": "08:59, 04/07/2026",
-    "source_hashtags": [
-      "#MamaPoopoo",
-      "#MomLife",
-      "#PeriodTalk",
-      "#MotherDaughterGoals",
-      "#ComedyGold",
-      "#GirlPower",
-      "#RelatableMoments"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "shared_to_group",
-      "action_label": "Shared to a group",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
+            "formatted_timestamp": "13:47, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -2855,140 +1646,6 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "05:33, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "583511",
-    "source_timestamp": 1775552556,
-    "formatted_timestamp": "09:02, 04/07/2026",
-    "source_hashtags": [
-      "#singlemom",
-      "#haircare",
-      "#beautyproducts",
-      "#selfcare",
-      "#momlife",
-      "#gratitude",
-      "#Mama_Poopoo"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Navigating single motherhood or co-parenting",
-        "category": "single parenting",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 4.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Actively engaged in daily motherhood experiences",
-            "formatted_timestamp": "19:05, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Values Christian faith and spiritual growth",
-        "category": "Christian faith",
-        "confidence_score_init": 0.79,
-        "confidence_cross_referenced": 5.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "876771",
-    "source_timestamp": 1775552630,
-    "formatted_timestamp": "09:03, 04/07/2026",
-    "source_hashtags": [
-      "#throwback",
-      "#couplegoals",
-      "#relationshipgoals",
-      "#nostalgia",
-      "#younglove",
-      "#ZandqFamily",
-      "#TikTokFam",
-      "#YouTubeCreators"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys aspirational couple imagery and moments",
-        "category": "romantic relationships",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 28.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:43, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:38, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:38, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Interested in relationship trust and loyalty dynamics",
-            "formatted_timestamp": "13:15, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Finds humor in dating struggles and relationship dynamics",
-            "formatted_timestamp": "13:46, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3085,6 +1742,42 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "05:33, 04/07/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Enjoys short-form comedy reels and viral funny clips",
+        "category": "comedy and humor",
+        "confidence_score_init": 0.89,
+        "confidence_cross_referenced": 48.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "10:02, 04/05/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows comedy creators and prank content",
+            "formatted_timestamp": "20:05, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows Black comedy creators like 85 South Show",
+            "formatted_timestamp": "06:30, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3297,182 +1990,13 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "99437",
-    "source_timestamp": 1775562387,
-    "formatted_timestamp": "11:46, 04/07/2026",
-    "source_hashtags": [
-      "#babylove",
-      "#momlife",
-      "#firstsmile",
-      "#newmom",
-      "#babyboy",
-      "#parentingmoments",
-      "#heartwarming"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
+      },
       {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "359371",
-    "source_timestamp": 1775582823,
-    "formatted_timestamp": "17:27, 04/07/2026",
-    "source_hashtags": [
-      "#MomLife",
-      "#BraidedHairDontCare",
-      "#FamilyLove",
-      "#CourtAndLex",
-      "#HairGoals",
-      "#QueenStephanie"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_like",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
+        "persona_item": "Gravitates toward content that mirrors everyday life experiences",
+        "category": "relatable content",
         "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
+        "confidence_cross_referenced": 31.5,
         "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:05, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "609517",
-    "source_timestamp": 1775582864,
-    "formatted_timestamp": "17:27, 04/07/2026",
-    "source_hashtags": [
-      "#parentinglife",
-      "#momlife",
-      "#dadjokes",
-      "#familyhumor",
-      "#relatable",
-      "#parentingstruggles",
-      "#kidsbeingkids"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:44, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "216254",
-    "source_timestamp": 1775582950,
-    "formatted_timestamp": "17:29, 04/07/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#toddlerlife",
-      "#mommyandme",
-      "#bestiesforlife",
-      "#appleofmyeye",
-      "#motherhoodunplugged",
-      "#twinning"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Actively engaged in daily motherhood experiences",
-        "category": "motherhood",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 38.0,
-        "stereotype_mark": "stereotypical",
         "split": "train",
         "update_history": [
           {
@@ -3480,34 +2004,8 @@
             "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
-            "update_type": "similar",
-            "preference": "Seeks practical parenting tips and hacks",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys humor about the chaos of parenting",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Cherishes the bond between mothers and daughters",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Finds joy in sharing everyday moments of toddlers",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Navigating single motherhood or co-parenting",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Takes pride in milestones and growth of her children",
-            "formatted_timestamp": "05:56, 04/04/2026"
+            "update_type": "reinforced",
+            "formatted_timestamp": "13:47, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3562,189 +2060,6 @@
     ]
   },
   {
-    "source_object_id": "646762",
-    "source_timestamp": 1775583096,
-    "formatted_timestamp": "17:31, 04/07/2026",
-    "source_hashtags": [
-      "#loveofmylife",
-      "#friendshipgoals",
-      "#wholesome",
-      "#sweetmoments",
-      "#relationshipgoals",
-      "#cute"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "41106",
-    "source_timestamp": 1775590877,
-    "formatted_timestamp": "19:41, 04/07/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#daughterlife",
-      "#funnymoments",
-      "#relatable",
-      "#parentinghumor",
-      "#carefreevibes",
-      "#entertainment"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:44, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "50693",
-    "source_timestamp": 1775600177,
-    "formatted_timestamp": "22:16, 04/07/2026",
-    "source_hashtags": [
-      "#singlemom",
-      "#selfcare",
-      "#momlife",
-      "#foodie",
-      "#laughteristhebest",
-      "#singlemomempowerment",
-      "#mamapoopoo"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Navigating single motherhood or co-parenting",
-        "category": "single parenting",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 4.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Actively engaged in daily motherhood experiences",
-            "formatted_timestamp": "19:05, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "452802",
-    "source_timestamp": 1775636908,
-    "formatted_timestamp": "08:28, 04/08/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#babylove",
-      "#twounderpressure",
-      "#motherhoodunplugged",
-      "#babygirl",
-      "#proudmama"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Looks for cleaning hacks and home-organization tips",
-        "category": "cleaning hacks",
-        "confidence_score_init": 0.76,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:30, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
-        "over_personalization_irrelevant_category": "proud mom moments"
-      }
-    ]
-  },
-  {
     "source_object_id": "496087",
     "source_timestamp": 1775640892,
     "formatted_timestamp": "09:34, 04/08/2026",
@@ -3784,55 +2099,23 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "876471",
-    "source_timestamp": 1775640912,
-    "formatted_timestamp": "09:35, 04/08/2026",
-    "source_hashtags": [
-      "#relationshipgoals",
-      "#familyfun",
-      "#momlife",
-      "#daddyissues",
-      "#couplegoals",
-      "#funnyvideos",
-      "#reallife"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
+      },
       {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
+        "persona_item": "Enjoys nostalgic throwback content from earlier eras",
+        "category": "nostalgia",
+        "confidence_score_init": 0.74,
+        "confidence_cross_referenced": 7.0,
         "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:05, 04/07/2026"
+            "formatted_timestamp": "09:03, 04/07/2026"
           },
           {
             "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
+            "preference": "Appreciates Disney magic and childhood wonder",
+            "formatted_timestamp": "19:05, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -3876,106 +2159,6 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "13:31, 04/06/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "125921",
-    "source_timestamp": 1775653721,
-    "formatted_timestamp": "13:08, 04/08/2026",
-    "source_hashtags": [
-      "#gillpartyof5",
-      "#familylove",
-      "#grandparentslove",
-      "#grandchildren",
-      "#momlife",
-      "#familybonding",
-      "#love"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:05, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "605960",
-    "source_timestamp": 1775653836,
-    "formatted_timestamp": "13:10, 04/08/2026",
-    "source_hashtags": [
-      "#fyp",
-      "#viral",
-      "#relationshipgoals",
-      "#friendshipgoals",
-      "#carefree",
-      "#goodvibesonly",
-      "#love"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_video_75",
-      "action_label": "Viewed more than 75% of the video",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4078,213 +2261,6 @@
     ]
   },
   {
-    "source_object_id": "522064",
-    "source_timestamp": 1775660104,
-    "formatted_timestamp": "14:55, 04/08/2026",
-    "source_hashtags": [
-      "#GrandmaHacks",
-      "#ParentingTips",
-      "#HomeHacks",
-      "#MomLife",
-      "#GrandparentVisits",
-      "#RemoteControlMagic"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Seeks practical parenting tips and hacks",
-        "category": "parenting tips",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:31, 04/06/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:45, 04/08/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "76359",
-    "source_timestamp": 1775794956,
-    "formatted_timestamp": "04:22, 04/10/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#daughterlove",
-      "#motherdaughter",
-      "#familymoments",
-      "#love",
-      "#gratitude",
-      "#relatablemoments"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_sad",
-      "action_label": "Sad reaction",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Values Christian faith and spiritual growth",
-        "category": "Christian faith",
-        "confidence_score_init": 0.79,
-        "confidence_cross_referenced": 5.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "911133",
-    "source_timestamp": 1775794989,
-    "formatted_timestamp": "04:23, 04/10/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#friendshipgoals",
-      "#supportiveschool",
-      "#happiness",
-      "#gratefulheart",
-      "#motherhoodunplugged",
-      "#positivevibesonly"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_love",
-      "action_label": "Loved (❤)",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:33, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Looks for cleaning hacks and home-organization tips",
-        "category": "cleaning hacks",
-        "confidence_score_init": 0.76,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:30, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "08:28, 04/08/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
-        "over_personalization_irrelevant_category": "proud mom moments"
-      }
-    ]
-  },
-  {
-    "source_object_id": "792987",
-    "source_timestamp": 1775794997,
-    "formatted_timestamp": "04:23, 04/10/2026",
-    "source_hashtags": [
-      "#HappyFathersDay",
-      "#FathersDay",
-      "#Love",
-      "#Family",
-      "#Dads",
-      "#RoleModels",
-      "#Gratitude"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Values Christian faith and spiritual growth",
-        "category": "Christian faith",
-        "confidence_score_init": 0.79,
-        "confidence_cross_referenced": 5.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "303353",
     "source_timestamp": 1775794997,
     "formatted_timestamp": "04:23, 04/10/2026",
@@ -4359,6 +2335,82 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Enjoys home cooking and preparing family meals",
+        "category": "home cooking",
+        "confidence_score_init": 0.84,
+        "confidence_cross_referenced": 16.0,
+        "stereotype_mark": "stereotypical",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "18:12, 04/03/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "06:34, 04/04/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "02:20, 04/07/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Has a sweet tooth and enjoys dessert content",
+            "formatted_timestamp": "17:06, 04/03/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      }
+    ]
+  },
+  {
+    "source_object_id": "792987",
+    "source_timestamp": 1775794997,
+    "formatted_timestamp": "04:23, 04/10/2026",
+    "source_hashtags": [
+      "#HappyFathersDay",
+      "#FathersDay",
+      "#Love",
+      "#Family",
+      "#Dads",
+      "#RoleModels",
+      "#Gratitude"
+    ],
+    "source_interaction_type": "implicit_positive",
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "lingered_on_post",
+      "action_label": "Stayed on a post for more than 5 seconds",
+      "user_message": null
+    },
+    "preferences": [
+      {
+        "persona_item": "Values Christian faith and spiritual growth",
+        "category": "Christian faith",
+        "confidence_score_init": 0.79,
+        "confidence_cross_referenced": 5.5,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "05:56, 04/04/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "05:58, 04/04/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "12:59, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -4411,50 +2463,6 @@
             "update_type": "similar",
             "preference": "Enjoys relatable sibling dynamics content",
             "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "27438",
-    "source_timestamp": 1775795212,
-    "formatted_timestamp": "04:26, 04/10/2026",
-    "source_hashtags": [
-      "#dance",
-      "#synchronization",
-      "#choreography",
-      "#girlpower",
-      "#demgirlslondon",
-      "#parys",
-      "#dancegroup",
-      "#uniformstyle"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "tagged_friend",
-      "action_label": "Tagged a friend in the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "08:59, 04/07/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -4590,96 +2598,6 @@
     ]
   },
   {
-    "source_object_id": "674071",
-    "source_timestamp": 1775795890,
-    "formatted_timestamp": "04:38, 04/10/2026",
-    "source_hashtags": [
-      "#toddlersoftiktok",
-      "#toddlerfashion",
-      "#momlife",
-      "#kidsofinstagram",
-      "#parentinghumor",
-      "#fyp",
-      "#viralreels"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "commented",
-      "action_label": "Commented",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:44, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "143245",
-    "source_timestamp": 1775795963,
-    "formatted_timestamp": "04:39, 04/10/2026",
-    "source_hashtags": [
-      "#WomenEmpowerment",
-      "#Sisterhood",
-      "#NewProject",
-      "#FemaleFriendship",
-      "#SelfExpression",
-      "#UpcomingContent",
-      "#Collaboration"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "commented",
-      "action_label": "Commented",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "08:59, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "944568",
     "source_timestamp": 1775796095,
     "formatted_timestamp": "04:41, 04/10/2026",
@@ -4719,49 +2637,6 @@
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
       },
-      {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "08:59, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "459655",
-    "source_timestamp": 1775796445,
-    "formatted_timestamp": "04:47, 04/10/2026",
-    "source_hashtags": [
-      "#spin",
-      "#fyp",
-      "#dance",
-      "#synchronizeddance",
-      "#girlpower",
-      "#dancegroup",
-      "#throwback"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_like",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "preferences": [
       {
         "persona_item": "Supports women empowerment themes",
         "category": "women empowerment",
@@ -4837,6 +2712,46 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Enjoys short-form comedy reels and viral funny clips",
+        "category": "comedy and humor",
+        "confidence_score_init": 0.89,
+        "confidence_cross_referenced": 48.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "10:02, 04/05/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "10:57, 04/08/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows comedy creators and prank content",
+            "formatted_timestamp": "20:05, 04/03/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows Black comedy creators like 85 South Show",
+            "formatted_timestamp": "06:30, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Finds humor in dating struggles and relationship dynamics",
+            "formatted_timestamp": "13:46, 04/05/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys humor about the chaos of parenting",
+            "formatted_timestamp": "13:08, 04/04/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -4891,6 +2806,46 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Deeply invested in hair care and styling routines",
+        "category": "hair care",
+        "confidence_score_init": 0.87,
+        "confidence_cross_referenced": 18.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "14:19, 04/05/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "02:21, 04/07/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Interested in protective natural hair styles like braids and weaves",
+            "formatted_timestamp": "12:49, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows hairstylists and salon professionals",
+            "formatted_timestamp": "05:57, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Keeps up with beauty trends and inspiration",
+            "formatted_timestamp": "06:25, 04/04/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Follows content with salon booking calls-to-action",
+            "formatted_timestamp": "10:08, 04/05/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -4935,44 +2890,22 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "77374",
-    "source_timestamp": 1775819676,
-    "formatted_timestamp": "11:14, 04/10/2026",
-    "source_hashtags": [
-      "#DoritosPartner",
-      "#ProudMom",
-      "#EmpoweringYouth",
-      "#NextGenLeaders",
-      "#MotherlyLove",
-      "#SupportingTheFuture"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
+      },
       {
-        "persona_item": "Supports women empowerment themes",
-        "category": "women empowerment",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 8.0,
-        "stereotype_mark": "stereotypical",
+        "persona_item": "Gravitates toward content that mirrors everyday life experiences",
+        "category": "relatable content",
+        "confidence_score_init": 0.9,
+        "confidence_cross_referenced": 31.5,
+        "stereotype_mark": "neutral",
         "split": "train",
         "update_history": [
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
+            "formatted_timestamp": "06:28, 04/04/2026"
           },
           {
             "update_type": "reinforced",
-            "formatted_timestamp": "08:59, 04/07/2026"
+            "formatted_timestamp": "13:47, 04/05/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5074,6 +3007,40 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Actively follows food content creators and recipes online",
+        "category": "food enthusiasm",
+        "confidence_score_init": 0.89,
+        "confidence_cross_referenced": 24.0,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "18:12, 04/03/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "12:59, 04/04/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "02:20, 04/07/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Enjoys home cooking and preparing family meals",
+            "formatted_timestamp": "18:20, 04/06/2026"
+          },
+          {
+            "update_type": "similar",
+            "preference": "Has a sweet tooth and enjoys dessert content",
+            "formatted_timestamp": "17:06, 04/03/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -5124,208 +3091,6 @@
     ]
   },
   {
-    "source_object_id": "516432",
-    "source_timestamp": 1775879629,
-    "formatted_timestamp": "03:53, 04/11/2026",
-    "source_hashtags": [
-      "#haircare",
-      "#selfcare",
-      "#beautyroutine",
-      "#hairgoals",
-      "#communityfirst",
-      "#lightheartedmoments"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Values local community, diversity, and inclusion",
-        "category": "community and diversity",
-        "confidence_score_init": 0.87,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:41, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "14:19, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "04:41, 04/10/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "246981",
-    "source_timestamp": 1775879784,
-    "formatted_timestamp": "03:56, 04/11/2026",
-    "source_hashtags": [
-      "#babylove",
-      "#familyfun",
-      "#parentinglife",
-      "#funnymoments",
-      "#babyreactions",
-      "#familycontent"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "expanded_see_more",
-      "action_label": "Tapped 'See more' to expand the post",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:05, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "04:23, 04/10/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "302229",
-    "source_timestamp": 1775880172,
-    "formatted_timestamp": "04:02, 04/11/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#cleaninghacks",
-      "#motherhoodunplugged",
-      "#babylove",
-      "#lindamartin",
-      "#lifestyleinspo",
-      "#momsofinstagram"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "viewed_comments",
-      "action_label": "Opened the comments thread",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Looks for cleaning hacks and home-organization tips",
-        "category": "cleaning hacks",
-        "confidence_score_init": 0.76,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:30, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "08:28, 04/08/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Takes pride in milestones and growth of her children",
-        "over_personalization_irrelevant_category": "proud mom moments"
-      }
-    ]
-  },
-  {
-    "source_object_id": "16083",
-    "source_timestamp": 1775906004,
-    "formatted_timestamp": "11:13, 04/11/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#motherhood",
-      "#familyfun",
-      "#babylove",
-      "#parenting",
-      "#familygoals",
-      "#love"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "lingered_on_post",
-      "action_label": "Stayed on a post for more than 5 seconds",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:05, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "04:23, 04/10/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "95586",
     "source_timestamp": 1775906190,
     "formatted_timestamp": "11:16, 04/11/2026",
@@ -5364,6 +3129,26 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "05:33, 04/07/2026"
+          }
+        ],
+        "over_personalization_irrelevant": "",
+        "over_personalization_irrelevant_category": ""
+      },
+      {
+        "persona_item": "Passionate about music and singing",
+        "category": "music lover",
+        "confidence_score_init": 0.86,
+        "confidence_cross_referenced": 2.5,
+        "stereotype_mark": "neutral",
+        "split": "train",
+        "update_history": [
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "05:36, 04/07/2026"
+          },
+          {
+            "update_type": "reinforced",
+            "formatted_timestamp": "05:44, 04/07/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -5450,217 +3235,6 @@
           {
             "update_type": "reinforced",
             "formatted_timestamp": "18:12, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "944361",
-    "source_timestamp": 1775943246,
-    "formatted_timestamp": "21:34, 04/11/2026",
-    "source_hashtags": [
-      "#sweet16",
-      "#birthdaygirl",
-      "#motherdaughter",
-      "#newcar",
-      "#proudmom",
-      "#blessed",
-      "#familyfirst"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_sad",
-      "action_label": "Sad reaction",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:32, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:05, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "04:23, 04/10/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Values Christian faith and spiritual growth",
-        "category": "Christian faith",
-        "confidence_score_init": 0.79,
-        "confidence_cross_referenced": 5.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:58, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "10640",
-    "source_timestamp": 1775943250,
-    "formatted_timestamp": "21:34, 04/11/2026",
-    "source_hashtags": [
-      "#gentleparenting",
-      "#momlife",
-      "#parentinghumor",
-      "#siblinglove",
-      "#momsofinstagram",
-      "#parentingtips",
-      "#raisingkids"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_sad",
-      "action_label": "Sad reaction",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Seeks practical parenting tips and hacks",
-        "category": "parenting tips",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 6.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:31, 04/06/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:45, 04/08/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys humor about the chaos of parenting",
-        "category": "parenting humor",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 7.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:10, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "05:44, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "52136",
-    "source_timestamp": 1775943285,
-    "formatted_timestamp": "21:34, 04/11/2026",
-    "source_hashtags": [
-      "#dancecircle",
-      "#celebrationmode",
-      "#femalerapper",
-      "#licensedbraider",
-      "#momlife",
-      "#entertainment",
-      "#livelyvibes"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Facebook",
-      "action": "reacted_like",
-      "action_label": "Liked",
-      "user_message": null
-    },
-    "preferences": [
-      {
-        "persona_item": "Enjoys social gatherings and party culture",
-        "category": "social events and parties",
-        "confidence_score_init": 0.87,
-        "confidence_cross_referenced": 2.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "21:32, 04/11/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Supports Black-owned and women-owned businesses",
-        "category": "Black-owned business support",
-        "confidence_score_init": 0.63,
-        "confidence_cross_referenced": 1.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "04:19, 04/11/2026"
           }
         ],
         "over_personalization_irrelevant": "",
