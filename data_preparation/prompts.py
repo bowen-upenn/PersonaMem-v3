@@ -734,7 +734,7 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 
 6. **Assistant responses should be helpful and natural** (50-150 words each). The assistant responds to the task at hand without explicitly calling out the user's preference.
 
-7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user. If {num_turns} is odd, end with a user message; if even, end with an assistant message.
+7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
 
 ## Output Format
 
