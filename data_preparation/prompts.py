@@ -50,7 +50,7 @@ For EACH hashtag and the overall content context, infer as many **atomic persona
 
 ## Rules
 
-1. **Be comprehensive**: Generate 3-5 atomic personas per hashtag, plus additional ones from the overall content context. More is better — cast a wide net of plausible inferences.
+1. **Be focused**: Generate 1-3 atomic personas per hashtag, focusing on the strongest inferences. Quality over quantity.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
 3. **Calibrate confidence on a 0.0 to 1.0 scale**:
    - 0.7-1.0: The inference is directly about the content's core topic
