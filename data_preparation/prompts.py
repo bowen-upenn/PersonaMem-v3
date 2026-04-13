@@ -51,7 +51,7 @@ Considering ALL the hashtags together as a whole and individually, infer **aroun
 ## Confidence Scoring (READ THIS FIRST)
 
 This is a "{interaction_type}" interaction.
-{"FOR POSITIVE INTERACTIONS: The user actively engaged with this content. This is meaningful behavioral evidence. Most scores should fall between 0.45 and 0.85. A direct topic match scores 0.70-0.85. A reasonable deduction scores 0.55-0.70. A broader inference scores 0.45-0.55. Some speculative inferences can score lower (0.2-0.4)." if "positive" in interaction_type else "FOR EXPLICIT NEGATIVE INTERACTIONS: The user actively disliked or dismissed this content. This is a meaningful signal. Most scores should fall between 0.35 and 0.70. A direct dislike of the core topic scores 0.55-0.70. A broader inference scores 0.35-0.55."}
+{"FOR POSITIVE INTERACTIONS: The user actively engaged with this content. Use the full 0.0-1.0 range. A direct topic match scores 0.65-0.85. A reasonable deduction scores 0.45-0.65. A broader or speculative inference scores 0.15-0.45." if "positive" in interaction_type else "FOR EXPLICIT NEGATIVE INTERACTIONS: The user actively disliked or dismissed this content. A direct dislike of the core topic scores 0.50-0.70. A broader inference scores 0.25-0.50. A speculative inference scores 0.10-0.25."}
 
 Use precise, varied values with two decimal places. Each inference must get a distinct score.
 
