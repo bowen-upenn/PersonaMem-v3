@@ -705,6 +705,12 @@ class PersonaAgent:
             if not isinstance(item, dict) or "persona_item" not in item:
                 continue
             raw_confidence = float(item.get("confidence_score_init", 0.3))
+            # Rescale if model outputs compressed confidence range (GPT
+            # typically outputs 0.05-0.15 for positive interactions where
+            # Claude outputs 0.5-0.8).  For negative interactions the low
+            # range is intentional, so skip rescaling.
+            if "negative" not in interaction.interaction_type and raw_confidence < 0.3:
+                raw_confidence = min(1.0, raw_confidence * 5.0)
             item_hashtags = item.get("source_hashtags", hashtags)
             if not isinstance(item_hashtags, list):
                 item_hashtags = hashtags
