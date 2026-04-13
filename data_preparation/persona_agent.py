@@ -843,15 +843,16 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged} duplicate atomic personas → "
                   f"{len(canonicals)} distinct canonicals.{utils.Colors.ENDC}")
 
-        # --- Step 2: Init filter ---
-        survivors = [
-            c for c in canonicals
-            if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
-        ]
+        # --- Step 2: Init filter (with 10% exploration of below-threshold) ---
+        above = [c for c in canonicals if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE]
+        below = [c for c in canonicals if c.confidence_score_init < MIN_PERSONA_INIT_CONFIDENCE]
+        n_explore = max(1, int(len(below) * 0.10)) if below else 0
+        explored = random.sample(below, min(n_explore, len(below))) if n_explore else []
+        survivors = above + explored
 
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] After init >= {MIN_PERSONA_INIT_CONFIDENCE} filter: "
-                  f"{len(survivors)} canonicals.{utils.Colors.ENDC}")
+                  f"{len(above)} canonicals + {len(explored)} exploratory (10% of {len(below)} below threshold).{utils.Colors.ENDC}")
 
         # --- Step 3: Weighted corroboration → confidence_cross_referenced ---
         # For each surviving canonical, sum weighted contributions from
