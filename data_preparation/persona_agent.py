@@ -163,7 +163,7 @@ MIN_PERSONA_INIT_CONFIDENCE = 0.6
 # at minimum means the persona survived the init filter AND is corroborated
 # by more than a handful of other rows.
 HIGH_CONFIDENCE_INIT_THRESHOLD = 0.6
-HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 1.0
+HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 3.0
 
 # Session grouping: source rows with timestamp gaps <= this threshold are
 # considered part of the same scrolling session on one app.
