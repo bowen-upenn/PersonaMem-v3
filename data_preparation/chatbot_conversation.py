@@ -136,13 +136,14 @@ def select_conversation_type(
 
 
 def select_num_turns(interaction_type: str, rng: random.Random) -> int:
-    """Pick 2-4 turns based on the interaction type.
+    """Pick an even number of turns (2-10) uniformly at random.
 
-    implicit_negative gets fewer turns (user disengages quickly).
+    Even turn count guarantees every user message gets a chatbot reply.
+    Negative interactions skew shorter (2-6).
     """
     if "negative" in interaction_type:
-        return rng.choices([2, 3], weights=[0.7, 0.3], k=1)[0]
-    return rng.choices([2, 3, 4], weights=[0.3, 0.45, 0.25], k=1)[0]
+        return rng.choice([2, 4, 6])
+    return rng.choice([2, 4, 6, 8, 10])
 
 
 # Keywords indicating self-referencing preferences (eligible for ask-to-forget)
