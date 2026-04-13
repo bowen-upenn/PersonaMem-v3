@@ -711,7 +711,7 @@ class PersonaAgent:
             # untouched while GPT's get lifted.  Negative interactions keep
             # their intentionally low scores.
             if "negative" not in interaction.interaction_type:
-                raw_confidence = max(raw_confidence, min(1.0, raw_confidence * 5.0))
+                raw_confidence = max(raw_confidence, min(1.0, raw_confidence * 3.0))
             item_hashtags = item.get("source_hashtags", hashtags)
             if not isinstance(item_hashtags, list):
                 item_hashtags = hashtags
