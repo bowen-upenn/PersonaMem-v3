@@ -351,9 +351,6 @@ if (eventsData.length === 0) {{
 
     // Preferences list
     let prefsHtml = '<div class="pref-list">';
-    if (isImplicitNeg && prefs.length === 0) {{
-      prefsHtml += '<div style="font-size:11px;color:#999;font-style:italic;padding:6px 0;">No preferences inferred (passive scroll-past)</div>';
-    }}
     prefs.forEach(p => {{
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
       badges += `<span class="badge ${{p.split || 'train'}}">${{p.split || 'train'}}</span>`;
