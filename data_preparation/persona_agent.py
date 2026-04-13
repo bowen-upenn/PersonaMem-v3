@@ -283,7 +283,7 @@ PLATFORMS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 # of the action within its polarity bucket. These are rough numbers based
 # on publicly-reported engagement benchmarks (passive > active; like >
 # comment > share; reactions cluster heavily around 👍 / ❤ on Facebook;
-# @ai comments are moderately frequent at ~4.0 weight; etc.). At sample time each
+# @ai comments are boosted to ~10.0 weight; etc.). At sample time each
 # USER gets their own per-user perturbed copy of these weights (lognormal
 # noise, see `_perturb_weights` on PersonaAgent), so different users have
 # visibly different action distributions while still roughly matching the
@@ -306,15 +306,15 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
         "explicit_positive": [
             {"action": "liked", "label": "Liked", "weight": 50.0},
             {"action": "double_tapped", "label": "Double-tapped to like", "weight": 22.0},
-            {"action": "saved_to_collection", "label": "Saved to a collection", "weight": 8.0},
+            {"action": "saved_to_collection", "label": "Saved to a collection", "weight": 6.0},
             {"action": "reacted_to_story", "label": "Reacted to the story", "weight": 5.0},
             {"action": "commented", "label": "Commented", "weight": 4.0},
             {"action": "followed_creator", "label": "Followed the creator", "weight": 3.0},
             {"action": "dm_to_friend", "label": "Sent via DM to a friend", "weight": 3.0},
             {"action": "shared_to_close_friends_story", "label": "Shared to Close Friends story", "weight": 2.0},
             {"action": "reposted", "label": "Reposted", "weight": 1.0},
-            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 4.0},
-            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 4.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 10.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 10.0},
         ],
         "implicit_positive": [
             {"action": "viewed_reel_75", "label": "Viewed more than 75% of the reel", "weight": 40.0},
@@ -323,15 +323,17 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "tapped_profile", "label": "Tapped through to the creator's profile", "weight": 10.0},
             {"action": "rewatched_reel", "label": "Rewatched the reel", "weight": 8.0},
             {"action": "long_pressed_for_options", "label": "Long-pressed to open context menu", "weight": 2.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 6.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 6.0},
         ],
         "explicit_negative": [
             {"action": "not_interested", "label": "Marked Not Interested", "weight": 10.0},
             {"action": "hidden", "label": "Hid this post", "weight": 5.0},
             {"action": "muted_user", "label": "Muted the user", "weight": 3.0},
             {"action": "unfollowed", "label": "Unfollowed the creator", "weight": 2.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 4.0},
-            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 3.0},
-            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 3.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 8.0},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 6.0},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 6.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -342,7 +344,7 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
     },
     "Facebook": {
         "explicit_positive": [
-            {"action": "reacted_like", "label": "Liked", "weight": 60.0},
+            {"action": "reacted_like", "label": "Liked", "weight": 58.0},
             {"action": "reacted_love", "label": "Loved (❤)", "weight": 20.0},
             {"action": "reacted_haha", "label": "Hahaha reaction", "weight": 10.0},
             {"action": "commented", "label": "Commented", "weight": 8.0},
@@ -353,8 +355,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "shared_to_timeline", "label": "Shared to own timeline", "weight": 2.0},
             {"action": "tagged_friend", "label": "Tagged a friend in the post", "weight": 2.0},
             {"action": "shared_to_group", "label": "Shared to a group", "weight": 1.0},
-            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 4.0},
-            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 4.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 10.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 10.0},
             {"action": "rsvp_event", "label": "Marked Interested / Going on an event", "weight": 0.5},
         ],
         "implicit_positive": [
@@ -362,6 +364,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "viewed_video_75", "label": "Viewed more than 75% of the video", "weight": 30.0},
             {"action": "expanded_see_more", "label": "Tapped 'See more' to expand the post", "weight": 20.0},
             {"action": "viewed_comments", "label": "Opened the comments thread", "weight": 10.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 6.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 6.0},
         ],
         "explicit_negative": [
             {"action": "hidden", "label": "Hid the post", "weight": 10.0},
@@ -369,9 +373,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "reacted_angry", "label": "Angry reaction", "weight": 5.0},
             {"action": "snoozed_user", "label": "Snoozed the user for 30 days", "weight": 2.0},
             {"action": "unfollowed", "label": "Unfollowed the page / user", "weight": 2.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 4.0},
-            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 3.0},
-            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 3.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 8.0},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 6.0},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 6.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -381,29 +385,31 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
     },
     "Threads": {
         "explicit_positive": [
-            {"action": "liked", "label": "Liked", "weight": 60.0},
+            {"action": "liked", "label": "Liked", "weight": 58.0},
             {"action": "replied", "label": "Replied", "weight": 15.0},
             {"action": "reposted", "label": "Reposted", "weight": 10.0},
             {"action": "saved", "label": "Saved the thread", "weight": 5.0},
             {"action": "quote_reposted", "label": "Reposted with a quote", "weight": 4.0},
             {"action": "followed_author", "label": "Followed the author", "weight": 3.0},
             {"action": "shared_externally", "label": "Shared externally (copy link / DM)", "weight": 2.0},
-            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 4.0},
-            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 4.0},
+            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 10.0},
+            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 10.0},
         ],
         "implicit_positive": [
             {"action": "lingered_on_thread", "label": "Stayed on the thread for more than 5 seconds", "weight": 40.0},
             {"action": "viewed_video_75", "label": "Viewed more than 75% of the video", "weight": 30.0},
             {"action": "expanded_replies", "label": "Expanded the reply thread", "weight": 20.0},
             {"action": "tapped_author", "label": "Tapped through to the author's profile", "weight": 10.0},
+            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 6.0},
+            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 6.0},
         ],
         "explicit_negative": [
             {"action": "not_interested", "label": "Marked Not Interested", "weight": 10.0},
             {"action": "muted_author", "label": "Muted the author", "weight": 5.0},
             {"action": "hid_replies", "label": "Hid the replies", "weight": 3.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 4.0},
-            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 3.0},
-            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 3.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 8.0},
+            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 6.0},
+            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 6.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -2339,6 +2345,12 @@ class PersonaAgent:
         # --- Build interaction events ---
         all_events: list[dict] = []
         seen_unique_prefs: list[str] = []  # for profile.json dedup
+        # Seeded RNG for per-event action sampling (deterministic per user)
+        try:
+            _ev_seed = int(str(self.user_id)) * 4219 + 37
+        except (ValueError, TypeError):
+            _ev_seed = abs(hash(str(self.user_id))) % (2**31)
+        event_rng = random.Random(_ev_seed)
 
         for oid, atoms in atomics_by_oid.items():
             if not atoms:
@@ -2442,12 +2454,25 @@ class PersonaAgent:
                     all_tags.extend(ap.source_hashtags)
                 event_hashtags = list(dict.fromkeys(all_tags))
 
-            # interaction_format: sample one action for the event
-            # Use the first canonical's stored format, or generate one
+            # interaction_format: independently sample one action per event
+            # from the user's perturbed catalog. This gives each event its
+            # own action (more variety than reusing the canonical's stored
+            # format) and raises the effective probability of rarer actions
+            # like @ai comments across the full event stream.
+            itype = rep.source_interaction_type or "implicit_positive"
+            sampled_entry = self._sample_action_from_bucket(app, itype, event_rng)
+            fmt = {
+                "app": app,
+                "action": sampled_entry["action"],
+                "action_label": sampled_entry["label"],
+                "user_message": None,
+            }
+            # Preserve existing user_message from stored format if available
             first_cr = canonical_lookup.get(_normalize_persona_text(atoms[0].persona_item))
-            fmt_raw = first_cr.source_interaction_format if first_cr else ""
-            fmt = _parse_format(fmt_raw, app)
-            fmt["app"] = app  # ensure consistency with session-routed app
+            if first_cr and first_cr.source_interaction_format:
+                stored = _parse_format(first_cr.source_interaction_format, app)
+                if stored.get("user_message"):
+                    fmt["user_message"] = stored["user_message"]
 
             # Build event dict with preferences LAST for readability
             event = {
@@ -2479,6 +2504,42 @@ class PersonaAgent:
             event["preferences"] = preferences  # always last
 
             all_events.append(event)
+
+        # --- Guarantee minimum @ai event rate on social platforms ---
+        # Ensure ~10% of social-platform events use @ai actions so they
+        # remain visible regardless of RNG luck.
+        MIN_AT_AI_RATE = 0.10
+        _social_apps = ("Instagram", "Facebook", "Threads")
+        social_non_ai = [e for e in all_events
+                         if e.get("interaction_format", {}).get("app") in _social_apps
+                         and not e.get("interaction_format", {}).get("action", "").startswith("at_ai")]
+        social_ai = [e for e in all_events
+                     if e.get("interaction_format", {}).get("app") in _social_apps
+                     and e.get("interaction_format", {}).get("action", "").startswith("at_ai")]
+        total_social = len(social_non_ai) + len(social_ai)
+        needed = max(0, int(total_social * MIN_AT_AI_RATE) - len(social_ai))
+        if needed > 0 and social_non_ai:
+            event_rng.shuffle(social_non_ai)
+            at_ai_positive = ["at_ai_recommend_more", "at_ai_focus_topic"]
+            at_ai_negative = ["at_ai_stop_recommending", "at_ai_not_interested", "at_ai_feels_off"]
+            for ev in social_non_ai[:needed]:
+                ev_app = ev["interaction_format"]["app"]
+                itype = ev.get("source_interaction_type", "")
+                if "negative" in itype:
+                    action_id = event_rng.choice(at_ai_negative)
+                else:
+                    action_id = event_rng.choice(at_ai_positive)
+                # Look up canonical label from catalog (check all buckets)
+                label = action_id
+                for polarity_bucket in PLATFORM_INTERACTION_FORMATS.get(ev_app, {}).values():
+                    for entry in polarity_bucket:
+                        if entry["action"] == action_id:
+                            label = entry["label"]
+                            break
+                    if label != action_id:
+                        break
+                ev["interaction_format"]["action"] = action_id
+                ev["interaction_format"]["action_label"] = label
 
         # Assertion: no negative interaction event should have test-labeled preferences
         for event in all_events:
