@@ -178,6 +178,10 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .event-card.app-Facebook {{ border-left-color: #4A6FA5; }}
   .event-card.app-Threads {{ border-left-color: #636366; }}
   .event-card.app-Chatbot {{ border-left-color: #C8956C; }}
+  .event-card.implicit-negative {{ background: #F5F5F5; border-left-color: #C0C0C0; opacity: 0.7; }}
+  .event-card.implicit-negative .event-meta {{ color: #999; }}
+  .event-card.implicit-negative .hashtags {{ color: #888; }}
+  .event-card.implicit-negative .badge {{ background: #E8E8E8 !important; color: #777 !important; }}
 
   .event-header {{ margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #F2F2F7; }}
   .event-header .event-meta {{ font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }}
@@ -319,13 +323,14 @@ if (eventsData.length === 0) {{
 
   eventsData.forEach((ev, idx) => {{
     const app = ev._app || 'Instagram';
-    const card = document.createElement('div');
-    card.className = `event-card app-${{app}}`;
-
     const fmt = ev.interaction_format || {{}};
     const prefs = ev.preferences || [];
     const hashtags = ev.source_hashtags || [];
     const itype = ev.source_interaction_type || '';
+    const isImplicitNeg = itype === 'implicit_negative';
+
+    const card = document.createElement('div');
+    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}`;
 
     // Event header
     let headerHtml = `
@@ -346,6 +351,9 @@ if (eventsData.length === 0) {{
 
     // Preferences list
     let prefsHtml = '<div class="pref-list">';
+    if (isImplicitNeg && prefs.length === 0) {{
+      prefsHtml += '<div style="font-size:11px;color:#999;font-style:italic;padding:6px 0;">No preferences inferred (passive scroll-past)</div>';
+    }}
     prefs.forEach(p => {{
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
       badges += `<span class="badge ${{p.split || 'train'}}">${{p.split || 'train'}}</span>`;

@@ -2454,8 +2454,9 @@ class PersonaAgent:
                 if cr.persona_item not in seen_unique_prefs:
                     seen_unique_prefs.append(cr.persona_item)
 
-            # Skip events with zero surviving preferences
-            if not preferences:
+            # Skip events with zero surviving preferences — UNLESS
+            # it's implicit_negative (keep those as empty-preference markers)
+            if not preferences and rep.source_interaction_type != "implicit_negative":
                 continue
 
             # Collect all unique hashtags from this event's atoms
