@@ -53,12 +53,12 @@ For EACH hashtag and the overall content context, infer as many **atomic persona
 1. **Be comprehensive**: Generate 3-5 atomic personas per hashtag, plus additional ones from the overall content context. More is better — cast a wide net of plausible inferences.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
 3. **Calibrate confidence on a 0.0 to 1.0 scale**:
-   - 0.0-0.2: Very speculative, loosely connected inference
-   - 0.2-0.4: Plausible but based on a single weak signal
-   - 0.4-0.6: Supported by moderate evidence in the content
-   - 0.6-0.8: Strong evidence from multiple converging signals
-   - 0.8-1.0: Near-certain, directly and unambiguously stated
-   Use the full range. Assign higher scores when the evidence is strong.
+   - 0.0-0.3: Very speculative, loosely connected inference
+   - 0.3-0.5: Plausible but based on a single weak signal
+   - 0.5-0.7: Supported by moderate evidence in the content (this is the AVERAGE — most inferences should land here)
+   - 0.7-0.85: Strong evidence from multiple converging signals
+   - 0.85-1.0: Near-certain, directly and unambiguously stated
+   IMPORTANT: An average, reasonable guess should score around 0.5. Do NOT be overly conservative — most positive-interaction inferences should be 0.4-0.7. Use the full range.
 4. **Handle negative interactions**: For "{interaction_type}" interactions, the user scrolled past or did not click on promoted content. This is a very weak signal — not clicking an ad does not reliably indicate dislike. Infer what the user might not prefer, but keep ALL confidence scores very low (0.05-0.15 range). Phrase the persona as what they DO prefer instead (e.g., if they ignored fast-food ads, infer "May prefer home-cooked or health-conscious meals").
 5. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
 6. **Categorize each inference**: Assign a **specific topical category** that describes the domain of the persona (e.g., "cooking", "Christian faith", "NFL fandom", "laundry products", "romantic relationships", "fitness", "parenting"). Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics". The category should tell you what real-world topic the persona is about.
