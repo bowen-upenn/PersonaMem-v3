@@ -941,7 +941,22 @@ class PersonaAgent:
                     adjustment -= other_base
             c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced + adjustment)
 
-        # --- Step 5: Bottom-20% filter + xref floor ---
+        # --- Step 5: Log xref distribution, then bottom-20% filter + xref floor ---
+        if self.verbose:
+            from collections import Counter as _Counter
+            xref_vals = [c.confidence_cross_referenced for c in survivors]
+            buckets = _Counter()
+            for v in xref_vals:
+                if v < 1.0: buckets["<1.0"] += 1
+                elif v < 2.0: buckets["1.0-1.9"] += 1
+                elif v < 3.0: buckets["2.0-2.9"] += 1
+                elif v < 5.0: buckets["3.0-4.9"] += 1
+                elif v < 10.0: buckets["5.0-9.9"] += 1
+                else: buckets["10.0+"] += 1
+            dist_str = ", ".join(f"{k}: {buckets.get(k,0)}" for k in ["<1.0","1.0-1.9","2.0-2.9","3.0-4.9","5.0-9.9","10.0+"])
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Xref distribution (before floor): {dist_str} "
+                  f"(total {len(survivors)}){utils.Colors.ENDC}")
+
         survivors = self._apply_bottom_20_filter(survivors)
         survivors = [c for c in survivors
                      if c.confidence_cross_referenced >= HIGH_CONFIDENCE_CROSS_REF_THRESHOLD]
