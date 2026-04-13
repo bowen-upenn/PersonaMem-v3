@@ -91,7 +91,7 @@ def summarize_and_cross_reference_prompt(atomic_personas: list[dict]) -> str:
     return f"""\
 You are an expert at synthesizing behavioral signals into a coherent user profile.
 
-Below is a list of canonical persona traits/preferences for a single user. These have already been deduplicated — if two interaction rows produced the exact same persona text, they were merged into one canonical entry. `confidence_cross_referenced` records the number of distinct high-confidence source rows that produced each entry. Each entry includes the category, persona item, initial confidence score, cross-reference count, and source interaction metadata.
+Below is a list of persona traits/preferences for a single user. Each entry has a `persona_item` and `category`.
 
 ```json
 {personas_json}
@@ -99,22 +99,16 @@ Below is a list of canonical persona traits/preferences for a single user. These
 
 ## Your Task — Find cross-persona relationships
 
-1. **Cross-reference DISTINCT canonical personas** against each other. Because the input is already deduplicated, you will NEVER see two entries with identical `persona_item` text — so you must NEVER mark a persona as `similar` or `contradictory` to itself.
+1. **Cross-reference personas** against each other.
    - If two **different** personas are **similar** (reinforce each other — e.g. "Enjoys home cooking" and "Buys fresh produce weekly"), mark them as related with `"type": "similar"`.
    - If two **different** personas **contradict** each other (e.g. "Prefers vegan meals" and "Loves BBQ ribs"), mark them as related with `"type": "contradictory"`.
-   - If a persona has no meaningful cross-persona relationship, set `relationship_type` to `"none"` with an empty `related_personas` list.
+   - If a persona has no meaningful relationship to others, set `relationship_type` to `"none"` with an empty `related_personas` list.
 
-2. **Do NOT mark identical persona_items as similar to each other.** Identical-text preferences are the same preference corroborated by multiple rows — that corroboration is already captured in `confidence_cross_referenced`. Marking them as "similar" would double-count.
+2. **Do NOT mark a persona as similar to itself.**
 
-3. **Do NOT compute confidence scores** — the `confidence_cross_referenced` field is computed downstream from your relationships. Do not include it in your output.
+3. **Return EVERY persona** from the input — one entry per input item, even if its `relationship_type` is `"none"`.
 
-4. **Keep the original `confidence_score_init` unchanged.**
-
-5. **Return EVERY canonical persona** — one entry per input, even if its `relationship_type` is `"none"`.
-
-6. **For each persona, list all related personas** in the `related_personas` array. Each entry must include the other persona's text AND its relationship type as an object: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
-
-7. **Preserve the `category`** from the input for each persona item.
+4. **For each persona, list all related personas** in the `related_personas` array as: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
 
 ## Output Format
 
@@ -123,13 +117,9 @@ Respond with ONLY a JSON array. No explanation.
 ```json
 [
   {{
-    "category": "...",
     "persona_item": "...",
-    "confidence_score_init": 0.XX,
     "relationship_type": "similar" | "contradictory" | "none",
-    "related_personas": [{{"persona_item": "...", "type": "similar"}}, {{"persona_item": "...", "type": "contradictory"}}],
-    "formatted_timestamp": "...",
-    "source_interaction_type": "..."
+    "related_personas": [{{"persona_item": "...", "type": "similar"}}]
   }}
 ]
 ```"""
