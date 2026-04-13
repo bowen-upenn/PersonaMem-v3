@@ -615,6 +615,9 @@ class PersonaAgent:
         # Keyed by persona_item → {"conversation": [...], "conversation_type": str, "ask_to_forget": bool}
         self._chatbot_conversations: dict[str, dict] = {}
 
+        # Thread-safe set of known categories, built up during Step 1
+        self._known_categories: set[str] = set()
+
         os.makedirs(backend_dir, exist_ok=True)
 
     # ------------------------------------------------------------------
@@ -686,6 +689,9 @@ class PersonaAgent:
         if not hashtags:
             return []
 
+        # Snapshot current categories for context (thread-safe read)
+        existing_cats = list(self._known_categories) if self._known_categories else None
+
         formatted_ts = self._format_timestamp(interaction.interaction_time)
         prompt = prompts.hashtag_to_persona_prompt(
             object_text=interaction.object_text,
@@ -693,6 +699,7 @@ class PersonaAgent:
             interaction_format=interaction.interaction_format,
             formatted_timestamp=formatted_ts,
             hashtags=hashtags,
+            existing_categories=existing_cats,
         )
 
         response = self._query_llm_with_retry(prompt)
@@ -711,9 +718,10 @@ class PersonaAgent:
             item_hashtags = item.get("source_hashtags", hashtags)
             if not isinstance(item_hashtags, list):
                 item_hashtags = hashtags
+            cat = item.get("category", "uncategorized")
             results.append(AtomicPersona(
                 persona_item=item["persona_item"],
-                category=item.get("category", "uncategorized"),
+                category=cat,
                 confidence_score_init=raw_confidence,
                 source_interaction_type=interaction.interaction_type,
                 source_interaction_format=interaction.interaction_format,
@@ -722,6 +730,8 @@ class PersonaAgent:
                 formatted_timestamp=formatted_ts,
                 source_hashtags=item_hashtags,
             ))
+            # Track category for future prompts (thread-safe via set)
+            self._known_categories.add(cat.lower())
         return results
 
     def infer_personas_from_hashtags(self) -> None:
@@ -764,6 +774,11 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(self.atomic_personas)} positive atomic personas, "
                   f"{len(self.negative_personas)} negative (standalone) from {len(self.interactions)} interactions.{utils.Colors.ENDC}")
+            # Category statistics
+            from collections import Counter as _Ctr
+            cat_counts = _Ctr(ap.category.lower() for ap in self.atomic_personas)
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] {len(cat_counts)} unique categories. "
+                  f"Top 10: {', '.join(f'{c}({n})' for c, n in cat_counts.most_common(10))}{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM Call #2: Cross-reference and filter
@@ -870,8 +885,8 @@ class PersonaAgent:
                         base_score += 0.5 if "implicit" in ap.source_interaction_type else 1.0
             c.confidence_cross_referenced = base_score
 
-        # --- Step 4: LLM cross-reference for relationship discovery ---
-        # (relationship_type + related_personas only; no score changes)
+        # --- Step 4: Per-category LLM cross-reference for relationship discovery ---
+        # Group survivors by category, make one LLM call per category (parallel).
 
         # Short-circuit: single-row users have nothing to cross-reference.
         unique_objects_all = {ap.source_object_id for ap in self.atomic_personas}
@@ -882,45 +897,71 @@ class PersonaAgent:
                       f"skipping cross-reference.{utils.Colors.ENDC}")
             return
 
-        # Send only persona_item + category — the LLM only needs these
-        # to discover similar/contradictory relationships. All other fields
-        # are preserved on the canonical objects and joined back after.
-        personas_for_prompt = [
-            {
-                "persona_item": c.persona_item,
-                "category": c.category,
-            }
-            for c in survivors
-        ]
+        from collections import defaultdict as _ddict_xref
+        by_category: dict[str, list[CrossReferencedPersona]] = _ddict_xref(list)
+        for c in survivors:
+            by_category[c.category.lower()].append(c)
 
-        prompt = prompts.summarize_and_cross_reference_prompt(personas_for_prompt)
-        response = self._query_llm_with_retry(prompt)
+        # Only cross-ref categories with 2+ canonicals
+        categories_to_xref = {cat: items for cat, items in by_category.items() if len(items) >= 2}
+
+        if self.verbose:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Cross-referencing {len(categories_to_xref)} categories "
+                  f"({sum(len(v) for v in categories_to_xref.values())} canonicals, "
+                  f"skipping {len(by_category) - len(categories_to_xref)} single-item categories).{utils.Colors.ENDC}")
 
         canonical_by_norm = {_normalize_persona_text(c.persona_item): c for c in survivors}
 
-        if not response:
-            print(f"{utils.Colors.WARNING}[User {self.user_id}] Cross-reference LLM call failed.{utils.Colors.ENDC}")
-        else:
+        def _xref_one_category(cat: str, items: list[CrossReferencedPersona]) -> int:
+            """Cross-reference within one category. Returns number of relationships found."""
+            personas_for_prompt = [{"persona_item": c.persona_item, "category": c.category} for c in items]
+            prompt = prompts.summarize_and_cross_reference_prompt(personas_for_prompt)
+            response = self._query_llm_with_retry(prompt)
+            if not response:
+                return 0
             parsed = utils.extract_json_from_response(response)
             if not isinstance(parsed, list):
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable cross-reference response.{utils.Colors.ENDC}")
-            else:
-                for item in parsed:
-                    if not isinstance(item, dict) or "persona_item" not in item:
-                        continue
-                    my_key = _normalize_persona_text(item["persona_item"])
-                    if my_key not in canonical_by_norm:
-                        continue
-                    canonical = canonical_by_norm[my_key]
-                    canonical.relationship_type = item.get("relationship_type", canonical.relationship_type)
-                    raw_related = item.get("related_personas", [])
-                    related = []
-                    for r in raw_related:
-                        if isinstance(r, dict):
-                            related.append(r)
-                        elif isinstance(r, str):
-                            related.append({"persona_item": r, "type": item.get("relationship_type", "similar")})
-                    canonical.related_personas = related
+                return 0
+            n_rels = 0
+            for item in parsed:
+                if not isinstance(item, dict) or "persona_item" not in item:
+                    continue
+                my_key = _normalize_persona_text(item["persona_item"])
+                if my_key not in canonical_by_norm:
+                    continue
+                canonical = canonical_by_norm[my_key]
+                canonical.relationship_type = item.get("relationship_type", canonical.relationship_type)
+                raw_related = item.get("related_personas", [])
+                related = []
+                for r in raw_related:
+                    if isinstance(r, dict):
+                        related.append(r)
+                    elif isinstance(r, str):
+                        related.append({"persona_item": r, "type": item.get("relationship_type", "similar")})
+                canonical.related_personas = related
+                n_rels += len(related)
+            return n_rels
+
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        total_rels = 0
+        pbar_xref = tqdm(total=len(categories_to_xref),
+                         desc=f"[User {self.user_id}] Step 2: Cross-referencing",
+                         unit="cat", disable=not self.verbose)
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {
+                executor.submit(_xref_one_category, cat, items): cat
+                for cat, items in categories_to_xref.items()
+            }
+            for future in as_completed(futures):
+                pbar_xref.update(1)
+                try:
+                    total_rels += future.result()
+                except Exception:
+                    pass
+        pbar_xref.close()
+
+        if self.verbose:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Cross-ref found {total_rels} relationships.{utils.Colors.ENDC}")
 
         # --- Step 4b: Adjust scores for similar/contradictory relationships ---
         # After the LLM discovered relationships, propagate evidence:

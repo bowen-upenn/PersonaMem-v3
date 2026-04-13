@@ -17,6 +17,7 @@ def hashtag_to_persona_prompt(
     formatted_timestamp: str,
     hashtags: list[str],
     interaction_format: str = "",
+    existing_categories: list[str] | None = None,
 ) -> str:
     """Build a prompt that asks the LLM to infer atomic persona traits from hashtags."""
 
@@ -60,7 +61,7 @@ Use precise, varied values with two decimal places. Each inference must get a di
 1. **Be exploratory**: Produce around 10 preferences total by considering both individual hashtags and the combined signal from all hashtags together. Quality over quantity.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
 3. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
-4. **Categorize each inference**: Assign a **specific topical category** that describes the domain of the persona (e.g., "cooking", "Christian faith", "NFL fandom", "laundry products", "romantic relationships", "fitness", "parenting"). Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics". The category should tell you what real-world topic the persona is about.
+4. **Categorize each inference**: Assign a **specific topical category**.{(' REUSE one of these existing categories whenever possible: ' + ', '.join(existing_categories) + '. Only create a new category if none of the existing ones fit. Avoid creating categories that are near-synonyms of existing ones.') if existing_categories else ' Use specific topical categories (e.g., "cooking", "Christian faith", "NFL fandom", "romantic relationships", "fitness", "parenting").'} Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics".
 5. **Tag source hashtags**: For each persona, include ONLY the specific hashtag(s) that directly led to this inference — not the full list.
 
 ## Output Format
