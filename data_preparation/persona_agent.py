@@ -963,28 +963,93 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Cross-ref found {total_rels} relationships.{utils.Colors.ENDC}")
 
-        # --- Step 4b: Adjust scores for similar/contradictory relationships ---
-        # After the LLM discovered relationships, propagate evidence:
-        # similar canonicals boost each other, contradictory ones penalize.
-        # Use base scores (pre-adjustment) to avoid circular dependencies.
-        base_scores: dict[str, float] = {
-            c.persona_item: c.confidence_cross_referenced for c in survivors
-        }
+        # --- Step 4b: Merge similar preferences into clusters ---
+        # Build clusters via union-find: similar preferences merge into one.
+        # The representative is the one with the highest init score.
+        # Xref scores are summed across the cluster.
+        # Contradictory relationships are preserved (penalty applied after merge).
         canonical_by_item = {c.persona_item: c for c in survivors}
+        parent: dict[str, str] = {c.persona_item: c.persona_item for c in survivors}
 
+        def _find(x: str) -> str:
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def _union(a: str, b: str) -> None:
+            ra, rb = _find(a), _find(b)
+            if ra != rb:
+                # Keep the one with higher init as root
+                ca, cb = canonical_by_item.get(ra), canonical_by_item.get(rb)
+                if ca and cb and cb.confidence_score_init > ca.confidence_score_init:
+                    parent[ra] = rb
+                else:
+                    parent[rb] = ra
+
+        # Union similar pairs
         for c in survivors:
-            adjustment = 0.0
             for rel in c.related_personas:
                 if not isinstance(rel, dict):
                     continue
                 other_name = rel.get("persona_item", "")
-                rel_type = rel.get("type", "")
-                other_base = base_scores.get(other_name, 0.0)
-                if rel_type == "similar":
-                    adjustment += other_base
-                elif rel_type == "contradictory":
-                    adjustment -= other_base
-            c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced + adjustment)
+                if rel.get("type") == "similar" and other_name in canonical_by_item:
+                    _union(c.persona_item, other_name)
+
+        # Build clusters
+        from collections import defaultdict as _ddict_merge
+        clusters: dict[str, list[CrossReferencedPersona]] = _ddict_merge(list)
+        for c in survivors:
+            clusters[_find(c.persona_item)].append(c)
+
+        # Merge each cluster: representative gets summed xref, max init
+        merged_survivors: list[CrossReferencedPersona] = []
+        merge_map: dict[str, str] = {}  # old persona_item → merged persona_item
+        for root, members in clusters.items():
+            rep = max(members, key=lambda c: c.confidence_score_init)
+            rep.confidence_cross_referenced = sum(m.confidence_cross_referenced for m in members)
+            rep.confidence_score_init = max(m.confidence_score_init for m in members)
+            # Collect contradictory relationships from all members (skip self-similar)
+            contradictions = []
+            for m in members:
+                for rel in m.related_personas:
+                    if isinstance(rel, dict) and rel.get("type") == "contradictory":
+                        contradictions.append(rel)
+            rep.related_personas = contradictions
+            rep.relationship_type = "contradictory" if contradictions else "none"
+            merged_survivors.append(rep)
+            for m in members:
+                merge_map[m.persona_item] = rep.persona_item
+
+        # Update _canonical_groups to point merged atoms to the representative
+        for old_name, new_name in merge_map.items():
+            if old_name != new_name:
+                old_key = _normalize_persona_text(old_name)
+                new_key = _normalize_persona_text(new_name)
+                if old_key in groups and new_key in groups:
+                    groups[new_key].extend(groups[old_key])
+                elif old_key in groups:
+                    groups[new_key] = groups[old_key]
+
+        survivors = merged_survivors
+        self._canonical_groups = groups
+
+        if self.verbose:
+            n_merged_clusters = sum(1 for members in clusters.values() if len(members) > 1)
+            n_merged_items = sum(len(m) for m in clusters.values() if len(m) > 1)
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged_items} preferences into "
+                  f"{n_merged_clusters} clusters → {len(survivors)} unique preferences.{utils.Colors.ENDC}")
+
+        # Apply contradictory penalties
+        base_scores: dict[str, float] = {c.persona_item: c.confidence_cross_referenced for c in survivors}
+        for c in survivors:
+            penalty = 0.0
+            for rel in c.related_personas:
+                if isinstance(rel, dict) and rel.get("type") == "contradictory":
+                    other_base = base_scores.get(rel.get("persona_item", ""), 0.0)
+                    penalty += other_base
+            if penalty > 0:
+                c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced - penalty)
 
         # --- Step 5: Log xref distribution, then bottom-20% filter + xref floor ---
         if self.verbose:
