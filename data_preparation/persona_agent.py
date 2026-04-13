@@ -156,14 +156,14 @@ class AnnotatedPersona:
 # Floor on confidence_score_init. Personas below this are dropped after
 # cross-ref regardless of cross-ref score or relationship type. This is
 # the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.5
+MIN_PERSONA_INIT_CONFIDENCE = 0.3
 
 # High-confidence predicate — used for test-split eligibility and distractor
 # shortlisting. init threshold matches the filter floor so "high-confidence"
 # at minimum means the persona survived the init filter AND is corroborated
 # by more than a handful of other rows.
-HIGH_CONFIDENCE_INIT_THRESHOLD = 0.5
-HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 0.5
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.3
+HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 3.0
 
 # Session grouping: source rows with timestamp gaps <= this threshold are
 # considered part of the same scrolling session on one app.
@@ -283,7 +283,7 @@ PLATFORMS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 # of the action within its polarity bucket. These are rough numbers based
 # on publicly-reported engagement benchmarks (passive > active; like >
 # comment > share; reactions cluster heavily around 👍 / ❤ on Facebook;
-# @ai comments are ~10% of explicit buckets; etc.). At sample time each
+# @ai comments are ~20% of explicit buckets; etc.). At sample time each
 # USER gets their own per-user perturbed copy of these weights (lognormal
 # noise, see `_perturb_weights` on PersonaAgent), so different users have
 # visibly different action distributions while still roughly matching the
@@ -313,8 +313,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "dm_to_friend", "label": "Sent via DM to a friend", "weight": 3.0},
             {"action": "shared_to_close_friends_story", "label": "Shared to Close Friends story", "weight": 2.0},
             {"action": "reposted", "label": "Reposted", "weight": 1.0},
-            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 5.3},
-            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 5.3},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 12.2},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 12.2},
         ],
         "implicit_positive": [
             {"action": "viewed_reel_75", "label": "Viewed more than 75% of the reel", "weight": 40.0},
@@ -329,9 +329,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "hidden", "label": "Hid this post", "weight": 5.0},
             {"action": "muted_user", "label": "Muted the user", "weight": 3.0},
             {"action": "unfollowed", "label": "Unfollowed the creator", "weight": 2.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 0.8},
-            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 0.8},
-            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 0.8},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 1.7},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 1.7},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 1.7},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -353,8 +353,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "shared_to_timeline", "label": "Shared to own timeline", "weight": 2.0},
             {"action": "tagged_friend", "label": "Tagged a friend in the post", "weight": 2.0},
             {"action": "shared_to_group", "label": "Shared to a group", "weight": 1.0},
-            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 6.3},
-            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 6.3},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 14.4},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 14.4},
             {"action": "rsvp_event", "label": "Marked Interested / Going on an event", "weight": 0.5},
         ],
         "implicit_positive": [
@@ -369,9 +369,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "reacted_angry", "label": "Angry reaction", "weight": 5.0},
             {"action": "snoozed_user", "label": "Snoozed the user for 30 days", "weight": 2.0},
             {"action": "unfollowed", "label": "Unfollowed the page / user", "weight": 2.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 1.0},
-            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 1.0},
-            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 1.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 2.3},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 2.3},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 2.3},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -388,8 +388,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "quote_reposted", "label": "Reposted with a quote", "weight": 4.0},
             {"action": "followed_author", "label": "Followed the author", "weight": 3.0},
             {"action": "shared_externally", "label": "Shared externally (copy link / DM)", "weight": 2.0},
-            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 5.4},
-            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 5.4},
+            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 12.4},
+            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 12.4},
         ],
         "implicit_positive": [
             {"action": "lingered_on_thread", "label": "Stayed on the thread for more than 5 seconds", "weight": 40.0},
@@ -401,9 +401,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "not_interested", "label": "Marked Not Interested", "weight": 10.0},
             {"action": "muted_author", "label": "Muted the author", "weight": 5.0},
             {"action": "hid_replies", "label": "Hid the replies", "weight": 3.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 0.7},
-            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 0.7},
-            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 0.7},
+            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 1.5},
+            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 1.5},
+            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 1.5},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -705,13 +705,6 @@ class PersonaAgent:
             if not isinstance(item, dict) or "persona_item" not in item:
                 continue
             raw_confidence = float(item.get("confidence_score_init", 0.3))
-            # Boost low confidence scores (GPT outputs 0.05-0.15 where
-            # Claude outputs 0.5-0.8).  Always pick the higher of the raw
-            # score and a 5x-scaled version so Claude's scores pass through
-            # untouched while GPT's get lifted.  Negative interactions keep
-            # their intentionally low scores.
-            if "negative" not in interaction.interaction_type:
-                raw_confidence = max(raw_confidence, min(1.0, raw_confidence * 3.0))
             item_hashtags = item.get("source_hashtags", hashtags)
             if not isinstance(item_hashtags, list):
                 item_hashtags = hashtags
@@ -950,8 +943,10 @@ class PersonaAgent:
                     adjustment -= other_base
             c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced + adjustment)
 
-        # --- Step 5: Bottom-20% filter ---
+        # --- Step 5: Bottom-20% filter + hard xref floor ---
         survivors = self._apply_bottom_20_filter(survivors)
+        survivors = [c for c in survivors
+                     if c.confidence_cross_referenced >= HIGH_CONFIDENCE_CROSS_REF_THRESHOLD]
         self.cross_referenced_personas = survivors
 
         if self.verbose:
