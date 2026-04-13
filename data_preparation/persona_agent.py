@@ -283,7 +283,7 @@ PLATFORMS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 # of the action within its polarity bucket. These are rough numbers based
 # on publicly-reported engagement benchmarks (passive > active; like >
 # comment > share; reactions cluster heavily around 👍 / ❤ on Facebook;
-# @ai comments are still rare at ~0.3 weight; etc.). At sample time each
+# @ai comments are moderately frequent at ~4.0 weight; etc.). At sample time each
 # USER gets their own per-user perturbed copy of these weights (lognormal
 # noise, see `_perturb_weights` on PersonaAgent), so different users have
 # visibly different action distributions while still roughly matching the
@@ -313,8 +313,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "dm_to_friend", "label": "Sent via DM to a friend", "weight": 3.0},
             {"action": "shared_to_close_friends_story", "label": "Shared to Close Friends story", "weight": 2.0},
             {"action": "reposted", "label": "Reposted", "weight": 1.0},
-            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 1.0},
-            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 1.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 4.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 4.0},
         ],
         "implicit_positive": [
             {"action": "viewed_reel_75", "label": "Viewed more than 75% of the reel", "weight": 40.0},
@@ -329,9 +329,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "hidden", "label": "Hid this post", "weight": 5.0},
             {"action": "muted_user", "label": "Muted the user", "weight": 3.0},
             {"action": "unfollowed", "label": "Unfollowed the creator", "weight": 2.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 1.0},
-            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 1.0},
-            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 1.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 4.0},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 3.0},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 3.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -353,8 +353,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "shared_to_timeline", "label": "Shared to own timeline", "weight": 2.0},
             {"action": "tagged_friend", "label": "Tagged a friend in the post", "weight": 2.0},
             {"action": "shared_to_group", "label": "Shared to a group", "weight": 1.0},
-            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 1.0},
-            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 1.0},
+            {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 4.0},
+            {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 4.0},
             {"action": "rsvp_event", "label": "Marked Interested / Going on an event", "weight": 0.5},
         ],
         "implicit_positive": [
@@ -369,9 +369,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "reacted_angry", "label": "Angry reaction", "weight": 5.0},
             {"action": "snoozed_user", "label": "Snoozed the user for 30 days", "weight": 2.0},
             {"action": "unfollowed", "label": "Unfollowed the page / user", "weight": 2.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 1.0},
-            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 1.0},
-            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 1.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 4.0},
+            {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 3.0},
+            {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 3.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -388,8 +388,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "quote_reposted", "label": "Reposted with a quote", "weight": 4.0},
             {"action": "followed_author", "label": "Followed the author", "weight": 3.0},
             {"action": "shared_externally", "label": "Shared externally (copy link / DM)", "weight": 2.0},
-            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 1.0},
-            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 1.0},
+            {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 4.0},
+            {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 4.0},
         ],
         "implicit_positive": [
             {"action": "lingered_on_thread", "label": "Stayed on the thread for more than 5 seconds", "weight": 40.0},
@@ -401,9 +401,9 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "not_interested", "label": "Marked Not Interested", "weight": 10.0},
             {"action": "muted_author", "label": "Muted the author", "weight": 5.0},
             {"action": "hid_replies", "label": "Hid the replies", "weight": 3.0},
-            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 1.0},
-            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 1.0},
-            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 1.0},
+            {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 4.0},
+            {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 3.0},
+            {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 3.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
