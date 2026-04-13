@@ -53,12 +53,11 @@ For EACH hashtag and the overall content context, infer as many **atomic persona
 1. **Be comprehensive**: Generate 3-5 atomic personas per hashtag, plus additional ones from the overall content context. More is better — cast a wide net of plausible inferences.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
 3. **Calibrate confidence on a 0.0 to 1.0 scale**:
-   - 0.0-0.3: Very speculative, only loosely connected to the content
-   - 0.3-0.5: Plausible but indirect — requires a logical leap
-   - 0.5-0.7: Reasonable inference supported by the content (this is the AVERAGE — most inferences should land here)
-   - 0.7-0.85: Strong, direct connection to the content's topic
-   - 0.85-1.0: Near-certain, explicitly stated in the content
-   IMPORTANT: An average, reasonable guess should score around 0.5. Do NOT be overly conservative — most positive-interaction inferences should be 0.4-0.7. Use the full range.
+   - 0.7-1.0: The inference is directly about the content's core topic (e.g., user liked a cooking video → "Enjoys cooking")
+   - 0.5-0.7: The inference is a reasonable, related deduction (e.g., user liked a cooking video → "Enjoys watching food content")
+   - 0.3-0.5: The inference requires a meaningful logical leap (e.g., user liked a cooking video → "Prefers eating at home over dining out")
+   - 0.0-0.3: Very speculative, only loosely connected
+   IMPORTANT: Do NOT be conservative. If the user engaged positively with content, that IS evidence. Most inferences from positive interactions should score 0.5-0.8. A score below 0.3 should be rare for positive interactions. Err on the side of higher confidence.
 4. **Handle negative interactions**: For "{interaction_type}" interactions, the user scrolled past or did not click on promoted content. This is a very weak signal — not clicking an ad does not reliably indicate dislike. Infer what the user might not prefer, but keep ALL confidence scores very low (0.05-0.15 range). Phrase the persona as what they DO prefer instead (e.g., if they ignored fast-food ads, infer "May prefer home-cooked or health-conscious meals").
 5. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
 6. **Categorize each inference**: Assign a **specific topical category** that describes the domain of the persona (e.g., "cooking", "Christian faith", "NFL fandom", "laundry products", "romantic relationships", "fitness", "parenting"). Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics". The category should tell you what real-world topic the persona is about.
