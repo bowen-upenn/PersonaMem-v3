@@ -48,20 +48,20 @@ A user interacted with the following social media content:
 
 Considering ALL the hashtags together as a whole and individually, infer **around 10** atomic persona traits or preferences about this user. An "atomic persona" is a single, specific, testable statement about the user's personality, interests, values, demographics, or lifestyle (e.g., "Interested in CrossFit", "Values family traditions", "Likely a parent of school-age children").
 
+## Confidence Scoring (READ THIS FIRST)
+
+This is a "{interaction_type}" interaction.
+{"FOR POSITIVE INTERACTIONS: The user actively engaged with this content. This is meaningful behavioral evidence. Score ALL inferences between 0.45 and 0.85. NEVER output a score below 0.4 for a positive interaction. A direct topic match scores 0.70-0.85. A reasonable deduction scores 0.55-0.70. A broader inference scores 0.45-0.55." if "positive" in interaction_type else "FOR NEGATIVE INTERACTIONS: The user scrolled past or dismissed this content. This is a very weak signal. Score ALL inferences between 0.05 and 0.15. Phrase preferences as what they DO prefer instead."}
+
+Use precise, varied values with two decimal places. Each inference must get a distinct score.
+
 ## Rules
 
 1. **Be exploratory**: Produce around 10 preferences total by considering both individual hashtags and the combined signal from all hashtags together. Quality over quantity.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
-3. **Calibrate confidence on a 0.0 to 1.0 scale**:
-   - 0.7-1.0: The inference is directly about the content's core topic
-   - 0.5-0.7: The inference is a reasonable, related deduction
-   - 0.3-0.5: The inference requires a meaningful logical leap
-   - 0.0-0.3: Very speculative, only loosely connected
-   IMPORTANT: Use precise, varied values with two decimal places — do NOT cluster scores around a few round numbers. Each inference should get a distinct score reflecting its specific strength. Most inferences from positive interactions should score 0.5-0.8. Err on the side of higher confidence.
-4. **Handle negative interactions**: For "{interaction_type}" interactions, the user scrolled past or did not click on promoted content. This is a very weak signal — not clicking an ad does not reliably indicate dislike. Infer what the user might not prefer, but keep ALL confidence scores very low (0.05-0.15 range). Phrase the persona as what they DO prefer instead (e.g., if they ignored fast-food ads, infer "May prefer home-cooked or health-conscious meals").
-5. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
-6. **Categorize each inference**: Assign a **specific topical category** that describes the domain of the persona (e.g., "cooking", "Christian faith", "NFL fandom", "laundry products", "romantic relationships", "fitness", "parenting"). Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics". The category should tell you what real-world topic the persona is about.
-7. **Tag source hashtags**: For each persona, include ONLY the specific hashtag(s) that directly led to this inference — not the full list.
+3. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
+4. **Categorize each inference**: Assign a **specific topical category** that describes the domain of the persona (e.g., "cooking", "Christian faith", "NFL fandom", "laundry products", "romantic relationships", "fitness", "parenting"). Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics". The category should tell you what real-world topic the persona is about.
+5. **Tag source hashtags**: For each persona, include ONLY the specific hashtag(s) that directly led to this inference — not the full list.
 
 ## Output Format
 
