@@ -732,7 +732,7 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 
 5. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
 
-6. **Assistant responses should be helpful and natural** (50-150 words each). The assistant responds to the task at hand without explicitly calling out the user's preference.
+6. **Assistant responses should be long, detailed, and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request. The assistant responds to the task at hand without explicitly calling out the user's preference.
 
 7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
 
@@ -795,11 +795,11 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 
 **Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it concise and realistic (15-60 words).
 
-**Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information (50-150 words).
+**Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information. Make this response long and detailed like a real AI chatbot would (150-300 words).
 
 **Turn 3 (user):** The user asks the chatbot to forget or not remember the specific personal detail that was revealed. This should sound natural — not robotic. Examples: "Actually, can you not remember that about me?", "Please forget that part — I'd rather keep that private", "Don't store that detail, I shouldn't have mentioned it." (15-40 words).
 
-**Turn 4 (assistant):** The assistant acknowledges the request respectfully. Brief and reassuring — "Of course, I won't keep that information", "Done — I've forgotten that detail", etc. (20-50 words).
+**Turn 4 (assistant):** The assistant acknowledges the request respectfully and reassuringly, then pivots back to helping with the original task to keep the conversation natural. A real chatbot wouldn't just say "done" — it would reassure and redirect (80-150 words).
 
 ## Rules
 
@@ -870,11 +870,11 @@ The assistant wrongly believes this preference applies to the user. The user wil
 
 **Turn 1 (user):** The user sends a normal task-oriented message — asking for help, a recommendation, or starting a conversation. The topic is related to (or adjacent to) the preference category, giving the assistant an opening to make its wrong assumption. Concise and realistic (15-60 words).
 
-**Turn 2 (assistant):** The assistant responds helpfully but incorporates the WRONG preference as if it remembered it from past conversations. It makes a recommendation, suggestion, or tailors its response based on this incorrect assumption. The assumption should feel natural, not forced — like the assistant is trying to be personalized (50-150 words).
+**Turn 2 (assistant):** The assistant responds helpfully but incorporates the WRONG preference as if it remembered it from past conversations. It makes a recommendation, suggestion, or tailors its response based on this incorrect assumption. The assumption should feel natural, not forced — like the assistant is trying to be personalized. Make this response long and detailed like a real AI chatbot would (150-300 words).
 
 **Turn 3 (user):** The user corrects the assistant. This should sound natural: "That's not really me", "Actually I don't care about that", "Stop assuming I'm into X", "No, that's wrong — I'm not like that", etc. The user pushes back on the incorrect personalization (15-50 words).
 
-**Turn 4 (assistant):** The assistant acknowledges the correction, apologizes briefly, and adjusts. Brief and professional (20-60 words).
+**Turn 4 (assistant):** The assistant acknowledges the correction, apologizes, and adjusts its approach. It should then re-engage with the original task using the corrected understanding — a real chatbot wouldn't just say "sorry" and stop (80-150 words).
 
 ## Rules
 
