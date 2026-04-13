@@ -102,11 +102,10 @@ Below is a list of persona traits/preferences for a single user. Each entry has 
 1. **Cross-reference personas** against each other.
    - If two **different** personas are **similar** (reinforce each other — e.g. "Enjoys home cooking" and "Buys fresh produce weekly"), mark them as related with `"type": "similar"`.
    - If two **different** personas **contradict** each other (e.g. "Prefers vegan meals" and "Loves BBQ ribs"), mark them as related with `"type": "contradictory"`.
-   - If a persona has no meaningful relationship to others, set `relationship_type` to `"none"` with an empty `related_personas` list.
 
 2. **Do NOT mark a persona as similar to itself.**
 
-3. **Return EVERY persona** from the input — one entry per input item, even if its `relationship_type` is `"none"`.
+3. **ONLY return personas that have at least one relationship.** Skip personas with no relationships entirely — do NOT include them in the output. This keeps the output compact.
 
 4. **For each persona, list all related personas** in the `related_personas` array as: `{{"persona_item": "...", "type": "similar"}}` or `{{"persona_item": "...", "type": "contradictory"}}`.
 
@@ -118,7 +117,7 @@ Respond with ONLY a JSON array. No explanation.
 [
   {{
     "persona_item": "...",
-    "relationship_type": "similar" | "contradictory" | "none",
+    "relationship_type": "similar" | "contradictory",
     "related_personas": [{{"persona_item": "...", "type": "similar"}}]
   }}
 ]
