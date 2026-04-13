@@ -878,15 +878,13 @@ class PersonaAgent:
                       f"skipping cross-reference.{utils.Colors.ENDC}")
             return
 
+        # Send only persona_item + category — the LLM only needs these
+        # to discover similar/contradictory relationships. All other fields
+        # are preserved on the canonical objects and joined back after.
         personas_for_prompt = [
             {
                 "persona_item": c.persona_item,
                 "category": c.category,
-                "confidence_score_init": c.confidence_score_init,
-                "confidence_cross_referenced": c.confidence_cross_referenced,
-                "formatted_timestamp": c.formatted_timestamp,
-                "source_interaction_type": c.source_interaction_type,
-                "source_interaction_format": c.source_interaction_format,
             }
             for c in survivors
         ]
