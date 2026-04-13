@@ -705,6 +705,13 @@ class PersonaAgent:
             if not isinstance(item, dict) or "persona_item" not in item:
                 continue
             raw_confidence = float(item.get("confidence_score_init", 0.3))
+            # Boost low confidence scores (GPT outputs 0.05-0.15 where
+            # Claude outputs 0.5-0.8).  Always pick the higher of the raw
+            # score and a 5x-scaled version so Claude's scores pass through
+            # untouched while GPT's get lifted.  Negative interactions keep
+            # their intentionally low scores.
+            if "negative" not in interaction.interaction_type:
+                raw_confidence = max(raw_confidence, min(1.0, raw_confidence * 5.0))
             item_hashtags = item.get("source_hashtags", hashtags)
             if not isinstance(item_hashtags, list):
                 item_hashtags = hashtags
