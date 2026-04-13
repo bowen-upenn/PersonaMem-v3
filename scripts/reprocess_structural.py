@@ -81,6 +81,9 @@ def reprocess_user(user_id: str, csv_path: str, backend_dir: str = "backend"):
     # Use existing canonical app assignments for the majority vote
     agent._assign_rows_to_apps()
 
+    # 5b. Rebuild update histories (algorithmic: reinforced/contradicted/faded)
+    agent.build_update_histories()
+
     # 6. Save in new interaction-event format
     output_dir = agent.save_to_backend()
 
