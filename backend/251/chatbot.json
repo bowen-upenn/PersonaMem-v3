@@ -32,6 +32,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Right? Love the vibe. Let me know if anything else comes to mind!"
       }
     ],
     "ask_to_forget": false,
@@ -158,6 +162,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Makes sense. Give that a shot and circle back if you need more help."
       }
     ],
     "ask_to_forget": false,
@@ -243,87 +251,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys home cooking and preparing family meals",
-        "category": "home cooking",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "836494",
-    "source_timestamp": 1775243176,
-    "formatted_timestamp": "19:06, 04/03/2026",
-    "source_hashtags": [
-      "#beeftipsandrice",
-      "#easydinnerideas",
-      "#momlife",
-      "#cookingwithlove",
-      "#foodie",
-      "#homemade",
-      "#dinnerinspiration"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "referenced_response",
-      "action_label": "Copied or referenced part of the response",
-      "user_message": null
-    },
-    "conversation_type": "knowledge_query",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Hey, I've been curious about something related to food enthusiasm. What can you tell me about the latest trends?"
       },
       {
         "role": "assistant",
-        "content": "There's actually a lot happening in food enthusiasm right now! Several new developments have been getting attention. Want me to focus on any particular aspect?"
-      },
-      {
-        "role": "user",
-        "content": "Yeah, give me the practical stuff I can actually use day to day."
+        "content": "How does this version sound? I can adjust the tone if you'd like."
       }
     ],
     "ask_to_forget": false,
@@ -405,6 +336,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -618,83 +553,6 @@
     ]
   },
   {
-    "source_object_id": "80119",
-    "source_timestamp": 1775307571,
-    "formatted_timestamp": "12:59, 04/04/2026",
-    "source_hashtags": [
-      "#fyp",
-      "#viralvideo",
-      "#crumblecookie",
-      "#cookies",
-      "#foodie",
-      "#prankwar",
-      "#siblinggoals",
-      "#funnyvideos"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "troubleshooting",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I'm trying to figure something out with desserts and sweets. I keep running into the same issue and I'm stuck."
-      },
-      {
-        "role": "assistant",
-        "content": "I'd be happy to help troubleshoot. Can you walk me through what you've tried so far?"
-      },
-      {
-        "role": "user",
-        "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Has a sweet tooth and enjoys dessert content",
-        "category": "desserts and sweets",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 3.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "470128",
     "source_timestamp": 1775308333,
     "formatted_timestamp": "13:12, 04/04/2026",
@@ -727,6 +585,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -751,56 +613,6 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "658738",
-    "source_timestamp": 1775308933,
-    "formatted_timestamp": "13:22, 04/04/2026",
-    "source_hashtags": [
-      "#roomtransformation",
-      "#homedecor",
-      "#organizationinspo",
-      "#pennsylvaniamom",
-      "#momlife",
-      "#fridaymotivation",
-      "#beforeandafter"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "positive_language_next_turn",
-      "action_label": "Positive language in the next turn",
-      "user_message": null
-    },
-    "conversation_type": "troubleshooting",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I'm trying to figure something out with home decor. I keep running into the same issue and I'm stuck."
-      },
-      {
-        "role": "assistant",
-        "content": "I'd be happy to help troubleshoot. Can you walk me through what you've tried so far?"
-      },
-      {
-        "role": "user",
-        "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Appreciates home decor and interior inspiration",
-        "category": "home decor",
-        "confidence_score_init": 0.72,
-        "confidence_cross_referenced": 4.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [],
-        "over_personalization_irrelevant": "Follows boxing events and fight night content",
-        "over_personalization_irrelevant_category": "boxing"
       }
     ]
   },
@@ -836,6 +648,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -885,6 +701,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Right? Love the vibe. Let me know if anything else comes to mind!"
       }
     ],
     "ask_to_forget": false,
@@ -934,6 +754,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -983,6 +807,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a really interesting area — let me know if you'd like more specific details or recommendations."
       }
     ],
     "ask_to_forget": false,
@@ -997,53 +825,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "535735",
-    "source_timestamp": 1775316877,
-    "formatted_timestamp": "15:34, 04/04/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#selfcare",
-      "#sportsmom",
-      "#parentinghacks",
-      "#kingtreatment",
-      "#love"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "Staying on self-care for a sec, what would you recommend next?"
-    },
-    "conversation_type": null,
-    "conversation": null,
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
       }
     ]
   },
@@ -1078,6 +859,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -1092,67 +877,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "657571",
-    "source_timestamp": 1775319432,
-    "formatted_timestamp": "16:17, 04/04/2026",
-    "source_hashtags": [
-      "#selfcare",
-      "#skincare",
-      "#relaxation",
-      "#couplegoals",
-      "#intimacy",
-      "#wellness",
-      "#love"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "Okay so building on that — what about the self-care side of things?"
-    },
-    "conversation_type": "knowledge_query",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Hey, I've been curious about something related to self-care. What can you tell me about the latest trends?"
-      },
-      {
-        "role": "assistant",
-        "content": "There's actually a lot happening in self-care right now! Several new developments have been getting attention. Want me to focus on any particular aspect?"
-      },
-      {
-        "role": "user",
-        "content": "Yeah, give me the practical stuff I can actually use day to day."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
       }
     ]
   },
@@ -1225,6 +949,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "How does this version sound? I can adjust the tone if you'd like."
       }
     ],
     "ask_to_forget": false,
@@ -1280,6 +1008,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Great question! Based on what I've found, I think you'll find some useful options there. Want me to dig deeper into any aspect?"
       }
     ],
     "ask_to_forget": false,
@@ -1474,6 +1206,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Right? Love the vibe. Let me know if anything else comes to mind!"
       }
     ],
     "ask_to_forget": false,
@@ -1498,151 +1234,6 @@
             "update_type": "similar",
             "preference": "Has a sweet tooth and enjoys dessert content",
             "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "621421",
-    "source_timestamp": 1775396518,
-    "formatted_timestamp": "13:41, 04/05/2026",
-    "source_hashtags": [
-      "#momssupportingmoms",
-      "#macandcheese",
-      "#homcooking",
-      "#familylove",
-      "#momlife",
-      "#kitchenfun"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "Let's keep going with home cooking, I'm really getting into this"
-    },
-    "conversation_type": "knowledge_query",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Hey, I've been curious about something related to home cooking. What can you tell me about the latest trends?"
-      },
-      {
-        "role": "assistant",
-        "content": "There's actually a lot happening in home cooking right now! Several new developments have been getting attention. Want me to focus on any particular aspect?"
-      },
-      {
-        "role": "user",
-        "content": "Yeah, give me the practical stuff I can actually use day to day."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Enjoys home cooking and preparing family meals",
-        "category": "home cooking",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:34, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "72194",
-    "source_timestamp": 1775396528,
-    "formatted_timestamp": "13:42, 04/05/2026",
-    "source_hashtags": [
-      "#Ragù",
-      "#ItalianFood",
-      "#PastaLover",
-      "#FoodPolice",
-      "#ItalianGirl",
-      "#Foodie",
-      "#Saucy",
-      "#Relatable",
-      "#Funny"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "referenced_response",
-      "action_label": "Copied or referenced part of the response",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about food enthusiasm. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for food enthusiasm meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys seafood recipes and Italian-inspired home cooking",
-        "category": "seafood and Italian cooking",
-        "confidence_score_init": 0.83,
-        "confidence_cross_referenced": 3.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
           }
         ],
         "over_personalization_irrelevant": "",
@@ -1702,70 +1293,6 @@
     ]
   },
   {
-    "source_object_id": "368314",
-    "source_timestamp": 1775396721,
-    "formatted_timestamp": "13:45, 04/05/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#toddlermom",
-      "#easydinnerideas",
-      "#affordablemeals",
-      "#busymom",
-      "#momhacks",
-      "#dinnerinspiration"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "troubleshooting",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I'm trying to figure something out with home cooking. I keep running into the same issue and I'm stuck."
-      },
-      {
-        "role": "assistant",
-        "content": "I'd be happy to help troubleshoot. Can you walk me through what you've tried so far?"
-      },
-      {
-        "role": "user",
-        "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Enjoys home cooking and preparing family meals",
-        "category": "home cooking",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:34, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "17803",
     "source_timestamp": 1775396722,
     "formatted_timestamp": "13:45, 04/05/2026",
@@ -1798,6 +1325,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Ha, totally get that! Always fun chatting about this stuff with you."
       }
     ],
     "ask_to_forget": false,
@@ -1852,90 +1383,6 @@
     ]
   },
   {
-    "source_object_id": "873781",
-    "source_timestamp": 1775397046,
-    "formatted_timestamp": "13:50, 04/05/2026",
-    "source_hashtags": [
-      "#quickweave",
-      "#hairstyling",
-      "#beauty",
-      "#hairgoals",
-      "#jadekennedyhair",
-      "#nycstylist",
-      "#booknow",
-      "#fallhair"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "positive_language_next_turn",
-      "action_label": "Positive language in the next turn",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about beauty inspiration. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for beauty inspiration meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Keeps up with beauty trends and inspiration",
-        "category": "beauty inspiration",
-        "confidence_score_init": 0.78,
-        "confidence_cross_referenced": 11.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Enjoys nail art and beauty content",
-            "formatted_timestamp": "06:25, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Deeply invested in hair care and styling routines",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Interested in protective natural hair styles like braids and weaves",
-        "category": "protective hair styles",
-        "confidence_score_init": 0.82,
-        "confidence_cross_referenced": 12.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Deeply invested in hair care and styling routines",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Follows hairstylists and salon professionals",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "544789",
     "source_timestamp": 1775398732,
     "formatted_timestamp": "14:18, 04/05/2026",
@@ -1968,6 +1415,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a really interesting area — let me know if you'd like more specific details or recommendations."
       }
     ],
     "ask_to_forget": false,
@@ -2025,90 +1476,6 @@
     ]
   },
   {
-    "source_object_id": "636964",
-    "source_timestamp": 1775413518,
-    "formatted_timestamp": "18:25, 04/05/2026",
-    "source_hashtags": [
-      "#Mood",
-      "#NewContent",
-      "#TikTok",
-      "#Funny",
-      "#Relatable",
-      "#Foodie",
-      "#DessertLover"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "knowledge_query",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Hey, I've been curious about something related to desserts and sweets. What can you tell me about the latest trends?"
-      },
-      {
-        "role": "assistant",
-        "content": "There's actually a lot happening in desserts and sweets right now! Several new developments have been getting attention. Want me to focus on any particular aspect?"
-      },
-      {
-        "role": "user",
-        "content": "Yeah, give me the practical stuff I can actually use day to day."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Has a sweet tooth and enjoys dessert content",
-        "category": "desserts and sweets",
-        "confidence_score_init": 0.74,
-        "confidence_cross_referenced": 3.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "16:18, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "397707",
     "source_timestamp": 1775413796,
     "formatted_timestamp": "18:29, 04/05/2026",
@@ -2141,6 +1508,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "That should do the trick! Reach out if you run into anything else."
       }
     ],
     "ask_to_forget": false,
@@ -2155,74 +1526,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "82907",
-    "source_timestamp": 1775413946,
-    "formatted_timestamp": "18:32, 04/05/2026",
-    "source_hashtags": [
-      "#girlboss",
-      "#minime",
-      "#familygoals",
-      "#heartwarming",
-      "#playfulvibes",
-      "#laughteristhebest",
-      "#loveofmylife"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": null,
-    "conversation": null,
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Centers family togetherness as a core value",
-        "category": "family togetherness",
-        "confidence_score_init": 0.9,
-        "confidence_cross_referenced": 14.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Enjoys content celebrating involved fatherhood",
-            "formatted_timestamp": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys relatable sibling dynamics content",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys wholesome, heartwarming feel-good content",
-        "category": "feel-good content",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:27, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "13:23, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -2258,6 +1561,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Ha, totally get that! Always fun chatting about this stuff with you."
       }
     ],
     "ask_to_forget": false,
@@ -2307,6 +1614,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Makes sense. Give that a shot and circle back if you need more help."
       }
     ],
     "ask_to_forget": false,
@@ -2321,70 +1632,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "465781",
-    "source_timestamp": 1775425044,
-    "formatted_timestamp": "21:37, 04/05/2026",
-    "source_hashtags": [
-      "#mukbang",
-      "#foodchallenge",
-      "#AyooTravv",
-      "#foodie",
-      "#comedy",
-      "#rawfish",
-      "#sashimi"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "asked_followup",
-      "action_label": "Asked a follow-up question showing interest",
-      "user_message": "Wait, tell me more about that food enthusiasm angle you mentioned"
-    },
-    "conversation_type": "casual_chat",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Okay so random question but have you ever noticed how people get about food enthusiasm? It's a whole world."
-      },
-      {
-        "role": "assistant",
-        "content": "Ha, yes — food enthusiasm communities can be incredibly passionate. There's always something new to discover. What sparked this thought?"
-      },
-      {
-        "role": "user",
-        "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -2420,6 +1667,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Happy to help with that! There's actually a lot more to explore here. Feel free to ask follow-ups anytime."
       }
     ],
     "ask_to_forget": false,
@@ -2564,6 +1815,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -2706,6 +1961,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -2769,6 +2028,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a really interesting area — let me know if you'd like more specific details or recommendations."
       }
     ],
     "ask_to_forget": false,
@@ -3028,6 +2291,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Makes sense. Give that a shot and circle back if you need more help."
       }
     ],
     "ask_to_forget": false,
@@ -3117,6 +2384,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -3285,6 +2556,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -3474,6 +2749,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Right? Love the vibe. Let me know if anything else comes to mind!"
       }
     ],
     "ask_to_forget": false,
@@ -3567,6 +2846,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "That should do the trick! Reach out if you run into anything else."
       }
     ],
     "ask_to_forget": false,
@@ -3738,6 +3021,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Great question! Based on what I've found, I think you'll find some useful options there. Want me to dig deeper into any aspect?"
       }
     ],
     "ask_to_forget": false,
@@ -3800,71 +3087,6 @@
     ]
   },
   {
-    "source_object_id": "1524",
-    "source_timestamp": 1775528509,
-    "formatted_timestamp": "02:21, 04/07/2026",
-    "source_hashtags": [
-      "#hairgoals",
-      "#salonlife",
-      "#licensedstylist",
-      "#haircare",
-      "#selfcare",
-      "#bookanappointment",
-      "#luxehairstudio"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "therapy_reflection",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I've been thinking a lot about how self-care has kind of shaped who I am. Is that weird?"
-      },
-      {
-        "role": "assistant",
-        "content": "Not at all — our interests and routines often reflect deeper parts of our identity. What specifically about self-care feels meaningful to you?"
-      },
-      {
-        "role": "user",
-        "content": "I think it's the consistency of it. Like, no matter what else is going on, that's my thing."
-      },
-      {
-        "role": "assistant",
-        "content": "That sense of grounding is really valuable. Having something that stays constant when life feels chaotic can be a genuine anchor for wellbeing."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
-      }
-    ]
-  },
-  {
     "source_object_id": "315374",
     "source_timestamp": 1775539858,
     "formatted_timestamp": "05:30, 04/07/2026",
@@ -3898,6 +3120,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -4055,6 +3281,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -4130,6 +3360,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -4180,6 +3414,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Right? Love the vibe. Let me know if anything else comes to mind!"
       }
     ],
     "ask_to_forget": false,
@@ -4194,65 +3432,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "1006563",
-    "source_timestamp": 1775540573,
-    "formatted_timestamp": "05:42, 04/07/2026",
-    "source_hashtags": [
-      "#detailing",
-      "#homedecor",
-      "#cleaninghacks",
-      "#localbusiness",
-      "#supportsmall",
-      "#funnyguys"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "Let's keep going with home decor, I'm really getting into this"
-    },
-    "conversation_type": "knowledge_query",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Hey, I've been curious about something related to home decor. What can you tell me about the latest trends?"
-      },
-      {
-        "role": "assistant",
-        "content": "There's actually a lot happening in home decor right now! Several new developments have been getting attention. Want me to focus on any particular aspect?"
-      },
-      {
-        "role": "user",
-        "content": "Yeah, give me the practical stuff I can actually use day to day."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Appreciates home decor and interior inspiration",
-        "category": "home decor",
-        "confidence_score_init": 0.72,
-        "confidence_cross_referenced": 4.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:25, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Occasionally interested in DIY and handmade home projects",
-            "formatted_timestamp": "02:19, 04/07/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Follows boxing events and fight night content",
-        "over_personalization_irrelevant_category": "boxing"
       }
     ]
   },
@@ -4334,79 +3513,6 @@
     ]
   },
   {
-    "source_object_id": "840476",
-    "source_timestamp": 1775542252,
-    "formatted_timestamp": "06:10, 04/07/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#comedy",
-      "#foodie",
-      "#womenincomedy",
-      "#latreseallen",
-      "#carefree",
-      "#motherhood"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about food enthusiasm. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for food enthusiasm meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys home cooking and preparing family meals",
-            "formatted_timestamp": "18:20, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "697161",
     "source_timestamp": 1775552460,
     "formatted_timestamp": "09:01, 04/07/2026",
@@ -4438,6 +3544,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -4504,6 +3614,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -4545,71 +3659,6 @@
     ]
   },
   {
-    "source_object_id": "583511",
-    "source_timestamp": 1775552556,
-    "formatted_timestamp": "09:02, 04/07/2026",
-    "source_hashtags": [
-      "#singlemom",
-      "#haircare",
-      "#beautyproducts",
-      "#selfcare",
-      "#momlife",
-      "#gratitude",
-      "#Mama_Poopoo"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about self-care. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for self-care meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
-      }
-    ]
-  },
-  {
     "source_object_id": "195411",
     "source_timestamp": 1775552655,
     "formatted_timestamp": "09:04, 04/07/2026",
@@ -4642,6 +3691,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Ha, totally get that! Always fun chatting about this stuff with you."
       }
     ],
     "ask_to_forget": false,
@@ -4656,79 +3709,6 @@
         "update_history": [],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "946167",
-    "source_timestamp": 1775552669,
-    "formatted_timestamp": "09:04, 04/07/2026",
-    "source_hashtags": [
-      "#momlife",
-      "#selfcare",
-      "#independence",
-      "#socialmedia",
-      "#digitaldetox",
-      "#momdaughter",
-      "#relatable"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "asked_followup",
-      "action_label": "Asked a follow-up question showing interest",
-      "user_message": "I want to know more about how self-care actually works in practice"
-    },
-    "conversation_type": "therapy_reflection",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I've been thinking a lot about how self-care has kind of shaped who I am. Is that weird?"
-      },
-      {
-        "role": "assistant",
-        "content": "Not at all — our interests and routines often reflect deeper parts of our identity. What specifically about self-care feels meaningful to you?"
-      },
-      {
-        "role": "user",
-        "content": "I think it's the consistency of it. Like, no matter what else is going on, that's my thing."
-      },
-      {
-        "role": "assistant",
-        "content": "That sense of grounding is really valuable. Having something that stays constant when life feels chaotic can be a genuine anchor for wellbeing."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
       }
     ]
   },
@@ -4820,64 +3800,12 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
+      },
       {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
+        "role": "assistant",
+        "content": "Happy to help with that! There's actually a lot more to explore here. Feel free to ask follow-ups anytime."
       }
-    ]
-  },
-  {
-    "source_object_id": "718673",
-    "source_timestamp": 1775560747,
-    "formatted_timestamp": "11:19, 04/07/2026",
-    "source_hashtags": [
-      "#adultingstruggles",
-      "#selfcare",
-      "#healthyliving",
-      "#fitnessmotivation",
-      "#viral",
-      "#relatable",
-      "#lifestylechanges"
     ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": null,
-    "conversation": null,
     "ask_to_forget": false,
     "preferences": [
       {
@@ -4945,6 +3873,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -4994,6 +3926,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a really interesting area — let me know if you'd like more specific details or recommendations."
       }
     ],
     "ask_to_forget": false,
@@ -5043,6 +3979,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -5116,6 +4056,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -5203,6 +4147,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Great question! Based on what I've found, I think you'll find some useful options there. Want me to dig deeper into any aspect?"
       }
     ],
     "ask_to_forget": false,
@@ -5252,6 +4200,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -5301,6 +4253,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Makes sense. Give that a shot and circle back if you need more help."
       }
     ],
     "ask_to_forget": false,
@@ -5350,6 +4306,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -5399,6 +4359,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -5448,6 +4412,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -5591,6 +4559,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "How does this version sound? I can adjust the tone if you'd like."
       }
     ],
     "ask_to_forget": false,
@@ -5693,6 +4665,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -5716,75 +4692,6 @@
         ],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "823739",
-    "source_timestamp": 1775562756,
-    "formatted_timestamp": "11:52, 04/07/2026",
-    "source_hashtags": [
-      "#dance",
-      "#synchronization",
-      "#womensupportingwomen",
-      "#style",
-      "#unity",
-      "#performance",
-      "#communityfirst"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "asked_followup",
-      "action_label": "Asked a follow-up question showing interest",
-      "user_message": "Oh that's cool, what else should I know about dance?"
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about dance. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for dance meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Enjoys dance content and casual music videos",
-        "category": "dance",
-        "confidence_score_init": 0.86,
-        "confidence_cross_referenced": 17.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "10:02, 04/05/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Passionate about music and singing",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Interested in cheerleading and dance routines",
-            "formatted_timestamp": "15:32, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -5865,6 +4772,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "Ha, totally get that! Always fun chatting about this stuff with you."
       }
     ],
     "ask_to_forget": false,
@@ -5924,6 +4835,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Happy to help with that! There's actually a lot more to explore here. Feel free to ask follow-ups anytime."
       }
     ],
     "ask_to_forget": false,
@@ -5983,6 +4898,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -6089,6 +5008,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Great question! Based on what I've found, I think you'll find some useful options there. Want me to dig deeper into any aspect?"
       }
     ],
     "ask_to_forget": false,
@@ -6112,109 +5035,6 @@
         ],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "50693",
-    "source_timestamp": 1775600177,
-    "formatted_timestamp": "22:16, 04/07/2026",
-    "source_hashtags": [
-      "#singlemom",
-      "#selfcare",
-      "#momlife",
-      "#foodie",
-      "#laughteristhebest",
-      "#singlemomempowerment",
-      "#mamapoopoo"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "casual_chat",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Okay so random question but have you ever noticed how people get about food enthusiasm? It's a whole world."
-      },
-      {
-        "role": "assistant",
-        "content": "Ha, yes — food enthusiasm communities can be incredibly passionate. There's always something new to discover. What sparked this thought?"
-      },
-      {
-        "role": "user",
-        "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys home cooking and preparing family meals",
-            "formatted_timestamp": "18:20, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
       }
     ]
   },
@@ -6251,6 +5071,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Happy to help with that! There's actually a lot more to explore here. Feel free to ask follow-ups anytime."
       }
     ],
     "ask_to_forget": false,
@@ -6310,6 +5134,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Happy to help with that! There's actually a lot more to explore here. Feel free to ask follow-ups anytime."
       }
     ],
     "ask_to_forget": false,
@@ -6372,6 +5200,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -6432,6 +5264,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -6708,6 +5544,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Great question! Based on what I've found, I think you'll find some useful options there. Want me to dig deeper into any aspect?"
       }
     ],
     "ask_to_forget": false,
@@ -6735,76 +5575,6 @@
         ],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "306767",
-    "source_timestamp": 1775690567,
-    "formatted_timestamp": "23:22, 04/08/2026",
-    "source_hashtags": [
-      "#haircare",
-      "#blackhair",
-      "#naturalhair",
-      "#gluelesswigs",
-      "#OqHAIR",
-      "#hairgoals",
-      "#selfcare",
-      "#beautycommunity"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "positive_language_next_turn",
-      "action_label": "Positive language in the next turn",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about self-care. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for self-care meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
       }
     ]
   },
@@ -6889,6 +5659,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "I think that captures it well. Let me know if you'd like any tweaks."
       }
     ],
     "ask_to_forget": false,
@@ -6991,6 +5765,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a really interesting area — let me know if you'd like more specific details or recommendations."
       }
     ],
     "ask_to_forget": false,
@@ -7092,6 +5870,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "How does this version sound? I can adjust the tone if you'd like."
       }
     ],
     "ask_to_forget": false,
@@ -7119,164 +5901,6 @@
         ],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "303353",
-    "source_timestamp": 1775794997,
-    "formatted_timestamp": "04:23, 04/10/2026",
-    "source_hashtags": [
-      "#cookingwithlove",
-      "#familybonding",
-      "#BetterBreaderXL",
-      "#homecooking",
-      "#kitchentools",
-      "#parentinghacks",
-      "#cookware",
-      "#familyfun"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "So with home cooking, what's the next thing I should look into?"
-    },
-    "conversation_type": null,
-    "conversation": null,
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Enjoys home cooking and preparing family meals",
-        "category": "home cooking",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:34, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "584465",
-    "source_timestamp": 1775795020,
-    "formatted_timestamp": "04:23, 04/10/2026",
-    "source_hashtags": [
-      "#homcooking",
-      "#familymeals",
-      "#parentingmoments",
-      "#foodie",
-      "#lifestyle",
-      "#momlife",
-      "#cookingwithlove"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "casual_chat",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Okay so random question but have you ever noticed how people get about food enthusiasm? It's a whole world."
-      },
-      {
-        "role": "assistant",
-        "content": "Ha, yes — food enthusiasm communities can be incredibly passionate. There's always something new to discover. What sparked this thought?"
-      },
-      {
-        "role": "user",
-        "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys home cooking and preparing family meals",
-            "formatted_timestamp": "18:20, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys home cooking and preparing family meals",
-        "category": "home cooking",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:34, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -7312,6 +5936,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "Happy to help with that! There's actually a lot more to explore here. Feel free to ask follow-ups anytime."
       }
     ],
     "ask_to_forget": false,
@@ -7451,6 +6079,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -7494,79 +6126,6 @@
         ],
         "over_personalization_irrelevant": "",
         "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "972034",
-    "source_timestamp": 1775795929,
-    "formatted_timestamp": "04:38, 04/10/2026",
-    "source_hashtags": [
-      "#throwback",
-      "#personalgrowth",
-      "#8thgrade",
-      "#middleSchoolMemories",
-      "#growthmindset",
-      "#humor",
-      "#selfreflection"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "thumbs_up",
-      "action_label": "Thumbs-upped the response",
-      "user_message": null
-    },
-    "conversation_type": "casual_chat",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Okay so random question but have you ever noticed how people get about self-care? It's a whole world."
-      },
-      {
-        "role": "assistant",
-        "content": "Ha, yes — self-care communities can be incredibly passionate. There's always something new to discover. What sparked this thought?"
-      },
-      {
-        "role": "user",
-        "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "23:22, 04/08/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
       }
     ]
   },
@@ -7682,228 +6241,6 @@
         ],
         "over_personalization_irrelevant": "Passionate about music and singing",
         "over_personalization_irrelevant_category": "music lover"
-      }
-    ]
-  },
-  {
-    "source_object_id": "776277",
-    "source_timestamp": 1775796243,
-    "formatted_timestamp": "04:44, 04/10/2026",
-    "source_hashtags": [
-      "#MondayBlues",
-      "#SelfCare",
-      "#Humor",
-      "#Relatable",
-      "#GrowingIntoGlory",
-      "#TreatOthersWithKindness",
-      "#MomLife"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "copied_response",
-      "action_label": "Copied the response text",
-      "user_message": null
-    },
-    "conversation_type": null,
-    "conversation": null,
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "23:22, 04/08/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
-      }
-    ]
-  },
-  {
-    "source_object_id": "945489",
-    "source_timestamp": 1775796657,
-    "formatted_timestamp": "04:50, 04/10/2026",
-    "source_hashtags": [
-      "#comedyreel",
-      "#relationshipgoals",
-      "#funnyvideos",
-      "#reelschallenge",
-      "#couplegoals",
-      "#foodiefun"
-    ],
-    "source_interaction_type": "explicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "asked_followup",
-      "action_label": "Asked a follow-up question showing interest",
-      "user_message": "That's interesting — can you go deeper on the comedy and humor part specifically?"
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about comedy and humor. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for comedy and humor meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Enjoys short-form comedy reels and viral funny clips",
-        "category": "comedy and humor",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 48.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "10:02, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "10:57, 04/08/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Follows comedy creators and prank content",
-            "formatted_timestamp": "20:05, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Follows Black comedy creators like 85 South Show",
-            "formatted_timestamp": "06:30, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Finds humor in dating struggles and relationship dynamics",
-            "formatted_timestamp": "13:46, 04/05/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys humor about the chaos of parenting",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "543067",
-    "source_timestamp": 1775799373,
-    "formatted_timestamp": "05:36, 04/10/2026",
-    "source_hashtags": [
-      "#babyfever",
-      "#momlife",
-      "#motherhoodunplugged",
-      "#babiesofinstagram",
-      "#momsofinstagram",
-      "#parentinglife"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "Okay so building on that — what about the motherhood side of things?"
-    },
-    "conversation_type": "casual_chat",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Okay so random question but have you ever noticed how people get about motherhood? It's a whole world."
-      },
-      {
-        "role": "assistant",
-        "content": "Ha, yes — motherhood communities can be incredibly passionate. There's always something new to discover. What sparked this thought?"
-      },
-      {
-        "role": "user",
-        "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively engaged in daily motherhood experiences",
-        "category": "motherhood",
-        "confidence_score_init": 0.85,
-        "confidence_cross_referenced": 38.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Seeks practical parenting tips and hacks",
-            "formatted_timestamp": "06:28, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys humor about the chaos of parenting",
-            "formatted_timestamp": "13:08, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Cherishes the bond between mothers and daughters",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Finds joy in sharing everyday moments of toddlers",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Navigating single motherhood or co-parenting",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Takes pride in milestones and growth of her children",
-            "formatted_timestamp": "05:56, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -8063,86 +6400,6 @@
     ]
   },
   {
-    "source_object_id": "168658",
-    "source_timestamp": 1775819357,
-    "formatted_timestamp": "11:09, 04/10/2026",
-    "source_hashtags": [
-      "#hairextensiontips",
-      "#wiglife",
-      "#frontalwig",
-      "#haircare",
-      "#edgesmatter",
-      "#hairgoals",
-      "#fyp",
-      "#wiginstall"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "continued_topic",
-      "action_label": "Continued the conversation on the same topic",
-      "user_message": "Staying on hair care for a sec, what would you recommend next?"
-    },
-    "conversation_type": "knowledge_query",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "Hey, I've been curious about something related to hair care. What can you tell me about the latest trends?"
-      },
-      {
-        "role": "assistant",
-        "content": "There's actually a lot happening in hair care right now! Several new developments have been getting attention. Want me to focus on any particular aspect?"
-      },
-      {
-        "role": "user",
-        "content": "Yeah, give me the practical stuff I can actually use day to day."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Deeply invested in hair care and styling routines",
-        "category": "hair care",
-        "confidence_score_init": 0.87,
-        "confidence_cross_referenced": 18.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "14:19, 04/05/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Interested in protective natural hair styles like braids and weaves",
-            "formatted_timestamp": "12:49, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Follows hairstylists and salon professionals",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Keeps up with beauty trends and inspiration",
-            "formatted_timestamp": "06:25, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Follows content with salon booking calls-to-action",
-            "formatted_timestamp": "10:08, 04/05/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "371177",
     "source_timestamp": 1775819368,
     "formatted_timestamp": "11:09, 04/10/2026",
@@ -8176,6 +6433,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "That should do the trick! Reach out if you run into anything else."
       }
     ],
     "ask_to_forget": false,
@@ -8325,6 +6586,10 @@
       {
         "role": "user",
         "content": "Yeah, give me the practical stuff I can actually use day to day."
+      },
+      {
+        "role": "assistant",
+        "content": "That's a really interesting area — let me know if you'd like more specific details or recommendations."
       }
     ],
     "ask_to_forget": false,
@@ -8538,6 +6803,10 @@
       {
         "role": "user",
         "content": "I was just scrolling and realized how much time I spend on it. Not complaining though."
+      },
+      {
+        "role": "assistant",
+        "content": "For real though! Hit me up whenever you want to chat more about it."
       }
     ],
     "ask_to_forget": false,
@@ -8615,6 +6884,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "Got it — try that approach and let me know if it works or if you need a different angle."
       }
     ],
     "ask_to_forget": false,
@@ -8972,6 +7245,10 @@
       {
         "role": "user",
         "content": "That's close but make it shorter and more casual, like how I'd actually talk."
+      },
+      {
+        "role": "assistant",
+        "content": "Here's what I'd suggest — want me to revise or try a different angle?"
       }
     ],
     "ask_to_forget": false,
@@ -8996,107 +7273,6 @@
         ],
         "over_personalization_irrelevant": "Navigating single motherhood or co-parenting",
         "over_personalization_irrelevant_category": "single parenting"
-      }
-    ]
-  },
-  {
-    "source_object_id": "319006",
-    "source_timestamp": 1775820298,
-    "formatted_timestamp": "11:24, 04/10/2026",
-    "source_hashtags": [
-      "#familydinner",
-      "#homcooking",
-      "#dinnerideas",
-      "#momlife",
-      "#cookingwithlove",
-      "#foodie"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "troubleshooting",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I'm trying to figure something out with food enthusiasm. I keep running into the same issue and I'm stuck."
-      },
-      {
-        "role": "assistant",
-        "content": "I'd be happy to help troubleshoot. Can you walk me through what you've tried so far?"
-      },
-      {
-        "role": "user",
-        "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys home cooking and preparing family meals",
-            "formatted_timestamp": "18:20, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      },
-      {
-        "persona_item": "Enjoys home cooking and preparing family meals",
-        "category": "home cooking",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 16.0,
-        "stereotype_mark": "stereotypical",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "06:34, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
       }
     ]
   },
@@ -9169,207 +7345,6 @@
     ]
   },
   {
-    "source_object_id": "244670",
-    "source_timestamp": 1775820372,
-    "formatted_timestamp": "11:26, 04/10/2026",
-    "source_hashtags": [
-      "#graffitinails",
-      "#nailart",
-      "#beautytutorial",
-      "#naildesigns",
-      "#graffitiinspired",
-      "#nailtech",
-      "#beautyambassador"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": null,
-    "conversation": null,
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Keeps up with beauty trends and inspiration",
-        "category": "beauty inspiration",
-        "confidence_score_init": 0.78,
-        "confidence_cross_referenced": 11.5,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "14:19, 04/05/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys nail art and beauty content",
-            "formatted_timestamp": "06:25, 04/04/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Deeply invested in hair care and styling routines",
-            "formatted_timestamp": "05:57, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
-    "source_object_id": "516432",
-    "source_timestamp": 1775879629,
-    "formatted_timestamp": "03:53, 04/11/2026",
-    "source_hashtags": [
-      "#haircare",
-      "#selfcare",
-      "#beautyroutine",
-      "#hairgoals",
-      "#communityfirst",
-      "#lightheartedmoments"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "referenced_response",
-      "action_label": "Copied or referenced part of the response",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about self-care. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for self-care meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Invested in self-care routines and personal growth",
-        "category": "self-care",
-        "confidence_score_init": 0.84,
-        "confidence_cross_referenced": 10.5,
-        "stereotype_mark": "neutral",
-        "split": "test",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:21, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "09:02, 04/07/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "23:22, 04/08/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Believes confidence and positivity are important daily practices",
-            "formatted_timestamp": "20:04, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Supports women empowerment themes",
-            "formatted_timestamp": "13:06, 04/04/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "Enjoys relatable sibling dynamics content",
-        "over_personalization_irrelevant_category": "sibling dynamics"
-      }
-    ]
-  },
-  {
-    "source_object_id": "593446",
-    "source_timestamp": 1775906086,
-    "formatted_timestamp": "11:14, 04/11/2026",
-    "source_hashtags": [
-      "#stitch",
-      "#foodie",
-      "#cargood",
-      "#couplegoals",
-      "#relatable",
-      "#humor"
-    ],
-    "source_interaction_type": "implicit_positive",
-    "interaction_format": {
-      "app": "Chatbot",
-      "action": "read_carefully",
-      "action_label": "Spent significant time reading the response",
-      "user_message": null
-    },
-    "conversation_type": "writing_help",
-    "conversation": [
-      {
-        "role": "user",
-        "content": "I need to write a caption for a post about food enthusiasm. Something catchy but real, not too salesy."
-      },
-      {
-        "role": "assistant",
-        "content": "How about something like: 'When your passion for food enthusiasm meets your everyday life — it just hits different.' Want me to try a few more options?"
-      },
-      {
-        "role": "user",
-        "content": "That's close but make it shorter and more casual, like how I'd actually talk."
-      }
-    ],
-    "ask_to_forget": false,
-    "preferences": [
-      {
-        "persona_item": "Actively follows food content creators and recipes online",
-        "category": "food enthusiasm",
-        "confidence_score_init": 0.89,
-        "confidence_cross_referenced": 24.0,
-        "stereotype_mark": "neutral",
-        "split": "train",
-        "update_history": [
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "18:12, 04/03/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "12:59, 04/04/2026"
-          },
-          {
-            "update_type": "reinforced",
-            "formatted_timestamp": "02:20, 04/07/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys home cooking and preparing family meals",
-            "formatted_timestamp": "18:20, 04/06/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Has a sweet tooth and enjoys dessert content",
-            "formatted_timestamp": "17:06, 04/03/2026"
-          },
-          {
-            "update_type": "similar",
-            "preference": "Enjoys seafood recipes and Italian-inspired home cooking",
-            "formatted_timestamp": "04:19, 04/11/2026"
-          }
-        ],
-        "over_personalization_irrelevant": "",
-        "over_personalization_irrelevant_category": ""
-      }
-    ]
-  },
-  {
     "source_object_id": "797035",
     "source_timestamp": 1775906126,
     "formatted_timestamp": "11:15, 04/11/2026",
@@ -9403,6 +7378,10 @@
       {
         "role": "user",
         "content": "I tried the usual approach but it's just not working the way it should. Any alternatives?"
+      },
+      {
+        "role": "assistant",
+        "content": "That should do the trick! Reach out if you run into anything else."
       }
     ],
     "ask_to_forget": false,
