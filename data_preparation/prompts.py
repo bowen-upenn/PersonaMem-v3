@@ -46,11 +46,11 @@ A user interacted with the following social media content:
 
 ## Your Task
 
-For EACH hashtag and the overall content context, infer as many **atomic persona traits or preferences** as possible about this user. An "atomic persona" is a single, specific, testable statement about the user's personality, interests, values, demographics, or lifestyle (e.g., "Interested in CrossFit", "Values family traditions", "Likely a parent of school-age children").
+Considering ALL the hashtags together as a whole and individually, infer **around 10** atomic persona traits or preferences about this user. An "atomic persona" is a single, specific, testable statement about the user's personality, interests, values, demographics, or lifestyle (e.g., "Interested in CrossFit", "Values family traditions", "Likely a parent of school-age children").
 
 ## Rules
 
-1. **Be exploratory**: Generate 1-3 atomic personas per hashtag. Quality over quantity.
+1. **Be exploratory**: Produce around 10 preferences total by considering both individual hashtags and the combined signal from all hashtags together. Quality over quantity.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
 3. **Calibrate confidence on a 0.0 to 1.0 scale**:
    - 0.7-1.0: The inference is directly about the content's core topic
