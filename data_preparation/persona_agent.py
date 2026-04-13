@@ -679,6 +679,9 @@ class PersonaAgent:
 
     def _infer_one_interaction(self, idx: int, interaction: InteractionRow) -> list[AtomicPersona]:
         """Infer atomic personas from a single interaction row (thread-safe)."""
+        # Skip implicit_negative — too weak a signal to justify an API call
+        if interaction.interaction_type == "implicit_negative":
+            return []
         hashtags = self._extract_hashtags(interaction.object_text)
         if not hashtags:
             return []
