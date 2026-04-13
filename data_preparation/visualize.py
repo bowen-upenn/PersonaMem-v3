@@ -302,6 +302,7 @@ function renderUpdateHistory(history) {{
     if (h.preference) text += ` ${{h.preference}}`;
     if (h.description) text += ` — ${{h.description}}`;
     if (h.formatted_timestamp) text += ` <span style="opacity:0.6">(${{h.formatted_timestamp}})</span>`;
+    if (h.source_app) text += ` <span class="badge platform p-${{h.source_app}}" style="font-size:9px;padding:1px 6px;">${{h.source_app}}</span>`;
     if (h.total_occurrences) text += ` <span style="opacity:0.6">[occ ${{h.occurrence}}/${{h.total_occurrences}}]</span>`;
     return `<div class="update-entry">${{text}}</div>`;
   }}).join('');

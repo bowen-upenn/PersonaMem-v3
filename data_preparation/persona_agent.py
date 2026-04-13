@@ -1216,11 +1216,11 @@ class PersonaAgent:
             atoms = groups.get(key, [])
             # Collect distinct (source_object_id, timestamp) pairs
             seen_oids: set[str] = set()
-            unique_occurrences: list[int] = []
+            unique_occurrences: list[tuple[int, str]] = []  # (timestamp, source_object_id)
             for ap in sorted(atoms, key=lambda a: a.source_timestamp):
                 if ap.source_object_id and ap.source_object_id not in seen_oids:
                     seen_oids.add(ap.source_object_id)
-                    unique_occurrences.append(ap.source_timestamp)
+                    unique_occurrences.append((ap.source_timestamp, ap.source_object_id))
 
             total = len(unique_occurrences)
             if total <= 1:
@@ -1236,13 +1236,14 @@ class PersonaAgent:
                 sampled = subsequent
 
             entries = []
-            for i, ts in enumerate(sampled, start=2):
+            for i, (ts, oid) in enumerate(sampled, start=2):
                 entries.append({
                     "update_type": "reinforced",
                     "timestamp": ts,
                     "formatted_timestamp": utils.unix_to_formatted(ts),
                     "occurrence": i,
                     "total_occurrences": total,
+                    "source_object_id": oid,
                 })
             reinforced_entries[cr.persona_item] = entries
 
@@ -2368,7 +2369,7 @@ class PersonaAgent:
                 # Causality: only keep entries whose timestamp <= this event's time.
                 # Key order: update_type, preference, formatted_timestamp, then extras.
                 _HISTORY_KEY_ORDER = ["update_type", "preference", "formatted_timestamp",
-                                      "occurrence", "total_occurrences", "description"]
+                                      "source_app", "occurrence", "total_occurrences", "description"]
                 event_ts = ap.source_timestamp  # this atomic's source row timestamp
 
                 merged_history = []
@@ -2382,6 +2383,15 @@ class PersonaAgent:
                     # Drop self-referencing preference (same as parent persona_item)
                     if raw.get("preference") == cr.persona_item:
                         raw.pop("preference")
+                    # Resolve source_object_id → source_app for reinforced entries
+                    oid = raw.pop("source_object_id", None)
+                    if oid:
+                        raw["source_app"] = self._row_app.get(oid, "")
+                    # For entries with a preference (evolution/contradicted), use target canonical's app
+                    elif raw.get("preference"):
+                        pref_cr = canonical_lookup.get(_normalize_persona_text(raw["preference"]))
+                        if pref_cr:
+                            raw["source_app"] = pref_cr.assigned_app
                     ordered = {k: raw[k] for k in _HISTORY_KEY_ORDER if k in raw}
                     merged_history.append(ordered)
                 for rel in (cr.related_personas or []):
@@ -2398,6 +2408,7 @@ class PersonaAgent:
                             "update_type": rel.get("type", "similar"),
                             "preference": rel["persona_item"],
                             "formatted_timestamp": rel_cr.formatted_timestamp if rel_cr else "",
+                            "source_app": rel_cr.assigned_app if rel_cr else "",
                         })
 
                 pref = {
