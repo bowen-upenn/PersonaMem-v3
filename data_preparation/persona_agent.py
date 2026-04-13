@@ -866,14 +866,6 @@ class PersonaAgent:
                         base_score += 0.5 if "implicit" in ap.source_interaction_type else 1.0
             c.confidence_cross_referenced = base_score
 
-        # --- Step 3b: Filter by xref floor BEFORE the LLM call ---
-        pre_llm_count = len(survivors)
-        survivors = [c for c in survivors
-                     if c.confidence_cross_referenced >= HIGH_CONFIDENCE_CROSS_REF_THRESHOLD]
-        if self.verbose:
-            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] After xref >= {HIGH_CONFIDENCE_CROSS_REF_THRESHOLD} "
-                  f"filter: {len(survivors)} canonicals (dropped {pre_llm_count - len(survivors)}).{utils.Colors.ENDC}")
-
         # --- Step 4: LLM cross-reference for relationship discovery ---
         # (relationship_type + related_personas only; no score changes)
 
@@ -951,8 +943,10 @@ class PersonaAgent:
                     adjustment -= other_base
             c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced + adjustment)
 
-        # --- Step 5: Bottom-20% filter ---
+        # --- Step 5: Bottom-20% filter + xref floor ---
         survivors = self._apply_bottom_20_filter(survivors)
+        survivors = [c for c in survivors
+                     if c.confidence_cross_referenced >= HIGH_CONFIDENCE_CROSS_REF_THRESHOLD]
         self.cross_referenced_personas = survivors
 
         if self.verbose:
