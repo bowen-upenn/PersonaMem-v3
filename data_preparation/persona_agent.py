@@ -156,13 +156,13 @@ class AnnotatedPersona:
 # Floor on confidence_score_init. Personas below this are dropped after
 # cross-ref regardless of cross-ref score or relationship type. This is
 # the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.3
+MIN_PERSONA_INIT_CONFIDENCE = 0.5
 
 # High-confidence predicate — used for test-split eligibility and distractor
 # shortlisting. init threshold matches the filter floor so "high-confidence"
 # at minimum means the persona survived the init filter AND is corroborated
 # by more than a handful of other rows.
-HIGH_CONFIDENCE_INIT_THRESHOLD = 0.3
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.5
 HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 3.0
 
 # Session grouping: source rows with timestamp gaps <= this threshold are
