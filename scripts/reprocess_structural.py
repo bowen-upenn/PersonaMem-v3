@@ -84,6 +84,9 @@ def reprocess_user(user_id: str, csv_path: str, backend_dir: str = "backend"):
     # 5b. Rebuild update histories (algorithmic: reinforced/contradicted/faded)
     agent.build_update_histories()
 
+    # 5c. Re-sample interaction formats from the catalog (uses weights, no LLM needed)
+    agent.generate_interaction_formats()
+
     # 6. Save in new interaction-event format
     output_dir = agent.save_to_backend()
 
