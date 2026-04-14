@@ -530,6 +530,8 @@ For EACH preference in the list above, pick exactly **one primary app** (from "I
 
 6. **Chatbot naturally captures implicit signals.** In real chatbot usage, preferences emerge through questions, writing samples, and topics the user brings up — not through explicit engagement buttons. When routing `implicit_positive` preferences, give extra weight to Chatbot if the preference topic aligns with its `use_purposes` or `chatbot_contexts`. Implicit signals are the most natural fit for conversational AI interactions.
 
+7. **Target roughly even distribution across apps.** Aim for approximately 25% of preferences on each app. Users engage with all their apps regularly. If you notice one app getting too few or too many assignments, rebalance.
+
 ## Output Format
 
 Respond with ONLY a JSON array of the same length as the input, in the same order. One entry per preference.
