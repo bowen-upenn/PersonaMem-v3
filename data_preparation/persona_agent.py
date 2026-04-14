@@ -1281,8 +1281,8 @@ class PersonaAgent:
                     persona_item=node.get("persona_item", ""),
                     timestamp=int(node.get("timestamp", 0)),
                     formatted_timestamp=node.get("formatted_timestamp", ""),
-                    confidence_score_init=float(node.get("confidence_score_init", 0.0)),
-                    confidence_cross_referenced=float(node.get("confidence_cross_referenced", 0.0)),
+                    confidence_score_init=float(node.get("confidence_score_init") or 0.0),
+                    confidence_cross_referenced=float(node.get("confidence_cross_referenced") or 0.0),
                 ))
             self.temporal_graph.append(TemporalContradiction(
                 topic=group.get("topic", "unknown"),
@@ -2736,7 +2736,7 @@ class PersonaAgent:
                     ap = AtomicPersona(
                         persona_item=persona_item,
                         category=pref.get("category", "uncategorized"),
-                        confidence_score_init=float(pref.get("confidence_score_init", 0.0)),
+                        confidence_score_init=float(pref.get("confidence_score_init") or 0.0),
                         source_interaction_type=interaction_type,
                         source_interaction_format=fmt_str,
                         source_object_id=oid,
@@ -2752,8 +2752,8 @@ class PersonaAgent:
                             cr = CrossReferencedPersona(
                                 persona_item=persona_item,
                                 category=pref.get("category", "uncategorized"),
-                                confidence_score_init=float(pref.get("confidence_score_init", 0.0)),
-                                confidence_cross_referenced=float(pref.get("confidence_cross_referenced", 0.0)),
+                                confidence_score_init=float(pref.get("confidence_score_init") or 0.0),
+                                confidence_cross_referenced=float(pref.get("confidence_cross_referenced") or 0.0),
                                 relationship_type=pref.get("relationship_type", "none"),
                                 related_personas=list(pref.get("related_personas", [])),
                                 formatted_timestamp=fmt_ts,
@@ -2769,8 +2769,8 @@ class PersonaAgent:
                             cr = CrossReferencedPersona(
                                 persona_item=persona_item,
                                 category=pref.get("category", "uncategorized"),
-                                confidence_score_init=float(pref.get("confidence_score_init", 0.0)),
-                                confidence_cross_referenced=float(pref.get("confidence_cross_referenced", 0.0)),
+                                confidence_score_init=float(pref.get("confidence_score_init") or 0.0),
+                                confidence_cross_referenced=float(pref.get("confidence_cross_referenced") or 0.0),
                                 relationship_type=pref.get("relationship_type", "none"),
                                 related_personas=list(pref.get("related_personas", [])),
                                 formatted_timestamp=fmt_ts,
@@ -2783,8 +2783,8 @@ class PersonaAgent:
                             ann = AnnotatedPersona(
                                 persona_item=persona_item,
                                 category=pref.get("category", "uncategorized"),
-                                confidence_score_init=float(pref.get("confidence_score_init", 0.0)),
-                                confidence_cross_referenced=float(pref.get("confidence_cross_referenced", 0.0)),
+                                confidence_score_init=float(pref.get("confidence_score_init") or 0.0),
+                                confidence_cross_referenced=float(pref.get("confidence_cross_referenced") or 0.0),
                                 stereotype_mark=pref.get("stereotype_mark", "neutral"),
                             )
                             self.annotated_personas.append(ann)
@@ -2810,7 +2810,7 @@ class PersonaAgent:
                 ap = AtomicPersona(
                     persona_item=rec["persona_item"],
                     category=rec.get("category", "uncategorized"),
-                    confidence_score_init=float(rec.get("confidence_score_init", 0.0)),
+                    confidence_score_init=float(rec.get("confidence_score_init") or 0.0),
                     source_interaction_type=interaction_type,
                     source_interaction_format=interaction_format_str,
                     source_object_id=str(rec.get("source_object_id", "")),
@@ -2825,8 +2825,8 @@ class PersonaAgent:
                     cr = CrossReferencedPersona(
                         persona_item=rec["persona_item"],
                         category=rec.get("category", "uncategorized"),
-                        confidence_score_init=float(rec.get("confidence_score_init", 0.0)),
-                        confidence_cross_referenced=float(rec.get("confidence_cross_referenced", 0.0)),
+                        confidence_score_init=float(rec.get("confidence_score_init") or 0.0),
+                        confidence_cross_referenced=float(rec.get("confidence_cross_referenced") or 0.0),
                         relationship_type=rec.get("relationship_type", "none"),
                         related_personas=list(rec.get("related_personas", [])),
                         formatted_timestamp=rec.get("formatted_timestamp", ""),
@@ -2838,8 +2838,8 @@ class PersonaAgent:
                     ann = AnnotatedPersona(
                         persona_item=rec["persona_item"],
                         category=rec.get("category", "uncategorized"),
-                        confidence_score_init=float(rec.get("confidence_score_init", 0.0)),
-                        confidence_cross_referenced=float(rec.get("confidence_cross_referenced", 0.0)),
+                        confidence_score_init=float(rec.get("confidence_score_init") or 0.0),
+                        confidence_cross_referenced=float(rec.get("confidence_cross_referenced") or 0.0),
                         stereotype_mark=rec.get("stereotype_mark", "neutral"),
                     )
                     self.annotated_personas.append(ann)
