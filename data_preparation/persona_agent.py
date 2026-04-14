@@ -1788,6 +1788,7 @@ class PersonaAgent:
                 row_apps[r.object_id] = session_app
 
         # Step 3: 8% noise per-session
+        SOCIAL_PLATFORMS = [p for p in PLATFORMS if p != "Chatbot"]
         for session in self._sessions:
             if random.random() < self.NOISE_REASSIGN_PROBABILITY:
                 current_app = row_apps.get(session[0].object_id, PLATFORMS[0])
@@ -1795,6 +1796,11 @@ class PersonaAgent:
                 new_app = random.choice(alternatives)
                 for r in session:
                     row_apps[r.object_id] = new_app
+
+        # Step 4: Never route implicit_negative to Chatbot — redirect to social
+        for r in self.interactions:
+            if r.interaction_type == "implicit_negative" and row_apps.get(r.object_id) == "Chatbot":
+                row_apps[r.object_id] = random.choice(SOCIAL_PLATFORMS)
 
         self._row_app = row_apps
 
@@ -2574,12 +2580,14 @@ class PersonaAgent:
                     all_tags.extend(ap.source_hashtags)
                 event_hashtags = list(dict.fromkeys(all_tags))
 
-            # interaction_format: independently sample one action per event
-            # from the user's perturbed catalog. This gives each event its
-            # own action (more variety than reusing the canonical's stored
-            # format) and raises the effective probability of rarer actions
-            # like @ai comments across the full event stream.
+            # Determine effective interaction type for this event.
+            # For Chatbot: reassign 20% explicit / 80% implicit (polarity kept).
             itype = rep.source_interaction_type or "implicit_positive"
+            if app == "Chatbot" and itype != "implicit_negative":
+                polarity = "negative" if "negative" in itype else "positive"
+                itype = f"explicit_{polarity}" if event_rng.random() < 0.20 else f"implicit_{polarity}"
+
+            # interaction_format: independently sample one action per event
             sampled_entry = self._sample_action_from_bucket(app, itype, event_rng)
             fmt = {
                 "app": app,
@@ -2600,7 +2608,7 @@ class PersonaAgent:
                 "source_timestamp": rep.source_timestamp,
                 "formatted_timestamp": rep.formatted_timestamp,
                 "source_hashtags": event_hashtags,
-                "source_interaction_type": rep.source_interaction_type,
+                "source_interaction_type": itype,
                 "interaction_format": fmt,
             }
 
