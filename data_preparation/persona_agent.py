@@ -1279,7 +1279,7 @@ class PersonaAgent:
                     continue
                 timeline_nodes.append(TemporalNode(
                     persona_item=node.get("persona_item", ""),
-                    timestamp=int(node.get("timestamp", 0)),
+                    timestamp=int(node.get("timestamp") or 0),
                     formatted_timestamp=node.get("formatted_timestamp", ""),
                     confidence_score_init=float(node.get("confidence_score_init") or 0.0),
                     confidence_cross_referenced=float(node.get("confidence_cross_referenced") or 0.0),
