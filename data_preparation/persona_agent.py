@@ -169,6 +169,16 @@ HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 2.0
 # considered part of the same scrolling session on one app.
 SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 
+# Implicit-negative handling. A single skipped post is too weak a signal, but
+# the same topic skipped many times is a real dislike. We process implicit
+# negatives conditionally: a cheap hashtag-signature pre-filter drops obvious
+# singletons before LLM inference, and an authoritative gate in the negative
+# cross-ref step requires N distinct source rows for any canonical supported
+# only by implicit evidence. Canonicals with any explicit-negative evidence
+# are unaffected.
+MIN_IMPLICIT_NEGATIVE_REPETITION = 5  # distinct source rows for implicit-only negative to survive
+IMPLICIT_NEGATIVE_PREFILTER_K = 3     # rows per hashtag signature required to bother with LLM call
+
 # NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
 # side. A preference corroborated by 200 distinct rows should be strictly
 # more confident than one corroborated by 10 — they can't both be 1.0. Only
@@ -682,9 +692,6 @@ class PersonaAgent:
 
     def _infer_one_interaction(self, idx: int, interaction: InteractionRow) -> list[AtomicPersona]:
         """Infer atomic personas from a single interaction row (thread-safe)."""
-        # Skip implicit_negative — too weak a signal to justify an API call
-        if interaction.interaction_type == "implicit_negative":
-            return []
         hashtags = self._extract_hashtags(interaction.object_text)
         if not hashtags:
             return []
@@ -744,8 +751,49 @@ class PersonaAgent:
         self.atomic_personas = []
         self.negative_personas = []
 
+        # Pre-filter implicit_negative rows by hashtag signature. Singletons
+        # (and small groups below IMPLICIT_NEGATIVE_PREFILTER_K) can't possibly
+        # reach the downstream MIN_IMPLICIT_NEGATIVE_REPETITION gate, so skip
+        # the API call entirely. The pre-filter K is deliberately looser than
+        # the final gate since LLM inference may merge different hashtag sets
+        # into one canonical persona text.
+        impl_neg_sig_counts: dict[frozenset, int] = {}
+        for interaction in self.interactions:
+            if interaction.interaction_type != "implicit_negative":
+                continue
+            tags = self._extract_hashtags(interaction.object_text)
+            if not tags:
+                continue
+            sig = frozenset(tags)
+            impl_neg_sig_counts[sig] = impl_neg_sig_counts.get(sig, 0) + 1
+
+        skipped_indices: set[int] = set()
+        for idx, interaction in enumerate(self.interactions):
+            if interaction.interaction_type != "implicit_negative":
+                continue
+            tags = self._extract_hashtags(interaction.object_text)
+            if not tags:
+                skipped_indices.add(idx)
+                continue
+            if impl_neg_sig_counts.get(frozenset(tags), 0) < IMPLICIT_NEGATIVE_PREFILTER_K:
+                skipped_indices.add(idx)
+
+        to_submit = [
+            (idx, interaction)
+            for idx, interaction in enumerate(self.interactions)
+            if idx not in skipped_indices
+        ]
+
+        if self.verbose:
+            n_impl_neg = sum(1 for i in self.interactions if i.interaction_type == "implicit_negative")
+            n_impl_neg_submitted = sum(
+                1 for idx, i in to_submit if i.interaction_type == "implicit_negative"
+            )
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative pre-filter: "
+                  f"{n_impl_neg_submitted}/{n_impl_neg} rows survive (K={IMPLICIT_NEGATIVE_PREFILTER_K}).{utils.Colors.ENDC}")
+
         pbar = tqdm(
-            total=len(self.interactions),
+            total=len(to_submit),
             desc=f"[User {self.user_id}] Step 1: Inferring personas",
             unit="row",
             disable=not self.verbose,
@@ -754,7 +802,7 @@ class PersonaAgent:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = {
                 executor.submit(self._infer_one_interaction, idx, interaction): (idx, interaction)
-                for idx, interaction in enumerate(self.interactions)
+                for idx, interaction in to_submit
             }
             for future in as_completed(futures):
                 idx, interaction = futures[future]
@@ -1132,11 +1180,28 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Negatives: merged {n_merged} → "
                   f"{len(neg_canonicals)} distinct canonicals.{utils.Colors.ENDC}")
 
-        # Step 2: Init filter
-        neg_survivors = [
-            c for c in neg_canonicals
-            if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
-        ]
+        # Step 2: Init filter + implicit-only repetition gate. Canonicals
+        # supported solely by implicit_negative rows must have at least
+        # MIN_IMPLICIT_NEGATIVE_REPETITION distinct source rows; any
+        # explicit-negative evidence bypasses the row-count gate.
+        neg_survivors: list[CrossReferencedPersona] = []
+        n_gated_implicit_only = 0
+        for c in neg_canonicals:
+            if c.confidence_score_init < MIN_PERSONA_INIT_CONFIDENCE:
+                continue
+            key = _normalize_persona_text(c.persona_item)
+            atoms = neg_groups.get(key, [])
+            has_explicit = any("implicit" not in a.source_interaction_type for a in atoms)
+            if not has_explicit:
+                distinct_rows = {a.source_object_id for a in atoms if a.source_object_id}
+                if len(distinct_rows) < MIN_IMPLICIT_NEGATIVE_REPETITION:
+                    n_gated_implicit_only += 1
+                    continue
+            neg_survivors.append(c)
+
+        if self.verbose and n_gated_implicit_only:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Gated {n_gated_implicit_only} implicit-only "
+                  f"negative canonicals (< {MIN_IMPLICIT_NEGATIVE_REPETITION} distinct rows).{utils.Colors.ENDC}")
 
         # Step 3: Weighted corroboration
         for c in neg_survivors:
