@@ -2586,9 +2586,9 @@ class PersonaAgent:
                     if raw.get("preference") == cr.persona_item:
                         raw.pop("preference")
                     # Resolve source_object_id → source_app for reinforced entries
-                    oid = raw.pop("source_object_id", None)
-                    if oid:
-                        raw["source_app"] = self._row_app.get(oid, "")
+                    hist_oid = raw.pop("source_object_id", None)
+                    if hist_oid:
+                        raw["source_app"] = self._row_app.get(hist_oid, "")
                     # For entries with a preference (evolution/contradicted), use target canonical's app
                     elif raw.get("preference"):
                         pref_cr = canonical_lookup.get(_normalize_persona_text(raw["preference"]))
