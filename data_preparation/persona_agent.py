@@ -615,6 +615,7 @@ class PersonaAgent:
         # Populated by summarize_and_cross_reference() for positive and negative separately.
         self._canonical_groups: dict[str, list] = {}
         self._negative_canonical_groups: dict[str, list] = {}
+        self._merge_map: dict[str, str] = {}  # old persona_item → merged representative
 
         # Session infrastructure — populated by _build_sessions()
         self._sessions: list[list] = []                               # list of session groups (each = list of InteractionRow)
@@ -1265,7 +1266,8 @@ class PersonaAgent:
 
         # Merge each cluster: representative gets summed xref, max init
         merged_survivors: list[CrossReferencedPersona] = []
-        merge_map: dict[str, str] = {}  # old persona_item → merged persona_item
+        self._merge_map = {}  # old persona_item → merged representative
+        merge_map = self._merge_map
         for root, members in clusters.items():
             rep = max(members, key=lambda c: c.confidence_score_init)
             rep.confidence_cross_referenced = sum(m.confidence_cross_referenced for m in members)
@@ -1291,6 +1293,9 @@ class PersonaAgent:
                     groups[new_key].extend(groups[old_key])
                 elif old_key in groups:
                     groups[new_key] = groups[old_key]
+                # Remove stale absorbed key
+                if old_key in groups and old_key != new_key:
+                    del groups[old_key]
 
         survivors = merged_survivors
         self._canonical_groups = groups
@@ -1597,11 +1602,13 @@ class PersonaAgent:
 
         from collections import defaultdict as _ddict
 
-        # Group raw atomic personas by normalized key, filtered to init >= threshold
-        groups: dict[str, list] = _ddict(list)
-        for ap in self.atomic_personas:
-            if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE:
-                groups[_normalize_persona_text(ap.persona_item)].append(ap)
+        # Use pre-merged canonical groups (includes atoms from absorbed members)
+        # with init-confidence filter applied
+        groups: dict[str, list] = {}
+        for key, atom_list in self._canonical_groups.items():
+            filtered = [ap for ap in atom_list if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE]
+            if filtered:
+                groups[key] = filtered
 
         # Overall user activity window
         all_timestamps = [ap.source_timestamp for ap in self.atomic_personas if ap.source_timestamp]
@@ -2705,11 +2712,22 @@ class PersonaAgent:
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
 
         # Canonical metadata lookup (positive + negative)
+        # Also map absorbed members' atom texts to the representative canonical
         canonical_lookup: dict[str, CrossReferencedPersona] = {}
         for cr in self.cross_referenced_personas:
-            canonical_lookup[_normalize_persona_text(cr.persona_item)] = cr
+            cr_key = _normalize_persona_text(cr.persona_item)
+            canonical_lookup[cr_key] = cr
+            for ap in self._canonical_groups.get(cr_key, []):
+                ap_key = _normalize_persona_text(ap.persona_item)
+                if ap_key not in canonical_lookup:
+                    canonical_lookup[ap_key] = cr
         for cr in self.cross_referenced_negatives:
-            canonical_lookup[_normalize_persona_text(cr.persona_item)] = cr
+            cr_key = _normalize_persona_text(cr.persona_item)
+            canonical_lookup[cr_key] = cr
+            for ap in self._negative_canonical_groups.get(cr_key, []):
+                ap_key = _normalize_persona_text(ap.persona_item)
+                if ap_key not in canonical_lookup:
+                    canonical_lookup[ap_key] = cr
 
         def _parse_format(raw: str, fallback_app: str) -> dict:
             """Parse a stored interaction_format (JSON str or legacy plain str)
