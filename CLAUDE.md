@@ -6,6 +6,9 @@
 - Key milestones include: new features, pipeline changes, bug fixes, data reprocessing with code changes
 - Always push to the current branch after committing
 
+## Regeneration
+- **NEVER** start the persona pipeline (reprocess/regenerate data) without explicitly asking the user first. LLM calls are expensive and other sessions may be editing code concurrently.
+
 ## Persona Pipeline
 - Default mode is Claude Code subagents (not API). See skill.md for the full 11-step specification.
 - When asked to "reprocess persona data", spawn one subagent per user in parallel.
