@@ -615,6 +615,7 @@ class PersonaAgent:
         # Populated by summarize_and_cross_reference() for positive and negative separately.
         self._canonical_groups: dict[str, list] = {}
         self._negative_canonical_groups: dict[str, list] = {}
+        self._merge_map: dict[str, str] = {}  # old persona_item → merged representative
 
         # Session infrastructure — populated by _build_sessions()
         self._sessions: list[list] = []                               # list of session groups (each = list of InteractionRow)
@@ -750,7 +751,7 @@ class PersonaAgent:
     IMPL_NEG_WEIGHT = 1.0    # each implicit_negative row
     EXPL_POS_WEIGHT = 3.0    # each explicit_positive row (strong counter-signal)
     IMPL_POS_WEIGHT = 1.5    # each implicit_positive row (moderate counter-signal)
-    MIN_TEMPORAL_DAYS = 3    # must span >= 3 distinct days to avoid session noise
+    MIN_TEMPORAL_DAYS = 1    # must span >= 1 distinct day
 
     def _promote_implicit_negatives(self) -> None:
         """Promote repeated implicit_negative rows using weighted net-sentiment.
@@ -827,13 +828,12 @@ class PersonaAgent:
                       f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
             return
 
-        # Step 3: Rows with >= 2 hot hashtags are promoted
+        # Step 3: Rows with >= 1 hot hashtag are promoted
         hot_tag_set = set(hot_tags.keys())
         promoted_oids: set[str] = set()
         for row in impl_neg_rows:
             tags = self._extract_hashtags(row.object_text)
-            n_hot = sum(1 for t in tags if t.lower() in hot_tag_set)
-            if n_hot >= 2:
+            if any(t.lower() in hot_tag_set for t in tags):
                 promoted_oids.add(row.object_id)
 
         # Step 4: Pick ONE representative per hot hashtag (longest text)
@@ -848,7 +848,7 @@ class PersonaAgent:
                   f">= {self.MIN_TEMPORAL_DAYS} days), "
                   f"{n_filtered_pos} removed by positive counterevidence, "
                   f"{n_filtered_days} by temporal spread, "
-                  f"{len(promoted_oids)} rows promoted (>= 2 hot tags), "
+                  f"{len(promoted_oids)} rows promoted (>= 1 hot tag), "
                   f"{len(representatives)} LLM calls.{utils.Colors.ENDC}")
 
         # Step 5: Run LLM — one call per hot hashtag, single hashtag only
@@ -883,11 +883,17 @@ class PersonaAgent:
         pbar.close()
 
         # Step 6: Fan out — for each hot hashtag, copy preferences to promoted
-        # rows only (>= 2 hot hashtags). source_hashtags keeps the FULL original set.
+        # rows that actually contain that hashtag (tag-scoped, no cross-tag
+        # leakage). The hot hashtag's own net-sentiment filtering is sufficient
+        # corroboration; no per-preference text-matching filter needed.
+        # source_hashtags keeps the FULL original set for realism.
         n_atomics = 0
         for tag, personas in tag_personas.items():
             for row in hot_tags[tag]:
                 if row.object_id not in promoted_oids:
+                    continue
+                row_tags_lower = {t.lower() for t in self._extract_hashtags(row.object_text)}
+                if tag not in row_tags_lower:
                     continue
                 formatted_ts = self._format_timestamp(row.interaction_time)
                 all_hashtags = self._extract_hashtags(row.object_text)
@@ -1235,7 +1241,8 @@ class PersonaAgent:
 
         # Merge each cluster: representative gets summed xref, max init
         merged_survivors: list[CrossReferencedPersona] = []
-        merge_map: dict[str, str] = {}  # old persona_item → merged persona_item
+        self._merge_map = {}  # old persona_item → merged representative
+        merge_map = self._merge_map
         for root, members in clusters.items():
             rep = max(members, key=lambda c: c.confidence_score_init)
             rep.confidence_cross_referenced = sum(m.confidence_cross_referenced for m in members)
@@ -1261,6 +1268,9 @@ class PersonaAgent:
                     groups[new_key].extend(groups[old_key])
                 elif old_key in groups:
                     groups[new_key] = groups[old_key]
+                # Remove stale absorbed key
+                if old_key in groups and old_key != new_key:
+                    del groups[old_key]
 
         survivors = merged_survivors
         self._canonical_groups = groups
@@ -1567,11 +1577,13 @@ class PersonaAgent:
 
         from collections import defaultdict as _ddict
 
-        # Group raw atomic personas by normalized key, filtered to init >= threshold
-        groups: dict[str, list] = _ddict(list)
-        for ap in self.atomic_personas:
-            if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE:
-                groups[_normalize_persona_text(ap.persona_item)].append(ap)
+        # Use pre-merged canonical groups (includes atoms from absorbed members)
+        # with init-confidence filter applied
+        groups: dict[str, list] = {}
+        for key, atom_list in self._canonical_groups.items():
+            filtered = [ap for ap in atom_list if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE]
+            if filtered:
+                groups[key] = filtered
 
         # Overall user activity window
         all_timestamps = [ap.source_timestamp for ap in self.atomic_personas if ap.source_timestamp]
@@ -2675,11 +2687,22 @@ class PersonaAgent:
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
 
         # Canonical metadata lookup (positive + negative)
+        # Also map absorbed members' atom texts to the representative canonical
         canonical_lookup: dict[str, CrossReferencedPersona] = {}
         for cr in self.cross_referenced_personas:
-            canonical_lookup[_normalize_persona_text(cr.persona_item)] = cr
+            cr_key = _normalize_persona_text(cr.persona_item)
+            canonical_lookup[cr_key] = cr
+            for ap in self._canonical_groups.get(cr_key, []):
+                ap_key = _normalize_persona_text(ap.persona_item)
+                if ap_key not in canonical_lookup:
+                    canonical_lookup[ap_key] = cr
         for cr in self.cross_referenced_negatives:
-            canonical_lookup[_normalize_persona_text(cr.persona_item)] = cr
+            cr_key = _normalize_persona_text(cr.persona_item)
+            canonical_lookup[cr_key] = cr
+            for ap in self._negative_canonical_groups.get(cr_key, []):
+                ap_key = _normalize_persona_text(ap.persona_item)
+                if ap_key not in canonical_lookup:
+                    canonical_lookup[ap_key] = cr
 
         def _parse_format(raw: str, fallback_app: str) -> dict:
             """Parse a stored interaction_format (JSON str or legacy plain str)
@@ -2716,6 +2739,18 @@ class PersonaAgent:
         for ap in self.negative_personas:
             atomics_by_oid[ap.source_object_id].append(ap)
 
+        # --- Compute latest-20% timestamp cutoff for test labeling ---
+        # Test labels only apply to events in the latest 20% of the timeline.
+        # Earlier occurrences of the same canonical get no split label.
+        all_timestamps = sorted(set(
+            ap.source_timestamp for ap in self.atomic_personas if ap.source_timestamp
+        ))
+        if all_timestamps:
+            cutoff_idx = int(len(all_timestamps) * 0.8)
+            test_ts_cutoff = all_timestamps[min(cutoff_idx, len(all_timestamps) - 1)]
+        else:
+            test_ts_cutoff = 0
+
         # --- Build interaction events ---
         all_events: list[dict] = []
         seen_unique_prefs: list[str] = []  # for profile.json dedup
@@ -2747,7 +2782,9 @@ class PersonaAgent:
                     continue  # this atomic's canonical was filtered out
 
                 ann = all_annotated_items.get(cr.persona_item)
-                split_label = self.split_labels.get(cr.persona_item, "train")
+                # Only label as "test" if this event is in the latest 20%
+                raw_split = self.split_labels.get(cr.persona_item, "")
+                split_label = "test" if raw_split == "test" and ap.source_timestamp >= test_ts_cutoff else ""
                 distractor = self.test_distractors.get(cr.persona_item, {}) if split_label == "test" else {}
 
                 # Build merged update_history: temporal entries (no raw timestamp)
@@ -2803,10 +2840,10 @@ class PersonaAgent:
                     "confidence_score_init": ap.confidence_score_init,
                     "confidence_cross_referenced": cr.confidence_cross_referenced,
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
-                    "split": split_label,
                     "update_history": merged_history,
                 }
                 if split_label == "test":
+                    pref["split"] = "test"
                     pref["over_personalization_irrelevant"] = distractor.get("persona_item", "")
                     pref["over_personalization_irrelevant_category"] = distractor.get("category", "")
 
@@ -3086,7 +3123,7 @@ class PersonaAgent:
                             )
                             self.annotated_personas.append(ann)
 
-                    split_label = pref.get("split", "train") or "train"
+                    split_label = pref.get("split", "")
                     self.split_labels[persona_item] = split_label
                     if split_label == "test":
                         distractor_item = pref.get("over_personalization_irrelevant", "") or ""
@@ -3141,7 +3178,7 @@ class PersonaAgent:
                     )
                     self.annotated_personas.append(ann)
 
-                split_label = rec.get("split", "train") or "train"
+                split_label = rec.get("split", "")
                 self.split_labels[rec["persona_item"]] = split_label
                 if split_label == "test":
                     distractor_item = rec.get("over_personalization_irrelevant", "") or ""

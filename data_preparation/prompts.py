@@ -726,17 +726,21 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 
 1. **Task-oriented conversation.** The user is asking the chatbot for help with a real task — not chatting about their preferences. Frame the conversation as a realistic request: editing text, asking a question, seeking advice, solving a problem, etc.
 
-2. **{implicitness_instruction}**
+2. **Embed the preference in the user's task content, not in their words about themselves.** The preference should be revealed through the MATERIAL the user provides to the chatbot — an email draft they paste, a text they want translated, a question they ask, a problem they describe. The user's explicit request is about the task (improve this email, translate this text, help me debug this). The preference is inferable from the subject matter, details, and context of that material, never from the user talking about their own likes/dislikes.
 
-3. **{polarity_instruction}**
+3. **{implicitness_instruction}**
 
-4. **NEVER have the user directly state the preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. The preference must be inferable from context, not explicitly declared.
+4. **{polarity_instruction}**
 
-5. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
+5. **NEVER have the user directly state the preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. The preference must be inferable from the task content, not explicitly declared. Do NOT have the user explain why they are asking — real users just ask.
 
-6. **Assistant responses should be long, detailed, and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request. The assistant responds to the task at hand without explicitly calling out the user's preference.
+6. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
 
-7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
+7. **Assistant responses should be long, detailed, and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request. The assistant responds to the task at hand without explicitly calling out the user's preference.
+
+8. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
+
+**Importantly, the user preference must be implicit and require some reasoning to interpret.**
 
 ## Output Format
 
