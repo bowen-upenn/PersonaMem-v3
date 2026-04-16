@@ -2851,10 +2851,10 @@ class PersonaAgent:
                     "confidence_score_init": ap.confidence_score_init,
                     "confidence_cross_referenced": cr.confidence_cross_referenced,
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
-                    "split": split_label,
                     "update_history": merged_history,
                 }
                 if split_label == "test":
+                    pref["split"] = "test"
                     pref["over_personalization_irrelevant"] = distractor.get("persona_item", "")
                     pref["over_personalization_irrelevant_category"] = distractor.get("category", "")
 
