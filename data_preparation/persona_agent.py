@@ -751,7 +751,7 @@ class PersonaAgent:
     IMPL_NEG_WEIGHT = 1.0    # each implicit_negative row
     EXPL_POS_WEIGHT = 3.0    # each explicit_positive row (strong counter-signal)
     IMPL_POS_WEIGHT = 1.5    # each implicit_positive row (moderate counter-signal)
-    MIN_TEMPORAL_DAYS = 3    # must span >= 3 distinct days to avoid session noise
+    MIN_TEMPORAL_DAYS = 1    # must span >= 1 distinct day
 
     def _promote_implicit_negatives(self) -> None:
         """Promote repeated implicit_negative rows using weighted net-sentiment.
