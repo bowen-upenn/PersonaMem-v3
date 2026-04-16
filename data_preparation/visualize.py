@@ -227,6 +227,22 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.platform.p-Threads {{ background: #8E8E93; color: #fff; }}
   .badge.platform.p-Chatbot {{ background: #C8956C; color: #fff; }}
   .badge.action {{ background: #E8E8ED; color: #48484A; font-weight: 500; }}
+  .badge.hidden-persona {{ background: #EDE9FE; color: #6D28D9; font-weight: 500; }}
+
+  .hidden-section {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 40px; box-shadow: var(--shadow); }}
+  .hidden-section h2 {{ font-size: 18px; font-weight: 600; margin-bottom: 14px; letter-spacing: -0.2px; }}
+  .hidden-summary {{ font-size: 13px; line-height: 1.7; color: var(--text); margin-bottom: 16px; padding: 12px 16px; background: #FAFAFA; border-radius: 8px; border-left: 3px solid #6D28D9; }}
+  .hp-card {{ padding: 12px 16px; margin-bottom: 10px; border-radius: 8px; background: #FAFAFA; border: 1px solid #F2F2F7; }}
+  .hp-card .hp-label {{ font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }}
+  .hp-card .hp-type {{ font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: #6D28D9; margin-bottom: 4px; }}
+  .hp-card .hp-desc {{ font-size: 12px; color: var(--text); line-height: 1.6; margin-bottom: 6px; }}
+  .hp-card .hp-meta {{ font-size: 10px; color: var(--text-secondary); }}
+  .hp-card .hp-meta span {{ margin-right: 12px; }}
+  .hp-card .hp-tags {{ font-size: 11px; color: var(--text-secondary); margin-top: 4px; }}
+  .hp-card .hp-motivation {{ font-size: 11px; color: #6D28D9; margin-top: 4px; font-style: italic; }}
+  .dual-card {{ padding: 10px 16px; margin-bottom: 8px; border-radius: 8px; background: #FFF7ED; border: 1px solid #FED7AA; }}
+  .dual-card .dual-label {{ font-size: 12px; font-weight: 600; color: #9A3412; }}
+  .dual-card .dual-tension {{ font-size: 11px; color: var(--text); line-height: 1.5; margin-top: 2px; }}
   .badge.interaction-type {{ font-weight: 600; padding: 2px 10px; }}
   .badge.interaction-type.explicit_positive {{ background: #D1FAE5; color: #065F46; }}
   .badge.interaction-type.implicit_positive {{ background: #EDF5E1; color: #3F6212; }}
@@ -269,6 +285,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   </div>
 
   <div id="profile-section"></div>
+  <div id="hidden-personas-section"></div>
 
   <div class="section">
     <div class="section-title">Interaction Events (earliest &rarr; latest)</div>
@@ -299,6 +316,58 @@ if (profileData) {{
       <div class="big-five">${{b5Html}}</div>
     </div>
   `;
+}}
+
+// -- Hidden Personas section --
+const hps = document.getElementById('hidden-personas-section');
+if (profileData && profileData.hidden_personas && profileData.hidden_personas.length > 0) {{
+  let html = '<div class="hidden-section"><h2>Hidden Personas</h2>';
+
+  // Summary paragraph
+  if (profileData.hidden_persona_summary) {{
+    html += `<div class="hidden-summary">${{profileData.hidden_persona_summary}}</div>`;
+  }}
+
+  // Individual hidden persona cards
+  profileData.hidden_personas.forEach(hp => {{
+    const tags = (hp.evidence_hashtags || []).join('  ');
+    const ib = hp.interaction_breakdown || {{}};
+    const ibStr = Object.entries(ib).map(([k,v]) => `${{k.replace(/_/g,' ')}}: ${{v}}`).join(' · ');
+    const appDist = hp.app_distribution || {{}};
+    const appStr = Object.entries(appDist).map(([k,v]) => `${{k}}: ${{v}}`).join(' · ');
+    html += `
+      <div class="hp-card">
+        <div class="hp-type">${{hp.type || ''}}</div>
+        <div class="hp-label">${{hp.label || ''}}</div>
+        <div class="hp-desc">${{hp.description || ''}}</div>
+        <div class="hp-meta">
+          <span>${{hp.evidence_rows || 0}} rows (${{((hp.evidence_row_fraction || 0) * 100).toFixed(1)}}%)</span>
+          <span>privacy: ${{((hp.privacy_ratio || 0) * 100).toFixed(0)}}%</span>
+          <span>${{hp.temporal_spread_days || 0}} days</span>
+          ${{appStr ? `<span>${{appStr}}</span>` : ''}}
+        </div>
+        <div class="hp-tags">${{tags}}</div>
+        ${{hp.inferred_motivation ? `<div class="hp-motivation">"${{hp.inferred_motivation}}"</div>` : ''}}
+      </div>
+    `;
+  }});
+
+  // Dual personalities
+  if (profileData.dual_personalities && profileData.dual_personalities.length > 0) {{
+    html += '<div style="margin-top:16px;"><div class="section-title" style="font-size:14px;">Dual Personality Tensions</div>';
+    profileData.dual_personalities.forEach(d => {{
+      html += `
+        <div class="dual-card">
+          <div class="dual-label">${{d.persona_a}} &harr; ${{d.persona_b}}</div>
+          <div class="dual-tension">${{d.tension || ''}}</div>
+        </div>
+      `;
+    }});
+    html += '</div>';
+  }}
+
+  html += '</div>';
+  hps.innerHTML = html;
 }}
 
 // -- Render update history --
@@ -359,6 +428,11 @@ if (eventsData.length === 0) {{
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
       if (p.split === 'test') badges += `<span class="badge test">test</span>`;
       if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
+      if (p.hidden_persona_labels && p.hidden_persona_labels.length > 0) {{
+        p.hidden_persona_labels.forEach(lbl => {{
+          badges += `<span class="badge hidden-persona">${{lbl}}</span>`;
+        }});
+      }}
 
       let distractorLine = '';
       if (p.split === 'test' && p.over_personalization_irrelevant) {{
