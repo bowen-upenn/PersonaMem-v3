@@ -1776,7 +1776,7 @@ class PersonaAgent:
     def annotate_stereotype_marks(self) -> None:
         """For each persona (positive and negative), annotate whether it is neutral,
         stereotypical, or anti-stereotypical relative to the user's demographics."""
-        all_personas = list(self.cross_referenced_personas) + list(self.negative_personas)
+        all_personas = list(self.cross_referenced_personas) + list(self.cross_referenced_negatives)
         if not self.user_profile or not all_personas:
             self.annotated_personas = []
             return
@@ -1794,13 +1794,13 @@ class PersonaAgent:
 
         response = self._query_llm_with_retry(prompt)
         if not response:
-            print(f"{utils.Colors.WARNING}[User {self.user_id}] Stereotype annotation LLM call failed.{utils.Colors.ENDC}")
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] Stereotype annotation LLM call failed — skipping.{utils.Colors.ENDC}")
             self.annotated_personas = []
             return
 
         parsed = utils.extract_json_from_response(response)
         if not isinstance(parsed, list):
-            print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable stereotype annotation response.{utils.Colors.ENDC}")
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable stereotype annotation response — skipping.{utils.Colors.ENDC}")
             self.annotated_personas = []
             return
 
@@ -1808,8 +1808,8 @@ class PersonaAgent:
         all_lookup: dict[str, any] = {}
         for p in self.cross_referenced_personas:
             all_lookup[p.persona_item] = (p.confidence_score_init, p.confidence_cross_referenced, p.category)
-        for p in self.negative_personas:
-            all_lookup[p.persona_item] = (p.confidence_score_init, 0.0, p.category)
+        for p in self.cross_referenced_negatives:
+            all_lookup[p.persona_item] = (p.confidence_score_init, p.confidence_cross_referenced, p.category)
 
         self.annotated_personas = []
         for item in parsed:
