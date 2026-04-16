@@ -827,13 +827,12 @@ class PersonaAgent:
                       f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
             return
 
-        # Step 3: Rows with >= 2 hot hashtags are promoted
+        # Step 3: Rows with >= 1 hot hashtag are promoted
         hot_tag_set = set(hot_tags.keys())
         promoted_oids: set[str] = set()
         for row in impl_neg_rows:
             tags = self._extract_hashtags(row.object_text)
-            n_hot = sum(1 for t in tags if t.lower() in hot_tag_set)
-            if n_hot >= 2:
+            if any(t.lower() in hot_tag_set for t in tags):
                 promoted_oids.add(row.object_id)
 
         # Step 4: Pick ONE representative per hot hashtag (longest text)
@@ -848,7 +847,7 @@ class PersonaAgent:
                   f">= {self.MIN_TEMPORAL_DAYS} days), "
                   f"{n_filtered_pos} removed by positive counterevidence, "
                   f"{n_filtered_days} by temporal spread, "
-                  f"{len(promoted_oids)} rows promoted (>= 2 hot tags), "
+                  f"{len(promoted_oids)} rows promoted (>= 1 hot tag), "
                   f"{len(representatives)} LLM calls.{utils.Colors.ENDC}")
 
         # Step 5: Run LLM — one call per hot hashtag, single hashtag only
@@ -882,16 +881,46 @@ class PersonaAgent:
 
         pbar.close()
 
-        # Step 6: Fan out — for each hot hashtag, copy preferences to promoted
-        # rows only (>= 2 hot hashtags). source_hashtags keeps the FULL original set.
+        # Step 6: Per-preference corroboration filter. A preference text must
+        # be independently produced by >= 2 different hot hashtag LLM calls.
+        # This filters out speculative one-off inferences from a single call.
+        from collections import Counter as _Ctr
+        pref_tag_count: dict[str, int] = _Ctr()  # normalized pref text → # of distinct tags that produced it
+        for tag, personas in tag_personas.items():
+            seen_in_tag: set[str] = set()
+            for p in personas:
+                key = _normalize_persona_text(p.persona_item)
+                if key not in seen_in_tag:
+                    seen_in_tag.add(key)
+                    pref_tag_count[key] += 1
+
+        MIN_PREF_CORROBORATION = 2  # preference must come from >= 2 independent hashtag calls
+        corroborated_prefs: set[str] = {
+            key for key, count in pref_tag_count.items()
+            if count >= MIN_PREF_CORROBORATION
+        }
+
+        n_pref_total = len(pref_tag_count)
+        n_pref_kept = len(corroborated_prefs)
+
+        # Step 7: Fan out — for each hot hashtag, copy ONLY corroborated
+        # preferences to promoted rows that actually contain that hashtag.
+        # source_hashtags keeps the FULL original set for realism.
         n_atomics = 0
         for tag, personas in tag_personas.items():
             for row in hot_tags[tag]:
                 if row.object_id not in promoted_oids:
                     continue
+                # Only assign preference if THIS row's hashtags contain the
+                # hot hashtag that produced it (no cross-tag leakage).
+                row_tags_lower = {t.lower() for t in self._extract_hashtags(row.object_text)}
+                if tag not in row_tags_lower:
+                    continue
                 formatted_ts = self._format_timestamp(row.interaction_time)
                 all_hashtags = self._extract_hashtags(row.object_text)
                 for template in personas:
+                    if _normalize_persona_text(template.persona_item) not in corroborated_prefs:
+                        continue  # one-off inference, not corroborated
                     self.negative_personas.append(AtomicPersona(
                         persona_item=template.persona_item,
                         category=template.category,
@@ -908,6 +937,7 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Implicit-negative promotion: "
                   f"{len(tag_personas)}/{len(hot_tags)} hashtags produced preferences, "
+                  f"{n_pref_kept}/{n_pref_total} prefs corroborated (>= {MIN_PREF_CORROBORATION} independent tags), "
                   f"{n_atomics} atomic negatives fanned out.{utils.Colors.ENDC}")
 
     def _infer_implicit_neg_hashtag(
