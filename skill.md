@@ -18,7 +18,7 @@ When spawning the subagent, the parent prompt should include an explicit "plan m
 
 ## What it does
 
-Reads a CSV of social media interactions, groups rows by `user_id`, and spawns one parallel subagent per user. Each subagent follows the prompt templates in `data_preparation/prompts.py`, runs the full persona pipeline, and writes **per-user subfolder** outputs at `backend/{user_id}/` as JSON files — one per app.
+Reads a CSV of social media interactions, groups rows by `user_id`, and spawns one parallel subagent per user. Each subagent follows the prompt templates in `data_preparation/prompts.py`, runs the full persona pipeline (including hidden persona inference from cross-row hashtag patterns), and writes **per-user subfolder** outputs at `backend/{user_id}/` as JSON files — one per app.
 
 ## Output layout
 
@@ -69,6 +69,8 @@ For each user, the subagent executes these steps in order. Each step's rules com
 4. **Temporal contradiction graph** — rules from `prompts.py::temporal_contradiction_graph_prompt`. Group contradictions into topical timelines (optional; skip if no contradictions).
 
 5. **Generate user profile** — rules from `prompts.py::generate_user_profile_prompt`. Sample `gender_orientation` + `race_ethnicity` from the Python distributions in `persona_agent.py`, then generate name/career/education/Big Five/bio. Deliberately avoid stereotypes.
+
+5.5. **Infer hidden personas** — rules from `prompts.py::infer_hidden_personas_prompt`. Scan ALL interaction rows to build a hashtag frequency census (per-interaction-type counts, distinct days). Pass top ~200 hashtags (≥3 occurrences) to LLM along with the user's demographics and surviving preference skeleton. LLM groups hashtags into 8–15 thematic clusters representing hidden motivations (personality traits, aspirations, emotional patterns, identity anchors, intimate interests, intellectual curiosity, private hobbies). Each cluster is validated algorithmically: ≥20 distinct source rows (`MIN_HIDDEN_PERSONA_ROWS`), ≥3 distinct calendar days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio and interaction breakdown are computed from raw data. A second LLM call (`hidden_persona_summary_prompt`) synthesizes all validated hidden personas into a narrative summary. Both `hidden_personas` list and `hidden_persona_summary` string are stored on `UserProfile` and saved to `profile.json`. `app_distribution` per hidden persona is filled retroactively in `save_to_backend()` after app routing completes.
 
 6. **Generate per-app sub-personas** — rules from `prompts.py::generate_app_personas_prompt`. Produce **four distinct** AppPersona objects (one per app) describing how this specific user uses each app: `use_purposes`, `friend_zones`, `audience_type`, `style_description`, `posting_frequency`, `topical_focus`. For Chatbot, also populate `chatbot_contexts` with 2–3 entries from `CHATBOT_CONTEXTS` in `persona_agent.py` that match the user.
 
