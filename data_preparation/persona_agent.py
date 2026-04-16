@@ -2019,7 +2019,7 @@ class PersonaAgent:
                     # Claude Code subagent mode — this method is called
                     # inline so the LLM reasoning IS the execution.
                     return
-                raw_clusters = utils.parse_json_response(response)
+                raw_clusters = utils.extract_json_from_response(response)
                 if isinstance(raw_clusters, list):
                     break
             except Exception as e:
@@ -2129,7 +2129,7 @@ class PersonaAgent:
             )
             for attempt in range(self.MAX_RETRIES):
                 try:
-                    raw_duals = utils.parse_json_response(self.llm_client.query_llm(dual_prompt))
+                    raw_duals = utils.extract_json_from_response(self.llm_client.query_llm(dual_prompt))
                     if isinstance(raw_duals, list):
                         for d in raw_duals:
                             if isinstance(d, dict) and d.get("persona_a") and d.get("persona_b"):
