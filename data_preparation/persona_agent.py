@@ -123,6 +123,37 @@ class AppPersona:
 
 
 @dataclass
+class HiddenPersona:
+    """A deeper motivational layer inferred from cross-row hashtag clustering.
+
+    Hidden personas are the 'why' behind surface-level preferences — personality
+    traits, aspirations, emotional patterns, identity anchors, intimate interests,
+    and private hobbies that explain observable engagement but are not captured by
+    individual-row inference.
+    """
+    label: str                                                              # e.g., "Romantic vulnerability and yearning"
+    type: str = ""                                                          # personality_trait | aspiration | emotional_pattern | identity_anchor | intimate_interest | intellectual_curiosity | private_hobby
+    description: str = ""                                                   # 2-3 sentence interpretation
+    evidence_hashtags: list[str] = field(default_factory=list)              # Top 8-10 hashtags backing this
+    evidence_rows: int = 0                                                  # Distinct source rows
+    evidence_row_fraction: float = 0.0                                      # Fraction of user's total rows
+    interaction_breakdown: dict = field(default_factory=dict)               # {implicit_positive: N, ...}
+    privacy_ratio: float = 0.0                                              # implicit_positive / (implicit_positive + explicit_positive)
+    temporal_spread_days: int = 0                                           # Distinct calendar days
+    app_distribution: dict = field(default_factory=dict)                    # {Instagram: N, Facebook: N, ...}
+    surface_connections: list[str] = field(default_factory=list)            # Which surface preferences this explains
+    inferred_motivation: str = ""                                           # 1-2 sentence "why" behind this pattern
+    already_captured: bool = False                                          # True if overlaps heavily with surface preferences
+
+
+# Validation thresholds for hidden persona inference
+MIN_HIDDEN_PERSONA_ROWS = 20       # Minimum distinct source rows for a cluster to survive
+MIN_HIDDEN_PERSONA_DAYS = 3        # Minimum temporal spread in distinct calendar days
+HIDDEN_PERSONA_HASHTAG_MIN_FREQ = 3  # Minimum total occurrences for a hashtag to be considered
+HIDDEN_PERSONA_TOP_HASHTAGS = 200  # Number of top hashtags passed to LLM
+
+
+@dataclass
 class UserProfile:
     """Synthetic user profile generated from final personas (output of LLM call #4)."""
     name: str = ""
@@ -135,6 +166,10 @@ class UserProfile:
     # Per-app sub-personas — filled in by generate_app_personas() after the
     # base profile is written. Keyed by app_name.
     app_personas: dict = field(default_factory=dict)  # dict[str, AppPersona]
+    # Hidden personas — deeper motivational layers inferred from cross-row
+    # hashtag clustering. Filled in by infer_hidden_personas().
+    hidden_personas: list = field(default_factory=list)  # list[HiddenPersona]
+    hidden_persona_summary: str = ""                     # cohesive narrative paragraph
 
 
 @dataclass
@@ -224,20 +259,20 @@ def _normalize_persona_text(text: str) -> str:
 
 # Gender × sexual orientation distribution
 GENDER_ORIENTATION_DISTRIBUTION = {
-    "cisgender female, heterosexual": 0.34,
+    "cisgender female, heterosexual": 0.30,
     "cisgender female, bisexual": 0.04,
-    "cisgender female, lesbian": 0.02,
+    "cisgender female, lesbian": 0.04,
     "cisgender female, queer": 0.01,
-    "cisgender male, heterosexual": 0.36,
+    "cisgender male, heterosexual": 0.32,
     "cisgender male, bisexual": 0.02,
-    "cisgender male, gay": 0.03,
+    "cisgender male, gay": 0.05,
     "cisgender male, queer": 0.01,
-    "transgender female, heterosexual": 0.01,
-    "transgender female, lesbian": 0.005,
-    "transgender female, bisexual": 0.005,
-    "transgender male, heterosexual": 0.01,
-    "transgender male, gay": 0.005,
-    "transgender male, bisexual": 0.005,
+    "transgender female, heterosexual": 0.02,
+    "transgender female, lesbian": 0.01,
+    "transgender female, bisexual": 0.01,
+    "transgender male, heterosexual": 0.02,
+    "transgender male, gay": 0.01,
+    "transgender male, bisexual": 0.01,
     "non-binary, queer": 0.02,
     "non-binary, bisexual": 0.01,
     "non-binary, pansexual": 0.01,
@@ -253,7 +288,7 @@ RACE_ETHNICITY_DISTRIBUTION = {
     "White European immigrant": 0.02,
     "Russian or Eastern European": 0.02,
     "Jewish American": 0.02,
-    "Black or African American": 0.10,
+    "Black or African American": 0.08,
     "African immigrant": 0.02,
     "Afro-Caribbean": 0.02,
     "Mexican American": 0.08,
@@ -261,7 +296,7 @@ RACE_ETHNICITY_DISTRIBUTION = {
     "Cuban American": 0.01,
     "Central American": 0.02,
     "South American": 0.02,
-    "Chinese": 0.08,
+    "Chinese": 0.10,
     "Indian": 0.08,
     "Filipino": 0.04,
     "Vietnamese": 0.04,
@@ -1887,6 +1922,208 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Stereotype annotations: {counts}{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
+    # Step 5.5: Hidden Persona Inference (cross-row hashtag clustering)
+    # ------------------------------------------------------------------
+
+    def infer_hidden_personas(self) -> None:
+        """Infer hidden personas from cross-row hashtag patterns.
+
+        Three phases:
+        1. Hashtag frequency census across all interaction rows.
+        2. LLM thematic clustering + motivation inference.
+        3. Algorithmic validation (row count, temporal spread, privacy ratio).
+
+        Results are stored on self.user_profile.hidden_personas and
+        self.user_profile.hidden_persona_summary.
+        """
+        if not self.user_profile or not self.interactions:
+            return
+
+        from collections import Counter
+        from datetime import datetime
+
+        # ── Phase 1: Hashtag Frequency Census ───────────────────────────
+
+        # Per-hashtag, per-interaction-type counters
+        hashtag_total: Counter = Counter()
+        hashtag_by_type: dict[str, Counter] = {
+            "explicit_positive": Counter(),
+            "implicit_positive": Counter(),
+            "explicit_negative": Counter(),
+            "implicit_negative": Counter(),
+        }
+        # hashtag → set of distinct calendar day strings
+        hashtag_days: dict[str, set] = {}
+        # hashtag → set of distinct source row object_ids
+        hashtag_rows: dict[str, set] = {}
+
+        for row in self.interactions:
+            tags = self._extract_hashtags(row.object_text)
+            day_str = datetime.utcfromtimestamp(row.interaction_time).strftime("%Y-%m-%d")
+            itype = row.interaction_type
+            for tag in tags:
+                hashtag_total[tag] += 1
+                if itype in hashtag_by_type:
+                    hashtag_by_type[itype][tag] += 1
+                hashtag_days.setdefault(tag, set()).add(day_str)
+                hashtag_rows.setdefault(tag, set()).add(row.object_id)
+
+        # Filter to hashtags with >= MIN_FREQ total occurrences
+        eligible = [
+            (tag, count)
+            for tag, count in hashtag_total.most_common()
+            if count >= HIDDEN_PERSONA_HASHTAG_MIN_FREQ
+        ]
+
+        if len(eligible) < 10:
+            # Not enough hashtag diversity for meaningful clustering
+            return
+
+        # Take top N for LLM
+        top_hashtags = eligible[:HIDDEN_PERSONA_TOP_HASHTAGS]
+
+        # Build hashtag table for the prompt
+        lines = []
+        for tag, total in top_hashtags:
+            ep = hashtag_by_type["explicit_positive"].get(tag, 0)
+            ip = hashtag_by_type["implicit_positive"].get(tag, 0)
+            en = hashtag_by_type["explicit_negative"].get(tag, 0)
+            inn = hashtag_by_type["implicit_negative"].get(tag, 0)
+            lines.append(f"{tag} — {total} | {ep} | {ip} | {en} | {inn}")
+        hashtag_table = "\n".join(lines)
+
+        # Build known preference list
+        pref_list = []
+        for cr in self.cross_referenced_personas:
+            if cr.persona_item not in pref_list:
+                pref_list.append(cr.persona_item)
+        for cr in self.cross_referenced_negatives:
+            if cr.persona_item not in pref_list:
+                pref_list.append(cr.persona_item)
+
+        # ── Phase 2: LLM Thematic Clustering ────────────────────────────
+
+        prompt_text = prompts.infer_hidden_personas_prompt(
+            gender=self.user_profile.gender,
+            race_ethnicity=self.user_profile.race_ethnicity,
+            career=self.user_profile.career,
+            bio=self.user_profile.bio,
+            preference_list=pref_list,
+            hashtag_table=hashtag_table,
+        )
+
+        raw_clusters = None
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                if self.llm_client:
+                    response = self.llm_client.query(prompt_text)
+                else:
+                    # Claude Code subagent mode — this method is called
+                    # inline so the LLM reasoning IS the execution.
+                    return
+                raw_clusters = utils.parse_json_response(response)
+                if isinstance(raw_clusters, list):
+                    break
+            except Exception as e:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] Hidden persona LLM attempt "
+                          f"{attempt+1} failed: {e}{utils.Colors.ENDC}")
+        if not raw_clusters or not isinstance(raw_clusters, list):
+            return
+
+        # ── Phase 3: Algorithmic Validation ──────────────────────────────
+
+        total_rows = len(self.interactions)
+        validated: list[HiddenPersona] = []
+
+        for cluster in raw_clusters:
+            if not isinstance(cluster, dict):
+                continue
+            evidence_tags = cluster.get("evidence_hashtags", [])
+            if len(evidence_tags) < 3:
+                continue
+
+            # Compute evidence metrics from raw data
+            tag_set_lower = set(t.lower() for t in evidence_tags)
+            distinct_row_ids: set[str] = set()
+            distinct_days: set[str] = set()
+            itype_counts: Counter = Counter()
+
+            for row in self.interactions:
+                tags_in_row = self._extract_hashtags(row.object_text)
+                tags_lower = set(t.lower() for t in tags_in_row)
+                if tags_lower & tag_set_lower:
+                    distinct_row_ids.add(row.object_id)
+                    day_str = datetime.utcfromtimestamp(row.interaction_time).strftime("%Y-%m-%d")
+                    distinct_days.add(day_str)
+                    itype_counts[row.interaction_type] += 1
+
+            n_rows = len(distinct_row_ids)
+            n_days = len(distinct_days)
+
+            # Gate: minimum rows and temporal spread
+            if n_rows < MIN_HIDDEN_PERSONA_ROWS:
+                continue
+            if n_days < MIN_HIDDEN_PERSONA_DAYS:
+                continue
+
+            # Compute privacy ratio
+            ip = itype_counts.get("implicit_positive", 0)
+            ep = itype_counts.get("explicit_positive", 0)
+            privacy = ip / (ip + ep) if (ip + ep) > 0 else 0.0
+
+            hp = HiddenPersona(
+                label=cluster.get("label", ""),
+                type=cluster.get("type", ""),
+                description=cluster.get("description", ""),
+                evidence_hashtags=evidence_tags,
+                evidence_rows=n_rows,
+                evidence_row_fraction=round(n_rows / total_rows, 4) if total_rows else 0.0,
+                interaction_breakdown=dict(itype_counts),
+                privacy_ratio=round(privacy, 3),
+                temporal_spread_days=n_days,
+                app_distribution={},  # Filled retroactively in save_to_backend after routing
+                surface_connections=cluster.get("surface_connections", []),
+                inferred_motivation=cluster.get("inferred_motivation", ""),
+                already_captured=cluster.get("already_captured", False),
+            )
+            validated.append(hp)
+
+        if not validated:
+            return
+
+        # ── Generate Summary ─────────────────────────────────────────────
+
+        summary_prompt = prompts.hidden_persona_summary_prompt(
+            hidden_personas_json=json.dumps(
+                [{"label": hp.label, "type": hp.type, "description": hp.description,
+                  "evidence_hashtags": hp.evidence_hashtags, "evidence_rows": hp.evidence_rows,
+                  "privacy_ratio": hp.privacy_ratio, "inferred_motivation": hp.inferred_motivation}
+                 for hp in validated],
+                indent=2,
+            ),
+            preference_list=pref_list,
+        )
+
+        summary_text = ""
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                if self.llm_client:
+                    summary_text = self.llm_client.query(summary_prompt).strip()
+                    if summary_text:
+                        break
+            except Exception:
+                pass
+
+        # Store on profile
+        self.user_profile.hidden_personas = validated
+        self.user_profile.hidden_persona_summary = summary_text
+
+        if self.verbose:
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(validated)} "
+                  f"hidden personas{utils.Colors.ENDC}")
+
+    # ------------------------------------------------------------------
     # LLM Call #6: Per-app sub-personas
     # ------------------------------------------------------------------
 
@@ -2606,6 +2843,7 @@ class PersonaAgent:
             ("3.  Temporal contradiction graph",   self.build_temporal_contradiction_graph),
             ("4.  Build update histories",         self.build_update_histories),
             ("5.  Generate user profile",          self.generate_user_profile),
+            ("5.5 Infer hidden personas",          self.infer_hidden_personas),
             ("6.  Generate app personas",          self.generate_app_personas),
             ("6b. Build sessions",                 self._build_sessions),
             ("7.  Route preferences to apps",      self.route_personas_to_apps),
@@ -2986,7 +3224,21 @@ class PersonaAgent:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(events, f, indent=2, ensure_ascii=False)
 
-        # --- Write profile.json (flat unique preference list — unchanged) ---
+        # --- Retroactively fill app_distribution on hidden personas ---
+        if self.user_profile and self.user_profile.hidden_personas and self._row_app:
+            from collections import Counter as _Counter
+            for hp in self.user_profile.hidden_personas:
+                tag_set_lower = set(t.lower() for t in hp.evidence_hashtags)
+                app_counts: _Counter = _Counter()
+                for row in self.interactions:
+                    tags_in_row = self._extract_hashtags(row.object_text)
+                    if set(t.lower() for t in tags_in_row) & tag_set_lower:
+                        app = self._row_app.get(row.object_id, "")
+                        if app:
+                            app_counts[app] += 1
+                hp.app_distribution = dict(app_counts)
+
+        # --- Write profile.json (flat unique preference list + hidden personas) ---
         if self.user_profile:
             profile_dict = asdict(self.user_profile)
             profile_dict["user_id"] = str(self.user_id)

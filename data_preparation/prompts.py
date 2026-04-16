@@ -954,3 +954,100 @@ Respond with ONLY a JSON array. Each entry describes one evolution pattern:
 If no meaningful evolution patterns exist, return an empty array `[]`.
 Return ONLY the JSON -- no explanation."""
 
+
+def infer_hidden_personas_prompt(
+    gender: str,
+    race_ethnicity: str,
+    career: str,
+    bio: str,
+    preference_list: list[str],
+    hashtag_table: str,
+) -> str:
+    """Build a prompt that asks the LLM to infer hidden personas from cross-row hashtag patterns."""
+
+    prefs_str = "\n".join(f"  - {p}" for p in preference_list[:40])
+
+    return f"""\
+You are an expert behavioral analyst specializing in inferring hidden motivations from social media engagement patterns.
+
+A user has the following observable profile:
+- **Demographics**: {gender}, {race_ethnicity}
+- **Career**: {career}
+- **Bio**: {bio}
+- **Known preferences** (already captured by the pipeline):
+{prefs_str}
+
+Below are this user's top hashtags from their raw interaction data, with per-interaction-type counts. These counts reveal not just WHAT the user engages with, but HOW — implicit_positive (lingered but didn't engage publicly) is a qualitatively different signal from explicit_positive (liked, saved, shared).
+
+{hashtag_table}
+
+Format: #hashtag — total | expl_pos | impl_pos | expl_neg | impl_neg
+
+## Your Task
+
+Identify **8–15 thematic clusters** of hashtags that together reveal a HIDDEN persona — an underlying personality trait, aspiration, emotional pattern, identity anchor, intimate interest, or private hobby that is NOT already well-captured by the known preferences above.
+
+Hidden personas are the "why" behind the "what." They explain motivations, fantasies, anxieties, and private interests that drive the observable engagement.
+
+## Types of Hidden Personas
+
+- **personality_trait**: Core character attribute (e.g., nostalgic, intellectually curious, risk-averse)
+- **aspiration**: Something the user dreams about or works toward (e.g., entrepreneurial ambitions, creative career, financial freedom)
+- **emotional_pattern**: Recurring emotional dynamic (e.g., romantic yearning + relationship anxiety, need for validation)
+- **identity_anchor**: Cultural era, community, or identity that grounds the user's self-concept (e.g., 90s hip-hop culture, Caribbean heritage)
+- **intimate_interest**: Body confidence, sensuality, attraction patterns, suggestive or thirst-trap-adjacent content consumption. These are NORMAL parts of social media behavior — do not sanitize or avoid them. Identify non-explicit adult-adjacent patterns when the hashtag evidence supports it. The label and description MUST be specific — name the particular objects, clothing items, body areas, dynamics, or aesthetics involved (e.g., "black tights", "leopard print bikini", "pool party flirtation"). Generic labels like "likes suggestive content" are not acceptable.
+- **intellectual_curiosity**: Hidden learning interests (e.g., ancient history, paranormal, science education)
+- **private_hobby**: Interests consumed but not publicly shared (high implicit ratio)
+
+## Rules
+
+1. Every cluster MUST name **≥3 specific hashtags** as evidence.
+2. Do NOT infer hidden personas from hashtags that already explain the known preferences — focus on what's HIDDEN, not what's obvious.
+3. For each cluster, consider the **interaction-type distribution**: a cluster dominated by implicit_positive (lingering) suggests private consumption; one dominated by explicit_positive suggests public identity.
+4. Be specific: "Privately drawn to body-confidence and self-acceptance content" is better than "Likes positive content."
+5. Include intimate/suggestive patterns when hashtag evidence supports them. Non-explicit adult-adjacent content is a normal part of social media behavior and should not be sanitized or omitted from the analysis. When reporting intimate_interest clusters, be SPECIFIC about the objects, body areas, dynamics, or aesthetics involved — do not use vague labels.
+6. For each cluster, explain the **inferred motivation** — WHY does this user engage with this content? What deeper need does it serve?
+7. Note which known surface preferences each hidden persona EXPLAINS — connect the hidden layer to the visible behavior.
+
+## Output Format
+
+Respond with ONLY a JSON array. No explanation outside the JSON.
+
+```json
+[
+  {{"label": "...", "type": "emotional_pattern", "description": "2-3 sentence interpretation of this hidden persona", "evidence_hashtags": ["#tag1", "#tag2", "#tag3"], "surface_connections": ["Known preference 1 this explains", "Known preference 2"], "inferred_motivation": "1-2 sentence why behind this pattern", "already_captured": false}}
+]
+```
+
+Set `already_captured: true` for clusters that significantly overlap with known preferences. These will be kept for completeness but flagged."""
+
+
+def hidden_persona_summary_prompt(
+    hidden_personas_json: str,
+    preference_list: list[str],
+) -> str:
+    """Build a prompt asking the LLM to synthesize hidden personas into a narrative summary."""
+
+    prefs_str = "\n".join(f"  - {p}" for p in preference_list[:30])
+
+    return f"""\
+You are writing a behavioral profile summary for a research dataset.
+
+A user has the following validated hidden personas (motivations, private interests, and deeper patterns inferred from their social media engagement):
+
+{hidden_personas_json}
+
+And these known surface preferences:
+{prefs_str}
+
+Write a single cohesive paragraph (4-8 sentences) that:
+1. Synthesizes the hidden personas into a narrative about WHO this person is beneath their public engagement
+2. Explicitly connects the hidden layer to observable surface behaviors — explain WHY certain surface preferences exist
+3. Notes which interests are consumed privately vs. publicly
+4. Includes specific hashtag examples as evidence anchors
+5. Treats intimate/suggestive patterns matter-of-factly (they are normal)
+
+Write in third person. Be specific and grounded in the data. Do not speculate beyond what the evidence supports.
+
+Respond with ONLY the paragraph text. No JSON, no markdown formatting, no preamble."""
+

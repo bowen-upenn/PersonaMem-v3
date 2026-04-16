@@ -65,6 +65,7 @@ Input CSV (hashtag interactions per user)
   ├─ Step 4:  Build update histories          [Algo+LLM] ── reinforced/faded/evolved
   │
   ├─ Step 5:  Generate user profile           [LLM]    ── demographics + Big Five
+  ├─ Step 5.5: Infer hidden personas          [Algo+LLM] ── cross-row hashtag clustering
   ├─ Step 6:  Generate per-app sub-personas   [LLM]    ── 4 AppPersonas
   │
   ├─ Step 7:  Route preferences to apps       [LLM+Algo] ── distribution: ~40/20/20/20
@@ -85,6 +86,7 @@ Input CSV (hashtag interactions per user)
 | 3 | LLM | Contradiction timelines grouped by topic |
 | 4 | Algo + LLM | Update history per preference (reinforced, faded, evolved) |
 | 5 | LLM | Synthetic user profile: name, demographics, Big Five, career, bio |
+| 5.5 | Algo + LLM | Hidden personas: deeper motivational layers from cross-row hashtag patterns |
 | 6 | LLM | Four distinct AppPersonas (one per platform) |
 | 7 | LLM + Algo | Each preference routed to one primary app; 8% noise |
 | 8 | Algo + LLM | Platform-specific action + optional user_message per preference |
@@ -341,23 +343,23 @@ Demographics are **sampled first**, before any other profile field. Everything d
 
 | Category | Probability |
 |----------|------------|
-| Cisgender female, heterosexual | 34% |
-| Cisgender male, heterosexual | 36% |
+| Cisgender female, heterosexual | 30% |
+| Cisgender male, heterosexual | 32% |
+| Cisgender male, gay | 5% |
 | Cisgender female, bisexual | 4% |
-| Cisgender male, gay | 3% |
+| Cisgender female, lesbian | 4% |
 | Non-binary, queer | 2% |
-| Cisgender female, lesbian | 2% |
 | Cisgender male, bisexual | 2% |
-| Transgender female, heterosexual | 1% |
-| Transgender male, heterosexual | 1% |
+| Transgender female, heterosexual | 2% |
+| Transgender male, heterosexual | 2% |
 | Cisgender female, queer | 1% |
 | Cisgender male, queer | 1% |
+| Transgender female, lesbian | 1% |
+| Transgender female, bisexual | 1% |
+| Transgender male, gay | 1% |
+| Transgender male, bisexual | 1% |
 | Non-binary, bisexual | 1% |
 | Non-binary, pansexual | 1% |
-| Transgender female, lesbian | 0.5% |
-| Transgender female, bisexual | 0.5% |
-| Transgender male, gay | 0.5% |
-| Transgender male, bisexual | 0.5% |
 | Non-binary, asexual | 0.5% |
 | Genderfluid, queer | 0.5% |
 | Genderfluid, pansexual | 0.5% |
@@ -368,8 +370,8 @@ Demographics are **sampled first**, before any other profile field. Everything d
 | Category | Probability |
 |----------|------------|
 | White American | 15% |
-| Black or African American | 10% |
-| Chinese | 8% |
+| Black or African American | 8% |
+| Chinese | 10% |
 | Indian | 8% |
 | Mexican American | 8% |
 | Filipino | 4% |
@@ -413,6 +415,49 @@ Given the sampled demographics and the preference skeleton, the LLM generates:
 The prompt explicitly instructs the LLM to: be consistent with *some but not all* preferences (a real person's profile doesn't explain every interest), and actively avoid stereotypical demographic-career-hobby combinations.
 
 > **Realism.** Demographics are sampled before generation to prevent the LLM from defaulting to a "generic" profile. The anti-stereotype instruction forces diversity: a Chinese female user might be a firefighter, a Black male user might be into figure skating. Surprising combinations are explicitly encouraged because real people are not their stereotypes.
+
+---
+
+## 8.5. Step 5.5 — Hidden Persona Inference
+
+After the profile is generated, the pipeline analyzes **cross-row hashtag patterns** to infer deeper motivational layers not captured by individual-row inference.
+
+### Why Hidden Personas?
+
+The per-row inference (Step 1) captures *what* a user likes. Hidden personas capture *why* — the underlying personality traits, aspirations, emotional patterns, identity anchors, intimate interests, and private hobbies that explain observable engagement. For example, a user who consumes both `#RelationshipGoals` (69x) and `#DivorceCourt` (5x) content has a surface preference for "romantic content," but the hidden persona is "romantic vulnerability and yearning" — a desire for emotional stability mixed with relationship anxiety.
+
+### Three-Phase Algorithm
+
+**Phase 1 — Hashtag Frequency Census (algorithmic).** Scan all interaction rows. For each hashtag, count total occurrences, per-interaction-type breakdown, and distinct calendar days. Filter to hashtags with ≥ 3 total occurrences. Pass the top ~200 to the LLM.
+
+**Phase 2 — LLM Thematic Clustering.** The LLM receives the hashtag frequency table, the user's demographics, and the surviving preference skeleton. It groups hashtags into 8–15 thematic clusters, each representing a hidden persona. Types:
+
+| Type | What it captures |
+|------|-----------------|
+| `personality_trait` | Core character attributes (nostalgic, risk-averse, etc.) |
+| `aspiration` | Dreams and goals (entrepreneurial ambitions, financial freedom) |
+| `emotional_pattern` | Recurring emotional dynamics (romantic yearning + anxiety) |
+| `identity_anchor` | Cultural era/community grounding the self-concept |
+| `intimate_interest` | Body confidence, sensuality, attraction patterns — specific objects, clothing, body areas, dynamics |
+| `intellectual_curiosity` | Hidden learning interests (ancient history, science, paranormal) |
+| `private_hobby` | Interests consumed but not publicly shared |
+
+**Phase 3 — Algorithmic Validation.** Each cluster is validated against raw data:
+
+| Metric | Threshold |
+|--------|-----------|
+| Distinct source rows | ≥ 20 (`MIN_HIDDEN_PERSONA_ROWS`) |
+| Temporal spread (distinct days) | ≥ 3 (`MIN_HIDDEN_PERSONA_DAYS`) |
+| Privacy ratio (`impl_pos / (impl_pos + expl_pos)`) | Reported, not gated |
+| App distribution | Computed retroactively after routing |
+
+### Output
+
+Each validated cluster becomes a `HiddenPersona` with: label, type, description, evidence_hashtags, evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation.
+
+A second LLM call generates a `hidden_persona_summary` — a cohesive narrative paragraph linking all hidden personas to observable surface behaviors. Both are saved in `profile.json`.
+
+> **Realism.** Real users have motivational layers beneath their visible engagement. A user doesn't just "like boxing content" — they may be nostalgic for a cultural era, privately aspirational about self-expression, or processing relationship dynamics through spectator content. Hidden personas make the dataset useful for deep personalization that goes beyond surface-level topic matching.
 
 ---
 
@@ -677,5 +722,9 @@ All noise is applied **after** the core ground-truth skeleton is established. Th
 | `EXPLICIT_NEG_SPECIAL_FRACTION` | 0.70 | Fraction of negative chatbot prefs getting special treatment |
 | Test fraction | 0.20 | Latest 20% of high-confidence positives |
 | Distractor shortlist | 5 | Candidates for over-personalization distractor |
+| `MIN_HIDDEN_PERSONA_ROWS` | 20 | Minimum distinct source rows for a hidden persona cluster |
+| `MIN_HIDDEN_PERSONA_DAYS` | 3 | Minimum temporal spread for hidden persona cluster |
+| `HIDDEN_PERSONA_HASHTAG_MIN_FREQ` | 3 | Minimum hashtag occurrences to be considered |
+| `HIDDEN_PERSONA_TOP_HASHTAGS` | 200 | Number of top hashtags passed to LLM for clustering |
 
 > **Note:** Several thresholds (especially the high-confidence predicate values) are declared **tentative** and will be tuned empirically once real-scale statistics are available.
