@@ -3134,7 +3134,7 @@ class PersonaAgent:
                             )
                             self.annotated_personas.append(ann)
 
-                    split_label = pref.get("split", "train") or "train"
+                    split_label = pref.get("split", "")
                     self.split_labels[persona_item] = split_label
                     if split_label == "test":
                         distractor_item = pref.get("over_personalization_irrelevant", "") or ""
@@ -3189,7 +3189,7 @@ class PersonaAgent:
                     )
                     self.annotated_personas.append(ann)
 
-                split_label = rec.get("split", "train") or "train"
+                split_label = rec.get("split", "")
                 self.split_labels[rec["persona_item"]] = split_label
                 if split_label == "test":
                     distractor_item = rec.get("over_personalization_irrelevant", "") or ""
