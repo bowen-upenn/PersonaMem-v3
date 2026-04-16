@@ -170,6 +170,8 @@ class UserProfile:
     # hashtag clustering. Filled in by infer_hidden_personas().
     hidden_personas: list = field(default_factory=list)  # list[HiddenPersona]
     hidden_persona_summary: str = ""                     # cohesive narrative paragraph
+    # Dual personalities — contradictory hidden persona pairs (internal tensions).
+    dual_personalities: list = field(default_factory=list)  # list[{"persona_a": str, "persona_b": str, "tension": str}]
 
 
 @dataclass
@@ -788,6 +790,10 @@ class PersonaAgent:
     IMPL_POS_WEIGHT = 1.5    # each implicit_positive row (moderate counter-signal)
     MIN_TEMPORAL_DAYS = 1    # must span >= 1 distinct day
 
+    def promote_implicit_negatives(self) -> None:
+        """Public entry point for implicit negative promotion (Step 2)."""
+        self._promote_implicit_negatives()
+
     def _promote_implicit_negatives(self) -> None:
         """Promote repeated implicit_negative rows using weighted net-sentiment.
 
@@ -1036,14 +1042,6 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(self.atomic_personas)} positive atomic personas, "
                   f"{len(self.negative_personas)} negative (standalone) from {len(self.interactions)} interactions.{utils.Colors.ENDC}")
-
-        # --- Step 1b: Hashtag-based promotion of implicit negatives ---
-        # Instead of running LLM on every implicit_negative row, group them
-        # by individual hashtag frequency. Hashtags appearing in >= K rows
-        # are "hot". For each hot hashtag, run LLM on ONE representative row
-        # to get preference text, then fan out AtomicPersonas to ALL rows
-        # sharing that hashtag. This saves ~5-10x in LLM calls.
-        self._promote_implicit_negatives()
 
         if self.verbose:
             # Category statistics
@@ -2115,13 +2113,43 @@ class PersonaAgent:
             except Exception:
                 pass
 
+        # ── Detect Dual Personalities ────────────────────────────────────
+
+        dual_personalities: list[dict] = []
+        if len(validated) >= 2 and self.llm_client:
+            dual_prompt = prompts.identify_dual_personalities_prompt(
+                hidden_personas_json=json.dumps(
+                    [{"label": hp.label, "type": hp.type, "description": hp.description,
+                      "evidence_rows": hp.evidence_rows, "privacy_ratio": hp.privacy_ratio,
+                      "interaction_breakdown": hp.interaction_breakdown,
+                      "inferred_motivation": hp.inferred_motivation}
+                     for hp in validated],
+                    indent=2,
+                ),
+            )
+            for attempt in range(self.MAX_RETRIES):
+                try:
+                    raw_duals = utils.parse_json_response(self.llm_client.query(dual_prompt))
+                    if isinstance(raw_duals, list):
+                        for d in raw_duals:
+                            if isinstance(d, dict) and d.get("persona_a") and d.get("persona_b"):
+                                dual_personalities.append({
+                                    "persona_a": d["persona_a"],
+                                    "persona_b": d["persona_b"],
+                                    "tension": d.get("tension", ""),
+                                })
+                        break
+                except Exception:
+                    pass
+
         # Store on profile
         self.user_profile.hidden_personas = validated
         self.user_profile.hidden_persona_summary = summary_text
+        self.user_profile.dual_personalities = dual_personalities
 
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(validated)} "
-                  f"hidden personas{utils.Colors.ENDC}")
+                  f"hidden personas, {len(dual_personalities)} dual tensions{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM Call #6: Per-app sub-personas
@@ -2821,38 +2849,41 @@ class PersonaAgent:
         Order:
           1. infer atomic personas
           2. dedupe (lexical) + init filter + count corroboration → cross_ref
-          3. LLM cross-reference for relationship discovery (no score changes)
-          4. temporal contradiction graph (on surviving canonicals)
-          5. generate user profile (demographics + big_five + bio)
-          6. generate per-app sub-personas
-          7. route preferences to apps (LLM + 8% noise)
-          8. generate interaction_format objects per preference (weighted
-             sampling from catalog + @ai / chat-turn user_messages)
-        8.5. generate chatbot conversations (multi-turn, implicit preference
-             embedding for Chatbot-routed preferences)
-          9. annotate stereotype marks
-         10. build test split (cross-app, global latest-20% high-conf by time)
-         11. save to backend/{uid}/ subfolder
+          3. cross-reference & filter
+          4. temporal contradiction graph
+          5. build update histories
+          6. generate user profile (demographics + big_five + bio)
+          7. infer hidden personas (cross-row hashtag clustering)
+          8. generate per-app sub-personas
+          9. build sessions
+         10. route preferences to apps (LLM + 8% noise)
+         11. assign rows to apps (session majority vote)
+         12. generate interaction formats (weighted catalog sampling)
+         13. generate chatbot conversations (multi-turn, implicit embedding)
+         14. annotate stereotype marks
+         15. build test split (cross-app, latest-20% high-conf by time)
+         16. save to backend/{uid}/ subfolder
         """
         print(f"{utils.Colors.BOLD}[User {self.user_id}] Starting persona pipeline...{utils.Colors.ENDC}")
         pipeline_start = time.time()
 
         steps = [
-            ("1.  Infer atomic personas",        self.infer_personas_from_hashtags),
-            ("2.  Cross-reference & filter",      self.summarize_and_cross_reference),
-            ("3.  Temporal contradiction graph",   self.build_temporal_contradiction_graph),
-            ("4.  Build update histories",         self.build_update_histories),
-            ("5.  Generate user profile",          self.generate_user_profile),
-            ("5.5 Infer hidden personas",          self.infer_hidden_personas),
-            ("6.  Generate app personas",          self.generate_app_personas),
-            ("6b. Build sessions",                 self._build_sessions),
-            ("7.  Route preferences to apps",      self.route_personas_to_apps),
-            ("7b. Assign rows to apps",            self._assign_rows_to_apps),
-            ("8.  Generate interaction formats",   self.generate_interaction_formats),
-            ("8.5 Generate chatbot conversations", self.generate_chatbot_conversations),
-            ("9.  Annotate stereotype marks",      self.annotate_stereotype_marks),
-            ("10. Build test split",               self.build_test_split),
-            ("11. Save to backend",                self.save_to_backend),
+            ("1.  Infer atomic personas",          self.infer_personas_from_hashtags),
+            ("2.  Promote implicit negatives",      self.promote_implicit_negatives),
+            ("3.  Cross-reference & filter",        self.summarize_and_cross_reference),
+            ("4.  Temporal contradiction graph",     self.build_temporal_contradiction_graph),
+            ("5.  Build update histories",           self.build_update_histories),
+            ("6.  Generate user profile",            self.generate_user_profile),
+            ("7.  Infer hidden personas",            self.infer_hidden_personas),
+            ("8.  Generate app personas",            self.generate_app_personas),
+            ("9.  Build sessions",                   self._build_sessions),
+            ("10. Route preferences to apps",        self.route_personas_to_apps),
+            ("11. Assign rows to apps",              self._assign_rows_to_apps),
+            ("12. Generate interaction formats",     self.generate_interaction_formats),
+            ("13. Generate chatbot conversations",   self.generate_chatbot_conversations),
+            ("14. Annotate stereotype marks",        self.annotate_stereotype_marks),
+            ("15. Build test split",                 self.build_test_split),
+            ("16. Save to backend",                  self.save_to_backend),
         ]
 
         for step_name, step_fn in steps:
@@ -2923,6 +2954,14 @@ class PersonaAgent:
 
         # --- Build lookups ---
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
+
+        # Hidden persona hashtag lookup: for each hidden persona, pre-compute
+        # lowercase evidence hashtag set for matching against preference source_hashtags.
+        _hp_tag_sets: list[tuple[str, set[str]]] = []
+        if self.user_profile and self.user_profile.hidden_personas:
+            for hp in self.user_profile.hidden_personas:
+                tag_set = set(t.lower() for t in hp.evidence_hashtags)
+                _hp_tag_sets.append((hp.label, tag_set))
 
         # Canonical metadata lookup (positive + negative)
         # Also map absorbed members' atom texts to the representative canonical
@@ -3072,12 +3111,21 @@ class PersonaAgent:
                             "source_app": rel_cr.assigned_app if rel_cr else "",
                         })
 
+                # Match preference's source hashtags against hidden personas
+                hp_labels: list[str] = []
+                if _hp_tag_sets and ap.source_hashtags:
+                    pref_tags_lower = set(t.lower() for t in ap.source_hashtags)
+                    for hp_label, hp_tags in _hp_tag_sets:
+                        if pref_tags_lower & hp_tags:
+                            hp_labels.append(hp_label)
+
                 pref = {
                     "persona_item": cr.persona_item,
                     "category": cr.category,
                     "confidence_score_init": ap.confidence_score_init,
                     "confidence_cross_referenced": cr.confidence_cross_referenced,
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
+                    "hidden_persona_labels": hp_labels,
                     "update_history": merged_history,
                 }
                 if split_label == "test":
