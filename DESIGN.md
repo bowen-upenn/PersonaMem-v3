@@ -419,7 +419,17 @@ The prompt explicitly instructs the LLM to: be consistent with *some but not all
 
 ## 9. Step 7 — Hidden Persona Inference
 
-After the profile is generated, the pipeline analyzes **cross-row hashtag patterns** to infer deeper motivational layers not captured by individual-row inference.
+<!-- Theoretical foundations:
+  - Katz, Blumler & Gurevitch (1973): Uses and Gratifications Theory — people actively select media to satisfy cognitive, affective, integrative, and escapist needs
+  - Deci & Ryan (1985, 2000): Self-Determination Theory — autonomy, competence, and relatedness as basic psychological needs driving behavior
+  - Kardefelt-Winther (2014): Compensatory Internet Use — social media compensates for unmet real-world needs; high private consumption signals compensation
+  - Berger & Heath (2007); Smaldino et al. (2022): Identity Signaling Theory — consumption patterns signal group membership through overt and covert markers
+  - Horton & Wohl (1956); Dibble et al. (2016): Parasocial Relationship Theory — one-sided emotional bonds with media figures detectable through concentrated engagement
+  - Paulhus & Williams (2002): Dark Triad — narcissism, Machiavellianism, psychopathy manifest as behavioral styles in social media engagement (we use behavioral descriptions only, never clinical labels)
+  - Maslow (1943): Hierarchy of Needs — users operate on multiple need levels simultaneously (safety, belonging, esteem, self-actualization)
+-->
+
+After the profile is generated, the pipeline analyzes **cross-row hashtag patterns** to infer deeper motivational layers not captured by individual-row inference. The type taxonomy is grounded in established behavioral science frameworks.
 
 ### Why Hidden Personas?
 
@@ -431,15 +441,23 @@ The per-row inference (Step 1) captures *what* a user likes. Hidden personas cap
 
 **Phase 2 — LLM Thematic Clustering.** The LLM receives the hashtag frequency table, the user's demographics, and the surviving preference skeleton. It groups hashtags into 8–15 thematic clusters, each representing a hidden persona. Types:
 
-| Type | What it captures |
-|------|-----------------|
-| `personality_trait` | Core character attributes (nostalgic, risk-averse, etc.) |
-| `aspiration` | Dreams and goals (entrepreneurial ambitions, financial freedom) |
-| `emotional_pattern` | Recurring emotional dynamics (romantic yearning + anxiety) |
-| `identity_anchor` | Cultural era/community grounding the self-concept |
-| `intimate_interest` | Body confidence, sensuality, attraction patterns — specific objects, clothing, body areas, dynamics |
-| `intellectual_curiosity` | Hidden learning interests (ancient history, science, paranormal) |
-| `private_hobby` | Interests consumed but not publicly shared |
+<!-- Uses & Gratifications → personality_trait, aspiration, emotional_pattern, intellectual_curiosity, private_hobby -->
+<!-- Self-Determination Theory → autonomy needs surface in personality_trait; competence in intellectual_curiosity + aspiration; relatedness in emotional_pattern -->
+<!-- Identity Signaling Theory → identity_anchor (overt tribal + covert aesthetic markers) -->
+<!-- Compensatory Use Theory → compensatory_need (high privacy_ratio = unmet real-world need) -->
+<!-- Parasocial Relationship Theory → parasocial_attachment (concentrated engagement with one figure) -->
+
+| Type | What it captures | Theoretical basis |
+|------|-----------------|-------------------|
+| `personality_trait` | Core character attributes (nostalgic, risk-averse, drawn to transgressive humor) | Big Five; Dark Triad behavioral markers |
+| `aspiration` | Dreams and goals (entrepreneurial ambitions, financial freedom) | Maslow's esteem/self-actualization |
+| `emotional_pattern` | Recurring emotional dynamics (romantic yearning + anxiety, need for validation) | Uses & Gratifications (affective needs) |
+| `identity_anchor` | Cultural era, community, tribal belonging — both overt markers (community names) AND covert signals (niche aesthetics like #hopelesscore, #cottagecore) | Identity Signaling Theory |
+| `intimate_interest` | Body confidence, sensuality, attraction patterns — specific objects, clothing, body areas, dynamics | Self-presentation; body image research |
+| `intellectual_curiosity` | Hidden learning interests (ancient history, science, paranormal) | Self-Determination Theory (competence need) |
+| `private_hobby` | Interests consumed but not publicly shared (high implicit ratio) | Uses & Gratifications (escapist needs) |
+| `parasocial_attachment` | Intense one-sided bond with a specific public figure, detected by ≥15 rows mentioning one figure | Parasocial Relationship Theory |
+| `compensatory_need` | Unmet real-world needs satisfied through private media consumption (privacy_ratio >0.7) | Compensatory Internet Use Theory |
 
 **Phase 3 — Algorithmic Validation.** Each cluster is validated against raw data:
 
@@ -447,16 +465,28 @@ The per-row inference (Step 1) captures *what* a user likes. Hidden personas cap
 |--------|-----------|
 | Distinct source rows | ≥ 20 (`MIN_HIDDEN_PERSONA_ROWS`) |
 | Temporal spread (distinct days) | ≥ 3 (`MIN_HIDDEN_PERSONA_DAYS`) |
-| Privacy ratio (`impl_pos / (impl_pos + expl_pos)`) | Reported, not gated |
+| Privacy ratio (`impl_pos / (impl_pos + expl_pos)`) | Reported, not gated (>0.7 required for `compensatory_need`) |
 | App distribution | Computed retroactively after routing |
+
+### Dual Personalities
+
+<!-- Approach-avoidance conflict: Lewin (1935); Miller (1944) — individuals simultaneously attracted to and repelled by the same goal or competing goals -->
+
+After validation, the LLM identifies **dual personality tensions** — pairs of hidden personas that coexist in contradiction. These represent psychologically well-established internal conflicts (approach-avoidance, public-vs-private self, contradictory needs). Both halves must independently pass validation gates. Examples: public confidence + private vulnerability, aspirational luxury + minimalist escape.
+
+Stored as `dual_personalities` in `profile.json`: `[{"persona_a": "...", "persona_b": "...", "tension": "..."}]`.
+
+### Per-Preference Hidden Persona Labels
+
+Each preference in the saved app JSONs carries a `hidden_persona_labels` field linking it to the hidden persona(s) it provides evidence for. The match is computed by checking whether the preference's source hashtags overlap with a hidden persona's `evidence_hashtags`. Preferences with no overlap get an empty list — labels are never forced.
 
 ### Output
 
 Each validated cluster becomes a `HiddenPersona` with: label, type, description, evidence_hashtags, evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation.
 
-A second LLM call generates a `hidden_persona_summary` — a cohesive narrative paragraph linking all hidden personas to observable surface behaviors. Both are saved in `profile.json`.
+A second LLM call generates a `hidden_persona_summary` — a cohesive narrative paragraph linking all hidden personas to observable surface behaviors. A third LLM call detects `dual_personalities`. All are saved in `profile.json`.
 
-> **Realism.** Real users have motivational layers beneath their visible engagement. A user doesn't just "like boxing content" — they may be nostalgic for a cultural era, privately aspirational about self-expression, or processing relationship dynamics through spectator content. Hidden personas make the dataset useful for deep personalization that goes beyond surface-level topic matching.
+> **Realism.** Real users have motivational layers beneath their visible engagement. A user doesn't just "like boxing content" — they may have a parasocial attachment to a specific fighter, be nostalgic for a cultural era, privately compensate for romantic loneliness through couple content, or process relationship dynamics as a spectator. These hidden layers, grounded in established behavioral science, make the dataset useful for deep personalization beyond surface-level topic matching.
 
 ---
 

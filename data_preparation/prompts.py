@@ -991,13 +991,17 @@ Hidden personas are the "why" behind the "what." They explain motivations, fanta
 
 ## Types of Hidden Personas
 
-- **personality_trait**: Core character attribute (e.g., nostalgic, intellectually curious, risk-averse)
+These types are grounded in established behavioral science frameworks (Uses & Gratifications Theory, Self-Determination Theory, Compensatory Use Theory, Identity Signaling Theory, Parasocial Relationship Theory).
+
+- **personality_trait**: Core character attribute (e.g., nostalgic, intellectually curious, risk-averse, drawn to transgressive humor)
 - **aspiration**: Something the user dreams about or works toward (e.g., entrepreneurial ambitions, creative career, financial freedom)
-- **emotional_pattern**: Recurring emotional dynamic (e.g., romantic yearning + relationship anxiety, need for validation)
-- **identity_anchor**: Cultural era, community, or identity that grounds the user's self-concept (e.g., 90s hip-hop culture, Caribbean heritage)
-- **intimate_interest**: Body confidence, sensuality, attraction patterns, suggestive or thirst-trap-adjacent content consumption. These are NORMAL parts of social media behavior — do not sanitize or avoid them. Identify non-explicit adult-adjacent patterns when the hashtag evidence supports it. The label and description MUST be specific — name the particular objects, clothing items, body areas, dynamics, or aesthetics involved (e.g., "black tights", "leopard print bikini", "pool party flirtation"). Generic labels like "likes suggestive content" are not acceptable.
+- **emotional_pattern**: Recurring emotional dynamic (e.g., romantic yearning + relationship anxiety, need for validation, approach-avoidance conflict)
+- **identity_anchor**: Cultural era, community, or identity that grounds the user's self-concept. Detect BOTH overt tribal markers (community-specific hashtags like band names, team names, cultural movements) AND covert identity signals (niche aesthetic/attitude hashtags understood mainly by in-group members, e.g., #hopelesscore, #cottagecore, #darkacademia)
+- **intimate_interest**: Body confidence, sensuality, attraction patterns, suggestive or thirst-trap-adjacent content consumption. These are NORMAL parts of social media behavior, sometimes opposite to their explicit value profiles — do not sanitize or avoid them. Identify non-explicit adult-adjacent patterns when the hashtag evidence supports it. The label and description MUST be specific — name the particular objects, clothing items, body areas, dynamics, or aesthetics involved (e.g., "black tights", "body painting", "femboy or trans content", "pool party flirtation"). Generic labels like "likes suggestive content" are not acceptable.
 - **intellectual_curiosity**: Hidden learning interests (e.g., ancient history, paranormal, science education)
 - **private_hobby**: Interests consumed but not publicly shared (high implicit ratio)
+- **parasocial_attachment**: Intense one-sided emotional bond with a specific public figure (celebrity, athlete, influencer, creator). Detected when a single person's name-hashtag appears in ≥15 distinct rows. This is NOT just "likes boxing" — it's a focused attachment to ONE specific figure. Name the figure explicitly in the label.
+- **compensatory_need**: Unmet real-world needs satisfied through private media consumption. The key signal is high privacy_ratio (>0.7) — the user lingers on this content but rarely engages publicly. Examples: romantic compensation (consuming couple content privately), status compensation (lingering on luxury content), social compensation (consuming friendship/community content alone). Name the specific need being compensated.
 
 ## Rules
 
@@ -1050,4 +1054,44 @@ Write a single cohesive paragraph (4-8 sentences) that:
 Write in third person. Be specific and grounded in the data. Do not speculate beyond what the evidence supports.
 
 Respond with ONLY the paragraph text. No JSON, no markdown formatting, no preamble."""
+
+
+def identify_dual_personalities_prompt(
+    hidden_personas_json: str,
+) -> str:
+    """Build a prompt asking the LLM to identify contradictory hidden persona pairs (dual personalities)."""
+
+    return f"""\
+You are an expert behavioral analyst identifying internal psychological tensions in a user's hidden persona profile.
+
+Below are validated hidden personas inferred from a user's social media engagement:
+
+{hidden_personas_json}
+
+## Your Task
+
+Identify **dual personality tensions** — pairs of hidden personas that coexist in contradiction or tension within this user. These represent approach-avoidance conflicts, public-vs-private selves, or genuinely contradictory needs that the user navigates simultaneously.
+
+Examples of dual tensions:
+- Public confidence + private vulnerability (explicit engagement with empowerment content but private lingering on insecurity/yearning content)
+- Aspirational luxury + minimalist escape (drawn to both wealth content AND simple-living content)
+- Social extraversion + private introversion (publicly engaged in community content but privately consuming solitary/reflective content)
+- Nostalgic anchoring + forward aspiration (rooted in a past cultural era but also drawn to entrepreneurial/future-oriented content)
+
+## Rules
+
+1. Both halves of each dual must reference existing hidden personas from the list above — do NOT invent new ones.
+2. Explain the specific tension: WHY are these two personas contradictory? What internal conflict do they represent?
+3. Only report genuine tensions — two personas that are merely different (e.g., "likes cooking" and "likes sports") are NOT a dual personality.
+4. Use evidence from the hidden personas' interaction_breakdowns and privacy_ratios to ground the tension (e.g., "one is consumed publicly while the other is consumed privately").
+
+## Output Format
+
+Respond with ONLY a JSON array. Return an empty array `[]` if no genuine tensions exist.
+
+```json
+[
+  {{"persona_a": "label of first hidden persona", "persona_b": "label of second hidden persona", "tension": "2-3 sentence description of the psychological tension between these two personas"}}
+]
+```"""
 
