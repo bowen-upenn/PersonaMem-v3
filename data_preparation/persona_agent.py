@@ -2014,7 +2014,7 @@ class PersonaAgent:
         for attempt in range(self.MAX_RETRIES):
             try:
                 if self.llm_client:
-                    response = self.llm_client.query(prompt_text)
+                    response = self.llm_client.query_llm(prompt_text)
                 else:
                     # Claude Code subagent mode — this method is called
                     # inline so the LLM reasoning IS the execution.
@@ -2107,7 +2107,7 @@ class PersonaAgent:
         for attempt in range(self.MAX_RETRIES):
             try:
                 if self.llm_client:
-                    summary_text = self.llm_client.query(summary_prompt).strip()
+                    summary_text = self.llm_client.query_llm(summary_prompt).strip()
                     if summary_text:
                         break
             except Exception:
@@ -2129,7 +2129,7 @@ class PersonaAgent:
             )
             for attempt in range(self.MAX_RETRIES):
                 try:
-                    raw_duals = utils.parse_json_response(self.llm_client.query(dual_prompt))
+                    raw_duals = utils.parse_json_response(self.llm_client.query_llm(dual_prompt))
                     if isinstance(raw_duals, list):
                         for d in raw_duals:
                             if isinstance(d, dict) and d.get("persona_a") and d.get("persona_b"):
