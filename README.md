@@ -25,22 +25,24 @@ Real-world interaction data from Meta, with all user-private and personally iden
 
 ## Pipeline
 
-Each user goes through 11 steps (see [skill.md](skill.md) for the full spec):
+Each user goes through 16 steps (see [skill.md](skill.md) for the full spec):
 
 1. **Infer** atomic persona traits from hashtags with confidence scores
-2. **Cross-reference** across interaction rows — dedupe, init filter (0.5), count corroboration, discover similar/contradictory relationships
-3. **Temporal graph** — organize contradictions into a timeline
-4. **Update histories** — track how preferences evolve (new, reinforced, faded, expanded)
-5. **User profile** — synthetic demographics, Big Five, career, education, bio
-6. **App sub-personas** — distinct personas for Instagram, Facebook, Threads, Chatbot
-7. **Route preferences to apps** — LLM-based assignment + 8% noise; implicit signals biased toward Chatbot
-8. **Interaction formats** — sample actions from per-app catalogs (`PLATFORM_INTERACTION_FORMATS`)
-8.5. **Chatbot conversations** — generate multi-turn task-oriented conversations (PersonaMem-v2 style) where preferences are implicitly embedded. Includes ask-to-forget and correction/rejection scenarios for explicit negatives.
-9. **Stereotype marks** — demographics-only annotation (neutral/stereotypical/anti-stereotypical)
-10. **Train/test split** — time-based, cross-app, LLM inferrability-gated, with distractor pairing
-11. **Save** — per-user JSON files to `backend/{uid}/`
-
-Negative interactions only go through step 1 with low confidence (0.05-0.15), skip steps 2-10.
+2. **Promote implicit negatives** — weighted net-sentiment + temporal spread
+3. **Cross-reference** across interaction rows — dedupe, init filter (0.5), count corroboration, discover similar/contradictory relationships
+4. **Temporal graph** — organize contradictions into a timeline
+5. **Update histories** — track how preferences evolve (new, reinforced, faded, expanded)
+6. **User profile** — synthetic demographics, Big Five, career, education, bio
+7. **Hidden personas** — infer deeper motivational layers from cross-row hashtag clustering
+8. **App sub-personas** — distinct personas for Instagram, Facebook, Threads, Chatbot
+9. **Build sessions** — group rows into temporal browsing sessions
+10. **Route preferences to apps** — LLM-based assignment driven by per-app sub-personas
+11. **Assign rows to apps** — session majority vote + 8% noise
+12. **Interaction formats** — sample actions from per-app catalogs (`PLATFORM_INTERACTION_FORMATS`)
+13. **Chatbot conversations** — multi-turn task-oriented conversations with implicit preference embedding
+14. **Stereotype marks** — demographics-only annotation (neutral/stereotypical/anti-stereotypical)
+15. **Train/test split** — time-based, cross-app, LLM inferrability-gated, with distractor pairing
+16. **Save** — per-user JSON files to `backend/{uid}/`
 
 ## Usage
 

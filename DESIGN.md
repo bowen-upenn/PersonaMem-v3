@@ -57,43 +57,42 @@ Every interaction event, on every platform, traces back to **one shared preferen
 ```
 Input CSV (hashtag interactions per user)
   │
-  ├─ Step 1:  Infer atomic personas         [LLM]    ── scores: init 0.0–1.0
-  ├─ Step 1b: Promote implicit negatives     [Algo+LLM] ── net-sentiment gate
-  │
-  ├─ Step 2:  Cross-reference                [Algo+LLM] ── scores: cross_ref (uncapped)
-  ├─ Step 3:  Temporal contradiction graph    [LLM]    ── timeline grouping
-  ├─ Step 4:  Build update histories          [Algo+LLM] ── reinforced/faded/evolved
-  │
-  ├─ Step 5:  Generate user profile           [LLM]    ── demographics + Big Five
-  ├─ Step 5.5: Infer hidden personas          [Algo+LLM] ── cross-row hashtag clustering
-  ├─ Step 6:  Generate per-app sub-personas   [LLM]    ── 4 AppPersonas
-  │
-  ├─ Step 7:  Route preferences to apps       [LLM+Algo] ── distribution: ~40/20/20/20
-  ├─ Step 8:  Generate interaction formats     [Algo+LLM] ── per-user perturbed weights
-  ├─ Step 8.5: Generate chatbot conversations [LLM]    ── multi-turn, ask-to-forget
-  │
-  ├─ Step 9:  Annotate stereotype marks        [LLM]    ── demographics-only
-  ├─ Step 10: Build train/test split           [LLM+Algo] ── 80/20, inferrability gate
-  │
-  └─ Step 11: Save to backend                 [Algo]    ── 5 JSON files per user
+  ├─ Step 1:  Infer atomic personas           [LLM]      ── scores: init 0.0–1.0
+  ├─ Step 2:  Promote implicit negatives     [Algo+LLM] ── net-sentiment gate
+  ├─ Step 3:  Cross-reference & filter       [Algo+LLM] ── scores: cross_ref (uncapped)
+  ├─ Step 4:  Temporal contradiction graph   [LLM]      ── timeline grouping
+  ├─ Step 5:  Build update histories         [Algo+LLM] ── reinforced/faded/evolved
+  ├─ Step 6:  Generate user profile          [LLM]      ── demographics + Big Five
+  ├─ Step 7:  Infer hidden personas          [Algo+LLM] ── cross-row hashtag clustering
+  ├─ Step 8:  Generate per-app sub-personas  [LLM]      ── 4 AppPersonas
+  ├─ Step 9:  Build sessions                 [Algo]     ── temporal grouping
+  ├─ Step 10: Route preferences to apps      [LLM+Algo] ── distribution: ~40/20/20/20
+  ├─ Step 11: Assign rows to apps            [Algo]     ── session majority vote + 8% noise
+  ├─ Step 12: Generate interaction formats   [Algo+LLM] ── per-user perturbed weights
+  ├─ Step 13: Generate chatbot conversations [LLM]      ── multi-turn, ask-to-forget
+  ├─ Step 14: Annotate stereotype marks      [LLM]      ── demographics-only
+  ├─ Step 15: Build train/test split         [LLM+Algo] ── 80/20, inferrability gate
+  └─ Step 16: Save to backend               [Algo]     ── 5 JSON files per user
 ```
 
 | Step | Type | Key output |
 |------|------|------------|
 | 1 | LLM | ~10 atomic preferences per interaction, each with init confidence |
-| 1b | Algo + LLM | Promoted implicit negatives via net-sentiment + temporal spread |
-| 2 | Algo + LLM | Deduplicated, cross-referenced preference skeleton with cross_ref scores |
-| 3 | LLM | Contradiction timelines grouped by topic |
-| 4 | Algo + LLM | Update history per preference (reinforced, faded, evolved) |
-| 5 | LLM | Synthetic user profile: name, demographics, Big Five, career, bio |
-| 5.5 | Algo + LLM | Hidden personas: deeper motivational layers from cross-row hashtag patterns |
-| 6 | LLM | Four distinct AppPersonas (one per platform) |
-| 7 | LLM + Algo | Each preference routed to one primary app; 8% noise |
-| 8 | Algo + LLM | Platform-specific action + optional user_message per preference |
-| 8.5 | LLM | Multi-turn chatbot conversations with implicit preference embedding |
-| 9 | LLM | Stereotype marks (neutral / stereotypical / anti-stereotypical) |
-| 10 | LLM + Algo | Train/test labels + distractor pairing for test items |
-| 11 | Algo | `profile.json` + 4 app JSONs per user |
+| 2 | Algo + LLM | Promoted implicit negatives via net-sentiment + temporal spread |
+| 3 | Algo + LLM | Deduplicated, cross-referenced preference skeleton with cross_ref scores |
+| 4 | LLM | Contradiction timelines grouped by topic |
+| 5 | Algo + LLM | Update history per preference (reinforced, faded, evolved) |
+| 6 | LLM | Synthetic user profile: name, demographics, Big Five, career, bio |
+| 7 | Algo + LLM | Hidden personas: deeper motivational layers from cross-row hashtag patterns |
+| 8 | LLM | Four distinct AppPersonas (one per platform) |
+| 9 | Algo | Temporal sessions (rows within ≤5s grouped together) |
+| 10 | LLM + Algo | Each preference routed to one primary app |
+| 11 | Algo | Session majority vote + 8% noise for row-to-app assignment |
+| 12 | Algo + LLM | Platform-specific action + optional user_message per preference |
+| 13 | LLM | Multi-turn chatbot conversations with implicit preference embedding |
+| 14 | LLM | Stereotype marks (neutral / stereotypical / anti-stereotypical) |
+| 15 | LLM + Algo | Train/test labels + distractor pairing for test items |
+| 16 | Algo | `profile.json` + 4 app JSONs per user |
 
 ---
 
@@ -154,7 +153,7 @@ The same canonical preference text naturally appears across multiple events — 
 
 ---
 
-## 4. Step 1 — Persona Inference
+## 4. Step 1 — Atomic Persona Inference
 
 For each interaction row (except `implicit_negative`, handled separately in Step 1b), the LLM infers **~10 atomic persona traits** from the hashtags.
 
@@ -193,7 +192,7 @@ Negative preferences are always phrased negatively: "Dislikes X", "Avoids X", "N
 
 ---
 
-## 5. Step 1b — Implicit Negative Promotion
+## 5. Step 2 — Implicit Negative Promotion
 
 `implicit_negative` rows (user scrolled past content with no interaction) are **skipped** in Step 1 — a single scroll-past is too weak a signal. Instead, we aggregate them:
 
@@ -237,7 +236,7 @@ The temporal spread requirement prevents session-level noise (e.g., user scrolle
 
 ---
 
-## 6. Step 2 — Cross-Referencing (The Core Engine)
+## 6. Step 3 — Cross-Referencing (The Core Engine)
 
 This is the central pipeline stage that transforms raw atomic inferences into the validated preference skeleton. It runs seven sub-stages:
 
@@ -308,7 +307,7 @@ Negative preferences go through the **same pipeline independently** (within nega
 
 ---
 
-## 7. Steps 3–4 — Temporal Evolution
+## 7. Steps 4–5 — Temporal Evolution
 
 ### Step 3: Temporal Contradiction Graph
 
@@ -331,7 +330,7 @@ A causality filter ensures only update entries with `timestamp ≤ event timesta
 
 ---
 
-## 8. Step 5 — Synthetic User Profile
+## 8. Step 6 — Synthetic User Profile
 
 Each user receives a synthetic profile grounded in their preference skeleton.
 
@@ -418,9 +417,19 @@ The prompt explicitly instructs the LLM to: be consistent with *some but not all
 
 ---
 
-## 8.5. Step 5.5 — Hidden Persona Inference
+## 9. Step 7 — Hidden Persona Inference
 
-After the profile is generated, the pipeline analyzes **cross-row hashtag patterns** to infer deeper motivational layers not captured by individual-row inference.
+<!-- Theoretical foundations:
+  - Katz, Blumler & Gurevitch (1973): Uses and Gratifications Theory — people actively select media to satisfy cognitive, affective, integrative, and escapist needs
+  - Deci & Ryan (1985, 2000): Self-Determination Theory — autonomy, competence, and relatedness as basic psychological needs driving behavior
+  - Kardefelt-Winther (2014): Compensatory Internet Use — social media compensates for unmet real-world needs; high private consumption signals compensation
+  - Berger & Heath (2007); Smaldino et al. (2022): Identity Signaling Theory — consumption patterns signal group membership through overt and covert markers
+  - Horton & Wohl (1956); Dibble et al. (2016): Parasocial Relationship Theory — one-sided emotional bonds with media figures detectable through concentrated engagement
+  - Paulhus & Williams (2002): Dark Triad — narcissism, Machiavellianism, psychopathy manifest as behavioral styles in social media engagement (we use behavioral descriptions only, never clinical labels)
+  - Maslow (1943): Hierarchy of Needs — users operate on multiple need levels simultaneously (safety, belonging, esteem, self-actualization)
+-->
+
+After the profile is generated, the pipeline analyzes **cross-row hashtag patterns** to infer deeper motivational layers not captured by individual-row inference. The type taxonomy is grounded in established behavioral science frameworks.
 
 ### Why Hidden Personas?
 
@@ -432,15 +441,23 @@ The per-row inference (Step 1) captures *what* a user likes. Hidden personas cap
 
 **Phase 2 — LLM Thematic Clustering.** The LLM receives the hashtag frequency table, the user's demographics, and the surviving preference skeleton. It groups hashtags into 8–15 thematic clusters, each representing a hidden persona. Types:
 
-| Type | What it captures |
-|------|-----------------|
-| `personality_trait` | Core character attributes (nostalgic, risk-averse, etc.) |
-| `aspiration` | Dreams and goals (entrepreneurial ambitions, financial freedom) |
-| `emotional_pattern` | Recurring emotional dynamics (romantic yearning + anxiety) |
-| `identity_anchor` | Cultural era/community grounding the self-concept |
-| `intimate_interest` | Body confidence, sensuality, attraction patterns — specific objects, clothing, body areas, dynamics |
-| `intellectual_curiosity` | Hidden learning interests (ancient history, science, paranormal) |
-| `private_hobby` | Interests consumed but not publicly shared |
+<!-- Uses & Gratifications → personality_trait, aspiration, emotional_pattern, intellectual_curiosity, private_hobby -->
+<!-- Self-Determination Theory → autonomy needs surface in personality_trait; competence in intellectual_curiosity + aspiration; relatedness in emotional_pattern -->
+<!-- Identity Signaling Theory → identity_anchor (overt tribal + covert aesthetic markers) -->
+<!-- Compensatory Use Theory → compensatory_need (high privacy_ratio = unmet real-world need) -->
+<!-- Parasocial Relationship Theory → parasocial_attachment (concentrated engagement with one figure) -->
+
+| Type | What it captures | Theoretical basis |
+|------|-----------------|-------------------|
+| `personality_trait` | Core character attributes (nostalgic, risk-averse, drawn to transgressive humor) | Big Five; Dark Triad behavioral markers |
+| `aspiration` | Dreams and goals (entrepreneurial ambitions, financial freedom) | Maslow's esteem/self-actualization |
+| `emotional_pattern` | Recurring emotional dynamics (romantic yearning + anxiety, need for validation) | Uses & Gratifications (affective needs) |
+| `identity_anchor` | Cultural era, community, tribal belonging — both overt markers (community names) AND covert signals (niche aesthetics like #hopelesscore, #cottagecore) | Identity Signaling Theory |
+| `intimate_interest` | Body confidence, sensuality, attraction patterns — specific objects, clothing, body areas, dynamics | Self-presentation; body image research |
+| `intellectual_curiosity` | Hidden learning interests (ancient history, science, paranormal) | Self-Determination Theory (competence need) |
+| `private_hobby` | Interests consumed but not publicly shared (high implicit ratio) | Uses & Gratifications (escapist needs) |
+| `parasocial_attachment` | Intense one-sided bond with a specific public figure, detected by ≥15 rows mentioning one figure | Parasocial Relationship Theory |
+| `compensatory_need` | Unmet real-world needs satisfied through private media consumption (privacy_ratio >0.7) | Compensatory Internet Use Theory |
 
 **Phase 3 — Algorithmic Validation.** Each cluster is validated against raw data:
 
@@ -448,20 +465,32 @@ The per-row inference (Step 1) captures *what* a user likes. Hidden personas cap
 |--------|-----------|
 | Distinct source rows | ≥ 20 (`MIN_HIDDEN_PERSONA_ROWS`) |
 | Temporal spread (distinct days) | ≥ 3 (`MIN_HIDDEN_PERSONA_DAYS`) |
-| Privacy ratio (`impl_pos / (impl_pos + expl_pos)`) | Reported, not gated |
+| Privacy ratio (`impl_pos / (impl_pos + expl_pos)`) | Reported, not gated (>0.7 required for `compensatory_need`) |
 | App distribution | Computed retroactively after routing |
+
+### Dual Personalities
+
+<!-- Approach-avoidance conflict: Lewin (1935); Miller (1944) — individuals simultaneously attracted to and repelled by the same goal or competing goals -->
+
+After validation, the LLM identifies **dual personality tensions** — pairs of hidden personas that coexist in contradiction. These represent psychologically well-established internal conflicts (approach-avoidance, public-vs-private self, contradictory needs). Both halves must independently pass validation gates. Examples: public confidence + private vulnerability, aspirational luxury + minimalist escape.
+
+Stored as `dual_personalities` in `profile.json`: `[{"persona_a": "...", "persona_b": "...", "tension": "..."}]`.
+
+### Per-Preference Hidden Persona Labels
+
+Each preference in the saved app JSONs carries a `hidden_persona_labels` field linking it to the hidden persona(s) it provides evidence for. The match is computed by checking whether the preference's source hashtags overlap with a hidden persona's `evidence_hashtags`. Preferences with no overlap get an empty list — labels are never forced.
 
 ### Output
 
 Each validated cluster becomes a `HiddenPersona` with: label, type, description, evidence_hashtags, evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation.
 
-A second LLM call generates a `hidden_persona_summary` — a cohesive narrative paragraph linking all hidden personas to observable surface behaviors. Both are saved in `profile.json`.
+A second LLM call generates a `hidden_persona_summary` — a cohesive narrative paragraph linking all hidden personas to observable surface behaviors. A third LLM call detects `dual_personalities`. All are saved in `profile.json`.
 
-> **Realism.** Real users have motivational layers beneath their visible engagement. A user doesn't just "like boxing content" — they may be nostalgic for a cultural era, privately aspirational about self-expression, or processing relationship dynamics through spectator content. Hidden personas make the dataset useful for deep personalization that goes beyond surface-level topic matching.
+> **Realism.** Real users have motivational layers beneath their visible engagement. A user doesn't just "like boxing content" — they may have a parasocial attachment to a specific fighter, be nostalgic for a cultural era, privately compensate for romantic loneliness through couple content, or process relationship dynamics as a spectator. These hidden layers, grounded in established behavioral science, make the dataset useful for deep personalization beyond surface-level topic matching.
 
 ---
 
-## 9. Step 6 — Per-App Sub-Personas
+## 10. Step 8 — Per-App Sub-Personas
 
 Each user receives **four distinct AppPersona objects** — one per platform — describing how they present on each app.
 
@@ -494,7 +523,7 @@ The Chatbot AppPersona selects 2–3 from: professional emails, personal emails,
 
 ---
 
-## 10. Step 7 — App Routing
+## 11. Steps 9–11 — App Routing
 
 Each surviving preference is assigned to exactly one primary app. The routing has three stages:
 
@@ -526,7 +555,7 @@ Additionally, `implicit_negative` rows are **never routed to Chatbot** — skipp
 
 ---
 
-## 11. Step 8 — Interaction Formats
+## 12. Step 12 — Interaction Formats
 
 Each preference gets a platform-specific interaction action (e.g., "Liked", "Saved to a collection", "Replied").
 
@@ -580,7 +609,7 @@ These represent two fundamentally different UX paradigms: @ai comments are publi
 
 ---
 
-## 12. Step 8.5 — Chatbot Conversations
+## 13. Step 13 — Chatbot Conversations
 
 Every preference routed to the Chatbot app gets a multi-turn conversation.
 
@@ -626,7 +655,7 @@ The user **never directly states** their preference. Instead:
 
 ---
 
-## 13. Step 9 — Stereotype Annotation
+## 14. Step 14 — Stereotype Annotation
 
 Each preference (positive and negative) receives a stereotype mark based on the user's demographics.
 
@@ -650,7 +679,7 @@ The LLM is instructed to be conservative: "when in doubt, mark as neutral." Only
 
 ---
 
-## 14. Step 10 — Train/Test Split
+## 15. Steps 15–16 — Train/Test Split and Save
 
 ### Time-Based, Cross-App Split
 
@@ -679,7 +708,7 @@ The distractor is stored as `over_personalization_irrelevant` on the test item.
 
 ---
 
-## 15. Noise and Realism Summary
+## 16. Noise and Realism Summary
 
 All noise is applied **after** the core ground-truth skeleton is established. The skeleton (Steps 1–2) is deterministic and filter-based; noise enters during platform-specific generation (Steps 5+).
 
@@ -698,7 +727,7 @@ All noise is applied **after** the core ground-truth skeleton is established. Th
 
 ---
 
-## 16. Key Thresholds Reference
+## 17. Key Thresholds Reference
 
 | Constant | Value | Purpose |
 |----------|-------|---------|
