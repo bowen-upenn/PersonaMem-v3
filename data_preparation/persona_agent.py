@@ -2764,6 +2764,18 @@ class PersonaAgent:
         for ap in self.negative_personas:
             atomics_by_oid[ap.source_object_id].append(ap)
 
+        # --- Compute latest-20% timestamp cutoff for test labeling ---
+        # Test labels only apply to events in the latest 20% of the timeline.
+        # Earlier occurrences of the same canonical get no split label.
+        all_timestamps = sorted(set(
+            ap.source_timestamp for ap in self.atomic_personas if ap.source_timestamp
+        ))
+        if all_timestamps:
+            cutoff_idx = int(len(all_timestamps) * 0.8)
+            test_ts_cutoff = all_timestamps[min(cutoff_idx, len(all_timestamps) - 1)]
+        else:
+            test_ts_cutoff = 0
+
         # --- Build interaction events ---
         all_events: list[dict] = []
         seen_unique_prefs: list[str] = []  # for profile.json dedup
@@ -2795,7 +2807,9 @@ class PersonaAgent:
                     continue  # this atomic's canonical was filtered out
 
                 ann = all_annotated_items.get(cr.persona_item)
-                split_label = self.split_labels.get(cr.persona_item, "train")
+                # Only label as "test" if this event is in the latest 20%
+                raw_split = self.split_labels.get(cr.persona_item, "")
+                split_label = "test" if raw_split == "test" and ap.source_timestamp >= test_ts_cutoff else ""
                 distractor = self.test_distractors.get(cr.persona_item, {}) if split_label == "test" else {}
 
                 # Build merged update_history: temporal entries (no raw timestamp)
