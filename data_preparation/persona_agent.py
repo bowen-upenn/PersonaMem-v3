@@ -793,10 +793,15 @@ class PersonaAgent:
                       f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
             return
 
-        n_promoted_oids = set()
-        for rows in hot_tags.values():
-            for r in rows:
-                n_promoted_oids.add(r.object_id)
+        # A row is only promoted if it has >= 2 hot hashtags (not just 1).
+        # This avoids promoting rows that only tangentially touch a hot topic.
+        hot_tag_set = set(hot_tags.keys())
+        promoted_oids: set[str] = set()
+        for row in impl_neg_rows:
+            tags = self._extract_hashtags(row.object_text)
+            n_hot = sum(1 for t in tags if t.lower() in hot_tag_set)
+            if n_hot >= 2:
+                promoted_oids.add(row.object_id)
 
         # Step 3: Pick ONE representative per hot hashtag (longest text)
         representatives: dict[str, InteractionRow] = {
@@ -807,7 +812,7 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
                   f"{len(hot_tags)} hot hashtags (>= {MIN_IMPLICIT_NEGATIVE_REPETITION}), "
-                  f"{len(n_promoted_oids)} rows promoted, "
+                  f"{len(promoted_oids)} rows promoted (>= 2 hot tags), "
                   f"{len(representatives)} LLM calls.{utils.Colors.ENDC}")
 
         # Step 4: Run LLM — one call per hot hashtag, single hashtag only
@@ -841,11 +846,13 @@ class PersonaAgent:
 
         pbar.close()
 
-        # Step 5: Fan out — for each hot hashtag, copy preferences to ALL
-        # rows containing it. source_hashtags keeps the FULL original set.
+        # Step 5: Fan out — for each hot hashtag, copy preferences to promoted
+        # rows only (>= 2 hot hashtags). source_hashtags keeps the FULL original set.
         n_atomics = 0
         for tag, personas in tag_personas.items():
             for row in hot_tags[tag]:
+                if row.object_id not in promoted_oids:
+                    continue  # row has only 1 hot tag — stays as stub
                 formatted_ts = self._format_timestamp(row.interaction_time)
                 all_hashtags = self._extract_hashtags(row.object_text)
                 for template in personas:
@@ -1411,8 +1418,9 @@ class PersonaAgent:
                         adjustment -= other_base
                 c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced + adjustment)
 
-        # Step 5: Bottom-20% filter
-        neg_survivors = self._apply_bottom_20_filter(neg_survivors)
+        # Skip bottom-20% filter for negatives — keep all that passed the
+        # init filter + repetition gate. The promoted negatives are already
+        # high-signal (≥5 distinct rows, ≥2 hot hashtags per row).
         self.cross_referenced_negatives = neg_survivors
 
         if self.verbose:
