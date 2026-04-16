@@ -751,21 +751,20 @@ class PersonaAgent:
         self.atomic_personas = []
         self.negative_personas = []
 
-        # Pre-filter implicit_negative rows by hashtag signature. Singletons
-        # (and small groups below IMPLICIT_NEGATIVE_PREFILTER_K) can't possibly
-        # reach the downstream MIN_IMPLICIT_NEGATIVE_REPETITION gate, so skip
-        # the API call entirely. The pre-filter K is deliberately looser than
-        # the final gate since LLM inference may merge different hashtag sets
-        # into one canonical persona text.
-        impl_neg_sig_counts: dict[frozenset, int] = {}
+        # Pre-filter implicit_negative rows by per-hashtag frequency. A row
+        # survives if ANY of its hashtags appears in >= IMPLICIT_NEGATIVE_PREFILTER_K
+        # implicit_negative rows for this user. This is much more effective than
+        # exact-signature matching (which fails because each row has a unique
+        # combination of 6-7 hashtags). The real filtering happens downstream
+        # when the >=5 canonical gate drops low-repetition topics after LLM merge.
+        impl_neg_tag_counts: dict[str, int] = {}
         for interaction in self.interactions:
             if interaction.interaction_type != "implicit_negative":
                 continue
             tags = self._extract_hashtags(interaction.object_text)
-            if not tags:
-                continue
-            sig = frozenset(tags)
-            impl_neg_sig_counts[sig] = impl_neg_sig_counts.get(sig, 0) + 1
+            for t in tags:
+                key = t.lower()
+                impl_neg_tag_counts[key] = impl_neg_tag_counts.get(key, 0) + 1
 
         skipped_indices: set[int] = set()
         for idx, interaction in enumerate(self.interactions):
@@ -775,7 +774,8 @@ class PersonaAgent:
             if not tags:
                 skipped_indices.add(idx)
                 continue
-            if impl_neg_sig_counts.get(frozenset(tags), 0) < IMPLICIT_NEGATIVE_PREFILTER_K:
+            if not any(impl_neg_tag_counts.get(t.lower(), 0) >= IMPLICIT_NEGATIVE_PREFILTER_K
+                       for t in tags):
                 skipped_indices.add(idx)
 
         to_submit = [
