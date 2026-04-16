@@ -882,46 +882,22 @@ class PersonaAgent:
 
         pbar.close()
 
-        # Step 6: Per-preference corroboration filter. A preference text must
-        # be independently produced by >= 2 different hot hashtag LLM calls.
-        # This filters out speculative one-off inferences from a single call.
-        from collections import Counter as _Ctr
-        pref_tag_count: dict[str, int] = _Ctr()  # normalized pref text → # of distinct tags that produced it
-        for tag, personas in tag_personas.items():
-            seen_in_tag: set[str] = set()
-            for p in personas:
-                key = _normalize_persona_text(p.persona_item)
-                if key not in seen_in_tag:
-                    seen_in_tag.add(key)
-                    pref_tag_count[key] += 1
-
-        MIN_PREF_CORROBORATION = 2  # preference must come from >= 2 independent hashtag calls
-        corroborated_prefs: set[str] = {
-            key for key, count in pref_tag_count.items()
-            if count >= MIN_PREF_CORROBORATION
-        }
-
-        n_pref_total = len(pref_tag_count)
-        n_pref_kept = len(corroborated_prefs)
-
-        # Step 7: Fan out — for each hot hashtag, copy ONLY corroborated
-        # preferences to promoted rows that actually contain that hashtag.
+        # Step 6: Fan out — for each hot hashtag, copy preferences to promoted
+        # rows that actually contain that hashtag (tag-scoped, no cross-tag
+        # leakage). The hot hashtag's own net-sentiment filtering is sufficient
+        # corroboration; no per-preference text-matching filter needed.
         # source_hashtags keeps the FULL original set for realism.
         n_atomics = 0
         for tag, personas in tag_personas.items():
             for row in hot_tags[tag]:
                 if row.object_id not in promoted_oids:
                     continue
-                # Only assign preference if THIS row's hashtags contain the
-                # hot hashtag that produced it (no cross-tag leakage).
                 row_tags_lower = {t.lower() for t in self._extract_hashtags(row.object_text)}
                 if tag not in row_tags_lower:
                     continue
                 formatted_ts = self._format_timestamp(row.interaction_time)
                 all_hashtags = self._extract_hashtags(row.object_text)
                 for template in personas:
-                    if _normalize_persona_text(template.persona_item) not in corroborated_prefs:
-                        continue  # one-off inference, not corroborated
                     self.negative_personas.append(AtomicPersona(
                         persona_item=template.persona_item,
                         category=template.category,
@@ -938,7 +914,6 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Implicit-negative promotion: "
                   f"{len(tag_personas)}/{len(hot_tags)} hashtags produced preferences, "
-                  f"{n_pref_kept}/{n_pref_total} prefs corroborated (>= {MIN_PREF_CORROBORATION} independent tags), "
                   f"{n_atomics} atomic negatives fanned out.{utils.Colors.ENDC}")
 
     def _infer_implicit_neg_hashtag(
