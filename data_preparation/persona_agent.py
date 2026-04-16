@@ -744,23 +744,26 @@ class PersonaAgent:
             self._known_categories.add(cat.lower())
         return results
 
-    def _promote_implicit_negatives(self) -> None:
-        """Promote repeated implicit_negative rows using hashtag-based grouping.
+    # Weights for net-sentiment scoring of implicit negatives.
+    # A hashtag is "hot negative" only when the user consistently skips it
+    # AND doesn't engage positively with that topic elsewhere.
+    IMPL_NEG_WEIGHT = 1.0    # each implicit_negative row
+    EXPL_POS_WEIGHT = 3.0    # each explicit_positive row (strong counter-signal)
+    IMPL_POS_WEIGHT = 1.5    # each implicit_positive row (moderate counter-signal)
+    MIN_TEMPORAL_DAYS = 3    # must span >= 3 distinct days to avoid session noise
 
-        1. Count per-hashtag frequency across implicit_negative rows.
-        2. Hashtags appearing in >= MIN_IMPLICIT_NEGATIVE_REPETITION distinct
-           rows are "hot" — topics the user repeatedly skipped.
-        3. ONE LLM call per hot hashtag (using a representative row for
-           context but passing only that single hashtag). This keeps
-           inference focused on one topic at a time and avoids false-
-           positive dislikes from rare co-occurring tags.
-        4. Fan out: for each hot hashtag, copy the inferred preferences to
-           ALL rows containing that hashtag. Each row keeps its FULL
-           original hashtag set in source_hashtags for realism.
-        5. A row with multiple hot hashtags gets preferences from each —
-           but cross-ref deduplicates by source_object_id within each
-           canonical, so the same row won't inflate a single canonical's
-           count.
+    def _promote_implicit_negatives(self) -> None:
+        """Promote repeated implicit_negative rows using weighted net-sentiment.
+
+        1. For each hashtag, count occurrences across implicit_negative,
+           explicit_positive, and implicit_positive rows.
+        2. Compute net_score = neg*1.0 - expl_pos*3.0 - impl_pos*1.5.
+           A single like cancels ~3 scroll-pasts; lingering cancels ~1.5.
+        3. A hashtag is "hot" only if net_score >= MIN_IMPLICIT_NEGATIVE_REPETITION
+           AND the negative rows span >= MIN_TEMPORAL_DAYS distinct days.
+        4. ONE LLM call per hot hashtag, passing only that single tag.
+        5. Rows with >= 2 hot hashtags are promoted; others stay as stubs.
+        6. Fan out inferred preferences; keep FULL original hashtags in output.
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from collections import defaultdict as _ddict
@@ -769,32 +772,62 @@ class PersonaAgent:
         if not impl_neg_rows:
             return
 
-        # Step 1: Count per-hashtag frequency (distinct rows by object_id)
-        tag_rows: dict[str, list[InteractionRow]] = _ddict(list)
-        tag_oids: dict[str, set[str]] = _ddict(set)
-        for row in impl_neg_rows:
+        # Step 1: Count per-hashtag occurrences by interaction type
+        tag_neg_oids: dict[str, set[str]] = _ddict(set)
+        tag_neg_rows: dict[str, list[InteractionRow]] = _ddict(list)
+        tag_neg_days: dict[str, set[int]] = _ddict(set)
+        tag_expl_pos_oids: dict[str, set[str]] = _ddict(set)
+        tag_impl_pos_oids: dict[str, set[str]] = _ddict(set)
+
+        for row in self.interactions:
             tags = self._extract_hashtags(row.object_text)
             for t in tags:
                 key = t.lower()
-                if row.object_id not in tag_oids[key]:
-                    tag_oids[key].add(row.object_id)
-                    tag_rows[key].append(row)
+                if row.interaction_type == "implicit_negative":
+                    if row.object_id not in tag_neg_oids[key]:
+                        tag_neg_oids[key].add(row.object_id)
+                        tag_neg_rows[key].append(row)
+                        tag_neg_days[key].add(row.interaction_time // 86400)
+                elif row.interaction_type == "explicit_positive":
+                    tag_expl_pos_oids[key].add(row.object_id)
+                elif row.interaction_type == "implicit_positive":
+                    tag_impl_pos_oids[key].add(row.object_id)
 
-        # Step 2: Hot hashtags (>= threshold distinct rows)
-        hot_tags: dict[str, list[InteractionRow]] = {
-            tag: rows for tag, rows in tag_rows.items()
-            if len(rows) >= MIN_IMPLICIT_NEGATIVE_REPETITION
-        }
+        # Step 2: Compute net scores and filter to hot hashtags
+        hot_tags: dict[str, list[InteractionRow]] = {}
+        hot_scores: dict[str, float] = {}
+        n_filtered_pos = 0
+        n_filtered_days = 0
+
+        for tag, neg_rows in tag_neg_rows.items():
+            n_neg = len(neg_rows)
+            n_ep = len(tag_expl_pos_oids.get(tag, set()))
+            n_ip = len(tag_impl_pos_oids.get(tag, set()))
+            n_days = len(tag_neg_days.get(tag, set()))
+            net = (n_neg * self.IMPL_NEG_WEIGHT
+                   - n_ep * self.EXPL_POS_WEIGHT
+                   - n_ip * self.IMPL_POS_WEIGHT)
+
+            if net < MIN_IMPLICIT_NEGATIVE_REPETITION:
+                if n_neg >= MIN_IMPLICIT_NEGATIVE_REPETITION:
+                    n_filtered_pos += 1  # would have been hot without counterevidence
+                continue
+            if n_days < self.MIN_TEMPORAL_DAYS:
+                n_filtered_days += 1
+                continue
+            hot_tags[tag] = neg_rows
+            hot_scores[tag] = net
 
         if not hot_tags:
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
-                      f"0 hot hashtags (>= {MIN_IMPLICIT_NEGATIVE_REPETITION} rows), "
+                      f"0 hot hashtags after net-sentiment filter "
+                      f"({n_filtered_pos} removed by positive counterevidence, "
+                      f"{n_filtered_days} by temporal spread < {self.MIN_TEMPORAL_DAYS} days), "
                       f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
             return
 
-        # A row is only promoted if it has >= 2 hot hashtags (not just 1).
-        # This avoids promoting rows that only tangentially touch a hot topic.
+        # Step 3: Rows with >= 2 hot hashtags are promoted
         hot_tag_set = set(hot_tags.keys())
         promoted_oids: set[str] = set()
         for row in impl_neg_rows:
@@ -803,7 +836,7 @@ class PersonaAgent:
             if n_hot >= 2:
                 promoted_oids.add(row.object_id)
 
-        # Step 3: Pick ONE representative per hot hashtag (longest text)
+        # Step 4: Pick ONE representative per hot hashtag (longest text)
         representatives: dict[str, InteractionRow] = {
             tag: max(rows, key=lambda r: len(r.object_text))
             for tag, rows in hot_tags.items()
@@ -811,11 +844,14 @@ class PersonaAgent:
 
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
-                  f"{len(hot_tags)} hot hashtags (>= {MIN_IMPLICIT_NEGATIVE_REPETITION}), "
+                  f"{len(hot_tags)} hot hashtags (net >= {MIN_IMPLICIT_NEGATIVE_REPETITION}, "
+                  f">= {self.MIN_TEMPORAL_DAYS} days), "
+                  f"{n_filtered_pos} removed by positive counterevidence, "
+                  f"{n_filtered_days} by temporal spread, "
                   f"{len(promoted_oids)} rows promoted (>= 2 hot tags), "
                   f"{len(representatives)} LLM calls.{utils.Colors.ENDC}")
 
-        # Step 4: Run LLM — one call per hot hashtag, single hashtag only
+        # Step 5: Run LLM — one call per hot hashtag, single hashtag only
         tag_personas: dict[str, list[AtomicPersona]] = {}
 
         pbar = tqdm(
@@ -846,13 +882,13 @@ class PersonaAgent:
 
         pbar.close()
 
-        # Step 5: Fan out — for each hot hashtag, copy preferences to promoted
+        # Step 6: Fan out — for each hot hashtag, copy preferences to promoted
         # rows only (>= 2 hot hashtags). source_hashtags keeps the FULL original set.
         n_atomics = 0
         for tag, personas in tag_personas.items():
             for row in hot_tags[tag]:
                 if row.object_id not in promoted_oids:
-                    continue  # row has only 1 hot tag — stays as stub
+                    continue
                 formatted_ts = self._format_timestamp(row.interaction_time)
                 all_hashtags = self._extract_hashtags(row.object_text)
                 for template in personas:
