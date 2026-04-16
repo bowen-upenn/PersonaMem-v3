@@ -9,6 +9,9 @@
 ## Regeneration
 - **NEVER** start the persona pipeline (reprocess/regenerate data) without explicitly asking the user first. LLM calls are expensive and other sessions may be editing code concurrently.
 
+## Design Document
+- Whenever you make changes to the pipeline design (new features, changed thresholds, altered logic, new steps, etc.), update `DESIGN.md` accordingly. Keep it clean and concise — match the existing style.
+
 ## Persona Pipeline
 - Default mode is Claude Code subagents (not API). See skill.md for the full 11-step specification.
 - When asked to "reprocess persona data", spawn one subagent per user in parallel.
