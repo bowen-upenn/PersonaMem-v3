@@ -170,6 +170,8 @@ class UserProfile:
     # hashtag clustering. Filled in by infer_hidden_personas().
     hidden_personas: list = field(default_factory=list)  # list[HiddenPersona]
     hidden_persona_summary: str = ""                     # cohesive narrative paragraph
+    # Dual personalities — contradictory hidden persona pairs (internal tensions).
+    dual_personalities: list = field(default_factory=list)  # list[{"persona_a": str, "persona_b": str, "tension": str}]
 
 
 @dataclass
@@ -2111,13 +2113,43 @@ class PersonaAgent:
             except Exception:
                 pass
 
+        # ── Detect Dual Personalities ────────────────────────────────────
+
+        dual_personalities: list[dict] = []
+        if len(validated) >= 2 and self.llm_client:
+            dual_prompt = prompts.identify_dual_personalities_prompt(
+                hidden_personas_json=json.dumps(
+                    [{"label": hp.label, "type": hp.type, "description": hp.description,
+                      "evidence_rows": hp.evidence_rows, "privacy_ratio": hp.privacy_ratio,
+                      "interaction_breakdown": hp.interaction_breakdown,
+                      "inferred_motivation": hp.inferred_motivation}
+                     for hp in validated],
+                    indent=2,
+                ),
+            )
+            for attempt in range(self.MAX_RETRIES):
+                try:
+                    raw_duals = utils.parse_json_response(self.llm_client.query(dual_prompt))
+                    if isinstance(raw_duals, list):
+                        for d in raw_duals:
+                            if isinstance(d, dict) and d.get("persona_a") and d.get("persona_b"):
+                                dual_personalities.append({
+                                    "persona_a": d["persona_a"],
+                                    "persona_b": d["persona_b"],
+                                    "tension": d.get("tension", ""),
+                                })
+                        break
+                except Exception:
+                    pass
+
         # Store on profile
         self.user_profile.hidden_personas = validated
         self.user_profile.hidden_persona_summary = summary_text
+        self.user_profile.dual_personalities = dual_personalities
 
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(validated)} "
-                  f"hidden personas{utils.Colors.ENDC}")
+                  f"hidden personas, {len(dual_personalities)} dual tensions{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM Call #6: Per-app sub-personas
@@ -2923,6 +2955,14 @@ class PersonaAgent:
         # --- Build lookups ---
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
 
+        # Hidden persona hashtag lookup: for each hidden persona, pre-compute
+        # lowercase evidence hashtag set for matching against preference source_hashtags.
+        _hp_tag_sets: list[tuple[str, set[str]]] = []
+        if self.user_profile and self.user_profile.hidden_personas:
+            for hp in self.user_profile.hidden_personas:
+                tag_set = set(t.lower() for t in hp.evidence_hashtags)
+                _hp_tag_sets.append((hp.label, tag_set))
+
         # Canonical metadata lookup (positive + negative)
         # Also map absorbed members' atom texts to the representative canonical
         canonical_lookup: dict[str, CrossReferencedPersona] = {}
@@ -3071,12 +3111,21 @@ class PersonaAgent:
                             "source_app": rel_cr.assigned_app if rel_cr else "",
                         })
 
+                # Match preference's source hashtags against hidden personas
+                hp_labels: list[str] = []
+                if _hp_tag_sets and ap.source_hashtags:
+                    pref_tags_lower = set(t.lower() for t in ap.source_hashtags)
+                    for hp_label, hp_tags in _hp_tag_sets:
+                        if pref_tags_lower & hp_tags:
+                            hp_labels.append(hp_label)
+
                 pref = {
                     "persona_item": cr.persona_item,
                     "category": cr.category,
                     "confidence_score_init": ap.confidence_score_init,
                     "confidence_cross_referenced": cr.confidence_cross_referenced,
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
+                    "hidden_persona_labels": hp_labels,
                     "update_history": merged_history,
                 }
                 if split_label == "test":
