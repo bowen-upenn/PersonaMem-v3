@@ -75,7 +75,7 @@ def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
                         "confidence_score_init": entry.get("confidence_score_init", 0),
                         "confidence_cross_referenced": entry.get("confidence_cross_referenced", 0),
                         "stereotype_mark": entry.get("stereotype_mark", "neutral"),
-                        "split": entry.get("split", "train"),
+                        "split": entry.get("split", ""),
                         "update_history": entry.get("update_history", []),
                         "over_personalization_irrelevant": entry.get("over_personalization_irrelevant", ""),
                         "over_personalization_irrelevant_category": entry.get("over_personalization_irrelevant_category", ""),
@@ -127,7 +127,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     n_stereo = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "stereotypical")
     n_anti = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "anti-stereotypical")
     n_test = sum(1 for r in flat_prefs if r.get("split") == "test")
-    n_train = sum(1 for r in flat_prefs if (r.get("split") or "train") == "train")
+    n_train = n_prefs - n_test
     per_app_counts = {}
     for app in APPS:
         per_app_counts[app] = sum(1 for e in events if e.get("_app") == app)
@@ -357,7 +357,7 @@ if (eventsData.length === 0) {{
     let prefsHtml = '<div class="pref-list">';
     prefs.forEach(p => {{
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
-      badges += `<span class="badge ${{p.split || 'train'}}">${{p.split || 'train'}}</span>`;
+      if (p.split === 'test') badges += `<span class="badge test">test</span>`;
       if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
 
       let distractorLine = '';
