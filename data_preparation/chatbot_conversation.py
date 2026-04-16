@@ -24,8 +24,12 @@ from data_preparation import prompts, utils
 
 CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
     "writing_help": {
-        "description": "User asks the chatbot to draft, edit, or improve written text (emails, captions, messages). "
-                       "The preference is hidden in the content the user provides or the style they request.",
+        "description": "User pastes a draft (email, caption, message, cover letter, post) and asks the chatbot "
+                       "to improve the language, fix grammar, or adjust tone. The preference is embedded INSIDE "
+                       "the user-provided draft text — e.g., the email body mentions a hobby, the caption "
+                       "references a lifestyle detail. The user's explicit request is about writing quality, "
+                       "NOT about the preference itself. The chatbot should help improve the text without "
+                       "calling out the preference.",
         "compatible_contexts": [
             "professional emails",
             "personal emails",
@@ -35,8 +39,11 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "weight": 25.0,
     },
     "knowledge_query": {
-        "description": "User asks a factual, how-to, or nuanced knowledge question. "
-                       "The preference is revealed through the specificity of the question and domain details.",
+        "description": "User asks a specific factual, how-to, or nuanced question that reveals hidden curiosity. "
+                       "The preference is inferred from WHAT the user chooses to ask about and the level of "
+                       "domain-specific detail in their question — not from any direct statement. For example, "
+                       "a user who enjoys Korean cooking might ask 'What's the difference between gochugaru "
+                       "and gochujang in terms of fermentation?' without ever saying they like Korean food.",
         "compatible_contexts": [
             "knowledge exploration",
             "medical consultations",
@@ -44,16 +51,22 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "weight": 30.0,
     },
     "therapy_reflection": {
-        "description": "User seeks advice, vents, or engages in personal reflection. "
-                       "The preference emerges through the personal context and feelings shared.",
+        "description": "User discusses personal concerns, vents, or seeks life advice. The preference is NOT "
+                       "the topic of concern — it surfaces as incidental context while the user talks about "
+                       "something else. For example, a user who values fitness might say 'I've been stressed "
+                       "about work deadlines and it's cutting into my morning runs' — the concern is stress, "
+                       "the preference (running/fitness) is mentioned naturally as background.",
         "compatible_contexts": [
             "therapy and reflection",
         ],
         "weight": 20.0,
     },
     "troubleshooting": {
-        "description": "User describes a problem and seeks a practical solution. "
-                       "The preference is concealed within the problem description.",
+        "description": "User describes a practical problem and asks for a solution. The preference is embedded "
+                       "in the problem context, NOT as the problem itself. For example, a user into home "
+                       "gardening might ask 'My raised bed drainage isn't working after the last rain — what "
+                       "could be wrong?' The preference (gardening) is the backdrop, the troubleshooting "
+                       "request is the explicit task.",
         "compatible_contexts": [
             "knowledge exploration",
             "medical consultations",
@@ -61,8 +74,10 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "weight": 10.0,
     },
     "casual_chat": {
-        "description": "Natural back-and-forth conversation. "
-                       "The preference is woven into the flow of casual dialogue.",
+        "description": "User asks the chatbot to help compose a chat message or social reply to a friend, "
+                       "family member, or colleague. The preference is embedded in the content of the message "
+                       "being composed — e.g., 'Help me reply to my friend who asked what I did this weekend' "
+                       "and the user's draft mentions an activity revealing the preference.",
         "compatible_contexts": [
             "composing chat messages",
             "knowledge exploration",
@@ -71,16 +86,20 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "weight": 5.0,
     },
     "translation": {
-        "description": "User asks for translation or cross-language help. "
-                       "The preference is embedded in the source material chosen.",
+        "description": "User provides text in another language and asks the chatbot to translate or rephrase it. "
+                       "The preference is embedded in the SOURCE TEXT being translated — e.g., a recipe, a forum "
+                       "post, a product review, an article excerpt — whose subject matter reveals the preference. "
+                       "The user's request is about translation accuracy, not the preference.",
         "compatible_contexts": [
             "multilingual translation",
         ],
         "weight": 10.0,
     },
     "health_consultation": {
-        "description": "User asks health or medical questions. "
-                       "The preference is revealed through symptoms, conditions, or health concerns described.",
+        "description": "User asks a health or medical question. The preference surfaces through the specific "
+                       "lifestyle details, symptoms, or health context the user provides — e.g., a user who "
+                       "does rock climbing might mention 'I've had this recurring pain in my forearm after "
+                       "long sessions at the crag.' The consultation is about the symptom, not the preference.",
         "compatible_contexts": [
             "medical consultations",
         ],
