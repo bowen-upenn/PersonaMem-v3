@@ -1630,7 +1630,9 @@ class PersonaAgent:
         # For each canonical with >1 distinct source row, sample up to 5
         # recurrence timestamps evenly across the timeline.
         reinforced_entries: dict[str, list] = {}
-        for cr in self.cross_referenced_personas:
+        for cr in tqdm(self.cross_referenced_personas,
+                       desc=f"[User {self.user_id}] Step 5: Update histories",
+                       disable=not self.verbose):
             key = _normalize_persona_text(cr.persona_item)
             atoms = groups.get(key, [])
             # Collect distinct (source_object_id, timestamp) pairs
@@ -2034,7 +2036,9 @@ class PersonaAgent:
         total_rows = len(self.interactions)
         validated: list[HiddenPersona] = []
 
-        for cluster in raw_clusters:
+        for cluster in tqdm(raw_clusters,
+                            desc=f"[User {self.user_id}] Step 7: Validating hidden personas",
+                            disable=not self.verbose):
             if not isinstance(cluster, dict):
                 continue
             evidence_tags = cluster.get("evidence_hashtags", [])
@@ -2787,7 +2791,9 @@ class PersonaAgent:
             if is_high_confidence(cr.confidence_score_init, cr.confidence_cross_referenced)
         ]
 
-        for test_cr in kept_test:
+        for test_cr in tqdm(kept_test,
+                            desc=f"[User {self.user_id}] Step 15: Distractor pairing",
+                            disable=not self.verbose):
             self.split_labels[test_cr.persona_item] = "test"
             if not high_conf_train:
                 if self.verbose:
@@ -3038,7 +3044,10 @@ class PersonaAgent:
             _ev_seed = abs(hash(str(self.user_id))) % (2**31)
         event_rng = random.Random(_ev_seed)
 
-        for oid, atoms in atomics_by_oid.items():
+        for oid, atoms in tqdm(atomics_by_oid.items(),
+                               desc=f"[User {self.user_id}] Step 16: Building events",
+                               total=len(atomics_by_oid),
+                               disable=not self.verbose):
             if not atoms:
                 continue
             # Representative atom for event-level metadata
