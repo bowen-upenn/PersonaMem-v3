@@ -178,10 +178,14 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .event-card.app-Facebook {{ border-left-color: #4A6FA5; }}
   .event-card.app-Threads {{ border-left-color: #636366; }}
   .event-card.app-Chatbot {{ border-left-color: #C8956C; }}
-  .event-card.implicit-negative {{ background: #F5F5F5; border-left-color: #C0C0C0; opacity: 0.7; }}
+  .event-card.implicit-negative {{ background: #F0F0F0; border-left-color: #B0B0B0; opacity: 0.65; filter: grayscale(100%); }}
   .event-card.implicit-negative .event-meta {{ color: #999; }}
+  .event-card.implicit-negative .event-header {{ border-bottom-color: #E0E0E0; }}
   .event-card.implicit-negative .hashtags {{ color: #888; }}
-  .event-card.implicit-negative .badge {{ background: #E8E8E8 !important; color: #777 !important; }}
+  .event-card.implicit-negative .badge {{ background: #E0E0E0 !important; color: #777 !important; }}
+  .event-card.implicit-negative .pref-item {{ background: #E8E8E8; border-color: #D0D0D0; }}
+  .event-card.implicit-negative .pref-item .item-text {{ color: #666; }}
+  .event-card.implicit-negative .conf-inline {{ color: #999; }}
 
   .event-header {{ margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #F2F2F7; }}
   .event-header .event-meta {{ font-size: 11px; color: var(--text-secondary); margin-bottom: 4px; }}

@@ -89,7 +89,7 @@ For each user, the subagent executes these steps in order. Each step's rules com
 
 11. **Save** — write 5 JSON files + 1 aggregated CSV to `backend/{user_id}/`:
     - `profile.json`: UserProfile dataclass + `app_personas` dict
-    - `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json`: list of preference objects **sorted strictly by `source_timestamp` ascending**
+    - `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json`: list of interaction events **sorted strictly by `source_timestamp` ascending**. `implicit_negative` events whose canonicals survived the ≥5 gate are promoted to `source_interaction_type: "explicit_negative"` and carry full preferences. All other `implicit_negative` rows appear as stub events with empty `preferences: []` (no predictions needed). In `persona.html` these stubs render in full greyscale.
     - `preferences.csv`: the same preferences merged across all apps, flat CSV format, strictly chronologically sorted. Columns listed in "Output layout" above.
 
 ## Preference object shape (used in all per-app JSONs)

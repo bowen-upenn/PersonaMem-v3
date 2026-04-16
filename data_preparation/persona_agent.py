@@ -2646,8 +2646,13 @@ class PersonaAgent:
                 event_hashtags = list(dict.fromkeys(all_tags))
 
             # Determine effective interaction type for this event.
-            # For Chatbot: reassign 20% explicit / 80% implicit (polarity kept).
+            # Promote implicit_negative → explicit_negative when the event
+            # carries surviving preferences (i.e. the ≥5 repetition gate
+            # passed and real negative preferences were inferred).
             itype = rep.source_interaction_type or "implicit_positive"
+            if itype == "implicit_negative" and preferences:
+                itype = "explicit_negative"
+            # For Chatbot: reassign 20% explicit / 80% implicit (polarity kept).
             if app == "Chatbot" and itype != "implicit_negative":
                 polarity = "negative" if "negative" in itype else "positive"
                 itype = f"explicit_{polarity}" if event_rng.random() < 0.20 else f"implicit_{polarity}"
@@ -2697,6 +2702,41 @@ class PersonaAgent:
             event["preferences"] = preferences  # always last
 
             all_events.append(event)
+
+        # --- Stub events for implicit_negative rows that produced no atomics ---
+        # These rows were pre-filtered (hashtag signature below K) or the LLM
+        # returned nothing. They still appear in the app JSONs as empty-preference
+        # markers so the timeline is complete, rendered in greyscale in HTML.
+        oids_with_atoms = set(atomics_by_oid.keys())
+        n_stubs = 0
+        for interaction in self.interactions:
+            if interaction.interaction_type != "implicit_negative":
+                continue
+            if interaction.object_id in oids_with_atoms:
+                continue  # already has an event from the main loop
+            stub_app = self._row_app.get(interaction.object_id, "") or random.choice(PLATFORMS)
+            stub_hashtags = self._extract_hashtags(interaction.object_text)
+            stub_fmt_ts = self._format_timestamp(interaction.interaction_time)
+            sampled_entry = self._sample_action_from_bucket(stub_app, "implicit_negative", event_rng)
+            all_events.append({
+                "source_object_id": interaction.object_id,
+                "source_timestamp": interaction.interaction_time,
+                "formatted_timestamp": stub_fmt_ts,
+                "source_hashtags": stub_hashtags,
+                "source_interaction_type": "implicit_negative",
+                "interaction_format": {
+                    "app": stub_app,
+                    "action": sampled_entry["action"],
+                    "action_label": sampled_entry["label"],
+                    "user_message": None,
+                },
+                "preferences": [],
+            })
+            n_stubs += 1
+
+        if self.verbose and n_stubs:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Added {n_stubs} implicit-negative stub events "
+                  f"(no preferences, greyscale in HTML).{utils.Colors.ENDC}")
 
         # Assertion: no negative interaction event should have test-labeled preferences
         for event in all_events:
