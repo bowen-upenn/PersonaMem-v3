@@ -692,6 +692,9 @@ class PersonaAgent:
 
     def _infer_one_interaction(self, idx: int, interaction: InteractionRow) -> list[AtomicPersona]:
         """Infer atomic personas from a single interaction row (thread-safe)."""
+        # Skip implicit_negative — handled separately by hashtag-based promotion
+        if interaction.interaction_type == "implicit_negative":
+            return []
         hashtags = self._extract_hashtags(interaction.object_text)
         if not hashtags:
             return []
@@ -741,6 +744,162 @@ class PersonaAgent:
             self._known_categories.add(cat.lower())
         return results
 
+    def _promote_implicit_negatives(self) -> None:
+        """Promote repeated implicit_negative rows using hashtag-based grouping.
+
+        Instead of running LLM on every implicit_negative row, we:
+        1. Count per-hashtag frequency across implicit_negative rows.
+        2. Hashtags with >= IMPLICIT_NEGATIVE_PREFILTER_K distinct rows are "hot".
+        3. For each hot hashtag, pick ONE representative row and run LLM inference.
+        4. Fan out the inferred AtomicPersonas to ALL rows sharing that hashtag,
+           each with its own source_object_id (so cross-ref counts them correctly).
+
+        This saves ~5-10x in LLM calls vs running inference on every row.
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from collections import defaultdict as _ddict
+
+        impl_neg_rows = [r for r in self.interactions if r.interaction_type == "implicit_negative"]
+        if not impl_neg_rows:
+            return
+
+        # Step 1: Count per-hashtag frequency
+        tag_to_rows: dict[str, list[InteractionRow]] = _ddict(list)
+        for row in impl_neg_rows:
+            tags = self._extract_hashtags(row.object_text)
+            for t in tags:
+                tag_to_rows[t.lower()].append(row)
+
+        # Step 2: Identify hot hashtags (>= K distinct rows)
+        hot_tags: dict[str, list[InteractionRow]] = {}
+        for tag, rows in tag_to_rows.items():
+            # Dedupe by object_id
+            seen = set()
+            unique = []
+            for r in rows:
+                if r.object_id not in seen:
+                    seen.add(r.object_id)
+                    unique.append(r)
+            if len(unique) >= IMPLICIT_NEGATIVE_PREFILTER_K:
+                hot_tags[tag] = unique
+
+        if not hot_tags:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
+                      f"0 hot hashtags (K={IMPLICIT_NEGATIVE_PREFILTER_K}), "
+                      f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
+            return
+
+        # Step 3: Pick ONE representative row per hot hashtag (longest object_text)
+        representatives: dict[str, InteractionRow] = {}
+        for tag, rows in hot_tags.items():
+            representatives[tag] = max(rows, key=lambda r: len(r.object_text))
+
+        if self.verbose:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
+                  f"{len(hot_tags)} hot hashtags (K={IMPLICIT_NEGATIVE_PREFILTER_K}), "
+                  f"running LLM on {len(representatives)} representative rows.{utils.Colors.ENDC}")
+
+        # Step 4: Run LLM on representative rows only
+        tag_personas: dict[str, list[AtomicPersona]] = {}  # tag → inferred personas from representative
+
+        pbar = tqdm(
+            total=len(representatives),
+            desc=f"[User {self.user_id}] Step 1b: Implicit-neg promotion",
+            unit="tag",
+            disable=not self.verbose,
+        )
+
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {
+                executor.submit(self._infer_one_interaction_forced, rep): tag
+                for tag, rep in representatives.items()
+            }
+            for future in as_completed(futures):
+                tag = futures[future]
+                pbar.update(1)
+                try:
+                    results = future.result()
+                except Exception as e:
+                    if self.verbose:
+                        print(f"\n{utils.Colors.WARNING}[User {self.user_id}] Hashtag {tag} inference error: {e}{utils.Colors.ENDC}")
+                    continue
+                if results:
+                    tag_personas[tag] = results
+
+        pbar.close()
+
+        # Step 5: Fan out — for each hot hashtag, create AtomicPersonas for ALL
+        # rows sharing that hashtag, copying the persona_item/category from the
+        # representative's inference but using each row's own source metadata.
+        n_atomics = 0
+        for tag, personas in tag_personas.items():
+            rows = hot_tags[tag]
+            for row in rows:
+                formatted_ts = self._format_timestamp(row.interaction_time)
+                for template in personas:
+                    self.negative_personas.append(AtomicPersona(
+                        persona_item=template.persona_item,
+                        category=template.category,
+                        confidence_score_init=template.confidence_score_init,
+                        source_interaction_type=row.interaction_type,
+                        source_interaction_format=row.interaction_format,
+                        source_object_id=row.object_id,
+                        source_timestamp=row.interaction_time,
+                        formatted_timestamp=formatted_ts,
+                        source_hashtags=self._extract_hashtags(row.object_text),
+                    ))
+                    n_atomics += 1
+
+        if self.verbose:
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Implicit-negative promotion: "
+                  f"{len(tag_personas)} hashtags produced preferences, "
+                  f"{n_atomics} atomic negatives fanned out.{utils.Colors.ENDC}")
+
+    def _infer_one_interaction_forced(self, interaction: InteractionRow) -> list[AtomicPersona]:
+        """Like _infer_one_interaction but skips the implicit_negative guard."""
+        hashtags = self._extract_hashtags(interaction.object_text)
+        if not hashtags:
+            return []
+        existing_cats = list(self._known_categories) if self._known_categories else None
+        formatted_ts = self._format_timestamp(interaction.interaction_time)
+        prompt = prompts.hashtag_to_persona_prompt(
+            object_text=interaction.object_text,
+            interaction_type=interaction.interaction_type,
+            interaction_format=interaction.interaction_format,
+            formatted_timestamp=formatted_ts,
+            hashtags=hashtags,
+            existing_categories=existing_cats,
+        )
+        response = self._query_llm_with_retry(prompt)
+        if not response:
+            return []
+        parsed = utils.extract_json_from_response(response)
+        if not isinstance(parsed, list):
+            return []
+        results: list[AtomicPersona] = []
+        for item in parsed:
+            if not isinstance(item, dict) or "persona_item" not in item:
+                continue
+            raw_confidence = float(item.get("confidence_score_init", 0.3))
+            item_hashtags = item.get("source_hashtags", hashtags)
+            if not isinstance(item_hashtags, list):
+                item_hashtags = hashtags
+            cat = item.get("category", "uncategorized")
+            results.append(AtomicPersona(
+                persona_item=item["persona_item"],
+                category=cat,
+                confidence_score_init=raw_confidence,
+                source_interaction_type=interaction.interaction_type,
+                source_interaction_format=interaction.interaction_format,
+                source_object_id=interaction.object_id,
+                source_timestamp=interaction.interaction_time,
+                formatted_timestamp=formatted_ts,
+                source_hashtags=item_hashtags,
+            ))
+            self._known_categories.add(cat.lower())
+        return results
+
     def infer_personas_from_hashtags(self) -> None:
         """For each interaction, call the LLM to infer atomic persona traits from hashtags.
 
@@ -751,50 +910,10 @@ class PersonaAgent:
         self.atomic_personas = []
         self.negative_personas = []
 
-        # Pre-filter implicit_negative rows by per-hashtag frequency. A row
-        # survives if ANY of its hashtags appears in >= IMPLICIT_NEGATIVE_PREFILTER_K
-        # implicit_negative rows for this user. This is much more effective than
-        # exact-signature matching (which fails because each row has a unique
-        # combination of 6-7 hashtags). The real filtering happens downstream
-        # when the >=5 canonical gate drops low-repetition topics after LLM merge.
-        impl_neg_tag_counts: dict[str, int] = {}
-        for interaction in self.interactions:
-            if interaction.interaction_type != "implicit_negative":
-                continue
-            tags = self._extract_hashtags(interaction.object_text)
-            for t in tags:
-                key = t.lower()
-                impl_neg_tag_counts[key] = impl_neg_tag_counts.get(key, 0) + 1
-
-        skipped_indices: set[int] = set()
-        for idx, interaction in enumerate(self.interactions):
-            if interaction.interaction_type != "implicit_negative":
-                continue
-            tags = self._extract_hashtags(interaction.object_text)
-            if not tags:
-                skipped_indices.add(idx)
-                continue
-            if not any(impl_neg_tag_counts.get(t.lower(), 0) >= IMPLICIT_NEGATIVE_PREFILTER_K
-                       for t in tags):
-                skipped_indices.add(idx)
-
-        to_submit = [
-            (idx, interaction)
-            for idx, interaction in enumerate(self.interactions)
-            if idx not in skipped_indices
-        ]
-
-        if self.verbose:
-            n_impl_neg = sum(1 for i in self.interactions if i.interaction_type == "implicit_negative")
-            n_impl_neg_submitted = sum(
-                1 for idx, i in to_submit if i.interaction_type == "implicit_negative"
-            )
-            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative pre-filter: "
-                  f"{n_impl_neg_submitted}/{n_impl_neg} rows survive (K={IMPLICIT_NEGATIVE_PREFILTER_K}).{utils.Colors.ENDC}")
-
+        # --- Step 1a: Infer positives & explicit negatives (skip implicit_negative) ---
         pbar = tqdm(
-            total=len(to_submit),
-            desc=f"[User {self.user_id}] Step 1: Inferring personas",
+            total=len(self.interactions),
+            desc=f"[User {self.user_id}] Step 1a: Inferring personas",
             unit="row",
             disable=not self.verbose,
         )
@@ -802,7 +921,7 @@ class PersonaAgent:
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = {
                 executor.submit(self._infer_one_interaction, idx, interaction): (idx, interaction)
-                for idx, interaction in to_submit
+                for idx, interaction in enumerate(self.interactions)
             }
             for future in as_completed(futures):
                 idx, interaction = futures[future]
@@ -822,6 +941,16 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(self.atomic_personas)} positive atomic personas, "
                   f"{len(self.negative_personas)} negative (standalone) from {len(self.interactions)} interactions.{utils.Colors.ENDC}")
+
+        # --- Step 1b: Hashtag-based promotion of implicit negatives ---
+        # Instead of running LLM on every implicit_negative row, group them
+        # by individual hashtag frequency. Hashtags appearing in >= K rows
+        # are "hot". For each hot hashtag, run LLM on ONE representative row
+        # to get preference text, then fan out AtomicPersonas to ALL rows
+        # sharing that hashtag. This saves ~5-10x in LLM calls.
+        self._promote_implicit_negatives()
+
+        if self.verbose:
             # Category statistics
             from collections import Counter as _Ctr
             cat_counts = _Ctr(ap.category.lower() for ap in self.atomic_personas)
