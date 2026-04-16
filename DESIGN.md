@@ -57,43 +57,42 @@ Every interaction event, on every platform, traces back to **one shared preferen
 ```
 Input CSV (hashtag interactions per user)
   │
-  ├─ Step 1:  Infer atomic personas         [LLM]    ── scores: init 0.0–1.0
-  ├─ Step 1b: Promote implicit negatives     [Algo+LLM] ── net-sentiment gate
-  │
-  ├─ Step 2:  Cross-reference                [Algo+LLM] ── scores: cross_ref (uncapped)
-  ├─ Step 3:  Temporal contradiction graph    [LLM]    ── timeline grouping
-  ├─ Step 4:  Build update histories          [Algo+LLM] ── reinforced/faded/evolved
-  │
-  ├─ Step 5:  Generate user profile           [LLM]    ── demographics + Big Five
-  ├─ Step 5.5: Infer hidden personas          [Algo+LLM] ── cross-row hashtag clustering
-  ├─ Step 6:  Generate per-app sub-personas   [LLM]    ── 4 AppPersonas
-  │
-  ├─ Step 7:  Route preferences to apps       [LLM+Algo] ── distribution: ~40/20/20/20
-  ├─ Step 8:  Generate interaction formats     [Algo+LLM] ── per-user perturbed weights
-  ├─ Step 8.5: Generate chatbot conversations [LLM]    ── multi-turn, ask-to-forget
-  │
-  ├─ Step 9:  Annotate stereotype marks        [LLM]    ── demographics-only
-  ├─ Step 10: Build train/test split           [LLM+Algo] ── 80/20, inferrability gate
-  │
-  └─ Step 11: Save to backend                 [Algo]    ── 5 JSON files per user
+  ├─ Step 1:  Infer atomic personas           [LLM]      ── scores: init 0.0–1.0
+  ├─ Step 2:  Promote implicit negatives     [Algo+LLM] ── net-sentiment gate
+  ├─ Step 3:  Cross-reference & filter       [Algo+LLM] ── scores: cross_ref (uncapped)
+  ├─ Step 4:  Temporal contradiction graph   [LLM]      ── timeline grouping
+  ├─ Step 5:  Build update histories         [Algo+LLM] ── reinforced/faded/evolved
+  ├─ Step 6:  Generate user profile          [LLM]      ── demographics + Big Five
+  ├─ Step 7:  Infer hidden personas          [Algo+LLM] ── cross-row hashtag clustering
+  ├─ Step 8:  Generate per-app sub-personas  [LLM]      ── 4 AppPersonas
+  ├─ Step 9:  Build sessions                 [Algo]     ── temporal grouping
+  ├─ Step 10: Route preferences to apps      [LLM+Algo] ── distribution: ~40/20/20/20
+  ├─ Step 11: Assign rows to apps            [Algo]     ── session majority vote + 8% noise
+  ├─ Step 12: Generate interaction formats   [Algo+LLM] ── per-user perturbed weights
+  ├─ Step 13: Generate chatbot conversations [LLM]      ── multi-turn, ask-to-forget
+  ├─ Step 14: Annotate stereotype marks      [LLM]      ── demographics-only
+  ├─ Step 15: Build train/test split         [LLM+Algo] ── 80/20, inferrability gate
+  └─ Step 16: Save to backend               [Algo]     ── 5 JSON files per user
 ```
 
 | Step | Type | Key output |
 |------|------|------------|
 | 1 | LLM | ~10 atomic preferences per interaction, each with init confidence |
-| 1b | Algo + LLM | Promoted implicit negatives via net-sentiment + temporal spread |
-| 2 | Algo + LLM | Deduplicated, cross-referenced preference skeleton with cross_ref scores |
-| 3 | LLM | Contradiction timelines grouped by topic |
-| 4 | Algo + LLM | Update history per preference (reinforced, faded, evolved) |
-| 5 | LLM | Synthetic user profile: name, demographics, Big Five, career, bio |
-| 5.5 | Algo + LLM | Hidden personas: deeper motivational layers from cross-row hashtag patterns |
-| 6 | LLM | Four distinct AppPersonas (one per platform) |
-| 7 | LLM + Algo | Each preference routed to one primary app; 8% noise |
-| 8 | Algo + LLM | Platform-specific action + optional user_message per preference |
-| 8.5 | LLM | Multi-turn chatbot conversations with implicit preference embedding |
-| 9 | LLM | Stereotype marks (neutral / stereotypical / anti-stereotypical) |
-| 10 | LLM + Algo | Train/test labels + distractor pairing for test items |
-| 11 | Algo | `profile.json` + 4 app JSONs per user |
+| 2 | Algo + LLM | Promoted implicit negatives via net-sentiment + temporal spread |
+| 3 | Algo + LLM | Deduplicated, cross-referenced preference skeleton with cross_ref scores |
+| 4 | LLM | Contradiction timelines grouped by topic |
+| 5 | Algo + LLM | Update history per preference (reinforced, faded, evolved) |
+| 6 | LLM | Synthetic user profile: name, demographics, Big Five, career, bio |
+| 7 | Algo + LLM | Hidden personas: deeper motivational layers from cross-row hashtag patterns |
+| 8 | LLM | Four distinct AppPersonas (one per platform) |
+| 9 | Algo | Temporal sessions (rows within ≤5s grouped together) |
+| 10 | LLM + Algo | Each preference routed to one primary app |
+| 11 | Algo | Session majority vote + 8% noise for row-to-app assignment |
+| 12 | Algo + LLM | Platform-specific action + optional user_message per preference |
+| 13 | LLM | Multi-turn chatbot conversations with implicit preference embedding |
+| 14 | LLM | Stereotype marks (neutral / stereotypical / anti-stereotypical) |
+| 15 | LLM + Algo | Train/test labels + distractor pairing for test items |
+| 16 | Algo | `profile.json` + 4 app JSONs per user |
 
 ---
 
@@ -154,7 +153,7 @@ The same canonical preference text naturally appears across multiple events — 
 
 ---
 
-## 4. Step 1 — Persona Inference
+## 4. Step 1 — Atomic Persona Inference
 
 For each interaction row (except `implicit_negative`, handled separately in Step 1b), the LLM infers **~10 atomic persona traits** from the hashtags.
 
@@ -193,7 +192,7 @@ Negative preferences are always phrased negatively: "Dislikes X", "Avoids X", "N
 
 ---
 
-## 5. Step 1b — Implicit Negative Promotion
+## 5. Step 2 — Implicit Negative Promotion
 
 `implicit_negative` rows (user scrolled past content with no interaction) are **skipped** in Step 1 — a single scroll-past is too weak a signal. Instead, we aggregate them:
 
@@ -237,7 +236,7 @@ The temporal spread requirement prevents session-level noise (e.g., user scrolle
 
 ---
 
-## 6. Step 2 — Cross-Referencing (The Core Engine)
+## 6. Step 3 — Cross-Referencing (The Core Engine)
 
 This is the central pipeline stage that transforms raw atomic inferences into the validated preference skeleton. It runs seven sub-stages:
 
@@ -308,7 +307,7 @@ Negative preferences go through the **same pipeline independently** (within nega
 
 ---
 
-## 7. Steps 3–4 — Temporal Evolution
+## 7. Steps 4–5 — Temporal Evolution
 
 ### Step 3: Temporal Contradiction Graph
 
@@ -331,7 +330,7 @@ A causality filter ensures only update entries with `timestamp ≤ event timesta
 
 ---
 
-## 8. Step 5 — Synthetic User Profile
+## 8. Step 6 — Synthetic User Profile
 
 Each user receives a synthetic profile grounded in their preference skeleton.
 
@@ -418,7 +417,7 @@ The prompt explicitly instructs the LLM to: be consistent with *some but not all
 
 ---
 
-## 8.5. Step 5.5 — Hidden Persona Inference
+## 9. Step 7 — Hidden Persona Inference
 
 After the profile is generated, the pipeline analyzes **cross-row hashtag patterns** to infer deeper motivational layers not captured by individual-row inference.
 
@@ -461,7 +460,7 @@ A second LLM call generates a `hidden_persona_summary` — a cohesive narrative 
 
 ---
 
-## 9. Step 6 — Per-App Sub-Personas
+## 10. Step 8 — Per-App Sub-Personas
 
 Each user receives **four distinct AppPersona objects** — one per platform — describing how they present on each app.
 
@@ -494,7 +493,7 @@ The Chatbot AppPersona selects 2–3 from: professional emails, personal emails,
 
 ---
 
-## 10. Step 7 — App Routing
+## 11. Steps 9–11 — App Routing
 
 Each surviving preference is assigned to exactly one primary app. The routing has three stages:
 
@@ -526,7 +525,7 @@ Additionally, `implicit_negative` rows are **never routed to Chatbot** — skipp
 
 ---
 
-## 11. Step 8 — Interaction Formats
+## 12. Step 12 — Interaction Formats
 
 Each preference gets a platform-specific interaction action (e.g., "Liked", "Saved to a collection", "Replied").
 
@@ -580,7 +579,7 @@ These represent two fundamentally different UX paradigms: @ai comments are publi
 
 ---
 
-## 12. Step 8.5 — Chatbot Conversations
+## 13. Step 13 — Chatbot Conversations
 
 Every preference routed to the Chatbot app gets a multi-turn conversation.
 
@@ -626,7 +625,7 @@ The user **never directly states** their preference. Instead:
 
 ---
 
-## 13. Step 9 — Stereotype Annotation
+## 14. Step 14 — Stereotype Annotation
 
 Each preference (positive and negative) receives a stereotype mark based on the user's demographics.
 
@@ -650,7 +649,7 @@ The LLM is instructed to be conservative: "when in doubt, mark as neutral." Only
 
 ---
 
-## 14. Step 10 — Train/Test Split
+## 15. Steps 15–16 — Train/Test Split and Save
 
 ### Time-Based, Cross-App Split
 
@@ -679,7 +678,7 @@ The distractor is stored as `over_personalization_irrelevant` on the test item.
 
 ---
 
-## 15. Noise and Realism Summary
+## 16. Noise and Realism Summary
 
 All noise is applied **after** the core ground-truth skeleton is established. The skeleton (Steps 1–2) is deterministic and filter-based; noise enters during platform-specific generation (Steps 5+).
 
@@ -698,7 +697,7 @@ All noise is applied **after** the core ground-truth skeleton is established. Th
 
 ---
 
-## 16. Key Thresholds Reference
+## 17. Key Thresholds Reference
 
 | Constant | Value | Purpose |
 |----------|-------|---------|

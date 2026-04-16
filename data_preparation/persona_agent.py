@@ -788,6 +788,10 @@ class PersonaAgent:
     IMPL_POS_WEIGHT = 1.5    # each implicit_positive row (moderate counter-signal)
     MIN_TEMPORAL_DAYS = 1    # must span >= 1 distinct day
 
+    def promote_implicit_negatives(self) -> None:
+        """Public entry point for implicit negative promotion (Step 2)."""
+        self._promote_implicit_negatives()
+
     def _promote_implicit_negatives(self) -> None:
         """Promote repeated implicit_negative rows using weighted net-sentiment.
 
@@ -1036,14 +1040,6 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(self.atomic_personas)} positive atomic personas, "
                   f"{len(self.negative_personas)} negative (standalone) from {len(self.interactions)} interactions.{utils.Colors.ENDC}")
-
-        # --- Step 1b: Hashtag-based promotion of implicit negatives ---
-        # Instead of running LLM on every implicit_negative row, group them
-        # by individual hashtag frequency. Hashtags appearing in >= K rows
-        # are "hot". For each hot hashtag, run LLM on ONE representative row
-        # to get preference text, then fan out AtomicPersonas to ALL rows
-        # sharing that hashtag. This saves ~5-10x in LLM calls.
-        self._promote_implicit_negatives()
 
         if self.verbose:
             # Category statistics
@@ -2821,38 +2817,41 @@ class PersonaAgent:
         Order:
           1. infer atomic personas
           2. dedupe (lexical) + init filter + count corroboration → cross_ref
-          3. LLM cross-reference for relationship discovery (no score changes)
-          4. temporal contradiction graph (on surviving canonicals)
-          5. generate user profile (demographics + big_five + bio)
-          6. generate per-app sub-personas
-          7. route preferences to apps (LLM + 8% noise)
-          8. generate interaction_format objects per preference (weighted
-             sampling from catalog + @ai / chat-turn user_messages)
-        8.5. generate chatbot conversations (multi-turn, implicit preference
-             embedding for Chatbot-routed preferences)
-          9. annotate stereotype marks
-         10. build test split (cross-app, global latest-20% high-conf by time)
-         11. save to backend/{uid}/ subfolder
+          3. cross-reference & filter
+          4. temporal contradiction graph
+          5. build update histories
+          6. generate user profile (demographics + big_five + bio)
+          7. infer hidden personas (cross-row hashtag clustering)
+          8. generate per-app sub-personas
+          9. build sessions
+         10. route preferences to apps (LLM + 8% noise)
+         11. assign rows to apps (session majority vote)
+         12. generate interaction formats (weighted catalog sampling)
+         13. generate chatbot conversations (multi-turn, implicit embedding)
+         14. annotate stereotype marks
+         15. build test split (cross-app, latest-20% high-conf by time)
+         16. save to backend/{uid}/ subfolder
         """
         print(f"{utils.Colors.BOLD}[User {self.user_id}] Starting persona pipeline...{utils.Colors.ENDC}")
         pipeline_start = time.time()
 
         steps = [
-            ("1.  Infer atomic personas",        self.infer_personas_from_hashtags),
-            ("2.  Cross-reference & filter",      self.summarize_and_cross_reference),
-            ("3.  Temporal contradiction graph",   self.build_temporal_contradiction_graph),
-            ("4.  Build update histories",         self.build_update_histories),
-            ("5.  Generate user profile",          self.generate_user_profile),
-            ("5.5 Infer hidden personas",          self.infer_hidden_personas),
-            ("6.  Generate app personas",          self.generate_app_personas),
-            ("6b. Build sessions",                 self._build_sessions),
-            ("7.  Route preferences to apps",      self.route_personas_to_apps),
-            ("7b. Assign rows to apps",            self._assign_rows_to_apps),
-            ("8.  Generate interaction formats",   self.generate_interaction_formats),
-            ("8.5 Generate chatbot conversations", self.generate_chatbot_conversations),
-            ("9.  Annotate stereotype marks",      self.annotate_stereotype_marks),
-            ("10. Build test split",               self.build_test_split),
-            ("11. Save to backend",                self.save_to_backend),
+            ("1.  Infer atomic personas",          self.infer_personas_from_hashtags),
+            ("2.  Promote implicit negatives",      self.promote_implicit_negatives),
+            ("3.  Cross-reference & filter",        self.summarize_and_cross_reference),
+            ("4.  Temporal contradiction graph",     self.build_temporal_contradiction_graph),
+            ("5.  Build update histories",           self.build_update_histories),
+            ("6.  Generate user profile",            self.generate_user_profile),
+            ("7.  Infer hidden personas",            self.infer_hidden_personas),
+            ("8.  Generate app personas",            self.generate_app_personas),
+            ("9.  Build sessions",                   self._build_sessions),
+            ("10. Route preferences to apps",        self.route_personas_to_apps),
+            ("11. Assign rows to apps",              self._assign_rows_to_apps),
+            ("12. Generate interaction formats",     self.generate_interaction_formats),
+            ("13. Generate chatbot conversations",   self.generate_chatbot_conversations),
+            ("14. Annotate stereotype marks",        self.annotate_stereotype_marks),
+            ("15. Build test split",                 self.build_test_split),
+            ("16. Save to backend",                  self.save_to_backend),
         ]
 
         for step_name, step_fn in steps:

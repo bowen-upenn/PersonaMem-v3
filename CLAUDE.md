@@ -13,7 +13,7 @@
 - Whenever you make changes to the pipeline design (new features, changed thresholds, altered logic, new steps, etc.), update `DESIGN.md` accordingly. Keep it clean and concise — match the existing style.
 
 ## Persona Pipeline
-- Default mode is Claude Code subagents (not API). See skill.md for the full 11-step specification.
+- Default mode is Claude Code subagents (not API). See skill.md for the full 16-step specification.
 - When asked to "reprocess persona data", spawn one subagent per user in parallel.
 - **Cross-referencing** only applies across different interaction rows (different source_object_id), never within the same row. Identical persona_items are merged into a canonical BEFORE cross-referencing.
 - **`confidence_cross_referenced`** = weighted count of supporting evidence from source rows. Explicit rows contribute 1.0, implicit rows contribute 0.5. After the LLM cross-ref step discovers `similar`/`contradictory` relationships, similar canonicals' base scores are added and contradictory canonicals' scores are subtracted (clamped to ≥0). This replaces the old simple integer count.
