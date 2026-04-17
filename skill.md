@@ -4,6 +4,18 @@
 
 When the user asks to process or reprocess persona data without using Azure OpenAI API or OpenAI API calls. Claude Code itself acts as the LLM, spawning parallel subagents to handle each user's persona inference directly.
 
+## Subagent model selection
+
+The user can specify which Claude model every spawned subagent should use by passing one of `opus`, `sonnet`, or `haiku` as the skill argument (e.g. `/skill run-persona-pipeline sonnet`). Behavior:
+
+- **`opus`** — highest quality, slowest, most expensive. Use when the user explicitly asks for maximum fidelity.
+- **`sonnet`** — balanced quality / speed / cost. **Default when no argument is given.**
+- **`haiku`** — fastest and cheapest, lower fidelity on nuanced persona inference. Only use when the user explicitly asks for it.
+
+When spawning each subagent via the `Agent` tool, set the `model` parameter to the value derived above. The same model is used for EVERY subagent in the run so all users are processed with consistent quality. Do NOT mix models within a single run.
+
+If the user passes a model name that is not in the allow-list (`opus` / `sonnet` / `haiku`), ignore the argument, default to `sonnet`, and print a one-line warning to the user.
+
 ## Subagent execution mode — NO PLAN MODE
 
 **Critical**: every subagent spawned by this skill runs in **EXECUTION MODE, NOT plan mode**. Subagents:
