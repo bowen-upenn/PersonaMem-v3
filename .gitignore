@@ -10,6 +10,8 @@ checkpoints/
 *.json
 *.jsonl
 logs/
+*.log
+hashtags_*.tsv
 .cache/
 .claude/
 ray_*/
