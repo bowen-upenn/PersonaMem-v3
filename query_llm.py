@@ -376,9 +376,15 @@ class QueryLLM:
                             'content': content_text
                         })
 
-                # Add cache breakpoint on the chat history prefix (second-to-last message)
-                # The last 1-2 messages are the new user query + MCQ instruction;
-                # everything before is the stable chat history that should be cached.
+                # --- Prompt caching strategy ---
+                # (a) Multi-turn: cache the stable chat-history prefix
+                #     (second-to-last message) — the last 1–2 messages are the
+                #     new query that varies per call.
+                # (b) Single-shot: if the final user message is long enough
+                #     (>= ~400 tokens ≈ 1600 chars) split it at a natural
+                #     boundary ("## Your Task", "## Output Format", first "##",
+                #     or the midpoint) and cache the prefix part. Identical
+                #     prefixes across calls hit the cache (TTL 5 min).
                 if len(claude_messages) >= 3:
                     cache_idx = len(claude_messages) - 2
                     msg = claude_messages[cache_idx]
@@ -388,10 +394,38 @@ class QueryLLM:
                             {
                                 'type': 'text',
                                 'text': msg['content'],
-                                'cache_control': {'type': 'ephemeral'}
+                                'cache_control': {'type': 'ephemeral'},
                             }
                         ]
                     }
+                elif claude_messages and isinstance(claude_messages[-1].get('content'), str):
+                    last_msg = claude_messages[-1]
+                    text = last_msg['content']
+                    # Anthropic caches prefixes >= 1024 tokens. At ~4 chars/token
+                    # for English prose, 4200 chars is a safe floor.
+                    MIN_CACHE_CHARS = 4200
+                    if len(text) >= MIN_CACHE_CHARS:
+                        split_at = -1
+                        for marker in ("\n## Your Task", "\n## Output Format", "\n## "):
+                            pos = text.find(marker, 800)
+                            if pos > split_at:
+                                split_at = pos
+                        if split_at < 0:
+                            split_at = len(text) // 2
+                        prefix_text = text[:split_at]
+                        suffix_text = text[split_at:]
+                        if prefix_text and suffix_text:
+                            claude_messages[-1] = {
+                                'role': last_msg['role'],
+                                'content': [
+                                    {
+                                        'type': 'text',
+                                        'text': prefix_text,
+                                        'cache_control': {'type': 'ephemeral'},
+                                    },
+                                    {'type': 'text', 'text': suffix_text},
+                                ],
+                            }
 
                 response = self.client.messages.create(
                     model=self.model,
@@ -411,7 +445,12 @@ class QueryLLM:
                 print(utils.Colors.WARNING + f'Error getting Claude response: {e}' + utils.Colors.ENDC)
                 content = None
         else:
-            # Call OpenAI/Azure OpenAI Chat Completions API
+            # Call OpenAI/Azure OpenAI Chat Completions API.
+            # Azure OpenAI and OpenAI both auto-cache prompt prefixes >= 1024 tokens
+            # for supported models (gpt-4o family, o1, gpt-5, etc.) when the same
+            # prefix recurs within ~5-10 min. Nothing to enable in code — but we
+            # log the cached-token count from the response so operators can tell
+            # caching is actually firing.
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
@@ -423,6 +462,16 @@ class QueryLLM:
             except Exception as e:
                 print(utils.Colors.WARNING + f'Error getting response: {e}' + utils.Colors.ENDC)
                 content = None
+
+            # Log OpenAI/Azure OpenAI prompt-cache hits when available.
+            try:
+                usage = response.usage
+                details = getattr(usage, 'prompt_tokens_details', None)
+                cached = getattr(details, 'cached_tokens', 0) if details is not None else 0
+                if cached:
+                    print(f"  OpenAI cache hit: cached={cached}, total_prompt={usage.prompt_tokens}")
+            except Exception:
+                pass
 
         if use_history:
             if isinstance(prompt, list):

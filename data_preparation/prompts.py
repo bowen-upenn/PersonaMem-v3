@@ -76,6 +76,103 @@ Respond with ONLY a JSON array. No explanation, no markdown outside the JSON fen
 ```"""
 
 
+def hashtag_to_persona_batched_prompt(
+    rows: list[dict],
+    existing_categories: list[str] | None = None,
+) -> str:
+    """Batched variant of `hashtag_to_persona_prompt` — infer personas for
+    multiple interaction rows in a single LLM call.
+
+    Each element of `rows` is a dict with keys:
+      - row_index (int, 0-based within the batch)
+      - object_text (str)
+      - interaction_type (str — e.g. 'explicit_positive', 'implicit_positive')
+      - formatted_timestamp (str)
+      - hashtags (list[str])
+      - interaction_format (str, optional)
+
+    The LLM produces a JSON array where each element is
+      {"row_index": N, "personas": [<same schema as the single-row prompt>]}.
+    Callers must route the per-row persona lists back to the correct row.
+    """
+    categories_clause = (
+        " REUSE one of these existing categories whenever possible: "
+        + ", ".join(existing_categories)
+        + ". Only create a new category if none of the existing ones fit."
+        if existing_categories else ""
+    )
+
+    row_blocks = []
+    for r in rows:
+        interaction_type = r.get("interaction_type", "")
+        interaction_format = r.get("interaction_format", "") or ""
+        if interaction_format:
+            parts = interaction_format.split(":", 1)
+            platform = parts[0].strip()
+            action = parts[1].strip() if len(parts) > 1 else interaction_format
+            polarity = f"on {platform}, {action}"
+        else:
+            polarity = (
+                "engaged positively with (liked, shared, or lingered on)"
+                if "positive" in interaction_type
+                else "scrolled past, dismissed, or disengaged from"
+            )
+        hashtag_list = ", ".join(r.get("hashtags") or []) or "(no hashtags found)"
+        row_blocks.append(
+            f"--- ROW {r['row_index']} ---\n"
+            f"- interaction_type: {interaction_type} — the user {polarity} this content.\n"
+            f"- platform & action: {interaction_format or 'unknown'}\n"
+            f"- timestamp: {r.get('formatted_timestamp', '')}\n"
+            f"- full content text: {r.get('object_text', '')}\n"
+            f"- extracted hashtags: {hashtag_list}"
+        )
+
+    rows_section = "\n\n".join(row_blocks)
+
+    return f"""\
+You are an expert behavioral analyst specializing in social media user profiling.
+
+You will be given a BATCH of {len(rows)} separate interaction rows for a single user. For EACH row independently, infer ~10 atomic persona traits.
+
+Each row is delimited by `--- ROW N ---` where N is the row's 0-based index within this batch. Treat every row as its own standalone input — do NOT pool inferences across rows.
+
+## The rows
+
+{rows_section}
+
+## Confidence scoring (applies per-row)
+
+For POSITIVE rows: use the full 0.0–1.0 range. Near-certain, explicitly stated = 0.80–1.00. Direct topic match = 0.60–0.80. Reasonable deduction = 0.40–0.60. Broader inference = 0.15–0.40. Speculative = 0.00–0.15. Phrase positively ("Enjoys X", "Interested in X", "Values X").
+
+For EXPLICIT NEGATIVE rows: use a compressed range. Direct dislike = 0.55–0.75. Reasonable deduction = 0.35–0.55. Broader inference = 0.15–0.35. Speculative = 0.00–0.15. ALWAYS phrase negatively ("Dislikes X", "Avoids X", "Not interested in X", "Turned off by X") — NEVER "Enjoys".
+
+Use precise two-decimal values. Spread scores across the range — be critical.
+
+## Rules
+
+1. Produce ~10 personas PER ROW. Quality over quantity.
+2. Each persona_item must be concrete, specific, testable.
+3. Consider interests, values, demographics, lifestyle, profession, cultural background, media consumption, purchasing behavior, social identity.
+4. Assign a specific topical category per inference.{categories_clause}
+5. Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics".
+6. Tag `source_hashtags` as ONLY the specific hashtag(s) from THIS row that led to the inference.
+7. Row N's personas must be grounded in row N's text only — do not mix.
+
+## Output format
+
+Respond with ONLY a JSON array of length {len(rows)}, one entry per input row, in input order. No explanation outside the JSON fence.
+
+```json
+[
+  {{"row_index": 0, "personas": [
+    {{"category": "...", "persona_item": "...", "confidence_score_init": 0.XX, "source_hashtags": ["#..."]}},
+    ...
+  ]}},
+  ...
+]
+```"""
+
+
 def summarize_and_cross_reference_prompt(atomic_personas: list[dict]) -> str:
     """Build a prompt that asks the LLM to cross-reference and score all atomic personas.
 
@@ -120,6 +217,60 @@ Respond with ONLY a JSON array. No explanation.
     "persona_item": "...",
     "relationship_type": "similar" | "contradictory",
     "related_personas": [{{"persona_item": "...", "type": "similar"}}]
+  }}
+]
+```"""
+
+
+def summarize_and_cross_reference_batched_prompt(
+    categories: list[dict],
+) -> str:
+    """Batched cross-reference for SMALL categories (3-9 canonicals each).
+
+    `categories` is a list of dicts with:
+      - category_name (str)
+      - personas (list[{"persona_item", "category"}])
+
+    The LLM performs cross-referencing WITHIN each category independently
+    (no cross-category relationships). Returns a JSON array where each
+    entry names the category and lists personas that have relationships.
+    """
+    categories_json = json.dumps(categories, indent=2)
+
+    return f"""\
+You are an expert at synthesizing behavioral signals into a coherent user profile.
+
+Below is a batch of {len(categories)} SEPARATE topical categories for a single user. Each category contains a small set of persona traits/preferences. For EACH category, independently identify `similar` / `contradictory` relationships WITHIN that category.
+
+```json
+{categories_json}
+```
+
+## Your Task — per-category cross-referencing
+
+For each category:
+1. Cross-reference its personas against each other WITHIN the same category only.
+   - Similar (reinforce each other): `{{"type": "similar"}}`.
+   - Contradictory: `{{"type": "contradictory"}}`.
+2. Do NOT mark a persona as similar to itself.
+3. Do NOT cross-link personas across different categories.
+4. Only return personas that have at least one relationship. Skip personas with no relationships.
+
+## Output Format
+
+Respond with ONLY a JSON array of the same length as the input, one entry per input category, in the same order. Each entry contains the category_name and its relationship-carrying personas.
+
+```json
+[
+  {{
+    "category_name": "...",
+    "personas": [
+      {{
+        "persona_item": "...",
+        "relationship_type": "similar" | "contradictory",
+        "related_personas": [{{"persona_item": "...", "type": "similar"}}]
+      }}
+    ]
   }}
 ]
 ```"""

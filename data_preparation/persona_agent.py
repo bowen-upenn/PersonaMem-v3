@@ -772,59 +772,110 @@ class PersonaAgent:
     # LLM Call #1: Per-interaction persona inference
     # ------------------------------------------------------------------
 
+    # Batch size for Step 1 atomic persona inference. 5 rows per LLM call
+    # reduces API overhead by ~5x while keeping each row's prompt block
+    # focused enough that the model still produces per-row specific
+    # inferences (empirically tested).
+    STEP1_BATCH_SIZE = 5
+
     def _infer_one_interaction(self, idx: int, interaction: InteractionRow) -> list[AtomicPersona]:
-        """Infer atomic personas from a single interaction row (thread-safe)."""
-        # Skip implicit_negative — handled separately by hashtag-based promotion
-        if interaction.interaction_type == "implicit_negative":
-            return []
-        hashtags = self._extract_hashtags(interaction.object_text)
-        if not hashtags:
-            return []
+        """Thin wrapper: infer atomic personas from a single interaction row.
+
+        Kept for backward compatibility with callers that want a single-row
+        inference. The hot path (Step 1a) uses `_infer_batch_interactions`
+        instead to amortize LLM overhead across 5 rows per call.
+        """
+        results_by_idx = self._infer_batch_interactions([(idx, interaction)])
+        return results_by_idx.get(idx, [])
+
+    def _infer_batch_interactions(
+        self,
+        batch: list[tuple[int, InteractionRow]],
+    ) -> dict[int, list[AtomicPersona]]:
+        """Infer atomic personas for a batch of interactions in ONE LLM call.
+
+        Returns a map `{original_idx: list[AtomicPersona]}`. Rows that should
+        be skipped (implicit_negative or no-hashtag) map to an empty list.
+        """
+        # Filter out rows that need no LLM call (skip rule).
+        eligible: list[tuple[int, InteractionRow, list[str], str]] = []
+        results_by_idx: dict[int, list[AtomicPersona]] = {idx: [] for idx, _ in batch}
+        for idx, interaction in batch:
+            if interaction.interaction_type == "implicit_negative":
+                continue
+            hashtags = self._extract_hashtags(interaction.object_text)
+            if not hashtags:
+                continue
+            formatted_ts = self._format_timestamp(interaction.interaction_time)
+            eligible.append((idx, interaction, hashtags, formatted_ts))
+
+        if not eligible:
+            return results_by_idx
 
         # Snapshot current categories for context (thread-safe read)
         existing_cats = list(self._known_categories) if self._known_categories else None
 
-        formatted_ts = self._format_timestamp(interaction.interaction_time)
-        prompt = prompts.hashtag_to_persona_prompt(
-            object_text=interaction.object_text,
-            interaction_type=interaction.interaction_type,
-            interaction_format=interaction.interaction_format,
-            formatted_timestamp=formatted_ts,
-            hashtags=hashtags,
+        # Build the batched prompt: local_i is the 0-based index *within* this
+        # LLM call that the model will echo back as `row_index`.
+        rows_for_prompt = [
+            {
+                "row_index": local_i,
+                "object_text": interaction.object_text,
+                "interaction_type": interaction.interaction_type,
+                "interaction_format": interaction.interaction_format,
+                "formatted_timestamp": formatted_ts,
+                "hashtags": hashtags,
+            }
+            for local_i, (_, interaction, hashtags, formatted_ts) in enumerate(eligible)
+        ]
+        prompt = prompts.hashtag_to_persona_batched_prompt(
+            rows=rows_for_prompt,
             existing_categories=existing_cats,
         )
 
         response = self._query_llm_with_retry(prompt)
         if not response:
-            return []
+            return results_by_idx
 
         parsed = utils.extract_json_from_response(response)
         if not isinstance(parsed, list):
-            return []
+            return results_by_idx
 
-        results: list[AtomicPersona] = []
-        for item in parsed:
-            if not isinstance(item, dict) or "persona_item" not in item:
+        for entry in parsed:
+            if not isinstance(entry, dict):
                 continue
-            raw_confidence = float(item.get("confidence_score_init", 0.3))
-            item_hashtags = item.get("source_hashtags", hashtags)
-            if not isinstance(item_hashtags, list):
-                item_hashtags = hashtags
-            cat = item.get("category", "uncategorized")
-            results.append(AtomicPersona(
-                persona_item=item["persona_item"],
-                category=cat,
-                confidence_score_init=raw_confidence,
-                source_interaction_type=interaction.interaction_type,
-                source_interaction_format=interaction.interaction_format,
-                source_object_id=interaction.object_id,
-                source_timestamp=interaction.interaction_time,
-                formatted_timestamp=formatted_ts,
-                source_hashtags=item_hashtags,
-            ))
-            # Track category for future prompts (thread-safe via set)
-            self._known_categories.add(cat.lower())
-        return results
+            local_i = entry.get("row_index")
+            if not isinstance(local_i, int) or not (0 <= local_i < len(eligible)):
+                continue
+            orig_idx, interaction, hashtags, formatted_ts = eligible[local_i]
+            personas_raw = entry.get("personas")
+            if not isinstance(personas_raw, list):
+                continue
+
+            row_results: list[AtomicPersona] = []
+            for item in personas_raw:
+                if not isinstance(item, dict) or "persona_item" not in item:
+                    continue
+                raw_confidence = float(item.get("confidence_score_init", 0.3))
+                item_hashtags = item.get("source_hashtags", hashtags)
+                if not isinstance(item_hashtags, list):
+                    item_hashtags = hashtags
+                cat = item.get("category", "uncategorized")
+                row_results.append(AtomicPersona(
+                    persona_item=item["persona_item"],
+                    category=cat,
+                    confidence_score_init=raw_confidence,
+                    source_interaction_type=interaction.interaction_type,
+                    source_interaction_format=interaction.interaction_format,
+                    source_object_id=interaction.object_id,
+                    source_timestamp=interaction.interaction_time,
+                    formatted_timestamp=formatted_ts,
+                    source_hashtags=item_hashtags,
+                ))
+                self._known_categories.add(cat.lower())
+            results_by_idx[orig_idx] = row_results
+
+        return results_by_idx
 
     # Weights for net-sentiment scoring of implicit negatives.
     # A hashtag is "hot negative" only when the user consistently skips it
@@ -1064,6 +1115,15 @@ class PersonaAgent:
         self.negative_personas = []
 
         # --- Step 1a: Infer positives & explicit negatives (skip implicit_negative) ---
+        # Rows are grouped into batches of STEP1_BATCH_SIZE and each batch
+        # produces ONE LLM call (see `_infer_batch_interactions`). We still
+        # parallelize batches across the thread pool.
+        indexed_rows = list(enumerate(self.interactions))
+        batches = [
+            indexed_rows[i:i + self.STEP1_BATCH_SIZE]
+            for i in range(0, len(indexed_rows), self.STEP1_BATCH_SIZE)
+        ]
+
         pbar = tqdm(
             total=len(self.interactions),
             desc=f"[User {self.user_id}] Step 1a: Inferring personas",
@@ -1073,21 +1133,26 @@ class PersonaAgent:
 
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             futures = {
-                executor.submit(self._infer_one_interaction, idx, interaction): (idx, interaction)
-                for idx, interaction in enumerate(self.interactions)
+                executor.submit(self._infer_batch_interactions, batch): batch
+                for batch in batches
             }
             for future in as_completed(futures):
-                idx, interaction = futures[future]
-                pbar.update(1)
+                batch = futures[future]
+                pbar.update(len(batch))
                 try:
-                    results = future.result()
+                    results_by_idx = future.result()
                 except Exception as e:
                     if self.verbose:
-                        print(f"\n{utils.Colors.WARNING}[User {self.user_id}] Interaction {idx} error: {e}{utils.Colors.ENDC}")
+                        idxs = [b[0] for b in batch]
+                        print(f"\n{utils.Colors.WARNING}[User {self.user_id}] Batch {idxs[0]}..{idxs[-1]} error: {e}{utils.Colors.ENDC}")
                     continue
-                is_negative = "negative" in interaction.interaction_type
-                target_list = self.negative_personas if is_negative else self.atomic_personas
-                target_list.extend(results)
+                for idx, interaction in batch:
+                    results = results_by_idx.get(idx, [])
+                    if not results:
+                        continue
+                    is_negative = "negative" in interaction.interaction_type
+                    target_list = self.negative_personas if is_negative else self.atomic_personas
+                    target_list.extend(results)
 
         pbar.close()
 
@@ -1233,28 +1298,50 @@ class PersonaAgent:
         for c in survivors:
             by_category[c.category.lower()].append(c)
 
-        # Only cross-ref categories with 2+ canonicals
-        categories_to_xref = {cat: items for cat, items in by_category.items() if len(items) >= 2}
+        # Only cross-ref categories with 3+ canonicals (raised from 2+).
+        # Tiny categories (1-2 items) produce few useful relationships and
+        # aren't worth the LLM call.
+        MIN_CATEGORY_SIZE = 3
+        categories_to_xref = {
+            cat: items for cat, items in by_category.items()
+            if len(items) >= MIN_CATEGORY_SIZE
+        }
+
+        # Split into small (3-9 canonicals) and large (>= 10). Small
+        # categories are grouped into batched calls to amortize overhead;
+        # large categories get their own dedicated call each (the prompt
+        # budget stays focused and the relationship-dense output doesn't
+        # overflow).
+        SMALL_CATEGORY_MAX = 9
+        SMALL_BATCH_GROUP = 5  # up to 5 small categories per batched call
+        small_items = [
+            (cat, items) for cat, items in categories_to_xref.items()
+            if len(items) <= SMALL_CATEGORY_MAX
+        ]
+        large_items = [
+            (cat, items) for cat, items in categories_to_xref.items()
+            if len(items) > SMALL_CATEGORY_MAX
+        ]
+        small_batches = [
+            small_items[i:i + SMALL_BATCH_GROUP]
+            for i in range(0, len(small_items), SMALL_BATCH_GROUP)
+        ]
 
         if self.verbose:
+            n_total_items = sum(len(v) for v in categories_to_xref.values())
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Cross-referencing {len(categories_to_xref)} categories "
-                  f"({sum(len(v) for v in categories_to_xref.values())} canonicals, "
-                  f"skipping {len(by_category) - len(categories_to_xref)} single-item categories).{utils.Colors.ENDC}")
+                  f"({n_total_items} canonicals, "
+                  f"skipping {len(by_category) - len(categories_to_xref)} small categories < {MIN_CATEGORY_SIZE}) — "
+                  f"{len(large_items)} large (1 call each), {len(small_items)} small in {len(small_batches)} batched calls.{utils.Colors.ENDC}")
 
         canonical_by_norm = {_normalize_persona_text(c.persona_item): c for c in survivors}
 
-        def _xref_one_category(cat: str, items: list[CrossReferencedPersona]) -> int:
-            """Cross-reference within one category. Returns number of relationships found."""
-            personas_for_prompt = [{"persona_item": c.persona_item, "category": c.category} for c in items]
-            prompt = prompts.summarize_and_cross_reference_prompt(personas_for_prompt)
-            response = self._query_llm_with_retry(prompt)
-            if not response:
-                return 0
-            parsed = utils.extract_json_from_response(response)
-            if not isinstance(parsed, list):
-                return 0
+        def _apply_relationships(personas_block: list) -> int:
+            """Apply LLM-returned relationships to the canonicals_by_norm
+            lookup. Shared between single-category and batched paths.
+            """
             n_rels = 0
-            for item in parsed:
+            for item in personas_block:
                 if not isinstance(item, dict) or "persona_item" not in item:
                     continue
                 my_key = _normalize_persona_text(item["persona_item"])
@@ -1273,16 +1360,56 @@ class PersonaAgent:
                 n_rels += len(related)
             return n_rels
 
+        def _xref_one_category(cat: str, items: list[CrossReferencedPersona]) -> int:
+            """Cross-reference within one (large) category. Returns #relationships."""
+            personas_for_prompt = [{"persona_item": c.persona_item, "category": c.category} for c in items]
+            prompt = prompts.summarize_and_cross_reference_prompt(personas_for_prompt)
+            response = self._query_llm_with_retry(prompt)
+            if not response:
+                return 0
+            parsed = utils.extract_json_from_response(response)
+            if not isinstance(parsed, list):
+                return 0
+            return _apply_relationships(parsed)
+
+        def _xref_small_batch(batch: list[tuple[str, list[CrossReferencedPersona]]]) -> int:
+            """Cross-reference a batch of small categories in ONE LLM call."""
+            categories_payload = [
+                {
+                    "category_name": cat,
+                    "personas": [
+                        {"persona_item": c.persona_item, "category": c.category}
+                        for c in items
+                    ],
+                }
+                for cat, items in batch
+            ]
+            prompt = prompts.summarize_and_cross_reference_batched_prompt(categories_payload)
+            response = self._query_llm_with_retry(prompt)
+            if not response:
+                return 0
+            parsed = utils.extract_json_from_response(response)
+            if not isinstance(parsed, list):
+                return 0
+            n_rels = 0
+            for entry in parsed:
+                if not isinstance(entry, dict):
+                    continue
+                n_rels += _apply_relationships(entry.get("personas", []))
+            return n_rels
+
         from concurrent.futures import ThreadPoolExecutor, as_completed
         total_rels = 0
-        pbar_xref = tqdm(total=len(categories_to_xref),
+        total_calls = len(large_items) + len(small_batches)
+        pbar_xref = tqdm(total=total_calls,
                          desc=f"[User {self.user_id}] Step 2: Cross-referencing",
-                         unit="cat", disable=not self.verbose)
+                         unit="call", disable=not self.verbose)
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-            futures = {
-                executor.submit(_xref_one_category, cat, items): cat
-                for cat, items in categories_to_xref.items()
-            }
+            futures = []
+            for cat, items in large_items:
+                futures.append(executor.submit(_xref_one_category, cat, items))
+            for batch in small_batches:
+                futures.append(executor.submit(_xref_small_batch, batch))
             for future in as_completed(futures):
                 pbar_xref.update(1)
                 try:
