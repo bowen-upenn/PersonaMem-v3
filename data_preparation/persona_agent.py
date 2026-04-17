@@ -782,7 +782,7 @@ class PersonaAgent:
         """Thin wrapper: infer atomic personas from a single interaction row.
 
         Kept for backward compatibility with callers that want a single-row
-        inference. The hot path (Step 1a) uses `_infer_batch_interactions`
+        inference. The hot path (Step 1) uses `_infer_batch_interactions`
         instead to amortize LLM overhead across 5 rows per call.
         """
         results_by_idx = self._infer_batch_interactions([(idx, interaction)])
@@ -992,7 +992,7 @@ class PersonaAgent:
 
         pbar = tqdm(
             total=len(representatives),
-            desc=f"[User {self.user_id}] Step 1b: Implicit-neg promotion",
+            desc=f"[User {self.user_id}] Step 2: Implicit-neg promotion",
             unit="tag",
             disable=not self.verbose,
         )
@@ -1114,7 +1114,7 @@ class PersonaAgent:
         self.atomic_personas = []
         self.negative_personas = []
 
-        # --- Step 1a: Infer positives & explicit negatives (skip implicit_negative) ---
+        # --- Step 1: Infer positives & explicit negatives (skip implicit_negative) ---
         # Rows are grouped into batches of STEP1_BATCH_SIZE and each batch
         # produces ONE LLM call (see `_infer_batch_interactions`). We still
         # parallelize batches across the thread pool.
@@ -1126,7 +1126,7 @@ class PersonaAgent:
 
         pbar = tqdm(
             total=len(self.interactions),
-            desc=f"[User {self.user_id}] Step 1a: Inferring personas",
+            desc=f"[User {self.user_id}] Step 1: Inferring personas",
             unit="row",
             disable=not self.verbose,
         )
@@ -1421,7 +1421,7 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Cross-ref found {total_rels} relationships.{utils.Colors.ENDC}")
 
-        # --- Step 4b: Merge similar preferences into clusters ---
+        # --- Sub-step 5: Merge similar preferences into clusters ---
         # Build clusters via union-find: similar preferences merge into one.
         # The representative is the one with the highest init score.
         # Xref scores are summed across the cluster.
@@ -1684,7 +1684,7 @@ class PersonaAgent:
                                 related.append({"persona_item": r, "type": item.get("relationship_type", "similar")})
                         canonical.related_personas = related
 
-            # Step 4b: Adjust for relationships
+            # Sub-step 5: Adjust for relationships
             base_scores = {c.persona_item: c.confidence_cross_referenced for c in neg_survivors}
             for c in neg_survivors:
                 adjustment = 0.0
@@ -2132,16 +2132,17 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Stereotype annotations: {counts}{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
-    # Step 5.5: Hidden Persona Inference (cross-row hashtag clustering)
+    # Step 7: Hidden Persona Inference (cross-row hashtag clustering)
     # ------------------------------------------------------------------
 
     def infer_hidden_personas(self) -> None:
         """Infer hidden personas from cross-row hashtag patterns.
 
-        Three phases:
+        Four phases:
         1. Hashtag frequency census across all interaction rows.
         2. LLM thematic clustering + motivation inference.
         3. Algorithmic validation (row count, temporal spread, privacy ratio).
+        4. Deduplicate hidden personas by evidence-hashtag overlap.
 
         Results are stored on self.user_profile.hidden_personas and
         self.user_profile.hidden_persona_summary.
@@ -2304,7 +2305,7 @@ class PersonaAgent:
         if not validated:
             return
 
-        # ── Phase 3.5: Deduplicate by Hashtag Overlap ──────────────────
+        # ── Phase 4: Deduplicate by Hashtag Overlap ────────────────────
         # Merge hidden personas whose evidence_hashtags have Jaccard >= 0.5.
         # Iterative: repeat until no merges occur.
         dedup_changed = True

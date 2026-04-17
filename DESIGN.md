@@ -230,7 +230,7 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 
 **Phase 3 — Validation:** Each cluster needs >= 20 distinct rows (`MIN_HIDDEN_PERSONA_ROWS`) and >= 3 distinct days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio reported (> 0.7 required for `compensatory_need`).
 
-**Phase 3.5 — Deduplication:** Merge hidden personas with Jaccard >= 0.5 on evidence hashtags. Persona with more evidence_rows becomes base; hashtags and surface_connections unioned; metrics recomputed. Repeats until no merges.
+**Phase 4 — Deduplication:** Merge hidden personas with Jaccard >= 0.5 on evidence hashtags. Persona with more evidence_rows becomes base; hashtags and surface_connections unioned; metrics recomputed. Repeats until no merges.
 
 ### Dual Personality Tensions (folded into hidden personas)
 
