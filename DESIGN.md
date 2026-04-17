@@ -48,7 +48,7 @@ Three interaction pillars:
 ```
 Input CSV (hashtag interactions per user)
   |
-  +- Step 1:  Infer atomic personas           [LLM]      -- ~10 per row, init 0.0-1.0
+  +- Step 1:  Infer atomic personas           [LLM]      -- 1-3 per row, init 0.0-1.0
   +- Step 2:  Promote implicit negatives       [Algo+LLM] -- net-sentiment gate
   +- Step 3:  Cross-reference & filter         [Algo+LLM] -- cross_ref scores (uncapped)
   +- Step 4:  Temporal contradiction graph     [LLM]      -- timeline grouping
@@ -111,7 +111,7 @@ Same canonical preference text appears across multiple events (intentional real-
 
 ## 4. Step 1 — Atomic Persona Inference
 
-For each interaction row (except `implicit_negative`), the LLM infers ~10 atomic persona traits with: `persona_item` (specific testable statement), `category` (topical label), `confidence_score_init` (LLM confidence), `source_hashtags`.
+For each interaction row (except `implicit_negative`), the LLM infers **1 to 3** atomic persona traits, treating the full hashtag set as one coherent signal. Each trait has: `persona_item` (specific testable statement), `category` (topical label), `confidence_score_init` (LLM confidence), `source_hashtags`. Keeping the count low reduces downstream scale and forces the LLM to pick only its strongest, most defensible inferences.
 
 ### Confidence Scale
 

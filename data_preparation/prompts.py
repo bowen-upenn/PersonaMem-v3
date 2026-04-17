@@ -47,7 +47,7 @@ A user interacted with the following social media content:
 
 ## Your Task
 
-Considering ALL the hashtags together as a whole and individually, infer **around 10** atomic persona traits or preferences about this user. An "atomic persona" is a single, specific, testable statement about the user's personality, interests, values, demographics, or lifestyle (e.g., "Interested in CrossFit", "Values family traditions", "Likely a parent of school-age children").
+Considering ALL the hashtags together as a holistic signal, infer **1 to 3** atomic persona traits or preferences about this user. An "atomic persona" is a single, specific, testable statement about the user's personality, interests, values, demographics, or lifestyle (e.g., "Interested in CrossFit", "Values family traditions", "Likely a parent of school-age children"). Quality over quantity — pick only the strongest, most defensible inferences that this particular event supports. One sharp inference is better than three weak ones.
 
 ## Confidence Scoring (READ THIS FIRST)
 
@@ -58,7 +58,7 @@ Use precise, varied values with two decimal places. Each inference must get a di
 
 ## Rules
 
-1. **Be exploratory**: Produce around 10 preferences total by considering both individual hashtags and the combined signal from all hashtags together. Quality over quantity.
+1. **Be exploratory**: Produce between 1 and 3 preferences total, treating the full hashtag set as one coherent signal. Fewer, stronger inferences are better than many speculative ones.
 2. **Be specific**: Each persona item must be concrete and testable, not vague (e.g., "Enjoys cooking Italian food at home" rather than "Likes food").
 3. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
 4. **Categorize each inference**: Assign a **specific topical category**.{(' REUSE one of these existing categories whenever possible: ' + ', '.join(existing_categories) + '. Only create a new category if none of the existing ones fit. Avoid creating categories that are near-synonyms of existing ones.') if existing_categories else ' Use specific topical categories (e.g., "cooking", "Christian faith", "NFL fandom", "romantic relationships", "fitness", "parenting").'} Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics".
@@ -132,7 +132,7 @@ def hashtag_to_persona_batched_prompt(
     return f"""\
 You are an expert behavioral analyst specializing in social media user profiling.
 
-You will be given a BATCH of {len(rows)} separate interaction rows for a single user. For EACH row independently, infer ~10 atomic persona traits.
+You will be given a BATCH of {len(rows)} separate interaction rows for a single user. For EACH row independently, infer 1 to 3 atomic persona traits, treating that row's hashtags as one coherent signal.
 
 Each row is delimited by `--- ROW N ---` where N is the row's 0-based index within this batch. Treat every row as its own standalone input — do NOT pool inferences across rows.
 
@@ -150,7 +150,7 @@ Use precise two-decimal values. Spread scores across the range — be critical.
 
 ## Rules
 
-1. Produce ~10 personas PER ROW. Quality over quantity.
+1. Produce 1 to 3 personas PER ROW. Quality over quantity — fewer, stronger inferences are better than many weak ones.
 2. Each persona_item must be concrete, specific, testable.
 3. Consider interests, values, demographics, lifestyle, profession, cultural background, media consumption, purchasing behavior, social identity.
 4. Assign a specific topical category per inference.{categories_clause}
