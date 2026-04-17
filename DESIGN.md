@@ -78,7 +78,7 @@ Input CSV (hashtag interactions per user)
 | Step | Type | Key output |
 |------|------|------------|
 | 1 | LLM | ~10 atomic preferences per interaction, each with init confidence |
-| 2 | Algo + LLM | Promoted implicit negatives via net-sentiment + temporal spread |
+| 2 | Algo + LLM | Promoted implicit negatives via net-sentiment (≥5) + temporal spread (≥3 days) |
 | 3 | Algo + LLM | Deduplicated, cross-referenced preference skeleton with cross_ref scores |
 | 4 | LLM | Contradiction timelines grouped by topic |
 | 5 | Algo + LLM | Update history per preference (reinforced, faded, evolved) |
@@ -282,7 +282,7 @@ For each canonical with contradictory relationships, subtract the contradicting 
 
 ### 6.7 Bottom-20% Filter
 
-Remove canonicals in the bottom 20% of cross-ref scores, **unless** their score exceeds 10.0 (the `bottom_20_min_exempt` threshold — high-count items are exempt). Then apply a hard floor: only canonicals with `cross_ref ≥ 5.0` (`HIGH_CONFIDENCE_CROSS_REF_THRESHOLD`) survive. Cross-ref starts at 1.0 (base) and accumulates 1.0 per distinct explicit row, 0.5 per distinct implicit row, so a score of 5.0 requires roughly 4 explicit corroborating rows beyond the initial occurrence.
+Remove canonicals in the bottom 20% of cross-ref scores, **unless** their score exceeds 10.0 (the `bottom_20_min_exempt` threshold — high-count items are exempt). Then apply a hard floor: only canonicals with `cross_ref ≥ 10.0` (`HIGH_CONFIDENCE_CROSS_REF_THRESHOLD`) survive. Cross-ref starts at 1.0 (base) and accumulates 1.0 per distinct explicit row, 0.5 per distinct implicit row, so a score of 10.0 requires roughly 9 explicit corroborating rows beyond the initial occurrence.
 
 ### Summary
 
@@ -294,7 +294,7 @@ Remove canonicals in the bottom 20% of cross-ref scores, **unless** their score 
 | LLM cross-ref | LLM | None (discovers relationships only) |
 | Union-find | Algorithmic | Sums cross_ref across cluster |
 | Contradiction penalty | Algorithmic | Subtracts from cross_ref |
-| Bottom-20% filter | Statistical | Drops weak tail; floor at 5.0 |
+| Bottom-20% filter | Statistical | Drops weak tail; floor at 10.0 |
 
 ### Negative Cross-Referencing
 
@@ -728,7 +728,7 @@ The LLM is instructed to be conservative: "when in doubt, mark as neutral." Only
 ### Time-Based, Cross-App Split
 
 1. Sort **all** positive survivors by `source_timestamp` ascending (globally, across all apps).
-2. Scan newest → oldest, collecting items that pass the **high-confidence predicate** (`init ≥ 0.5 AND cross_ref > 5.0`) until reaching 20% of total positives.
+2. Scan newest → oldest, collecting items that pass the **high-confidence predicate** (`init ≥ 0.5 AND cross_ref > 10.0`) until reaching 20% of total positives.
 3. These become **test candidates**. Everything else is `train`. All negatives are always `train`.
 
 ### Inferrability Gate
@@ -777,7 +777,7 @@ All noise is applied **after** the core ground-truth skeleton is established. Th
 |----------|-------|---------|
 | `MIN_PERSONA_INIT_CONFIDENCE` | 0.5 | Init filter floor — main knob for preference-list size |
 | `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.5 | High-confidence predicate (test-split eligibility) |
-| `HIGH_CONFIDENCE_CROSS_REF_THRESHOLD` | 5.0 | High-confidence predicate (corroboration floor) |
+| `HIGH_CONFIDENCE_CROSS_REF_THRESHOLD` | 10.0 | High-confidence predicate (corroboration floor) |
 | `MIN_IMPLICIT_NEGATIVE_REPETITION` | 5 | Distinct source rows for implicit-only negative to survive |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag signature required before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Independent hot-hashtag LLM calls needed for preference |
