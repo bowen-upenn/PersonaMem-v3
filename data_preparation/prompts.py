@@ -1407,3 +1407,60 @@ Respond with ONLY a JSON array. Return an empty array `[]` if no genuine tension
 ]
 ```"""
 
+
+def infer_mbti_prompt(
+    big_five: dict,
+    hidden_persona_summary: str,
+    hidden_personas_brief: list[dict],
+    top_hashtags: list[str],
+) -> str:
+    """Build a prompt asking the LLM to infer MBTI type with per-dimension probabilities."""
+
+    b5_str = ", ".join(f"{k}: {v}" for k, v in (big_five or {}).items())
+    hp_str = "\n".join(
+        f"  - [{hp.get('type','')}] {hp.get('label','')}: {hp.get('description','')}"
+        for hp in (hidden_personas_brief or [])
+    ) or "  (none)"
+    tags_str = ", ".join(top_hashtags[:50]) if top_hashtags else "(none)"
+
+    return f"""\
+You are a personality assessor inferring MBTI type from a user's behavioral profile.
+
+## Big Five (qualitative)
+{b5_str}
+
+## Hidden persona summary
+{hidden_persona_summary or '(none)'}
+
+## Validated hidden personas
+{hp_str}
+
+## Top hashtags the user engages with
+{tags_str}
+
+## Your Task
+
+Infer the most likely MBTI type across the four dimensions:
+- **E vs I** — Extraversion vs Introversion
+- **S vs N** — Sensing vs Intuition
+- **T vs F** — Thinking vs Feeling
+- **J vs P** — Judging vs Perceiving
+
+For each dimension, return probabilities for both letters (summing to 1.0) and a one-sentence reason grounded in the evidence above. Use probabilities that reflect genuine uncertainty — avoid defaulting to 0.5 or extreme 0.99 values unless the evidence strongly supports it.
+
+Output ONLY this JSON, no explanation outside:
+
+```json
+{{
+  "type": "INTJ",
+  "dimensions": {{
+    "E_I": {{"E": 0.22, "I": 0.78, "reason": "..."}},
+    "S_N": {{"S": 0.35, "N": 0.65, "reason": "..."}},
+    "T_F": {{"T": 0.55, "F": 0.45, "reason": "..."}},
+    "J_P": {{"J": 0.60, "P": 0.40, "reason": "..."}}
+  }}
+}}
+```
+
+The `type` field must be the concatenation of the higher-probability letter from each dimension."""
+
