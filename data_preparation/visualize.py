@@ -297,6 +297,16 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 const eventsData = {events_json};
 const profileData = {profile_json};
 
+// Label -> motivation lookup for hidden persona badge tooltips.
+const hpMotivation = {{}};
+if (profileData && profileData.hidden_personas) {{
+  profileData.hidden_personas.forEach(hp => {{
+    if (hp && hp.label) {{
+      hpMotivation[hp.label] = hp.inferred_motivation || hp.description || '';
+    }}
+  }});
+}}
+
 // -- Profile card --
 const ps = document.getElementById('profile-section');
 if (profileData) {{
@@ -420,7 +430,9 @@ if (eventsData.length === 0) {{
       if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
       if (p.hidden_persona_labels && p.hidden_persona_labels.length > 0) {{
         p.hidden_persona_labels.forEach(lbl => {{
-          badges += `<span class="badge hidden-persona">${{lbl}}</span>`;
+          const motiv = (hpMotivation[lbl] || '').replace(/"/g, '&quot;');
+          const titleAttr = motiv ? ` title="${{motiv}}"` : '';
+          badges += `<span class="badge hidden-persona"${{titleAttr}}>${{lbl}}</span>`;
         }});
       }}
 

@@ -141,6 +141,10 @@ class HiddenPersona:
     description: str = ""                                                   # 2-3 sentence interpretation
     evidence_hashtags: list[str] = field(default_factory=list)              # Top 8-10 hashtags backing this
     evidence_rows: int = 0                                                  # Distinct source rows
+    # Sorted list of distinct source_object_ids whose hashtags placed them
+    # inside this cluster. Used in Step 16 to label preferences with the
+    # hidden persona that motivated them (backward lookup: oid -> cluster).
+    evidence_oids: list[str] = field(default_factory=list)
     evidence_row_fraction: float = 0.0                                      # Fraction of user's total rows
     interaction_breakdown: dict = field(default_factory=dict)               # {implicit_positive: N, ...}
     privacy_ratio: float = 0.0                                              # implicit_positive / (implicit_positive + explicit_positive)
@@ -2230,6 +2234,8 @@ class PersonaAgent:
                 description=cluster.get("description", ""),
                 evidence_hashtags=evidence_tags,
                 evidence_rows=n_rows,
+                # Sorted list so JSON output is deterministic across runs.
+                evidence_oids=sorted(distinct_row_ids),
                 evidence_row_fraction=round(n_rows / total_rows, 4) if total_rows else 0.0,
                 interaction_breakdown=dict(itype_counts),
                 privacy_ratio=round(privacy, 3),
@@ -2295,6 +2301,7 @@ class PersonaAgent:
                                 itype_counts[row.interaction_type] += 1
 
                         merged.evidence_rows = len(distinct_row_ids)
+                        merged.evidence_oids = sorted(distinct_row_ids)
                         merged.evidence_row_fraction = round(len(distinct_row_ids) / total_rows, 4) if total_rows else 0.0
                         merged.interaction_breakdown = dict(itype_counts)
                         ip = itype_counts.get("implicit_positive", 0)
@@ -3391,50 +3398,19 @@ class PersonaAgent:
         # --- Build lookups ---
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
 
-        # Hidden persona hashtag lookup: for each hidden persona, pre-compute
-        # lowercase evidence hashtag set for matching against preference source_hashtags.
-        _hp_tag_sets: list[tuple[str, set[str]]] = []
+        # Backward lookup: which hidden persona cluster(s) did each
+        # source_object_id contribute to? Each hidden persona's
+        # `evidence_oids` is the sorted list of oids whose hashtags placed
+        # the row inside the cluster during Step 7. A preference's source
+        # row being in the cluster IS the motivation trace — we attach the
+        # cluster label back onto that preference. When a single oid feeds
+        # multiple clusters, the one with the most evidence_rows wins.
+        from collections import defaultdict as _ddict_oid
+        _oid_to_hp: dict[str, list[tuple[str, int]]] = _ddict_oid(list)
         if self.user_profile and self.user_profile.hidden_personas:
             for hp in self.user_profile.hidden_personas:
-                tag_set = set(t.lower() for t in hp.evidence_hashtags)
-                _hp_tag_sets.append((hp.label, tag_set))
-
-        # Per-hidden-persona "first-satisfaction" timestamp — the earliest
-        # timestamp at which a cluster's validation predicates were met
-        # (>= MIN_HIDDEN_PERSONA_ROWS distinct rows AND
-        #  >= MIN_HIDDEN_PERSONA_DAYS distinct calendar days). Events before
-        # this timestamp should NOT carry the hidden persona label (causality —
-        # the pattern wasn't observable yet).
-        _hp_available_at: dict[str, int] = {}
-        if _hp_tag_sets:
-            # Build a (timestamp, oid, tags) list from ALL interaction rows
-            # so we can scan in chronological order.
-            row_events: list[tuple[int, str, set[str]]] = []
-            for r in self.interactions:
-                tags_lc = {t.lower() for t in self._extract_hashtags(r.object_text)}
-                if r.interaction_time and tags_lc:
-                    row_events.append((r.interaction_time, r.object_id, tags_lc))
-            row_events.sort()
-            from datetime import datetime as _dt, timezone as _tz
-            for hp_label, hp_tags in _hp_tag_sets:
-                distinct_oids: set[str] = set()
-                distinct_days: set[str] = set()
-                sat_ts = 0
-                for ts, oid, tags in row_events:
-                    if not (tags & hp_tags):
-                        continue
-                    distinct_oids.add(oid)
-                    if ts:
-                        distinct_days.add(_dt.fromtimestamp(ts, tz=_tz.utc).strftime("%Y-%m-%d"))
-                    if (len(distinct_oids) >= MIN_HIDDEN_PERSONA_ROWS
-                            and len(distinct_days) >= MIN_HIDDEN_PERSONA_DAYS):
-                        sat_ts = ts
-                        break
-                # If a cluster was inferred but we cannot reconstruct its
-                # satisfaction point (edge case), fall back to the cluster's
-                # latest matching row timestamp (still strictly causal because
-                # we only pass the gate for events at or after that point).
-                _hp_available_at[hp_label] = sat_ts
+                for oid in hp.evidence_oids:
+                    _oid_to_hp[oid].append((hp.label, hp.evidence_rows))
 
         # Canonical metadata lookup (positive + negative)
         # Also map absorbed members' atom texts to the representative canonical
@@ -3604,20 +3580,16 @@ class PersonaAgent:
                         "source_app": rel_cr.assigned_app if rel_cr else "",
                     })
 
-                # Match preference's source hashtags against hidden personas,
-                # gated by each cluster's first-satisfaction timestamp
-                # (causality: the pattern wasn't observable before it was
-                # corroborated).
+                # Backward-link from hidden personas' evidence_oids: label a
+                # preference with at most ONE hidden persona — the cluster
+                # whose evidence includes this preference's source row.
+                # Ties (a row in multiple clusters) resolve to the cluster
+                # with the most evidence_rows. Rows that didn't contribute
+                # to any cluster stay unlabeled — traceability is required.
                 hp_labels: list[str] = []
-                if _hp_tag_sets and ap.source_hashtags:
-                    pref_tags_lower = set(t.lower() for t in ap.source_hashtags)
-                    for hp_label, hp_tags in _hp_tag_sets:
-                        if not (pref_tags_lower & hp_tags):
-                            continue
-                        available_at = _hp_available_at.get(hp_label, 0)
-                        if available_at and event_ts < available_at:
-                            continue
-                        hp_labels.append(hp_label)
+                matches = _oid_to_hp.get(ap.source_object_id, [])
+                if matches:
+                    hp_labels = [max(matches, key=lambda m: m[1])[0]]
 
                 pref = {
                     "persona_item": cr.persona_item,
