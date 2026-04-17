@@ -55,6 +55,7 @@ Input CSV (hashtag interactions per user)
   +- Step 5:  Build update histories           [Algo+LLM] -- reinforced/faded/evolved
   +- Step 6:  Generate user profile            [LLM]      -- demographics + Big Five
   +- Step 7:  Infer hidden personas            [Algo+LLM] -- cross-row hashtag clustering
+  +- Step 7b: Infer MBTI                       [LLM]      -- type + per-dimension probabilities
   +- Step 8:  Generate per-app sub-personas    [LLM]      -- 4 AppPersonas
   +- Step 9:  Build sessions                   [Algo]     -- temporal grouping
   +- Step 10: Route preferences to apps        [LLM+Algo] -- ~40/20/20/20 distribution

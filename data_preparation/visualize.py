@@ -166,6 +166,16 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .profile-card .details span {{ margin-right: 14px; }}
   .profile-card .big-five {{ display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }}
   .profile-card .b5-item {{ font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #F2F2F7; color: var(--text-secondary); }}
+  .profile-card .mbti {{ margin-top: 12px; display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; }}
+  .profile-card .mbti-type {{ font-size: 18px; font-weight: 600; letter-spacing: 2px; padding: 6px 12px; background: linear-gradient(135deg, #007AFF 0%, #5856D6 100%); color: white; border-radius: 8px; }}
+  .profile-card .mbti-dims {{ display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 260px; }}
+  .profile-card .mbti-dim {{ display: grid; grid-template-columns: 20px 1fr 20px; align-items: center; gap: 6px; font-size: 11px; }}
+  .profile-card .mbti-letter {{ font-weight: 600; color: var(--text-secondary); text-align: center; }}
+  .profile-card .mbti-letter.dominant {{ color: #007AFF; }}
+  .profile-card .mbti-bar {{ position: relative; height: 14px; background: #F2F2F7; border-radius: 7px; overflow: hidden; cursor: help; }}
+  .profile-card .mbti-fill {{ position: absolute; top: 0; bottom: 0; background: linear-gradient(90deg, #007AFF, #5856D6); border-radius: 7px; }}
+  .profile-card .mbti-prob {{ position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--text-primary); mix-blend-mode: difference; filter: invert(1); }}
+  .profile-card .mbti-reason {{ font-size: 11px; color: var(--text-secondary); margin-top: 6px; line-height: 1.5; }}
 
   .section {{ margin-bottom: 40px; }}
   .section-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
@@ -312,6 +322,38 @@ const ps = document.getElementById('profile-section');
 if (profileData) {{
   const b5 = profileData.big_five || {{}};
   const b5Html = Object.entries(b5).map(([k,v]) => `<span class="b5-item">${{k}}: ${{v}}</span>`).join('');
+
+  // MBTI block (rendered just below Big Five)
+  let mbtiHtml = '';
+  const mbti = profileData.mbti;
+  if (mbti && mbti.type && mbti.dimensions) {{
+    const dimOrder = ['E_I', 'S_N', 'T_F', 'J_P'];
+    const dimRows = dimOrder.map(key => {{
+      const d = mbti.dimensions[key];
+      if (!d) return '';
+      const [letterA, letterB] = key.split('_');
+      const pA = Number(d[letterA] || 0);
+      const pB = Number(d[letterB] || 0);
+      const dominant = pA >= pB ? letterA : letterB;
+      const shown = pA >= pB ? pA : pB;
+      const reason = (d.reason || '').replace(/"/g, '&quot;');
+      return `
+        <div class="mbti-dim" title="${{reason}}">
+          <span class="mbti-letter ${{dominant === letterA ? 'dominant' : ''}}">${{letterA}}</span>
+          <div class="mbti-bar">
+            <div class="mbti-fill" style="left: ${{dominant === letterA ? '0' : (100 - shown*100).toFixed(0)}}%; width: ${{(shown*100).toFixed(0)}}%;"></div>
+            <div class="mbti-prob">${{(shown*100).toFixed(0)}}% ${{dominant}}</div>
+          </div>
+          <span class="mbti-letter ${{dominant === letterB ? 'dominant' : ''}}">${{letterB}}</span>
+        </div>`;
+    }}).join('');
+    mbtiHtml = `
+      <div class="mbti">
+        <div class="mbti-type">${{mbti.type}}</div>
+        <div class="mbti-dims">${{dimRows}}</div>
+      </div>`;
+  }}
+
   ps.innerHTML = `
     <div class="profile-card">
       <h2>${{profileData.name || ''}}</h2>
@@ -323,6 +365,7 @@ if (profileData) {{
         <span>${{profileData.education || ''}}</span>
       </div>
       <div class="big-five">${{b5Html}}</div>
+      ${{mbtiHtml}}
     </div>
   `;
 }}

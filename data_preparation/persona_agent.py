@@ -184,6 +184,10 @@ class UserProfile:
     # hashtag clustering. Filled in by infer_hidden_personas().
     hidden_personas: list = field(default_factory=list)  # list[HiddenPersona]
     hidden_persona_summary: str = ""                     # cohesive narrative paragraph
+    # MBTI inferred from Big Five + hidden personas + top hashtags. Shape:
+    # {"type": "INTJ",
+    #  "dimensions": {"E_I": {"E": 0.22, "I": 0.78, "reason": "..."}, ...}}
+    mbti: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -2448,6 +2452,63 @@ class PersonaAgent:
                   f"hidden personas, {n_tensions_kept} tensions folded in{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
+    # LLM call: MBTI inference
+    # ------------------------------------------------------------------
+
+    def infer_mbti(self) -> None:
+        """Infer the user's MBTI type from Big Five + hidden personas + top hashtags.
+
+        Single LLM call. Result stored on self.user_profile.mbti as:
+            {"type": "INTJ",
+             "dimensions": {"E_I": {"E": p, "I": p, "reason": "..."}, ...}}
+        """
+        if not self.user_profile or not self.interactions:
+            return
+        if not self.llm_client:
+            # Subagent mode handles this inline per skill.md.
+            return
+
+        from collections import Counter
+
+        # Top hashtags (quick local census; no threshold).
+        hashtag_counter: Counter = Counter()
+        for row in self.interactions:
+            for tag in self._extract_hashtags(row.object_text):
+                hashtag_counter[tag] += 1
+        top_tags = [tag for tag, _ in hashtag_counter.most_common(50)]
+
+        hp_brief = [
+            {
+                "type": hp.type,
+                "label": hp.label,
+                "description": hp.description,
+            }
+            for hp in self.user_profile.hidden_personas
+        ]
+
+        prompt_text = prompts.infer_mbti_prompt(
+            big_five=self.user_profile.big_five,
+            hidden_persona_summary=self.user_profile.hidden_persona_summary,
+            hidden_personas_brief=hp_brief,
+            top_hashtags=top_tags,
+        )
+
+        for attempt in range(self.MAX_RETRIES):
+            try:
+                response = self.llm_client.query_llm(prompt_text)
+                parsed = utils.extract_json_from_response(response)
+                if isinstance(parsed, dict) and "type" in parsed and "dimensions" in parsed:
+                    self.user_profile.mbti = parsed
+                    if self.verbose:
+                        print(f"{utils.Colors.OKGREEN}[User {self.user_id}] MBTI: "
+                              f"{parsed.get('type')}{utils.Colors.ENDC}")
+                    return
+            except Exception as e:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] MBTI attempt "
+                          f"{attempt+1} failed: {e}{utils.Colors.ENDC}")
+
+    # ------------------------------------------------------------------
     # LLM Call #6: Per-app sub-personas
     # ------------------------------------------------------------------
 
@@ -3363,6 +3424,7 @@ class PersonaAgent:
             ("5.  Build update histories",           self.build_update_histories),
             ("6.  Generate user profile",            self.generate_user_profile),
             ("7.  Infer hidden personas",            self.infer_hidden_personas),
+            ("7b. Infer MBTI",                       self.infer_mbti),
             ("8.  Generate app personas",            self.generate_app_personas),
             ("9.  Build sessions",                   self._build_sessions),
             ("10. Route preferences to apps",        self.route_personas_to_apps),
