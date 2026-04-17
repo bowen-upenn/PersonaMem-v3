@@ -2136,6 +2136,42 @@ class PersonaAgent:
         # Take top N for LLM
         top_hashtags = eligible[:HIDDEN_PERSONA_TOP_HASHTAGS]
 
+        # ── Phase 1b: Intimate-Signal Pre-Screen ────────────────────────
+        # Ask the LLM to flag any adult/kink/sexually-suggestive hashtags
+        # among the user's positive-signal tags. Hashtags it returns get
+        # force-included in the table passed to the main clustering LLM
+        # (even if below MIN_FREQ), and the MIN_ROWS/MIN_DAYS gates are
+        # waived for intimate_interest clusters whose evidence overlaps
+        # this set — "one signal is enough" per design.
+        positive_tags = sorted({
+            tag for tag in hashtag_total
+            if hashtag_by_type["explicit_positive"].get(tag, 0) > 0
+            or hashtag_by_type["implicit_positive"].get(tag, 0) > 0
+        })
+        intimate_tags_lower: set[str] = set()
+        if self.llm_client and positive_tags:
+            screen_prompt = prompts.detect_intimate_hashtags_prompt(positive_tags)
+            try:
+                screen_resp = self.llm_client.query_llm(screen_prompt)
+                flagged = utils.extract_json_from_response(screen_resp)
+                if isinstance(flagged, list):
+                    intimate_tags_lower = {
+                        str(t).lstrip("#").lower() for t in flagged
+                    }
+            except Exception as e:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] Intimate-tag "
+                          f"screen failed: {e}{utils.Colors.ENDC}")
+
+        # Ensure every flagged intimate tag appears in top_hashtags (even
+        # if its count < MIN_FREQ and it would otherwise be dropped).
+        if intimate_tags_lower:
+            existing_lower = {t.lower() for t, _ in top_hashtags}
+            for tag in hashtag_total:
+                if tag.lower() in intimate_tags_lower and tag.lower() not in existing_lower:
+                    top_hashtags.append((tag, hashtag_total[tag]))
+                    existing_lower.add(tag.lower())
+
         # Build hashtag table for the prompt
         lines = []
         for tag, total in top_hashtags:
@@ -2217,11 +2253,20 @@ class PersonaAgent:
             n_rows = len(distinct_row_ids)
             n_days = len(distinct_days)
 
-            # Gate: minimum rows and temporal spread
-            if n_rows < MIN_HIDDEN_PERSONA_ROWS:
-                continue
-            if n_days < MIN_HIDDEN_PERSONA_DAYS:
-                continue
+            # Gate: minimum rows and temporal spread. Waived for
+            # intimate_interest clusters whose evidence overlaps the
+            # LLM-flagged intimate hashtag set — a single positive signal
+            # is enough to surface an intimate persona.
+            is_intimate_exempt = (
+                cluster.get("type") == "intimate_interest"
+                and intimate_tags_lower
+                and bool(tag_set_lower & intimate_tags_lower)
+            )
+            if not is_intimate_exempt:
+                if n_rows < MIN_HIDDEN_PERSONA_ROWS:
+                    continue
+                if n_days < MIN_HIDDEN_PERSONA_DAYS:
+                    continue
 
             # Compute privacy ratio
             ip = itype_counts.get("implicit_positive", 0)
