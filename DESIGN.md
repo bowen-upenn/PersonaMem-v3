@@ -282,7 +282,7 @@ For each canonical with contradictory relationships, subtract the contradicting 
 
 ### 6.7 Bottom-20% Filter
 
-Remove canonicals in the bottom 20% of cross-ref scores, **unless** their score exceeds 10.0 (the `bottom_20_min_exempt` threshold — high-count items are exempt). Then apply a hard floor: only canonicals with `cross_ref ≥ 2.0` (`HIGH_CONFIDENCE_CROSS_REF_THRESHOLD`) survive.
+Remove canonicals in the bottom 20% of cross-ref scores, **unless** their score exceeds 10.0 (the `bottom_20_min_exempt` threshold — high-count items are exempt). Then apply a hard floor: only canonicals with `cross_ref ≥ 5.0` (`HIGH_CONFIDENCE_CROSS_REF_THRESHOLD`) survive. Cross-ref starts at 1.0 (base) and accumulates 1.0 per distinct explicit row, 0.5 per distinct implicit row, so a score of 5.0 requires roughly 4 explicit corroborating rows beyond the initial occurrence.
 
 ### Summary
 
@@ -294,7 +294,7 @@ Remove canonicals in the bottom 20% of cross-ref scores, **unless** their score 
 | LLM cross-ref | LLM | None (discovers relationships only) |
 | Union-find | Algorithmic | Sums cross_ref across cluster |
 | Contradiction penalty | Algorithmic | Subtracts from cross_ref |
-| Bottom-20% filter | Statistical | Drops weak tail; floor at 2.0 |
+| Bottom-20% filter | Statistical | Drops weak tail; floor at 5.0 |
 
 ### Negative Cross-Referencing
 
@@ -309,20 +309,59 @@ Negative preferences go through the **same pipeline independently** (within nega
 
 ## 7. Steps 4–5 — Temporal Evolution
 
-### Step 3: Temporal Contradiction Graph
+### Step 4: Temporal Contradiction Graph
 
 Preferences marked as `contradictory` in Step 2 are grouped by topic/theme. For each group, a chronological timeline is built, showing how the user's stance shifted over time (e.g., "user initially preferred vegan options in January, then shifted to pescatarian by March").
 
-### Step 4: Update Histories
+### Step 5: Update Histories
 
-Each surviving preference receives a temporal update history:
+Each surviving preference receives a temporal update history — an array of entries sorted by timestamp, each tagged with an `update_type`. There are **8 distinct values**:
 
-| Update type | Trigger | Details |
-|-------------|---------|---------|
-| **Reinforced** | Preference appears in multiple rows | Up to 5 recurrence timestamps, evenly sampled across timeline |
-| **Faded** | > 48 hours since last appearance | Marked with `FADE_THRESHOLD_SECONDS = 172,800` |
-| **Contradicted** | Has contradictory relationship | Linked to the contradicting preference |
-| **Evolved** | Category has ≥ 2 preferences | LLM narrative describing deepening, branching, or shifting |
+| `update_type` | Definition | Example |
+|----------------|-----------|---------|
+| `new` | First appearance of the preference (the initial inference) | Filtered out during serialization — redundant with the event timestamp |
+| `reinforced` | Preference appeared in multiple distinct source rows | Up to 5 recurrence timestamps, evenly sampled across the timeline |
+| `faded` | Preference inactive for > 48 hours before the user's last activity | `(user_last_ts − pref_last_ts) ≥ FADE_THRESHOLD_SECONDS (172,800)` |
+| `contradicted` | A contradicting preference was discovered during cross-referencing | "Enjoys vegan cooking" contradicted by "Loves BBQ ribs" |
+| `deepened` | A general interest became more specific over time | "Likes cooking" → "Follows advanced baking techniques" |
+| `branched` | Interest expanded into a new sub-direction | "Hair styling" → also "Hair product reviews" |
+| `shifted` | Focus moved from one aspect to another within the same domain | "Comedy reels" → "Wholesome family humor" |
+| `intensified` | Engagement grew demonstrably stronger over time | Casual mentions early → frequent engagement later |
+| `similar` | A semantically similar preference was discovered during cross-referencing | "Enjoys Italian cooking" linked to "Interested in Mediterranean cuisine" |
+
+### Update History Data Format
+
+Each entry in the `update_history` array is a JSON object. Fields are ordered: `update_type` → `preference` → `formatted_timestamp` → extras. Not all fields appear on every type.
+
+| Field | Type | Present on | Description |
+|-------|------|-----------|-------------|
+| `update_type` | string | All | One of the 8 values above |
+| `preference` | string | `contradicted`, `deepened`, `branched`, `shifted`, `similar` | The related preference text (target of evolution, or the contradicting/similar preference) |
+| `formatted_timestamp` | string | All | Human-readable timestamp (e.g., `"01:03, 04/03/2026"`) |
+| `source_app` | string | `reinforced`, `deepened`, `branched`, `shifted`, `similar` | Which app the related row/preference was routed to |
+| `occurrence` | int | `reinforced` | 1-indexed occurrence number (starts at 2, since 1 is the initial "new") |
+| `total_occurrences` | int | `reinforced` | Total distinct source rows that produced this preference |
+| `description` | string | `deepened`, `branched`, `shifted`, `intensified` | One-sentence LLM narrative describing the evolution pattern |
+
+**Examples from output:**
+
+```json
+{"update_type": "reinforced", "formatted_timestamp": "01:03, 04/03/2026", "source_app": "Threads", "occurrence": 2, "total_occurrences": 58}
+```
+```json
+{"update_type": "deepened", "preference": "Actively follows the Crawford vs. Canelo matchup.", "formatted_timestamp": "06:47, 04/03/2026", "source_app": "Threads", "description": "Athlete-specific boxing fandom evolved into focused engagement with marquee matchup narratives."}
+```
+```json
+{"update_type": "faded", "formatted_timestamp": "22:56, 04/03/2026"}
+```
+```json
+{"update_type": "contradicted", "preference": "Prefers bold, attention-grabbing fashion aesthetics.", "formatted_timestamp": "05:49, 04/04/2026"}
+```
+```json
+{"update_type": "similar", "preference": "Interested in Mediterranean cuisine.", "formatted_timestamp": "01:15, 04/03/2026", "source_app": "Facebook"}
+```
+
+**Causality filter:** only entries with `timestamp ≤ event timestamp` are included — no knowledge leakage from future interactions.
 
 A causality filter ensures only update entries with `timestamp ≤ event timestamp` are included — no knowledge leakage from future interactions.
 
@@ -468,6 +507,8 @@ The per-row inference (Step 1) captures *what* a user likes. Hidden personas cap
 | Privacy ratio (`impl_pos / (impl_pos + expl_pos)`) | Reported, not gated (>0.7 required for `compensatory_need`) |
 | App distribution | Computed retroactively after routing |
 
+**Phase 3.5 — Hashtag-Overlap Deduplication.** After validation, a deduplication pass merges hidden personas whose evidence hashtags overlap significantly. Pairwise Jaccard similarity is computed on lowercase evidence_hashtag sets. If Jaccard ≥ 0.5 (half the hashtags overlap), the two personas are merged: the one with more evidence_rows becomes the base, evidence_hashtags are unioned, surface_connections are unioned, and evidence metrics (evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days) are recomputed from raw data. The pass repeats iteratively until no more merges occur. The LLM prompt also instructs against producing near-duplicate clusters.
+
 ### Dual Personalities
 
 <!-- Approach-avoidance conflict: Lewin (1935); Miller (1944) — individuals simultaneously attracted to and repelled by the same goal or competing goals -->
@@ -611,14 +652,16 @@ These represent two fundamentally different UX paradigms: @ai comments are publi
 
 ## 13. Step 13 — Chatbot Conversations
 
-Every preference routed to the Chatbot app gets a multi-turn conversation.
+Every chatbot **event** (source row routed to Chatbot) gets a multi-turn conversation that naturally embeds ALL of that event's surviving preferences. Conversations are generated per-event, not per-canonical preference.
 
 ### Conversation Generation
 
 | Probability | Type | Turns |
 |-------------|------|-------|
-| ~80% | Full multi-turn | 2–10 turns (always even, so every user message gets a reply) |
-| ~20% | Minimal exchange | 2 turns (one user message, one assistant reply) |
+| ~80% | Full multi-turn | 4–10 turns (scaled by preference count, always even) |
+| ~20% | Minimal exchange | 2–6 turns (scaled by preference count, always even) |
+
+Turn count scales with the number of preferences to ensure each preference can be naturally mentioned: `min(max(base, n_prefs * 2), 10)`.
 
 ### Conversation Types
 
@@ -636,9 +679,10 @@ Selected based on the user's `chatbot_contexts` from their AppPersona:
 
 ### Implicit Embedding
 
-The user **never directly states** their preference. Instead:
+The user **never directly states** any preference. Instead, all preferences for the event are woven naturally into the conversation:
 - For explicit interactions, the preference is "fairly apparent" through the task topic.
 - For implicit interactions, the preference is "deeply embedded" — a side detail or cultural reference requiring reasoning to infer.
+- When an event has multiple preferences, they are spread across turns — the primary task topic carries the most prominent preference(s), while others surface through details, follow-up questions, or contextual references.
 
 **Example:** A user who enjoys Korean cooking doesn't say "I like Korean food." Instead, they ask: "What's the difference between gochugaru and gochujang in terms of fermentation?"
 
@@ -684,7 +728,7 @@ The LLM is instructed to be conservative: "when in doubt, mark as neutral." Only
 ### Time-Based, Cross-App Split
 
 1. Sort **all** positive survivors by `source_timestamp` ascending (globally, across all apps).
-2. Scan newest → oldest, collecting items that pass the **high-confidence predicate** (`init ≥ 0.5 AND cross_ref > 2.0`) until reaching 20% of total positives.
+2. Scan newest → oldest, collecting items that pass the **high-confidence predicate** (`init ≥ 0.5 AND cross_ref > 5.0`) until reaching 20% of total positives.
 3. These become **test candidates**. Everything else is `train`. All negatives are always `train`.
 
 ### Inferrability Gate
@@ -733,7 +777,7 @@ All noise is applied **after** the core ground-truth skeleton is established. Th
 |----------|-------|---------|
 | `MIN_PERSONA_INIT_CONFIDENCE` | 0.5 | Init filter floor — main knob for preference-list size |
 | `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.5 | High-confidence predicate (test-split eligibility) |
-| `HIGH_CONFIDENCE_CROSS_REF_THRESHOLD` | 2.0 | High-confidence predicate (corroboration floor) |
+| `HIGH_CONFIDENCE_CROSS_REF_THRESHOLD` | 5.0 | High-confidence predicate (corroboration floor) |
 | `MIN_IMPLICIT_NEGATIVE_REPETITION` | 5 | Distinct source rows for implicit-only negative to survive |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag signature required before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Independent hot-hashtag LLM calls needed for preference |

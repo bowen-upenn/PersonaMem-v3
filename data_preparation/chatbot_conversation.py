@@ -224,14 +224,20 @@ def generate_chatbot_conversations(
     user_seed: int,
     max_workers: int = 20,
 ) -> list[dict]:
-    """Generate multi-turn conversations for chatbot preference records.
+    """Generate multi-turn conversations for chatbot event records.
+
+    Each record represents one chatbot event (source row) with a
+    ``preferences`` list of dicts (each having ``persona_item``,
+    ``category``, and optionally ``interaction_type``). The generated
+    conversation weaves in ALL preferences for that event.
 
     Uses ThreadPoolExecutor with ``max_workers`` parallel LLM calls.
     Deterministic RNG decisions are pre-computed sequentially, then LLM
     calls are fanned out in parallel.
 
     Args:
-        chatbot_records: list of preference dicts already routed to Chatbot.
+        chatbot_records: list of event dicts with ``preferences``,
+            ``source_interaction_type``, and ``source_object_id``.
         user_profile: the user's profile dict (name, bio, career, etc.)
         chatbot_persona: the Chatbot AppPersona dict.
         llm_query_fn: callable that takes a prompt string and returns the
@@ -255,8 +261,9 @@ def generate_chatbot_conversations(
 
     for i, rec in enumerate(chatbot_records):
         interaction_type = rec.get("source_interaction_type", "implicit_positive")
-        persona_item = rec.get("persona_item", "")
-        category = rec.get("category", "")
+        preferences = rec.get("preferences", [])
+        if not preferences:
+            continue
 
         rec["conversation"] = None
         rec["conversation_type"] = None
@@ -269,24 +276,60 @@ def generate_chatbot_conversations(
 
         # Special ask-to-forget / correction variants only for multiturn negatives
         if is_multiturn and interaction_type == "explicit_negative":
+            # Pick the best candidate for the variant among this event's preferences
+            primary = preferences[0]
             variant = pick_explicit_neg_variant(rng)
-            if variant == "ask_to_forget" and not is_self_preference(persona_item):
-                variant = "correction"
+            if variant == "ask_to_forget":
+                # Find a self-referencing preference, fallback to correction
+                self_pref = next((p for p in preferences if is_self_preference(p.get("persona_item", ""))), None)
+                if self_pref:
+                    primary = self_pref
+                else:
+                    variant = "correction"
 
         if variant == "ask_to_forget":
+            additional = [p for p in preferences if p.get("persona_item") != primary.get("persona_item")]
             prompt = prompts.generate_ask_to_forget_conversation_prompt(
-                persona_item=persona_item, category=category,
+                persona_item=primary.get("persona_item", ""),
+                category=primary.get("category", ""),
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
+                additional_preferences=additional if additional else None,
             )
         elif variant == "correction":
+            primary = preferences[0]
+            additional = [p for p in preferences if p.get("persona_item") != primary.get("persona_item")]
             prompt = prompts.generate_correction_conversation_prompt(
-                persona_item=persona_item, category=category,
+                persona_item=primary.get("persona_item", ""),
+                category=primary.get("category", ""),
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
+                additional_preferences=additional if additional else None,
             )
         else:
-            num_turns = select_num_turns(interaction_type, rng) if is_multiturn else 2
+            # Scale turn count based on number of preferences
+            n_prefs = len(preferences)
+            if is_multiturn:
+                base_turns = select_num_turns(interaction_type, rng)
+                # Ensure enough turns to mention all preferences
+                num_turns = min(max(base_turns, n_prefs * 2), 10)
+                # Round up to even
+                if num_turns % 2 != 0:
+                    num_turns += 1
+            else:
+                num_turns = max(2, min(n_prefs * 2, 6))
+                if num_turns % 2 != 0:
+                    num_turns += 1
+
+            # Build preference list with per-preference interaction types
+            prefs_for_prompt = []
+            for p in preferences:
+                prefs_for_prompt.append({
+                    "persona_item": p.get("persona_item", ""),
+                    "category": p.get("category", ""),
+                    "interaction_type": p.get("interaction_type", interaction_type),
+                })
+
             prompt = prompts.generate_chatbot_conversation_prompt(
-                persona_item=persona_item, category=category,
+                preferences=prefs_for_prompt,
                 conversation_type=conv_type,
                 conversation_type_description=CHATBOT_CONVERSATION_TYPES[conv_type]["description"],
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
@@ -295,8 +338,8 @@ def generate_chatbot_conversations(
 
         work_items.append((i, prompt, conv_type, variant))
 
-    # --- Phase 2: Parallel LLM calls (with up to 2 retries) ---
-    MAX_RETRIES = 2
+    # --- Phase 2: Parallel LLM calls (with up to 4 retries) ---
+    MAX_RETRIES = 4
 
     def _validate_conversation(response: str | None) -> list[dict] | None:
         """Parse and validate a conversation response. Returns turns or None."""

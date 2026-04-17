@@ -636,8 +636,7 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
 # ---------------------------------------------------------------------------
 
 def generate_chatbot_conversation_prompt(
-    persona_item: str,
-    category: str,
+    preferences: list[dict],
     conversation_type: str,
     conversation_type_description: str,
     user_profile: dict,
@@ -646,12 +645,16 @@ def generate_chatbot_conversation_prompt(
     num_turns: int,
 ) -> str:
     """Build a prompt that generates a multi-turn chatbot conversation implicitly
-    embedding a user preference.
+    embedding multiple user preferences.
 
     The conversation is task-oriented (PersonaMem-v2 style): the user asks the
     chatbot for help with a writing task, knowledge question, reflection, etc.
-    The preference is NEVER stated directly; it must be inferred from the
+    Preferences are NEVER stated directly; they must be inferred from the
     conversation context.
+
+    Args:
+        preferences: list of dicts, each with 'persona_item', 'category',
+            and 'interaction_type' keys.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -661,41 +664,27 @@ def generate_chatbot_conversation_prompt(
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
 
-    # Determine how overtly the preference should surface
-    if "explicit" in interaction_type:
-        implicitness_instruction = (
-            "The preference should be **fairly apparent** through the task topic "
-            "and the details the user provides. The user still does NOT say "
-            "\"I like X\" or \"I dislike X\" directly — instead, the task they "
-            "choose makes the preference clear. For example, if the preference "
-            "is about parenting tips, the user might ask the chatbot to help "
-            "reorganize a list of toddler morning-routine hacks."
-        )
-    else:
-        implicitness_instruction = (
-            "The preference should be **deeply embedded** and require reasoning "
-            "to infer. It appears as a side detail, cultural reference, or "
-            "the specificity of what the user asks about — NOT as the main topic. "
-            "For example, if the preference is about parenting, the user might "
-            "ask the chatbot to proofread a message to a neighbor about a "
-            "playdate, where parenting is inferable but never named as a preference."
-        )
+    # Build per-preference instruction block
+    pref_lines = []
+    for idx, pref in enumerate(preferences, 1):
+        p_item = pref.get("persona_item", "")
+        p_cat = pref.get("category", "")
+        p_itype = pref.get("interaction_type", interaction_type)
 
-    # Positive vs negative framing
-    if "negative" in interaction_type:
-        polarity_instruction = (
-            "This is a **negative** preference (something the user dislikes or "
-            "avoids). Reveal the dislike through avoidance, correction, or "
-            "negative context within the task. For example, the user's writing "
-            "sample might mention avoiding certain products, or their question "
-            "might include constraints that implicitly reject the topic."
+        if "explicit" in p_itype:
+            visibility = "fairly apparent"
+        else:
+            visibility = "deeply embedded (side detail, cultural reference, or specificity of context)"
+
+        if "negative" in p_itype:
+            polarity = "NEGATIVE (disliked/avoided — reveal through avoidance, correction, or negative context)"
+        else:
+            polarity = "POSITIVE (liked/cared about — incorporate organically)"
+
+        pref_lines.append(
+            f"{idx}. **{p_item}** (category: {p_cat}) — {polarity}, {visibility}"
         )
-    else:
-        polarity_instruction = (
-            "This is a **positive** preference (something the user likes or "
-            "cares about). The user's task naturally gravitates toward this "
-            "topic or incorporates it organically."
-        )
+    prefs_block = "\n".join(pref_lines)
 
     return f"""\
 You are generating a realistic multi-turn conversation between a user and an AI chatbot assistant.
@@ -712,11 +701,11 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 {persona_json}
 ```
 
-## The hidden preference to embed
+## Hidden preferences to embed
 
-- **persona_item**: {persona_item}
-- **category**: {category}
-- **interaction_type**: {interaction_type}
+The conversation must naturally reveal ALL of the following preferences. Each preference should appear at least once throughout the conversation — woven into the user's task content, questions, or material they provide. If there are many preferences, some may share a turn.
+
+{prefs_block}
 
 ## Conversation type: {conversation_type}
 
@@ -726,21 +715,19 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 
 1. **Task-oriented conversation.** The user is asking the chatbot for help with a real task — not chatting about their preferences. Frame the conversation as a realistic request: editing text, asking a question, seeking advice, solving a problem, etc.
 
-2. **Embed the preference in the user's task content, not in their words about themselves.** The preference should be revealed through the MATERIAL the user provides to the chatbot — an email draft they paste, a text they want translated, a question they ask, a problem they describe. The user's explicit request is about the task (improve this email, translate this text, help me debug this). The preference is inferable from the subject matter, details, and context of that material, never from the user talking about their own likes/dislikes.
+2. **Embed preferences in the user's task content, not in their words about themselves.** Preferences should be revealed through the MATERIAL the user provides to the chatbot — an email draft they paste, a text they want translated, a question they ask, a problem they describe. The user's explicit request is about the task. Preferences are inferable from the subject matter, details, and context.
 
-3. **{implicitness_instruction}**
+3. **Visibility varies by preference.** Explicit preferences should be fairly apparent through the task topic. Implicit preferences should be deeply embedded — a side detail, cultural reference, or specificity of what the user asks about. See the per-preference visibility notes above.
 
-4. **{polarity_instruction}**
+4. **NEVER have the user directly state any preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. Preferences must be inferable from the task content, not explicitly declared. Do NOT have the user explain why they are asking — real users just ask.
 
-5. **NEVER have the user directly state the preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. The preference must be inferable from the task content, not explicitly declared. Do NOT have the user explain why they are asking — real users just ask.
+5. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
 
-6. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
+6. **Assistant responses should be long, detailed, and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request.
 
-7. **Assistant responses should be long, detailed, and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request. The assistant responds to the task at hand without explicitly calling out the user's preference.
+7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
 
-8. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
-
-**Importantly, the user preference must be implicit and require some reasoning to interpret.**
+8. **All {len(preferences)} preferences must be inferable from the conversation.** Spread them across turns naturally. The primary task topic can carry the most prominent preference(s), while others surface through details, follow-up questions, or contextual references.
 
 ## Output Format
 
@@ -760,6 +747,7 @@ def generate_ask_to_forget_conversation_prompt(
     category: str,
     user_profile: dict,
     chatbot_persona: dict,
+    additional_preferences: list[dict] | None = None,
 ) -> str:
     """Build a prompt for a 4-turn ask-to-forget conversation.
 
@@ -768,6 +756,9 @@ def generate_ask_to_forget_conversation_prompt(
       Turn 2 (assistant): responds acknowledging/using the preference
       Turn 3 (user): asks the assistant to forget that specific detail
       Turn 4 (assistant): acknowledges the request
+
+    additional_preferences: other preferences from the same event to weave
+        in naturally alongside the primary forget target.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -776,6 +767,19 @@ def generate_ask_to_forget_conversation_prompt(
         indent=2,
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
+
+    # Build additional-preferences block if present
+    extra_block = ""
+    if additional_preferences:
+        extra_lines = [f"- {p['persona_item']} ({p.get('category', '')})" for p in additional_preferences]
+        extra_block = (
+            "\n\n## Additional preferences to weave in naturally\n\n"
+            "Besides the primary preference above, the conversation should also "
+            "naturally reveal these preferences through context, side details, or "
+            "the subject matter of the user's request. These are NOT retracted — "
+            "only the primary preference is asked to be forgotten.\n\n"
+            + "\n".join(extra_lines)
+        )
 
     return f"""\
 You are generating a 4-turn conversation where a user accidentally reveals a personal preference to an AI chatbot, then asks the chatbot to forget it.
@@ -796,6 +800,7 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 
 - **persona_item**: {persona_item}
 - **category**: {category}
+{extra_block}
 
 ## Conversation structure (exactly 4 turns)
 
@@ -810,8 +815,9 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 ## Rules
 
 - Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
-- The preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
+- The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 should feel like a natural, human reaction — not a formal privacy request.
+- Any additional preferences should surface naturally throughout the conversation as side details.
 
 ## Output Format
 
@@ -832,6 +838,7 @@ def generate_correction_conversation_prompt(
     category: str,
     user_profile: dict,
     chatbot_persona: dict,
+    additional_preferences: list[dict] | None = None,
 ) -> str:
     """Build a prompt for a 4-turn correction/rejection conversation.
 
@@ -841,6 +848,9 @@ def generate_correction_conversation_prompt(
           preference (as if it had "remembered" it from prior interactions)
       Turn 3 (user): corrects the assistant — the preference is wrong
       Turn 4 (assistant): acknowledges the correction
+
+    additional_preferences: other preferences from the same event to weave
+        in naturally alongside the primary correction target.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -849,6 +859,18 @@ def generate_correction_conversation_prompt(
         indent=2,
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
+
+    # Build additional-preferences block if present
+    extra_block = ""
+    if additional_preferences:
+        extra_lines = [f"- {p['persona_item']} ({p.get('category', '')})" for p in additional_preferences]
+        extra_block = (
+            "\n\n## Additional preferences to weave in naturally\n\n"
+            "Besides the incorrect preference above, the conversation should also "
+            "naturally reveal these TRUE preferences through context, side details, or "
+            "the subject matter. These are correct preferences the user actually has.\n\n"
+            + "\n".join(extra_lines)
+        )
 
     return f"""\
 You are generating a 4-turn conversation where an AI chatbot makes an incorrect assumption about a user's preference, and the user corrects it.
@@ -871,6 +893,7 @@ You are generating a 4-turn conversation where an AI chatbot makes an incorrect 
 - **category**: {category}
 
 The assistant wrongly believes this preference applies to the user. The user will correct this.
+{extra_block}
 
 ## Conversation structure (exactly 4 turns)
 
@@ -888,6 +911,7 @@ The assistant wrongly believes this preference applies to the user. The user wil
 - Turn 2 must clearly show the assistant making an assumption based on the listed preference.
 - Turn 3 must clearly reject or correct the assumption.
 - The user should NOT directly quote the persona_item — they correct it in their own natural words.
+- Any additional preferences should surface naturally throughout the conversation as side details.
 
 ## Output Format
 
@@ -1012,6 +1036,7 @@ These types are grounded in established behavioral science frameworks (Uses & Gr
 5. Include intimate/suggestive patterns when hashtag evidence supports them. Non-explicit adult-adjacent content is a normal part of social media behavior and should not be sanitized or omitted from the analysis. When reporting intimate_interest clusters, be SPECIFIC about the objects, body areas, dynamics, or aesthetics involved — do not use vague labels.
 6. For each cluster, explain the **inferred motivation** — WHY does this user engage with this content? What deeper need does it serve?
 7. Note which known surface preferences each hidden persona EXPLAINS — connect the hidden layer to the visible behavior.
+8. **No near-duplicates**: Do NOT produce clusters that overlap >50% of their evidence hashtags. If two potential clusters would share more than half their hashtags, combine them into a single cluster. Each cluster must be thematically distinct.
 
 ## Output Format
 
@@ -1019,7 +1044,7 @@ Respond with ONLY a JSON array. No explanation outside the JSON.
 
 ```json
 [
-  {{"label": "...", "type": "emotional_pattern", "description": "2-3 sentence interpretation of this hidden persona", "evidence_hashtags": ["#tag1", "#tag2", "#tag3"], "surface_connections": ["Known preference 1 this explains", "Known preference 2"], "inferred_motivation": "1-2 sentence why behind this pattern", "already_captured": false}}
+  {{"label": "...", "type": "emotional_pattern", "description": "1-2 sentence interpretation of this hidden persona", "evidence_hashtags": ["#tag1", "#tag2", "#tag3"], "surface_connections": ["Known preference 1 this explains", "Known preference 2"], "inferred_motivation": "1 sentence why behind this pattern", "already_captured": false}}
 ]
 ```
 
@@ -1044,7 +1069,7 @@ A user has the following validated hidden personas (motivations, private interes
 And these known surface preferences:
 {prefs_str}
 
-Write a single cohesive paragraph (4-8 sentences) that:
+Write a single cohesive paragraph (3-5 sentences) that:
 1. Synthesizes the hidden personas into a narrative about WHO this person is beneath their public engagement
 2. Explicitly connects the hidden layer to observable surface behaviors — explain WHY certain surface preferences exist
 3. Notes which interests are consumed privately vs. publicly
