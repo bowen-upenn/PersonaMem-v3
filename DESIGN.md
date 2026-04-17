@@ -230,6 +230,7 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 | `private_hobby` | Consumed but not publicly shared (high implicit ratio) | Uses & Gratifications (escapist) |
 | `parasocial_attachment` | Intense bond with public figure (>= 15 rows) | Parasocial Relationship Theory |
 | `compensatory_need` | Unmet needs via private consumption (privacy_ratio > 0.7) | Compensatory Internet Use Theory |
+| `covert_concern` | Specific worries / fears / pressures the user privately dwells on (health anxiety, financial stress, parenting worry, relationship insecurity, body-image pressure) | Uses & Gratifications (reassurance seeking) |
 
 **Phase 3 — Validation:** Each cluster needs >= 20 distinct rows (`MIN_HIDDEN_PERSONA_ROWS`) and >= 3 distinct days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio reported (> 0.7 required for `compensatory_need`). **Exemption:** `intimate_interest` clusters whose evidence overlaps the Phase-1b pre-screened set skip both gates — one positive signal is enough to surface an intimate persona.
 
