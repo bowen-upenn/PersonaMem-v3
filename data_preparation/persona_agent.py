@@ -83,6 +83,11 @@ class CrossReferencedPersona:
     # Each entry: {"preference": str, "update_type": str, "timestamp": int, "formatted_timestamp": str}
     # update_type values: "new", "reinforced", "contradicted", "faded"
     update_history: list = field(default_factory=list)
+    # Evidence-mix counters set during weighted corroboration. Used by the
+    # per-canonical survival threshold (implicit-heavy canonicals need more
+    # rows to survive).
+    n_explicit_rows: int = 0
+    n_implicit_rows: int = 0
 
 
 @dataclass
@@ -144,6 +149,11 @@ class HiddenPersona:
     surface_connections: list[str] = field(default_factory=list)            # Which surface preferences this explains
     inferred_motivation: str = ""                                           # 1-2 sentence "why" behind this pattern
     already_captured: bool = False                                          # True if overlaps heavily with surface preferences
+    # Dual-personality tensions this hidden persona participates in. Each
+    # entry: {"other_persona": str, "tension": str}. Folded in from the
+    # former top-level `dual_personalities` list — we only keep the most
+    # important tensions, attached directly to the relevant hidden personas.
+    related_tensions: list = field(default_factory=list)
 
 
 # Validation thresholds for hidden persona inference
@@ -170,8 +180,6 @@ class UserProfile:
     # hashtag clustering. Filled in by infer_hidden_personas().
     hidden_personas: list = field(default_factory=list)  # list[HiddenPersona]
     hidden_persona_summary: str = ""                     # cohesive narrative paragraph
-    # Dual personalities — contradictory hidden persona pairs (internal tensions).
-    dual_personalities: list = field(default_factory=list)  # list[{"persona_a": str, "persona_b": str, "tension": str}]
 
 
 @dataclass
@@ -193,14 +201,28 @@ class AnnotatedPersona:
 # Floor on confidence_score_init. Personas below this are dropped after
 # cross-ref regardless of cross-ref score or relationship type. This is
 # the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.5
+MIN_PERSONA_INIT_CONFIDENCE = 0.55
 
 # High-confidence predicate — used for test-split eligibility and distractor
 # shortlisting. init threshold matches the filter floor so "high-confidence"
-# at minimum means the persona survived the init filter AND is corroborated
-# by more than a handful of other rows.
-HIGH_CONFIDENCE_INIT_THRESHOLD = 0.5
-HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 10.0
+# at minimum means the persona survived the init filter AND cleared the
+# per-canonical xref threshold.
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.55
+
+# Per-canonical xref threshold: the survival bar is interpolated by each
+# canonical's evidence mix. Canonicals backed mostly by explicit rows need a
+# smaller xref; canonicals backed mostly by implicit rows need a larger one.
+#
+#   threshold_c = (1 - implicit_fraction) * XREF_THRESHOLD_EXPLICIT
+#                 + implicit_fraction     * XREF_THRESHOLD_IMPLICIT
+#
+# Tune empirically to land ~200 positive survivors.
+XREF_THRESHOLD_EXPLICIT = 10.0
+XREF_THRESHOLD_IMPLICIT = 30.0
+
+# Kept for backward-compatibility references. Internal code prefers
+# canonical_xref_threshold() so it gets the evidence-mix-dependent value.
+HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = XREF_THRESHOLD_EXPLICIT
 
 # Session grouping: source rows with timestamp gaps <= this threshold are
 # considered part of the same scrolling session on one app.
@@ -223,19 +245,43 @@ IMPLICIT_NEGATIVE_PREFILTER_K = 3     # rows per hashtag signature required to b
 # distinguishing signal at scale.
 
 
-def is_high_confidence(init_score: float, cross_ref_score: float) -> bool:
-    """Return True if a persona's scores qualify as 'reasonably high confidence'.
+def canonical_xref_threshold(n_explicit_rows: int, n_implicit_rows: int) -> float:
+    """Return the survival xref threshold for a canonical, interpolated by
+    its evidence mix.
+
+    A canonical backed mostly by explicit rows survives with a smaller xref;
+    a canonical backed mostly by implicit rows needs a larger xref. When a
+    canonical has no distinct row evidence (e.g., single-object user), the
+    fallback is the explicit threshold (no penalty).
+    """
+    total = n_explicit_rows + n_implicit_rows
+    if total <= 0:
+        return XREF_THRESHOLD_EXPLICIT
+    implicit_frac = n_implicit_rows / total
+    return (
+        (1.0 - implicit_frac) * XREF_THRESHOLD_EXPLICIT
+        + implicit_frac * XREF_THRESHOLD_IMPLICIT
+    )
+
+
+def is_high_confidence(
+    init_score: float,
+    cross_ref_score: float,
+    n_explicit_rows: int = 0,
+    n_implicit_rows: int = 0,
+) -> bool:
+    """Return True if a persona's scores qualify as 'high confidence'.
 
     BOTH conditions must hold:
-      - confidence_score_init  >= MIN_PERSONA_INIT_CONFIDENCE (the filter floor)
-      - confidence_cross_referenced > HIGH_CONFIDENCE_CROSS_REF_THRESHOLD
-        (the persona is corroborated by multiple distinct interaction rows;
-         cross_ref starts at 1.0 and accumulates 1.0 per explicit row,
-         0.5 per implicit row, so > 10.0 requires substantial evidence)
+      - confidence_score_init  >= HIGH_CONFIDENCE_INIT_THRESHOLD
+      - confidence_cross_referenced > canonical_xref_threshold(...)
+        (evidence-mix-dependent survival bar — stricter for implicit-only
+         canonicals than for explicit-supported ones)
     """
     return (
         init_score >= HIGH_CONFIDENCE_INIT_THRESHOLD
-        and cross_ref_score > HIGH_CONFIDENCE_CROSS_REF_THRESHOLD
+        and cross_ref_score
+        > canonical_xref_threshold(n_explicit_rows, n_implicit_rows)
     )
 
 
@@ -560,6 +606,7 @@ CHATBOT_TURN_ACTIONS: set[str] = {
     "edited_prompt_and_retried",
     "regenerated",
     "asked_to_forget",
+    "asked_not_to_personalize",
     "corrected_assumption",
 }
 
@@ -638,7 +685,7 @@ class PersonaAgent:
 
         # Train/test split state populated by build_test_split()
         self.split_labels: dict[str, str] = {}                       # persona_item -> "train" | "test"
-        self.test_distractors: dict[str, dict] = {}                  # test persona_item -> {"persona_item": ..., "category": ...}
+        self.test_distractors: dict[str, list[dict]] = {}            # test persona_item -> list of {"persona_item", "category"} distractors
 
         # Per-user perturbed action distribution (set lazily on first use).
         # The seed is deterministic in user_id so the same user gets the
@@ -936,11 +983,19 @@ class PersonaAgent:
                 formatted_ts = self._format_timestamp(row.interaction_time)
                 all_hashtags = self._extract_hashtags(row.object_text)
                 for template in personas:
+                    # Promoted rows are upgraded to explicit_negative at the
+                    # atomic level — the net-sentiment gate + per-hot-tag LLM
+                    # call make this a strong signal, comparable to a real
+                    # explicit_negative (hide/mute/unfollow). This changes how
+                    # downstream cross-referencing weighs the atomic (explicit
+                    # weight 1.0 rather than implicit 0.5) and makes the count
+                    # of explicit_negative non-zero at the atomic/canonical
+                    # layer.
                     self.negative_personas.append(AtomicPersona(
                         persona_item=template.persona_item,
                         category=template.category,
                         confidence_score_init=template.confidence_score_init,
-                        source_interaction_type=row.interaction_type,
+                        source_interaction_type="explicit_negative",
                         source_interaction_format=row.interaction_format,
                         source_object_id=row.object_id,
                         source_timestamp=row.interaction_time,
@@ -1125,32 +1180,41 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged} duplicate atomic personas → "
                   f"{len(canonicals)} distinct canonicals.{utils.Colors.ENDC}")
 
-        # --- Step 2: Init filter (with 10% exploration of below-threshold) ---
+        # --- Step 2: Init filter (strict — no exploration) ---
         above = [c for c in canonicals if c.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE]
-        below = [c for c in canonicals if c.confidence_score_init < MIN_PERSONA_INIT_CONFIDENCE]
-        n_explore = max(1, int(len(below) * 0.10)) if below else 0
-        explored = random.sample(below, min(n_explore, len(below))) if n_explore else []
-        survivors = above + explored
+        below_count = len(canonicals) - len(above)
+        survivors = above
 
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] After init >= {MIN_PERSONA_INIT_CONFIDENCE} filter: "
-                  f"{len(above)} canonicals + {len(explored)} exploratory (10% of {len(below)} below threshold).{utils.Colors.ENDC}")
+                  f"{len(above)} canonicals ({below_count} dropped below threshold, no exploration).{utils.Colors.ENDC}")
 
         # --- Step 3: Weighted corroboration → confidence_cross_referenced ---
         # For each surviving canonical, sum weighted contributions from
         # distinct source rows whose individual init >= threshold.
         # Explicit rows contribute 1.0, implicit rows contribute 0.5.
+        # Also record evidence mix (n_explicit_rows, n_implicit_rows) for the
+        # per-canonical survival threshold later.
         for c in survivors:
             key = _normalize_persona_text(c.persona_item)
             atoms = groups.get(key, [])
             seen_sources: set[str] = set()
             base_score = 1.0
+            n_expl = 0
+            n_impl = 0
             for ap in atoms:
                 if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE and ap.source_object_id:
                     if ap.source_object_id not in seen_sources:
                         seen_sources.add(ap.source_object_id)
-                        base_score += 0.5 if "implicit" in ap.source_interaction_type else 1.0
+                        if "implicit" in ap.source_interaction_type:
+                            base_score += 0.5
+                            n_impl += 1
+                        else:
+                            base_score += 1.0
+                            n_expl += 1
             c.confidence_cross_referenced = base_score
+            c.n_explicit_rows = n_expl
+            c.n_implicit_rows = n_impl
 
         # --- Step 4: Per-category LLM cross-reference for relationship discovery ---
         # Group survivors by category, make one LLM call per category (parallel).
@@ -1338,9 +1402,15 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Xref distribution (before floor): {dist_str} "
                   f"(total {len(survivors)}){utils.Colors.ENDC}")
 
-        survivors = self._apply_bottom_20_filter(survivors)
-        survivors = [c for c in survivors
-                     if c.confidence_cross_referenced >= HIGH_CONFIDENCE_CROSS_REF_THRESHOLD]
+        # Bottom-20 filter with NO exemption — the per-canonical xref
+        # threshold already handles the lower bound, and we want a strict
+        # cut so the final survivor count is close to target.
+        survivors = self._apply_bottom_20_filter(survivors, min_exempt=float("inf"))
+        survivors = [
+            c for c in survivors
+            if c.confidence_cross_referenced
+            > canonical_xref_threshold(c.n_explicit_rows, c.n_implicit_rows)
+        ]
         self.cross_referenced_personas = survivors
 
         if self.verbose:
@@ -1426,18 +1496,27 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Gated {n_gated_implicit_only} implicit-only "
                   f"negative canonicals (< {MIN_IMPLICIT_NEGATIVE_REPETITION} distinct rows).{utils.Colors.ENDC}")
 
-        # Step 3: Weighted corroboration
+        # Step 3: Weighted corroboration + evidence mix tracking
         for c in neg_survivors:
             key = _normalize_persona_text(c.persona_item)
             atoms = neg_groups.get(key, [])
             seen: set[str] = set()
             base = 1.0
+            n_expl = 0
+            n_impl = 0
             for ap in atoms:
                 if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE and ap.source_object_id:
                     if ap.source_object_id not in seen:
                         seen.add(ap.source_object_id)
-                        base += 0.5 if "implicit" in ap.source_interaction_type else 1.0
+                        if "implicit" in ap.source_interaction_type:
+                            base += 0.5
+                            n_impl += 1
+                        else:
+                            base += 1.0
+                            n_expl += 1
             c.confidence_cross_referenced = base
+            c.n_explicit_rows = n_expl
+            c.n_implicit_rows = n_impl
 
         # Step 4: LLM cross-reference for negatives
         unique_neg_objects = {ap.source_object_id for ap in self.negative_personas}
@@ -1496,7 +1575,14 @@ class PersonaAgent:
 
         # Skip bottom-20% filter for negatives — keep all that passed the
         # init filter + repetition gate. The promoted negatives are already
-        # high-signal (≥5 distinct rows, ≥2 hot hashtags per row).
+        # high-signal (≥5 distinct rows, ≥2 hot hashtags per row). Then apply
+        # the per-canonical xref threshold so implicit-only negatives still
+        # face a reasonable corroboration bar.
+        neg_survivors = [
+            c for c in neg_survivors
+            if c.confidence_cross_referenced
+            > canonical_xref_threshold(c.n_explicit_rows, c.n_implicit_rows)
+        ]
         self.cross_referenced_negatives = neg_survivors
 
         if self.verbose:
@@ -2186,9 +2272,13 @@ class PersonaAgent:
             except Exception:
                 pass
 
-        # ── Detect Dual Personalities ────────────────────────────────────
+        # ── Detect Dual Personalities and FOLD them into hidden personas ──
+        # No separate `dual_personalities` field on the profile anymore — the
+        # most important tensions are attached to both participating hidden
+        # personas via their `related_tensions` list.
 
-        dual_personalities: list[dict] = []
+        MAX_TENSIONS = 3  # keep only the most important tensions
+        raw_tensions: list[dict] = []
         if len(validated) >= 2 and self.llm_client:
             dual_prompt = prompts.identify_dual_personalities_prompt(
                 hidden_personas_json=json.dumps(
@@ -2206,7 +2296,7 @@ class PersonaAgent:
                     if isinstance(raw_duals, list):
                         for d in raw_duals:
                             if isinstance(d, dict) and d.get("persona_a") and d.get("persona_b"):
-                                dual_personalities.append({
+                                raw_tensions.append({
                                     "persona_a": d["persona_a"],
                                     "persona_b": d["persona_b"],
                                     "tension": d.get("tension", ""),
@@ -2215,14 +2305,28 @@ class PersonaAgent:
                 except Exception:
                     pass
 
+        # Attach the top-N tensions to each participating hidden persona.
+        by_label: dict[str, HiddenPersona] = {hp.label: hp for hp in validated}
+        for t in raw_tensions[:MAX_TENSIONS]:
+            a_hp = by_label.get(t["persona_a"])
+            b_hp = by_label.get(t["persona_b"])
+            if a_hp is not None:
+                a_hp.related_tensions.append(
+                    {"other_persona": t["persona_b"], "tension": t["tension"]}
+                )
+            if b_hp is not None:
+                b_hp.related_tensions.append(
+                    {"other_persona": t["persona_a"], "tension": t["tension"]}
+                )
+
         # Store on profile
         self.user_profile.hidden_personas = validated
         self.user_profile.hidden_persona_summary = summary_text
-        self.user_profile.dual_personalities = dual_personalities
 
         if self.verbose:
+            n_tensions_kept = min(len(raw_tensions), MAX_TENSIONS)
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(validated)} "
-                  f"hidden personas, {len(dual_personalities)} dual tensions{utils.Colors.ENDC}")
+                  f"hidden personas, {n_tensions_kept} tensions folded in{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM Call #6: Per-app sub-personas
@@ -2363,6 +2467,28 @@ class PersonaAgent:
         for ap in all_atomics:
             atomics_by_oid[ap.source_object_id].append(ap)
 
+        # Row-level interaction_type lookup for tiebreak logic.
+        row_itype: dict[str, str] = {r.object_id: r.interaction_type for r in self.interactions}
+
+        def _pick_with_chatbot_bias(votes: list[str], itype: str | None) -> str:
+            """Majority vote with Chatbot tiebreak for non-negative rows.
+
+            If the top vote tally is tied between Chatbot and another app and
+            the row/session is positive (not implicit_negative), prefer
+            Chatbot. Implicit_negative rows are never routed to Chatbot
+            (enforced again in Step 4 below).
+            """
+            if not votes:
+                return random.choice(PLATFORMS)
+            tallies = _Counter(votes).most_common()
+            top_count = tallies[0][1]
+            tied_apps = [a for a, c in tallies if c == top_count]
+            if len(tied_apps) == 1:
+                return tied_apps[0]
+            if "Chatbot" in tied_apps and itype != "implicit_negative":
+                return "Chatbot"
+            return tied_apps[0]
+
         for oid, atoms in atomics_by_oid.items():
             app_votes = []
             for ap in atoms:
@@ -2370,19 +2496,21 @@ class PersonaAgent:
                 app = canonical_app.get(key, "")
                 if app:
                     app_votes.append(app)
-            if app_votes:
-                row_apps[oid] = _Counter(app_votes).most_common(1)[0][0]
-            else:
-                row_apps[oid] = random.choice(PLATFORMS)
+            row_apps[oid] = _pick_with_chatbot_bias(app_votes, row_itype.get(oid))
 
-        # Step 2: Session majority vote — override all rows in session
+        # Step 2: Session majority vote — override all rows in session.
+        # Tiebreak: Chatbot wins ties when at least half the session is
+        # positive (not implicit_negative).
         for session in self._sessions:
             session_votes = [row_apps.get(r.object_id, "") for r in session]
             session_votes = [v for v in session_votes if v]
-            if session_votes:
-                session_app = _Counter(session_votes).most_common(1)[0][0]
-            else:
-                session_app = random.choice(PLATFORMS)
+            session_itypes = [row_itype.get(r.object_id, "") for r in session]
+            pos_share = sum(1 for it in session_itypes if it and it != "implicit_negative")
+            session_is_positive = pos_share >= max(1, len(session_itypes) // 2)
+            session_app = _pick_with_chatbot_bias(
+                session_votes,
+                "implicit_positive" if session_is_positive else "implicit_negative",
+            )
             for r in session:
                 row_apps[r.object_id] = session_app
 
@@ -2472,10 +2600,82 @@ class PersonaAgent:
         # Per-canonical noise removed — noise is now applied per-session
         # in _assign_rows_to_apps() to keep close-timestamp rows on same app.
 
+        # Quota rebalance: push Chatbot canonical share up to ~40% by
+        # migrating the lowest-xref non-Chatbot canonicals. Session-majority
+        # voting downstream washes out the LLM's Chatbot share, so we pre-bias
+        # the canonical pool.
+        self._quota_rebalance_apps()
+
         if self.verbose:
             from collections import Counter
             counts = Counter(cr.assigned_app for cr in self.cross_referenced_personas)
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Canonical app routing: {dict(counts)}{utils.Colors.ENDC}")
+
+    # Target shares for the canonical-level distribution before session voting.
+    CHATBOT_CANONICAL_TARGET = 0.40
+    SOCIAL_CANONICAL_FLOOR = 0.17
+
+    def _quota_rebalance_apps(self) -> None:
+        """Enforce soft quotas on the canonical-level app distribution.
+
+        If Chatbot's share is below CHATBOT_CANONICAL_TARGET, migrate the
+        lowest-priority non-Chatbot canonicals (lowest xref; introspective /
+        knowledge-seeking categories first) into Chatbot until the share
+        reaches the target. Symmetrically, if any social app is below
+        SOCIAL_CANONICAL_FLOOR, top it up from Chatbot surplus.
+        """
+        pool = list(self.cross_referenced_personas)
+        if not pool:
+            return
+        n = len(pool)
+        target_cb = int(round(n * self.CHATBOT_CANONICAL_TARGET))
+        social_floor = int(round(n * self.SOCIAL_CANONICAL_FLOOR))
+
+        from collections import Counter as _C
+        counts = _C(cr.assigned_app for cr in pool)
+        cb_count = counts.get("Chatbot", 0)
+
+        # Introspective hints (category substrings) that should default to Chatbot.
+        introspective_keywords = (
+            "knowledge", "learning", "curiosity", "curious",
+            "reflection", "identity", "values", "belief",
+            "aspiration", "goal", "personal", "private",
+            "health", "medical", "therapy", "emotion",
+        )
+
+        def _priority_for_chatbot_migration(cr) -> tuple:
+            cat = (cr.category or "").lower()
+            intro_hit = any(k in cat for k in introspective_keywords)
+            # Lower tuple sorts first → migrate first.
+            # Prefer introspective categories (True first by using 0) and low xref.
+            return (0 if intro_hit else 1, cr.confidence_cross_referenced)
+
+        if cb_count < target_cb:
+            non_cb = [cr for cr in pool if cr.assigned_app != "Chatbot"]
+            non_cb.sort(key=_priority_for_chatbot_migration)
+            deficit = target_cb - cb_count
+            for cr in non_cb[:deficit]:
+                cr.assigned_app = "Chatbot"
+
+        # Social-app floors: top up starved social apps from Chatbot surplus
+        # (only if Chatbot is well above its target).
+        counts = _C(cr.assigned_app for cr in pool)
+        for app in PLATFORMS:
+            if app == "Chatbot":
+                continue
+            if counts.get(app, 0) >= social_floor:
+                continue
+            shortfall = social_floor - counts.get(app, 0)
+            surplus_cb = counts.get("Chatbot", 0) - target_cb
+            if surplus_cb <= 0:
+                break
+            # Migrate the lowest-xref Chatbot canonicals into this starved app.
+            chatbot_crs = [cr for cr in pool if cr.assigned_app == "Chatbot"]
+            chatbot_crs.sort(key=lambda cr: cr.confidence_cross_referenced)
+            n_move = min(shortfall, surplus_cb)
+            for cr in chatbot_crs[:n_move]:
+                cr.assigned_app = app
+            counts = _C(cr.assigned_app for cr in pool)
 
     # ------------------------------------------------------------------
     # LLM Call #8: Generate interaction_format objects
@@ -2752,7 +2952,12 @@ class PersonaAgent:
     # Train/test split — LLM-gated, with LLM-picked distractors
     # ------------------------------------------------------------------
 
-    def build_test_split(self, fraction: float = 0.2, shortlist_size: int = 5) -> None:
+    def build_test_split(
+        self,
+        fraction: float = 0.2,
+        shortlist_size: int = 15,
+        n_distractors: int = 3,
+    ) -> None:
         """Partition positive cross-referenced personas into train/test splits.
 
         NOTE: implicit_negative personas are excluded from test by construction:
@@ -2786,13 +2991,27 @@ class PersonaAgent:
         if not self.cross_referenced_personas:
             return
 
-        # Build lookup of source_timestamp from atomic_personas (authoritative)
-        ts_lookup: dict[str, int] = {ap.persona_item: ap.source_timestamp for ap in self.atomic_personas}
+        # Build first/last-occurrence lookups per canonical (by normalized key).
+        # Canonicals are the rows tracked in self._canonical_groups; a
+        # canonical's first_ts is the earliest supporting atom's timestamp,
+        # and last_ts is the latest.
+        first_ts_by_canon: dict[str, int] = {}
+        last_ts_by_canon: dict[str, int] = {}
+        for cr in self.cross_referenced_personas:
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = self._canonical_groups.get(key, [])
+            tss = [a.source_timestamp for a in atoms if a.source_timestamp]
+            if tss:
+                first_ts_by_canon[cr.persona_item] = min(tss)
+                last_ts_by_canon[cr.persona_item] = max(tss)
 
-        sorted_positives = sorted(
-            self.cross_referenced_personas,
-            key=lambda p: ts_lookup.get(p.persona_item, 0),
-        )
+        def _last_ts(cr) -> int:
+            return last_ts_by_canon.get(cr.persona_item, 0)
+
+        def _first_ts(cr) -> int:
+            return first_ts_by_canon.get(cr.persona_item, 0)
+
+        sorted_positives = sorted(self.cross_referenced_personas, key=_last_ts)
 
         total = len(sorted_positives)
         n_test_target = max(1, int(total * fraction))
@@ -2803,7 +3022,12 @@ class PersonaAgent:
         for cr in reversed(sorted_positives):
             if "negative" in cr.source_interaction_type:
                 continue
-            if is_high_confidence(cr.confidence_score_init, cr.confidence_cross_referenced):
+            if is_high_confidence(
+                cr.confidence_score_init,
+                cr.confidence_cross_referenced,
+                getattr(cr, "n_explicit_rows", 0),
+                getattr(cr, "n_implicit_rows", 0),
+            ):
                 test_candidates.append(cr)
                 if len(test_candidates) >= n_test_target:
                     break
@@ -2898,48 +3122,77 @@ class PersonaAgent:
         # --- Distractor pairing ---
         high_conf_train = [
             cr for cr in train_pool
-            if is_high_confidence(cr.confidence_score_init, cr.confidence_cross_referenced)
+            if is_high_confidence(
+                cr.confidence_score_init,
+                cr.confidence_cross_referenced,
+                getattr(cr, "n_explicit_rows", 0),
+                getattr(cr, "n_implicit_rows", 0),
+            )
         ]
 
         for test_cr in tqdm(kept_test,
                             desc=f"[User {self.user_id}] Step 15: Distractor pairing",
                             disable=not self.verbose):
             self.split_labels[test_cr.persona_item] = "test"
-            if not high_conf_train:
+
+            # Causality: only train items whose first occurrence is at or
+            # before this test item's last-occurrence timestamp are eligible
+            # as distractors.
+            test_cutoff = _last_ts(test_cr)
+            causal_train = [cr for cr in high_conf_train if _first_ts(cr) <= test_cutoff]
+            if not causal_train:
                 if self.verbose:
-                    print(f"{utils.Colors.WARNING}[User {self.user_id}] No high-confidence train items — "
-                          f"test item '{test_cr.persona_item}' has no distractor.{utils.Colors.ENDC}")
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] No causally-eligible "
+                          f"high-confidence train items for test item "
+                          f"'{test_cr.persona_item}' — no distractors assigned.{utils.Colors.ENDC}")
                 continue
 
-            n_to_sample = min(shortlist_size, len(high_conf_train))
-            shortlist = random.sample(high_conf_train, n_to_sample)
+            n_to_sample = min(shortlist_size, len(causal_train))
+            shortlist = random.sample(causal_train, n_to_sample)
             shortlist_for_prompt = [
                 {"persona_item": cr.persona_item, "category": cr.category}
                 for cr in shortlist
             ]
 
-            chosen_name: str = ""
+            # Rank distractors: LLM returns a list of up to n_distractors,
+            # Python falls back to the first N from the shortlist on failure.
+            n_picks = min(n_distractors, len(shortlist))
+            chosen_names: list[str] = []
             if self.llm_client is not None and shortlist_for_prompt:
                 prompt = prompts.distractor_selection_prompt(
                     test_persona={"persona_item": test_cr.persona_item, "category": test_cr.category},
                     candidate_distractors=shortlist_for_prompt,
+                    n_picks=n_picks,
                 )
                 response = self._query_llm_with_retry(prompt)
                 if response:
                     parsed = utils.extract_json_from_response(response)
-                    if isinstance(parsed, dict):
-                        chosen_name = parsed.get("chosen_persona_item", "") or ""
+                    if isinstance(parsed, list):
+                        valid = {cr.persona_item: cr for cr in shortlist}
+                        for item in parsed:
+                            if not isinstance(item, dict):
+                                continue
+                            name = item.get("persona_item", "")
+                            if name in valid and name not in chosen_names:
+                                chosen_names.append(name)
+                            if len(chosen_names) >= n_picks:
+                                break
 
-            # Fall back: first shortlist item if LLM pick is missing / invalid
-            valid_names = {cr.persona_item for cr in shortlist}
-            if chosen_name not in valid_names:
-                chosen_name = shortlist[0].persona_item
+            # Top up with shortlist ordering if LLM underdelivered
+            for cr in shortlist:
+                if len(chosen_names) >= n_picks:
+                    break
+                if cr.persona_item not in chosen_names:
+                    chosen_names.append(cr.persona_item)
 
-            chosen_cr = next(cr for cr in shortlist if cr.persona_item == chosen_name)
-            self.test_distractors[test_cr.persona_item] = {
-                "persona_item": chosen_cr.persona_item,
-                "category": chosen_cr.category,
-            }
+            valid_lookup = {cr.persona_item: cr for cr in shortlist}
+            self.test_distractors[test_cr.persona_item] = [
+                {
+                    "persona_item": valid_lookup[name].persona_item,
+                    "category": valid_lookup[name].category,
+                }
+                for name in chosen_names
+            ]
 
         # --- Everything else that survived the gate is train ---
         for cr in self.cross_referenced_personas:
@@ -3079,6 +3332,43 @@ class PersonaAgent:
                 tag_set = set(t.lower() for t in hp.evidence_hashtags)
                 _hp_tag_sets.append((hp.label, tag_set))
 
+        # Per-hidden-persona "first-satisfaction" timestamp — the earliest
+        # timestamp at which a cluster's validation predicates were met
+        # (>= MIN_HIDDEN_PERSONA_ROWS distinct rows AND
+        #  >= MIN_HIDDEN_PERSONA_DAYS distinct calendar days). Events before
+        # this timestamp should NOT carry the hidden persona label (causality —
+        # the pattern wasn't observable yet).
+        _hp_available_at: dict[str, int] = {}
+        if _hp_tag_sets:
+            # Build a (timestamp, oid, tags) list from ALL interaction rows
+            # so we can scan in chronological order.
+            row_events: list[tuple[int, str, set[str]]] = []
+            for r in self.interactions:
+                tags_lc = {t.lower() for t in self._extract_hashtags(r.object_text)}
+                if r.interaction_time and tags_lc:
+                    row_events.append((r.interaction_time, r.object_id, tags_lc))
+            row_events.sort()
+            from datetime import datetime as _dt, timezone as _tz
+            for hp_label, hp_tags in _hp_tag_sets:
+                distinct_oids: set[str] = set()
+                distinct_days: set[str] = set()
+                sat_ts = 0
+                for ts, oid, tags in row_events:
+                    if not (tags & hp_tags):
+                        continue
+                    distinct_oids.add(oid)
+                    if ts:
+                        distinct_days.add(_dt.fromtimestamp(ts, tz=_tz.utc).strftime("%Y-%m-%d"))
+                    if (len(distinct_oids) >= MIN_HIDDEN_PERSONA_ROWS
+                            and len(distinct_days) >= MIN_HIDDEN_PERSONA_DAYS):
+                        sat_ts = ts
+                        break
+                # If a cluster was inferred but we cannot reconstruct its
+                # satisfaction point (edge case), fall back to the cluster's
+                # latest matching row timestamp (still strictly causal because
+                # we only pass the gate for events at or after that point).
+                _hp_available_at[hp_label] = sat_ts
+
         # Canonical metadata lookup (positive + negative)
         # Also map absorbed members' atom texts to the representative canonical
         canonical_lookup: dict[str, CrossReferencedPersona] = {}
@@ -3181,7 +3471,13 @@ class PersonaAgent:
                 # Only label as "test" if this event is in the latest 20%
                 raw_split = self.split_labels.get(cr.persona_item, "")
                 split_label = "test" if raw_split == "test" and ap.source_timestamp >= test_ts_cutoff else ""
-                distractor = self.test_distractors.get(cr.persona_item, {}) if split_label == "test" else {}
+                distractor_list = (
+                    self.test_distractors.get(cr.persona_item, []) if split_label == "test" else []
+                )
+                # Tolerate the legacy single-dict shape from older cached
+                # state so we don't need a migration sweep.
+                if isinstance(distractor_list, dict):
+                    distractor_list = [distractor_list]
 
                 # Build merged update_history: temporal entries (no raw timestamp)
                 # + related_personas folded in as similar/contradictory entries.
@@ -3214,33 +3510,47 @@ class PersonaAgent:
                     ordered = {k: raw[k] for k in _HISTORY_KEY_ORDER if k in raw}
                     merged_history.append(ordered)
                 for rel in (cr.related_personas or []):
-                    if isinstance(rel, dict) and rel.get("persona_item"):
-                        rel_cr = canonical_lookup.get(_normalize_persona_text(rel["persona_item"]))
-                        # Only include if the related preference appeared before this event
-                        if rel_cr:
-                            rel_atoms = self._canonical_groups.get(
-                                _normalize_persona_text(rel["persona_item"]), [])
-                            rel_first_ts = min((a.source_timestamp for a in rel_atoms), default=0) if rel_atoms else 0
-                            if rel_first_ts > event_ts:
-                                continue  # skip future relationships — causality
-                        # Normalize "contradictory" → "contradicted" for consistent naming
-                        rel_type = rel.get("type", "similar")
-                        if rel_type == "contradictory":
-                            rel_type = "contradicted"
-                        merged_history.append({
-                            "update_type": rel_type,
-                            "preference": rel["persona_item"],
-                            "formatted_timestamp": rel_cr.formatted_timestamp if rel_cr else "",
-                            "source_app": rel_cr.assigned_app if rel_cr else "",
-                        })
+                    if not (isinstance(rel, dict) and rel.get("persona_item")):
+                        continue
+                    rel_key = _normalize_persona_text(rel["persona_item"])
+                    rel_cr = canonical_lookup.get(rel_key)
+                    # Recover the related preference's first-occurrence timestamp.
+                    rel_atoms = self._canonical_groups.get(rel_key, [])
+                    if not rel_atoms:
+                        rel_atoms = self._negative_canonical_groups.get(rel_key, [])
+                    rel_first_ts = (
+                        min((a.source_timestamp for a in rel_atoms if a.source_timestamp), default=0)
+                        if rel_atoms else 0
+                    )
+                    # Strict causality: drop any related entry we cannot place
+                    # in time, or whose first occurrence is after this event.
+                    if not rel_first_ts or rel_first_ts > event_ts:
+                        continue
+                    # Normalize "contradictory" → "contradicted" for consistent naming
+                    rel_type = rel.get("type", "similar")
+                    if rel_type == "contradictory":
+                        rel_type = "contradicted"
+                    merged_history.append({
+                        "update_type": rel_type,
+                        "preference": rel["persona_item"],
+                        "formatted_timestamp": utils.unix_to_formatted(rel_first_ts),
+                        "source_app": rel_cr.assigned_app if rel_cr else "",
+                    })
 
-                # Match preference's source hashtags against hidden personas
+                # Match preference's source hashtags against hidden personas,
+                # gated by each cluster's first-satisfaction timestamp
+                # (causality: the pattern wasn't observable before it was
+                # corroborated).
                 hp_labels: list[str] = []
                 if _hp_tag_sets and ap.source_hashtags:
                     pref_tags_lower = set(t.lower() for t in ap.source_hashtags)
                     for hp_label, hp_tags in _hp_tag_sets:
-                        if pref_tags_lower & hp_tags:
-                            hp_labels.append(hp_label)
+                        if not (pref_tags_lower & hp_tags):
+                            continue
+                        available_at = _hp_available_at.get(hp_label, 0)
+                        if available_at and event_ts < available_at:
+                            continue
+                        hp_labels.append(hp_label)
 
                 pref = {
                     "persona_item": cr.persona_item,
@@ -3253,8 +3563,14 @@ class PersonaAgent:
                 }
                 if split_label == "test":
                     pref["split"] = "test"
-                    pref["over_personalization_irrelevant"] = distractor.get("persona_item", "")
-                    pref["over_personalization_irrelevant_category"] = distractor.get("category", "")
+                    # A list of distractor dicts, each {persona_item, category}.
+                    pref["over_personalization_irrelevant"] = [
+                        {
+                            "persona_item": d.get("persona_item", ""),
+                            "category": d.get("category", ""),
+                        }
+                        for d in distractor_list
+                    ]
 
                 preferences.append(pref)
 
@@ -3321,7 +3637,11 @@ class PersonaAgent:
                 override = conv_data.get("interaction_format_override")
                 if override and isinstance(override, dict):
                     action = override.get("action")
-                    if action in ("asked_to_forget", "corrected_assumption"):
+                    if action in (
+                        "asked_to_forget",
+                        "asked_not_to_personalize",
+                        "corrected_assumption",
+                    ):
                         event["interaction_format"] = override
 
             event["preferences"] = preferences  # always last
@@ -3443,7 +3763,23 @@ class PersonaAgent:
         if self.user_profile:
             profile_dict = asdict(self.user_profile)
             profile_dict["user_id"] = str(self.user_id)
-            profile_dict["preferences"] = seen_unique_prefs
+            # Each preference is prefixed with its LATEST occurrence timestamp
+            # (across all supporting atoms — positive or negative canonical
+            # groups). Format: "YYYY-MM-DD HH:MM : <persona_item>".
+            # Sorted by latest timestamp descending so recent preferences surface first.
+            prefs_with_ts: list[tuple[int, str]] = []
+            for pi in seen_unique_prefs:
+                key = _normalize_persona_text(pi)
+                atoms = (
+                    self._canonical_groups.get(key, [])
+                    or self._negative_canonical_groups.get(key, [])
+                )
+                tss = [a.source_timestamp for a in atoms if a.source_timestamp]
+                latest_ts = max(tss) if tss else 0
+                ts_str = utils.unix_to_formatted(latest_ts) if latest_ts else ""
+                prefs_with_ts.append((latest_ts, f"{ts_str} : {pi}" if ts_str else pi))
+            prefs_with_ts.sort(key=lambda x: x[0], reverse=True)
+            profile_dict["preferences"] = [p for _, p in prefs_with_ts]
             profile_path = os.path.join(user_dir, "profile.json")
             with open(profile_path, "w", encoding="utf-8") as f:
                 json.dump(profile_dict, f, indent=2, ensure_ascii=False)
@@ -3579,12 +3915,24 @@ class PersonaAgent:
                     split_label = pref.get("split", "")
                     self.split_labels[persona_item] = split_label
                     if split_label == "test":
-                        distractor_item = pref.get("over_personalization_irrelevant", "") or ""
-                        if distractor_item:
-                            self.test_distractors[persona_item] = {
-                                "persona_item": distractor_item,
-                                "category": pref.get("over_personalization_irrelevant_category", "") or "",
-                            }
+                        raw_dis = pref.get("over_personalization_irrelevant", None)
+                        # New shape: list of {persona_item, category}. Legacy:
+                        # a single string + a separate *_category field.
+                        if isinstance(raw_dis, list):
+                            self.test_distractors[persona_item] = [
+                                {
+                                    "persona_item": d.get("persona_item", ""),
+                                    "category": d.get("category", ""),
+                                }
+                                for d in raw_dis if isinstance(d, dict)
+                            ]
+                        elif isinstance(raw_dis, str) and raw_dis:
+                            self.test_distractors[persona_item] = [
+                                {
+                                    "persona_item": raw_dis,
+                                    "category": pref.get("over_personalization_irrelevant_category", "") or "",
+                                }
+                            ]
 
             elif "persona_item" in event:
                 # --- Legacy flat format (backwards compatibility) ---
@@ -3634,12 +3982,22 @@ class PersonaAgent:
                 split_label = rec.get("split", "")
                 self.split_labels[rec["persona_item"]] = split_label
                 if split_label == "test":
-                    distractor_item = rec.get("over_personalization_irrelevant", "") or ""
-                    if distractor_item:
-                        self.test_distractors[rec["persona_item"]] = {
-                            "persona_item": distractor_item,
-                            "category": rec.get("over_personalization_irrelevant_category", "") or "",
-                        }
+                    raw_dis = rec.get("over_personalization_irrelevant", None)
+                    if isinstance(raw_dis, list):
+                        self.test_distractors[rec["persona_item"]] = [
+                            {
+                                "persona_item": d.get("persona_item", ""),
+                                "category": d.get("category", ""),
+                            }
+                            for d in raw_dis if isinstance(d, dict)
+                        ]
+                    elif isinstance(raw_dis, str) and raw_dis:
+                        self.test_distractors[rec["persona_item"]] = [
+                            {
+                                "persona_item": raw_dis,
+                                "category": rec.get("over_personalization_irrelevant_category", "") or "",
+                            }
+                        ]
 
         # --- Load profile.json ---
         with open(profile_path, "r", encoding="utf-8") as f:
