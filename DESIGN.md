@@ -214,6 +214,8 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 
 **Phase 1 — Hashtag Census (algo):** Count occurrences, per-type breakdown, distinct days for each hashtag. Filter to >= 3 occurrences (`HIDDEN_PERSONA_HASHTAG_MIN_FREQ`). Pass top ~200 (`HIDDEN_PERSONA_TOP_HASHTAGS`) to LLM.
 
+**Phase 1b — Intimate-Signal Pre-Screen (LLM):** Ask the LLM (via `detect_intimate_hashtags_prompt`) to flag adult/kink/sexually-suggestive hashtags among the user's positive-signal tags. No keyword list lives in code — substring heuristics produce too many false positives (e.g. `cummins`, `hotchicken`, `earthporn`, `nakedchef`, `cheatersexposed`). Flagged hashtags are **force-included in the top-N table** even if their counts fall below `HIDDEN_PERSONA_HASHTAG_MIN_FREQ`, so a single intimate signal cannot be dropped.
+
 **Phase 2 — LLM Clustering:** Groups hashtags into 8-15 thematic clusters. Nine types:
 
 | Type | Captures | Basis |
@@ -228,7 +230,7 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 | `parasocial_attachment` | Intense bond with public figure (>= 15 rows) | Parasocial Relationship Theory |
 | `compensatory_need` | Unmet needs via private consumption (privacy_ratio > 0.7) | Compensatory Internet Use Theory |
 
-**Phase 3 — Validation:** Each cluster needs >= 20 distinct rows (`MIN_HIDDEN_PERSONA_ROWS`) and >= 3 distinct days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio reported (> 0.7 required for `compensatory_need`).
+**Phase 3 — Validation:** Each cluster needs >= 20 distinct rows (`MIN_HIDDEN_PERSONA_ROWS`) and >= 3 distinct days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio reported (> 0.7 required for `compensatory_need`). **Exemption:** `intimate_interest` clusters whose evidence overlaps the Phase-1b pre-screened set skip both gates — one positive signal is enough to surface an intimate persona.
 
 **Phase 4 — Deduplication:** Merge hidden personas with Jaccard >= 0.5 on evidence hashtags. Persona with more evidence_rows becomes base; hashtags and surface_connections unioned; metrics recomputed. Repeats until no merges.
 

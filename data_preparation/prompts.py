@@ -1228,6 +1228,44 @@ If no meaningful evolution patterns exist, return an empty array `[]`.
 Return ONLY the JSON -- no explanation."""
 
 
+def detect_intimate_hashtags_prompt(hashtags: list[str]) -> str:
+    """Build a prompt asking the LLM to flag adult/kink/sexually-suggestive hashtags.
+
+    Used to pre-screen a user's distinct hashtags before hidden-persona inference
+    so that low-frequency intimate signals (below `HIDDEN_PERSONA_HASHTAG_MIN_FREQ`)
+    can still surface an `intimate_interest` cluster. The LLM is the single source
+    of truth for the classification — the pipeline intentionally avoids a hardcoded
+    keyword list (too many false positives: cummins, hotchicken, milford, earthporn,
+    naked-brand food, sexposed = "exposed" word break, etc.).
+    """
+    tags_str = "\n".join(f"  - {t}" for t in hashtags)
+    return f"""\
+You are a content-moderation classifier. Below is a list of hashtags from a single user's social media activity:
+
+{tags_str}
+
+Return ONLY the hashtags that are clearly adult, sexual, kink-related, or sexually-suggestive content. Include tags referencing:
+- Explicit sexual content or services (porn, onlyfans, escorts, cam platforms)
+- Body-part fetishism or thirst-trap content (bbw, milf, thickthighs, thirsttrap, bigass)
+- Kink and fetish communities (bdsm, bondage, fetish, findom)
+- Sugar-daddy / transactional romance
+- Suggestive pop slang used sexually (sexy, lewd) — when the tag is clearly sexual, not a motivational phrase
+
+EXCLUDE false positives:
+- Colloquial "-porn" tags for enthusiast photography (carporn, earthporn, engineporn, foodporn)
+- Brand names, food, place names, TV shows (Nashville hotchicken, Nakedchef, Nakedandafraid, Cummins diesel, Milford, XXXTentacion rapper, Super Bowl XXX numerals, Nissan Skyline R34)
+- Hair-texture terms (kinkycurly, afrokinky, kinkystraight)
+- Motivational / body-positivity tags used non-sexually (confidenceissexy, sweatissexy)
+- Word-break artifacts (cheatersexposed = "cheaters exposed", easternstatesexposition)
+- Non-sexual uses of "bondage" (livinginbondage, humanbondage)
+
+Return a JSON array of the flagged hashtags, preserving original casing. No explanation outside the JSON. Empty array if none qualify.
+
+```json
+["#tag1", "#tag2"]
+```"""
+
+
 def infer_hidden_personas_prompt(
     gender: str,
     race_ethnicity: str,
