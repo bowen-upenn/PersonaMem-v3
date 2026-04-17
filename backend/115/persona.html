@@ -33,8 +33,6 @@
   .profile-card .big-five { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
   .profile-card .b5-item { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #F2F2F7; color: var(--text-secondary); }
   .profile-card .mbti { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .profile-card .mbti-type { font-size: 12px; font-weight: 600; letter-spacing: 1px; padding: 3px 10px; border-radius: 20px; background: #F2F2F7; color: var(--text); }
-  .profile-card .mbti-dim { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: transparent; color: var(--text-secondary); border: 1px solid var(--border); cursor: help; }
 
   .section { margin-bottom: 40px; }
   .section-title { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
@@ -148,7 +146,7 @@
       <span>FB: 598</span>
       <span>TH: 598</span>
       <span>AI: 408</span>
-      <span>Generated April 17, 2026 at 23:45 UTC</span>
+      <span>Generated April 17, 2026 at 23:49 UTC</span>
     </div>
   </div>
 
@@ -182,11 +180,12 @@ if (profileData) {
   const b5 = profileData.big_five || {};
   const b5Html = Object.entries(b5).map(([k,v]) => `<span class="b5-item">${k}: ${v}</span>`).join('');
 
-  // MBTI block — minimal: type as a chip, one small chip per dimension
-  // showing the dominant letter. Full per-dimension reason on hover.
+  // MBTI block — reuse the Big Five chip style. One chip per dimension,
+  // formatted as "axis: dominant letter". The MBTI type itself is just the
+  // concatenation of these four letters, so we don't repeat it as a chip.
   let mbtiHtml = '';
   const mbti = profileData.mbti;
-  if (mbti && mbti.type && mbti.dimensions) {
+  if (mbti && mbti.dimensions) {
     const dimOrder = ['E_I', 'S_N', 'T_F', 'J_P'];
     const dimChips = dimOrder.map(key => {
       const d = mbti.dimensions[key];
@@ -195,10 +194,13 @@ if (profileData) {
       const pA = Number(d[letterA] || 0);
       const pB = Number(d[letterB] || 0);
       const dominant = pA >= pB ? letterA : letterB;
+      const axis = `${letterA}/${letterB}`;
       const reason = (d.reason || '').replace(/"/g, '&quot;');
-      return `<span class="mbti-dim" title="${reason}">${dominant}</span>`;
+      return `<span class="b5-item" title="${reason}">${axis}: ${dominant}</span>`;
     }).join('');
-    mbtiHtml = `<div class="mbti"><span class="mbti-type">${mbti.type}</span>${dimChips}</div>`;
+    if (dimChips) {
+      mbtiHtml = `<div class="mbti">${dimChips}</div>`;
+    }
   }
 
   ps.innerHTML = `
