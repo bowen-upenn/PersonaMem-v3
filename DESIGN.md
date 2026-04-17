@@ -236,13 +236,13 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 
 LLM identifies contradictory hidden persona pairs representing internal conflicts (approach-avoidance, public-vs-private self). Both halves must independently pass validation. The top 3 tensions are **folded into the relevant hidden personas' `related_tensions` list** (each entry: `{other_persona, tension}`) rather than saved as a separate top-level field. No `dual_personalities` field on `profile.json`.
 
-### Per-Preference Labels
+### Per-Preference Labels (backward-linked)
 
-Each preference carries `hidden_persona_labels` based on source hashtag overlap with hidden persona `evidence_hashtags`. No overlap = empty list.
+Each cluster records the distinct `source_object_id`s that placed a row inside it during validation (stored as `evidence_oids`). In Step 16, each preference carries `hidden_persona_labels` = **at most 1** cluster label — the cluster (if any) whose `evidence_oids` contains the preference's source row. When a single row belongs to multiple clusters, the one with the largest `evidence_rows` wins. Preferences whose source row didn't contribute to any cluster stay unlabeled — traceability is required, not forced coverage.
 
 ### Output
 
-Each cluster: label, type, description, evidence_hashtags, evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation, `related_tensions` (list of `{other_persona, tension}`, top 3 only). Plus a top-level `hidden_persona_summary` narrative in `profile.json`.
+Each cluster: label, type, description, evidence_hashtags, evidence_rows, `evidence_oids` (sorted list of contributing `source_object_id`s — used for backward-linking labels in Step 16), evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation, `related_tensions` (list of `{other_persona, tension}`, top 3 only). Plus a top-level `hidden_persona_summary` narrative in `profile.json`.
 
 ---
 
@@ -340,7 +340,7 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 **Step 16:**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
 - `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
-- `hidden_persona_labels` are attached only if the cluster's first-satisfaction timestamp (≥ 20 rows AND ≥ 3 days accumulated) is `<=` the event's timestamp.
+- `hidden_persona_labels` are now derived by **backward lookup** (row → cluster via `evidence_oids`), so causality is guaranteed by construction: a preference is labeled iff its own source row is part of the cluster's evidence. No separate availability gate needed.
 
 ---
 
