@@ -201,13 +201,13 @@ class AnnotatedPersona:
 # Floor on confidence_score_init. Personas below this are dropped after
 # cross-ref regardless of cross-ref score or relationship type. This is
 # the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.55
+MIN_PERSONA_INIT_CONFIDENCE = 0.6
 
 # High-confidence predicate — used for test-split eligibility and distractor
 # shortlisting. init threshold matches the filter floor so "high-confidence"
 # at minimum means the persona survived the init filter AND cleared the
 # per-canonical xref threshold.
-HIGH_CONFIDENCE_INIT_THRESHOLD = 0.55
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.6
 
 # Per-canonical xref threshold: the survival bar is interpolated by each
 # canonical's evidence mix. Canonicals backed mostly by explicit rows need a

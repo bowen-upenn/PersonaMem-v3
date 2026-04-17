@@ -154,9 +154,9 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 1. **Merge Duplicates:** Normalize (lowercase, whitespace-collapsed) and group by exact string match. No semantic dedup — handled later by LLM relationship discovery.
 
-2. **Init Filter:** Drop canonicals with `max(init) < 0.55` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor.
+2. **Init Filter:** Drop canonicals with `max(init) < 0.6` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor.
 
-3. **Weighted Corroboration:** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.55), +0.5 per implicit row (init >= 0.55). Also record per-canonical `n_explicit_rows` and `n_implicit_rows` for the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
+3. **Weighted Corroboration:** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.6), +0.5 per implicit row (init >= 0.6). Also record per-canonical `n_explicit_rows` and `n_implicit_rows` for the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
 
 4. **LLM Relationship Discovery:** Per-category LLM calls identify `similar` and `contradictory` relationships. LLM does not alter scores. Categories with one canonical are skipped.
 
@@ -363,8 +363,8 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 
 | Constant | Value | Purpose |
 |----------|-------|---------|
-| `MIN_PERSONA_INIT_CONFIDENCE` | 0.55 | Init filter floor (no exploratory retention) |
-| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.55 | Test-split eligibility |
+| `MIN_PERSONA_INIT_CONFIDENCE` | 0.6 | Init filter floor (no exploratory retention) |
+| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.6 | Test-split eligibility |
 | `XREF_THRESHOLD_EXPLICIT` | 10.0 | Xref bar for explicit-dominated canonicals |
 | `XREF_THRESHOLD_IMPLICIT` | 30.0 | Xref bar for implicit-dominated canonicals |
 | `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (always drop) |
