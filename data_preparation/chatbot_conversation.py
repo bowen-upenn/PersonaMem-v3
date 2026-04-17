@@ -107,13 +107,15 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
     },
 }
 
-# Probability of generating a full multi-turn conversation vs keeping the
-# existing single-action format.
-MULTITURN_PROBABILITY = 0.80
+# Fraction of ALL chatbot conversations (any polarity) that get either an
+# ask-to-forget or a don't-personalize variant. Sampling is 50/50 between
+# the two sub-variants. Applies regardless of interaction_type.
+ASK_TO_FORGET_FRACTION = 0.20
 
-# Fraction of explicit_negative chatbot samples that get ask-to-forget or
-# correction treatment (combined).
-EXPLICIT_NEG_SPECIAL_FRACTION = 0.70
+# Fraction of explicit_negative chatbot samples that — if they did NOT get
+# an ask_to_forget / do_not_personalize variant above — instead get the
+# "wrong assumption → correction" treatment. Applied only to negatives.
+CORRECTION_FRACTION_NEGATIVE = 0.50
 
 
 # ---------------------------------------------------------------------------
@@ -155,14 +157,14 @@ def select_conversation_type(
 
 
 def select_num_turns(interaction_type: str, rng: random.Random) -> int:
-    """Pick an even number of turns (2-10) uniformly at random.
+    """Pick an even number of turns (2-8) uniformly at random.
 
     Even turn count guarantees every user message gets a chatbot reply.
     Negative interactions skew shorter (2-6).
     """
     if "negative" in interaction_type:
         return rng.choice([2, 4, 6])
-    return rng.choice([2, 4, 6, 8, 10])
+    return rng.choice([2, 4, 6, 8])
 
 
 # Keywords indicating self-referencing preferences (eligible for ask-to-forget)
@@ -196,20 +198,25 @@ def is_self_preference(persona_item: str) -> bool:
     return any(pat in lower for pat in _SELF_PREF_PATTERNS)
 
 
-def should_generate_multiturn(rng: random.Random) -> bool:
-    """~80% chance of full multi-turn conversation."""
-    return rng.random() < MULTITURN_PROBABILITY
+def pick_conversation_variant(interaction_type: str, rng: random.Random) -> str | None:
+    """Decide whether a chatbot conversation gets a special variant.
 
+    Returns one of:
+      - "ask_to_forget"       (user reveals a preference then asks assistant to forget it)
+      - "do_not_personalize"  (user reveals a preference then asks not to be personalized on it)
+      - "correction"          (explicit_negative only — assistant wrong assumption, user corrects)
+      - None                   (standard multi-turn conversation)
 
-def pick_explicit_neg_variant(rng: random.Random) -> str | None:
-    """For explicit_negative records, decide if this gets a special treatment.
-
-    Returns 'ask_to_forget', 'correction', or None (standard format).
-    ~70% get special treatment, split roughly evenly.
+    With probability ASK_TO_FORGET_FRACTION (20%), pick 50/50 between
+    ask_to_forget and do_not_personalize — applied to ALL polarities.
+    Otherwise, for explicit_negative only, with probability
+    CORRECTION_FRACTION_NEGATIVE (50% of the remaining 80%), pick "correction".
     """
-    if rng.random() >= EXPLICIT_NEG_SPECIAL_FRACTION:
-        return None
-    return rng.choice(["ask_to_forget", "correction"])
+    if rng.random() < ASK_TO_FORGET_FRACTION:
+        return rng.choice(["ask_to_forget", "do_not_personalize"])
+    if interaction_type == "explicit_negative" and rng.random() < CORRECTION_FRACTION_NEGATIVE:
+        return "correction"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -269,34 +276,39 @@ def generate_chatbot_conversations(
         rec["conversation_type"] = None
         rec["ask_to_forget"] = False
 
-        is_multiturn = should_generate_multiturn(rng)
-
         conv_type = select_conversation_type(user_contexts, rng)
-        variant: str | None = None
+        variant: str | None = pick_conversation_variant(interaction_type, rng)
 
-        # Special ask-to-forget / correction variants only for multiturn negatives
-        if is_multiturn and interaction_type == "explicit_negative":
-            # Pick the best candidate for the variant among this event's preferences
-            primary = preferences[0]
-            variant = pick_explicit_neg_variant(rng)
-            if variant == "ask_to_forget":
-                # Find a self-referencing preference, fallback to correction
-                self_pref = next((p for p in preferences if is_self_preference(p.get("persona_item", ""))), None)
-                if self_pref:
-                    primary = self_pref
-                else:
-                    variant = "correction"
-
+        # Pick the "primary" preference that the variant acts on.
+        # For ask_to_forget, prefer a self-referencing preference; fall back
+        # to the first preference if none found (no fallback to correction
+        # since do_not_personalize works for any preference kind).
+        primary = preferences[0]
         if variant == "ask_to_forget":
-            additional = [p for p in preferences if p.get("persona_item") != primary.get("persona_item")]
-            prompt = prompts.generate_ask_to_forget_conversation_prompt(
-                persona_item=primary.get("persona_item", ""),
-                category=primary.get("category", ""),
-                user_profile=user_profile, chatbot_persona=chatbot_persona,
-                additional_preferences=additional if additional else None,
+            self_pref = next(
+                (p for p in preferences if is_self_preference(p.get("persona_item", ""))),
+                None,
             )
+            if self_pref is not None:
+                primary = self_pref
+
+        if variant in ("ask_to_forget", "do_not_personalize"):
+            additional = [p for p in preferences if p.get("persona_item") != primary.get("persona_item")]
+            if variant == "ask_to_forget":
+                prompt = prompts.generate_ask_to_forget_conversation_prompt(
+                    persona_item=primary.get("persona_item", ""),
+                    category=primary.get("category", ""),
+                    user_profile=user_profile, chatbot_persona=chatbot_persona,
+                    additional_preferences=additional if additional else None,
+                )
+            else:
+                prompt = prompts.generate_do_not_personalize_conversation_prompt(
+                    persona_item=primary.get("persona_item", ""),
+                    category=primary.get("category", ""),
+                    user_profile=user_profile, chatbot_persona=chatbot_persona,
+                    additional_preferences=additional if additional else None,
+                )
         elif variant == "correction":
-            primary = preferences[0]
             additional = [p for p in preferences if p.get("persona_item") != primary.get("persona_item")]
             prompt = prompts.generate_correction_conversation_prompt(
                 persona_item=primary.get("persona_item", ""),
@@ -305,19 +317,13 @@ def generate_chatbot_conversations(
                 additional_preferences=additional if additional else None,
             )
         else:
-            # Scale turn count based on number of preferences
+            # Standard conversation — scale turn count based on number of preferences,
+            # clamped to the [2, 8] even-turn range.
             n_prefs = len(preferences)
-            if is_multiturn:
-                base_turns = select_num_turns(interaction_type, rng)
-                # Ensure enough turns to mention all preferences
-                num_turns = min(max(base_turns, n_prefs * 2), 10)
-                # Round up to even
-                if num_turns % 2 != 0:
-                    num_turns += 1
-            else:
-                num_turns = max(2, min(n_prefs * 2, 6))
-                if num_turns % 2 != 0:
-                    num_turns += 1
+            base_turns = select_num_turns(interaction_type, rng)
+            num_turns = min(max(base_turns, min(n_prefs * 2, 8)), 8)
+            if num_turns % 2 != 0:
+                num_turns += 1
 
             # Build preference list with per-preference interaction types
             prefs_for_prompt = []
@@ -384,12 +390,19 @@ def generate_chatbot_conversations(
             rec = chatbot_records[idx]
             rec["conversation"] = parsed
             rec["conversation_type"] = conv_type
-            rec["ask_to_forget"] = (variant == "ask_to_forget")
+            # Shared flag: both ask_to_forget and do_not_personalize set this True.
+            rec["ask_to_forget"] = variant in ("ask_to_forget", "do_not_personalize")
 
             if variant == "ask_to_forget":
                 rec["interaction_format"]["action"] = "asked_to_forget"
                 rec["interaction_format"]["action_label"] = (
                     "Asked the assistant to forget a specific preference"
+                )
+                rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
+            elif variant == "do_not_personalize":
+                rec["interaction_format"]["action"] = "asked_not_to_personalize"
+                rec["interaction_format"]["action_label"] = (
+                    "Asked the assistant not to personalize recommendations around a preference"
                 )
                 rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
             elif variant == "correction":

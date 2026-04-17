@@ -77,8 +77,7 @@ def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
                         "stereotype_mark": entry.get("stereotype_mark", "neutral"),
                         "split": entry.get("split", ""),
                         "update_history": entry.get("update_history", []),
-                        "over_personalization_irrelevant": entry.get("over_personalization_irrelevant", ""),
-                        "over_personalization_irrelevant_category": entry.get("over_personalization_irrelevant_category", ""),
+                        "over_personalization_irrelevant": entry.get("over_personalization_irrelevant", []),
                     }],
                     "conversation": entry.get("conversation"),
                     "conversation_type": entry.get("conversation_type"),
@@ -348,23 +347,14 @@ if (profileData && profileData.hidden_personas && profileData.hidden_personas.le
         </div>
         <div class="hp-tags">${{tags}}</div>
         ${{hp.inferred_motivation ? `<div class="hp-motivation">"${{hp.inferred_motivation}}"</div>` : ''}}
+        ${{(hp.related_tensions && hp.related_tensions.length)
+          ? '<div class="hp-tensions">' + hp.related_tensions.map(t =>
+              `<div class="dual-card"><div class="dual-label">↔ ${{t.other_persona || ''}}</div><div class="dual-tension">${{t.tension || ''}}</div></div>`
+            ).join('') + '</div>'
+          : ''}}
       </div>
     `;
   }});
-
-  // Dual personalities
-  if (profileData.dual_personalities && profileData.dual_personalities.length > 0) {{
-    html += '<div style="margin-top:16px;"><div class="section-title" style="font-size:14px;">Dual Personality Tensions</div>';
-    profileData.dual_personalities.forEach(d => {{
-      html += `
-        <div class="dual-card">
-          <div class="dual-label">${{d.persona_a}} &harr; ${{d.persona_b}}</div>
-          <div class="dual-tension">${{d.tension || ''}}</div>
-        </div>
-      `;
-    }});
-    html += '</div>';
-  }}
 
   html += '</div>';
   hps.innerHTML = html;
@@ -435,7 +425,15 @@ if (eventsData.length === 0) {{
       }}
 
       let distractorLine = '';
-      if (p.split === 'test' && p.over_personalization_irrelevant) {{
+      if (p.split === 'test' && Array.isArray(p.over_personalization_irrelevant) && p.over_personalization_irrelevant.length > 0) {{
+        const distractorItems = p.over_personalization_irrelevant
+          .map(d => (d && d.persona_item) ? d.persona_item : '')
+          .filter(x => x)
+          .join(' | ');
+        if (distractorItems) {{
+          distractorLine = `<div style="margin-top:4px;font-size:10px;"><span class="badge distractor">distractors</span> ${{distractorItems}}</div>`;
+        }}
+      }} else if (p.split === 'test' && typeof p.over_personalization_irrelevant === 'string' && p.over_personalization_irrelevant) {{
         distractorLine = `<div style="margin-top:4px;font-size:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}}</div>`;
       }}
 

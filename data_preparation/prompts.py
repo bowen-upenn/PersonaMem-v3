@@ -333,12 +333,14 @@ Respond with ONLY a JSON array. No explanation outside the JSON fence.
 def distractor_selection_prompt(
     test_persona: dict,
     candidate_distractors: list[dict],
+    n_picks: int = 3,
 ) -> str:
-    """Build a prompt that asks the LLM to pick one distractor from a shortlist.
+    """Build a prompt that asks the LLM to rank the top `n_picks` distractors.
 
-    The goal: choose the candidate that would feel most topically irrelevant and
-    most annoying/inappropriate if surfaced as a personalization recommendation
-    at the moment of the test preference. It's a hard-negative selection.
+    The goal: choose the candidates that would feel most topically irrelevant
+    and most annoying/inappropriate if surfaced as a personalization
+    recommendation at the moment of the test preference. Returns an ordered
+    list (most jarring first).
 
     test_persona and each candidate dict has: persona_item, category.
     """
@@ -347,7 +349,7 @@ def distractor_selection_prompt(
     candidates_json = json.dumps(candidate_distractors, indent=2)
 
     return f"""\
-You are building a hard-negative distractor for a personalization evaluation.
+You are building hard-negative distractors for a personalization evaluation.
 
 ## Target test preference
 
@@ -365,25 +367,28 @@ These are all known to be correct, high-confidence preferences of the same user 
 
 ## Your Task
 
-Imagine a personalization feature is trying to surface something relevant to the user at the moment the target test preference is active (e.g., the user is in the mood or context described by the test preference). Out of the shortlist, pick the **one** candidate that would be:
+Imagine a personalization feature is trying to surface something relevant to the user at the moment the target test preference is active (e.g., the user is in the mood or context described by the test preference). Rank the **top {n_picks}** candidates from the shortlist that would be:
 
 1. **Topically irrelevant** to the target test preference — no meaningful overlap in domain, activity, or need.
-2. **Most annoying or inappropriate** as a personalization recommendation in that moment — i.e., if the system suggested this candidate instead of something aligned with the test preference, it would feel like a jarring miss that undermines user trust in the personalization.
+2. **Most annoying or inappropriate** as a personalization recommendation in that moment — i.e., if the system suggested a candidate instead of something aligned with the test preference, it would feel like a jarring miss that undermines user trust in the personalization.
 
-Among the shortlist, choose the single worst match along these two axes combined. Ties broken in favor of the one most likely to frustrate the user.
+Order them from MOST jarring (rank 1) to LEAST jarring (rank {n_picks}).
 
 ## Rules
 
-1. Pick exactly **one** candidate from the shortlist — do not invent new items.
-2. The chosen `persona_item` string must match one of the candidates exactly.
-3. One-sentence justification explaining why it's the most jarring / least relevant of the options.
+1. Pick exactly **{n_picks}** candidates from the shortlist — do not invent new items, and do not pick duplicates.
+2. Each chosen `persona_item` string must match one of the candidates exactly.
+3. A one-sentence justification per pick, explaining why it's jarring / irrelevant for the target.
 
 ## Output Format
 
-Respond with ONLY a JSON object. No explanation outside the JSON fence.
+Respond with ONLY a JSON array of {n_picks} ordered entries. No explanation outside the JSON fence.
 
 ```json
-{{"chosen_persona_item": "...", "reason": "..."}}
+[
+  {{"persona_item": "...", "category": "...", "reason": "..."}},
+  ...
+]
 ```"""
 
 
@@ -531,6 +536,8 @@ For EACH preference in the list above, pick exactly **one primary app** (from "I
 6. **Chatbot naturally captures implicit signals.** In real chatbot usage, preferences emerge through questions, writing samples, and topics the user brings up — not through explicit engagement buttons. When routing `implicit_positive` preferences, give extra weight to Chatbot if the preference topic aligns with its `use_purposes` or `chatbot_contexts`. Implicit signals are the most natural fit for conversational AI interactions.
 
 7. **Target distribution: ~40% Chatbot, ~20% each for Instagram/Facebook/Threads.** Users frequently discuss their interests with AI chatbots. Route a larger share of preferences to Chatbot, especially knowledge-seeking, reflective, and implicit preferences.
+
+8. **Introspective, knowledge-oriented, reflective, or private preferences default to Chatbot.** If a preference is about learning something, self-understanding, health/medical questions, therapy-style reflection, professional growth, or any topic the user would naturally explore in private, it belongs on Chatbot — NOT on a social feed. Social platforms are for publicly-visible engagement; Chatbot is for private conversation.
 
 ## Output Format
 
@@ -911,6 +918,97 @@ The assistant wrongly believes this preference applies to the user. The user wil
 - Turn 2 must clearly show the assistant making an assumption based on the listed preference.
 - Turn 3 must clearly reject or correct the assumption.
 - The user should NOT directly quote the persona_item — they correct it in their own natural words.
+- Any additional preferences should surface naturally throughout the conversation as side details.
+
+## Output Format
+
+Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JSON fence.
+
+```json
+[
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}},
+  {{"role": "user", "content": "..."}},
+  {{"role": "assistant", "content": "..."}}
+]
+```"""
+
+
+def generate_do_not_personalize_conversation_prompt(
+    persona_item: str,
+    category: str,
+    user_profile: dict,
+    chatbot_persona: dict,
+    additional_preferences: list[dict] | None = None,
+) -> str:
+    """Build a prompt for a 4-turn "don't personalize on this" conversation.
+
+    Structure:
+      Turn 1 (user): implicitly reveals the preference through context
+      Turn 2 (assistant): responds helpfully, acknowledging the preference
+      Turn 3 (user): asks the assistant NOT to use this for future
+                     personalization / recommendations (they don't want
+                     it retracted, just not used to tailor future output)
+      Turn 4 (assistant): acknowledges the request and explains how it will
+                          adjust its personalization going forward
+    """
+    profile_json = json.dumps(
+        {k: v for k, v in user_profile.items() if k in (
+            "name", "gender", "race_ethnicity", "career", "education", "bio",
+        )},
+        indent=2,
+    )
+    persona_json = json.dumps(chatbot_persona, indent=2)
+
+    extra_block = ""
+    if additional_preferences:
+        extra_lines = [f"- {p['persona_item']} ({p.get('category', '')})" for p in additional_preferences]
+        extra_block = (
+            "\n\n## Additional preferences to weave in naturally\n\n"
+            "Besides the primary preference above, the conversation should also "
+            "naturally reveal these preferences through context, side details, or "
+            "the subject matter of the user's request. These are NOT opted out of "
+            "— only the primary preference is asked to be left out of future "
+            "personalization.\n\n"
+            + "\n".join(extra_lines)
+        )
+
+    return f"""\
+You are generating a 4-turn conversation where a user reveals a personal preference to an AI chatbot, then asks the chatbot NOT to use that detail for future personalization or recommendations. The user is not asking the chatbot to forget the detail — they just don't want it shaping future suggestions.
+
+## User Profile
+
+```json
+{profile_json}
+```
+
+## User's Chatbot Persona
+
+```json
+{persona_json}
+```
+
+## The preference to reveal then opt out of personalization for
+
+- **persona_item**: {persona_item}
+- **category**: {category}
+{extra_block}
+
+## Conversation structure (exactly 4 turns)
+
+**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it concise and realistic (15-60 words).
+
+**Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information. Make this response long and detailed like a real AI chatbot would (150-300 words).
+
+**Turn 3 (user):** The user asks the chatbot not to use this preference for future recommendations or personalization. The user is NOT asking to erase the fact — only to stop it influencing future suggestions. Examples: "By the way, please don't start recommending things based on that.", "Can you not personalize around this going forward? I'd rather keep it one-off.", "Please don't let this shape future suggestions — it's not really something I want in my feed." (15-50 words).
+
+**Turn 4 (assistant):** The assistant acknowledges the request, clarifies how it will adjust its personalization approach, and then pivots back to helping with the original task. A real chatbot wouldn't just say "ok" — it would reassure, briefly explain, and redirect (80-150 words).
+
+## Rules
+
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
+- Turn 3 is about opting out of personalization, NOT about forgetting or retracting the fact. The distinction matters.
 - Any additional preferences should surface naturally throughout the conversation as side details.
 
 ## Output Format

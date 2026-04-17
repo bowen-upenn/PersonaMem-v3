@@ -88,6 +88,8 @@ Interaction types: `explicit_positive` (liked/saved/shared), `implicit_positive`
 
 Per-user directory at `backend/{user_id}/`: `profile.json` (profile + 4 AppPersonas + flat preference list), plus `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json` (interaction events sorted by timestamp).
 
+`profile.json["preferences"]` is a list of strings formatted as `"{latest_timestamp} : {persona_item}"`, sorted by latest timestamp descending (most recent first). The timestamp is the maximum `source_timestamp` across the canonical's supporting atoms.
+
 Each app JSON is an array of interaction events. Each event = one source CSV row with nested `preferences[]`:
 
 ```
@@ -99,7 +101,7 @@ Event:
   |     +- confidence_score_init, confidence_cross_referenced
   |     +- stereotype_mark, split (train/test)
   |     +- update_history[], hidden_persona_labels
-  |     +- over_personalization_irrelevant (test items only)
+  |     +- over_personalization_irrelevant (test items only — list of 3 {persona_item, category} distractors, ranked most- to least-jarring)
   +- [Chatbot only] conversation[], conversation_type, ask_to_forget
 ```
 
@@ -140,9 +142,9 @@ net = (implicit_neg_count x 1.0) - (explicit_pos_count x 3.0) - (implicit_pos_co
 
 **Promotion gate** — both must hold:
 1. `net >= 5` (`MIN_IMPLICIT_NEGATIVE_REPETITION`)
-2. Negative rows span >= 3 distinct calendar days (`MIN_TEMPORAL_DAYS`)
+2. Negative rows span >= 1 distinct calendar day (`MIN_TEMPORAL_DAYS`)
 
-**Processing:** One LLM call per "hot" hashtag on a representative row (single hashtag only). Inferred preferences must be independently produced by >= 2 different hot-hashtag LLM calls (`MIN_PREF_CORROBORATION = 2`). Promoted rows become `explicit_negative`; non-promoted remain as stub events with empty `preferences: []` (rendered greyscale in HTML).
+**Processing:** One LLM call per "hot" hashtag on a representative row (single hashtag only). Inferred preferences must be independently produced by >= 2 different hot-hashtag LLM calls (`MIN_PREF_CORROBORATION = 2`). Promoted rows become `explicit_negative` at BOTH the atomic level (`source_interaction_type = "explicit_negative"` on every promoted atomic) and the event level. Non-promoted implicit_negative rows remain as stub events with empty `preferences: []` (rendered greyscale in HTML).
 
 ---
 
@@ -152,9 +154,9 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 1. **Merge Duplicates:** Normalize (lowercase, whitespace-collapsed) and group by exact string match. No semantic dedup — handled later by LLM relationship discovery.
 
-2. **Init Filter:** Drop canonicals with `max(init) < 0.5` (`MIN_PERSONA_INIT_CONFIDENCE`). 10% of below-threshold are randomly retained as exploration.
+2. **Init Filter:** Drop canonicals with `max(init) < 0.55` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor.
 
-3. **Weighted Corroboration:** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.5), +0.5 per implicit row (init >= 0.5). Score is intentionally uncapped — magnitude is meaningful.
+3. **Weighted Corroboration:** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.55), +0.5 per implicit row (init >= 0.55). Also record per-canonical `n_explicit_rows` and `n_implicit_rows` for the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
 
 4. **LLM Relationship Discovery:** Per-category LLM calls identify `similar` and `contradictory` relationships. LLM does not alter scores. Categories with one canonical are skipped.
 
@@ -162,9 +164,9 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 6. **Contradiction Penalty:** Subtract contradicting canonical's cross-ref score. Floor at 0.0.
 
-7. **Bottom-20% Filter:** Remove bottom 20% of cross-ref scores unless score > 10.0 (`bottom_20_min_exempt`). Hard floor: only `cross_ref >= 10.0` (`HIGH_CONFIDENCE_CROSS_REF_THRESHOLD`) survives.
+7. **Bottom-20% Filter + Per-canonical Survival Threshold:** First remove the bottom 20% by xref (no exemption). Then apply an **evidence-mix-dependent threshold** — a canonical survives iff its `cross_ref` exceeds `canonical_xref_threshold(n_explicit_rows, n_implicit_rows)`, which interpolates linearly between `XREF_THRESHOLD_EXPLICIT = 10.0` (pure-explicit support) and `XREF_THRESHOLD_IMPLICIT = 30.0` (pure-implicit support). Canonicals backed mostly by implicit positives thus face a substantially higher bar to survive.
 
-**Negative cross-referencing** runs the same pipeline independently (within negatives only). Differences: canonicals with only implicit evidence need >= 5 distinct source rows to survive; no bottom-20% filter applied.
+**Negative cross-referencing** runs the same pipeline independently (within negatives only). Differences: canonicals with only implicit evidence need >= 5 distinct source rows to survive; the bottom-20% step is skipped; the per-canonical xref threshold in step 7 still applies.
 
 ---
 
@@ -230,9 +232,9 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 
 **Phase 3.5 — Deduplication:** Merge hidden personas with Jaccard >= 0.5 on evidence hashtags. Persona with more evidence_rows becomes base; hashtags and surface_connections unioned; metrics recomputed. Repeats until no merges.
 
-### Dual Personalities
+### Dual Personality Tensions (folded into hidden personas)
 
-LLM identifies contradictory hidden persona pairs representing internal conflicts (approach-avoidance, public-vs-private self). Both halves must independently pass validation. Stored as `dual_personalities` in `profile.json`.
+LLM identifies contradictory hidden persona pairs representing internal conflicts (approach-avoidance, public-vs-private self). Both halves must independently pass validation. The top 3 tensions are **folded into the relevant hidden personas' `related_tensions` list** (each entry: `{other_persona, tension}`) rather than saved as a separate top-level field. No `dual_personalities` field on `profile.json`.
 
 ### Per-Preference Labels
 
@@ -240,7 +242,7 @@ Each preference carries `hidden_persona_labels` based on source hashtag overlap 
 
 ### Output
 
-Each cluster: label, type, description, evidence_hashtags, evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation. Plus `hidden_persona_summary` narrative and `dual_personalities` in `profile.json`.
+Each cluster: label, type, description, evidence_hashtags, evidence_rows, evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation, `related_tensions` (list of `{other_persona, tension}`, top 3 only). Plus a top-level `hidden_persona_summary` narrative in `profile.json`.
 
 ---
 
@@ -268,11 +270,11 @@ Four `AppPersona` objects per user:
 
 **Step 9 — Sessions:** Group rows with timestamp gaps <= 5s (`SESSION_GAP_SECONDS`).
 
-**Step 10 — LLM Routing:** Assign each canonical preference to best-fitting app based on sub-personas. Target: ~40% Chatbot, ~20% each Instagram/Facebook/Threads.
+**Step 10 — LLM Routing + Quota Rebalance:** Assign each canonical preference to best-fitting app based on sub-personas (target ~40% Chatbot). Introspective, knowledge-oriented, reflective, or private preferences default to Chatbot. After the LLM assigns, a **post-LLM quota rebalance** pushes Chatbot canonical share up to `CHATBOT_CANONICAL_TARGET = 0.40` by migrating the lowest-xref non-Chatbot canonicals (introspective categories first). Symmetric social-app floors at `SOCIAL_CANONICAL_FLOOR = 0.17`.
 
-**Step 11 — Session Majority Vote + Noise:**
-1. Each row gets majority-vote app from its preferences' canonical assignments.
-2. Each session gets majority-vote app across rows.
+**Step 11 — Session Majority Vote + Chatbot Tiebreak + Noise:**
+1. Each row gets majority-vote app from its preferences' canonical assignments. Ties broken in favor of Chatbot for positive rows; implicit_negative never ties to Chatbot.
+2. Each session gets majority-vote app across rows (same tiebreak rule).
 3. All rows in session override to session app.
 4. 8% of sessions randomly reassigned (`NOISE_REASSIGN_PROBABILITY = 0.08`).
 5. `implicit_negative` rows never routed to Chatbot — redirected to random social app.
@@ -302,15 +304,17 @@ Four `AppPersona` objects per user:
 
 Every chatbot event gets a multi-turn conversation embedding ALL of that event's surviving preferences. Generated per-event.
 
-**Turn count:** ~80% full (4-10 turns), ~20% minimal (2-6 turns). Scales with preference count: `min(max(base, n_prefs * 2), 10)`. Always even.
+**Turn count:** 2–8 turns, always even. Scales with preference count: `min(max(base, min(n_prefs * 2, 8)), 8)`. Negative interactions skew shorter (pool `{2, 4, 6}`); positive draws from `{2, 4, 6, 8}`.
 
 **Conversation types** (selected from user's chatbot_contexts): knowledge_query (30%), writing_help (25%), therapy_reflection (20%), health_consultation (15%), troubleshooting (10%), translation (10%), casual_chat (5%).
 
 **Implicit embedding:** User never directly states preferences. Explicit interactions = "fairly apparent" through task topic. Implicit = "deeply embedded" as side details. Multiple preferences spread across turns.
 
-**Negative scenarios** (~70% of explicit_negative chatbot preferences, `EXPLICIT_NEG_SPECIAL_FRACTION = 0.70`):
-- **Ask-to-forget:** 4 turns — reveal -> acknowledge -> ask to forget -> confirm
-- **Correction:** 4 turns — message -> wrong assumption -> correction -> adjustment
+**Special variants — applied to ~20% of ALL chatbot conversations (any polarity), `ASK_TO_FORGET_FRACTION = 0.20`**, split 50/50 between:
+- **Ask-to-forget:** 4 turns — reveal → acknowledge → ask to forget → confirm. Sets `ask_to_forget = True` on the event.
+- **Don't-personalize:** 4 turns — reveal → acknowledge → ask the assistant to stop personalizing around this preference → assistant explains how it will adjust. Also sets `ask_to_forget = True` (shared output flag).
+
+**Correction variant (explicit_negative only, `CORRECTION_FRACTION_NEGATIVE = 0.50` of the 80% remainder):** 4 turns — message → wrong assumption → correction → adjustment.
 
 ---
 
@@ -325,15 +329,18 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 ## 15. Steps 15-16 — Train/Test Split and Save
 
 **Time-based, cross-app split:**
-1. Sort all positive survivors by timestamp ascending (globally).
-2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.5 AND cross_ref > 10.0`) until 20% of total positives.
+1. Sort all positive survivors by latest-occurrence timestamp ascending (globally).
+2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.55 AND cross_ref > canonical_xref_threshold(...)`) until 20% of total positives.
 3. These = test candidates. All else = train. Negatives always train.
 
 **Inferrability gate:** LLM evaluates each test candidate — can it be predicted from train set? Non-inferrable items dropped entirely (not demoted).
 
-**Distractor pairing:** Python shortlists 5 high-confidence train items; LLM picks the most topically irrelevant / annoying one. Stored as `over_personalization_irrelevant`.
+**Distractor pairing (3 per test item, causal):** For each test item, Python filters high-confidence train items to those whose first-occurrence timestamp `<=` the test item's last-occurrence timestamp (causality). LLM then ranks the top 3 most topically irrelevant / annoying items from a random shortlist of 15. Stored as a **list** of `{persona_item, category}` objects under `over_personalization_irrelevant`.
 
-**Step 16:** Save `profile.json` + 4 app JSONs per user.
+**Step 16:**
+- `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
+- `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
+- `hidden_persona_labels` are attached only if the cluster's first-satisfaction timestamp (≥ 20 rows AND ≥ 3 days accumulated) is `<=` the event's timestamp.
 
 ---
 
@@ -346,10 +353,9 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | Demographic sampling | Step 6 | Weighted distributions | Random identity |
 | Per-user action weights | Step 12 | `noise_strength = 0.6`, seed=user_id | Lognormal perturbation |
 | Session reassignment | Step 11 | `NOISE_REASSIGN_PROBABILITY = 0.08` | 8% sessions re-routed |
-| Exploratory retention | Step 3 | 10% random | Low-confidence preferences survive |
 | Conversation type | Step 13 | `CHATBOT_CONVERSATION_TYPES` weights | Per-user conversation mix |
-| Multi-turn vs. minimal | Step 13 | `MULTITURN_PROBABILITY = 0.80` | 80/20 split |
-| Negative special treatment | Step 13 | `EXPLICIT_NEG_SPECIAL_FRACTION = 0.70` | 70% ask-to-forget/correction |
+| Ask-to-forget / don't-personalize | Step 13 | `ASK_TO_FORGET_FRACTION = 0.20` | 20% of chatbot events split 50/50 |
+| Correction (negatives only) | Step 13 | `CORRECTION_FRACTION_NEGATIVE = 0.50` | 50% of remaining negatives |
 
 ---
 
@@ -357,26 +363,30 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 
 | Constant | Value | Purpose |
 |----------|-------|---------|
-| `MIN_PERSONA_INIT_CONFIDENCE` | 0.5 | Init filter floor |
-| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.5 | Test-split eligibility |
-| `HIGH_CONFIDENCE_CROSS_REF_THRESHOLD` | 10.0 | Corroboration floor for high-confidence |
+| `MIN_PERSONA_INIT_CONFIDENCE` | 0.55 | Init filter floor (no exploratory retention) |
+| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.55 | Test-split eligibility |
+| `XREF_THRESHOLD_EXPLICIT` | 10.0 | Xref bar for explicit-dominated canonicals |
+| `XREF_THRESHOLD_IMPLICIT` | 30.0 | Xref bar for implicit-dominated canonicals |
+| `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (always drop) |
 | `MIN_IMPLICIT_NEGATIVE_REPETITION` | 5 | Implicit-only negative survival threshold |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Hot-hashtag LLM calls needed |
-| `MIN_TEMPORAL_DAYS` | 3 | Calendar days negatives must span |
+| `MIN_TEMPORAL_DAYS` | 1 | Calendar days negatives must span |
 | `SESSION_GAP_SECONDS` | 5 | Session grouping threshold |
 | `NOISE_REASSIGN_PROBABILITY` | 0.08 | Per-session reassignment rate |
+| `CHATBOT_CANONICAL_TARGET` | 0.40 | Post-LLM Chatbot canonical share floor |
+| `SOCIAL_CANONICAL_FLOOR` | 0.17 | Post-LLM floor for each social app |
 | `noise_strength` | 0.6 | Action weight perturbation intensity |
 | `IMPL_NEG_WEIGHT` | 1.0 | Net-sentiment weight |
 | `EXPL_POS_WEIGHT` | 3.0 | Net-sentiment weight |
 | `IMPL_POS_WEIGHT` | 1.5 | Net-sentiment weight |
 | `FADE_THRESHOLD_SECONDS` | 172,800 (48h) | "Faded" inactivity threshold |
 | `MAX_REINFORCED_ENTRIES` | 5 | Max recurrence samples |
-| `bottom_20_min_exempt` | 10.0 | Bottom-20% exemption threshold |
-| `MULTITURN_PROBABILITY` | 0.80 | Full conversation fraction |
-| `EXPLICIT_NEG_SPECIAL_FRACTION` | 0.70 | Negative special treatment fraction |
+| `ASK_TO_FORGET_FRACTION` | 0.20 | Share of chatbot events with ask-to-forget / don't-personalize variants |
+| `CORRECTION_FRACTION_NEGATIVE` | 0.50 | Share of remaining negatives that get the correction variant |
+| Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
 | Test fraction | 0.20 | Latest 20% high-confidence positives |
-| Distractor shortlist | 5 | Over-personalization candidates |
+| Distractors per test item | 3 | Ranked via LLM from causally-filtered shortlist of 15 |
 | `MIN_HIDDEN_PERSONA_ROWS` | 20 | Min rows for hidden persona |
 | `MIN_HIDDEN_PERSONA_DAYS` | 3 | Min temporal spread for hidden persona |
 | `HIDDEN_PERSONA_HASHTAG_MIN_FREQ` | 3 | Min hashtag occurrences |
