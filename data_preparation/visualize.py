@@ -328,9 +328,10 @@ if (profileData) {{
       const pA = Number(d[letterA] || 0);
       const pB = Number(d[letterB] || 0);
       const dominant = pA >= pB ? letterA : letterB;
+      const pct = Math.round((pA >= pB ? pA : pB) * 100);
       const axis = `${{letterA}}/${{letterB}}`;
       const reason = (d.reason || '').replace(/"/g, '&quot;');
-      return `<span class="b5-item" title="${{reason}}">${{axis}}: ${{dominant}}</span>`;
+      return `<span class="b5-item" title="${{reason}}">${{axis}}: ${{dominant}} ${{pct}}%</span>`;
     }}).join('');
     if (dimChips) {{
       mbtiHtml = `<div class="mbti">${{dimChips}}</div>`;
