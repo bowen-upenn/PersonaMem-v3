@@ -3909,6 +3909,12 @@ class PersonaAgent:
         if self.user_profile:
             profile_dict = asdict(self.user_profile)
             profile_dict["user_id"] = str(self.user_id)
+            # evidence_oids is an internal lookup index used at Step 16 to
+            # back-link preferences to their cluster — it's not meant to be
+            # consumed downstream. Strip it from each hidden_persona to keep
+            # profile.json small and readable.
+            for hp in profile_dict.get("hidden_personas", []) or []:
+                hp.pop("evidence_oids", None)
             # Each preference is prefixed with its LATEST occurrence timestamp
             # (across all supporting atoms — positive or negative canonical
             # groups). Format: "YYYY-MM-DD HH:MM : <persona_item>".
