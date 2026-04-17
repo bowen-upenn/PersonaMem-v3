@@ -200,7 +200,7 @@ MIN_PERSONA_INIT_CONFIDENCE = 0.5
 # at minimum means the persona survived the init filter AND is corroborated
 # by more than a handful of other rows.
 HIGH_CONFIDENCE_INIT_THRESHOLD = 0.5
-HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 5.0
+HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = 10.0
 
 # Session grouping: source rows with timestamp gaps <= this threshold are
 # considered part of the same scrolling session on one app.
@@ -231,7 +231,7 @@ def is_high_confidence(init_score: float, cross_ref_score: float) -> bool:
       - confidence_cross_referenced > HIGH_CONFIDENCE_CROSS_REF_THRESHOLD
         (the persona is corroborated by multiple distinct interaction rows;
          cross_ref starts at 1.0 and accumulates 1.0 per explicit row,
-         0.5 per implicit row, so > 5.0 requires substantial evidence)
+         0.5 per implicit row, so > 10.0 requires substantial evidence)
     """
     return (
         init_score >= HIGH_CONFIDENCE_INIT_THRESHOLD
