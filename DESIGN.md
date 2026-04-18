@@ -217,7 +217,7 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 
 **Phase 1b — Intimate-Signal Pre-Screen (LLM):** Ask the LLM (via `detect_intimate_hashtags_prompt`) to flag adult/kink/sexually-suggestive hashtags among the user's positive-signal tags. No keyword list lives in code — substring heuristics produce too many false positives (e.g. `cummins`, `hotchicken`, `earthporn`, `nakedchef`, `cheatersexposed`). Flagged hashtags are **force-included in the top-N table** even if their counts fall below `HIDDEN_PERSONA_HASHTAG_MIN_FREQ`, so a single intimate signal cannot be dropped.
 
-**Phase 2 — LLM Clustering:** Groups hashtags into 8-15 thematic clusters. Nine types:
+**Phase 2 — LLM Clustering:** Groups hashtags into **at most 6** thematic clusters, actively using the user's profile (demographics, career, bio) to ground inference. The prompt flags `intimate_interest` and `covert_concern` as priority signals that must be surfaced whenever hashtag evidence supports them. Ten types:
 
 | Type | Captures | Basis |
 |------|----------|-------|

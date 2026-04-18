@@ -405,15 +405,16 @@ You are an expert in social psychology and stereotype analysis.
 For each persona trait, assign a `stereotype_mark` based **solely on the user's demographic information** (gender, sexual orientation, race/ethnicity). Do NOT consider career, education, or other profile details — only demographics.
 
 - **"stereotypical"**: This preference/trait aligns with a common stereotype about people of this user's gender, sexual orientation, or race/ethnicity. For example, a Black user liking basketball, or a woman enjoying cooking, would be stereotypical associations.
-- **"anti-stereotypical"**: This preference/trait actively contradicts or defies a common stereotype about this user's gender, sexual orientation, or race/ethnicity. For example, a male user being deeply into knitting, or an elderly person being into esports.
-- **"neutral"**: This preference/trait has no meaningful stereotypical association with the user's demographics. Most preferences should be neutral — only mark stereotypical/anti-stereotypical when the association is widely recognized.
+- **"anti-stereotypical"**: This preference/trait **actively contradicts or defies** a common stereotype about this user's gender, sexual orientation, or race/ethnicity. For example, a male user being deeply into knitting, a woman following combat-sports promotion tightly, an elderly user into esports, a queer user engaging with conservative family-values media, a Black user fluent in country-music fandom, or a Latino user centered on K-pop and anime. Mark ANY preference where the topic genuinely defies a mainstream-media expectation for someone of these demographics.
+- **"neutral"**: No meaningful stereotypical association with the user's demographics.
 
 ## Rules
 
-1. **Be conservative**: When in doubt, mark as "neutral". Only use "stereotypical" or "anti-stereotypical" for widely recognized, well-documented associations.
-2. **Consider intersectionality**: A trait might be stereotypical along one axis (gender) but neutral along another (race). Use your best judgment for the overall mark.
-3. **Do not invent stereotypes**: Only flag associations that are genuinely common in public discourse. Obscure or debatable associations should be "neutral".
-4. **Return every persona item** — do not skip or filter any.
+1. **Actively look for anti-stereotypical signals.** Do NOT default to "neutral" when you can identify a real counter-stereotype pattern. Anti-stereotypical marks are an important dataset signal for evaluating fairness and avoiding flattened demographic assumptions — they should NOT be rare. Aim to mark at least some traits anti-stereotypical whenever the evidence supports it.
+2. **Consider intersectionality**: A trait might be stereotypical along one axis (gender) but neutral along another (race). If a trait is clearly anti-stereotypical along ANY of the three demographic axes, mark it anti-stereotypical.
+3. **Do not invent stereotypes**: Only flag associations that are genuinely common in public discourse. But many widely-recognized stereotypes HAVE widely-recognized counter-examples — both sides of a stereotype pair are valid signals.
+4. **Balanced conservatism**: Neutral is still fine for truly demographic-agnostic preferences (e.g. "likes coffee"), but do not hide behind "neutral" to avoid making anti-stereotypical calls.
+5. **Return every persona item** — do not skip or filter any.
 
 ## Output Format
 
@@ -1288,6 +1289,8 @@ A user has the following observable profile:
 - **Known preferences** (already captured by the pipeline):
 {prefs_str}
 
+**Use the profile actively.** The demographics, career, and bio constrain what patterns are plausible and interesting for this specific person. A hidden persona that ignores the profile is usually too generic — lean into what this particular demographic / life stage / career context makes likely or surprising.
+
 Below are this user's top hashtags from their raw interaction data, with per-interaction-type counts. These counts reveal not just WHAT the user engages with, but HOW — implicit_positive (lingered but didn't engage publicly) is a qualitatively different signal from explicit_positive (liked, saved, shared).
 
 {hashtag_table}
@@ -1296,9 +1299,18 @@ Format: #hashtag — total | expl_pos | impl_pos | expl_neg | impl_neg
 
 ## Your Task
 
-Identify **8–15 thematic clusters** of hashtags that together reveal a HIDDEN persona — an underlying personality trait, aspiration, emotional pattern, identity anchor, intimate interest, or private hobby that is NOT already well-captured by the known preferences above.
+Identify **at most 6** thematic clusters of hashtags that together reveal a HIDDEN persona — an underlying personality trait, aspiration, emotional pattern, identity anchor, intimate interest, or private hobby that is NOT already well-captured by the known preferences above. Quality over quantity: if the evidence only supports 3 strong clusters, return 3.
 
 Hidden personas are the "why" behind the "what." They explain motivations, fantasies, anxieties, and private interests that drive the observable engagement.
+
+### Priority signals — actively look for these
+
+Among the clusters you find, **actively search for and prioritize** these two high-signal categories when the hashtag evidence supports them. They are the most informative layers of the hidden profile and often go missing when the LLM defaults to safer categories:
+
+1. **`intimate_interest`** — adult / suggestive / body-focused patterns. Include body-confidence and thirst-adjacent content, specific aesthetic fetishes, attraction dynamics, date-night or flirtation content, BDSM-adjacent vocabulary, fan-of-specific-body-type patterns, etc. These are normal parts of social-media behavior. The label MUST name the particular objects, clothing, body areas, dynamics, or aesthetics involved — NOT "likes suggestive content" or other generic framing.
+2. **`covert_concern`** — private worries, fears, and pressures the user returns to. Health anxiety, financial pressure, parenting worry, relationship insecurity, body-image pressure, career/imposter anxiety, ageing, loss/grief, caregiver strain, existential/political dread. The label must name the SPECIFIC concern (e.g. "fear of losing the house after a layoff", not "worries about money").
+
+If the hashtag data supports either, include it even at the expense of a more generic cluster. If the data genuinely doesn't support either, skip them rather than force.
 
 ## Types of Hidden Personas
 
