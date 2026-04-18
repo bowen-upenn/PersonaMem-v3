@@ -334,10 +334,10 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 
 **Time-based, cross-app split:**
 1. Sort all positive survivors by latest-occurrence timestamp ascending (globally).
-2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.55 AND cross_ref > canonical_xref_threshold(...)`) until 20% of total positives.
-3. These = test candidates. All else = train. Negatives always train.
+2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.55 AND cross_ref > canonical_xref_threshold(...)`) until **3× the target (20 %)** of total positives — an over-selection buffer so the inferrability gate can drop most candidates and the final test set still hits 20 %.
+3. Inferrability gate then runs on the whole over-selected pool. After the gate, take the **newest `n_test_target` (= 20 % × total positives) inferrable survivors** as the final test set. All else = train. Negatives always train.
 
-**Inferrability gate:** LLM evaluates each test candidate — can it be predicted from train set? Non-inferrable items dropped entirely (not demoted).
+**Inferrability gate:** LLM evaluates each candidate — can it be predicted from the train set? Non-inferrable items that WOULD have been in the final test set (the newest `n_test_target` of the candidate pool) are dropped entirely. Non-inferrable items past the target demote to train.
 
 **Distractor pairing (3 per test item, causal):** For each test item, Python filters high-confidence train items to those whose first-occurrence timestamp `<=` the test item's last-occurrence timestamp (causality). LLM then ranks the top 3 most topically irrelevant / annoying items from a random shortlist of 15. Stored as a **list** of `{persona_item, category}` objects under `over_personalization_irrelevant`.
 
