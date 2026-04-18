@@ -23,22 +23,7 @@
         "confidence_cross_referenced": 77.5,
         "stereotype_mark": "anti-stereotypical",
         "hidden_persona_labels": [],
-        "update_history": [],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
-        ]
+        "update_history": []
       },
       {
         "persona_item": "Enjoys basketball storytelling and discussion-based sports content.",
@@ -314,21 +299,6 @@
             "occurrence": 2,
             "total_occurrences": 58
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       }
     ]
@@ -401,21 +371,6 @@
             "occurrence": 2,
             "total_occurrences": 58
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       },
       {
@@ -432,21 +387,6 @@
             "formatted_timestamp": "07:20, 04/03/2026",
             "source_app": "Threads",
             "description": "Broad enjoyment of sports humor evolved into more person-centered sports engagement, especially around a recognizable football figure like Cam Newton."
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Follows content related to Rampage Jackson.",
-            "category": "player-specific sports following"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -1240,22 +1180,7 @@
         "confidence_cross_referenced": 38.5,
         "stereotype_mark": "anti-stereotypical",
         "hidden_persona_labels": [],
-        "update_history": [],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
-          }
-        ]
+        "update_history": []
       }
     ]
   },
@@ -1553,21 +1478,6 @@
             "occurrence": 2,
             "total_occurrences": 24
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Follows content related to Rampage Jackson.",
-            "category": "player-specific sports following"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       },
       {
@@ -1672,21 +1582,6 @@
             "source_app": "Chatbot",
             "occurrence": 3,
             "total_occurrences": 58
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       },
@@ -2183,21 +2078,6 @@
             "occurrence": 2,
             "total_occurrences": 26
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
-          }
         ]
       }
     ]
@@ -2372,21 +2252,6 @@
             "source_app": "Threads",
             "occurrence": 2,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       },
@@ -3097,21 +2962,6 @@
             "occurrence": 3,
             "total_occurrences": 71
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       },
       {
@@ -3587,21 +3437,6 @@
             "occurrence": 3,
             "total_occurrences": 71
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       }
     ]
@@ -3806,21 +3641,6 @@
             "preference": "Interested in cooking easy vegetarian comfort meals at home.",
             "formatted_timestamp": "12:12, 04/03/2026",
             "source_app": ""
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys classic hip-hop, especially artists associated with The Notorious B.I.G. and Puff Daddy era.",
-            "category": "hip-hop music"
-          },
-          {
-            "persona_item": "Interested in celebrity gossip and entertainment news coverage.",
-            "category": "celebrity news"
-          },
-          {
-            "persona_item": "Enjoys relatable everyday frustration humor.",
-            "category": "relatable"
           }
         ]
       },
@@ -4313,21 +4133,6 @@
             "occurrence": 3,
             "total_occurrences": 71
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       },
       {
@@ -4372,21 +4177,6 @@
             "source_app": "Threads",
             "occurrence": 3,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -4774,22 +4564,7 @@
         "confidence_cross_referenced": 37.0,
         "stereotype_mark": "neutral",
         "hidden_persona_labels": [],
-        "update_history": [],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in following Cam Newton specifically.",
-            "category": "player-specific sports following"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          }
-        ]
+        "update_history": []
       }
     ]
   },
@@ -4977,21 +4752,6 @@
             "preference": "Interested in cooking easy vegetarian comfort meals at home.",
             "formatted_timestamp": "12:12, 04/03/2026",
             "source_app": ""
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys classic hip-hop, especially artists associated with The Notorious B.I.G. and Puff Daddy era.",
-            "category": "hip-hop music"
-          },
-          {
-            "persona_item": "Interested in celebrity gossip and entertainment news coverage.",
-            "category": "celebrity news"
-          },
-          {
-            "persona_item": "Enjoys relatable everyday frustration humor.",
-            "category": "relatable"
           }
         ]
       }
@@ -5207,21 +4967,6 @@
             "source_app": "Instagram",
             "occurrence": 3,
             "total_occurrences": 26
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
           }
         ]
       }
@@ -5618,21 +5363,6 @@
             "occurrence": 3,
             "total_occurrences": 30
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          },
-          {
-            "persona_item": "Enjoys humorous content about the everyday challenges of adult responsibilities.",
-            "category": "adult life experiences"
-          },
-          {
-            "persona_item": "Interested in cooking seafood dishes at home, especially grilled squid.",
-            "category": "seafood cooking"
-          }
         ]
       }
     ]
@@ -5840,21 +5570,6 @@
             "formatted_timestamp": "12:12, 04/03/2026",
             "source_app": ""
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys classic hip-hop, especially artists associated with The Notorious B.I.G. and Puff Daddy era.",
-            "category": "hip-hop music"
-          },
-          {
-            "persona_item": "Interested in celebrity gossip and entertainment news coverage.",
-            "category": "celebrity news"
-          },
-          {
-            "persona_item": "Enjoys relatable everyday frustration humor.",
-            "category": "relatable"
-          }
         ]
       }
     ]
@@ -5899,21 +5614,6 @@
             "source_app": "Threads",
             "occurrence": 3,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       },
@@ -6091,21 +5791,6 @@
             "source_app": "Facebook",
             "occurrence": 2,
             "total_occurrences": 22
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in following Cam Newton specifically.",
-            "category": "player-specific sports following"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
           }
         ]
       }
@@ -6390,21 +6075,6 @@
             "occurrence": 3,
             "total_occurrences": 30
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          },
-          {
-            "persona_item": "Enjoys humorous content about the everyday challenges of adult responsibilities.",
-            "category": "adult life experiences"
-          },
-          {
-            "persona_item": "Interested in cooking seafood dishes at home, especially grilled squid.",
-            "category": "seafood cooking"
-          }
         ]
       }
     ]
@@ -6593,21 +6263,6 @@
             "source_app": "Threads",
             "occurrence": 3,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -6813,21 +6468,6 @@
             "occurrence": 3,
             "total_occurrences": 71
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       },
       {
@@ -6853,21 +6493,6 @@
             "source_app": "Threads",
             "occurrence": 3,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -7937,21 +7562,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 13
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in bargain hunting and discount-focused shopping.",
-            "category": "budget shopping"
-          },
-          {
-            "persona_item": "Actively follows streaming TV releases and platform-promoted series on HBO Max.",
-            "category": "streaming entertainment"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
           }
         ]
       }
@@ -10114,21 +9724,6 @@
             "occurrence": 4,
             "total_occurrences": 26
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
-          }
         ]
       }
     ]
@@ -10209,21 +9804,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 26
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
           }
         ]
       }
@@ -10733,21 +10313,6 @@
             "source_app": "Chatbot",
             "occurrence": 4,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -12749,21 +12314,6 @@
             "occurrence": 3,
             "total_occurrences": 22
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in following Cam Newton specifically.",
-            "category": "player-specific sports following"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          }
         ]
       },
       {
@@ -13951,21 +13501,6 @@
             "occurrence": 4,
             "total_occurrences": 71
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       }
     ]
@@ -14697,21 +14232,6 @@
             "occurrence": 5,
             "total_occurrences": 58
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       }
     ]
@@ -14870,21 +14390,6 @@
             "formatted_timestamp": "12:12, 04/03/2026",
             "source_app": ""
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys classic hip-hop, especially artists associated with The Notorious B.I.G. and Puff Daddy era.",
-            "category": "hip-hop music"
-          },
-          {
-            "persona_item": "Interested in celebrity gossip and entertainment news coverage.",
-            "category": "celebrity news"
-          },
-          {
-            "persona_item": "Enjoys relatable everyday frustration humor.",
-            "category": "relatable"
-          }
         ]
       }
     ]
@@ -15002,21 +14507,6 @@
             "source_app": "Chatbot",
             "occurrence": 4,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -15529,21 +15019,6 @@
             "occurrence": 5,
             "total_occurrences": 58
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       }
     ]
@@ -15636,21 +15111,6 @@
             "source_app": "Facebook",
             "occurrence": 5,
             "total_occurrences": 58
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       },
@@ -16350,21 +15810,6 @@
             "formatted_timestamp": "12:12, 04/03/2026",
             "source_app": ""
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys classic hip-hop, especially artists associated with The Notorious B.I.G. and Puff Daddy era.",
-            "category": "hip-hop music"
-          },
-          {
-            "persona_item": "Interested in celebrity gossip and entertainment news coverage.",
-            "category": "celebrity news"
-          },
-          {
-            "persona_item": "Enjoys relatable everyday frustration humor.",
-            "category": "relatable"
-          }
         ]
       },
       {
@@ -17013,21 +16458,6 @@
             "occurrence": 5,
             "total_occurrences": 30
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          },
-          {
-            "persona_item": "Enjoys humorous content about the everyday challenges of adult responsibilities.",
-            "category": "adult life experiences"
-          },
-          {
-            "persona_item": "Interested in cooking seafood dishes at home, especially grilled squid.",
-            "category": "seafood cooking"
-          }
         ]
       }
     ]
@@ -17268,21 +16698,6 @@
             "occurrence": 5,
             "total_occurrences": 58
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       }
     ]
@@ -17340,21 +16755,6 @@
             "source_app": "Facebook",
             "occurrence": 5,
             "total_occurrences": 58
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in hip-hop history and legacy storytelling.",
-            "category": "hip-hop history"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }
@@ -17428,21 +16828,6 @@
             "source_app": "Chatbot",
             "occurrence": 4,
             "total_occurrences": 22
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in following Cam Newton specifically.",
-            "category": "player-specific sports following"
-          },
-          {
-            "persona_item": "Interested in flatbed trucking work and cargo securement practices.",
-            "category": "new category: skilled trades"
-          },
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
           }
         ]
       }
@@ -18147,21 +17532,6 @@
             "occurrence": 5,
             "total_occurrences": 26
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
-          }
         ]
       }
     ]
@@ -18865,21 +18235,6 @@
             "occurrence": 5,
             "total_occurrences": 26
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in paranormal and unexplained phenomena content.",
-            "category": "paranormal"
-          },
-          {
-            "persona_item": "Interested in foraging and identifying edible wild plants.",
-            "category": "nature"
-          },
-          {
-            "persona_item": "Enjoys humorous social media content about breakups, exes, and text-message relationship mishaps.",
-            "category": "relationship humor"
-          }
         ]
       }
     ]
@@ -19356,21 +18711,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 30
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          },
-          {
-            "persona_item": "Enjoys humorous content about the everyday challenges of adult responsibilities.",
-            "category": "adult life experiences"
-          },
-          {
-            "persona_item": "Interested in cooking seafood dishes at home, especially grilled squid.",
-            "category": "seafood cooking"
           }
         ]
       }
@@ -20321,21 +19661,6 @@
             "occurrence": 5,
             "total_occurrences": 71
           }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
-          }
         ]
       },
       {
@@ -20655,21 +19980,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 71
-          }
-        ],
-        "split": "test",
-        "over_personalization_irrelevant": [
-          {
-            "persona_item": "Enjoys watching short-form basketball highlight clips, particularly defensive standout plays.",
-            "category": "sports highlight media"
-          },
-          {
-            "persona_item": "Interested in personal growth and self-improvement content",
-            "category": "self-improvement"
-          },
-          {
-            "persona_item": "Interested in watching live sports through streaming services.",
-            "category": "sports streaming media"
           }
         ]
       }

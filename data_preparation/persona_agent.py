@@ -3203,30 +3203,34 @@ class PersonaAgent:
 
         total = len(sorted_positives)
         n_test_target = max(1, int(total * fraction))
-        # Over-select candidates upfront so that AFTER the inferrability gate
-        # drops some, the remaining test set still hits n_test_target. Empirical
-        # gate-drop rate is ~60-70% in recent runs, so 3x gives good headroom.
-        # Any survivors beyond n_test_target are trimmed back to n_test_target
-        # (keeping the newest) after the gate runs.
+        # Scan high-confidence positives newest-first. We over-select 3x
+        # upfront so the inferrability gate has headroom; if that's still
+        # not enough, we keep walking deeper into the newest-to-oldest
+        # ordering. Test items are ALWAYS drawn from the newest
+        # contiguous stretch — never random-sampled from the full history.
         OVER_SELECT_FACTOR = 3.0
         n_candidates_target = max(n_test_target, int(n_test_target * OVER_SELECT_FACTOR))
 
-        # Collect test candidates from the tail of the timeline, newest first,
-        # only keeping high-confidence items. Explicit guard: never test negatives.
-        test_candidates: list[CrossReferencedPersona] = []
-        for cr in reversed(sorted_positives):
-            if "negative" in cr.source_interaction_type:
-                continue
-            if is_high_confidence(
+        # The full pool of high-confidence positives, strictly newest-first.
+        # We'll peel off `n_candidates_target` at a time into `test_candidates`.
+        reversed_positives = list(reversed(sorted_positives))
+        high_conf_pool_iter = (
+            cr for cr in reversed_positives
+            if "negative" not in cr.source_interaction_type
+            and is_high_confidence(
                 cr.confidence_score_init,
                 cr.confidence_cross_referenced,
                 getattr(cr, "n_explicit_rows", 0),
                 getattr(cr, "n_implicit_rows", 0),
-            ):
-                test_candidates.append(cr)
-                if len(test_candidates) >= n_candidates_target:
-                    break
-        # Preserve chronological order (oldest-of-selected first)
+            )
+        )
+
+        test_candidates: list[CrossReferencedPersona] = []
+        for cr in high_conf_pool_iter:
+            test_candidates.append(cr)
+            if len(test_candidates) >= n_candidates_target:
+                break
+        # Preserve chronological order (oldest-of-selected first) for the LLM prompt
         test_candidates.reverse()
 
         if not test_candidates:
@@ -3240,68 +3244,97 @@ class PersonaAgent:
 
         test_candidate_set = {cr.persona_item for cr in test_candidates}
 
-        # Build the train pool now (everything else among positives)
-        train_pool: list[CrossReferencedPersona] = [
-            cr for cr in sorted_positives if cr.persona_item not in test_candidate_set
-        ]
-
-        # --- LLM inferrability gate ---
-        train_personas_for_prompt = [
-            {
-                "persona_item": cr.persona_item,
-                "category": cr.category,
-                "confidence_score_init": cr.confidence_score_init,
-                "confidence_cross_referenced": cr.confidence_cross_referenced,
-                "formatted_timestamp": cr.formatted_timestamp,
-            }
-            for cr in train_pool
-        ]
-        test_candidates_for_prompt = [
-            {
-                "persona_item": cr.persona_item,
-                "category": cr.category,
-                "confidence_score_init": cr.confidence_score_init,
-                "confidence_cross_referenced": cr.confidence_cross_referenced,
-                "formatted_timestamp": cr.formatted_timestamp,
-            }
-            for cr in test_candidates
-        ]
-
+        # --- LLM inferrability gate (with newest-first extension) ---
+        # If the first gate pass leaves fewer than n_test_target inferrable
+        # survivors, we keep extending the candidate pool by peeling off the
+        # next newest high-confidence items from the iterator and re-running
+        # the gate on the extension. This guarantees the final test set is
+        # always a contiguous prefix of the newest-first high-confidence
+        # sequence — never a random sample from elsewhere in the history.
         inferrable_items: set[str] = set()
         non_inferrable_items: set[str] = set()
+        MAX_GATE_ITERATIONS = 3
 
-        if self.llm_client is not None:
+        def _run_gate(candidates: list[CrossReferencedPersona]) -> None:
+            """Evaluate `candidates` against the current train_pool; merge
+            results into `inferrable_items` / `non_inferrable_items`."""
+            if not candidates:
+                return
+            consumed = {c.persona_item for c in candidates} | test_candidate_set
+            train_pool_local = [
+                cr for cr in sorted_positives if cr.persona_item not in consumed
+            ]
+            train_prompt = [
+                {
+                    "persona_item": cr.persona_item, "category": cr.category,
+                    "confidence_score_init": cr.confidence_score_init,
+                    "confidence_cross_referenced": cr.confidence_cross_referenced,
+                    "formatted_timestamp": cr.formatted_timestamp,
+                } for cr in train_pool_local
+            ]
+            test_prompt = [
+                {
+                    "persona_item": cr.persona_item, "category": cr.category,
+                    "confidence_score_init": cr.confidence_score_init,
+                    "confidence_cross_referenced": cr.confidence_cross_referenced,
+                    "formatted_timestamp": cr.formatted_timestamp,
+                } for cr in candidates
+            ]
+            local_set = {c.persona_item for c in candidates}
+            if self.llm_client is None:
+                # Claude Code subagent mode — no gate, keep all.
+                inferrable_items.update(local_set)
+                return
             prompt = prompts.test_inferrability_check_prompt(
-                train_personas=train_personas_for_prompt,
-                test_candidates=test_candidates_for_prompt,
+                train_personas=train_prompt, test_candidates=test_prompt,
             )
             response = self._query_llm_with_retry(prompt)
-            if response:
-                parsed = utils.extract_json_from_response(response)
-                if isinstance(parsed, list):
-                    for item in parsed:
-                        if not isinstance(item, dict):
-                            continue
-                        name = item.get("persona_item", "")
-                        if not name:
-                            continue
-                        if bool(item.get("inferrable", False)):
-                            inferrable_items.add(name)
-                        else:
-                            non_inferrable_items.add(name)
-                else:
-                    print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable test inferrability response — "
-                          f"defaulting to keep all candidates.{utils.Colors.ENDC}")
-                    inferrable_items = set(test_candidate_set)
-            else:
+            if not response:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] Inferrability check LLM call failed — "
-                      f"defaulting to keep all candidates.{utils.Colors.ENDC}")
-                inferrable_items = set(test_candidate_set)
-        else:
-            # Claude Code subagent mode: persona_agent runs *without* an llm_client;
-            # subagents perform this step inline per skill.md. In that mode this
-            # method should not normally be called. Fall back to keeping all candidates.
-            inferrable_items = set(test_candidate_set)
+                      f"keeping this batch as inferrable by default.{utils.Colors.ENDC}")
+                inferrable_items.update(local_set)
+                return
+            parsed = utils.extract_json_from_response(response)
+            if not isinstance(parsed, list):
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable test inferrability response — "
+                      f"keeping this batch as inferrable by default.{utils.Colors.ENDC}")
+                inferrable_items.update(local_set)
+                return
+            for item in parsed:
+                if not isinstance(item, dict):
+                    continue
+                name = item.get("persona_item", "")
+                if not name or name not in local_set:
+                    continue
+                if bool(item.get("inferrable", False)):
+                    inferrable_items.add(name)
+                else:
+                    non_inferrable_items.add(name)
+
+        # Iteration 0: the initial n_candidates_target batch we already picked
+        _run_gate(test_candidates)
+
+        # Extend deeper into the newest-first ordering if we didn't hit target.
+        # Each extension grabs another n_test_target * 2 high-confidence items.
+        extension_batch_size = max(n_test_target, n_test_target * 2)
+        for _ in range(MAX_GATE_ITERATIONS - 1):
+            cur_survivors = len(inferrable_items)
+            if cur_survivors >= n_test_target:
+                break
+            extension: list[CrossReferencedPersona] = []
+            for cr in high_conf_pool_iter:
+                extension.append(cr)
+                if len(extension) >= extension_batch_size:
+                    break
+            if not extension:
+                break  # exhausted the newest-first high-confidence pool
+            test_candidates.extend(extension)
+            test_candidate_set.update(cr.persona_item for cr in extension)
+            _run_gate(extension)
+
+        # Update `test_candidate_set` so downstream code (e.g. drop-set logic)
+        # sees the expanded pool.
+        test_candidates.sort(key=_last_ts)
 
         # --- Drop non-inferrable test candidates entirely ---
         # Because we over-selected candidates, a non-inferrable item may
