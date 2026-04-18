@@ -3149,19 +3149,27 @@ class PersonaAgent:
         Test eligibility rules:
           1. Sort positive personas by source_timestamp ascending (early -> latest).
           2. Scan newest -> oldest collecting items that pass `is_high_confidence`
-             until we have `fraction * total_positives` candidates (or run out).
-             Only truly high-confidence items can be test candidates.
+             until we have `3 * fraction * total_positives` candidates. The 3x
+             over-selection is a budget for the inferrability-gate dropping
+             most candidates in practice (empirical gate kill rate ~60-70%),
+             so the final test set still hits `fraction * total_positives`.
           3. LLM inferrability gate: ask whether each candidate is reasonably
-             inferrable from the train 80% (ground truth). Candidates the LLM
-             marks as NOT inferrable are REMOVED from self.cross_referenced_personas
-             entirely — they fail the fidelity gate.
-          4. Distractor pairing for each surviving test item:
+             inferrable from the train 80% (ground truth). Non-inferrable items
+             that WOULD have been in the final test set (the newest
+             `n_test_target` of the candidate pool) are REMOVED from
+             `self.cross_referenced_personas` entirely — they fail the
+             fidelity gate. Non-inferrable items past the target stay as
+             train.
+          4. After the gate, take the newest `n_test_target` inferrable
+             survivors as the final test set.
+          5. Distractor pairing for each test item:
                Stage A (Python): randomly shortlist `shortlist_size` train items
-                 passing the high-confidence predicate.
-               Stage B (LLM): picks the one most topically irrelevant and most
-                 annoying/inappropriate as a personalization recommendation.
-             The chosen distractor is stored in self.test_distractors.
-          5. self.split_labels is populated for every surviving positive persona
+                 passing the high-confidence predicate, filtered to causally
+                 valid ones (first_occurrence <= test item's last_occurrence).
+               Stage B (LLM): picks the top `n_distractors` most topically
+                 irrelevant items.
+             The chosen distractors are stored in self.test_distractors.
+          6. self.split_labels is populated for every surviving positive persona
              ("train" or "test"). Negative personas are always "train" and are
              not passed through the gate.
         """
@@ -3195,6 +3203,13 @@ class PersonaAgent:
 
         total = len(sorted_positives)
         n_test_target = max(1, int(total * fraction))
+        # Over-select candidates upfront so that AFTER the inferrability gate
+        # drops some, the remaining test set still hits n_test_target. Empirical
+        # gate-drop rate is ~60-70% in recent runs, so 3x gives good headroom.
+        # Any survivors beyond n_test_target are trimmed back to n_test_target
+        # (keeping the newest) after the gate runs.
+        OVER_SELECT_FACTOR = 3.0
+        n_candidates_target = max(n_test_target, int(n_test_target * OVER_SELECT_FACTOR))
 
         # Collect test candidates from the tail of the timeline, newest first,
         # only keeping high-confidence items. Explicit guard: never test negatives.
@@ -3209,7 +3224,7 @@ class PersonaAgent:
                 getattr(cr, "n_implicit_rows", 0),
             ):
                 test_candidates.append(cr)
-                if len(test_candidates) >= n_test_target:
+                if len(test_candidates) >= n_candidates_target:
                     break
         # Preserve chronological order (oldest-of-selected first)
         test_candidates.reverse()
@@ -3289,15 +3304,37 @@ class PersonaAgent:
             inferrable_items = set(test_candidate_set)
 
         # --- Drop non-inferrable test candidates entirely ---
-        if non_inferrable_items:
+        # Because we over-selected candidates, a non-inferrable item may
+        # simply have been past the cap anyway — those should stay as train,
+        # not be deleted. Only delete non-inferrable items that are among the
+        # newest `n_test_target` of the candidate pool; everything else
+        # demotes to train.
+        newest_target_set = set(
+            cr.persona_item
+            for cr in sorted(test_candidates, key=_last_ts, reverse=True)[:n_test_target]
+        )
+        drop_set = non_inferrable_items & newest_target_set
+        if drop_set:
             self.cross_referenced_personas = [
                 cr for cr in self.cross_referenced_personas
-                if cr.persona_item not in non_inferrable_items
+                if cr.persona_item not in drop_set
             ]
 
-        kept_test: list[CrossReferencedPersona] = [
+        # After the gate, trim back to the actual target (the newest
+        # n_test_target survivors). We over-selected 3x upfront; take only
+        # as many as `fraction * total` allows, preferring the most recent.
+        gate_survivors: list[CrossReferencedPersona] = [
             cr for cr in test_candidates if cr.persona_item in inferrable_items
         ]
+        if len(gate_survivors) > n_test_target:
+            gate_survivors_by_recency = sorted(
+                gate_survivors, key=_last_ts, reverse=True
+            )[:n_test_target]
+            # Re-sort to preserve chronological order (oldest first) downstream.
+            gate_survivors_by_recency.sort(key=_last_ts)
+            kept_test: list[CrossReferencedPersona] = gate_survivors_by_recency
+        else:
+            kept_test = gate_survivors
 
         # --- Distractor pairing ---
         high_conf_train = [
