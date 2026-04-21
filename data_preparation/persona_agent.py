@@ -3811,9 +3811,16 @@ class PersonaAgent:
             kept_test = gate_survivors
 
         # --- Distractor pairing ---
+        # Train pool for distractors: every surviving positive that's NOT
+        # a final test item. (The prior `train_pool` variable was scoped
+        # to the pre-refactor inline gate; the iterative-gate refactor
+        # moved it into `_run_gate` as `train_pool_local`, so we
+        # reconstruct the post-gate train pool here.)
+        test_items_set = {cr.persona_item for cr in kept_test}
         high_conf_train = [
-            cr for cr in train_pool
-            if is_high_confidence(
+            cr for cr in self.cross_referenced_personas
+            if cr.persona_item not in test_items_set
+            and is_high_confidence(
                 cr.confidence_score_init,
                 cr.confidence_cross_referenced,
                 getattr(cr, "n_explicit_rows", 0),
