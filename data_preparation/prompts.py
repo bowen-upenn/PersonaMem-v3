@@ -791,6 +791,177 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
 
 
 # ---------------------------------------------------------------------------
+# Step 13b — synthetic per-event content generation
+# ---------------------------------------------------------------------------
+
+def generate_synthetic_content_prompt(
+    content_type: str,
+    app: str,
+    app_persona: dict,
+    user_profile: dict,
+    hashtags: list[str],
+    preferences: list[dict],
+    action: str,
+    action_label: str,
+) -> str:
+    """Build a prompt that fabricates one piece of realistic feed content.
+
+    The LLM returns a single JSON object `{"content_type": ..., "content": ...}`
+    whose `content` shape depends on `content_type`:
+      - "text":        {text}
+      - "image":       {caption, overall_description, parts[], metadata{}}
+      - "short_video": {title, caption, overall_description, key_frames[],
+                        audio_transcript, metadata{}}
+
+    Used by step 13b in the persona pipeline. Chatbot events and
+    implicit_negative stub events are generated upstream, so this prompt
+    never runs for them.
+    """
+    app_persona_json = json.dumps(app_persona or {}, indent=2)
+    user_profile_json = json.dumps(user_profile or {}, indent=2)
+    hashtag_str = " ".join(hashtags) if hashtags else "(no hashtags)"
+
+    if preferences:
+        pref_lines = "\n".join(
+            f"- {p.get('persona_item', '')} ({p.get('category', '')})"
+            for p in preferences
+        )
+        pref_block = f"The user's surviving preferences for this interaction:\n{pref_lines}"
+    else:
+        pref_block = (
+            "The user did not stop on this item long enough for a preference to be inferred — "
+            "generate generic-but-plausible content that matches the hashtags alone."
+        )
+
+    # Per-type schema stub to keep the LLM honest
+    if content_type == "text":
+        schema_block = (
+            "The `content` object MUST be:\n"
+            "```json\n"
+            "{\n"
+            '  "text": "<full post body, 30-180 words, platform-appropriate voice. '
+            'No leading @ or hashtag dumps at the top; hashtags may be woven in naturally>"\n'
+            "}\n"
+            "```"
+        )
+    elif content_type == "image":
+        schema_block = (
+            "The `content` object MUST be:\n"
+            "```json\n"
+            "{\n"
+            '  "caption": "<=30 words, conversational, hashtag-free",\n'
+            '  "overall_description": "1-2 sentence description of the scene as a whole",\n'
+            '  "parts": [\n'
+            '    {"region": "foreground", "description": "..."},\n'
+            '    {"region": "background", "description": "..."},\n'
+            '    {"region": "subject_detail", "description": "..."}\n'
+            "  ],\n"
+            '  "metadata": {\n'
+            '    "camera": "iPhone 15 Pro" | "Sony A7 IV" | "Canon R6" | "Pixel 8" | similar real model,\n'
+            '    "lens": "24mm f/1.8" | "50mm f/1.4" | null,\n'
+            '    "filter": "Clarendon" | "Lark" | "None" | similar,\n'
+            '    "aspect_ratio": "1:1" | "4:5" | "9:16" | "16:9",\n'
+            '    "dimensions": "1080x1350" (must match aspect_ratio),\n'
+            '    "iso": 100-3200, "shutter": "1/60"-"1/2000", "aperture": "f/1.4"-"f/11",\n'
+            '    "color_profile": "sRGB" | "Display P3",\n'
+            '    "location": "Brooklyn, NY" | "indoor" | null,\n'
+            '    "time_of_day": "golden hour" | "midday" | "blue hour" | "night" | "indoor",\n'
+            '    "filename": "IMG_4827.HEIC" | "DSC_0042.JPG"\n'
+            "  }\n"
+            "}\n"
+            "```"
+        )
+    elif content_type == "short_video":
+        schema_block = (
+            "The `content` object MUST be:\n"
+            "```json\n"
+            "{\n"
+            '  "title": "short punchy title, <=8 words",\n'
+            '  "caption": "<=30 words",\n'
+            '  "overall_description": "1-3 sentences describing the narrative arc",\n'
+            '  "key_frames": [\n'
+            '    {"timestamp_s": 0.0, "description": "opening frame: ..."},\n'
+            '    {"timestamp_s": <mid>, "description": "..."},\n'
+            '    {"timestamp_s": <late>, "description": "..."}\n'
+            "  ],  // 3-6 entries, timestamps strictly increasing, within duration\n"
+            '  "audio_transcript": "<full VO/dialogue transcript, OR \\"Music only: <genre/mood>\\" '
+            'if no speech>",\n'
+            '  "metadata": {\n'
+            '    "duration_s": 5-90,\n'
+            '    "resolution": "1080x1920" | "1920x1080" | "1080x1080",\n'
+            '    "fps": 24 | 30 | 60,\n'
+            '    "aspect_ratio": "9:16" | "1:1" | "16:9",\n'
+            '    "music_track": "Artist - Song Title" | "Original audio",\n'
+            '    "sound_design": "voiceover + ambient street noise" | "b-roll + music" | similar,\n'
+            '    "codec": "H.264" | "HEVC",\n'
+            '    "bitrate_kbps": 6000-20000,\n'
+            '    "creator_handle": "@realistic_handle"\n'
+            "  }\n"
+            "}\n"
+            "```"
+        )
+    else:
+        schema_block = "The `content` object structure depends on content_type."
+
+    # Platform voice guidance
+    platform_voice = {
+        "Instagram": "Instagram is visual-first. Captions short and punchy; reels tightly edited; "
+                     "aesthetic quality matters; emojis common.",
+        "Facebook":  "Facebook skews longer and more narrative — status updates can be paragraph-length. "
+                     "Community posts, event invites, family updates are common. Less emoji-heavy than IG.",
+        "Threads":   "Threads is conversational and short — pithy takes, hot takes, quote-threads. "
+                     "Rich mix of text / image / short video. Twitter-like voice, not LinkedIn-serious.",
+    }.get(app, "")
+
+    return f"""\
+You are generating ONE piece of realistic feed content that just appeared in a user's {app} feed.
+The user then took this action on it: **{action_label}** (`{action}`).
+
+## The user
+```json
+{user_profile_json}
+```
+
+## The user's {app} AppPersona (style / audience / purpose)
+```json
+{app_persona_json}
+```
+
+## Platform voice
+{platform_voice}
+
+## Topical signal (hashtags attached to this item)
+{hashtag_str}
+
+## Preferences context
+{pref_block}
+
+## Content type requested
+**{content_type}**
+
+{schema_block}
+
+## Rules
+1. The content must be **consistent with the hashtags** — they are the topical spine.
+2. Respect the AppPersona's voice (style_description, audience_type) — this is content the user would plausibly see in their feed.
+3. Content quality should roughly match the implied engagement: if the action is a "skipped" / "scrolled past" action, the item can be plausible but not maximally compelling; if the action is "saved" / "reposted" / "rewatched", the content should be info-dense / high-quality.
+4. For `short_video`, `key_frames[*].timestamp_s` must be strictly increasing and all ≤ `metadata.duration_s`.
+5. For `image`, `dimensions` must be consistent with `aspect_ratio` (e.g., 4:5 → "1080x1350", 9:16 → "1080x1920", 1:1 → "1080x1080").
+6. Do NOT invent preferences beyond those listed. Do NOT include raw hashtag dumps at the top of text bodies — hashtags may appear naturally in-line.
+7. Realism matters — camera models, filter names, music tracks, creator handles should sound like real ones (but do not copy any specific real creator's handle).
+
+## Output Format
+Respond with ONLY a single JSON object. No prose outside the JSON fence.
+
+```json
+{{
+  "content_type": "{content_type}",
+  "content": {{ ... }}
+}}
+```"""
+
+
+# ---------------------------------------------------------------------------
 # Chatbot multi-turn conversation generation prompts
 # ---------------------------------------------------------------------------
 
