@@ -62,6 +62,7 @@ Input CSV (hashtag interactions per user)
   +- Step 11: Assign rows to apps              [Algo]     -- session majority vote + 8% noise
   +- Step 12: Generate interaction formats     [Algo+LLM] -- per-user perturbed weights
   +- Step 13: Generate chatbot conversations   [LLM]      -- multi-turn, ask-to-forget
+  +- Step 13b: Generate synthetic content      [LLM]      -- text / image / short_video per event
   +- Step 14: Annotate stereotype marks        [LLM]      -- demographics-only
   +- Step 15: Build train/test split           [LLM+Algo] -- 80/20, inferrability gate
   +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user
@@ -97,6 +98,7 @@ Each app JSON is an array of interaction events. Each event = one source CSV row
 Event:
   +- source_object_id, source_timestamp, source_hashtags, source_interaction_type
   +- interaction_format: { app, action, action_label, user_message }
+  +- [Instagram/Facebook/Threads non-stub only] content_type, content
   +- preferences[]:
   |     +- persona_item, category
   |     +- confidence_score_init, confidence_cross_referenced
@@ -322,6 +324,30 @@ Every chatbot event gets a multi-turn conversation embedding ALL of that event's
 
 ---
 
+## 13b. Step 13b — Synthetic Per-Event Content
+
+Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `short_video`) plus a `content` payload describing the post the user actually saw. Chatbot events skip this step (their `conversation` already serves as the content). Implicit-negative stub events stay content-less and continue rendering as greyscale timeline markers.
+
+**Per-user content mix derivation** — three layers, computed per-app:
+
+1. **Platform prior** `PLATFORM_CONTENT_PRIOR`: Instagram 45% image / 50% short_video / 5% text; Facebook 35/30/35; Threads 30/20/50.
+2. **Observed-action signal** — actions in `ACTION_CONTENT_HINTS` contribute hard weight toward their implied type. IG `viewed_reel_75` / `rewatched_reel` / `skipped_reel` imply video; `lingered_on_image` / `skipped_image` imply image; story actions split 50/50 image/video; everything else is ambiguous and carries no weight. FB `viewed_video_75` / `scrolled_past_video` imply video; `expanded_see_more` weakly implies text. Threads `viewed_video_75` implies video; rest ambiguous.
+3. **Bayesian smoothing** with `PRIOR_PSEUDOCOUNT = 30`: `p_k = (n_k + 30 * prior_k) / (N + 30)`. A user with 200+ observed-action events on an app is dominated by their own signal; one with ≤20 stays near the platform baseline.
+4. **Per-user lognormal perturbation** (`CONTENT_MIX_NOISE_SIGMA = 0.3`, seeded on `(user_id, app)`) — two users with identical action histories still land on visibly distinct mixes, mirroring the `_perturb_weights` pattern used in Step 12.
+
+**Per-event resolution:** `content_type` is deterministic from the action when the hint is unambiguous; otherwise sampled from the user's posterior mix with an `(user_id, oid)`-seeded RNG, so different events with the same ambiguous action land on different content types.
+
+**Action pre-sampling:** Step 13b also pre-samples the per-event action + itype (consuming `event_rng` in the same order `save_to_backend` would) so the final displayed action matches the content_type it chose. `save_to_backend` then reads actions from `self._action_by_oid` rather than re-sampling.
+
+**Content schemas:**
+- `text` → `{ text }` (30–180 words, platform voice).
+- `image` → `{ caption, overall_description, parts[], metadata{camera, lens, filter, aspect_ratio, dimensions, iso, shutter, aperture, color_profile, location, time_of_day, filename} }`.
+- `short_video` → `{ title, caption, overall_description, key_frames[], audio_transcript, metadata{duration_s, resolution, fps, aspect_ratio, music_track, sound_design, codec, bitrate_kbps, creator_handle} }`.
+
+**Cost:** one LLM call per event (parallelized via ThreadPoolExecutor), ~1,760 calls per persona (IG ~600 + FB ~560 + Threads ~600; Chatbot and stubs skipped). Routed to the mini-tier client when `llm_client_mini` is provided (falls back to flagship otherwise). Retries use the shared 3-attempt exponential-backoff wrapper; total-failure events get a minimal placeholder content dict so downstream consumers never see missing fields.
+
+---
+
 ## 14. Step 14 — Stereotype Annotation
 
 Each preference gets a stereotype mark based on demographics **only** (gender, sexual orientation, race/ethnicity — not career/education/personality).
@@ -358,6 +384,8 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | Per-user action weights | Step 12 | `noise_strength = 0.6`, seed=user_id | Lognormal perturbation |
 | Session reassignment | Step 11 | `NOISE_REASSIGN_PROBABILITY = 0.08` | 8% sessions re-routed |
 | Conversation type | Step 13 | `CHATBOT_CONVERSATION_TYPES` weights | Per-user conversation mix |
+| Per-user content mix | Step 13b | `CONTENT_MIX_NOISE_SIGMA = 0.3`, seed=(user_id, app) | Lognormal perturbation of the posterior mix |
+| Per-event content type | Step 13b | seed=(user_id, oid) | Ambiguous-action events sample from user mix |
 | Ask-to-forget / don't-personalize | Step 13 | `ASK_TO_FORGET_FRACTION = 0.20` | 20% of chatbot events split 50/50 |
 | Correction (negatives only) | Step 13 | `CORRECTION_FRACTION_NEGATIVE = 0.50` | 50% of remaining negatives |
 
@@ -381,6 +409,8 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `CHATBOT_CANONICAL_TARGET` | 0.40 | Post-LLM Chatbot canonical share floor |
 | `SOCIAL_CANONICAL_FLOOR` | 0.17 | Post-LLM floor for each social app |
 | `noise_strength` | 0.6 | Action weight perturbation intensity |
+| `PRIOR_PSEUDOCOUNT` | 30 | Smoothing strength for per-user content mix |
+| `CONTENT_MIX_NOISE_SIGMA` | 0.3 | Lognormal σ for per-user content-mix perturbation |
 | `IMPL_NEG_WEIGHT` | 1.0 | Net-sentiment weight |
 | `EXPL_POS_WEIGHT` | 3.0 | Net-sentiment weight |
 | `IMPL_POS_WEIGHT` | 1.5 | Net-sentiment weight |
