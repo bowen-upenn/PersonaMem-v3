@@ -227,6 +227,14 @@ HIGH_CONFIDENCE_INIT_THRESHOLD = 0.75
 XREF_THRESHOLD_EXPLICIT = 20.0
 XREF_THRESHOLD_IMPLICIT = 50.0
 
+# Negatives are structurally rarer than positives (source CSVs typically have
+# ~5-10x fewer implicit_negative rows than implicit_positive, and often 0
+# explicit_negative). The per-canonical xref floor for negatives is therefore
+# decoupled from the positive scale — negatives that pass the hot-hashtag gate
+# + init ≥ 0.75 + distinct-rows gate already carry enough signal; stacking the
+# 50.0 implicit floor on top double-counts the bars.
+XREF_THRESHOLD_NEGATIVE = 5.0
+
 # Kept for backward-compatibility references. Internal code prefers
 # canonical_xref_threshold() so it gets the evidence-mix-dependent value.
 HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = XREF_THRESHOLD_EXPLICIT
@@ -242,7 +250,7 @@ SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 # cross-ref step requires N distinct source rows for any canonical supported
 # only by implicit evidence. Canonicals with any explicit-negative evidence
 # are unaffected.
-MIN_IMPLICIT_NEGATIVE_REPETITION = 10  # distinct source rows for implicit-only negative to survive
+MIN_IMPLICIT_NEGATIVE_REPETITION = 5   # distinct source rows for implicit-only negative to survive
 IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to bother with LLM call
 
 # Recency window on cross-reference counting. Only evidence rows whose
@@ -971,8 +979,8 @@ class PersonaAgent:
     # A hashtag is "hot negative" only when the user consistently skips it
     # AND doesn't engage positively with that topic elsewhere.
     IMPL_NEG_WEIGHT = 1.0    # each implicit_negative row
-    EXPL_POS_WEIGHT = 3.0    # each explicit_positive row (strong counter-signal)
-    IMPL_POS_WEIGHT = 1.5    # each implicit_positive row (moderate counter-signal)
+    EXPL_POS_WEIGHT = 2.0    # each explicit_positive row (strong counter-signal)
+    IMPL_POS_WEIGHT = 1.0    # each implicit_positive row (moderate counter-signal)
     MIN_TEMPORAL_DAYS = 1    # must span >= 1 distinct day
 
     def promote_implicit_negatives(self) -> None:
@@ -1790,13 +1798,14 @@ class PersonaAgent:
 
         # Skip bottom-20% filter for negatives — keep all that passed the
         # init filter + repetition gate. The promoted negatives are already
-        # high-signal (≥5 distinct rows, ≥2 hot hashtags per row). Then apply
-        # the per-canonical xref threshold so implicit-only negatives still
-        # face a reasonable corroboration bar.
+        # high-signal (hot-hashtag gate + init ≥ 0.75 + distinct-rows gate).
+        # Apply a small dedicated xref floor — decoupled from the positive
+        # 20/50 thresholds, which are calibrated for data scales negatives
+        # never reach (implicit_negative rows are typically 5-10x rarer than
+        # implicit_positive, and explicit_negative is often 0).
         neg_survivors = [
             c for c in neg_survivors
-            if c.confidence_cross_referenced
-            > canonical_xref_threshold(c.n_explicit_rows, c.n_implicit_rows)
+            if c.confidence_cross_referenced > XREF_THRESHOLD_NEGATIVE
         ]
         self.cross_referenced_negatives = neg_survivors
 
