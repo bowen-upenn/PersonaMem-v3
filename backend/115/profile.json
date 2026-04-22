@@ -1,114 +1,114 @@
 {
-  "name": "Taemin Kwon",
-  "gender": "cisgender male, heterosexual",
-  "race_ethnicity": "Korean",
-  "career": "Municipal broadband field technician",
-  "education": "Associate degree in Network Systems Technology",
+  "name": "Nandita Khosla",
+  "gender": "cisgender female, heterosexual",
+  "race_ethnicity": "Indian",
+  "career": "Union stagehand and live-events rigging technician",
+  "education": "Associate degree in Theater Production and Stagecraft",
   "big_five": {
-    "openness": "medium",
+    "openness": "high",
     "conscientiousness": "high",
     "extraversion": "medium",
-    "agreeableness": "high",
-    "neuroticism": "medium"
+    "agreeableness": "medium",
+    "neuroticism": "low"
   },
-  "bio": "Taemin spends most mornings troubleshooting fiber outages for the city, then heads to the gym for back day before picking up takeout and watching old WWE clips or a Cowboys game if it's on. He keeps a surprisingly meticulous notebook of product reviews for lip balms, brow pencils, and phone accessories, partly because he loves getting a deal and partly because his sisters always ask for recommendations. After a rough breakup a couple years ago, he got more serious about church, podcasts, and the kind of self-improvement content that feels grounded instead of cheesy. On weekends, he sometimes drives out to ride ATVs with friends, and he's oddly proud of making one very specific smoked mackerel recipe over a portable grill.",
+  "bio": "Nandita spends long days loading lighting trusses into arenas and theaters, then unwinds at home with Deftones on the speakers, old-school rap playlists, and a pan of garlicky shrimp sizzling on the stove. Her social feeds are a mix of boxing matchup talk, stand-up clips, goofy skits, dance videos, and plus-size confidence creators who make her laugh and buy the outfit anyway. She lifts before work when she can, has a soft spot for rich chocolate desserts, and is the friend people text for blunt relationship advice at 1 a.m. On some weekends, she disappears to an off-road park with a borrowed ATV and comes back grinning and covered in dust.",
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "use_purposes": [
-        "fitness inspiration",
-        "follow sports and fight content",
-        "share lifestyle highlights",
-        "browse products and food spots"
+        "lifestyle browsing and inspiration",
+        "keeping up with creators and close friends",
+        "sharing highlights from work and weekends",
+        "saving fitness and outfit ideas"
       ],
       "friend_zones": [
         "close friends",
-        "gym acquaintances",
-        "public creators",
-        "siblings"
+        "coworkers from live events",
+        "acquaintances",
+        "public creators"
       ],
       "audience_type": "mixed",
-      "style_description": "More image-conscious and upbeat here than anywhere else. He posts occasional gym selfies, burger runs, ATV clips, and the kind of polished everyday moments that feel masculine but a little curated, while mostly using Stories to react to fights, football, or funny reels.",
+      "style_description": "Visual, punchy, and a little tougher-edged than polished. She leans into gym clips, backstage arena snapshots, food photos, plus-size style confidence, and funny Reels, with captions that are short, blunt, and amused rather than overly sentimental.",
       "posting_frequency": "weekly",
       "topical_focus": [
         "fitness",
-        "combat sports",
-        "NFL football",
-        "ATV riding",
-        "food and dining"
+        "food and desserts",
+        "comedy",
+        "dance performance",
+        "body positivity"
       ],
       "chatbot_contexts": []
     },
     "Facebook": {
       "app_name": "Facebook",
       "use_purposes": [
-        "keep up with extended family",
-        "local community updates",
-        "buy and compare deals",
-        "share life milestones and outings"
+        "keeping up with extended family",
+        "event planning and local updates",
+        "sharing occasional life milestones",
+        "watching comedy clips and sports chatter"
       ],
       "friend_zones": [
         "extended family",
         "longtime friends",
         "coworkers",
-        "church community"
+        "local community acquaintances"
       ],
       "audience_type": "mixed",
-      "style_description": "This is his most grounded and socially conventional profile. He uses it like a practical hometown network: family check-ins, church-related posts, local outage chatter, Marketplace browsing, and the occasional album from an ATV day or a meal he was proud of.",
+      "style_description": "More grounded and socially practical here. She posts less often, shares work-proud photos from big venues, birthday shoutouts, occasional food or weekend ATV pictures, and uses comments more than original posting for casual banter.",
       "posting_frequency": "rarely",
       "topical_focus": [
-        "family life",
-        "self-improvement",
-        "ATV riding",
-        "NFL football",
-        "food and dining"
+        "comedy",
+        "combat sports",
+        "food and desserts",
+        "romantic relationship content"
       ],
       "chatbot_contexts": []
     },
     "Threads": {
       "app_name": "Threads",
       "use_purposes": [
-        "react to sports and entertainment in real time",
-        "follow public personalities",
-        "post quick opinions",
-        "consume humor and motivational takes"
+        "quick opinion posting",
+        "following sports and entertainment discourse",
+        "reacting to comedy and pop-culture moments",
+        "light public conversation"
       ],
       "friend_zones": [
         "strangers / public",
-        "fans of sports and wrestling",
+        "sports fans",
+        "comedy fans",
         "public creators"
       ],
       "audience_type": "public",
-      "style_description": "On Threads he is looser, more reactive, and a little snarkier. He drops short takes during Cowboys games, UFC cards, or WWE moments, reposts breakup-recovery and self-improvement thoughts that feel relatable, and occasionally joins joke or trend threads without getting deeply personal.",
+      "style_description": "This is where she sounds the most off-the-cuff and unfiltered. She posts short reactions about boxing matchups, Ravens frustrations, relationship takes, and whatever stand-up bit or absurd video has her laughing that day, usually with dry humor and zero interest in sounding curated.",
       "posting_frequency": "weekly",
       "topical_focus": [
-        "NFL football",
         "combat sports",
-        "WWE entertainment",
-        "humor",
-        "self-improvement"
+        "comedy",
+        "hip-hop culture",
+        "romantic relationship content",
+        "football"
       ],
       "chatbot_contexts": []
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "use_purposes": [
-        "work through practical questions",
-        "organize thoughts after stressful days",
-        "draft clearer messages",
-        "research products and interests"
+        "figuring things out privately",
+        "drafting clear messages",
+        "learning about topics she is curious about"
       ],
       "friend_zones": [
-        "self"
+        "self only",
+        "private confidant"
       ],
       "audience_type": "private",
-      "style_description": "He uses the chatbot as a low-pressure tool for both utility and reflection. The tone is direct and task-oriented most of the time, but it also becomes a private place to sort through relationship lessons, self-improvement ideas, and detailed comparisons before he buys something.",
+      "style_description": "She uses the chatbot in a direct, no-nonsense way: practical when she needs help wording something, curious when she wants background on a topic, and occasionally reflective when she is sorting through personal or relationship thoughts. The tone is more candid here than anywhere else because there is no audience to manage.",
       "posting_frequency": "daily",
       "topical_focus": [
-        "self-improvement",
-        "technology and gadgets",
+        "romantic relationship content",
+        "combat sports",
         "fitness",
-        "relationships and breakup recovery"
+        "hip-hop culture"
       ],
       "chatbot_contexts": [
         "composing chat messages",
@@ -119,99 +119,146 @@
   },
   "hidden_personas": [
     {
-      "label": "Private longing for stable couplehood after betrayal",
+      "label": "Private yearning for solid, drama-free partnership rather than performative romance",
       "type": "compensatory_need",
-      "description": "He appears to privately consume idealized romance content more than he publicly signals it, suggesting a quiet wish for a dependable, drama-free relationship rather than performative dating culture. For a church-going, post-breakup self-improvement-oriented man, this looks less like fantasy and more like reassurance that healthy partnership is still possible.",
+      "description": "Her repeated private lingering on couple and love content suggests she uses social media to imagine steadier intimacy and mutual loyalty, not just to enjoy cute romance clips. The pattern fits someone who gives blunt relationship advice to others but may privately be checking whether healthy partnership is still realistic for her own life.",
       "evidence_hashtags": [
         "#RelationshipGoals",
         "#relationshipgoals",
         "#couplegoals",
         "#CoupleGoals",
         "#loveofmylife",
-        "#love"
+        "#love",
+        "#relationships"
       ],
-      "evidence_rows": 194,
-      "evidence_row_fraction": 0.0756,
+      "evidence_rows": 203,
+      "evidence_row_fraction": 0.0791,
       "interaction_breakdown": {
-        "implicit_positive": 120,
-        "implicit_negative": 65,
-        "explicit_positive": 9
+        "implicit_positive": 125,
+        "implicit_negative": 68,
+        "explicit_positive": 10
       },
-      "privacy_ratio": 0.93,
+      "privacy_ratio": 0.926,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 53,
-        "Threads": 51,
-        "Facebook": 52,
-        "Chatbot": 38
+        "Facebook": 61,
+        "Threads": 49,
+        "Chatbot": 54,
+        "Instagram": 39
       },
       "surface_connections": [
-        "Interested in content about infidelity, breakups, and recovering from relationship betrayal",
-        "Interested in personal growth and self-improvement content",
-        "Identifies with Christian faith content"
+        "Interested in romantic relationship content and couple-oriented themes"
       ],
-      "inferred_motivation": "He uses aspirational couple content to soothe lingering trust damage and keep a future-oriented, hopeful model of love alive.",
-      "already_captured": false,
-      "related_tensions": [
-        {
-          "other_persona": "covert_concern: fear of repeating a bad relationship and choosing the wrong partner again",
-          "tension": "These two personas form a classic approach-avoidance conflict around intimacy: he privately wants calm, dependable love, but he also privately revisits content that keeps him vigilant about being hurt again. Both are highly private (privacy ratios 0.93 and 0.915) and show mixed interaction patterns with substantial implicit negative engagement (65 and 78), suggesting that hope for partnership and fear of misjudging a partner are active at the same time rather than sequentially resolved."
-        },
-        {
-          "other_persona": "Soft domestic reset fantasy: compact home, calm space, everyday order",
-          "tension": "He appears to want a shared, emotionally safe couple life, yet his private attraction to a compact, tightly controlled, orderly home suggests an equally strong wish for self-contained peace that does not depend on another person. The tension is that couplehood introduces unpredictability, while the domestic-reset fantasy leans toward control and stress containment; both are highly private (0.93 and 0.947), indicating this conflict is managed inwardly rather than openly expressed."
-        },
-        {
-          "other_persona": "Black media barbershop identity and talk-driven masculinity",
-          "tension": "His fully public-facing identity anchor is built around outspoken, humorous, status-aware masculine commentary, while his romantic reassurance-seeking is overwhelmingly private and emotionally vulnerable. The contrast between a public persona with privacy ratio 1.0 and a private longing with 0.93 suggests a split between the socially legible self that performs confidence and the hidden self that quietly seeks tenderness, stability, and repair."
-        }
-      ]
+      "inferred_motivation": "This content likely functions as quiet emotional rehearsal for the kind of dependable relationship she wants but does not loudly advertise.",
+      "already_captured": false
     },
     {
-      "label": "covert_concern: fear of repeating a bad relationship and choosing the wrong partner again",
+      "label": "covert_concern: fear of choosing the wrong partner and ending up in messy relationship drama",
       "type": "covert_concern",
-      "description": "The mix of romance-ideal hashtags with relationship-focused lingering suggests an unresolved screening problem: not just sadness about the past, but vigilance about future partner choice. This fits someone whose breakup pushed him toward grounded podcasts, church, and self-improvement rather than pure distraction.",
+      "description": "The romance cluster is paired with celebrity-drama and gossip consumption, suggesting she is not only entertained by relationship content but also studies failure modes: public betrayal, toxic dynamics, and avoidable chaos. For someone known as the blunt 1 a.m. advice friend, this looks like private vigilance about red flags and bad picks.",
       "evidence_hashtags": [
         "#relationships",
-        "#RelationshipGoals",
-        "#relationshipgoals",
-        "#couplegoals",
-        "#ConfidenceIsKey",
-        "#selfcare"
+        "#CelebrityGossip",
+        "#DramaAlert",
+        "#RealityTV",
+        "#CelebrityNews",
+        "#love"
       ],
-      "evidence_rows": 231,
-      "evidence_row_fraction": 0.09,
+      "evidence_rows": 107,
+      "evidence_row_fraction": 0.0417,
       "interaction_breakdown": {
-        "implicit_positive": 140,
-        "implicit_negative": 78,
-        "explicit_positive": 13
+        "implicit_positive": 69,
+        "explicit_positive": 9,
+        "implicit_negative": 29
       },
-      "privacy_ratio": 0.915,
+      "privacy_ratio": 0.885,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 58,
-        "Threads": 64,
-        "Facebook": 62,
-        "Chatbot": 47
+        "Chatbot": 26,
+        "Threads": 34,
+        "Facebook": 26,
+        "Instagram": 21
       },
       "surface_connections": [
-        "Interested in content about infidelity, breakups, and recovering from relationship betrayal",
-        "Interested in personal growth and self-improvement content",
-        "Enjoys motivational and uplifting social media content"
+        "Interested in romantic relationship content and couple-oriented themes",
+        "Enjoys short-form comedy and humorous entertainment content"
       ],
-      "inferred_motivation": "He returns to this content to build rules, intuition, and emotional steadiness so he does not get blindsided in love again.",
-      "already_captured": false,
-      "related_tensions": [
-        {
-          "other_persona": "Private longing for stable couplehood after betrayal",
-          "tension": "These two personas form a classic approach-avoidance conflict around intimacy: he privately wants calm, dependable love, but he also privately revisits content that keeps him vigilant about being hurt again. Both are highly private (privacy ratios 0.93 and 0.915) and show mixed interaction patterns with substantial implicit negative engagement (65 and 78), suggesting that hope for partnership and fear of misjudging a partner are active at the same time rather than sequentially resolved."
-        }
-      ]
+      "inferred_motivation": "She likely consumes this mix to sharpen her internal red-flag detector and reduce the risk of ending up in a draining or embarrassing relationship.",
+      "already_captured": false
     },
     {
-      "label": "Soft domestic reset fantasy: compact home, calm space, everyday order",
+      "label": "Blue-collar self-soothing through laughter and relatable chaos",
+      "type": "emotional_pattern",
+      "description": "The scale and consistency of comedy engagement points to more than casual humor taste: it looks like a decompression ritual. Given her physically demanding backstage work, she seems drawn to skits, jokes, and relatable clips that let her discharge stress without having to be emotionally vulnerable.",
+      "evidence_hashtags": [
+        "#funnyvideos",
+        "#comedy",
+        "#humor",
+        "#ComedyGold",
+        "#LaughOutLoud",
+        "#relatable",
+        "#FunnyMoments"
+      ],
+      "evidence_rows": 625,
+      "evidence_row_fraction": 0.2436,
+      "interaction_breakdown": {
+        "implicit_negative": 236,
+        "implicit_positive": 343,
+        "explicit_positive": 46
+      },
+      "privacy_ratio": 0.882,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Facebook": 156,
+        "Threads": 168,
+        "Instagram": 183,
+        "Chatbot": 118
+      },
+      "surface_connections": [
+        "Enjoys short-form comedy and humorous skit content",
+        "Enjoys stand-up comedy content",
+        "Enjoys lighthearted joke-based social media content"
+      ],
+      "inferred_motivation": "Humor gives her fast emotional recovery after hard labor, long hours, and social friction, making stress feel communal and manageable.",
+      "already_captured": false
+    },
+    {
+      "label": "Body-confidence identity built around dressing boldly as a plus-size woman",
+      "type": "intimate_interest",
+      "description": "This is not generic positivity; the pattern suggests attraction to content where fuller-bodied women are stylish, visible, and unapologetically dressed up. The likely appeal is not only self-esteem but permission to occupy space physically and aesthetically in fitted outfits, nightlife looks, and confidence-forward fashion.",
+      "evidence_hashtags": [
+        "#ConfidenceIsKey",
+        "#confidenceiskey",
+        "#fashion",
+        "#fashionista",
+        "#selfexpression",
+        "#Empowerment"
+      ],
+      "evidence_rows": 74,
+      "evidence_row_fraction": 0.0288,
+      "interaction_breakdown": {
+        "implicit_negative": 23,
+        "explicit_positive": 7,
+        "implicit_positive": 44
+      },
+      "privacy_ratio": 0.863,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Facebook": 19,
+        "Instagram": 20,
+        "Chatbot": 13,
+        "Threads": 22
+      },
+      "surface_connections": [
+        "Values body positivity and confidence-focused messaging for plus-size women"
+      ],
+      "inferred_motivation": "She is likely using this content to reinforce a sensual, socially confident self-presentation that pushes back against size-based invisibility or judgment.",
+      "already_captured": false
+    },
+    {
+      "label": "Aspiration toward a calmer, self-owned home base away from arena-scale chaos",
       "type": "aspiration",
-      "description": "High private engagement with small-home and decor tags points to a low-key fantasy of having a tidy, controlled personal space—something especially resonant for a field technician with physically demanding days and a routine built around work, gym, takeout, and solo media habits. It reads like a desire for simplicity, affordability, and peace rather than luxury.",
+      "description": "Tiny-home, small-space, and home-decor engagement stands out against the rest of her feed and reads like a fantasy of control, order, and a simpler private environment. For someone whose job revolves around heavy gear, loud venues, and constant movement, compact-home content can symbolize peace and autonomy rather than mere décor interest.",
       "evidence_hashtags": [
         "#tinyhomes",
         "#tinyhouseliving",
@@ -229,252 +276,107 @@
       "privacy_ratio": 0.947,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Facebook": 8,
-        "Chatbot": 6,
-        "Instagram": 16,
-        "Threads": 19
+        "Facebook": 17,
+        "Chatbot": 3,
+        "Instagram": 18,
+        "Threads": 11
       },
-      "surface_connections": [
-        "Interested in finding discounted consumer deals, especially during major sales events like Black Friday",
-        "Values supporting neighborhood-based community initiatives and local economic participation",
-        "Enjoys watching or engaging with daily-life vlog content centered on ordinary, unscripted moments"
-      ],
-      "inferred_motivation": "He is drawn to content that imagines a more ordered, manageable home life where stress is contained and daily living feels intentional.",
-      "already_captured": false,
-      "related_tensions": [
-        {
-          "other_persona": "Private longing for stable couplehood after betrayal",
-          "tension": "He appears to want a shared, emotionally safe couple life, yet his private attraction to a compact, tightly controlled, orderly home suggests an equally strong wish for self-contained peace that does not depend on another person. The tension is that couplehood introduces unpredictability, while the domestic-reset fantasy leans toward control and stress containment; both are highly private (0.93 and 0.947), indicating this conflict is managed inwardly rather than openly expressed."
-        }
-      ]
+      "surface_connections": [],
+      "inferred_motivation": "She may be soothing overstimulation by imagining a manageable, intentional home life that feels fully hers.",
+      "already_captured": false
     },
     {
-      "label": "Black media barbershop identity and talk-driven masculinity",
+      "label": "Nostalgic hip-hop insider identity anchored in talk-heavy legacy culture",
       "type": "identity_anchor",
-      "description": "Beyond generic sports or music fandom, his engagement clusters around debate-heavy, personality-led Black media spaces where humor, conflict, status talk, and cultural commentary blend together. For a Korean straight male, this suggests a chosen cultural style of masculinity and social belonging built around outspoken, entertainment-forward commentary rather than inherited ethnic identity alone.",
+      "description": "Beyond liking rap, she appears attached to the debate-and-memory ecosystem around legacy hip-hop figures and platforms. The mix suggests identity maintenance through cultural fluency: knowing the stories, beefs, interviews, and old-school references that signal real in-group membership.",
       "evidence_hashtags": [
+        "#HipHopHistory",
+        "#HipHopLegends",
+        "#Throwback",
+        "#Nostalgia",
         "#TheBreakfastClub",
-        "#ClubShayShay",
         "#DrinkChamps",
         "#VladTV",
         "#Camron",
-        "#DameDash"
+        "#DameDash",
+        "#JayZ",
+        "#50Cent",
+        "#FatJoe"
       ],
-      "evidence_rows": 88,
-      "evidence_row_fraction": 0.0343,
+      "evidence_rows": 147,
+      "evidence_row_fraction": 0.0573,
       "interaction_breakdown": {
-        "implicit_negative": 24,
-        "implicit_positive": 64
+        "implicit_negative": 40,
+        "implicit_positive": 104,
+        "explicit_positive": 3
       },
-      "privacy_ratio": 1.0,
+      "privacy_ratio": 0.972,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 18,
-        "Instagram": 22,
-        "Facebook": 27,
-        "Chatbot": 21
+        "Facebook": 37,
+        "Instagram": 38,
+        "Chatbot": 30,
+        "Threads": 42
       },
       "surface_connections": [
-        "Interested in podcast content and podcast culture",
-        "Enjoys urban comedy shows like Wild 'N Out",
-        "Enjoys stand-up comedy entertainment",
-        "Interested in DMX and his music legacy"
+        "Enjoys hip-hop music, especially classic East Coast and West Coast rap acts",
+        "Enjoys battle rap culture and rap-beef content",
+        "Interested in hip-hop culture and its legacy figures",
+        "Enjoys 1990s golden-era hip-hop history and legacy artists"
       ],
-      "inferred_motivation": "He uses these media ecosystems as a para-social social space for humor, opinion-sharpening, and a version of male camaraderie that feels lively and culturally legible.",
-      "already_captured": false,
-      "related_tensions": [
-        {
-          "other_persona": "Private longing for stable couplehood after betrayal",
-          "tension": "His fully public-facing identity anchor is built around outspoken, humorous, status-aware masculine commentary, while his romantic reassurance-seeking is overwhelmingly private and emotionally vulnerable. The contrast between a public persona with privacy ratio 1.0 and a private longing with 0.93 suggests a split between the socially legible self that performs confidence and the hidden self that quietly seeks tenderness, stability, and repair."
-        }
-      ]
-    },
-    {
-      "label": "Private appreciation for expressive movement and performance swagger",
-      "type": "private_hobby",
-      "description": "The dance-related tags suggest a quiet fascination with rhythm, performance confidence, and battle-style movement that he likely does not foreground publicly. This fits someone already drawn to wrestling, combat sports, and comedy—forms where charisma and physical timing matter as much as technique.",
-      "evidence_hashtags": [
-        "#dance",
-        "#Dance",
-        "#danceperformance",
-        "#DancePerformance",
-        "#dancemoves",
-        "#dancingqueen"
-      ],
-      "evidence_rows": 87,
-      "evidence_row_fraction": 0.0339,
-      "interaction_breakdown": {
-        "implicit_negative": 26,
-        "implicit_positive": 56,
-        "explicit_positive": 5
-      },
-      "privacy_ratio": 0.918,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Threads": 23,
-        "Instagram": 19,
-        "Facebook": 30,
-        "Chatbot": 15
-      },
-      "surface_connections": [
-        "Interested in breakdancing and battle-style street dance content",
-        "Enjoys WWE and professional wrestling entertainment content",
-        "Interested in taekwondo training and technique-focused martial arts content"
-      ],
-      "inferred_motivation": "He is attracted to movement content that packages confidence, rhythm, and controlled showmanship in a way that feels aspirational without requiring public participation.",
-      "already_captured": false,
-      "related_tensions": []
-    },
-    {
-      "label": "Caretaker-consumer streak: takes pride in being the useful recommender",
-      "type": "personality_trait",
-      "description": "His pattern around products, self-care, home, and practical lifestyle content suggests he likes being the guy who knows what is worth buying and what actually works. Given the bio detail about meticulous product notes for sisters, this is less vanity than competence-through-curation.",
-      "evidence_hashtags": [
-        "#selfcare",
-        "#healthyliving",
-        "#wellness",
-        "#homedecor",
-        "#Innovation",
-        "#adulting"
-      ],
-      "evidence_rows": 84,
-      "evidence_row_fraction": 0.0327,
-      "interaction_breakdown": {
-        "implicit_positive": 53,
-        "implicit_negative": 31
-      },
-      "privacy_ratio": 1.0,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Threads": 30,
-        "Facebook": 13,
-        "Chatbot": 17,
-        "Instagram": 24
-      },
-      "surface_connections": [
-        "Interested in makeup and beauty product content, especially brow and lip cosmetics",
-        "Interested in finding discounted consumer deals, especially during major sales events like Black Friday",
-        "Interested in biohacking and wellness optimization practices",
-        "Interested in reliable, high-performance home internet service"
-      ],
-      "inferred_motivation": "He gets identity value from being practically informed and able to help family or friends make better choices.",
-      "already_captured": false,
-      "related_tensions": []
+      "inferred_motivation": "This content helps her feel culturally rooted and socially sharp, reinforcing a no-BS persona through a canon of figures who embody swagger, conflict literacy, and survival.",
+      "already_captured": false
     }
   ],
-  "hidden_persona_summary": "Beneath his public mix of sports, comedy, wrestling, podcasts, church, and self-improvement, he reads as a steadying, post-betrayal personality who is trying to rebuild trust, competence, and a calmer vision of adult life. His strongest private pattern is relationship-oriented: heavy but mostly hidden engagement with tags like #RelationshipGoals, #couplegoals, #loveofmylife, #relationships, #ConfidenceIsKey, and #selfcare suggests he uses breakup, infidelity-recovery, faith, and personal-growth content to reassure himself that stable couplehood is still possible while also learning how not to choose the wrong partner again. That same quiet reset impulse shows up in more privately consumed aspiration and hobby content—#tinyhomes, #smallspaces, and #homedecor point to a compact, orderly home fantasy, while #dance, #danceperformance, and #dancemoves suggest a private appreciation for confidence, rhythm, and performance swagger he likely does not foreground socially; his beauty, fashion, wellness, deals, and product-focused browsing also fits a caretaker-consumer streak that values being useful and informed. By contrast, his fully public-facing identity is more culturally social and performative, clustering around Black media and talk-driven masculinity through tags like #TheBreakfastClub, #ClubShayShay, #DrinkChamps, and #VladTV, which helps explain why he openly gravitates toward boxing, NFL and Cowboys content, WWE, NBA, Deion Sanders media, podcast culture, urban comedy, memes, and humorous sports posts: these are less random tastes than the visible expression of a man who wants lively commentary, camaraderie, and controlled confidence while keeping his softer domestic and romantic hopes mostly private.",
+  "hidden_persona_summary": "Beneath her public feed, she comes across as a blunt, working-class, culturally fluent woman who uses social media less for self-display than for emotional regulation, private reality-testing, and identity maintenance. Her heavy private consumption of romance content such as #RelationshipGoals, #couplegoals, #loveofmylife, and #relationships—especially alongside #CelebrityGossip, #DramaAlert, and #RealityTV—suggests a quiet longing for a stable, drama-free partnership paired with vigilance about red flags, which helps explain why she follows couple-themed content while also tracking messy relationship narratives. The same private pattern shows up in her very high-volume humor use (#funnyvideos, #comedy, #LaughOutLoud, #relatable), which likely underlies her visible preference for short-form skits, stand-up, and light joke content as a fast decompression tool, while her confidence-focused engagement (#ConfidenceIsKey, #fashionista, #selfexpression) reflects a matter-of-fact body-confidence identity centered on dressing boldly as a plus-size woman rather than hiding. More privately, she also appears to retreat into calming control fantasies through #tinyhomes, #smallspaces, and #homedecor, while her strongest identity anchor is the highly private legacy hip-hop ecosystem—#HipHopHistory, #HipHopLegends, #TheBreakfastClub, #DrinkChamps, #VladTV, #JayZ, and #50Cent—which helps explain her public-facing interest in rap history, battle culture, beef narratives, boxing, MMA, Ravens fandom, and other no-nonsense competitive content that matches her conflict-literate, resilient persona.",
   "mbti": {
-    "type": "ISFJ",
+    "type": "ISTJ",
     "dimensions": {
       "E_I": {
-        "E": 0.38,
-        "I": 0.62,
-        "reason": "His public interests are socially lively and commentary-driven, but the profile emphasizes a mostly hidden inner life centered on private relationship repair, domestic calm, and self-protective reflection, which leans more introverted overall."
+        "E": 0.4,
+        "I": 0.6,
+        "reason": "Her social media use appears more private, regulatory, and identity-maintaining than outwardly expressive, suggesting someone who engages culture intensely without needing constant interpersonal broadcasting."
       },
       "S_N": {
-        "S": 0.61,
-        "N": 0.39,
-        "reason": "The strongest patterns are concrete and lifestyle-grounded—sports, products, home decor, fitness, food, and practical competence-through-curation—suggesting a more experience-based, tangible orientation than an abstract or purely conceptual one."
+        "S": 0.58,
+        "N": 0.42,
+        "reason": "Her interests cluster around concrete, real-world content—sports, boxing, hip-hop history, relationship red flags, humor, food, fashion, and home spaces—more than abstract systems or speculative ideas."
       },
       "T_F": {
-        "T": 0.34,
-        "F": 0.66,
-        "reason": "His hidden motivations are strongly relationship-oriented, reassurance-seeking, faith-linked, and caretaker-like, indicating decisions and attention are shaped more by interpersonal security and values than detached analysis."
+        "T": 0.56,
+        "F": 0.44,
+        "reason": "The profile reads blunt, conflict-literate, and reality-testing, with strong attention to red flags and no-nonsense cultural analysis, though this is balanced by clear relational longing and sentiment."
       },
       "J_P": {
         "J": 0.68,
         "P": 0.32,
-        "reason": "High conscientiousness plus themes of rebuilding trust, screening partners carefully, curating useful recommendations, and fantasizing about a tidy controlled home all point toward a structured, preference-for-order style."
+        "reason": "High conscientiousness plus her attraction to stability, controlled home environments, dependable partnership, and structured vigilance about messy outcomes all point more toward a judging orientation."
       }
     }
   },
   "user_id": "115",
   "preferences": [
-    "20:10, 04/11/2026 : Values close family bonds and family-centered identity.",
-    "19:56, 04/11/2026 : Interested in professional boxing matchups and fight-night content.",
-    "19:14, 04/11/2026 : Enjoys stand-up comedy entertainment.",
-    "19:14, 04/11/2026 : Enjoys live music performance content, especially singer-songwriter or club-show material.",
-    "19:11, 04/11/2026 : Interested in strength-training gym workouts, especially back-focused lifting exercises.",
-    "19:08, 04/11/2026 : Interested in NFL football content.",
-    "19:08, 04/11/2026 : Enjoys humorous sports meme content.",
-    "19:06, 04/11/2026 : Enjoys humorous food-related content, especially comedic kitchen mishaps and foodie fail videos.",
-    "19:06, 04/11/2026 : Strongly interested in WWE and professional wrestling culture.",
-    "19:06, 04/11/2026 : Interested in taekwondo training and technique-focused martial arts content",
-    "19:06, 04/11/2026 : Follows UFC and MMA content as a fan.",
-    "18:55, 04/11/2026 : Enjoys comedic short-form content designed to make people laugh.",
-    "18:52, 04/11/2026 : Enjoys motivational and uplifting social media content.",
-    "18:47, 04/11/2026 : Enjoys WWE and professional wrestling entertainment content.",
-    "18:26, 04/11/2026 : Enjoys viral social media challenge content and trend-driven participation formats.",
-    "18:23, 04/11/2026 : Enjoys ATV riding and off-road recreation.",
-    "17:58, 04/11/2026 : Follows Deion Sanders and his family-centered football media.",
-    "17:56, 04/11/2026 : Interested in scenic fall travel in New Hampshire and the broader New England region.",
-    "17:40, 04/11/2026 : Interested in DMX and his music legacy",
-    "17:40, 04/11/2026 : Interested in discovering newly released music.",
-    "17:34, 04/11/2026 : Interested in personal growth and self-improvement content.",
-    "17:27, 04/11/2026 : Interested in skateboarding culture and content.",
-    "17:24, 04/11/2026 : Interested in attending live Latin music concerts",
-    "17:05, 04/11/2026 : Interested in Marvel superhero franchise content and fandom.",
-    "16:59, 04/11/2026 : Interested in content about infidelity, breakups, and recovering from relationship betrayal.",
-    "16:59, 04/11/2026 : Interested in basketball culture and gameplay.",
-    "16:59, 04/11/2026 : Interested in home decor and interior design inspiration.",
-    "16:57, 04/11/2026 : Enjoys classic soul music.",
-    "16:46, 04/11/2026 : Interested in streaming live sports through bundled subscription services.",
-    "16:44, 04/11/2026 : Enjoys urban comedy shows like Wild 'N Out.",
-    "16:44, 04/11/2026 : Interested in outdoor seafood cooking techniques, especially grilling or smoking fish.",
-    "16:44, 04/11/2026 : Enjoys visually driven food content and culinary presentation on social media.",
-    "16:42, 04/11/2026 : Interested in NBA basketball",
-    "16:42, 04/11/2026 : Engages with funny animal humor and comedic pet videos.",
-    "16:42, 04/11/2026 : Interested in podcast content and podcast culture",
-    "16:42, 04/11/2026 : Identifies with Christian faith content",
-    "16:37, 04/11/2026 : Enjoys entertaining football-themed social media content.",
-    "16:37, 04/11/2026 : Enjoys short-form animated comedy content, especially dubbed cartoon-style videos.",
-    "16:26, 04/11/2026 : Enjoys internet meme content, especially absurd or playful humor.",
-    "16:25, 04/11/2026 : Enjoys R&B music content",
-    "16:17, 04/11/2026 : Interested in paranormal and unexplained phenomena content.",
-    "16:09, 04/11/2026 : Interested in personal finance and money management.",
-    "16:08, 04/11/2026 : Enjoys celebrity interview content, especially the Hot Ones series.",
-    "16:07, 04/11/2026 : Interested in makeup and beauty product content, especially brow and lip cosmetics.",
-    "15:40, 04/11/2026 : Interested in professional boxing, especially major title fights and elite boxers.",
-    "15:35, 04/11/2026 : Follows high-profile boxers such as Terence Crawford and Canelo Alvarez.",
-    "15:35, 04/11/2026 : Enjoys lighthearted family- and child-centered social media content.",
-    "15:08, 04/11/2026 : Interested in fashion and style-oriented content.",
-    "14:08, 04/11/2026 : Enjoys watching fight highlight and knockout clips.",
-    "13:50, 04/11/2026 : Enjoys humorous social media content, especially short funny videos and comedy posts.",
-    "13:50, 04/11/2026 : Interested in finding discounted consumer deals, especially during major sales events like Black Friday.",
-    "12:28, 04/11/2026 : Not interested in celebrity-driven comedy movie promotion.",
-    "10:48, 04/11/2026 : Interested in reliable, high-performance home internet service",
-    "10:48, 04/11/2026 : Interested in Apple and iPhone-related tech content.",
-    "10:46, 04/11/2026 : Enjoys watching action- and suspense-driven movies or TV shows.",
-    "10:31, 04/11/2026 : Feels nostalgic about past wrestling eras, particularly the WWE Attitude Era.",
-    "06:01, 04/11/2026 : Interested in humorous, relatable content about the struggles of adult life and financial stress.",
-    "02:52, 04/11/2026 : Not interested in NFL-related content.",
-    "02:52, 04/11/2026 : Avoids football highlight clips and recap-style sports media.",
-    "22:27, 04/10/2026 : Follows the Dallas Cowboys as a fan or frequent watcher.",
-    "18:32, 04/10/2026 : Interested in conspiracy theory content about hidden power structures and secret agendas.",
-    "18:19, 04/10/2026 : Interested in high-performance Honda vehicles, especially the Honda Civic Type R.",
-    "15:48, 04/10/2026 : Interested in celebrity gossip and high-profile entertainment drama.",
-    "15:46, 04/10/2026 : Values Puerto Rican cultural pride and identity.",
-    "14:30, 04/10/2026 : Enjoys comedic sports content that blends football with humor.",
-    "12:47, 04/10/2026 : Interested in high-profile celebrity couples and their relationship narratives.",
-    "12:47, 04/10/2026 : Enjoys watching or engaging with daily-life vlog content centered on ordinary, unscripted moments.",
-    "08:02, 04/09/2026 : Interested in prominent MMA personalities such as Dominic Cruz and Daniel Cormier.",
-    "04:07, 04/09/2026 : Not interested in Baltimore Ravens content.",
-    "04:07, 04/09/2026 : Avoids Lamar Jackson-centered football content.",
-    "02:08, 04/09/2026 : Not interested in NFL-themed content, especially New England Patriots or Tom Brady posts.",
-    "17:38, 04/07/2026 : Not interested in fairytale-inspired residential interiors or castle-themed home decor aesthetics.",
-    "17:38, 04/07/2026 : Turned off by aspirational luxury real estate content centered on ornate, high-end homes.",
-    "17:38, 04/07/2026 : Not interested in cozy/interior home decor inspiration content.",
-    "17:38, 04/07/2026 : Avoids content about tiny homes and traditional stone-house architecture.",
-    "17:38, 04/07/2026 : Not interested in tiny-home and small-space interior design content.",
-    "20:52, 04/06/2026 : Not interested in NBA news content.",
-    "20:52, 04/06/2026 : Avoids sports debate content.",
-    "15:03, 04/06/2026 : Not interested in boxing content",
-    "15:03, 04/06/2026 : Avoids martial arts-themed social media posts",
-    "15:03, 04/06/2026 : Not interested in UFC and MMA fight content",
-    "15:03, 04/06/2026 : Avoids content centered on Conor McGregor and Jose Aldo as sports personalities",
-    "09:59, 04/06/2026 : Not interested in movie-themed celebrity or film-fandom hashtag content.",
-    "04:02, 04/06/2026 : Interested in biohacking and wellness optimization practices.",
-    "22:14, 04/05/2026 : Not interested in social media content framed around financial literacy, wealth management, or financial freedom advice.",
-    "22:14, 04/05/2026 : Avoids entrepreneurship-themed motivational branding and business-hustle messaging."
+    "19:56, 04/11/2026 : Interested in professional boxing, especially major superfight narratives and championship matchups.",
+    "19:56, 04/11/2026 : Follows star boxers such as Terence Crawford, David Benavidez, and Canelo Alvarez.",
+    "19:26, 04/11/2026 : Enjoys lighthearted joke-based social media content.",
+    "19:11, 04/11/2026 : Interested in strength training and gym-based fitness.",
+    "19:11, 04/11/2026 : Enjoys dessert-focused food content, especially rich chocolate sweets like mousse and Nutella-based treats.",
+    "19:08, 04/11/2026 : Interested in the Baltimore Ravens as an NFL team.",
+    "19:06, 04/11/2026 : Interested in following combat sports, especially boxing and MMA/UFC.",
+    "19:06, 04/11/2026 : Follows martial arts competition content, especially ONE Championship events.",
+    "19:05, 04/11/2026 : Interested in hip-hop culture and its legacy figures.",
+    "18:23, 04/11/2026 : Enjoys short-form comedy and humorous skit content on social media.",
+    "17:50, 04/11/2026 : Enjoys short-form comedy and humorous entertainment content.",
+    "17:40, 04/11/2026 : Enjoys hip-hop music, especially classic East Coast and West Coast rap acts.",
+    "17:27, 04/11/2026 : Enjoys ATV riding and off-road recreation.",
+    "17:05, 04/11/2026 : Enjoys watching action- and suspense-driven movies or TV shows.",
+    "16:46, 04/11/2026 : Interested in boxing match coverage and fight analysis.",
+    "16:26, 04/11/2026 : Values body positivity and confidence-focused messaging for plus-size women.",
+    "16:13, 04/11/2026 : Enjoys seafood-focused cooking content, especially recipe and preparation ideas.",
+    "16:11, 04/11/2026 : Enjoys 1990s golden-era hip-hop history and legacy artists.",
+    "15:09, 04/11/2026 : Enjoys Deftones and is likely a fan of the band's music.",
+    "15:03, 04/11/2026 : Interested in hip-hop and rap culture news content.",
+    "12:06, 04/11/2026 : Enjoys battle rap culture and rap-beef content.",
+    "11:01, 04/11/2026 : Interested in romantic relationship content and couple-oriented themes."
   ]
 }
