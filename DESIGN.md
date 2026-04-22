@@ -394,8 +394,9 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 
 | Constant | Value | Purpose |
 |----------|-------|---------|
-| `MIN_PERSONA_INIT_CONFIDENCE` | 0.75 | Init filter floor (no exploratory retention) |
-| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.75 | Test-split eligibility |
+| `MIN_PERSONA_INIT_CONFIDENCE` | 0.75 | Init filter floor for positives |
+| `MIN_NEGATIVE_INIT_CONFIDENCE` | 0.55 | Init filter floor for negatives (aligned with the 0.55-0.75 prompt-scoring band for "direct dislike") |
+| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.75 | Test-split eligibility (positives only) |
 | `XREF_THRESHOLD_EXPLICIT` | 20.0 | Xref bar for explicit-dominated positive canonicals |
 | `XREF_THRESHOLD_IMPLICIT` | 50.0 | Xref bar for implicit-dominated positive canonicals |
 | `XREF_THRESHOLD_NEGATIVE` | 5.0 | Xref bar for negatives (decoupled from positive scale — negatives are structurally rarer) |
