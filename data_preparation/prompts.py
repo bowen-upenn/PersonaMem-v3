@@ -839,8 +839,9 @@ def generate_synthetic_content_prompt(
             "The `content` object MUST be:\n"
             "```json\n"
             "{\n"
-            '  "text": "<full post body, 30-180 words, platform-appropriate voice. '
-            'No leading @ or hashtag dumps at the top; hashtags may be woven in naturally>"\n'
+            '  "text": "<full post body, 30-140 words, platform-appropriate voice. '
+            'DO NOT include any hashtags in the body — hashtags are already surfaced '
+            'separately on the event. No @-mentions either unless the voice really calls for one.>"\n'
             "}\n"
             "```"
         )
@@ -947,7 +948,7 @@ The user then took this action on it: **{action_label}** (`{action}`).
 3. Content quality should roughly match the implied engagement: if the action is a "skipped" / "scrolled past" action, the item can be plausible but not maximally compelling; if the action is "saved" / "reposted" / "rewatched", the content should be info-dense / high-quality.
 4. For `short_video`, `key_frames[*].timestamp_s` must be strictly increasing and all ≤ `metadata.duration_s`.
 5. For `image`, `dimensions` must be consistent with `aspect_ratio` (e.g., 4:5 → "1080x1350", 9:16 → "1080x1920", 1:1 → "1080x1080").
-6. Do NOT invent preferences beyond those listed. Do NOT include raw hashtag dumps at the top of text bodies — hashtags may appear naturally in-line.
+6. Do NOT invent preferences beyond those listed. **Never include hashtags in any body copy** (post text, caption, overall_description, key-frame descriptions, audio transcript). Hashtags belong only in the event's separate `source_hashtags` field — the reader already sees them there, so duplicating them in-line is redundant and unrealistic.
 7. Realism matters — camera models, filter names, music tracks, creator handles should sound like real ones (but do not copy any specific real creator's handle).
 
 ## Output Format
