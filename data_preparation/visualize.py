@@ -125,11 +125,62 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     n_unique = len(set(r.get("persona_item", "") for r in flat_prefs))
     n_stereo = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "stereotypical")
     n_anti = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "anti-stereotypical")
-    n_test = sum(1 for r in flat_prefs if r.get("split") == "test")
-    n_train = n_prefs - n_test
+    # Pref-instance test counts (one per supporting event)
+    n_test_instances = sum(1 for r in flat_prefs if r.get("split") == "test")
+    n_history_instances = n_prefs - n_test_instances
+    # Canonical-level test counts: a canonical is "test" if any of its
+    # instances carries split=test (matches the pipeline summary's semantics).
+    test_canonicals = {r.get("persona_item", "") for r in flat_prefs if r.get("split") == "test"}
+    test_canonicals.discard("")
+    n_test_canonicals = len(test_canonicals)
+    n_history_canonicals = n_unique - n_test_canonicals
     per_app_counts = {}
     for app in APPS:
         per_app_counts[app] = sum(1 for e in events if e.get("_app") == app)
+
+    # Event counts split by source_interaction_type
+    _TYPES = ("explicit_positive", "explicit_negative", "implicit_positive", "implicit_negative")
+    event_type_counts = {t: 0 for t in _TYPES}
+    for e in events:
+        t = e.get("source_interaction_type", "")
+        if t in event_type_counts:
+            event_type_counts[t] += 1
+
+    # Canonical-preference counts split by their dominant interaction type.
+    # For each unique persona_item, classify by priority:
+    #   explicit_negative > explicit_positive > implicit_positive > implicit_negative.
+    # (In practice surviving negatives are all promoted to explicit_negative,
+    # so the implicit_negative canonical count will usually be 0.)
+    pref_types_by_canonical: dict[str, set[str]] = {}
+    for r in flat_prefs:
+        pi = r.get("persona_item", "")
+        if not pi:
+            continue
+        pref_types_by_canonical.setdefault(pi, set()).add(r.get("source_interaction_type", ""))
+    canonical_type_counts = {t: 0 for t in _TYPES}
+    for types in pref_types_by_canonical.values():
+        if "explicit_negative" in types:
+            canonical_type_counts["explicit_negative"] += 1
+        elif "explicit_positive" in types:
+            canonical_type_counts["explicit_positive"] += 1
+        elif "implicit_positive" in types:
+            canonical_type_counts["implicit_positive"] += 1
+        elif "implicit_negative" in types:
+            canonical_type_counts["implicit_negative"] += 1
+
+    # Time period: earliest → latest event's formatted timestamps.
+    event_ts = [int(e.get("source_timestamp") or 0) for e in events if e.get("source_timestamp")]
+    if event_ts:
+        first_ts, last_ts = min(event_ts), max(event_ts)
+        first_fmt = utils.unix_to_formatted(first_ts) if hasattr(utils, "unix_to_formatted") else datetime.fromtimestamp(first_ts, tz=timezone.utc).strftime("%H:%M, %m/%d/%Y")
+        last_fmt = utils.unix_to_formatted(last_ts) if hasattr(utils, "unix_to_formatted") else datetime.fromtimestamp(last_ts, tz=timezone.utc).strftime("%H:%M, %m/%d/%Y")
+        span_days = (last_ts - first_ts) / 86400.0
+        time_period = f"{first_fmt} → {last_fmt} ({span_days:.1f} days)"
+    else:
+        time_period = "—"
+
+    # Number of distinct preference categories
+    n_categories = len({r.get("category", "") for r in flat_prefs if r.get("category")})
 
     html = f"""\
 <!DOCTYPE html>
@@ -291,12 +342,28 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     <h1>User {user_id}</h1>
     <div class="meta">
       <span>{n_events} events</span>
-      <span>{n_prefs} pref instances</span>
-      <span>{n_unique} unique</span>
-      <span>{n_train} train</span>
-      <span>{n_test} test</span>
+      <span>{n_prefs} pref instances ({n_test_instances} test, {n_history_instances} history)</span>
+      <span>{n_unique} canonicals ({n_test_canonicals} test, {n_history_canonicals} history)</span>
+      <span>{n_categories} categories</span>
       <span>{n_stereo} stereo</span>
       <span>{n_anti} anti-stereo</span>
+    </div>
+    <div class="meta" style="margin-top: 4px;">
+      <span title="Events by source_interaction_type">Events:</span>
+      <span>expl+ {event_type_counts["explicit_positive"]}</span>
+      <span>expl− {event_type_counts["explicit_negative"]}</span>
+      <span>impl+ {event_type_counts["implicit_positive"]}</span>
+      <span>impl− {event_type_counts["implicit_negative"]}</span>
+    </div>
+    <div class="meta" style="margin-top: 4px;">
+      <span title="Canonical preferences by dominant supporting interaction type">Canonicals:</span>
+      <span>expl+ {canonical_type_counts["explicit_positive"]}</span>
+      <span>expl− {canonical_type_counts["explicit_negative"]}</span>
+      <span>impl+ {canonical_type_counts["implicit_positive"]}</span>
+      <span>impl− {canonical_type_counts["implicit_negative"]}</span>
+    </div>
+    <div class="meta" style="margin-top: 4px;">
+      <span>Period: {time_period}</span>
       <span>IG: {per_app_counts.get("Instagram", 0)}</span>
       <span>FB: {per_app_counts.get("Facebook", 0)}</span>
       <span>TH: {per_app_counts.get("Threads", 0)}</span>
