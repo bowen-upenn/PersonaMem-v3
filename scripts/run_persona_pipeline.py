@@ -29,7 +29,10 @@ def main():
     parser.add_argument("--user_id", default=None, help="Process only this user_id (default: all users)")
     parser.add_argument("--max_workers", type=int, default=1, help="Max parallel user workers (default: 1 — process users sequentially)")
     parser.add_argument("--parallel", type=int, default=50, help="Parallel LLM API calls per user (default: 50)")
-    parser.add_argument("--model", default="gpt-5-chat", help="LLM model name (default: gpt-5-chat, uses AZURE_OPENAI_DEPLOYMENT_NAME from .env)")
+    parser.add_argument("--model", default="gpt-5-chat", help="Flagship LLM model name (default: gpt-5-chat, uses AZURE_OPENAI_DEPLOYMENT_NAME from .env)")
+    parser.add_argument("--mini_model", default="gpt-5.4-mini",
+                        help="Mini-tier LLM model for mechanical steps — 7a intimate detection, 10 app routing, 12 interaction formats, 13b synthetic content, 14 stereotype marks. "
+                             "Only honored on OpenAI-direct / Claude / Gemini backends; Azure with a forced AZURE_OPENAI_DEPLOYMENT_NAME needs a separate deployment to benefit.")
     parser.add_argument("--rate_limit", type=int, default=50, help="API rate limit per minute (default: 50)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
 
@@ -40,6 +43,8 @@ def main():
 
     llm_args = {'models': {'llm_model': args.model}}
     llm_client = QueryLLM(llm_args, rate_limit_per_min=args.rate_limit)
+    mini_args = {'models': {'llm_model': args.mini_model}}
+    llm_client_mini = QueryLLM(mini_args, rate_limit_per_min=args.rate_limit)
 
     print(f"{utils.Colors.BOLD}PersonaMem Persona Pipeline{utils.Colors.ENDC}")
     print(f"  Input: {args.input_csv}")
@@ -47,7 +52,8 @@ def main():
     print(f"  User workers: {args.max_workers}")
     print(f"  Parallel API calls: {args.parallel}")
     actual_model = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME") or args.model
-    print(f"  Model: {actual_model}")
+    print(f"  Flagship model: {actual_model}")
+    print(f"  Mini model:     {args.mini_model}")
     print()
 
     grouped = load_and_group_csv(args.input_csv)
@@ -61,13 +67,15 @@ def main():
     results = []
     if len(grouped) == 1:
         uid, rows = next(iter(grouped.items()))
-        result = process_single_user(uid, rows, llm_client, args.backend_dir, args.verbose, args.parallel)
+        result = process_single_user(uid, rows, llm_client, args.backend_dir, args.verbose, args.parallel,
+                                     llm_client_mini=llm_client_mini)
         results.append(result)
     else:
         with ThreadPoolExecutor(max_workers=args.max_workers) as executor:
             futures = {
                 executor.submit(
-                    process_single_user, uid, rows, llm_client, args.backend_dir, args.verbose, args.parallel
+                    process_single_user, uid, rows, llm_client, args.backend_dir, args.verbose, args.parallel,
+                    llm_client_mini=llm_client_mini,
                 ): uid
                 for uid, rows in grouped.items()
             }

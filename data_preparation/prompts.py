@@ -1553,46 +1553,6 @@ Write in third person. Be specific and grounded in the data. Do not speculate be
 Respond with ONLY the paragraph text. No JSON, no markdown formatting, no preamble."""
 
 
-def identify_dual_personalities_prompt(
-    hidden_personas_json: str,
-) -> str:
-    """Build a prompt asking the LLM to identify contradictory hidden persona pairs (dual personalities)."""
-
-    return f"""\
-You are an expert behavioral analyst identifying internal psychological tensions in a user's hidden persona profile.
-
-Below are validated hidden personas inferred from a user's social media engagement:
-
-{hidden_personas_json}
-
-## Your Task
-
-Identify **dual personality tensions** — pairs of hidden personas that coexist in contradiction or tension within this user. These represent approach-avoidance conflicts, public-vs-private selves, or genuinely contradictory needs that the user navigates simultaneously.
-
-Examples of dual tensions:
-- Public confidence + private vulnerability (explicit engagement with empowerment content but private lingering on insecurity/yearning content)
-- Aspirational luxury + minimalist escape (drawn to both wealth content AND simple-living content)
-- Social extraversion + private introversion (publicly engaged in community content but privately consuming solitary/reflective content)
-- Nostalgic anchoring + forward aspiration (rooted in a past cultural era but also drawn to entrepreneurial/future-oriented content)
-
-## Rules
-
-1. Both halves of each dual must reference existing hidden personas from the list above — do NOT invent new ones.
-2. Explain the specific tension: WHY are these two personas contradictory? What internal conflict do they represent?
-3. Only report genuine tensions — two personas that are merely different (e.g., "likes cooking" and "likes sports") are NOT a dual personality.
-4. Use evidence from the hidden personas' interaction_breakdowns and privacy_ratios to ground the tension (e.g., "one is consumed publicly while the other is consumed privately").
-
-## Output Format
-
-Respond with ONLY a JSON array. Return an empty array `[]` if no genuine tensions exist.
-
-```json
-[
-  {{"persona_a": "label of first hidden persona", "persona_b": "label of second hidden persona", "tension": "2-3 sentence description of the psychological tension between these two personas"}}
-]
-```"""
-
-
 def infer_mbti_prompt(
     big_five: dict,
     hidden_persona_summary: str,

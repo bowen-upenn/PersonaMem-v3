@@ -153,15 +153,10 @@ class HiddenPersona:
     surface_connections: list[str] = field(default_factory=list)            # Which surface preferences this explains
     inferred_motivation: str = ""                                           # 1-2 sentence "why" behind this pattern
     already_captured: bool = False                                          # True if overlaps heavily with surface preferences
-    # Dual-personality tensions this hidden persona participates in. Each
-    # entry: {"other_persona": str, "tension": str}. Folded in from the
-    # former top-level `dual_personalities` list — we only keep the most
-    # important tensions, attached directly to the relevant hidden personas.
-    related_tensions: list = field(default_factory=list)
 
 
 # Validation thresholds for hidden persona inference
-MIN_HIDDEN_PERSONA_ROWS = 20       # Minimum distinct source rows for a cluster to survive
+MIN_HIDDEN_PERSONA_ROWS = 40       # Minimum distinct source rows for a cluster to survive
 MIN_HIDDEN_PERSONA_DAYS = 3        # Minimum temporal spread in distinct calendar days
 HIDDEN_PERSONA_HASHTAG_MIN_FREQ = 3  # Minimum total occurrences for a hashtag to be considered
 HIDDEN_PERSONA_TOP_HASHTAGS = 200  # Number of top hashtags passed to LLM
@@ -209,13 +204,13 @@ class AnnotatedPersona:
 # Floor on confidence_score_init. Personas below this are dropped after
 # cross-ref regardless of cross-ref score or relationship type. This is
 # the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.6
+MIN_PERSONA_INIT_CONFIDENCE = 0.75
 
 # High-confidence predicate — used for test-split eligibility and distractor
 # shortlisting. init threshold matches the filter floor so "high-confidence"
 # at minimum means the persona survived the init filter AND cleared the
 # per-canonical xref threshold.
-HIGH_CONFIDENCE_INIT_THRESHOLD = 0.6
+HIGH_CONFIDENCE_INIT_THRESHOLD = 0.75
 
 # Per-canonical xref threshold: the survival bar is interpolated by each
 # canonical's evidence mix. Canonicals backed mostly by explicit rows need a
@@ -224,9 +219,13 @@ HIGH_CONFIDENCE_INIT_THRESHOLD = 0.6
 #   threshold_c = (1 - implicit_fraction) * XREF_THRESHOLD_EXPLICIT
 #                 + implicit_fraction     * XREF_THRESHOLD_IMPLICIT
 #
-# Tune empirically to land ~200 positive survivors.
-XREF_THRESHOLD_EXPLICIT = 10.0
-XREF_THRESHOLD_IMPLICIT = 30.0
+# Paired with the 7-day recency window on corroboration counting
+# (RECENCY_WINDOW_SECONDS below): only evidence rows within the user's
+# trailing 7 days count toward confidence_cross_referenced and the
+# evidence-mix counters, so the effective survival bar is "≥ 20 weighted
+# corroborating distinct rows within the last 7 days".
+XREF_THRESHOLD_EXPLICIT = 20.0
+XREF_THRESHOLD_IMPLICIT = 50.0
 
 # Kept for backward-compatibility references. Internal code prefers
 # canonical_xref_threshold() so it gets the evidence-mix-dependent value.
@@ -243,8 +242,16 @@ SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 # cross-ref step requires N distinct source rows for any canonical supported
 # only by implicit evidence. Canonicals with any explicit-negative evidence
 # are unaffected.
-MIN_IMPLICIT_NEGATIVE_REPETITION = 5  # distinct source rows for implicit-only negative to survive
-IMPLICIT_NEGATIVE_PREFILTER_K = 3     # rows per hashtag signature required to bother with LLM call
+MIN_IMPLICIT_NEGATIVE_REPETITION = 10  # distinct source rows for implicit-only negative to survive
+IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to bother with LLM call
+
+# Recency window on cross-reference counting. Only evidence rows whose
+# source_timestamp falls within this trailing window (anchored on the user's
+# latest interaction, NOT wall-clock time) contribute to confidence_cross_referenced
+# and the n_explicit_rows / n_implicit_rows mix that feeds canonical_xref_threshold().
+# This replaces raw lifetime-of-account corroboration counting with a recency
+# gate, so stale-but-heavily-repeated preferences don't survive on old evidence.
+RECENCY_WINDOW_SECONDS = 7 * 86400  # 7 days
 
 # NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
 # side. A preference corroborated by 200 distinct rows should be strictly
@@ -270,6 +277,20 @@ def canonical_xref_threshold(n_explicit_rows: int, n_implicit_rows: int) -> floa
         (1.0 - implicit_frac) * XREF_THRESHOLD_EXPLICIT
         + implicit_frac * XREF_THRESHOLD_IMPLICIT
     )
+
+
+def _compute_recency_cutoff(interactions) -> int:
+    """Return the Unix-timestamp cutoff below which rows don't count toward
+    cross-reference corroboration.
+
+    Anchored on the user's latest interaction (not wall-clock time) so the
+    window is meaningful for synthetic data from any historical period. When
+    the interaction list is empty, returns 0 so every row passes.
+    """
+    if not interactions:
+        return 0
+    latest = max((r.interaction_time for r in interactions), default=0)
+    return latest - RECENCY_WINDOW_SECONDS
 
 
 def is_high_confidence(
@@ -1312,10 +1333,12 @@ class PersonaAgent:
 
         # --- Step 3: Weighted corroboration → confidence_cross_referenced ---
         # For each surviving canonical, sum weighted contributions from
-        # distinct source rows whose individual init >= threshold.
+        # distinct source rows whose individual init >= threshold AND whose
+        # timestamp falls within the user's trailing 7-day window.
         # Explicit rows contribute 1.0, implicit rows contribute 0.5.
         # Also record evidence mix (n_explicit_rows, n_implicit_rows) for the
         # per-canonical survival threshold later.
+        recency_cutoff = _compute_recency_cutoff(self.interactions)
         for c in survivors:
             key = _normalize_persona_text(c.persona_item)
             atoms = groups.get(key, [])
@@ -1324,7 +1347,9 @@ class PersonaAgent:
             n_expl = 0
             n_impl = 0
             for ap in atoms:
-                if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE and ap.source_object_id:
+                if (ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
+                        and ap.source_object_id
+                        and ap.source_timestamp >= recency_cutoff):
                     if ap.source_object_id not in seen_sources:
                         seen_sources.add(ap.source_object_id)
                         if "implicit" in ap.source_interaction_type:
@@ -1679,7 +1704,12 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Gated {n_gated_implicit_only} implicit-only "
                   f"negative canonicals (< {MIN_IMPLICIT_NEGATIVE_REPETITION} distinct rows).{utils.Colors.ENDC}")
 
-        # Step 3: Weighted corroboration + evidence mix tracking
+        # Step 3: Weighted corroboration + evidence mix tracking (recency-gated)
+        # Only rows within the trailing 7-day window count toward the
+        # cross-ref score. The cutoff is computed from the full interactions
+        # list so negatives aren't penalized by a later positive-only row
+        # defining the anchor (and vice versa).
+        recency_cutoff = _compute_recency_cutoff(self.interactions)
         for c in neg_survivors:
             key = _normalize_persona_text(c.persona_item)
             atoms = neg_groups.get(key, [])
@@ -1688,7 +1718,9 @@ class PersonaAgent:
             n_expl = 0
             n_impl = 0
             for ap in atoms:
-                if ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE and ap.source_object_id:
+                if (ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
+                        and ap.source_object_id
+                        and ap.source_timestamp >= recency_cutoff):
                     if ap.source_object_id not in seen:
                         seen.add(ap.source_object_id)
                         if "implicit" in ap.source_interaction_type:
@@ -2149,7 +2181,7 @@ class PersonaAgent:
             race_ethnicity=self.user_profile.race_ethnicity,
         )
 
-        response = self._query_llm_with_retry(prompt)
+        response = self._query_mini_with_retry(prompt)
         if not response:
             print(f"{utils.Colors.WARNING}[User {self.user_id}] Stereotype annotation LLM call failed — skipping.{utils.Colors.ENDC}")
             self.annotated_personas = []
@@ -2265,7 +2297,7 @@ class PersonaAgent:
         if self.llm_client and positive_tags:
             screen_prompt = prompts.detect_intimate_hashtags_prompt(positive_tags)
             try:
-                screen_resp = self.llm_client.query_llm(screen_prompt)
+                screen_resp = self._query_mini_with_retry(screen_prompt)
                 flagged = utils.extract_json_from_response(screen_resp)
                 if isinstance(flagged, list):
                     intimate_tags_lower = {
@@ -2504,61 +2536,13 @@ class PersonaAgent:
             except Exception:
                 pass
 
-        # ── Detect Dual Personalities and FOLD them into hidden personas ──
-        # No separate `dual_personalities` field on the profile anymore — the
-        # most important tensions are attached to both participating hidden
-        # personas via their `related_tensions` list.
-
-        MAX_TENSIONS = 3  # keep only the most important tensions
-        raw_tensions: list[dict] = []
-        if len(validated) >= 2 and self.llm_client:
-            dual_prompt = prompts.identify_dual_personalities_prompt(
-                hidden_personas_json=json.dumps(
-                    [{"label": hp.label, "type": hp.type, "description": hp.description,
-                      "evidence_rows": hp.evidence_rows, "privacy_ratio": hp.privacy_ratio,
-                      "interaction_breakdown": hp.interaction_breakdown,
-                      "inferred_motivation": hp.inferred_motivation}
-                     for hp in validated],
-                    indent=2,
-                ),
-            )
-            for attempt in range(self.MAX_RETRIES):
-                try:
-                    raw_duals = utils.extract_json_from_response(self.llm_client.query_llm(dual_prompt))
-                    if isinstance(raw_duals, list):
-                        for d in raw_duals:
-                            if isinstance(d, dict) and d.get("persona_a") and d.get("persona_b"):
-                                raw_tensions.append({
-                                    "persona_a": d["persona_a"],
-                                    "persona_b": d["persona_b"],
-                                    "tension": d.get("tension", ""),
-                                })
-                        break
-                except Exception:
-                    pass
-
-        # Attach the top-N tensions to each participating hidden persona.
-        by_label: dict[str, HiddenPersona] = {hp.label: hp for hp in validated}
-        for t in raw_tensions[:MAX_TENSIONS]:
-            a_hp = by_label.get(t["persona_a"])
-            b_hp = by_label.get(t["persona_b"])
-            if a_hp is not None:
-                a_hp.related_tensions.append(
-                    {"other_persona": t["persona_b"], "tension": t["tension"]}
-                )
-            if b_hp is not None:
-                b_hp.related_tensions.append(
-                    {"other_persona": t["persona_a"], "tension": t["tension"]}
-                )
-
         # Store on profile
         self.user_profile.hidden_personas = validated
         self.user_profile.hidden_persona_summary = summary_text
 
         if self.verbose:
-            n_tensions_kept = min(len(raw_tensions), MAX_TENSIONS)
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Inferred {len(validated)} "
-                  f"hidden personas, {n_tensions_kept} tensions folded in{utils.Colors.ENDC}")
+                  f"hidden personas{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
     # LLM call: MBTI inference
@@ -2865,7 +2849,7 @@ class PersonaAgent:
             app_personas=self.user_profile.app_personas,
             preferences=preferences_for_prompt,
         )
-        response = self._query_llm_with_retry(prompt)
+        response = self._query_mini_with_retry(prompt)
 
         if response:
             parsed = utils.extract_json_from_response(response)
@@ -3062,7 +3046,7 @@ class PersonaAgent:
                     action_catalog=[{"action": action_id, "label": canonical_label}],
                     requires_user_message=True,
                 )
-                response = self._query_llm_with_retry(prompt)
+                response = self._query_mini_with_retry(prompt)
                 if response:
                     parsed = utils.extract_json_from_response(response)
                     if isinstance(parsed, dict):
