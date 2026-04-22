@@ -251,6 +251,28 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
   .user-message {{ margin-top: 8px; padding: 8px 12px; background: #F2F2F7; border-left: 2px solid var(--text-tertiary); border-radius: 4px; font-size: 12px; color: var(--text); font-style: italic; }}
 
+  /* Synthetic content (step 13b) rendering */
+  .content-block {{ margin-top: 10px; padding: 12px 14px; background: #FAFAFC; border: 1px solid #ECECF1; border-radius: 8px; }}
+  .content-block .c-type {{ font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #6B7280; margin-bottom: 6px; }}
+  .content-block .c-type.c-text {{ color: #4A5DA8; }}
+  .content-block .c-type.c-image {{ color: #9B3068; }}
+  .content-block .c-type.c-short_video {{ color: #7C3AED; }}
+  .content-block .c-title {{ font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }}
+  .content-block .c-caption {{ font-size: 12px; color: var(--text); margin-bottom: 6px; line-height: 1.5; }}
+  .content-block .c-desc {{ font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 8px; font-style: italic; }}
+  .content-block .c-text-body {{ font-size: 13px; color: var(--text); line-height: 1.65; white-space: pre-wrap; }}
+  .content-block details {{ margin-top: 6px; }}
+  .content-block details summary {{ font-size: 11px; color: var(--text-secondary); cursor: pointer; padding: 2px 0; user-select: none; }}
+  .content-block details summary:hover {{ color: var(--text); }}
+  .content-block details[open] summary {{ color: var(--text); }}
+  .content-block .c-parts, .content-block .c-frames {{ margin-top: 6px; padding-left: 2px; }}
+  .content-block .c-part, .content-block .c-frame {{ font-size: 11px; color: var(--text); padding: 4px 8px; margin-bottom: 2px; background: #F2F2F7; border-radius: 4px; line-height: 1.45; }}
+  .content-block .c-part .region, .content-block .c-frame .ts {{ font-weight: 600; color: #636366; margin-right: 6px; font-variant-numeric: tabular-nums; }}
+  .content-block .c-transcript {{ font-size: 11px; color: var(--text); padding: 6px 10px; margin-top: 6px; background: #F2F2F7; border-radius: 4px; line-height: 1.5; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; }}
+  .content-block .c-meta {{ margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }}
+  .content-block .c-meta-chip {{ font-size: 10px; padding: 2px 8px; border-radius: 4px; background: #ECECF1; color: #636366; font-variant-numeric: tabular-nums; }}
+  .event-card.implicit-negative .content-block {{ background: #ECECEC; border-color: #D8D8D8; }}
+
   .chat-thread {{ margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }}
   .chat-bubble {{ max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 12px; line-height: 1.6; word-wrap: break-word; }}
   .chat-bubble.user-bubble {{ align-self: flex-end; background: #1B72E8; color: #fff; border-bottom-right-radius: 4px; }}
@@ -397,6 +419,81 @@ if (profileData && profileData.hidden_personas && profileData.hidden_personas.le
   hps.innerHTML = html;
 }}
 
+// -- Render synthetic content (step 13b) --
+// Produces an HTML block describing what the user saw on screen: the text,
+// image, or short video. Returns empty string when the event has no content
+// (Chatbot events and implicit_negative stubs).
+function escapeHtml(s) {{
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}}
+
+function renderContentMeta(meta) {{
+  if (!meta || typeof meta !== 'object') return '';
+  const chips = Object.entries(meta)
+    .filter(([k, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => {{
+      const val = typeof v === 'object' ? JSON.stringify(v) : String(v);
+      return `<span class="c-meta-chip"><b>${{escapeHtml(k)}}</b> ${{escapeHtml(val)}}</span>`;
+    }})
+    .join('');
+  return chips ? `<div class="c-meta">${{chips}}</div>` : '';
+}}
+
+function renderContent(ev) {{
+  const ctype = ev.content_type;
+  const content = ev.content;
+  if (!ctype || !content || typeof content !== 'object') return '';
+
+  const typeLabel = ctype.replace(/_/g, ' ');
+  const header = `<div class="c-type c-${{ctype}}">${{typeLabel}}</div>`;
+
+  if (ctype === 'text') {{
+    return `<div class="content-block">${{header}}<div class="c-text-body">${{escapeHtml(content.text || '')}}</div></div>`;
+  }}
+
+  if (ctype === 'image') {{
+    const caption = content.caption ? `<div class="c-caption">${{escapeHtml(content.caption)}}</div>` : '';
+    const desc = content.overall_description ? `<div class="c-desc">${{escapeHtml(content.overall_description)}}</div>` : '';
+    const parts = (content.parts || []).map(p =>
+      `<div class="c-part"><span class="region">${{escapeHtml(p.region || '')}}</span>${{escapeHtml(p.description || '')}}</div>`
+    ).join('');
+    const partsBlock = parts
+      ? `<details><summary>parts (${{content.parts.length}})</summary><div class="c-parts">${{parts}}</div></details>`
+      : '';
+    const metaBlock = renderContentMeta(content.metadata);
+    const metaWrapped = metaBlock
+      ? `<details><summary>metadata</summary>${{metaBlock}}</details>`
+      : '';
+    return `<div class="content-block">${{header}}${{caption}}${{desc}}${{partsBlock}}${{metaWrapped}}</div>`;
+  }}
+
+  if (ctype === 'short_video') {{
+    const title = content.title ? `<div class="c-title">${{escapeHtml(content.title)}}</div>` : '';
+    const caption = content.caption ? `<div class="c-caption">${{escapeHtml(content.caption)}}</div>` : '';
+    const desc = content.overall_description ? `<div class="c-desc">${{escapeHtml(content.overall_description)}}</div>` : '';
+    const frames = (content.key_frames || []).map(f => {{
+      const ts = typeof f.timestamp_s === 'number' ? f.timestamp_s.toFixed(1) + 's' : String(f.timestamp_s || '');
+      return `<div class="c-frame"><span class="ts">${{escapeHtml(ts)}}</span>${{escapeHtml(f.description || '')}}</div>`;
+    }}).join('');
+    const framesBlock = frames
+      ? `<details open><summary>key frames (${{content.key_frames.length}})</summary><div class="c-frames">${{frames}}</div></details>`
+      : '';
+    const transcript = content.audio_transcript
+      ? `<details><summary>audio transcript</summary><div class="c-transcript">${{escapeHtml(content.audio_transcript)}}</div></details>`
+      : '';
+    const metaBlock = renderContentMeta(content.metadata);
+    const metaWrapped = metaBlock
+      ? `<details><summary>metadata</summary>${{metaBlock}}</details>`
+      : '';
+    return `<div class="content-block">${{header}}${{title}}${{caption}}${{desc}}${{framesBlock}}${{transcript}}${{metaWrapped}}</div>`;
+  }}
+
+  return '';
+}}
+
 // -- Render update history --
 function renderUpdateHistory(history) {{
   if (!history || !history.length) return '';
@@ -504,7 +601,8 @@ if (eventsData.length === 0) {{
       convHtml = `<div class="user-message">${{fmt.user_message}}</div>`;
     }}
 
-    card.innerHTML = headerHtml + prefsHtml + convHtml;
+    const contentHtml = renderContent(ev);
+    card.innerHTML = headerHtml + contentHtml + prefsHtml + convHtml;
     grid.appendChild(card);
   }});
 
