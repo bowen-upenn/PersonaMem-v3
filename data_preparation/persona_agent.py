@@ -3573,49 +3573,42 @@ class PersonaAgent:
                   f"{n_placeholder} placeholders.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
-    # Train/test split — LLM-gated, with LLM-picked distractors
+    # Test split — LLM-gated, with LLM-picked distractors
     # ------------------------------------------------------------------
 
     def build_test_split(
         self,
         fraction: float = 0.2,
+        min_test_items: int = 10,
         shortlist_size: int = 15,
         n_distractors: int = 3,
     ) -> None:
-        """Partition positive cross-referenced personas into train/test splits.
+        """Pick newest-first high-confidence positives as held-out test items.
 
-        NOTE: implicit_negative personas are excluded from test by construction:
-          (a) they live in self.negative_personas / cross_referenced_negatives,
-              not self.cross_referenced_personas,
-          (b) the explicit guard below skips any that might leak through, and
-          (c) negative personas are always labelled "train" in save_to_backend.
+        There is no "train" concept in the output — everything that isn't
+        test is just interaction history in the app JSONs. split_labels only
+        ever holds "test" for items; items that aren't test have no label.
 
-        Test eligibility rules:
-          1. Sort positive personas by source_timestamp ascending (early -> latest).
-          2. Scan newest -> oldest collecting items that pass `is_high_confidence`
-             until we have `3 * fraction * total_positives` candidates. The 3x
-             over-selection is a budget for the inferrability-gate dropping
-             most candidates in practice (empirical gate kill rate ~60-70%),
-             so the final test set still hits `fraction * total_positives`.
-          3. LLM inferrability gate: ask whether each candidate is reasonably
-             inferrable from the train 80% (ground truth). Non-inferrable items
-             that WOULD have been in the final test set (the newest
-             `n_test_target` of the candidate pool) are REMOVED from
-             `self.cross_referenced_personas` entirely — they fail the
-             fidelity gate. Non-inferrable items past the target stay as
-             train.
-          4. After the gate, take the newest `n_test_target` inferrable
-             survivors as the final test set.
-          5. Distractor pairing for each test item:
-               Stage A (Python): randomly shortlist `shortlist_size` train items
-                 passing the high-confidence predicate, filtered to causally
-                 valid ones (first_occurrence <= test item's last_occurrence).
+        Test selection rules:
+          1. n_test_target = max(min_test_items, int(total_high_conf * fraction)),
+             capped at the size of the high-confidence pool.
+          2. Walk newest → oldest through high-confidence positives. Batch
+             them into gate calls of size n_test_target; the LLM marks each
+             as inferrable or not from the remaining (older) pool.
+          3. Inferrable items become "test" in strict newest-first order
+             until we hit n_test_target or the high-confidence pool runs out.
+             Non-inferrable items are NOT deleted — they stay in
+             cross_referenced_personas as interaction history.
+          4. Distractor pairing per test item:
+               Stage A (Python): randomly shortlist `shortlist_size` non-test
+                 high-confidence items, causally filtered (first_occurrence
+                 <= test item's last_occurrence).
                Stage B (LLM): picks the top `n_distractors` most topically
                  irrelevant items.
-             The chosen distractors are stored in self.test_distractors.
-          6. self.split_labels is populated for every surviving positive persona
-             ("train" or "test"). Negative personas are always "train" and are
-             not passed through the gate.
+
+        Implicit/explicit negatives live in cross_referenced_negatives, not
+        cross_referenced_personas, so they never enter the test candidate
+        pool. An explicit guard below also skips any "negative" source type.
         """
         self.split_labels = {}
         self.test_distractors = {}
@@ -3643,23 +3636,9 @@ class PersonaAgent:
         def _first_ts(cr) -> int:
             return first_ts_by_canon.get(cr.persona_item, 0)
 
-        sorted_positives = sorted(self.cross_referenced_personas, key=_last_ts)
-
-        total = len(sorted_positives)
-        n_test_target = max(1, int(total * fraction))
-        # Scan high-confidence positives newest-first. We over-select 3x
-        # upfront so the inferrability gate has headroom; if that's still
-        # not enough, we keep walking deeper into the newest-to-oldest
-        # ordering. Test items are ALWAYS drawn from the newest
-        # contiguous stretch — never random-sampled from the full history.
-        OVER_SELECT_FACTOR = 3.0
-        n_candidates_target = max(n_test_target, int(n_test_target * OVER_SELECT_FACTOR))
-
-        # The full pool of high-confidence positives, strictly newest-first.
-        # We'll peel off `n_candidates_target` at a time into `test_candidates`.
-        reversed_positives = list(reversed(sorted_positives))
-        high_conf_pool_iter = (
-            cr for cr in reversed_positives
+        # High-confidence positive pool, strictly newest → oldest.
+        high_conf_pool: list[CrossReferencedPersona] = [
+            cr for cr in sorted(self.cross_referenced_personas, key=_last_ts, reverse=True)
             if "negative" not in cr.source_interaction_type
             and is_high_confidence(
                 cr.confidence_score_init,
@@ -3667,158 +3646,109 @@ class PersonaAgent:
                 getattr(cr, "n_explicit_rows", 0),
                 getattr(cr, "n_implicit_rows", 0),
             )
-        )
+        ]
 
-        test_candidates: list[CrossReferencedPersona] = []
-        for cr in high_conf_pool_iter:
-            test_candidates.append(cr)
-            if len(test_candidates) >= n_candidates_target:
-                break
-        # Preserve chronological order (oldest-of-selected first) for the LLM prompt
-        test_candidates.reverse()
-
-        if not test_candidates:
-            # No high-confidence tail — everything stays train
-            for cr in self.cross_referenced_personas:
-                self.split_labels[cr.persona_item] = "train"
+        if not high_conf_pool:
             if self.verbose:
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] No high-confidence test candidates — "
-                      f"all {total} positives marked train.{utils.Colors.ENDC}")
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] No high-confidence positives — "
+                      f"no test items this run.{utils.Colors.ENDC}")
             return
 
-        test_candidate_set = {cr.persona_item for cr in test_candidates}
+        n_test_target = min(
+            len(high_conf_pool),
+            max(min_test_items, int(len(high_conf_pool) * fraction)),
+        )
 
-        # --- LLM inferrability gate (with newest-first extension) ---
-        # If the first gate pass leaves fewer than n_test_target inferrable
-        # survivors, we keep extending the candidate pool by peeling off the
-        # next newest high-confidence items from the iterator and re-running
-        # the gate on the extension. This guarantees the final test set is
-        # always a contiguous prefix of the newest-first high-confidence
-        # sequence — never a random sample from elsewhere in the history.
-        inferrable_items: set[str] = set()
-        non_inferrable_items: set[str] = set()
-        MAX_GATE_ITERATIONS = 3
+        # --- LLM inferrability gate, newest-first in batches ---
+        # Take n_test_target items at a time from the newest end; for each
+        # batch, the gate runs against "everything NOT currently in the
+        # batch" as the training reference. Inferrable items land in
+        # `kept_test` in strict newest-first order until target reached.
+        # Non-inferrable items stay in cross_referenced_personas as
+        # interaction history — they're never deleted.
+        kept_test: list[CrossReferencedPersona] = []
+        non_inferrable_total = 0
 
-        def _run_gate(candidates: list[CrossReferencedPersona]) -> None:
-            """Evaluate `candidates` against the current train_pool; merge
-            results into `inferrable_items` / `non_inferrable_items`."""
-            if not candidates:
-                return
-            consumed = {c.persona_item for c in candidates} | test_candidate_set
-            train_pool_local = [
-                cr for cr in sorted_positives if cr.persona_item not in consumed
+        def _run_gate(batch: list[CrossReferencedPersona]) -> tuple[set[str], set[str]]:
+            """Return (inferrable_names, non_inferrable_names) for `batch`.
+            Reference pool = all cross_referenced_personas minus the batch."""
+            if not batch:
+                return set(), set()
+            batch_names = {c.persona_item for c in batch}
+            reference_pool = [
+                cr for cr in self.cross_referenced_personas
+                if cr.persona_item not in batch_names
             ]
-            train_prompt = [
-                {
-                    "persona_item": cr.persona_item, "category": cr.category,
-                    "confidence_score_init": cr.confidence_score_init,
-                    "confidence_cross_referenced": cr.confidence_cross_referenced,
-                    "formatted_timestamp": cr.formatted_timestamp,
-                } for cr in train_pool_local
-            ]
-            test_prompt = [
-                {
-                    "persona_item": cr.persona_item, "category": cr.category,
-                    "confidence_score_init": cr.confidence_score_init,
-                    "confidence_cross_referenced": cr.confidence_cross_referenced,
-                    "formatted_timestamp": cr.formatted_timestamp,
-                } for cr in candidates
-            ]
-            local_set = {c.persona_item for c in candidates}
             if self.llm_client is None:
                 # Claude Code subagent mode — no gate, keep all.
-                inferrable_items.update(local_set)
-                return
+                return batch_names, set()
+            ref_prompt = [
+                {
+                    "persona_item": cr.persona_item, "category": cr.category,
+                    "confidence_score_init": cr.confidence_score_init,
+                    "confidence_cross_referenced": cr.confidence_cross_referenced,
+                    "formatted_timestamp": cr.formatted_timestamp,
+                } for cr in reference_pool
+            ]
+            batch_prompt = [
+                {
+                    "persona_item": cr.persona_item, "category": cr.category,
+                    "confidence_score_init": cr.confidence_score_init,
+                    "confidence_cross_referenced": cr.confidence_cross_referenced,
+                    "formatted_timestamp": cr.formatted_timestamp,
+                } for cr in batch
+            ]
             prompt = prompts.test_inferrability_check_prompt(
-                train_personas=train_prompt, test_candidates=test_prompt,
+                train_personas=ref_prompt, test_candidates=batch_prompt,
             )
             response = self._query_llm_with_retry(prompt)
             if not response:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] Inferrability check LLM call failed — "
                       f"keeping this batch as inferrable by default.{utils.Colors.ENDC}")
-                inferrable_items.update(local_set)
-                return
+                return batch_names, set()
             parsed = utils.extract_json_from_response(response)
             if not isinstance(parsed, list):
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable test inferrability response — "
                       f"keeping this batch as inferrable by default.{utils.Colors.ENDC}")
-                inferrable_items.update(local_set)
-                return
+                return batch_names, set()
+            inferrable, non_inferrable = set(), set()
             for item in parsed:
                 if not isinstance(item, dict):
                     continue
                 name = item.get("persona_item", "")
-                if not name or name not in local_set:
+                if not name or name not in batch_names:
                     continue
                 if bool(item.get("inferrable", False)):
-                    inferrable_items.add(name)
+                    inferrable.add(name)
                 else:
-                    non_inferrable_items.add(name)
+                    non_inferrable.add(name)
+            # Anything the LLM didn't return on — treat as inferrable.
+            missing = batch_names - inferrable - non_inferrable
+            inferrable |= missing
+            return inferrable, non_inferrable
 
-        # Iteration 0: the initial n_candidates_target batch we already picked
-        _run_gate(test_candidates)
+        # Walk the pool newest-first in batches of n_test_target.
+        pool_idx = 0
+        batch_size = max(n_test_target, 1)
+        while len(kept_test) < n_test_target and pool_idx < len(high_conf_pool):
+            batch = high_conf_pool[pool_idx : pool_idx + batch_size]
+            pool_idx += len(batch)
+            inferrable_names, non_inferrable_names = _run_gate(batch)
+            non_inferrable_total += len(non_inferrable_names)
+            # Preserve newest-first order within the batch.
+            for cr in batch:
+                if cr.persona_item in inferrable_names:
+                    kept_test.append(cr)
+                    if len(kept_test) >= n_test_target:
+                        break
 
-        # Extend deeper into the newest-first ordering if we didn't hit target.
-        # Each extension grabs another n_test_target * 2 high-confidence items.
-        extension_batch_size = max(n_test_target, n_test_target * 2)
-        for _ in range(MAX_GATE_ITERATIONS - 1):
-            cur_survivors = len(inferrable_items)
-            if cur_survivors >= n_test_target:
-                break
-            extension: list[CrossReferencedPersona] = []
-            for cr in high_conf_pool_iter:
-                extension.append(cr)
-                if len(extension) >= extension_batch_size:
-                    break
-            if not extension:
-                break  # exhausted the newest-first high-confidence pool
-            test_candidates.extend(extension)
-            test_candidate_set.update(cr.persona_item for cr in extension)
-            _run_gate(extension)
-
-        # Update `test_candidate_set` so downstream code (e.g. drop-set logic)
-        # sees the expanded pool.
-        test_candidates.sort(key=_last_ts)
-
-        # --- Drop non-inferrable test candidates entirely ---
-        # Because we over-selected candidates, a non-inferrable item may
-        # simply have been past the cap anyway — those should stay as train,
-        # not be deleted. Only delete non-inferrable items that are among the
-        # newest `n_test_target` of the candidate pool; everything else
-        # demotes to train.
-        newest_target_set = set(
-            cr.persona_item
-            for cr in sorted(test_candidates, key=_last_ts, reverse=True)[:n_test_target]
-        )
-        drop_set = non_inferrable_items & newest_target_set
-        if drop_set:
-            self.cross_referenced_personas = [
-                cr for cr in self.cross_referenced_personas
-                if cr.persona_item not in drop_set
-            ]
-
-        # After the gate, trim back to the actual target (the newest
-        # n_test_target survivors). We over-selected 3x upfront; take only
-        # as many as `fraction * total` allows, preferring the most recent.
-        gate_survivors: list[CrossReferencedPersona] = [
-            cr for cr in test_candidates if cr.persona_item in inferrable_items
-        ]
-        if len(gate_survivors) > n_test_target:
-            gate_survivors_by_recency = sorted(
-                gate_survivors, key=_last_ts, reverse=True
-            )[:n_test_target]
-            # Re-sort to preserve chronological order (oldest first) downstream.
-            gate_survivors_by_recency.sort(key=_last_ts)
-            kept_test: list[CrossReferencedPersona] = gate_survivors_by_recency
-        else:
-            kept_test = gate_survivors
+        # Sort test items chronologically (oldest-first) for downstream consumers.
+        kept_test.sort(key=_last_ts)
 
         # --- Distractor pairing ---
-        # Train pool for distractors: every surviving positive that's NOT
-        # a final test item. (The prior `train_pool` variable was scoped
-        # to the pre-refactor inline gate; the iterative-gate refactor
-        # moved it into `_run_gate` as `train_pool_local`, so we
-        # reconstruct the post-gate train pool here.)
+        # Distractor pool = all high-confidence positives that aren't test.
+        # Non-inferrable items remain in cross_referenced_personas and are
+        # eligible as distractor shortlist members.
         test_items_set = {cr.persona_item for cr in kept_test}
         high_conf_train = [
             cr for cr in self.cross_referenced_personas
@@ -3895,17 +3825,15 @@ class PersonaAgent:
                 for name in chosen_names
             ]
 
-        # --- Everything else that survived the gate is train ---
-        for cr in self.cross_referenced_personas:
-            if cr.persona_item not in self.split_labels:
-                self.split_labels[cr.persona_item] = "train"
+        # Non-test items get no split label — they're just interaction history.
+        # split_labels only carries "test".
 
         if self.verbose:
             n_test = sum(1 for v in self.split_labels.values() if v == "test")
-            n_train = sum(1 for v in self.split_labels.values() if v == "train")
+            n_history = len(self.cross_referenced_personas) - n_test
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Test split: "
-                  f"{n_train} train, {n_test} test, "
-                  f"{len(non_inferrable_items)} dropped by inferrability gate, "
+                  f"{n_test} test, {n_history} in interaction history, "
+                  f"{non_inferrable_total} non-inferrable (kept as history), "
                   f"{sum(1 for v in self.test_distractors.values())} distractors assigned."
                   f"{utils.Colors.ENDC}")
 
@@ -3968,7 +3896,7 @@ class PersonaAgent:
                   f"{elapsed:.1f}s (total: {total_elapsed:.1f}s){utils.Colors.ENDC}")
 
         n_test = sum(1 for v in self.split_labels.values() if v == "test")
-        n_train = sum(1 for v in self.split_labels.values() if v == "train")
+        n_history = len(self.cross_referenced_personas) - n_test
 
         summary = {
             "user_id": self.user_id,
@@ -3987,8 +3915,8 @@ class PersonaAgent:
                 len(self.user_profile.app_personas) if self.user_profile else 0
             ),
             "annotated_personas": len(self.annotated_personas),
-            "split_train": n_train,
             "split_test": n_test,
+            "interaction_history_preferences": n_history,
             "distractors_assigned": len(self.test_distractors),
             "total_time_seconds": round(time.time() - pipeline_start, 1),
         }
@@ -4707,11 +4635,11 @@ class PersonaAgent:
 
         if self.verbose:
             n_test = sum(1 for v in self.split_labels.values() if v == "test")
-            n_train = sum(1 for v in self.split_labels.values() if v == "train")
+            n_history = len(self.cross_referenced_personas) - n_test
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Loaded from backend: "
                   f"{len(self.atomic_personas)} positive, "
                   f"{len(self.negative_personas)} negative, "
                   f"{len(self.cross_referenced_personas)} positive canonicals, "
                   f"{len(self.cross_referenced_negatives)} negative canonicals, "
-                  f"{n_train} train, {n_test} test.{utils.Colors.ENDC}")
+                  f"{n_test} test, {n_history} in interaction history.{utils.Colors.ENDC}")
         return True
