@@ -64,7 +64,7 @@ Input CSV (hashtag interactions per user)
   +- Step 13: Generate chatbot conversations   [LLM]      -- multi-turn, ask-to-forget
   +- Step 13b: Generate synthetic content      [LLM]      -- text / image / short_video per event
   +- Step 14: Annotate stereotype marks        [LLM]      -- demographics-only
-  +- Step 15: Build train/test split           [LLM+Algo] -- 80/20, inferrability gate
+  +- Step 15: Build test split                 [LLM+Algo] -- newest-first ≥10, inferrability-labelled
   +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user
 ```
 
@@ -104,7 +104,7 @@ Event:
   +- preferences[]:
   |     +- persona_item, category
   |     +- confidence_score_init, confidence_cross_referenced
-  |     +- stereotype_mark, split (train/test)
+  |     +- stereotype_mark, split ("test" on held-out items only; absent otherwise)
   |     +- update_history[], hidden_persona_labels
   |     +- over_personalization_irrelevant (test items only — list of 3 {persona_item, category} distractors, ranked most- to least-jarring)
   +- [Chatbot only] conversation[], conversation_type, ask_to_forget
@@ -142,11 +142,11 @@ Scores must use two decimal places and be spread across the full range to preven
 
 **Net-sentiment formula** per hashtag:
 ```
-net = (implicit_neg_count x 1.0) - (explicit_pos_count x 3.0) - (implicit_pos_count x 1.5)
+net = (implicit_neg_count x 1.0) - (explicit_pos_count x 2.0) - (implicit_pos_count x 1.0)
 ```
 
 **Promotion gate** — both must hold:
-1. `net >= 10` (`MIN_IMPLICIT_NEGATIVE_REPETITION`)
+1. `net >= 5` (`MIN_IMPLICIT_NEGATIVE_REPETITION`)
 2. Negative rows span >= 1 distinct calendar day (`MIN_TEMPORAL_DAYS`)
 
 **Processing:** One LLM call per "hot" hashtag on a representative row (single hashtag only). Inferred preferences must be independently produced by >= 2 different hot-hashtag LLM calls (`MIN_PREF_CORROBORATION = 2`). Promoted rows become `explicit_negative` at BOTH the atomic level (`source_interaction_type = "explicit_negative"` on every promoted atomic) and the event level. Non-promoted implicit_negative rows remain as stub events with empty `preferences: []` (rendered greyscale in HTML).
@@ -354,16 +354,17 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 
 ---
 
-## 15. Steps 15-16 — Train/Test Split and Save
+## 15. Steps 15-16 — Test Split and Save
 
-**Time-based, cross-app split:**
-1. Sort all positive survivors by latest-occurrence timestamp ascending (globally).
-2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.75 AND cross_ref > canonical_xref_threshold(...)`) until **3× the target (20 %)** of total positives — an over-selection buffer so the inferrability gate can drop most candidates and the final test set still hits 20 %.
-3. Inferrability gate then runs on the whole over-selected pool. After the gate, take the **newest `n_test_target` (= 20 % × total positives) inferrable survivors** as the final test set. All else = train. Negatives always train.
+**Time-based, cross-app test selection (no "train" label):**
+1. Sort high-confidence positives (`init >= 0.75 AND cross_ref > canonical_xref_threshold(...)`) by latest-occurrence timestamp, newest-first.
+2. `n_test_target = min(pool_size, max(10, int(pool_size * 0.2)))`. Floor of 10 items per user when the pool is large enough, 20% otherwise.
+3. Walk the pool newest-first in batches of `n_test_target`. For each batch, the inferrability gate runs against "all cross_referenced_personas minus this batch". Inferrable items become `test` in strict newest-first order until the target is hit or the pool is exhausted.
+4. Items that fail the inferrability gate stay in `cross_referenced_personas` as interaction history — **never deleted**. Only "test" is written to the output; non-test preferences have no `split` field.
 
-**Inferrability gate:** LLM evaluates each candidate — can it be predicted from the train set? Non-inferrable items that WOULD have been in the final test set (the newest `n_test_target` of the candidate pool) are dropped entirely. Non-inferrable items past the target demote to train.
+**Inferrability gate:** LLM evaluates each candidate — can it be predicted from the rest of the history? The gate is informational only; it never removes canonicals from the pipeline.
 
-**Distractor pairing (3 per test item, causal):** For each test item, Python filters high-confidence train items to those whose first-occurrence timestamp `<=` the test item's last-occurrence timestamp (causality). LLM then ranks the top 3 most topically irrelevant / annoying items from a random shortlist of 15. Stored as a **list** of `{persona_item, category}` objects under `over_personalization_irrelevant`.
+**Distractor pairing (3 per test item, causal):** For each test item, Python filters the non-test high-confidence pool to items whose first-occurrence timestamp `<=` the test item's last-occurrence timestamp (causality). LLM then ranks the top 3 most topically irrelevant / annoying items from a random shortlist of 15. Stored as a **list** of `{persona_item, category}` objects under `over_personalization_irrelevant`.
 
 **Step 16:**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
@@ -395,11 +396,12 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 |----------|-------|---------|
 | `MIN_PERSONA_INIT_CONFIDENCE` | 0.75 | Init filter floor (no exploratory retention) |
 | `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.75 | Test-split eligibility |
-| `XREF_THRESHOLD_EXPLICIT` | 20.0 | Xref bar for explicit-dominated canonicals |
-| `XREF_THRESHOLD_IMPLICIT` | 50.0 | Xref bar for implicit-dominated canonicals |
+| `XREF_THRESHOLD_EXPLICIT` | 20.0 | Xref bar for explicit-dominated positive canonicals |
+| `XREF_THRESHOLD_IMPLICIT` | 50.0 | Xref bar for implicit-dominated positive canonicals |
+| `XREF_THRESHOLD_NEGATIVE` | 5.0 | Xref bar for negatives (decoupled from positive scale — negatives are structurally rarer) |
 | `RECENCY_WINDOW_SECONDS` | 7 * 86400 | Only rows within the trailing 7 days contribute to xref counting |
-| `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (always drop) |
-| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 10 | Implicit-only negative survival threshold |
+| `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (contradictories still exempt) |
+| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 5 | Implicit-only negative survival threshold (distinct rows) and net-sentiment floor |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Hot-hashtag LLM calls needed |
 | `MIN_TEMPORAL_DAYS` | 1 | Calendar days negatives must span |
@@ -411,14 +413,15 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `PRIOR_PSEUDOCOUNT` | 30 | Smoothing strength for per-user content mix |
 | `CONTENT_MIX_NOISE_SIGMA` | 0.3 | Lognormal σ for per-user content-mix perturbation |
 | `IMPL_NEG_WEIGHT` | 1.0 | Net-sentiment weight |
-| `EXPL_POS_WEIGHT` | 3.0 | Net-sentiment weight |
-| `IMPL_POS_WEIGHT` | 1.5 | Net-sentiment weight |
+| `EXPL_POS_WEIGHT` | 2.0 | Net-sentiment weight |
+| `IMPL_POS_WEIGHT` | 1.0 | Net-sentiment weight |
 | `FADE_THRESHOLD_SECONDS` | 172,800 (48h) | "Faded" inactivity threshold |
 | `MAX_REINFORCED_ENTRIES` | 5 | Max recurrence samples |
 | `ASK_TO_FORGET_FRACTION` | 0.20 | Share of chatbot events with ask-to-forget / don't-personalize variants |
 | `CORRECTION_FRACTION_NEGATIVE` | 0.50 | Share of remaining negatives that get the correction variant |
 | Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
-| Test fraction | 0.20 | Latest 20% high-confidence positives |
+| Test fraction | 0.20 | Latest 20% of high-confidence positives |
+| Test floor | 10 | Min test items per user (only reduced when the high-conf pool itself is smaller) |
 | Distractors per test item | 3 | Ranked via LLM from causally-filtered shortlist of 15 |
 | `MIN_HIDDEN_PERSONA_ROWS` | 40 | Min rows for hidden persona |
 | `MIN_HIDDEN_PERSONA_DAYS` | 3 | Min temporal spread for hidden persona |
