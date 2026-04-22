@@ -4218,12 +4218,19 @@ class PersonaAgent:
                 "action_label": sampled_entry["label"],
                 "user_message": None,
             }
-            # Preserve existing user_message from stored format if available
-            first_cr = canonical_lookup.get(_normalize_persona_text(atoms[0].persona_item))
-            if first_cr and first_cr.source_interaction_format:
-                stored = _parse_format(first_cr.source_interaction_format, app)
-                if stored.get("user_message"):
-                    fmt["user_message"] = stored["user_message"]
+            # Carry over a stored user_message ONLY when the re-sampled action
+            # is one that semantically carries a natural-language message
+            # (social-media @ai comments or Chatbot chat turns). Step 12
+            # generates user_messages keyed to the canonical's originally
+            # sampled action; Step 16 may re-sample a different action for
+            # this event (e.g. `viewed_video_75`), in which case the old
+            # message must NOT leak onto a passive-view action.
+            if sampled_entry["action"] in (AT_AI_ACTIONS | CHATBOT_TURN_ACTIONS):
+                first_cr = canonical_lookup.get(_normalize_persona_text(atoms[0].persona_item))
+                if first_cr and first_cr.source_interaction_format:
+                    stored = _parse_format(first_cr.source_interaction_format, app)
+                    if stored.get("user_message"):
+                        fmt["user_message"] = stored["user_message"]
 
             # Build event dict with preferences LAST for readability
             event = {
