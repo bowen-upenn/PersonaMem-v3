@@ -58,6 +58,8 @@
   .event-header .hashtags { font-size: 12px; color: var(--text); margin-top: 4px; line-height: 1.5; }
 
   .pref-list { display: flex; flex-direction: column; gap: 8px; }
+  .content-block + .pref-list { margin-top: 14px; }
+  .pref-list-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #6B7280; margin-bottom: 2px; }
   .pref-item { padding: 10px 14px; border-radius: 8px; background: #FAFAFA; border: 1px solid #F2F2F7; }
   .pref-item .item-text { font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--text); margin-bottom: 4px; }
   .pref-item .pref-meta { font-size: 10px; color: var(--text-secondary); }
@@ -168,7 +170,7 @@
       <span>FB: 570</span>
       <span>TH: 632</span>
       <span>AI: 396</span>
-      <span>Generated April 22, 2026 at 01:32 UTC</span>
+      <span>Generated April 22, 2026 at 01:53 UTC</span>
     </div>
   </div>
 
@@ -414,6 +416,9 @@ if (eventsData.length === 0) {
 
     // Preferences list
     let prefsHtml = '<div class="pref-list">';
+    if (prefs.length > 0) {
+      prefsHtml += '<div class="pref-list-label">Preferences</div>';
+    }
     prefs.forEach(p => {
       let badges = `<span class="badge category">${p.category || ''}</span>`;
       if (p.split === 'test') badges += `<span class="badge test">test</span>`;
