@@ -73,6 +73,7 @@ def run_task_b(
         user_query = inst["user_query"]
         prior = inst.get("prior_conversation") or []
         action = inst.get("action", "")
+        arm = inst.get("arm", "proactive")  # v2 arm tag; v1 instances default to proactive
 
         history_block = None
         history_tokens = 0
@@ -80,7 +81,11 @@ def run_task_b(
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
-        prompt = prompts.chatbot_response_prompt(user_query, prior, history_block)
+        # Arm-aware prompt: control queries get the "don't personalize" framing.
+        if arm == "control":
+            prompt = prompts.chatbot_control_prompt(user_query, prior, history_block)
+        else:
+            prompt = prompts.chatbot_response_prompt(user_query, prior, history_block)
 
         if dry_run:
             results.append({
@@ -120,9 +125,50 @@ def run_task_b(
         parsed = extract_json_from_response(raw_response) or {}
         response_text = parsed.get("response") or raw_response
 
-        # Score against the FROZEN TARGET/AVOID slice from the benchmark file.
-        gt = inst["gt_slice"]
+        # Task B v2 metric bundle depends on arm.
+        gt = inst.get("gt_slice") or {"target": [], "avoid": []}
         slice_metrics = metrics.score_response_against_slice(response_text, gt["target"], gt["avoid"])
+
+        top_k_prefs = inst.get("top_k_relevant_prefs") or []
+        privacy_flagged = inst.get("privacy_flagged_prefs") or []
+        post_test = inst.get("post_test_window") or {}
+
+        if arm == "control":
+            # For control: reward NOT surfacing personal preferences.
+            ctrl_leak = metrics.personalization_leak_rate(response_text, top_k_prefs)
+            arm_metrics = {
+                "personalization_leak_rate": ctrl_leak["leak_rate"],
+                "personalization_leaks": ctrl_leak["leaked"],
+            }
+        else:
+            # Proactive: reward surfacing top-K relevant prefs.
+            align = metrics.top_k_preference_alignment(response_text, top_k_prefs)
+            arm_metrics = {
+                "top_k_alignment_rate": align["alignment_rate"],
+                "top_k_matched": align["matched"],
+            }
+
+        # Privacy hard constraint applies on both arms.
+        priv = metrics.privacy_leak_rate(response_text, privacy_flagged)
+        priv_metrics = {
+            "privacy_leak_rate": priv["leak_rate"],
+            "privacy_leak_hard_fail": priv["hard_fail"],
+        }
+
+        # Source B — behavioral hit/miss, only for proactive arm instances
+        # that have a populated post-test window.
+        behavioral: dict = {}
+        if arm == "proactive" and post_test.get("post_test_positives"):
+            bh = metrics.behavioral_hit_miss(
+                response_text,
+                post_test["post_test_positives"],
+                post_test.get("post_test_negatives") or [],
+            )
+            behavioral = {
+                "behavioral_hit_rate": bh["hit_rate"],
+                "behavioral_miss_rate": bh["miss_rate"],
+                "behavioral_false_hit_rate": bh["false_hit_rate"],
+            }
 
         carve_out_respect = 1
         if action == "asked_not_to_personalize":
@@ -148,12 +194,13 @@ def run_task_b(
             )
             evidence = build_judge_evidence(bq, anchor, response_text)
             polarity = inst.get("polarity", "positive")
-            if action == "asked_not_to_personalize":
+            if action == "asked_not_to_personalize" or arm == "control":
                 polarity = "negative"
             judge_scores = judges.judge_chatbot_rubric(judge_client, response_text, evidence, polarity)
 
         results.append({
             "task": "chatbot_response",
+            "arm": arm,
             "user_id": user_id,
             "test_id": inst["test_id"],
             "mode": mode,
@@ -161,6 +208,7 @@ def run_task_b(
             "source_timestamp": t,
             "polarity": inst.get("polarity"),
             "action": action,
+            "blind_check_score": inst.get("blind_check_score"),
             "history_tokens": history_tokens,
             "tool_calls": tool_call_count,
             "subagent_stats": subagent_stats,
@@ -169,6 +217,9 @@ def run_task_b(
             "agent_response": response_text,
             "metrics": {
                 **slice_metrics,
+                **arm_metrics,
+                **priv_metrics,
+                **behavioral,
                 "carve_out_respect": carve_out_respect,
                 **judge_scores,
             },

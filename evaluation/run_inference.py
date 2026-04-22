@@ -31,13 +31,30 @@ from evaluation import metrics as metrics_mod
 
 
 TASK_ALIASES = {
-    "all": ["slate_ranking", "chatbot_response", "c1_fatigue", "c2_scenarios", "c3_restraint"],
+    "all": [
+        "slate_ranking",
+        "chatbot_response_proactive",
+        "chatbot_response_control",
+        "c1a_pairs",
+        "c1b_sequences",
+        "c2_scenarios",
+        "c3_restraint",
+        "c4_button_regen",
+    ],
     "a": ["slate_ranking"],
-    "b": ["chatbot_response"],
-    "c": ["c1_fatigue", "c2_scenarios", "c3_restraint"],
-    "c1": ["c1_fatigue"],
+    "b": ["chatbot_response_proactive", "chatbot_response_control"],
+    "b_proactive": ["chatbot_response_proactive"],
+    "b_control": ["chatbot_response_control"],
+    "c": ["c1a_pairs", "c1b_sequences", "c2_scenarios", "c3_restraint", "c4_button_regen"],
+    "c1": ["c1a_pairs", "c1b_sequences"],
+    "c1a": ["c1a_pairs"],
+    "c1b": ["c1b_sequences"],
     "c2": ["c2_scenarios"],
     "c3": ["c3_restraint"],
+    "c4": ["c4_button_regen"],
+    # Legacy v1 names (if an old benchmark is loaded).
+    "chatbot_response": ["chatbot_response"],
+    "c1_fatigue": ["c1_fatigue"],
 }
 
 MODES = ("agent_tools", "agent_longctx", "llm_longctx")
@@ -66,10 +83,18 @@ def _resolve_tasks(task_arg: str) -> list[str]:
 
 BENCHMARK_TASK_KEYS = {
     "slate_ranking": "slate_ranking",
+    # Task B v2 — two arms.
+    "chatbot_response_proactive": "chatbot_response_proactive",
+    "chatbot_response_control":   "chatbot_response_control",
+    # Task C v2.
+    "c1a_pairs":        "c1a_pairs",
+    "c1b_sequences":    "c1b_sequences",
+    "c2_scenarios":     "c2_scenarios",
+    "c3_restraint":     "c3_restraint",
+    "c4_button_regen":  "c4_button_regen",
+    # Legacy v1.
     "chatbot_response": "chatbot_response",
-    "c1_fatigue": "c1_fatigue",
-    "c2_scenarios": "c2_scenarios",
-    "c3_restraint": "c3_restraint",
+    "c1_fatigue":       "c1_fatigue",
 }
 
 
@@ -91,14 +116,20 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
     )
     if name == "slate_ranking":
         return slate_ranking.run_task_a(**common)
-    if name == "chatbot_response":
+    if name in ("chatbot_response", "chatbot_response_proactive", "chatbot_response_control"):
         return chatbot_response.run_task_b(**common)
+    if name == "c1a_pairs":
+        return over_personalization.run_task_c1a(**common)
+    if name == "c1b_sequences":
+        return over_personalization.run_task_c1b(**common)
     if name == "c1_fatigue":
         return over_personalization.run_task_c1(**common)
     if name == "c2_scenarios":
         return over_personalization.run_task_c2(**common)
     if name == "c3_restraint":
         return over_personalization.run_task_c3(**common)
+    if name == "c4_button_regen":
+        return over_personalization.run_task_c4(**common)
     raise ValueError(f"unknown task: {name}")
 
 

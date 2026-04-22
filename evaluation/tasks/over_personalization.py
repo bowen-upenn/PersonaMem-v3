@@ -276,6 +276,245 @@ def run_task_c3(
     return results
 
 
+# --- Task C1a: counterfactual history-diff pairs --------------------------
+
+def run_task_c1a(
+    instances,
+    user_id,
+    bq: BackendQuery,
+    llm_client,
+    judge_client,
+    mode: str,
+    snapshot_cache: SnapshotCache,
+    model_name: str | None,
+    claude_model: str,
+    context_budget: int | None,
+    enable_llm_judge: bool,
+    dry_run: bool,
+    limit: int | None = None,
+) -> list[dict]:
+    """For each counterfactual pair, ask the model for a recommendation at
+    t_early then at t_late. Score the divergence between the two responses.
+    Low divergence in the face of a substantive event diff → over-anchoring.
+    """
+    if limit is not None:
+        instances = instances[:limit]
+    results: list[dict] = []
+    for pair in instances:
+        t_early = pair["t_early"]
+        t_late = pair["t_late"]
+        app = pair["target_app"]
+        query = pair["query"]
+
+        def _run_at(t):
+            history_block = None
+            if mode in ("agent_longctx", "llm_longctx"):
+                history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
+            # For recommendation-style queries on a social app, reuse the
+            # chatbot response prompt (it's flexible enough for "recommend X for this user").
+            prompt = prompts.chatbot_response_prompt(query, [], history_block)
+            raw, turns, stats = _dispatch_agent(mode, prompt, bq=bq, user_id=user_id, t=t,
+                                                 claude_model=claude_model, llm_client=llm_client)
+            parsed = extract_json_from_response(raw) or {}
+            return parsed.get("response") or raw, turns, stats
+
+        if dry_run:
+            results.append({
+                "task": "c1a_counterfactual",
+                "pair_id": pair["pair_id"],
+                "mode": mode,
+                "agent_response_early": None,
+                "agent_response_late": None,
+                "metrics": None,
+            })
+            continue
+
+        resp_early, turns_early, stats_early = _run_at(t_early)
+        resp_late, turns_late, stats_late = _run_at(t_late)
+
+        divergence = metrics.response_divergence(resp_early, resp_late)
+        results.append({
+            "task": "c1a_counterfactual",
+            "pair_id": pair["pair_id"],
+            "mode": mode,
+            "target_app": app,
+            "t_early": t_early,
+            "t_late": t_late,
+            "diff_events_count": len(pair.get("diff_events") or []),
+            "dominant_category_pre": pair.get("dominant_category_pre"),
+            "shift_category": pair.get("shift_category"),
+            "agent_response_early": resp_early,
+            "agent_response_late": resp_late,
+            "tool_calls": turns_early + turns_late,
+            "subagent_stats": {"early": stats_early, "late": stats_late},
+            "metrics": {
+                "response_divergence": divergence,
+                "recency_sensitivity": divergence / max(1, len(pair.get("diff_events") or [])),
+                "over_anchored_flag": 1 if divergence < 0.15 else 0,
+            },
+        })
+    return results
+
+
+# --- Task C1b: chatbot-sequence preference repetition ---------------------
+
+def run_task_c1b(
+    instances,
+    user_id,
+    bq: BackendQuery,
+    llm_client,
+    judge_client,
+    mode: str,
+    snapshot_cache: SnapshotCache,
+    model_name: str | None,
+    claude_model: str,
+    context_budget: int | None,
+    enable_llm_judge: bool,
+    dry_run: bool,
+    limit: int | None = None,
+) -> list[dict]:
+    """Present a sequence of diverse-topic queries as a single conversation;
+    measure how often the same preference is surfaced across responses.
+    """
+    if limit is not None:
+        instances = instances[:limit]
+    results: list[dict] = []
+    for seq in instances:
+        queries = seq.get("queries") or []
+        if not queries:
+            continue
+        # Anchor time = max timestamp in the sequence.
+        t_anchor = max(q["source_timestamp"] for q in queries)
+        history_block = None
+        if mode in ("agent_longctx", "llm_longctx"):
+            history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t_anchor, model_name, context_budget)
+
+        # Run each query sequentially, passing previous turns as conversation history.
+        responses: list[str] = []
+        conversation: list[dict] = []
+        total_turns = 0
+        stats_per_query: list[dict] = []
+        if dry_run:
+            results.append({
+                "task": "c1b_sequence",
+                "sequence_id": seq["sequence_id"],
+                "mode": mode,
+                "responses": None,
+                "metrics": None,
+            })
+            continue
+        for q in queries:
+            prompt = prompts.chatbot_response_prompt(q["user_query"], conversation, history_block)
+            raw, turns, stats = _dispatch_agent(mode, prompt, bq=bq, user_id=user_id, t=q["source_timestamp"],
+                                                 claude_model=claude_model, llm_client=llm_client)
+            parsed = extract_json_from_response(raw) or {}
+            resp = parsed.get("response") or raw
+            responses.append(resp)
+            total_turns += turns
+            stats_per_query.append(stats)
+            conversation.append({"role": "user", "content": q["user_query"]})
+            conversation.append({"role": "assistant", "content": resp})
+
+        gt_prefs_per_query = [q.get("top_k_relevant_prefs") or [] for q in queries]
+        rep = metrics.preference_repetition_rate(responses, gt_prefs_per_query)
+
+        results.append({
+            "task": "c1b_sequence",
+            "sequence_id": seq["sequence_id"],
+            "mode": mode,
+            "responses": responses,
+            "query_categories": [q["top_k_relevant_prefs"][0].get("category") if q.get("top_k_relevant_prefs") else None for q in queries],
+            "tool_calls": total_turns,
+            "subagent_stats": stats_per_query,
+            "metrics": {
+                "preference_repetition_rate": rep["repetition_rate"],
+                "wrong_preference_reuse": rep["wrong_preference_reuse"],
+                "top_repeated_pref": rep["top_repeated_pref"],
+                "n_queries": rep["n"],
+            },
+        })
+    return results
+
+
+# --- Task C4: do-not-personalize button regeneration ---------------------
+
+def run_task_c4(
+    instances,
+    user_id,
+    bq: BackendQuery,
+    llm_client,
+    judge_client,
+    mode: str,
+    snapshot_cache: SnapshotCache,
+    model_name: str | None,
+    claude_model: str,
+    context_budget: int | None,
+    enable_llm_judge: bool,
+    dry_run: bool,
+    limit: int | None = None,
+) -> list[dict]:
+    """Two-turn: (1) let the model give a normal personalized response to the
+    B-proactive query, (2) send the 'do-not-personalize' signal + the original
+    response, expect a regen with personalization stripped.
+    """
+    if limit is not None:
+        instances = instances[:limit]
+    results: list[dict] = []
+    for inst in instances:
+        t = inst["source_timestamp"]
+        user_query = inst["user_query"]
+        prior = inst.get("prior_conversation") or []
+        history_block = None
+        if mode in ("agent_longctx", "llm_longctx"):
+            history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
+
+        if dry_run:
+            results.append({
+                "task": "c4_button_regen",
+                "test_id": inst["test_id"],
+                "mode": mode,
+                "metrics": None,
+            })
+            continue
+
+        # Turn 1: original personalized response.
+        p1 = prompts.chatbot_response_prompt(user_query, prior, history_block)
+        raw1, turns1, stats1 = _dispatch_agent(mode, p1, bq=bq, user_id=user_id, t=t,
+                                                claude_model=claude_model, llm_client=llm_client)
+        parsed1 = extract_json_from_response(raw1) or {}
+        original_resp = parsed1.get("response") or raw1
+
+        # Turn 2: regenerate without personalization.
+        p2 = prompts.button_regen_prompt(user_query, original_resp, prior, history_block)
+        raw2, turns2, stats2 = _dispatch_agent(mode, p2, bq=bq, user_id=user_id, t=t,
+                                                claude_model=claude_model, llm_client=llm_client)
+        parsed2 = extract_json_from_response(raw2) or {}
+        regen_resp = parsed2.get("response") or raw2
+
+        # Score the regeneration.
+        m = metrics.personalization_removal_delta(original_resp, regen_resp, inst["held_out_preference"])
+        # Content-retention: compare regen to the blind-check generic answer if available.
+        generic = inst.get("blind_check_generic_answer") or ""
+        content_retention = 0.0
+        if generic:
+            content_retention = 1.0 - metrics.response_divergence(generic, regen_resp)
+
+        results.append({
+            "task": "c4_button_regen",
+            "test_id": inst["test_id"],
+            "mode": mode,
+            "original_response": original_resp,
+            "regen_response": regen_resp,
+            "tool_calls": turns1 + turns2,
+            "subagent_stats": {"turn1": stats1, "turn2": stats2},
+            "metrics": {
+                **m,
+                "content_retention_vs_generic": content_retention,
+            },
+        })
+    return results
+
+
 # --- Task D: aggregate negative avoidance ----------------------------------
 
 def aggregate_task_d(task_a_results: list[dict]) -> dict:
