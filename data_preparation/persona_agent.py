@@ -235,6 +235,14 @@ XREF_THRESHOLD_IMPLICIT = 50.0
 # 50.0 implicit floor on top double-counts the bars.
 XREF_THRESHOLD_NEGATIVE = 5.0
 
+# Negatives get a lower init-confidence survival bar than positives.
+# `hashtag_to_persona_prompt` tells the LLM to score negatives in the
+# 0.55-0.75 range ("direct dislike of the core topic" tops out at 0.75),
+# while positives use 0.80-1.0. Applying the 0.75 positive bar to negatives
+# was a mathematical mismatch — virtually every negative canonical was
+# dropped at the init filter. 0.55 matches the LOW end of "direct dislike".
+MIN_NEGATIVE_INIT_CONFIDENCE = 0.55
+
 # Kept for backward-compatibility references. Internal code prefers
 # canonical_xref_threshold() so it gets the evidence-mix-dependent value.
 HIGH_CONFIDENCE_CROSS_REF_THRESHOLD = XREF_THRESHOLD_EXPLICIT
@@ -1699,14 +1707,19 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Negatives: merged {n_merged} → "
                   f"{len(neg_canonicals)} distinct canonicals.{utils.Colors.ENDC}")
 
-        # Step 2: Init filter + implicit-only repetition gate. Canonicals
+        # Step 2: Init filter + implicit-only repetition gate. Uses
+        # MIN_NEGATIVE_INIT_CONFIDENCE (0.55) instead of the positive 0.75
+        # because the hashtag_to_persona prompt caps negative scores at 0.75
+        # and most "direct dislike" atoms land in 0.55-0.75. Canonicals
         # supported solely by implicit_negative rows must have at least
         # MIN_IMPLICIT_NEGATIVE_REPETITION distinct source rows; any
         # explicit-negative evidence bypasses the row-count gate.
         neg_survivors: list[CrossReferencedPersona] = []
         n_gated_implicit_only = 0
+        n_gated_init = 0
         for c in neg_canonicals:
-            if c.confidence_score_init < MIN_PERSONA_INIT_CONFIDENCE:
+            if c.confidence_score_init < MIN_NEGATIVE_INIT_CONFIDENCE:
+                n_gated_init += 1
                 continue
             key = _normalize_persona_text(c.persona_item)
             atoms = neg_groups.get(key, [])
@@ -1717,6 +1730,10 @@ class PersonaAgent:
                     n_gated_implicit_only += 1
                     continue
             neg_survivors.append(c)
+
+        if self.verbose and n_gated_init:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Gated {n_gated_init} negative canonicals "
+                  f"(init < {MIN_NEGATIVE_INIT_CONFIDENCE}).{utils.Colors.ENDC}")
 
         if self.verbose and n_gated_implicit_only:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Gated {n_gated_implicit_only} implicit-only "
@@ -1736,7 +1753,10 @@ class PersonaAgent:
             n_expl = 0
             n_impl = 0
             for ap in atoms:
-                if (ap.confidence_score_init >= MIN_PERSONA_INIT_CONFIDENCE
+                # Use the negative init floor here too — positive 0.75 would
+                # discard most corroborating atoms since the prompt tops
+                # negatives at 0.75 for "direct dislike".
+                if (ap.confidence_score_init >= MIN_NEGATIVE_INIT_CONFIDENCE
                         and ap.source_object_id
                         and ap.source_timestamp >= recency_cutoff):
                     if ap.source_object_id not in seen:
