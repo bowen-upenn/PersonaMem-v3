@@ -1591,14 +1591,17 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged_items} preferences into "
                   f"{n_merged_clusters} clusters → {len(survivors)} unique preferences.{utils.Colors.ENDC}")
 
-        # Apply contradictory penalties
+        # Apply contradictory penalties — softened to 0.5 × other_base so a
+        # losing canonical in a contradiction pair isn't zeroed out. The
+        # contradictory signal itself is a meaningful evaluation target; full
+        # subtraction killed every contradictory canonical downstream.
         base_scores: dict[str, float] = {c.persona_item: c.confidence_cross_referenced for c in survivors}
         for c in survivors:
             penalty = 0.0
             for rel in c.related_personas:
                 if isinstance(rel, dict) and rel.get("type") == "contradictory":
                     other_base = base_scores.get(rel.get("persona_item", ""), 0.0)
-                    penalty += other_base
+                    penalty += 0.5 * other_base
             if penalty > 0:
                 c.confidence_cross_referenced = max(0.0, c.confidence_cross_referenced - penalty)
 
@@ -1618,15 +1621,22 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Xref distribution (before floor): {dist_str} "
                   f"(total {len(survivors)}){utils.Colors.ENDC}")
 
-        # Bottom-20 filter with NO exemption — the per-canonical xref
-        # threshold already handles the lower bound, and we want a strict
-        # cut so the final survivor count is close to target.
-        survivors = self._apply_bottom_20_filter(survivors, min_exempt=float("inf"))
-        survivors = [
-            c for c in survivors
+        # Bottom-20 filter + xref-floor filter — with an exemption for
+        # contradictory canonicals. Contradictions are a meaningful evaluation
+        # target (temporal preference change, stance shifts) and are
+        # structurally rare; applying the full survival bar on top of the
+        # softened-but-still-negative penalty reliably killed them all.
+        # Stash contradictories first, run the strict filters on the rest,
+        # then re-add the stashed ones.
+        contradictories = [c for c in survivors if c.relationship_type == "contradictory"]
+        non_contradictory = [c for c in survivors if c.relationship_type != "contradictory"]
+        non_contradictory = self._apply_bottom_20_filter(non_contradictory, min_exempt=float("inf"))
+        non_contradictory = [
+            c for c in non_contradictory
             if c.confidence_cross_referenced
             > canonical_xref_threshold(c.n_explicit_rows, c.n_implicit_rows)
         ]
+        survivors = non_contradictory + contradictories
         self.cross_referenced_personas = survivors
 
         if self.verbose:
