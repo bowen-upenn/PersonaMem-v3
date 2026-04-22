@@ -37,7 +37,7 @@ Three interaction pillars:
 
 | Tension | Choice |
 |---------|--------|
-| Signal fidelity vs. coverage | Strict filtering (init >= 0.5, bottom-20% removal) — choose fidelity |
+| Signal fidelity vs. coverage | Strict filtering (init >= 0.75, 7-day recency gate on corroboration, bottom-20% removal) — choose fidelity |
 | Realism vs. tractability | Approximate with session routing, per-user action distributions, temporal evolution |
 | Fairness vs. accuracy | Diversify demographics beyond census; avoid stereotypical combos — choose fairness |
 
@@ -67,6 +67,8 @@ Input CSV (hashtag interactions per user)
   +- Step 15: Build train/test split           [LLM+Algo] -- 80/20, inferrability gate
   +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user
 ```
+
+**Model tiers:** the pipeline uses two LLM clients. The **flagship** model (`gpt-5-chat`) handles reasoning-heavy steps — 1 (atomic persona), 3-6 (cross-ref, temporal, histories, profile), 7b/7c (hidden personas + summary), 7b-MBTI, 8 (app personas), 13 (chatbot conversations), 15 (train/test split). The **mini** model (`gpt-5.4-mini`, configurable via `--mini_model`) handles mechanical steps — 7a (intimate-hashtag detection), 10 (app routing), 12 (interaction formats), 13b (synthetic content), 14 (stereotype marks). Mini falls back to flagship when no mini client is configured.
 
 ---
 
@@ -144,7 +146,7 @@ net = (implicit_neg_count x 1.0) - (explicit_pos_count x 3.0) - (implicit_pos_co
 ```
 
 **Promotion gate** — both must hold:
-1. `net >= 5` (`MIN_IMPLICIT_NEGATIVE_REPETITION`)
+1. `net >= 10` (`MIN_IMPLICIT_NEGATIVE_REPETITION`)
 2. Negative rows span >= 1 distinct calendar day (`MIN_TEMPORAL_DAYS`)
 
 **Processing:** One LLM call per "hot" hashtag on a representative row (single hashtag only). Inferred preferences must be independently produced by >= 2 different hot-hashtag LLM calls (`MIN_PREF_CORROBORATION = 2`). Promoted rows become `explicit_negative` at BOTH the atomic level (`source_interaction_type = "explicit_negative"` on every promoted atomic) and the event level. Non-promoted implicit_negative rows remain as stub events with empty `preferences: []` (rendered greyscale in HTML).
@@ -157,9 +159,9 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 1. **Merge Duplicates:** Normalize (lowercase, whitespace-collapsed) and group by exact string match. No semantic dedup — handled later by LLM relationship discovery.
 
-2. **Init Filter:** Drop canonicals with `max(init) < 0.6` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor.
+2. **Init Filter:** Drop canonicals with `max(init) < 0.75` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor.
 
-3. **Weighted Corroboration:** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.6), +0.5 per implicit row (init >= 0.6). Also record per-canonical `n_explicit_rows` and `n_implicit_rows` for the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
+3. **Weighted Corroboration (recency-gated):** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.75), +0.5 per implicit row (init >= 0.75). **Only rows whose `source_timestamp` falls within the user's trailing 7-day window (`RECENCY_WINDOW_SECONDS`, anchored on the user's latest interaction) contribute to the score and to the `n_explicit_rows` / `n_implicit_rows` mix.** Older rows still pass the init filter but don't count here — recency is the strictness mechanism, so canonicals supported only by stale evidence fail the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
 
 4. **LLM Relationship Discovery:** Per-category LLM calls identify `similar` and `contradictory` relationships. LLM does not alter scores. Categories with one canonical are skipped.
 
@@ -167,9 +169,9 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 6. **Contradiction Penalty:** Subtract contradicting canonical's cross-ref score. Floor at 0.0.
 
-7. **Bottom-20% Filter + Per-canonical Survival Threshold:** First remove the bottom 20% by xref (no exemption). Then apply an **evidence-mix-dependent threshold** — a canonical survives iff its `cross_ref` exceeds `canonical_xref_threshold(n_explicit_rows, n_implicit_rows)`, which interpolates linearly between `XREF_THRESHOLD_EXPLICIT = 10.0` (pure-explicit support) and `XREF_THRESHOLD_IMPLICIT = 30.0` (pure-implicit support). Canonicals backed mostly by implicit positives thus face a substantially higher bar to survive.
+7. **Bottom-20% Filter + Per-canonical Survival Threshold:** First remove the bottom 20% by xref (no exemption). Then apply an **evidence-mix-dependent threshold** — a canonical survives iff its `cross_ref` exceeds `canonical_xref_threshold(n_explicit_rows, n_implicit_rows)`, which interpolates linearly between `XREF_THRESHOLD_EXPLICIT = 20.0` (pure-explicit support) and `XREF_THRESHOLD_IMPLICIT = 50.0` (pure-implicit support). Canonicals backed mostly by implicit positives thus face a substantially higher bar to survive.
 
-**Negative cross-referencing** runs the same pipeline independently (within negatives only). Differences: canonicals with only implicit evidence need >= 5 distinct source rows to survive; the bottom-20% step is skipped; the per-canonical xref threshold in step 7 still applies.
+**Negative cross-referencing** runs the same pipeline independently (within negatives only). Differences: canonicals with only implicit evidence need >= 10 distinct source rows to survive; the bottom-20% step is skipped; the per-canonical xref threshold in step 7 still applies (same recency window as positives).
 
 ---
 
@@ -234,13 +236,9 @@ Infers deeper motivational layers (*why* a user engages, not just *what* they li
 | `compensatory_need` | Unmet needs via private consumption (privacy_ratio > 0.7) | Compensatory Internet Use Theory |
 | `covert_concern` | Specific worries / fears / pressures the user privately dwells on (health anxiety, financial stress, parenting worry, relationship insecurity, body-image pressure) | Uses & Gratifications (reassurance seeking) |
 
-**Phase 3 — Validation:** Each cluster needs >= 20 distinct rows (`MIN_HIDDEN_PERSONA_ROWS`) and >= 3 distinct days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio reported (> 0.7 required for `compensatory_need`). **Exemption:** `intimate_interest` clusters whose evidence overlaps the Phase-1b pre-screened set skip both gates — one positive signal is enough to surface an intimate persona.
+**Phase 3 — Validation:** Each cluster needs >= 40 distinct rows (`MIN_HIDDEN_PERSONA_ROWS`) and >= 3 distinct days (`MIN_HIDDEN_PERSONA_DAYS`). Privacy ratio reported (> 0.7 required for `compensatory_need`). **Exemption:** `intimate_interest` clusters whose evidence overlaps the Phase-1b pre-screened set skip both gates — one positive signal is enough to surface an intimate persona.
 
 **Phase 4 — Deduplication:** Merge hidden personas with Jaccard >= 0.5 on evidence hashtags. Persona with more evidence_rows becomes base; hashtags and surface_connections unioned; metrics recomputed. Repeats until no merges.
-
-### Dual Personality Tensions (folded into hidden personas)
-
-LLM identifies contradictory hidden persona pairs representing internal conflicts (approach-avoidance, public-vs-private self). Both halves must independently pass validation. The top 3 tensions are **folded into the relevant hidden personas' `related_tensions` list** (each entry: `{other_persona, tension}`) rather than saved as a separate top-level field. No `dual_personalities` field on `profile.json`.
 
 ### Per-Preference Labels (backward-linked)
 
@@ -248,7 +246,7 @@ Each cluster records the distinct `source_object_id`s that placed a row inside i
 
 ### Output
 
-Each cluster: label, type, description, evidence_hashtags, evidence_rows, `evidence_oids` (sorted list of contributing `source_object_id`s — used for backward-linking labels in Step 16), evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation, `related_tensions` (list of `{other_persona, tension}`, top 3 only). Plus a top-level `hidden_persona_summary` narrative in `profile.json`.
+Each cluster: label, type, description, evidence_hashtags, evidence_rows, `evidence_oids` (sorted list of contributing `source_object_id`s — used for backward-linking labels in Step 16), evidence_row_fraction, interaction_breakdown, privacy_ratio, temporal_spread_days, app_distribution, surface_connections, inferred_motivation. Plus a top-level `hidden_persona_summary` narrative in `profile.json`.
 
 ---
 
@@ -360,7 +358,7 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 
 **Time-based, cross-app split:**
 1. Sort all positive survivors by latest-occurrence timestamp ascending (globally).
-2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.55 AND cross_ref > canonical_xref_threshold(...)`) until **3× the target (20 %)** of total positives — an over-selection buffer so the inferrability gate can drop most candidates and the final test set still hits 20 %.
+2. Scan newest -> oldest, collecting items passing high-confidence predicate (`init >= 0.75 AND cross_ref > canonical_xref_threshold(...)`) until **3× the target (20 %)** of total positives — an over-selection buffer so the inferrability gate can drop most candidates and the final test set still hits 20 %.
 3. Inferrability gate then runs on the whole over-selected pool. After the gate, take the **newest `n_test_target` (= 20 % × total positives) inferrable survivors** as the final test set. All else = train. Negatives always train.
 
 **Inferrability gate:** LLM evaluates each candidate — can it be predicted from the train set? Non-inferrable items that WOULD have been in the final test set (the newest `n_test_target` of the candidate pool) are dropped entirely. Non-inferrable items past the target demote to train.
@@ -395,12 +393,13 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 
 | Constant | Value | Purpose |
 |----------|-------|---------|
-| `MIN_PERSONA_INIT_CONFIDENCE` | 0.6 | Init filter floor (no exploratory retention) |
-| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.6 | Test-split eligibility |
-| `XREF_THRESHOLD_EXPLICIT` | 10.0 | Xref bar for explicit-dominated canonicals |
-| `XREF_THRESHOLD_IMPLICIT` | 30.0 | Xref bar for implicit-dominated canonicals |
+| `MIN_PERSONA_INIT_CONFIDENCE` | 0.75 | Init filter floor (no exploratory retention) |
+| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.75 | Test-split eligibility |
+| `XREF_THRESHOLD_EXPLICIT` | 20.0 | Xref bar for explicit-dominated canonicals |
+| `XREF_THRESHOLD_IMPLICIT` | 50.0 | Xref bar for implicit-dominated canonicals |
+| `RECENCY_WINDOW_SECONDS` | 7 * 86400 | Only rows within the trailing 7 days contribute to xref counting |
 | `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (always drop) |
-| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 5 | Implicit-only negative survival threshold |
+| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 10 | Implicit-only negative survival threshold |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Hot-hashtag LLM calls needed |
 | `MIN_TEMPORAL_DAYS` | 1 | Calendar days negatives must span |
@@ -421,7 +420,7 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
 | Test fraction | 0.20 | Latest 20% high-confidence positives |
 | Distractors per test item | 3 | Ranked via LLM from causally-filtered shortlist of 15 |
-| `MIN_HIDDEN_PERSONA_ROWS` | 20 | Min rows for hidden persona |
+| `MIN_HIDDEN_PERSONA_ROWS` | 40 | Min rows for hidden persona |
 | `MIN_HIDDEN_PERSONA_DAYS` | 3 | Min temporal spread for hidden persona |
 | `HIDDEN_PERSONA_HASHTAG_MIN_FREQ` | 3 | Min hashtag occurrences |
 | `HIDDEN_PERSONA_TOP_HASHTAGS` | 200 | Top hashtags passed to LLM |

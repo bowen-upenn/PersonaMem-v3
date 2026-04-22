@@ -242,9 +242,6 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .hp-card .hp-meta span {{ margin-right: 12px; }}
   .hp-card .hp-tags {{ font-size: 11px; color: var(--text-secondary); margin-top: 4px; }}
   .hp-card .hp-motivation {{ font-size: 11px; color: #6D28D9; margin-top: 4px; font-style: italic; }}
-  .dual-card {{ padding: 10px 16px; margin-bottom: 8px; border-radius: 8px; background: #FFF7ED; border: 1px solid #FED7AA; }}
-  .dual-card .dual-label {{ font-size: 12px; font-weight: 600; color: #9A3412; }}
-  .dual-card .dual-tension {{ font-size: 11px; color: var(--text); line-height: 1.5; margin-top: 2px; }}
   .badge.interaction-type {{ font-weight: 600; padding: 2px 10px; }}
   .badge.interaction-type.explicit_positive {{ background: #D1FAE5; color: #065F46; }}
   .badge.interaction-type.implicit_positive {{ background: #EDF5E1; color: #3F6212; }}
@@ -408,11 +405,6 @@ if (profileData && profileData.hidden_personas && profileData.hidden_personas.le
         </div>
         <div class="hp-tags">${{tags}}</div>
         ${{hp.inferred_motivation ? `<div class="hp-motivation">"${{hp.inferred_motivation}}"</div>` : ''}}
-        ${{(hp.related_tensions && hp.related_tensions.length)
-          ? '<div class="hp-tensions">' + hp.related_tensions.map(t =>
-              `<div class="dual-card"><div class="dual-label">↔ ${{t.other_persona || ''}}</div><div class="dual-tension">${{t.tension || ''}}</div></div>`
-            ).join('') + '</div>'
-          : ''}}
       </div>
     `;
   }});
