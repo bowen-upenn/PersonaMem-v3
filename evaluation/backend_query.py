@@ -46,6 +46,55 @@ def _strip_event(event: dict) -> dict:
     return out
 
 
+def _parse_formatted_ts(formatted: str) -> int | None:
+    """Parse a 'HH:MM, MM/DD/YYYY' timestamp into unix seconds, UTC.
+
+    Best-effort — returns None on any parse failure. Used by the
+    contradiction-aware GT filter to read `update_history` entries whose
+    underlying `timestamp` was stripped at save time.
+    """
+    if not formatted or not isinstance(formatted, str):
+        return None
+    import datetime as _dt
+    for fmt in ("%H:%M, %m/%d/%Y", "%Y-%m-%d %H:%M"):
+        try:
+            return int(_dt.datetime.strptime(formatted, fmt)
+                       .replace(tzinfo=_dt.timezone.utc).timestamp())
+        except ValueError:
+            pass
+    return None
+
+
+def _is_superseded_at(pref: dict, as_of_timestamp: int) -> bool:
+    """Return True if the preference was contradicted-and-superseded before T.
+
+    Reads the preference's `update_history` for an entry with
+    `update_type == "contradicted"` AND
+    `resolution == "stance_shift_with_precedent"`. When such an entry's
+    timestamp is ≤ `as_of_timestamp`, AND the preference's own source
+    timestamp is earlier than that entry, the preference is superseded
+    at `as_of_timestamp` — it should not count as current ground truth.
+
+    Works against a preference dict that still has `update_history`
+    populated (i.e. BEFORE `_strip_pref` is applied).
+    """
+    history = pref.get("update_history") or []
+    src_ts = pref.get("source_timestamp") or 0
+    for h in history:
+        if not isinstance(h, dict):
+            continue
+        if h.get("update_type") != "contradicted":
+            continue
+        if h.get("resolution") != "stance_shift_with_precedent":
+            continue
+        h_ts = h.get("timestamp") or _parse_formatted_ts(h.get("formatted_timestamp", ""))
+        if not h_ts:
+            continue
+        if h_ts <= as_of_timestamp and src_ts and src_ts < h_ts:
+            return True
+    return False
+
+
 class BackendQuery:
     """Read-only access to `backend/{user_id}/*.json` with time masking.
 
@@ -138,11 +187,19 @@ class BackendQuery:
         app: str | Iterable[str] | None = None,
         polarity: str | None = None,
         category: str | None = None,
+        include_superseded: bool = False,
     ) -> list[dict]:
         """Flatten all preferences from events before `since_timestamp`.
 
         `polarity` ∈ {positive, negative} filters via `source_interaction_type`
         (explicit_positive / implicit_positive → positive, etc.).
+
+        `include_superseded` (default False): when False, preferences whose
+        canonical has been CONTRADICTED-AND-SUPERSEDED (Phase 3 cross-polarity
+        gate, Case B) before `since_timestamp` are filtered out. The ground
+        truth at any T_test is the LATER stance only, never the superseded
+        earlier stance. Set to True to include both stances (e.g., for audit).
+
         Returns one dict per preference occurrence, annotated with
         `source_app`, `source_timestamp`, `source_interaction_type`,
         `source_hashtags`.
@@ -162,6 +219,12 @@ class BackendQuery:
                 for p in e.get("preferences", []):
                     if category and p.get("category", "").lower() != category.lower():
                         continue
+                    # Contradiction-aware filter: skip canonicals superseded at T
+                    if not include_superseded:
+                        p_with_src_ts = dict(p)
+                        p_with_src_ts.setdefault("source_timestamp", ts)
+                        if _is_superseded_at(p_with_src_ts, since_timestamp):
+                            continue
                     out.append({
                         **_strip_pref(p),
                         "source_app": a,
@@ -242,6 +305,78 @@ class BackendQuery:
     def get_full_profile(self, user_id: str) -> dict:
         """Full profile — for judge / eval-side use only, never pass to the agent."""
         return dict(self._load_profile(user_id))
+
+    # -- Calendar (R5 calendar modification stream) --------------------------
+
+    def _load_calendar_modifications(self, user_id: str) -> list[dict]:
+        """Return the raw modification stream for `user_id` (no time mask).
+
+        Internal — callers should use `get_calendar_modifications` (time-masked)
+        or `get_calendar_state` (folded to a point in time).
+        """
+        path = self.base / user_id / "calendar.json"
+        if not path.exists():
+            return []
+        try:
+            with path.open() as f:
+                doc = json.load(f)
+        except (ValueError, OSError):
+            return []
+        if not isinstance(doc, dict):
+            return []
+        mods = doc.get("modifications", [])
+        return list(mods) if isinstance(mods, list) else []
+
+    def get_calendar_modifications(
+        self,
+        user_id: str,
+        since_timestamp: int,
+        limit: int | None = None,
+    ) -> list[dict]:
+        """Return CRUD modifications with `ts < since_timestamp`, sorted ascending.
+
+        Time-masked the same way as `get_events` / `get_preferences` — the
+        agent at T_test sees only the modifications the user had made by then.
+        """
+        out = [m for m in self._load_calendar_modifications(user_id)
+               if isinstance(m, dict) and (m.get("ts") or 0) < since_timestamp]
+        out.sort(key=lambda m: m.get("ts", 0))
+        if limit is not None:
+            out = out[-limit:]
+        return out
+
+    def get_calendar_state(self, user_id: str, as_of_timestamp: int) -> dict[str, dict]:
+        """Fold the modification stream to produce the calendar state at T.
+
+        Returns `{entry_id → entry_dict}` after applying all modifications
+        with `ts <= as_of_timestamp`. Updates patch fields; removes drop
+        the entry. Modifications with `ts > as_of_timestamp` are invisible.
+        """
+        state: dict[str, dict] = {}
+        for m in self._load_calendar_modifications(user_id):
+            if not isinstance(m, dict):
+                continue
+            ts = m.get("ts") or 0
+            if ts > as_of_timestamp:
+                continue
+            action = m.get("action")
+            if action == "added":
+                entry = m.get("entry")
+                if isinstance(entry, dict) and entry.get("entry_id"):
+                    state[entry["entry_id"]] = dict(entry)
+            elif action == "updated":
+                entry_id = m.get("entry_id")
+                if entry_id and entry_id in state:
+                    diff = m.get("diff") or {}
+                    if isinstance(diff, dict):
+                        for field, change in diff.items():
+                            if isinstance(change, dict) and "to" in change:
+                                state[entry_id][field] = change["to"]
+            elif action == "removed":
+                entry_id = m.get("entry_id")
+                if entry_id and entry_id in state:
+                    state.pop(entry_id, None)
+        return state
 
     # -- MCP-support queries (Extension A′) ---------------------------------
     # Cursor pagination: opaque base64(f"{ts}:{eid}").
