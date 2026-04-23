@@ -26,9 +26,17 @@ from evaluation.build_benchmark import (
     default_benchmark_path,
 )
 from evaluation.inference_utils import SnapshotCache
-from evaluation.tasks import slate_ranking, chatbot_response, over_personalization
+from evaluation.tasks import slate_ranking, chatbot_response, over_personalization, agentic_tasks
 from evaluation import metrics as metrics_mod
 
+
+AGENTIC_TASK_IDS = [
+    "t6_community_digest", "t7_moment_recommendation", "t8_dm_digest",
+    "t9_cross_app_repost", "t10_auto_reply", "t11_vague_refind",
+    "t12_agent_composed_post", "t13_chatbot_dispatch", "t14_draft_audit",
+    "t15_collection_curation", "t16_group_dm_summary", "t17_wrong_recipient",
+    "t18_proactive_daily", "t19_trending_alert",
+]
 
 TASK_ALIASES = {
     "all": [
@@ -40,6 +48,7 @@ TASK_ALIASES = {
         "c2_scenarios",
         "c3_restraint",
         "c4_button_regen",
+        *AGENTIC_TASK_IDS,
     ],
     "a": ["slate_ranking"],
     "b": ["chatbot_response_proactive", "chatbot_response_control"],
@@ -52,7 +61,10 @@ TASK_ALIASES = {
     "c2": ["c2_scenarios"],
     "c3": ["c3_restraint"],
     "c4": ["c4_button_regen"],
-    # Legacy v1 names (if an old benchmark is loaded).
+    "agentic": AGENTIC_TASK_IDS,
+    # Individual agentic shortcuts: t6, t7, ..., t19.
+    **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
+    # Legacy v1 names.
     "chatbot_response": ["chatbot_response"],
     "c1_fatigue": ["c1_fatigue"],
 }
@@ -92,6 +104,8 @@ BENCHMARK_TASK_KEYS = {
     "c2_scenarios":     "c2_scenarios",
     "c3_restraint":     "c3_restraint",
     "c4_button_regen":  "c4_button_regen",
+    # Agentic T6-T19 — key in benchmark JSON is same as task_id.
+    **{tid: tid for tid in AGENTIC_TASK_IDS},
     # Legacy v1.
     "chatbot_response": "chatbot_response",
     "c1_fatigue":       "c1_fatigue",
@@ -130,6 +144,8 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
         return over_personalization.run_task_c3(**common)
     if name == "c4_button_regen":
         return over_personalization.run_task_c4(**common)
+    if name in AGENTIC_TASK_IDS:
+        return agentic_tasks.run_task(task_id=name, **common)
     raise ValueError(f"unknown task: {name}")
 
 

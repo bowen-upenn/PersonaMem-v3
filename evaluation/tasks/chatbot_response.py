@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from data_preparation.utils import extract_json_from_response
 from evaluation import judges, metrics, prompts
+from evaluation import personalization_rubric as pr
 from evaluation.backend_query import BackendQuery, materialize_snapshot
 from evaluation.claude_subagent import run_subagent
 from evaluation.inference_utils import (
@@ -183,6 +184,21 @@ def run_task_b(
                 polarity = "negative"
             judge_scores = judges.judge_chatbot_rubric(judge_client, response_text, evidence, polarity)
 
+        # Universal personalization rubric (hard dims always; judge dims gated on enable_llm_judge).
+        task_id = f"chatbot_response_{arm}"
+        ground_truth = pr.build_source_a(
+            bq, user_id, t,
+            query_text=user_query,
+            query_hashtags=inst.get("source_hashtags", []),
+        )
+        pers_rubric = pr.score(
+            task_id=task_id,
+            agent_output=response_text,
+            ground_truth=ground_truth,
+            source_b=inst.get("post_test_window"),
+            judge_client=(judge_client if enable_llm_judge else None),
+        )
+
         results.append({
             "task": "chatbot_response",
             "arm": arm,
@@ -207,6 +223,7 @@ def run_task_b(
                 **behavioral,
                 "carve_out_respect": carve_out_respect,
                 **judge_scores,
+                **{f"pr_{k}": v for k, v in pers_rubric.items() if isinstance(v, (int, float, str))},
             },
         })
     return results
