@@ -962,6 +962,192 @@ Respond with ONLY a single JSON object. No prose outside the JSON fence.
 ```"""
 
 
+def synthesize_ad_content_prompt(
+    content_type: str,
+    app: str,
+    ad_category: str,
+    action: str,
+    action_label: str,
+    hashtags: list[str],
+    user_profile: dict,
+) -> str:
+    """Build a prompt that fabricates ONE piece of sponsored-ad feed content.
+
+    Returned by step 13c (ad injection). The LLM returns a single JSON object
+    `{"content_type": ..., "content": ...}`. The `content` schema mirrors the
+    organic content shape (text/image/short_video) but adds a REQUIRED
+    `ad_metadata` block with sponsor_name, cta_label, disclosure, etc.
+
+    Unlike organic content, ads are PUSHED rather than chosen — so this
+    prompt does NOT condition on the user's inferred preferences, only on
+    demographic/career context and topical hashtags. This keeps ads realistic
+    (they target audiences, not individual users' specific preferences).
+    """
+    user_profile_json = json.dumps(user_profile or {}, indent=2)
+    hashtag_str = " ".join(hashtags) if hashtags else "(no hashtags)"
+
+    # action-aware framing so the copy fits how the user responded
+    if action == "clicked_ad":
+        action_guidance = (
+            "The user TAPPED THROUGH on this ad — so the copy should be compelling, "
+            "with a clear value proposition and a CTA the reader would plausibly click. "
+            "Tight, punchy, benefit-forward."
+        )
+    elif action == "hidden_ad":
+        action_guidance = (
+            "The user tapped 'Hide this ad' — the ad is plausibly annoying, off-target, "
+            "or generic. Keep the copy realistic (not parodic) but not especially compelling: "
+            "generic stock phrasing, weak value prop, mild brand irritation would fit."
+        )
+    else:  # dismissed_ad
+        action_guidance = (
+            "The user scrolled past this ad without engaging. The copy can be fine but "
+            "unremarkable — mid-funnel awareness-type ad, not especially resonant."
+        )
+
+    # Per-type schema stub — same as organic but adds ad_metadata
+    if content_type == "text":
+        schema_block = (
+            "The `content` object MUST be:\n"
+            "```json\n"
+            "{\n"
+            '  "text": "<sponsored post body, 20-90 words, first-party brand voice (not user voice). '
+            'Includes value prop + implicit CTA. No hashtags in the body.>",\n'
+            '  "ad_metadata": { ...see Ad Metadata schema below... }\n'
+            "}\n"
+            "```"
+        )
+    elif content_type == "image":
+        schema_block = (
+            "The `content` object MUST be:\n"
+            "```json\n"
+            "{\n"
+            '  "caption": "<=25 words, brand voice, first-party, CTA-oriented, no hashtags",\n'
+            '  "overall_description": "1-2 sentence description of the ad creative as a whole",\n'
+            '  "parts": [\n'
+            '    {"region": "foreground", "description": "product shot or hero subject"},\n'
+            '    {"region": "background", "description": "context / lifestyle framing"},\n'
+            '    {"region": "subject_detail", "description": "close-up detail, brand mark, etc."}\n'
+            "  ],\n"
+            '  "metadata": {\n'
+            '    "aspect_ratio": "1:1" | "4:5" | "9:16",\n'
+            '    "dimensions": "1080x1350" (consistent with aspect_ratio),\n'
+            '    "color_profile": "sRGB" | "Display P3",\n'
+            '    "filename": "AD_<slug>.JPG"\n'
+            "  },\n"
+            '  "ad_metadata": { ...see Ad Metadata schema below... }\n'
+            "}\n"
+            "```"
+        )
+    elif content_type == "short_video":
+        schema_block = (
+            "The `content` object MUST be:\n"
+            "```json\n"
+            "{\n"
+            '  "title": "short branded title, <=8 words",\n'
+            '  "caption": "<=25 words, brand voice",\n'
+            '  "overall_description": "1-3 sentences describing the ad narrative",\n'
+            '  "key_frames": [\n'
+            '    {"timestamp_s": 0.0, "description": "opening: hook frame"},\n'
+            '    {"timestamp_s": <mid>, "description": "product/benefit shot"},\n'
+            '    {"timestamp_s": <late>, "description": "CTA frame with brand mark"}\n'
+            "  ],\n"
+            '  "audio_transcript": "<VO + music cue, 6-25s of script>",\n'
+            '  "metadata": {\n'
+            '    "duration_s": 6-30,\n'
+            '    "resolution": "1080x1920" | "1080x1080",\n'
+            '    "fps": 30 | 60,\n'
+            '    "aspect_ratio": "9:16" | "1:1"\n'
+            "  },\n"
+            '  "ad_metadata": { ...see Ad Metadata schema below... }\n'
+            "}\n"
+            "```"
+        )
+    else:
+        schema_block = "Depends on content_type (see above)."
+
+    ad_categories_str = ", ".join(f'"{c}"' for c in [
+        "food_and_beverage", "apparel", "electronics", "travel", "finance",
+        "fitness_wellness", "education", "home_garden", "auto", "entertainment", "services",
+    ])
+    cta_labels_str = ", ".join(f'"{c}"' for c in [
+        "Shop now", "Learn more", "Sign up", "Download", "Get quote", "Book now",
+    ])
+    cta_kinds_str = ", ".join(f'"{c}"' for c in [
+        "product_page", "landing_page", "app_store", "signup_form", "checkout",
+    ])
+
+    ad_metadata_schema = f"""
+### Ad Metadata schema (ALWAYS REQUIRED inside `content`)
+```json
+{{
+  "sponsor_name": "<plausible brand name — NOT an existing real brand. Invent one that fits ad_category.>",
+  "ad_category": "<MUST equal '{ad_category}'>",
+  "cta_label": "<one of: {cta_labels_str}>",
+  "cta_destination_kind": "<one of: {cta_kinds_str}>",
+  "disclosure_label": "Sponsored"
+}}
+```
+`sponsor_name` must sound like a plausible independent brand (avoid
+copying household names like Nike, Apple, Amazon). Invent fresh names
+that fit the ad_category — e.g., "Bean & Barrel Coffee Co.",
+"Lumen Everyday", "TrailNorth Outfitters"."""
+
+    platform_voice = {
+        "Instagram": "Instagram ads are polished, visual, lifestyle-forward. Tight headlines, aspirational imagery.",
+        "Facebook":  "Facebook ads can be longer-form and more value-prop driven; more direct CTAs.",
+        "Threads":   "Threads ads are conversational, almost native-post-shaped. Less polished, more witty.",
+    }.get(app, "")
+
+    return f"""\
+You are generating ONE sponsored ad that just appeared in a user's {app} feed.
+The user then took this action on it: **{action_label}** (`{action}`).
+
+{action_guidance}
+
+## The user (context for ad targeting — do NOT echo their specific preferences)
+```json
+{user_profile_json}
+```
+
+## Ad category (fixed)
+`{ad_category}` (MUST appear in ad_metadata.ad_category)
+
+## Allowed ad_category values
+{ad_categories_str}
+
+## Platform voice
+{platform_voice}
+
+## Topical signal (hashtags on the event — the ad's topical focus)
+{hashtag_str}
+
+## Content type requested
+**{content_type}**
+
+{schema_block}
+
+{ad_metadata_schema}
+
+## Rules
+1. The ad must feel like an ad — brand voice, CTA, sponsor name visible via `ad_metadata`.
+2. Do NOT mention the user's name, specific preferences, or private data in the copy. Ads target segments, not individuals.
+3. `ad_metadata.ad_category` MUST equal `{ad_category}` (verbatim). `cta_label` MUST be one of the allowed values. `cta_destination_kind` MUST be one of the allowed values. `disclosure_label` MUST be "Sponsored".
+4. `sponsor_name` must be invented (not a real well-known brand) and plausibly fit the ad_category.
+5. Keep hashtags OUT of body copy / captions / descriptions — hashtags live on the event separately.
+6. Keep the ad on-topic with the hashtags; but the ad reader should see a product/service offer, not organic content.
+
+## Output Format
+Respond with ONLY a single JSON object. No prose outside the JSON fence.
+
+```json
+{{
+  "content_type": "{content_type}",
+  "content": {{ ... }}
+}}
+```"""
+
+
 # ---------------------------------------------------------------------------
 # Chatbot multi-turn conversation generation prompts
 # ---------------------------------------------------------------------------
