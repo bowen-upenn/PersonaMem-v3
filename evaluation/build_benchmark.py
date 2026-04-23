@@ -933,6 +933,14 @@ def build_benchmark(
         e3_instances = []
         print(f"[build_benchmark] WARN: e3_daily_briefing_multi builder failed: {exc}")
 
+    # Task E4 — Google Search personalization (opt-in at run time; always built)
+    try:
+        from evaluation.tasks.e4_google_search import build_e4_google_search
+        e4_instances = build_e4_google_search(bq, user_id, t_probe)
+    except Exception as exc:
+        e4_instances = []
+        print(f"[build_benchmark] WARN: e4_google_search builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -961,6 +969,7 @@ def build_benchmark(
             "c4_button_regen": len(c4_instances),
             "e2_at_ai_followup": len(e2_instances),
             "e3_daily_briefing_multi": len(e3_instances),
+            "e4_google_search": len(e4_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
         "slate_ranking": slate_instances,
@@ -973,6 +982,7 @@ def build_benchmark(
         "c4_button_regen": c4_instances,
         "e2_at_ai_followup": e2_instances,
         "e3_daily_briefing_multi": e3_instances,
+        "e4_google_search": e4_instances,
         **agentic_buckets,
     }
 
