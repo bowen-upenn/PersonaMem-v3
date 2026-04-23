@@ -88,6 +88,18 @@ class CrossReferencedPersona:
     # rows to survive).
     n_explicit_rows: int = 0
     n_implicit_rows: int = 0
+    # Time horizon classification (Step 3.5). "long_term" = enduring trait
+    # inferable from the observed window (default). "short_term" = bounded
+    # intent (trip, event prep, one-time purchase, how-to). Short-term uses
+    # a relaxed xref survival threshold.
+    time_horizon: str = "long_term"
+    # Structured stop-condition for short-term canonicals. Eval tasks auto-
+    # expire recommendations past expected_stop_ts. Shape:
+    # {"type": "event"|"date"|"mastery"|"relocation",
+    #  "description": str,
+    #  "expected_stop_ts": int | None}
+    # Empty dict for long_term canonicals (no stop condition applies).
+    stop_condition: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -269,6 +281,45 @@ IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to 
 # gate, so stale-but-heavily-repeated preferences don't survive on old evidence.
 RECENCY_WINDOW_SECONDS = 7 * 86400  # 7 days
 
+# --------------------------------------------------------------------------
+# Time horizon classification (Step 3.5).
+#
+# The observation window is short (~8 days), so horizon classification leans
+# on row count + category + span-fraction rather than raw span in days. A
+# canonical is eligible for `short_term` iff ALL of:
+#   - span_days / obs_window_days <= SHORT_TERM_MAX_SPAN_FRAC
+#   - n_explicit_rows + n_implicit_rows < SHORT_TERM_MAX_ROWS
+#   - category ∈ SHORT_TERM_ALLOWED_CATEGORIES
+# Everything else is `long_term`. The allow-list is the anti-loophole — a
+# canonical cannot claim short-term just by having a tight span + few rows
+# unless it's in a bounded category. LLM confirmation (run after rule
+# pre-label) can demote short→long but NEVER promote long→short.
+SHORT_TERM_MAX_SPAN_FRAC: float = 0.35
+SHORT_TERM_MAX_ROWS: int = 8
+# Survival xref threshold for short-term canonicals. Much lower than the
+# long-term explicit/implicit bars because short-term intents leave little
+# corroborating evidence (trip hotel search, one-time how-to) yet are still
+# legitimate and worth surfacing for personalization during their active
+# window.
+XREF_THRESHOLD_SHORT_TERM: float = 3.0
+# Allowed categories for short_term eligibility. Keep this small — each
+# entry names a class of BOUNDED intent (one trip, one event, one purchase,
+# one skill acquisition). Category names are matched case-insensitively
+# against substrings in the canonical's `category` field (so "travel_planning"
+# and "solo travel" both hit "travel").
+SHORT_TERM_ALLOWED_CATEGORIES: set[str] = {
+    "travel",
+    "event_prep",
+    "event prep",
+    "purchase_intent",
+    "purchase intent",
+    "how_to",
+    "how to",
+    "medical_consultation",
+    "medical consultation",
+    "trip",
+}
+
 # NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
 # side. A preference corroborated by 200 distinct rows should be strictly
 # more confident than one corroborated by 10 — they can't both be 1.0. Only
@@ -276,15 +327,26 @@ RECENCY_WINDOW_SECONDS = 7 * 86400  # 7 days
 # distinguishing signal at scale.
 
 
-def canonical_xref_threshold(n_explicit_rows: int, n_implicit_rows: int) -> float:
-    """Return the survival xref threshold for a canonical, interpolated by
-    its evidence mix.
+def canonical_xref_threshold(
+    n_explicit_rows: int,
+    n_implicit_rows: int,
+    time_horizon: str = "long_term",
+) -> float:
+    """Return the survival xref threshold for a canonical.
 
-    A canonical backed mostly by explicit rows survives with a smaller xref;
-    a canonical backed mostly by implicit rows needs a larger xref. When a
-    canonical has no distinct row evidence (e.g., single-object user), the
+    Long-term (default): interpolated by evidence mix. A canonical backed
+    mostly by explicit rows survives with a smaller xref; mostly implicit
+    needs a larger xref. When a canonical has no distinct row evidence, the
     fallback is the explicit threshold (no penalty).
+
+    Short-term: always `XREF_THRESHOLD_SHORT_TERM` regardless of mix. Short-
+    term intents leave sparse evidence but are still legitimate; this
+    relaxed floor lets them survive without opening a loophole for weak
+    long-term signals (eligibility for short_term is gated by category +
+    span + row count in `_classify_time_horizon_rule`).
     """
+    if time_horizon == "short_term":
+        return XREF_THRESHOLD_SHORT_TERM
     total = n_explicit_rows + n_implicit_rows
     if total <= 0:
         return XREF_THRESHOLD_EXPLICIT
@@ -293,6 +355,38 @@ def canonical_xref_threshold(n_explicit_rows: int, n_implicit_rows: int) -> floa
         (1.0 - implicit_frac) * XREF_THRESHOLD_EXPLICIT
         + implicit_frac * XREF_THRESHOLD_IMPLICIT
     )
+
+
+def _classify_time_horizon_rule(
+    category: str,
+    span_days: float,
+    obs_window_days: float,
+    n_total_rows: int,
+) -> str:
+    """Rule-based horizon classification. Deterministic, LLM-free.
+
+    Returns "short_term" only when ALL eligibility conditions hold. All
+    other inputs return "long_term". Called during cross-referencing BEFORE
+    the survival filter so short-term canonicals can use a relaxed xref
+    threshold.
+    """
+    if not category or obs_window_days <= 0:
+        return "long_term"
+    cat_lower = category.lower()
+    # substring match against the allow-list (handles "travel_planning",
+    # "solo travel", "medical_consultation", etc.)
+    cat_hit = any(
+        allowed_lower in cat_lower
+        for allowed_lower in (s.lower() for s in SHORT_TERM_ALLOWED_CATEGORIES)
+    )
+    if not cat_hit:
+        return "long_term"
+    span_frac = span_days / obs_window_days if obs_window_days > 0 else 0.0
+    if span_frac > SHORT_TERM_MAX_SPAN_FRAC:
+        return "long_term"
+    if n_total_rows >= SHORT_TERM_MAX_ROWS:
+        return "long_term"
+    return "short_term"
 
 
 def _compute_recency_cutoff(interactions) -> int:
@@ -314,19 +408,21 @@ def is_high_confidence(
     cross_ref_score: float,
     n_explicit_rows: int = 0,
     n_implicit_rows: int = 0,
+    time_horizon: str = "long_term",
 ) -> bool:
     """Return True if a persona's scores qualify as 'high confidence'.
 
     BOTH conditions must hold:
       - confidence_score_init  >= HIGH_CONFIDENCE_INIT_THRESHOLD
-      - confidence_cross_referenced > canonical_xref_threshold(...)
+      - confidence_cross_referenced > canonical_xref_threshold(..., time_horizon)
         (evidence-mix-dependent survival bar — stricter for implicit-only
-         canonicals than for explicit-supported ones)
+         canonicals than for explicit-supported ones; relaxed to
+         XREF_THRESHOLD_SHORT_TERM when time_horizon="short_term").
     """
     return (
         init_score >= HIGH_CONFIDENCE_INIT_THRESHOLD
         and cross_ref_score
-        > canonical_xref_threshold(n_explicit_rows, n_implicit_rows)
+        > canonical_xref_threshold(n_explicit_rows, n_implicit_rows, time_horizon)
     )
 
 
@@ -1758,6 +1854,13 @@ class PersonaAgent:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Xref distribution (before floor): {dist_str} "
                   f"(total {len(survivors)}){utils.Colors.ENDC}")
 
+        # Pre-label time horizons BEFORE the survival filter so short-term
+        # canonicals can use the relaxed XREF_THRESHOLD_SHORT_TERM. This is
+        # a deterministic rule-based pre-label; LLM refinement runs later
+        # as Step 3.5 (`classify_horizons_and_stop_conditions`) and may
+        # demote short→long (never promote long→short).
+        self._apply_rule_based_time_horizon(survivors, polarity="positive")
+
         # Bottom-20 filter + xref-floor filter — with an exemption for
         # contradictory canonicals. Contradictions are a meaningful evaluation
         # target (temporal preference change, stance shifts) and are
@@ -1771,7 +1874,9 @@ class PersonaAgent:
         non_contradictory = [
             c for c in non_contradictory
             if c.confidence_cross_referenced
-            > canonical_xref_threshold(c.n_explicit_rows, c.n_implicit_rows)
+            > canonical_xref_threshold(
+                c.n_explicit_rows, c.n_implicit_rows, c.time_horizon
+            )
         ]
         survivors = non_contradictory + contradictories
         self.cross_referenced_personas = survivors
@@ -1787,6 +1892,138 @@ class PersonaAgent:
         # Negative persona cross-referencing (same pipeline, independent)
         # ==============================================================
         self._cross_reference_negatives(groups_factory=_defaultdict)
+
+    def classify_horizons_and_stop_conditions(self) -> None:
+        """Step 3.5: LLM refinement of time-horizon labels + stop conditions.
+
+        Runs AFTER cross-reference (positive + negative) so survival filters
+        have already used the rule-based pre-labels. This step does two
+        things:
+
+          1. For each canonical the rule pre-labeled as `short_term`, ask the
+             LLM to confirm or DEMOTE to `long_term`. The LLM cannot promote
+             `long_term` → `short_term` (guards against weak long-term
+             signals bypassing the xref floor).
+          2. For confirmed short-term canonicals, get a structured
+             `stop_condition` so eval tasks can auto-expire recommendations.
+
+        Applies to both `cross_referenced_personas` and
+        `cross_referenced_negatives`. One batched LLM call per ~20
+        candidates via the mini-tier client.
+        """
+        client = self.llm_client_mini or self.llm_client
+        if client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping horizon classification (no llm client).{utils.Colors.ENDC}")
+            return
+
+        # Collect rule-labeled short-term candidates (positive + negative).
+        # Long-term canonicals are untouched by this step.
+        obs_window_days = self._obs_window_days()
+
+        def _candidate_payload(cr: CrossReferencedPersona, polarity: str) -> dict:
+            groups = (
+                self._canonical_groups if polarity == "positive"
+                else self._negative_canonical_groups
+            )
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = groups.get(key, []) if groups else []
+            tss = [a.source_timestamp for a in atoms if a.source_timestamp]
+            first_ts = min(tss) if tss else 0
+            last_ts = max(tss) if tss else 0
+            return {
+                "id": f"{polarity[:1]}:{cr.persona_item[:60]}",
+                "persona_item": cr.persona_item,
+                "category": cr.category,
+                "span_days": (last_ts - first_ts) / 86400.0 if tss else 0.0,
+                "n_rows": cr.n_explicit_rows + cr.n_implicit_rows,
+                "first_formatted_ts": utils.unix_to_formatted(first_ts) if first_ts else "",
+                "last_formatted_ts": utils.unix_to_formatted(last_ts) if last_ts else "",
+                "_cr": cr,
+                "_polarity": polarity,
+            }
+
+        shortterm_candidates: list[dict] = []
+        for cr in self.cross_referenced_personas:
+            if cr.time_horizon == "short_term":
+                shortterm_candidates.append(_candidate_payload(cr, "positive"))
+        for cr in self.cross_referenced_negatives:
+            if cr.time_horizon == "short_term":
+                shortterm_candidates.append(_candidate_payload(cr, "negative"))
+
+        if not shortterm_candidates:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"Step 3.5: no short-term candidates to refine.{utils.Colors.ENDC}")
+            return
+
+        user_profile_dict = {}
+        if self.user_profile:
+            user_profile_dict = {
+                "name": self.user_profile.name,
+                "gender": self.user_profile.gender,
+                "race_ethnicity": self.user_profile.race_ethnicity,
+                "career": self.user_profile.career,
+                "education": self.user_profile.education,
+                "bio": self.user_profile.bio,
+            }
+
+        # Batch candidates in groups of 20 for LLM calls
+        BATCH = 20
+        n_confirmed = 0
+        n_demoted = 0
+        for start in range(0, len(shortterm_candidates), BATCH):
+            batch = shortterm_candidates[start:start + BATCH]
+            # Strip internal references before serializing
+            public_batch = [
+                {k: v for k, v in c.items() if not k.startswith("_")}
+                for c in batch
+            ]
+            prompt = prompts.horizon_and_stop_prompt(
+                candidates=public_batch,
+                user_profile=user_profile_dict,
+                obs_window_days=obs_window_days,
+            )
+            response = self._query_mini_with_retry(prompt)
+            if not response:
+                continue
+            parsed = utils.extract_json_from_response(response)
+            if not isinstance(parsed, list):
+                continue
+            # Align by id; if the LLM drops entries or returns duplicates,
+            # apply only what we can match exactly.
+            by_id = {}
+            for entry in parsed:
+                if isinstance(entry, dict) and entry.get("id"):
+                    by_id[entry["id"]] = entry
+            for c in batch:
+                cr: CrossReferencedPersona = c["_cr"]
+                result = by_id.get(c["id"])
+                if not result:
+                    continue
+                new_horizon = result.get("time_horizon", "short_term")
+                if new_horizon == "long_term":
+                    cr.time_horizon = "long_term"
+                    cr.stop_condition = {}
+                    n_demoted += 1
+                else:
+                    cr.time_horizon = "short_term"
+                    sc = result.get("stop_condition")
+                    if isinstance(sc, dict):
+                        cr.stop_condition = {
+                            "type": sc.get("type", "event"),
+                            "description": sc.get("description", ""),
+                            "expected_stop_ts": sc.get("expected_stop_ts"),
+                        }
+                    else:
+                        cr.stop_condition = {}
+                    n_confirmed += 1
+
+        if self.verbose:
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"Horizon classification: {n_confirmed} short_term confirmed, "
+                  f"{n_demoted} demoted to long_term.{utils.Colors.ENDC}")
 
     def _cross_reference_negatives(self, groups_factory=None) -> None:
         """Run merge → init filter → weighted corroboration → LLM cross-ref
@@ -1962,16 +2199,70 @@ class PersonaAgent:
         # 20/50 thresholds, which are calibrated for data scales negatives
         # never reach (implicit_negative rows are typically 5-10x rarer than
         # implicit_positive, and explicit_negative is often 0).
+        # (XREF_THRESHOLD_NEGATIVE is already close to XREF_THRESHOLD_SHORT_TERM,
+        # so no horizon-aware override is needed for negatives at survival time;
+        # horizons are still pre-labeled below so downstream consumers see them.)
         neg_survivors = [
             c for c in neg_survivors
             if c.confidence_cross_referenced > XREF_THRESHOLD_NEGATIVE
         ]
+        self._apply_rule_based_time_horizon(neg_survivors, polarity="negative")
         self.cross_referenced_negatives = neg_survivors
 
         if self.verbose:
             cr_vals = [c.confidence_cross_referenced for c in neg_survivors] if neg_survivors else [0.0]
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] {len(neg_survivors)} negative survivors, "
                   f"cross_ref range {min(cr_vals):.1f}..{max(cr_vals):.1f}{utils.Colors.ENDC}")
+
+    def _obs_window_days(self) -> float:
+        """User's observation window in days (max - min interaction timestamp).
+
+        Used by the rule-based horizon classifier to normalize each
+        canonical's span. Returns 0.0 when no interactions are loaded so
+        callers can short-circuit to long_term.
+        """
+        if not self.interactions:
+            return 0.0
+        tss = [r.interaction_time for r in self.interactions if r.interaction_time]
+        if not tss:
+            return 0.0
+        span_sec = max(tss) - min(tss)
+        return span_sec / 86400.0
+
+    def _apply_rule_based_time_horizon(
+        self,
+        canonicals: list[CrossReferencedPersona],
+        polarity: str = "positive",
+    ) -> None:
+        """Rule-based pre-label for each canonical's `time_horizon` field.
+
+        Uses `_classify_time_horizon_rule` with the canonical's category,
+        span-fraction, and row count. Sets `time_horizon` in place. The
+        LLM refinement step (`classify_horizons_and_stop_conditions`)
+        runs after cross-ref and may demote short→long.
+        """
+        if not canonicals:
+            return
+        obs_window_days = self._obs_window_days()
+        groups = (
+            self._canonical_groups if polarity == "positive"
+            else self._negative_canonical_groups
+        )
+        for cr in canonicals:
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = groups.get(key, []) if groups else []
+            tss = [a.source_timestamp for a in atoms if a.source_timestamp]
+            if tss:
+                span_days = (max(tss) - min(tss)) / 86400.0
+            else:
+                span_days = 0.0
+            n_total = cr.n_explicit_rows + cr.n_implicit_rows
+            cr.time_horizon = _classify_time_horizon_rule(
+                category=cr.category,
+                span_days=span_days,
+                obs_window_days=obs_window_days,
+                n_total_rows=n_total,
+            )
 
     @staticmethod
     def _apply_bottom_20_filter(
@@ -4223,6 +4514,7 @@ class PersonaAgent:
           1.  infer atomic personas
           2.  dedupe (lexical) + init filter + count corroboration → cross_ref
           3.  cross-reference & filter
+          3.5 classify horizons + stop conditions (LLM refinement of short-term)
           4.  temporal contradiction graph
           5.  build update histories
           6.  generate user profile (demographics + big_five + bio)
@@ -4246,6 +4538,7 @@ class PersonaAgent:
             ("1.  Infer atomic personas",          self.infer_personas_from_hashtags),
             ("2.  Promote implicit negatives",      self.promote_implicit_negatives),
             ("3.  Cross-reference & filter",        self.summarize_and_cross_reference),
+            ("3.5 Classify horizons + stops",       self.classify_horizons_and_stop_conditions),
             ("4.  Temporal contradiction graph",     self.build_temporal_contradiction_graph),
             ("5.  Build update histories",           self.build_update_histories),
             ("6.  Generate user profile",            self.generate_user_profile),
@@ -4534,7 +4827,13 @@ class PersonaAgent:
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                     "hidden_persona_labels": hp_labels,
                     "update_history": merged_history,
+                    "time_horizon": getattr(cr, "time_horizon", "long_term"),
                 }
+                # Stop condition only meaningful for short-term canonicals
+                if getattr(cr, "time_horizon", "long_term") == "short_term":
+                    sc = getattr(cr, "stop_condition", {}) or {}
+                    if sc:
+                        pref["stop_condition"] = sc
                 if split_label == "test":
                     pref["split"] = "test"
                     # A list of distractor dicts, each {persona_item, category}.
@@ -4892,6 +5191,8 @@ class PersonaAgent:
                                 source_interaction_type=interaction_type,
                                 source_interaction_format=fmt_str,
                                 assigned_app=app,
+                                time_horizon=pref.get("time_horizon", "long_term"),
+                                stop_condition=dict(pref.get("stop_condition") or {}),
                             )
                             self.cross_referenced_negatives.append(cr)
                     else:
@@ -4909,6 +5210,8 @@ class PersonaAgent:
                                 source_interaction_type=interaction_type,
                                 source_interaction_format=fmt_str,
                                 assigned_app=app,
+                                time_horizon=pref.get("time_horizon", "long_term"),
+                                stop_condition=dict(pref.get("stop_condition") or {}),
                             )
                             self.cross_referenced_personas.append(cr)
 

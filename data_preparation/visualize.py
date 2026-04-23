@@ -281,6 +281,9 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.platform.p-Chatbot {{ background: #C8956C; color: #fff; }}
   .badge.action {{ background: #E8E8ED; color: #48484A; font-weight: 500; }}
   .badge.hidden-persona {{ background: #EDE9FE; color: #6D28D9; font-weight: 500; }}
+  .badge.short-term {{ background: #EFE1FF; color: #7C3AED; font-weight: 600; }}
+  .stop-condition {{ margin-top: 4px; font-size: 10px; color: #7C3AED; opacity: 0.85; font-style: italic; }}
+  .stop-condition .sc-type {{ text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; margin-right: 6px; }}
   .badge.sponsored {{ background: #FFF7ED; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #FED7AA; }}
   .ad-meta {{ margin-top: 6px; padding: 6px 10px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 6px; font-size: 11px; color: #7C2D12; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }}
   .ad-meta .ad-sponsor {{ font-weight: 600; }}
@@ -634,6 +637,7 @@ if (eventsData.length === 0) {{
     prefs.forEach(p => {{
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
       if (p.split === 'test') badges += `<span class="badge test">test</span>`;
+      if (p.time_horizon === 'short_term') badges += `<span class="badge short-term">short-term</span>`;
       if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
       if (p.hidden_persona_labels && p.hidden_persona_labels.length > 0) {{
         p.hidden_persona_labels.forEach(lbl => {{
@@ -658,11 +662,24 @@ if (eventsData.length === 0) {{
 
       const historyHtml = renderUpdateHistory(p.update_history);
 
+      let stopConditionLine = '';
+      if (p.time_horizon === 'short_term' && p.stop_condition && typeof p.stop_condition === 'object') {{
+        const sc = p.stop_condition;
+        const typeLabel = sc.type ? `<span class="sc-type">${{escapeHtml(sc.type)}}</span>` : '';
+        const desc = sc.description ? escapeHtml(sc.description) : '';
+        const stopTs = sc.expected_stop_ts ? new Date(sc.expected_stop_ts * 1000).toISOString().slice(0, 16).replace('T', ' ') : '';
+        const stopSuffix = stopTs ? ` <span style="opacity:0.7">(stops ~${{stopTs}})</span>` : '';
+        if (desc || typeLabel) {{
+          stopConditionLine = `<div class="stop-condition">${{typeLabel}}${{desc}}${{stopSuffix}}</div>`;
+        }}
+      }}
+
       prefsHtml += `
         <div class="pref-item">
           <div class="item-text">${{p.persona_item || ''}}</div>
           <div class="conf-inline"><span>init ${{(p.confidence_score_init || 0).toFixed(2)}}</span><span>xref ${{(p.confidence_cross_referenced || 0).toFixed(1)}}</span></div>
           <div class="pref-meta">${{badges}}</div>
+          ${{stopConditionLine}}
           ${{historyHtml}}
           ${{distractorLine}}
         </div>

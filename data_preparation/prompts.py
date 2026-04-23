@@ -962,6 +962,95 @@ Respond with ONLY a single JSON object. No prose outside the JSON fence.
 ```"""
 
 
+def horizon_and_stop_prompt(
+    candidates: list[dict],
+    user_profile: dict,
+    obs_window_days: float,
+) -> str:
+    """Build a prompt for batched LLM confirmation of short-term candidates.
+
+    Each input candidate was rule-labeled as `short_term` by category +
+    span + row count. The LLM may:
+      - CONFIRM short_term and return a structured stop_condition, OR
+      - DEMOTE to long_term (when the preference actually reflects an
+        enduring identity trait the window happens to sample sparsely).
+
+    The LLM CANNOT promote long_term candidates to short_term — those are
+    not in the input. This guards against weak long-term signals sneaking
+    through the relaxed short-term xref floor.
+    """
+    user_profile_json = json.dumps(user_profile or {}, indent=2)
+    cand_lines = []
+    for c in candidates:
+        cand_lines.append(
+            f"- id: {c.get('id')}\n"
+            f"  persona_item: {c.get('persona_item')}\n"
+            f"  category: {c.get('category')}\n"
+            f"  span_days: {c.get('span_days'):.2f}\n"
+            f"  n_rows: {c.get('n_rows')}\n"
+            f"  first_ts: {c.get('first_formatted_ts', '')}\n"
+            f"  last_ts: {c.get('last_formatted_ts', '')}"
+        )
+    cand_block = "\n".join(cand_lines)
+
+    return f"""\
+You are refining time-horizon labels for a set of USER PREFERENCES.
+
+Observation window: ~{obs_window_days:.1f} days. That's short — we cannot
+observe multi-month persistence. So "long_term" here means "an enduring
+identity trait inferable from this window" (career, religion, family role,
+stable hobby), NOT literal year-scale persistence. "short_term" means a
+bounded intent that will PLAUSIBLY stop being relevant once its goal is
+met (finished the trip, attended the event, bought the car, mastered the
+skill, completed the medical visit).
+
+## The user
+```json
+{user_profile_json}
+```
+
+## Candidates (all rule-labeled as short_term by category + span + row count)
+{cand_block}
+
+## Task
+For each candidate, return:
+  - `time_horizon`: either "short_term" (confirm) or "long_term" (demote).
+  - `stop_condition`: REQUIRED when time_horizon="short_term". Shape:
+      {{
+        "type": "event" | "date" | "mastery" | "relocation",
+        "description": "<1 sentence explaining when/why the intent ends>",
+        "expected_stop_ts": <unix seconds int OR null if unpredictable>
+      }}
+  - When demoting to "long_term", set `stop_condition` to null.
+
+### Guidance on each type
+- "event": intent ends when a specific scheduled event occurs (wedding, concert, medical appointment, trip arrival/departure).
+- "date": intent ends at a calendar moment (end of school semester, end of tax season).
+- "mastery": intent ends once the user learns/demonstrates a skill (how-to search, new-car functions).
+- "relocation": intent ends when the user returns home from travel (restaurant recs in Paris).
+
+### When to demote
+- When the persona_item is actually a long-standing trait the user happens to mention rarely (e.g., a foundational value like "privacy-minded" with 3 rows in an 8-day window — still long_term).
+- When the category is bounded-sounding but the specific item is not a bounded intent (e.g., "travel photography aesthetic" → long_term, not short_term).
+
+### When to confirm
+- When the persona_item clearly describes a one-time or bounded need (hotel recon for next week's trip; how to transfer Apple Watch data to a new phone; what to wear to a formal wedding).
+
+## Output Format
+Respond with ONLY a single JSON array, one entry per candidate, in the SAME ORDER as input:
+
+```json
+[
+  {{
+    "id": "<candidate id>",
+    "time_horizon": "short_term" | "long_term",
+    "stop_condition": {{...}} | null
+  }},
+  ...
+]
+```"""
+
+
 def synthesize_ad_content_prompt(
     content_type: str,
     app: str,

@@ -51,6 +51,7 @@ Input CSV (hashtag interactions per user)
   +- Step 1:  Infer atomic personas           [LLM]      -- 1-3 per row, init 0.0-1.0
   +- Step 2:  Promote implicit negatives       [Algo+LLM] -- net-sentiment gate
   +- Step 3:  Cross-reference & filter         [Algo+LLM] -- cross_ref scores (uncapped)
+  +- Step 3.5: Classify horizons + stops        [LLM]      -- short_term confirmation + stop_condition
   +- Step 4:  Temporal contradiction graph     [LLM]      -- timeline grouping
   +- Step 5:  Build update histories           [Algo+LLM] -- reinforced/faded/evolved
   +- Step 6:  Generate user profile            [LLM]      -- demographics + Big Five
@@ -173,6 +174,27 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 7. **Bottom-20% Filter + Per-canonical Survival Threshold:** First remove the bottom 20% by xref (no exemption). Then apply an **evidence-mix-dependent threshold** — a canonical survives iff its `cross_ref` exceeds `canonical_xref_threshold(n_explicit_rows, n_implicit_rows)`, which interpolates linearly between `XREF_THRESHOLD_EXPLICIT = 20.0` (pure-explicit support) and `XREF_THRESHOLD_IMPLICIT = 50.0` (pure-implicit support). Canonicals backed mostly by implicit positives thus face a substantially higher bar to survive.
 
 **Negative cross-referencing** runs the same pipeline independently (within negatives only). Differences: canonicals with only implicit evidence need >= 10 distinct source rows to survive; the bottom-20% step is skipped; the per-canonical xref threshold in step 7 still applies (same recency window as positives).
+
+### Step 3.5 — Time Horizon + Stop Conditions
+
+With the observation window being short (~8 days), time horizons must be inferred from category + span fraction + row count rather than raw span in days.
+
+**Rule-based pre-label (runs INSIDE Step 3, before the survival filter):** a canonical is eligible for `short_term` iff `(span_days / obs_window_days) ≤ SHORT_TERM_MAX_SPAN_FRAC` (0.35) AND `n_rows < SHORT_TERM_MAX_ROWS` (8) AND `category ∈ SHORT_TERM_ALLOWED_CATEGORIES` (travel, event_prep, purchase_intent, how_to, medical_consultation, trip). Everything else defaults to `long_term`. The allow-list is the anti-loophole — a canonical cannot claim short-term just by having a sparse tail; it must be in a bounded-intent category.
+
+Short-term canonicals use `XREF_THRESHOLD_SHORT_TERM = 3.0` instead of the long-term 20/50 interpolation, letting legitimate one-off intents (hotel recon, how-to search, upcoming event prep) survive despite little corroborating evidence.
+
+**LLM refinement (Step 3.5 — new step):** one batched mini-tier call per ~20 rule-labeled short-term candidates. The LLM may:
+- **Confirm** `short_term` and emit a structured `stop_condition`:
+  ```json
+  {"type": "event"|"date"|"mastery"|"relocation",
+   "description": "...",
+   "expected_stop_ts": <unix int | null>}
+  ```
+- **Demote** to `long_term` when the item is actually an enduring trait sampled sparsely.
+
+The LLM **cannot promote** `long_term` → `short_term` (only rule-labeled candidates are in the prompt). This guards against weak long-term signals bypassing the short-term xref floor.
+
+The prompt explicitly tells the LLM that in an 8-day window, "long_term" means "an enduring identity trait inferable from this window" — not literal year-scale persistence. `expected_stop_ts` may fall outside the observed window; eval tasks handle this by clamping to a synthetic post-window moment.
 
 ---
 
@@ -449,6 +471,9 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `CORRECTION_FRACTION_NEGATIVE` | 0.50 | Share of remaining negatives that get the correction variant |
 | `AD_INJECTION_RATE` | 0.06 | Fraction of commerce-adjacent events converted to ads in Step 13c |
 | `AD_POLARITY_WEIGHTS` | `{clicked_ad: 0.70, dismissed_ad: 0.20, hidden_ad: 0.10}` | Ad-event polarity mix |
+| `SHORT_TERM_MAX_SPAN_FRAC` | 0.35 | Span/obs_window cutoff for short-term horizon eligibility |
+| `SHORT_TERM_MAX_ROWS` | 8 | Row-count cutoff for short-term horizon eligibility |
+| `XREF_THRESHOLD_SHORT_TERM` | 3.0 | Relaxed xref survival floor for short_term canonicals |
 | Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
 | Test fraction | 0.20 | Latest 20% of high-confidence positives |
 | Test floor | 10 | Min test items per user (only reduced when the high-conf pool itself is smaller) |
