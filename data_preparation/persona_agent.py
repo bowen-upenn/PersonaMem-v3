@@ -270,10 +270,13 @@ SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 # cross-ref step requires N distinct source rows for any canonical supported
 # only by implicit evidence. Canonicals with any explicit-negative evidence
 # are unaffected.
-MIN_IMPLICIT_NEGATIVE_REPETITION = 10  # distinct source rows for implicit-only negative to survive
-                                       # (raised from 5 — the lower bar let spurious negatives through
-                                       # that then survived cross-ref and produced the 115 NFL
-                                       # "Interested in NFL" / "Not interested in NFL" both-survive bug)
+MIN_IMPLICIT_NEGATIVE_REPETITION = 10  # distinct source rows for implicit-only negative to survive.
+                                       # Counted with a per-day cap (IMPL_NEG_DAILY_CAP) so a single
+                                       # mood-driven bad day doesn't drive the count over threshold.
+# Daily cap on implicit_negative rows per hashtag. Skipping 20 boxing posts
+# in one hour probably means "bad mood right now", not a durable dislike.
+# After the cap, the count reflects CONSISTENT skipping across the window.
+IMPL_NEG_DAILY_CAP = 3
 IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to bother with LLM call
 
 # Recency window on cross-reference counting. Only evidence rows whose
@@ -1274,10 +1277,11 @@ class PersonaAgent:
     # Weights for net-sentiment scoring of implicit negatives.
     # A hashtag is "hot negative" only when the user consistently skips it
     # AND doesn't engage positively with that topic elsewhere.
-    IMPL_NEG_WEIGHT = 1.0    # each implicit_negative row
-    EXPL_POS_WEIGHT = 2.0    # each explicit_positive row (strong counter-signal)
-    IMPL_POS_WEIGHT = 1.0    # each implicit_positive row (moderate counter-signal)
-    MIN_TEMPORAL_DAYS = 1    # must span >= 1 distinct day
+    IMPL_NEG_WEIGHT = 1.0    # each implicit_negative row (capped per-day, see IMPL_NEG_DAILY_CAP)
+    EXPL_POS_WEIGHT = 2.0    # each explicit_positive row (strong counter-signal, uncapped)
+    IMPL_POS_WEIGHT = 1.0    # each implicit_positive row (moderate counter-signal, uncapped)
+    MIN_TEMPORAL_DAYS = 3    # must span >= 3 distinct days (raised from 1) so mood-driven
+                             # single-day skipping bursts don't promote to explicit_negative
 
     def promote_implicit_negatives(self) -> None:
         """Public entry point for implicit negative promotion (Step 2)."""
@@ -1303,45 +1307,62 @@ class PersonaAgent:
         if not impl_neg_rows:
             return
 
-        # Step 1: Count per-hashtag occurrences by interaction type
+        # Step 1: Count per-hashtag occurrences by interaction type.
+        # For implicit_negative we also bucket by calendar day so we can
+        # apply IMPL_NEG_DAILY_CAP — a single mood-driven skipping burst on
+        # one day shouldn't be able to drive the total count over the
+        # promotion threshold.
         tag_neg_oids: dict[str, set[str]] = _ddict(set)
         tag_neg_rows: dict[str, list[InteractionRow]] = _ddict(list)
-        tag_neg_days: dict[str, set[int]] = _ddict(set)
+        # tag → {day_idx → distinct_oid_count_on_that_day}
+        tag_neg_per_day: dict[str, dict[int, int]] = _ddict(lambda: _ddict(int))
+        tag_neg_per_day_oids: dict[str, dict[int, set[str]]] = _ddict(lambda: _ddict(set))
         tag_expl_pos_oids: dict[str, set[str]] = _ddict(set)
         tag_impl_pos_oids: dict[str, set[str]] = _ddict(set)
 
         for row in self.interactions:
             tags = self._extract_hashtags(row.object_text)
+            day_idx = row.interaction_time // 86400
             for t in tags:
                 key = t.lower()
                 if row.interaction_type == "implicit_negative":
                     if row.object_id not in tag_neg_oids[key]:
                         tag_neg_oids[key].add(row.object_id)
                         tag_neg_rows[key].append(row)
-                        tag_neg_days[key].add(row.interaction_time // 86400)
+                        if row.object_id not in tag_neg_per_day_oids[key][day_idx]:
+                            tag_neg_per_day_oids[key][day_idx].add(row.object_id)
+                            tag_neg_per_day[key][day_idx] += 1
                 elif row.interaction_type == "explicit_positive":
                     tag_expl_pos_oids[key].add(row.object_id)
                 elif row.interaction_type == "implicit_positive":
                     tag_impl_pos_oids[key].add(row.object_id)
 
-        # Step 2: Compute net scores and filter to hot hashtags
+        # Step 2: Compute net scores (per-day capped) and filter to hot hashtags
         hot_tags: dict[str, list[InteractionRow]] = {}
         hot_scores: dict[str, float] = {}
         n_filtered_pos = 0
         n_filtered_days = 0
+        n_filtered_cap = 0
 
         for tag, neg_rows in tag_neg_rows.items():
-            n_neg = len(neg_rows)
+            n_neg_raw = len(neg_rows)
+            per_day = tag_neg_per_day.get(tag, {})
+            n_days = len(per_day)
+            # Apply IMPL_NEG_DAILY_CAP per day — caps mood-driven bursts
+            n_neg_capped = sum(min(c, IMPL_NEG_DAILY_CAP) for c in per_day.values())
             n_ep = len(tag_expl_pos_oids.get(tag, set()))
             n_ip = len(tag_impl_pos_oids.get(tag, set()))
-            n_days = len(tag_neg_days.get(tag, set()))
-            net = (n_neg * self.IMPL_NEG_WEIGHT
+            net = (n_neg_capped * self.IMPL_NEG_WEIGHT
                    - n_ep * self.EXPL_POS_WEIGHT
                    - n_ip * self.IMPL_POS_WEIGHT)
 
             if net < MIN_IMPLICIT_NEGATIVE_REPETITION:
-                if n_neg >= MIN_IMPLICIT_NEGATIVE_REPETITION:
-                    n_filtered_pos += 1  # would have been hot without counterevidence
+                if n_neg_raw >= MIN_IMPLICIT_NEGATIVE_REPETITION:
+                    # Would have been hot without the cap or without the pos counter-signal
+                    if n_neg_capped < MIN_IMPLICIT_NEGATIVE_REPETITION + n_ep * self.EXPL_POS_WEIGHT + n_ip * self.IMPL_POS_WEIGHT:
+                        n_filtered_cap += 1
+                    else:
+                        n_filtered_pos += 1
                 continue
             if n_days < self.MIN_TEMPORAL_DAYS:
                 n_filtered_days += 1
@@ -1354,6 +1375,7 @@ class PersonaAgent:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
                       f"0 hot hashtags after net-sentiment filter "
                       f"({n_filtered_pos} removed by positive counterevidence, "
+                      f"{n_filtered_cap} by daily cap ({IMPL_NEG_DAILY_CAP}/day), "
                       f"{n_filtered_days} by temporal spread < {self.MIN_TEMPORAL_DAYS} days), "
                       f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
             return
@@ -1375,8 +1397,9 @@ class PersonaAgent:
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
                   f"{len(hot_tags)} hot hashtags (net >= {MIN_IMPLICIT_NEGATIVE_REPETITION}, "
-                  f">= {self.MIN_TEMPORAL_DAYS} days), "
+                  f">= {self.MIN_TEMPORAL_DAYS} days, daily cap {IMPL_NEG_DAILY_CAP}), "
                   f"{n_filtered_pos} removed by positive counterevidence, "
+                  f"{n_filtered_cap} by daily cap, "
                   f"{n_filtered_days} by temporal spread, "
                   f"{len(promoted_oids)} rows promoted (>= 1 hot tag), "
                   f"{len(representatives)} LLM calls.{utils.Colors.ENDC}")

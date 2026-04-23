@@ -3148,16 +3148,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -3336,16 +3326,6 @@
             "source_app": "Instagram",
             "occurrence": 2,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -6703,16 +6683,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -8444,26 +8414,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in MMA and UFC fight content.",
-            "formatted_timestamp": "14:16, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in UFC and MMA fight content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Avoids martial arts and fighting-themed media.",
             "formatted_timestamp": "06:33, 04/03/2026",
             "opposing_polarity": "negative",
@@ -8778,16 +8728,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -8972,26 +8912,6 @@
             "source_app": "Chatbot",
             "occurrence": 4,
             "total_occurrences": 36
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in MMA and UFC fight content.",
-            "formatted_timestamp": "14:16, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in UFC and MMA fight content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -9288,16 +9208,6 @@
             "source_app": "Threads",
             "occurrence": 4,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -10148,16 +10058,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -10321,16 +10221,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -10409,16 +10299,6 @@
             "source_app": "Threads",
             "occurrence": 4,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -11302,16 +11182,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -11377,16 +11247,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -11528,16 +11388,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -11602,16 +11452,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -11698,16 +11538,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -11967,16 +11797,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -12071,16 +11891,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -12213,16 +12023,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -12611,16 +12411,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -12853,16 +12643,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -12941,16 +12721,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -13187,16 +12957,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -13452,16 +13212,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -13531,16 +13281,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -14034,16 +13774,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -14791,26 +14521,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in MMA and UFC fight content.",
-            "formatted_timestamp": "14:16, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in UFC and MMA fight content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Avoids martial arts and fighting-themed media.",
             "formatted_timestamp": "06:33, 04/03/2026",
             "opposing_polarity": "negative",
@@ -15173,16 +14883,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -15452,16 +15152,6 @@
             "source_app": "Instagram",
             "occurrence": 5,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -15501,26 +15191,6 @@
             "source_app": "Threads",
             "occurrence": 5,
             "total_occurrences": 36
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in MMA and UFC fight content.",
-            "formatted_timestamp": "14:16, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in UFC and MMA fight content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -16034,16 +15704,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -16231,16 +15891,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -16801,16 +16451,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -16914,16 +16554,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -17179,16 +16809,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -17496,16 +17116,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -17545,26 +17155,6 @@
             "source_app": "Threads",
             "occurrence": 5,
             "total_occurrences": 36
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in MMA and UFC fight content.",
-            "formatted_timestamp": "14:16, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in UFC and MMA fight content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -17742,16 +17332,6 @@
             "source_app": "Chatbot",
             "occurrence": 5,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -18405,16 +17985,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -18517,16 +18087,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -18627,16 +18187,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -18683,26 +18233,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 36
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in MMA and UFC fight content.",
-            "formatted_timestamp": "14:16, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in UFC and MMA fight content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -20490,16 +20020,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -20725,16 +20245,6 @@
             "source_app": "Instagram",
             "occurrence": 6,
             "total_occurrences": 106
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Not interested in boxing content.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 46,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -21296,16 +20806,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -21397,16 +20897,6 @@
             "source_app": "Threads",
             "occurrence": 6,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -21788,16 +21278,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -22084,16 +21564,6 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "contradicted",
             "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
             "formatted_timestamp": "01:18, 04/03/2026",
             "opposing_polarity": "negative",
@@ -22197,16 +21667,6 @@
             "source_app": "Threads",
             "occurrence": 6,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
@@ -23046,16 +22506,6 @@
             "source_app": "Threads",
             "occurrence": 6,
             "total_occurrences": 102
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
           },
           {
             "update_type": "contradicted",
