@@ -1,20 +1,10 @@
 """Generate DM threads per social app — inbound, outbound, and group.
 
-Writes backend/{user_id}/{app}_dms.json with structure:
-    [
-      {"thread_id": "ig_thr_001",
-       "participants": ["self", "friend_3"],
-       "is_group": false,
-       "messages": [
-         {"msg_id": "m_001", "sender": "friend_3", "timestamp": ..., "text": "..."},
-         {"msg_id": "m_002", "sender": "self",     "timestamp": ..., "text": "..."}
-       ]},
-      ...
-    ]
-
-Also mirrors each top-level DM message into the main {app}.json as an event
-with is_dm=True + thread_id so cross-reference by thread_id works from either
-side. This is what the MCP server's list_dm_threads fallback reads.
+Each DM thread is emitted as ONE event-shaped entry appended directly to
+the main `{app}.json` list, with `is_dm: true` + the full `messages[]`
+array embedded. No separate `{app}_dms.json` file is produced anymore —
+a single merged list per app is simpler for consumers (MCP servers,
+eval harness, HTML renderer) and sorts naturally by `source_timestamp`.
 """
 
 from __future__ import annotations
@@ -92,13 +82,13 @@ def generate_dm_threads(
     existing_events: list[dict],
     llm_client,
     rng_seed: int = 0,
-) -> tuple[list[dict], list[dict]]:
-    """Returns (threads_for_dms_json, events_for_main_app_json).
+) -> list[dict]:
+    """Return a list of DM-thread events to append to `{app}.json`.
 
-    - threads_for_dms_json: goes to `{app}_dms.json`.
-    - events_for_main_app_json: one event per thread's latest message, tagged
-      with is_dm=True + thread_id, appended to `{app}.json` so list_dm_threads
-      fallback finds them.
+    Each entry is one full DM thread shaped as an event with the complete
+    `messages[]` embedded, `is_dm: true`, and a `dm_conversation` action.
+    Consumers iterate the main app JSON and filter by `is_dm` for DM
+    queries (MCP `list_dms` / `get_dm_thread`).
     """
     app_pretty = app.capitalize()
     app_persona = (profile.get("app_personas", {}) or {}).get(app_pretty, {}) or {}
@@ -124,20 +114,19 @@ def generate_dm_threads(
     resp = llm_client.query_llm(prompt)
     threads_raw = extract_json_from_response(resp) or []
     if not isinstance(threads_raw, list):
-        return [], []
+        return []
 
     event_ts = [int(e.get("source_timestamp", 0)) for e in existing_events if e.get("source_timestamp")]
     thread_start_ts = _sample_dm_timestamps(event_ts, len(threads_raw), rng_seed)
 
-    threads: list[dict] = []
-    mirror_events: list[dict] = []
+    merged_events: list[dict] = []
     for i, t in enumerate(threads_raw):
         tid = f"{app[:2]}_thr_{user_id}_{i:03d}"
         msgs_raw = t.get("messages", []) or []
         if not msgs_raw:
             continue
         t0 = thread_start_ts[i] if i < len(thread_start_ts) else (event_ts[-1] if event_ts else 0)
-        msgs = []
+        msgs: list[dict] = []
         for j, m in enumerate(msgs_raw):
             msg_ts = t0 + j * random.Random(f"{rng_seed}:{tid}:{j}").randint(60, 600)
             msgs.append({
@@ -148,50 +137,50 @@ def generate_dm_threads(
             })
         is_group = bool(t.get("is_group"))
         participants = t.get("participants") or []
-        threads.append({
-            "thread_id": tid,
-            "participants": participants,
-            "is_group": is_group,
-            "thread_kind": t.get("thread_kind", "unspecified"),
-            "messages": msgs,
-        })
-        # Mirror the LATEST message into the main app JSON so MCP list_dm_threads
-        # fallback + Task B privacy evaluators can see the DM exists.
+        thread_kind = t.get("thread_kind", "unspecified")
         last = msgs[-1]
         last_sender = last["sender"]
-        is_inbound = last_sender != "self"
-        # Interaction type heuristic: inbound-from-friend = implicit_positive,
-        # inbound-from-stranger = implicit_negative, outbound = explicit_positive.
+        latest_ts = max(int(m.get("timestamp") or 0) for m in msgs)
+        # Interaction-type heuristic unchanged from the previous mirror path.
         if last_sender == "self":
             interaction_type = "explicit_positive"
         elif any(p.get("friend_id") == last_sender for p in friends or []):
             interaction_type = "implicit_positive"
         else:
             interaction_type = "implicit_negative"
-        mirror_events.append({
-            "source_object_id": last["msg_id"],
-            "source_timestamp": last["timestamp"],
-            "formatted_timestamp": _format_ts(last["timestamp"]),
+        merged_events.append({
+            "source_object_id": tid,
+            "source_timestamp": latest_ts,
+            "formatted_timestamp": _format_ts(latest_ts),
             "source_hashtags": [],
             "source_interaction_type": interaction_type,
             "author_id": last_sender,
-            "recipient_id": "self" if is_inbound else (next((p for p in participants if p != "self"), "unknown")),
+            "recipient_id": (
+                "self" if last_sender != "self"
+                else next((p for p in participants if p != "self"), "unknown")
+            ),
             "relationship": _resolve_relationship(last_sender, friends),
             "is_self_authored": last_sender == "self",
             "is_dm": True,
             "thread_id": tid,
             "is_group_dm": is_group,
+            "thread_kind": thread_kind,
+            "participants": participants,
+            "messages": msgs,
             "interaction_format": {
                 "app": app_pretty,
-                "action": "sent_dm" if last_sender == "self" else "received_dm",
-                "action_label": "Sent a DM" if last_sender == "self" else "Received a DM",
+                "action": "dm_conversation",
+                "action_label": "DM conversation",
                 "user_message": None,
             },
             "content_type": "text",
-            "content": {"caption": last["text"]},
+            "content": {
+                "caption": last.get("text", ""),
+                "n_messages": len(msgs),
+            },
             "preferences": [],
         })
-    return threads, mirror_events
+    return merged_events
 
 
 def _resolve_relationship(sender_id: str, friends: list[dict]) -> str:

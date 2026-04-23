@@ -1,12 +1,13 @@
 """Pipeline Extension B — post-process augmentation of backend/{user_id}/.
 
-Runs AFTER the main 16-step pipeline. Adds:
+Runs AFTER the main 22-step pipeline. Adds:
 - profile.json `friends[]` — named friend graph with deliberate name
   collision for T17 wrong-recipient probes.
 - {app}.json self-authored post events (is_self_authored=True,
   author_id="self", source_interaction_type="explicit_positive").
-- {app}_dms.json — DM threads per app with friend + stranger + group
-  threads.
+- {app}.json DM thread entries — is_dm=true entries appended to each
+  social app's main JSON, with the full messages[] embedded (no
+  separate {app}_dms.json file anymore).
 - trending.json — frozen trending-hashtag list for T19 probes.
 
 Doesn't touch the core pipeline. Purely additive — can be re-run, deleted,

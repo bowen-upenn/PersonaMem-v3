@@ -151,12 +151,17 @@ class BackendQuery:
         category: str | None = None,
         interaction_type: str | None = None,
         limit: int | None = None,
+        include_dms: bool = False,
     ) -> list[dict]:
         """Time-masked event query. `app` may be a single app name or iterable.
 
         `hashtag` matches `source_hashtags` (case-insensitive substring).
         `category` matches any `preferences[].category` on the event.
         `interaction_type` matches `source_interaction_type` exactly.
+        `include_dms` (default False): DM thread entries (is_dm=true) are
+        excluded by default — DMs are private and feed/content queries
+        should not leak them. Use `list_dm_threads` / `get_dm_thread` for
+        DM-specific access, or pass `include_dms=True` to see both.
         """
         apps = (app,) if isinstance(app, str) else tuple(app)
         out: list[dict] = []
@@ -164,6 +169,8 @@ class BackendQuery:
             if a not in APPS:
                 continue
             for e in self._load_events(user_id, a):
+                if e.get("is_dm") and not include_dms:
+                    continue
                 ts = e.get("source_timestamp", 0)
                 if ts >= since_timestamp:
                     continue
@@ -416,6 +423,10 @@ class BackendQuery:
             if a not in APPS:
                 continue
             for e in self._load_events(user_id, a):
+                # Feed search never returns DM threads — those are accessed
+                # via list_dm_threads / get_dm_thread, never via search.
+                if e.get("is_dm"):
+                    continue
                 ts = e.get("source_timestamp", 0)
                 if since_timestamp is not None and ts >= since_timestamp:
                     continue
@@ -439,6 +450,31 @@ class BackendQuery:
         out.sort(key=lambda x: (x.get("source_timestamp", 0), str(x.get("source_object_id", ""))), reverse=True)
         return _paginate(out, cursor, limit)
 
+    def _iter_dm_thread_entries(self, user_id: str, app: str) -> list[dict]:
+        """Return the full DM thread entries for this app, merged-format.
+
+        Each DM thread now lives as ONE event in {app}.json with `is_dm:
+        true` and the full `messages[]` embedded. This helper extracts
+        those entries (raw, NOT stripped, since the harness itself needs
+        thread metadata for time-masking). Legacy fallback: if an older
+        backend still has {app}_dms.json on disk, read it.
+        """
+        legacy_path = self.base / user_id / f"{app}_dms.json"
+        if legacy_path.exists():
+            # Pre-merge backends (kept for backward compat).
+            try:
+                with legacy_path.open() as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    return data
+            except (ValueError, OSError):
+                pass
+        out: list[dict] = []
+        for e in self._load_events(user_id, app):
+            if e.get("is_dm") and e.get("messages"):
+                out.append(e)
+        return out
+
     def list_dm_threads(
         self,
         user_id: str,
@@ -447,39 +483,14 @@ class BackendQuery:
         cursor: str | None = None,
         limit: int = 20,
     ) -> dict:
-        """List DM threads for an app. v1: reads from {app}_dms.json if present
-        (Ext B output); v2: also falls back to scanning events with `is_dm: True`.
+        """List DM threads for an app.
+
+        Reads `is_dm: true` entries from the merged `{app}.json` and
+        applies the time mask at the message level — threads whose entire
+        message history is past `since_timestamp` are dropped.
         """
-        # Preferred path: per-app DM file from Extension B.
-        dm_path = self.base / user_id / f"{app}_dms.json"
-        threads: list[dict] = []
-        if dm_path.exists():
-            with dm_path.open() as f:
-                threads = json.load(f)
-        else:
-            # Graceful degradation: group is_dm events in {app}.json by thread_id.
-            by_thread: dict[str, list[dict]] = {}
-            for e in self._load_events(user_id, app):
-                if not e.get("is_dm"):
-                    continue
-                tid = e.get("thread_id") or f"__solo__{e.get('source_object_id')}"
-                by_thread.setdefault(tid, []).append(e)
-            for tid, msgs in by_thread.items():
-                msgs.sort(key=lambda m: m.get("source_timestamp", 0))
-                threads.append({
-                    "thread_id": tid,
-                    "participants": sorted({m.get("author_id", "unknown") for m in msgs}
-                                            | {m.get("recipient_id", "unknown") for m in msgs if m.get("recipient_id")}),
-                    "is_group": False,
-                    "messages": [
-                        {"msg_id": str(m.get("source_object_id")), "sender": m.get("author_id", "unknown"),
-                         "timestamp": m.get("source_timestamp"),
-                         "text": (m.get("content") or {}).get("caption") or (m.get("interaction_format") or {}).get("user_message") or ""}
-                        for m in msgs
-                    ],
-                })
-        # Apply time mask.
-        filtered = []
+        threads = self._iter_dm_thread_entries(user_id, app)
+        filtered: list[dict] = []
         for t in threads:
             msgs = t.get("messages") or []
             if since_timestamp is not None:
@@ -488,9 +499,9 @@ class BackendQuery:
                 continue
             latest_ts = max(m.get("timestamp") or 0 for m in msgs)
             filtered.append({
-                "thread_id": t["thread_id"],
+                "thread_id": t.get("thread_id") or str(t.get("source_object_id", "")),
                 "participants": t.get("participants") or [],
-                "is_group": bool(t.get("is_group")),
+                "is_group": bool(t.get("is_group") or t.get("is_group_dm")),
                 "latest_ts": latest_ts,
                 "last_message_preview": (msgs[-1].get("text") or "")[:80],
                 "unread_count": 0,
@@ -508,33 +519,14 @@ class BackendQuery:
         limit: int = 50,
     ) -> dict | None:
         """Paginated messages in one DM thread. Returns None if thread not found."""
-        dm_path = self.base / user_id / f"{app}_dms.json"
         thread: dict | None = None
-        if dm_path.exists():
-            with dm_path.open() as f:
-                for t in json.load(f):
-                    if t.get("thread_id") == thread_id:
-                        thread = t
-                        break
+        for t in self._iter_dm_thread_entries(user_id, app):
+            tid = t.get("thread_id") or str(t.get("source_object_id", ""))
+            if tid == thread_id:
+                thread = t
+                break
         if thread is None:
-            # Fallback: reconstruct from events.
-            msgs = [e for e in self._load_events(user_id, app)
-                    if e.get("is_dm") and e.get("thread_id") == thread_id]
-            if not msgs:
-                return None
-            msgs.sort(key=lambda m: m.get("source_timestamp", 0))
-            thread = {
-                "thread_id": thread_id,
-                "participants": sorted({m.get("author_id", "unknown") for m in msgs}
-                                        | {m.get("recipient_id", "unknown") for m in msgs if m.get("recipient_id")}),
-                "is_group": False,
-                "messages": [
-                    {"msg_id": str(m.get("source_object_id")), "sender": m.get("author_id", "unknown"),
-                     "timestamp": m.get("source_timestamp"),
-                     "text": (m.get("content") or {}).get("caption") or (m.get("interaction_format") or {}).get("user_message") or ""}
-                    for m in msgs
-                ],
-            }
+            return None
         msgs = thread.get("messages") or []
         if since_timestamp is not None:
             msgs = [m for m in msgs if (m.get("timestamp") or 0) < since_timestamp]
@@ -543,7 +535,7 @@ class BackendQuery:
         return {
             "thread_id": thread_id,
             "participants": thread.get("participants") or [],
-            "is_group": bool(thread.get("is_group")),
+            "is_group": bool(thread.get("is_group") or thread.get("is_group_dm")),
             **page,
         }
 

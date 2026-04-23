@@ -7080,6 +7080,57 @@
     ]
   },
   {
+    "source_object_id": "th_thr_115_000",
+    "source_timestamp": 1775329528,
+    "formatted_timestamp": "19:05, 04/04/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_1",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "th_thr_115_000",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_1"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_000_m_00",
+        "sender": "friend_1",
+        "timestamp": 1775329242,
+        "text": "bro that Lakers second unit take you posted was dead on lol"
+      },
+      {
+        "msg_id": "th_thr_115_000_m_01",
+        "sender": "self",
+        "timestamp": 1775329392,
+        "text": "they keep acting surprised every game like we can't all see it"
+      },
+      {
+        "msg_id": "th_thr_115_000_m_02",
+        "sender": "friend_1",
+        "timestamp": 1775329528,
+        "text": "Ham ghost still haunting rotations somehow"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Ham ghost still haunting rotations somehow",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "212440",
     "source_timestamp": 1775339771,
     "formatted_timestamp": "21:56, 04/04/2026",
@@ -7637,6 +7688,51 @@
     ]
   },
   {
+    "source_object_id": "th_thr_115_001",
+    "source_timestamp": 1775351951,
+    "formatted_timestamp": "01:19, 04/05/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_2",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_001",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_2"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_001_m_00",
+        "sender": "friend_2",
+        "timestamp": 1775351802,
+        "text": "you still doing open mat sunday or wedding load-in cooked you again"
+      },
+      {
+        "msg_id": "th_thr_115_001_m_01",
+        "sender": "self",
+        "timestamp": 1775351951,
+        "text": "if teardown ends on time i'm there. if not i'm getting triangled by fatigue at home"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "if teardown ends on time i'm there. if not i'm getting triangled by fatigue at home",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "375390",
     "source_timestamp": 1775362570,
     "formatted_timestamp": "04:16, 04/05/2026",
@@ -7966,6 +8062,51 @@
       "action": "skipped_thread",
       "action_label": "Skipped the thread with no interaction",
       "user_message": null
+    },
+    "preferences": []
+  },
+  {
+    "source_object_id": "th_thr_115_002",
+    "source_timestamp": 1775365455,
+    "formatted_timestamp": "05:04, 04/05/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_5",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_002",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_5"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_002_m_00",
+        "sender": "friend_5",
+        "timestamp": 1775365222,
+        "text": "you watching the matchup breakdown tonight or just clips tomorrow"
+      },
+      {
+        "msg_id": "th_thr_115_002_m_01",
+        "sender": "self",
+        "timestamp": 1775365455,
+        "text": "tomorrow probably. got a ballroom ceiling to fight first"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "tomorrow probably. got a ballroom ceiling to fight first",
+      "n_messages": 2
     },
     "preferences": []
   },
@@ -14538,6 +14679,51 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "th_thr_115_003",
+    "source_timestamp": 1775549993,
+    "formatted_timestamp": "08:19, 04/07/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_4",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "th_thr_115_003",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_4"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_003_m_00",
+        "sender": "friend_4",
+        "timestamp": 1775549514,
+        "text": "hey what uplights are you using for that amber garden look lately"
+      },
+      {
+        "msg_id": "th_thr_115_003_m_01",
+        "sender": "friend_4",
+        "timestamp": 1775549993,
+        "text": "looked clean in your post"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "looked clean in your post",
+      "n_messages": 2
+    },
+    "preferences": []
   },
   {
     "source_object_id": "698071",
@@ -26510,6 +26696,57 @@
     ]
   },
   {
+    "source_object_id": "th_thr_115_004",
+    "source_timestamp": 1775756051,
+    "formatted_timestamp": "17:34, 04/09/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_3",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_004",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_3"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_004_m_00",
+        "sender": "self",
+        "timestamp": 1775755221,
+        "text": "random but that Mary J track you put on your story took me all the way back"
+      },
+      {
+        "msg_id": "th_thr_115_004_m_01",
+        "sender": "friend_3",
+        "timestamp": 1775755659,
+        "text": "lol knew you'd appreciate that one"
+      },
+      {
+        "msg_id": "th_thr_115_004_m_02",
+        "sender": "self",
+        "timestamp": 1775756051,
+        "text": "late night teardown music right there"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "late night teardown music right there",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "731574",
     "source_timestamp": 1775756475,
     "formatted_timestamp": "17:41, 04/09/2026",
@@ -29456,6 +29693,57 @@
     "preferences": []
   },
   {
+    "source_object_id": "th_thr_115_005",
+    "source_timestamp": 1775812340,
+    "formatted_timestamp": "09:12, 04/10/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_7",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_005",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_7"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_005_m_00",
+        "sender": "self",
+        "timestamp": 1775811232,
+        "text": "you still liking that early morning class or nah"
+      },
+      {
+        "msg_id": "th_thr_115_005_m_01",
+        "sender": "friend_7",
+        "timestamp": 1775811318,
+        "text": "hate waking up, love the room"
+      },
+      {
+        "msg_id": "th_thr_115_005_m_02",
+        "sender": "self",
+        "timestamp": 1775812340,
+        "text": "that's basically my relationship with all training"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "that's basically my relationship with all training",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "293298",
     "source_timestamp": 1775813639,
     "formatted_timestamp": "09:33, 04/10/2026",
@@ -29545,6 +29833,57 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "th_thr_115_006",
+    "source_timestamp": 1775820946,
+    "formatted_timestamp": "11:35, 04/10/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_6",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_006",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_6"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_006_m_00",
+        "sender": "self",
+        "timestamp": 1775819760,
+        "text": "that community event setup looked smooth. who did the stage wash"
+      },
+      {
+        "msg_id": "th_thr_115_006_m_01",
+        "sender": "friend_6",
+        "timestamp": 1775820156,
+        "text": "we kept it simple, just warm pars and practicals"
+      },
+      {
+        "msg_id": "th_thr_115_006_m_02",
+        "sender": "self",
+        "timestamp": 1775820946,
+        "text": "makes sense. looked way better than half the overbuilt stuff out here"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "makes sense. looked way better than half the overbuilt stuff out here",
+      "n_messages": 3
+    },
+    "preferences": []
   },
   {
     "source_object_id": "748634",
@@ -33949,6 +34288,45 @@
     ]
   },
   {
+    "source_object_id": "th_thr_115_007",
+    "source_timestamp": 1775866894,
+    "formatted_timestamp": "00:21, 04/11/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_negative",
+    "author_id": "stranger_1",
+    "recipient_id": "self",
+    "relationship": "stranger",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "th_thr_115_007",
+    "is_group_dm": false,
+    "thread_kind": "stranger",
+    "participants": [
+      "self",
+      "stranger_1"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_007_m_00",
+        "sender": "stranger_1",
+        "timestamp": 1775866894,
+        "text": "yo saw your boxing posts. you tryna tap into my sports picks page?"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "yo saw your boxing posts. you tryna tap into my sports picks page?",
+      "n_messages": 1
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "100646",
     "source_timestamp": 1775871057,
     "formatted_timestamp": "01:30, 04/11/2026",
@@ -35272,6 +35650,51 @@
       "action": "skipped_thread",
       "action_label": "Skipped the thread with no interaction",
       "user_message": null
+    },
+    "preferences": []
+  },
+  {
+    "source_object_id": "th_thr_115_008",
+    "source_timestamp": 1775883124,
+    "formatted_timestamp": "04:52, 04/11/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "stranger_2",
+    "relationship": "stranger",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_008",
+    "is_group_dm": false,
+    "thread_kind": "stranger",
+    "participants": [
+      "self",
+      "stranger_2"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_008_m_00",
+        "sender": "stranger_2",
+        "timestamp": 1775883019,
+        "text": "can you send your wedding lighting rates"
+      },
+      {
+        "msg_id": "th_thr_115_008_m_01",
+        "sender": "self",
+        "timestamp": 1775883124,
+        "text": "hey, best to email me. DMs get buried after events"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "hey, best to email me. DMs get buried after events",
+      "n_messages": 2
     },
     "preferences": []
   },
@@ -37191,6 +37614,65 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "th_thr_115_009",
+    "source_timestamp": 1775921521,
+    "formatted_timestamp": "15:32, 04/11/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_1",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "th_thr_115_009",
+    "is_group_dm": true,
+    "thread_kind": "group",
+    "participants": [
+      "self",
+      "friend_1",
+      "friend_3",
+      "friend_9"
+    ],
+    "messages": [
+      {
+        "msg_id": "th_thr_115_009_m_00",
+        "sender": "friend_3",
+        "timestamp": 1775920991,
+        "text": "alright settle this: best 90s r&b album for a late drive"
+      },
+      {
+        "msg_id": "th_thr_115_009_m_01",
+        "sender": "friend_9",
+        "timestamp": 1775921209,
+        "text": "you can't ask this like there is one answer"
+      },
+      {
+        "msg_id": "th_thr_115_009_m_02",
+        "sender": "self",
+        "timestamp": 1775921521,
+        "text": "if we're talking pure late night, i'm cheating and taking 112 or Maxwell depending on mood"
+      },
+      {
+        "msg_id": "th_thr_115_009_m_03",
+        "sender": "friend_1",
+        "timestamp": 1775921396,
+        "text": "Jovian always got a deluxe edition answer lmao"
+      }
+    ],
+    "interaction_format": {
+      "app": "Threads",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "if we're talking pure late night, i'm cheating and taking 112 or Maxwell depending on mood",
+      "n_messages": 4
+    },
+    "preferences": []
   },
   {
     "source_object_id": "1011566",

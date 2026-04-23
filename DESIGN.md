@@ -571,7 +571,7 @@ Run via `python -m data_preparation.extension_b --user_id {uid}`:
 
 1. **Friend graph** (`profile.friends[]`, 10 entries) — named friends with `relationship_depth ∈ {close, acquaintance, distant}` and `shared_interests[]`. Deliberately includes a first-name collision (e.g., two "Alex"s) so the T17 wrong-recipient probe has material. One LLM call.
 2. **Self-authored posts** per social app — count scales with `posting_frequency` (rarely → 4, weekly → 10, daily → 15). Voice-matched to the user's `bio + Big Five + MBTI + app_persona.style_description`. Appended to `{app}.json` with `is_self_authored=True`. One LLM call per app.
-3. **DM threads** (`{app}_dms.json` + mirrored events in `{app}.json`) — inbound from friends, outbound to friends, inbound from strangers, and 1–2 group threads per app. Latest message of each thread is mirrored back into the main `{app}.json` as an `is_dm=True` event with `thread_id` so MCP list_dms can read either file. One LLM call per app.
+3. **DM threads** (inlined into `{app}.json` as `is_dm=true` entries) — inbound from friends, outbound to friends, inbound from strangers, and 1–2 group threads per app. Each thread is emitted as ONE event-shaped entry appended to the main `{app}.json` with the full `messages[]` embedded. No separate `{app}_dms.json` file — a single merged list per app is simpler for consumers (`BackendQuery.list_dm_threads` and `get_dm_thread` filter on `is_dm`; feed readers like `get_feed` / `search_events` exclude DMs by default so private messages never leak). One LLM call per app.
 4. **Trending hashtags** (`trending.json`) — deterministic (no LLM). 15 user-aligned + 5 off-user (drawn from user's explicit negatives). Shape: `{built_at, hashtags:[{hashtag, rank, post_ids, user_aligned}]}`.
 
 ### Data-sufficiency assertions (pre-benchmark-build gate)
@@ -593,6 +593,6 @@ Red checks block the benchmark build until Extension B closes the gap.
 
 ### MCP contract for this data
 
-Each app JSON + DM JSON is served by a mock MCP server under `evaluation/mcp_servers/`. Servers expose `get_feed`, `get_post`, `search`, `list_dms`, `get_dm_thread`, `create_post`, `react`, `comment`, `send_dm`. Writes go to a per-run overlay (`writes.jsonl`) which the server unions back into subsequent reads — mirrors real-app "post a reel → it appears in your feed" semantics. Details in [EVAL.md](EVAL.md).
+Each app JSON is served by a mock MCP server under `evaluation/mcp_servers/`. Servers expose `get_feed`, `get_post`, `search`, `list_dms`, `get_dm_thread`, `create_post`, `react`, `comment`, `send_dm`. `get_feed` / `search` filter out `is_dm=true` entries so the feed stream and DM stream stay cleanly separated despite sharing a single backing file. Writes go to a per-run overlay (`writes.jsonl`) which the server unions back into subsequent reads — mirrors real-app "post a reel → it appears in your feed" semantics. Details in [EVAL.md](EVAL.md).
 
 > Thresholds (especially high-confidence predicate values) are tentative and will be tuned empirically.

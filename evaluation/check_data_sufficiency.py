@@ -58,23 +58,29 @@ def check(user_id: str, backend_dir: str | Path) -> list[tuple[str, bool, str]]:
             f"{len(self_posts)} self-posts ({posting_freq}, floor={floor})",
         ))
 
-    # DM counts across apps.
-    dm_events: list[dict] = []
-    for app in APPS:
-        events = _load(base / f"{app}.json") or []
-        dm_events.extend(e for e in events if e.get("is_dm"))
-    inbound = sum(1 for e in dm_events if not e.get("is_self_authored"))
-    outbound = sum(1 for e in dm_events if e.get("is_self_authored"))
-    results.append(("inbound_dms_total", inbound >= 25, f"{inbound} inbound DMs (need ≥25)"))
-    results.append(("outbound_dms_total", outbound >= 15, f"{outbound} outbound DMs (need ≥15)"))
-
-    # Group-DM threads: look in per-app _dms.json files.
+    # DM counts across apps. DM threads now live inline in {app}.json as
+    # entries with is_dm=true + full messages[]; count messages per sender
+    # (each thread carries 1–4 messages).
+    inbound = 0
+    outbound = 0
     group_threads = 0
     for app in SOCIAL_APPS:
-        threads = _load(base / f"{app}_dms.json") or []
-        for t in threads:
-            if t.get("is_group") and len((t.get("participants") or [])) >= 3 and len((t.get("messages") or [])) >= 3:
+        events = _load(base / f"{app}.json") or []
+        for e in events:
+            if not e.get("is_dm"):
+                continue
+            msgs = e.get("messages") or []
+            for m in msgs:
+                if m.get("sender") == "self":
+                    outbound += 1
+                else:
+                    inbound += 1
+            if (e.get("is_group") or e.get("is_group_dm")) \
+                    and len(e.get("participants") or []) >= 3 \
+                    and len(msgs) >= 3:
                 group_threads += 1
+    results.append(("inbound_dms_total", inbound >= 25, f"{inbound} inbound DMs (need ≥25)"))
+    results.append(("outbound_dms_total", outbound >= 15, f"{outbound} outbound DMs (need ≥15)"))
     results.append(("group_dm_threads", group_threads >= 3, f"{group_threads} group threads (need ≥3)"))
 
     # Friends graph.
