@@ -906,6 +906,17 @@ def build_benchmark(
     c1b_sequences = build_c1b_sequence(b_arms["chatbot_response_proactive"])
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_response_proactive"])
+
+    # Agentic tasks T6-T19 — all share t_probe.
+    from evaluation.tasks.agentic_tasks import ALL_BUILDERS as _AGENTIC_BUILDERS
+    agentic_buckets: dict[str, list[dict]] = {}
+    for task_id, builder in _AGENTIC_BUILDERS.items():
+        try:
+            agentic_buckets[task_id] = builder(bq, user_id, t_probe)
+        except Exception as exc:
+            agentic_buckets[task_id] = []
+            print(f"[build_benchmark] WARN: {task_id} builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -932,6 +943,7 @@ def build_benchmark(
             "c2_scenarios": len(c2_instances),
             "c3_restraint": len(c3_instances),
             "c4_button_regen": len(c4_instances),
+            **{k: len(v) for k, v in agentic_buckets.items()},
         },
         "slate_ranking": slate_instances,
         "chatbot_response_proactive": b_arms["chatbot_response_proactive"],
@@ -941,6 +953,7 @@ def build_benchmark(
         "c2_scenarios": c2_instances,
         "c3_restraint": c3_instances,
         "c4_button_regen": c4_instances,
+        **agentic_buckets,
     }
 
 

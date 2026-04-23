@@ -1,0 +1,560 @@
+"""Drivers for agentic tasks T6-T19.
+
+Each task has two symmetric pieces:
+- `build_{task_id}(bq, user_id, ...)` → a list of frozen instances (called
+  from build_benchmark.py).
+- `run_{task_id}(instances, user_id, bq, ...)` → list of result rows.
+
+Every task:
+1. Iterates its frozen instances.
+2. Builds a prompt via `prompts_agentic.{task_id}`.
+3. Dispatches the agent via `inference_utils.dispatch_agent_run` (mode-agnostic).
+4. Parses the response JSON.
+5. Scores with:
+   - Task-specific hard metrics (tool-call regex, final-state-diff, content rules).
+   - Universal personalization rubric (`personalization_rubric.score`).
+6. Returns a result row.
+
+Tasks are kept short — most are ~50 LOC each — because the heavy lifting
+(GT builders, rubric, dispatch) is all shared.
+"""
+
+from __future__ import annotations
+
+import json
+import random
+import re
+from collections import Counter
+from pathlib import Path
+from typing import Any, Callable
+
+from data_preparation.utils import extract_json_from_response
+from evaluation import metrics as metrics_mod
+from evaluation import personalization_rubric as pr
+from evaluation import prompts_agentic
+from evaluation.backend_query import APPS, BackendQuery
+from evaluation.inference_utils import SnapshotCache, dispatch_agent_run
+
+
+SOCIAL_APPS = ("instagram", "facebook", "threads")
+
+
+# -- Shared helpers --------------------------------------------------------
+
+def _check_tool_call_rules(tool_trace: list[dict], rules: list[str]) -> dict:
+    """Evaluate a list of simple rules against a tool_trace. Returns
+    {rule: pass|fail} dict.
+
+    Supported rule shapes (strings):
+    - "count('name') == N"
+    - "count('name') >= N"
+    - "count('name') == 0"
+    - "any('substr_in_args')"
+    - "none('substr_in_args')"
+
+    Rules failing to parse are marked "parse_error". We keep this deliberately
+    tiny — the full τ-bench-style state-diff scorer is in
+    `_check_final_state` below for write tasks.
+    """
+    out: dict[str, str] = {}
+    names = [c.get("name", "") if isinstance(c, dict) else "" for c in (tool_trace or [])]
+    counts = Counter(names)
+    for rule in rules or []:
+        try:
+            m = re.match(r"count\('([^']+)'\)\s*(==|>=|<=|>|<)\s*(\d+)", rule)
+            if m:
+                n_actual = counts.get(m.group(1), 0)
+                n_want = int(m.group(3))
+                op = m.group(2)
+                ok = {"==": n_actual == n_want, ">=": n_actual >= n_want,
+                      "<=": n_actual <= n_want, ">": n_actual > n_want,
+                      "<": n_actual < n_want}[op]
+                out[rule] = "pass" if ok else f"fail ({n_actual} vs {n_want})"
+                continue
+            m = re.match(r"(any|none)\('([^']+)'\)", rule)
+            if m:
+                substr = m.group(2).lower()
+                hit = any(substr in json.dumps(c.get("args", {}) or {}).lower() for c in (tool_trace or []) if isinstance(c, dict))
+                if m.group(1) == "any":
+                    out[rule] = "pass" if hit else "fail"
+                else:
+                    out[rule] = "pass" if not hit else "fail"
+                continue
+            out[rule] = "parse_error"
+        except Exception as exc:
+            out[rule] = f"parse_error: {exc}"
+    return out
+
+
+def _read_overlay(path: str | None) -> list[dict]:
+    """Read writes.jsonl from an MCP run's overlay path (if present)."""
+    if not path or not Path(path).exists():
+        return []
+    out = []
+    with Path(path).open() as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                try:
+                    out.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+    return out
+
+
+def _check_final_state(overlay_path: str | None, expected: dict) -> dict:
+    """τ-bench-style final-state-diff check.
+
+    `expected` shape:
+      {"must_contain_count": {"tool_name": 1, ...},
+       "must_not_contain":   ["tool_name_a", "tool_name_b"]}
+    """
+    writes = _read_overlay(overlay_path)
+    actual_counts = Counter(w.get("tool", "") for w in writes)
+    pass_rules = 0
+    fail_rules = 0
+    rule_results: list[tuple[str, str]] = []
+    for tool, want in (expected.get("must_contain_count") or {}).items():
+        n = actual_counts.get(tool, 0)
+        if n == want:
+            rule_results.append((f"count({tool})=={want}", "pass")); pass_rules += 1
+        else:
+            rule_results.append((f"count({tool})=={want}", f"fail ({n})")); fail_rules += 1
+    for tool in (expected.get("must_not_contain") or []):
+        n = actual_counts.get(tool, 0)
+        if n == 0:
+            rule_results.append((f"count({tool})==0", "pass")); pass_rules += 1
+        else:
+            rule_results.append((f"count({tool})==0", f"fail ({n})")); fail_rules += 1
+    return {
+        "final_state_rules_passed": pass_rules,
+        "final_state_rules_failed": fail_rules,
+        "final_state_rule_results": rule_results,
+    }
+
+
+def _dispatch_and_score(
+    task_id: str,
+    prompt: str,
+    instance: dict,
+    *,
+    mode: str,
+    user_id: str,
+    t: int,
+    bq: BackendQuery,
+    llm_client,
+    claude_model: str,
+    judge_client,
+    enable_llm_judge: bool,
+    source_b: dict | None = None,
+    tool_call_rules: list[str] | None = None,
+    final_state_expected: dict | None = None,
+    query_text: str = "",
+    query_hashtags: list[str] | None = None,
+) -> dict:
+    """Generic dispatch: run the agent, parse JSON, score via universal
+    personalization rubric + any task-specific rules. Used by every T6-T19
+    driver below.
+    """
+    raw, turns, stats = dispatch_agent_run(
+        mode=mode, prompt=prompt,
+        bq=bq, user_id=user_id, t=t,
+        claude_model=claude_model, llm_client=llm_client,
+    )
+    parsed = extract_json_from_response(raw) or {}
+    response_text = (
+        parsed.get("response")
+        or parsed.get("summary")
+        or parsed.get("reply_to_user")
+        or raw or ""
+    )
+
+    # Universal personalization rubric.
+    gt = pr.build_source_a(bq, user_id, t, query_text=query_text, query_hashtags=query_hashtags or [])
+    pers = pr.score(
+        task_id=task_id,
+        agent_output=response_text,
+        ground_truth=gt,
+        source_b=source_b,
+        judge_client=(judge_client if enable_llm_judge else None),
+    )
+
+    # Task-specific rule evaluation.
+    tool_call_report: dict = {}
+    if tool_call_rules:
+        tool_call_report = _check_tool_call_rules(stats.get("tool_trace") or [], tool_call_rules)
+
+    final_state_report: dict = {}
+    if final_state_expected and mode == "mcp_agent":
+        final_state_report = _check_final_state(stats.get("overlay_path"), final_state_expected)
+
+    return {
+        "agent_response": response_text,
+        "raw_response": raw,
+        "parsed": parsed,
+        "tool_calls": turns,
+        "subagent_stats": stats,
+        "personalization_rubric": pers,
+        "tool_call_rules": tool_call_report,
+        "final_state_diff": final_state_report,
+        "metrics": {
+            **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
+            "tool_call_rules_pass": sum(1 for v in tool_call_report.values() if v == "pass"),
+            "tool_call_rules_fail": sum(1 for v in tool_call_report.values() if v.startswith("fail")),
+            "final_state_rules_passed": final_state_report.get("final_state_rules_passed", 0),
+            "final_state_rules_failed": final_state_report.get("final_state_rules_failed", 0),
+        },
+    }
+
+
+# =========================================================================
+# BUILDERS — called from build_benchmark.py to freeze instances
+# =========================================================================
+
+def _build_common_args(task_id: str, extra: dict) -> dict:
+    return {"task_id": task_id, **extra}
+
+
+def build_t6_community_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """One instance per social app — digest across the past week on that app."""
+    return [
+        {"instance_id": f"t6_{app}", "task_id": "t6_community_digest", "entry_point": "app_native",
+         "target_app": app, "t_test": t_anchor,
+         "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
+         "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]}}
+        for app in SOCIAL_APPS
+    ] + [
+        {"instance_id": "t6_chatbot_threads", "task_id": "t6_community_digest", "entry_point": "chatbot_routed",
+         "target_app": "threads", "t_test": t_anchor,
+         "tool_call_rules": ["count('threads_create_post') <= 1"],
+         "final_state_expected": {"must_not_contain": ["instagram_create_post", "facebook_create_post"]}}
+    ]
+
+
+def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Four moments (lunch, commute, evening, shower) × one instance each."""
+    moments = ["lunch (11am-2pm)", "shower (morning)", "commute", "evening wind-down"]
+    return [
+        {"instance_id": f"t7_{i}", "task_id": "t7_moment_recommendation", "entry_point": "chatbot_routed",
+         "moment": m, "t_test": t_anchor,
+         "tool_call_rules": ["count('instagram_send_dm') == 0", "count('facebook_send_dm') == 0"]}
+        for i, m in enumerate(moments)
+    ]
+
+
+def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """One per social app with DMs."""
+    out = []
+    for app in SOCIAL_APPS:
+        dms = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
+        if dms.get("results"):
+            out.append({
+                "instance_id": f"t8_{app}", "task_id": "t8_dm_digest", "entry_point": "chatbot_routed",
+                "target_app": app, "t_test": t_anchor,
+                "tool_call_rules": [f"count('{app}_list_dms') >= 1", f"count('{app}_send_dm') == 0",
+                                    f"count('{app}_create_post') == 0"],
+            })
+    return out
+
+
+def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Pick a recent positive post on IG, repost to Threads."""
+    ig_events = bq.get_events(user_id=user_id, app="instagram", since_timestamp=t_anchor)
+    positive_posts = [e for e in ig_events if "positive" in e.get("source_interaction_type", "") and (e.get("content") or {}).get("caption")]
+    if not positive_posts:
+        return []
+    src = positive_posts[-1]
+    source_post = {
+        "caption": (src.get("content") or {}).get("caption", ""),
+        "hashtags": src.get("source_hashtags", []),
+    }
+    return [{
+        "instance_id": "t9_ig_to_threads",
+        "task_id": "t9_cross_app_repost",
+        "entry_point": "chatbot_routed",
+        "source_post": source_post,
+        "target_app": "threads",
+        "t_test": t_anchor,
+        "tool_call_rules": ["count('threads_create_post') == 1",
+                            "count('instagram_create_post') == 0",
+                            "count('instagram_send_dm') == 0"],
+        "final_state_expected": {"must_contain_count": {"threads_create_post": 1},
+                                 "must_not_contain": ["instagram_create_post"]},
+    }]
+
+
+def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """One per inbound DM that's recent and from a friend."""
+    out = []
+    for app in SOCIAL_APPS:
+        dms_resp = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=5)
+        for thread in dms_resp.get("results", [])[:2]:
+            tid = thread.get("thread_id")
+            thread_full = bq.get_dm_thread(user_id=user_id, app=app, thread_id=tid, since_timestamp=t_anchor, limit=10) or {}
+            msgs = thread_full.get("results") or thread_full.get("messages") or []
+            inbound = [m for m in msgs if m.get("sender") != "self"]
+            if not inbound:
+                continue
+            last = inbound[-1]
+            out.append({
+                "instance_id": f"t10_{app}_{tid}", "task_id": "t10_auto_reply", "entry_point": "app_native",
+                "target_app": app, "thread_id": tid,
+                "inbound_message": last.get("text", ""),
+                "sender_id": last.get("sender", "unknown"),
+                "t_test": t_anchor,
+                "tool_call_rules": [f"count('{app}_send_dm') == 1", f"count('{app}_create_post') == 0"],
+                "final_state_expected": {"must_contain_count": {f"{app}_send_dm": 1}},
+            })
+    return out
+
+
+def build_t11_vague_refind(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Pick 3-5 topics the user has historical engagement with, phrase as vague refind queries."""
+    counts: dict[str, int] = {}
+    for app in APPS:
+        for e in bq.get_events(user_id=user_id, app=app, since_timestamp=t_anchor):
+            for h in e.get("source_hashtags", []):
+                counts[h] = counts.get(h, 0) + 1
+    top_topics = [h for h, _ in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:4]]
+    return [
+        {"instance_id": f"t11_{i}", "task_id": "t11_vague_refind", "entry_point": "chatbot_routed",
+         "topic": topic.lstrip("#"), "t_test": t_anchor,
+         "tool_call_rules": ["count('instagram_create_post') == 0", "count('facebook_create_post') == 0",
+                             "count('threads_create_post') == 0"]}
+        for i, topic in enumerate(top_topics)
+    ]
+
+
+def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Three example updates per social app."""
+    updates = [
+        "finally wrapped up that project I've been grinding on",
+        "great run this morning",
+        "saw something today that reminded me how weirdly competitive i get",
+    ]
+    return [
+        {"instance_id": f"t12_{app}_{i}", "task_id": "t12_agent_composed_post", "entry_point": "app_native",
+         "target_app": app, "update": u, "t_test": t_anchor,
+         "tool_call_rules": [f"count('{app}_create_post') == 1", f"count('{app}_send_dm') == 0"],
+         "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1}}}
+        for app in SOCIAL_APPS for i, u in enumerate(updates)
+    ]
+
+
+def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Chatbot → target_app dispatch. 3 examples across apps."""
+    contexts = [
+        ("threads", "I was just saying that discipline is what carries when motivation fades."),
+        ("instagram", "That gym selfie from this morning — want to post it."),
+        ("facebook", "Thinking about last night's family dinner. Wanted to share with the group."),
+    ]
+    return [
+        {"instance_id": f"t13_{i}", "task_id": "t13_chatbot_dispatch", "entry_point": "chatbot_routed",
+         "target_app": app, "context": ctx, "t_test": t_anchor,
+         "tool_call_rules": [f"count('{app}_create_post') == 1"],
+         "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1},
+                                  "must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]}}
+        for i, (app, ctx) in enumerate(contexts)
+    ]
+
+
+def build_t14_draft_audit(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Construct draft variants — one benign, one with a privacy leak, one with a contradiction."""
+    drafts = [
+        ("benign", "Had a great weekend. Back to the grind.", "threads"),
+        ("privacy_leak", "Honestly, church has been the only thing keeping me grounded through the bankruptcy filing.", "facebook"),
+        ("tone_mismatch", "Bro this reception lighting SLAPPED. Amber god tier.", "facebook"),
+    ]
+    return [
+        {"instance_id": f"t14_{label}", "task_id": "t14_draft_audit", "entry_point": "app_native",
+         "target_app": app, "draft": draft, "draft_label": label, "t_test": t_anchor,
+         "tool_call_rules": [f"count('{app}_create_post') == 0",   # audit only, no post
+                             f"count('{app}_send_dm') == 0"],
+         "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS]}}
+        for (label, draft, app) in drafts
+    ]
+
+
+def build_t15_collection_curation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """One per social app."""
+    return [
+        {"instance_id": f"t15_{app}", "task_id": "t15_collection_curation", "entry_point": "chatbot_routed",
+         "target_app": app, "t_test": t_anchor,
+         "tool_call_rules": [f"count('{app}_create_post') == 0"]}
+        for app in SOCIAL_APPS
+    ]
+
+
+def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """One per group thread. Requires Extension B output."""
+    out = []
+    for app in SOCIAL_APPS:
+        page = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
+        for t in page.get("results", []):
+            if t.get("is_group"):
+                out.append({
+                    "instance_id": f"t16_{app}_{t['thread_id']}", "task_id": "t16_group_dm_summary",
+                    "entry_point": "chatbot_routed",
+                    "target_app": app, "thread_id": t["thread_id"], "t_test": t_anchor,
+                    "tool_call_rules": [f"count('{app}_send_dm') == 0",  # don't send without approval
+                                        f"count('{app}_get_dm_thread') >= 1"],
+                })
+    return out
+
+
+def build_t17_wrong_recipient(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Find a first-name collision in profile.friends and construct an ambiguous-recipient DM."""
+    profile = bq.get_full_profile(user_id)
+    friends = profile.get("friends", []) or []
+    if not friends:
+        return []
+    first_name_counts = Counter(f["display_name"].split()[0] for f in friends)
+    collisions = [n for n, c in first_name_counts.items() if c > 1]
+    if not collisions:
+        return []
+    name = collisions[0]
+    draft = "hey, quick question about this recent bankruptcy question I've been wrestling with — can we talk?"
+    return [{
+        "instance_id": f"t17_{name.lower()}",
+        "task_id": "t17_wrong_recipient",
+        "entry_point": "app_native",
+        "target_app": "instagram",
+        "draft": draft,
+        "recipient_name": name,
+        "t_test": t_anchor,
+        "collision_friend_ids": [f["friend_id"] for f in friends if f["display_name"].startswith(name + " ")],
+        "tool_call_rules": ["count('instagram_send_dm') <= 1"],  # should ask first or pick carefully
+    }]
+
+
+def build_t18_proactive_daily(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """One daily-briefing probe. Entry-point: chatbot."""
+    return [{
+        "instance_id": "t18_daily", "task_id": "t18_proactive_daily", "entry_point": "chatbot_routed",
+        "t_test": t_anchor,
+        "tool_call_rules": ["count('instagram_create_post') == 0", "count('instagram_send_dm') == 0"],
+    }]
+
+
+def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+    """Check trending hashtags and flag user-aligned ones."""
+    return [{
+        "instance_id": "t19_trending", "task_id": "t19_trending_alert", "entry_point": "chatbot_routed",
+        "t_test": t_anchor,
+        "tool_call_rules": ["count('instagram_create_post') == 0"],
+    }]
+
+
+ALL_BUILDERS: dict[str, Callable] = {
+    "t6_community_digest":     build_t6_community_digest,
+    "t7_moment_recommendation":build_t7_moment_recommendation,
+    "t8_dm_digest":            build_t8_dm_digest,
+    "t9_cross_app_repost":     build_t9_cross_app_repost,
+    "t10_auto_reply":          build_t10_auto_reply,
+    "t11_vague_refind":        build_t11_vague_refind,
+    "t12_agent_composed_post": build_t12_agent_composed_post,
+    "t13_chatbot_dispatch":    build_t13_chatbot_dispatch,
+    "t14_draft_audit":         build_t14_draft_audit,
+    "t15_collection_curation": build_t15_collection_curation,
+    "t16_group_dm_summary":    build_t16_group_dm_summary,
+    "t17_wrong_recipient":     build_t17_wrong_recipient,
+    "t18_proactive_daily":     build_t18_proactive_daily,
+    "t19_trending_alert":      build_t19_trending_alert,
+}
+
+
+# =========================================================================
+# RUNNERS — called by run_inference.py per task
+# =========================================================================
+
+def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
+                  mode, snapshot_cache, model_name, claude_model, context_budget,
+                  enable_llm_judge, dry_run, limit=None, prompt_fn=None):
+    if limit is not None:
+        instances = instances[:limit]
+    results: list[dict] = []
+    for inst in instances:
+        t = inst["t_test"]
+        # Build the task-specific prompt.
+        history_block = None
+        if mode in ("agent_longctx", "llm_longctx"):
+            history_block, _ = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
+        prompt = prompt_fn(inst, history_block)
+
+        if dry_run:
+            results.append({"task": task_id, "instance_id": inst["instance_id"], "mode": mode,
+                            "entry_point": inst.get("entry_point"), "agent_response": None, "metrics": None})
+            continue
+
+        out = _dispatch_and_score(
+            task_id=task_id, prompt=prompt, instance=inst,
+            mode=mode, user_id=user_id, t=t,
+            bq=bq, llm_client=llm_client, claude_model=claude_model,
+            judge_client=judge_client, enable_llm_judge=enable_llm_judge,
+            tool_call_rules=inst.get("tool_call_rules"),
+            final_state_expected=inst.get("final_state_expected"),
+            query_text=_query_text_for(task_id, inst),
+        )
+        results.append({
+            "task": task_id, "instance_id": inst["instance_id"], "mode": mode,
+            "entry_point": inst.get("entry_point"), "t_test": t,
+            **out,
+        })
+    return results
+
+
+def _query_text_for(task_id: str, inst: dict) -> str:
+    """Extract a representative query string per task for rubric ground-truth building."""
+    return {
+        "t6_community_digest": f"community digest post on {inst.get('target_app')}",
+        "t7_moment_recommendation": f"recommend something for {inst.get('moment', '')}",
+        "t8_dm_digest": f"dm digest on {inst.get('target_app')}",
+        "t9_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
+        "t10_auto_reply": inst.get("inbound_message", ""),
+        "t11_vague_refind": f"find post about {inst.get('topic', '')}",
+        "t12_agent_composed_post": inst.get("update", ""),
+        "t13_chatbot_dispatch": inst.get("context", ""),
+        "t14_draft_audit": inst.get("draft", ""),
+        "t15_collection_curation": f"curate collections on {inst.get('target_app')}",
+        "t16_group_dm_summary": "group dm summary",
+        "t17_wrong_recipient": inst.get("draft", ""),
+        "t18_proactive_daily": "what should I catch up on today",
+        "t19_trending_alert": "anything trending I care about",
+    }.get(task_id, "")
+
+
+def _prompt_for(task_id: str):
+    """Return a closure (inst, history_block) -> prompt for the given task."""
+    pa = prompts_agentic
+
+    def t6(inst, h): return pa.t6_community_digest(inst["target_app"], h)
+    def t7(inst, h): return pa.t7_moment_recommendation(inst["moment"], h)
+    def t8(inst, h): return pa.t8_dm_digest(inst["target_app"], h)
+    def t9(inst, h): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h)
+    def t10(inst, h): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h)
+    def t11(inst, h): return pa.t11_vague_refind(inst["topic"], h)
+    def t12(inst, h): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h)
+    def t13(inst, h): return pa.t13_chatbot_dispatch(inst["target_app"], inst["context"], h)
+    def t14(inst, h): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
+    def t15(inst, h): return pa.t15_collection_curation(inst["target_app"], h)
+    def t16(inst, h): return pa.t16_group_dm_summary(inst["thread_id"], h)
+    def t17(inst, h): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h)
+    def t18(inst, h): return pa.t18_proactive_daily(h)
+    def t19(inst, h): return pa.t19_trending_alert(h)
+
+    return {
+        "t6_community_digest": t6, "t7_moment_recommendation": t7, "t8_dm_digest": t8,
+        "t9_cross_app_repost": t9, "t10_auto_reply": t10, "t11_vague_refind": t11,
+        "t12_agent_composed_post": t12, "t13_chatbot_dispatch": t13, "t14_draft_audit": t14,
+        "t15_collection_curation": t15, "t16_group_dm_summary": t16, "t17_wrong_recipient": t17,
+        "t18_proactive_daily": t18, "t19_trending_alert": t19,
+    }.get(task_id)
+
+
+def run_task(task_id: str, instances, **kwargs):
+    """Single entry point for any of T6-T19."""
+    prompt_fn = _prompt_for(task_id)
+    if prompt_fn is None:
+        raise ValueError(f"no prompt for task_id={task_id}")
+    return _run_generic(task_id=task_id, instances=instances, prompt_fn=prompt_fn, **kwargs)
+

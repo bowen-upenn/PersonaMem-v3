@@ -429,4 +429,52 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `HIDDEN_PERSONA_HASHTAG_MIN_FREQ` | 3 | Min hashtag occurrences |
 | `HIDDEN_PERSONA_TOP_HASHTAGS` | 200 | Top hashtags passed to LLM |
 
+---
+
+## 18. Extension B — Agentic Interaction Augmentation
+
+The 16-step pipeline produces a passive-consumption view of each user (they engage with content others created). Extension B is a **post-processing pass** that adds the agentic / social-graph layer needed for Task T6–T19:
+
+### Event-authorship taxonomy (new fields)
+
+Every event now carries five new fields (default-populated on pre-Ext-B events):
+
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `author_id` | `self` / `friend_{N}` / `stranger_{N}` / `public_creator` / `unknown` | Who wrote the content |
+| `recipient_id` | `self` / `friend_{N}` / `""` | For inbound/outbound DMs |
+| `relationship` | `self` / `friend` / `stranger` / `public` | Social graph edge used for personalization |
+| `is_self_authored` | bool | True for user's own posts + outbound DMs |
+| `is_dm` | bool | True for direct messages (not public posts) |
+
+### Four generators
+
+Run via `python -m data_preparation.extension_b --user_id {uid}`:
+
+1. **Friend graph** (`profile.friends[]`, 10 entries) — named friends with `relationship_depth ∈ {close, acquaintance, distant}` and `shared_interests[]`. Deliberately includes a first-name collision (e.g., two "Alex"s) so the T17 wrong-recipient probe has material. One LLM call.
+2. **Self-authored posts** per social app — count scales with `posting_frequency` (rarely → 4, weekly → 10, daily → 15). Voice-matched to the user's `bio + Big Five + MBTI + app_persona.style_description`. Appended to `{app}.json` with `is_self_authored=True`. One LLM call per app.
+3. **DM threads** (`{app}_dms.json` + mirrored events in `{app}.json`) — inbound from friends, outbound to friends, inbound from strangers, and 1–2 group threads per app. Latest message of each thread is mirrored back into the main `{app}.json` as an `is_dm=True` event with `thread_id` so MCP list_dms can read either file. One LLM call per app.
+4. **Trending hashtags** (`trending.json`) — deterministic (no LLM). 15 user-aligned + 5 off-user (drawn from user's explicit negatives). Shape: `{built_at, hashtags:[{hashtag, rank, post_ids, user_aligned}]}`.
+
+### Data-sufficiency assertions (pre-benchmark-build gate)
+
+`python -m evaluation.check_data_sufficiency --user_id {uid}` checks:
+
+| Assertion | Target |
+|-----------|--------|
+| self_posts per social app | ≥ 10 (weekly) or ≥ 5 (rarely) |
+| inbound_dms_total | ≥ 25 |
+| outbound_dms_total | ≥ 15 |
+| group_dm_threads | ≥ 3 |
+| named_friends | ≥ 8 |
+| sensitive_hidden_personas | ≥ 3 (privacy_ratio > 0.7) |
+| multi_app_topics | ≥ 2 (hashtags on ≥ 2 apps) |
+| trending_hashtags | ≥ 20 |
+
+Red checks block the benchmark build until Extension B closes the gap.
+
+### MCP contract for this data
+
+Each app JSON + DM JSON is served by a mock MCP server under `evaluation/mcp_servers/`. Servers expose `get_feed`, `get_post`, `search`, `list_dms`, `get_dm_thread`, `create_post`, `react`, `comment`, `send_dm`. Writes go to a per-run overlay (`writes.jsonl`) which the server unions back into subsequent reads — mirrors real-app "post a reel → it appears in your feed" semantics. Details in [EVAL.md](EVAL.md).
+
 > Thresholds (especially high-confidence predicate values) are tentative and will be tuned empirically.
