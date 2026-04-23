@@ -270,9 +270,12 @@ SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 # cross-ref step requires N distinct source rows for any canonical supported
 # only by implicit evidence. Canonicals with any explicit-negative evidence
 # are unaffected.
-MIN_IMPLICIT_NEGATIVE_REPETITION = 10  # distinct source rows for implicit-only negative to survive.
+MIN_IMPLICIT_NEGATIVE_REPETITION = 15  # distinct source rows for implicit-only negative to survive.
                                        # Counted with a per-day cap (IMPL_NEG_DAILY_CAP) so a single
                                        # mood-driven bad day doesn't drive the count over threshold.
+                                       # Raised 10 → 15: a user who CONSISTENTLY dislikes a topic
+                                       # should have at least 5 days at cap 3 of engagement-free
+                                       # scroll-pasts, not just 4 days with a few lingers on one day.
 # Daily cap on implicit_negative rows per hashtag. Skipping 20 boxing posts
 # in one hour probably means "bad mood right now", not a durable dislike.
 # After the cap, the count reflects CONSISTENT skipping across the window.
@@ -2187,14 +2190,19 @@ class PersonaAgent:
                       f"Step 7: no candidate pos/neg pairs share ≥{HASHTAG_OVERLAP_MIN} hashtags.{utils.Colors.ENDC}")
             return
 
-        # LLM-confirm opposition semantics (batched)
+        # LLM-confirm opposition semantics (batched). Each confirmed pair
+        # is (pos_cr, neg_cr, shared_hashtags, classification), where
+        # classification is one of "contradiction" (same topic, same
+        # granularity, opposite stances) or "ambivalence" (same topic,
+        # different granularities — e.g. "Interested in NFL" vs
+        # "Not interested in NFL training-camp").
         client = self.llm_client_mini or self.llm_client
-        confirmed_pairs: list[tuple[CrossReferencedPersona, CrossReferencedPersona, set[str]]] = []
+        confirmed_pairs: list[tuple] = []
         if client is None:
             # Without an LLM, conservatively treat all shared-hashtag pairs as
-            # contradictions. This is the pre-Phase-3 behavior modulo the
-            # hashtag-overlap gate, so it still improves over no gate at all.
-            confirmed_pairs = list(candidate_pairs)
+            # strict contradictions. Hashtag-overlap gate still applies.
+            confirmed_pairs = [(pos, neg, shared, "contradiction")
+                               for (pos, neg, shared) in candidate_pairs]
         else:
             BATCH = 10
             for start in range(0, len(candidate_pairs), BATCH):
@@ -2210,21 +2218,37 @@ class PersonaAgent:
                 prompt = prompts.contradiction_pair_check_prompt(prompt_pairs)
                 resp = self._query_mini_with_retry(prompt)
                 if not resp:
-                    # On LLM failure, default to treating all as confirmed
-                    confirmed_pairs.extend(batch)
+                    # On LLM failure, default to conservative "contradiction"
+                    for (pos, neg, shared) in batch:
+                        confirmed_pairs.append((pos, neg, shared, "contradiction"))
                     continue
                 parsed = utils.extract_json_from_response(resp)
                 if not isinstance(parsed, list):
-                    confirmed_pairs.extend(batch)
+                    for (pos, neg, shared) in batch:
+                        confirmed_pairs.append((pos, neg, shared, "contradiction"))
                     continue
                 by_id = {}
                 for entry in parsed:
                     if isinstance(entry, dict) and "id" in entry:
                         by_id[int(entry["id"])] = entry
-                for i, pair in enumerate(batch):
+                for i, (pos, neg, shared) in enumerate(batch):
                     res = by_id.get(i)
-                    if res is None or bool(res.get("is_contradiction")):
-                        confirmed_pairs.append(pair)
+                    if res is None:
+                        # No classification → skip (unrelated-by-default under
+                        # the new 3-way schema; old schema fell back to
+                        # "is_contradiction=true" which was too permissive)
+                        continue
+                    # New 3-way schema: classification ∈
+                    #   {"contradiction", "ambivalence", "unrelated"}.
+                    # Back-compat: if only `is_contradiction: true` is present,
+                    # treat as "contradiction"; if false/missing, skip.
+                    classification = res.get("classification")
+                    if classification in ("contradiction", "ambivalence"):
+                        confirmed_pairs.append((pos, neg, shared, classification))
+                    elif classification == "unrelated":
+                        continue
+                    elif bool(res.get("is_contradiction")):
+                        confirmed_pairs.append((pos, neg, shared, "contradiction"))
 
         if not confirmed_pairs:
             if self.verbose:
@@ -2232,30 +2256,85 @@ class PersonaAgent:
                       f"Step 7: no confirmed cross-polarity contradictions.{utils.Colors.ENDC}")
             return
 
-        # For each confirmed pair, apply the temporal-precedent rule
-        def _row_tss(cr: CrossReferencedPersona, polarity: str) -> list[int]:
+        # For each confirmed pair, apply the temporal-precedent rule.
+        # Each canonical's supporting rows are carried as (ts, oid) pairs
+        # so history entries can cite the earliest opposing event's oid for
+        # causality filtering downstream.
+        def _row_positions(cr: CrossReferencedPersona, polarity: str) -> list[tuple[int, str]]:
             groups = (
                 self._canonical_groups if polarity == "positive"
                 else self._negative_canonical_groups
             )
             key = _normalize_persona_text(cr.persona_item)
             atoms = groups.get(key, []) if groups else []
-            return sorted(a.source_timestamp for a in atoms if a.source_timestamp)
+            return sorted(
+                (a.source_timestamp, str(a.source_object_id or ""))
+                for a in atoms if a.source_timestamp
+            )
 
         to_drop_pos: set[str] = set()
         to_drop_neg: set[str] = set()
         pair_results: list[dict] = []  # audit
 
-        for pos_cr, neg_cr, shared in confirmed_pairs:
-            pos_tss = _row_tss(pos_cr, "positive")
-            neg_tss = _row_tss(neg_cr, "negative")
-            if not pos_tss or not neg_tss:
+        for pair in confirmed_pairs:
+            # Each pair is (pos_cr, neg_cr, shared_hashtags, classification)
+            # where classification ∈ {"contradiction", "ambivalence"}. For
+            # legacy callers that returned 3-tuples, fall back to
+            # "contradiction" for back-compat.
+            if len(pair) == 4:
+                pos_cr, neg_cr, shared, classification = pair
+            else:
+                pos_cr, neg_cr, shared = pair
+                classification = "contradiction"
+            pos_positions = _row_positions(pos_cr, "positive")
+            neg_positions = _row_positions(neg_cr, "negative")
+            if not pos_positions or not neg_positions:
                 continue
 
-            pos_first = pos_tss[0]
-            neg_first = neg_tss[0]
+            pos_tss = [t for t, _ in pos_positions]
+            neg_tss = [t for t, _ in neg_positions]
+            pos_first, pos_first_oid = pos_positions[0]
+            neg_first, neg_first_oid = neg_positions[0]
             pos_n = len(pos_tss)
             neg_n = len(neg_tss)
+
+            # ---- Ambivalence classification (different granularity) ---
+            # Different-granularity pairs are "ambivalent coexistence",
+            # NOT contradictions. Both survive, tagged as `ambivalent` so
+            # the HTML renders them with the word "ambivalent" rather than
+            # "contradicted" (the latter implies the stances negate each
+            # other at the SAME granularity).
+            if classification == "ambivalence":
+                anchor_ts = min(pos_first, neg_first)
+                anchor_oid = (
+                    pos_first_oid if pos_first <= neg_first else neg_first_oid
+                )
+                entry_for_pos = {
+                    "update_type": "ambivalent",
+                    "preference": neg_cr.persona_item,
+                    "timestamp": anchor_ts,
+                    "source_object_id": anchor_oid,
+                    "formatted_timestamp": utils.unix_to_formatted(anchor_ts),
+                    "opposing_polarity": "negative",
+                    "resolution": "different_granularity",
+                }
+                entry_for_neg = {
+                    "update_type": "ambivalent",
+                    "preference": pos_cr.persona_item,
+                    "timestamp": anchor_ts,
+                    "source_object_id": anchor_oid,
+                    "formatted_timestamp": utils.unix_to_formatted(anchor_ts),
+                    "opposing_polarity": "positive",
+                    "resolution": "different_granularity",
+                }
+                pos_cr.update_history = list(pos_cr.update_history or []) + [entry_for_pos]
+                neg_cr.update_history = list(neg_cr.update_history or []) + [entry_for_neg]
+                pair_results.append({
+                    "pos": pos_cr.persona_item, "neg": neg_cr.persona_item,
+                    "resolution": "different_granularity",
+                    "shared_hashtags": sorted(shared),
+                })
+                continue
 
             # ---- Dominance check ---------------------------------------
             # If one side is much stronger by row count, the weaker is
@@ -2270,11 +2349,14 @@ class PersonaAgent:
                 else:
                     stronger_cr, weaker_cr = neg_cr, pos_cr
                     stronger_pol, weaker_pol = "negative", "positive"
+                anchor_ts = min(pos_first, neg_first)
+                anchor_oid = pos_first_oid if pos_first <= neg_first else neg_first_oid
                 survivor_entry = {
                     "update_type": "contradicted",
                     "preference": weaker_cr.persona_item,
-                    "timestamp": min(pos_first, neg_first),
-                    "formatted_timestamp": utils.unix_to_formatted(min(pos_first, neg_first)),
+                    "timestamp": anchor_ts,
+                    "source_object_id": anchor_oid,
+                    "formatted_timestamp": utils.unix_to_formatted(anchor_ts),
                     "opposing_polarity": weaker_pol,
                     "resolution": "suppressed_weak_minority",
                     "stronger_row_count": stronger_n,
@@ -2312,12 +2394,14 @@ class PersonaAgent:
                 earlier_tss = pos_tss
                 later_tss_local = neg_tss
                 later_first = neg_first
+                later_first_oid = neg_first_oid
             elif pos_first > neg_first:
                 later_cr, later_polarity = pos_cr, "positive"
                 earlier_cr, earlier_polarity = neg_cr, "negative"
                 earlier_tss = neg_tss
                 later_tss_local = pos_tss
                 later_first = pos_first
+                later_first_oid = pos_first_oid
             else:
                 # Simultaneous first occurrences — treat the negative as
                 # "later" since negatives are structurally rarer and more
@@ -2327,6 +2411,7 @@ class PersonaAgent:
                 earlier_tss = pos_tss
                 later_tss_local = neg_tss
                 later_first = neg_first
+                later_first_oid = neg_first_oid
 
             prior_count = sum(1 for t in earlier_tss if t < later_first)
             # How much the earlier side continued AFTER the later side emerged.
@@ -2351,6 +2436,7 @@ class PersonaAgent:
                     "update_type": "contradicted",
                     "preference": earlier_cr.persona_item,
                     "timestamp": later_first,
+                    "source_object_id": later_first_oid,
                     "formatted_timestamp": utils.unix_to_formatted(later_first),
                     "opposing_polarity": earlier_polarity,
                     "resolution": resolution,
@@ -2362,6 +2448,7 @@ class PersonaAgent:
                     "update_type": "contradicted",
                     "preference": later_cr.persona_item,
                     "timestamp": later_first,
+                    "source_object_id": later_first_oid,
                     "formatted_timestamp": utils.unix_to_formatted(later_first),
                     "opposing_polarity": later_polarity,
                     "resolution": resolution,
@@ -2384,6 +2471,7 @@ class PersonaAgent:
                     "update_type": "contradicted",
                     "preference": later_cr.persona_item,
                     "timestamp": later_first,
+                    "source_object_id": later_first_oid,
                     "formatted_timestamp": utils.unix_to_formatted(later_first),
                     "opposing_polarity": later_polarity,
                     "resolution": resolution,
@@ -5474,24 +5562,40 @@ class PersonaAgent:
                                       "prior_corroboration_count", "required_precedent",
                                       "earlier_rows_after_flip",
                                       "stronger_row_count", "weaker_row_count", "dominance_ratio"]
-                event_ts = ap.source_timestamp  # this atomic's source row timestamp
+                event_ts = ap.source_timestamp
+                event_oid = str(ap.source_object_id or "")
+
+                def _is_before(h_ts, h_oid) -> bool:
+                    """Causality: entry is 'before' THIS event in HTML display order.
+                    HTML sorts events by (source_timestamp, source_object_id) —
+                    same order we use here. When the entry carries an oid, use
+                    lexicographic (ts, oid) compare. When it doesn't, use the
+                    stricter ts-only strict inequality (drop same-timestamp
+                    entries we can't disambiguate)."""
+                    if h_oid:
+                        return (int(h_ts or 0), str(h_oid)) < (int(event_ts or 0), event_oid)
+                    return int(h_ts or 0) < int(event_ts or 0)
 
                 merged_history = []
                 for h in (cr.update_history or []):
                     raw = dict(h)
                     h_ts = raw.pop("timestamp", 0)
-                    if h_ts and h_ts > event_ts:
-                        continue  # skip future entries — causality
+                    hist_oid = raw.pop("source_object_id", None)
+                    # Causality filter: the referenced event must come BEFORE
+                    # this event in the HTML display order (lexicographic by
+                    # (ts, source_object_id)).
+                    if not _is_before(h_ts, hist_oid):
+                        continue
                     if raw.get("update_type") == "new":
                         continue  # redundant — event timestamp already shows first appearance
                     # Drop self-referencing preference (same as parent persona_item)
                     if raw.get("preference") == cr.persona_item:
                         raw.pop("preference")
                     # Resolve source_object_id → source_app for reinforced entries
-                    hist_oid = raw.pop("source_object_id", None)
                     if hist_oid:
                         raw["source_app"] = self._row_app.get(hist_oid, "")
-                    # For entries with a preference (evolution/contradicted), use target canonical's app
+                    # For entries with a preference (evolution/contradicted),
+                    # use target canonical's app for display.
                     elif raw.get("preference"):
                         pref_cr = canonical_lookup.get(_normalize_persona_text(raw["preference"]))
                         if pref_cr:
@@ -5503,17 +5607,23 @@ class PersonaAgent:
                         continue
                     rel_key = _normalize_persona_text(rel["persona_item"])
                     rel_cr = canonical_lookup.get(rel_key)
-                    # Recover the related preference's first-occurrence timestamp.
+                    # Recover the related preference's first occurrence (ts + oid).
                     rel_atoms = self._canonical_groups.get(rel_key, [])
                     if not rel_atoms:
                         rel_atoms = self._negative_canonical_groups.get(rel_key, [])
-                    rel_first_ts = (
-                        min((a.source_timestamp for a in rel_atoms if a.source_timestamp), default=0)
-                        if rel_atoms else 0
-                    )
+                    rel_first_ts = 0
+                    rel_first_oid = ""
+                    if rel_atoms:
+                        rel_sorted = sorted(
+                            ((a.source_timestamp, str(a.source_object_id or "")) for a in rel_atoms
+                             if a.source_timestamp),
+                            key=lambda x: x,
+                        )
+                        if rel_sorted:
+                            rel_first_ts, rel_first_oid = rel_sorted[0]
                     # Strict causality: drop any related entry we cannot place
-                    # in time, or whose first occurrence is after this event.
-                    if not rel_first_ts or rel_first_ts > event_ts:
+                    # in timeline order strictly BEFORE this event.
+                    if not rel_first_ts or not _is_before(rel_first_ts, rel_first_oid):
                         continue
                     # Normalize "contradictory" → "contradicted" for consistent naming
                     rel_type = rel.get("type", "similar")

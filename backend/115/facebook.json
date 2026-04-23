@@ -1374,14 +1374,7 @@
         "confidence_cross_referenced": 128.0,
         "stereotype_mark": "anti-stereotypical",
         "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
+        "update_history": [],
         "time_horizon": "long_term"
       }
     ]
@@ -2042,14 +2035,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -2080,14 +2072,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -2130,14 +2121,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -2612,14 +2602,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -2717,24 +2706,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -2813,14 +2800,7 @@
         "confidence_cross_referenced": 128.0,
         "stereotype_mark": "anti-stereotypical",
         "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
+        "update_history": [],
         "time_horizon": "long_term"
       }
     ]
@@ -3000,14 +2980,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -3155,24 +3134,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -3251,14 +3228,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -3715,12 +3691,6 @@
             "preference": "Not interested in NFL football content.",
             "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -4049,14 +4019,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -4772,14 +4741,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -5581,24 +5549,22 @@
         ],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -6094,14 +6060,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -6636,14 +6601,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -6953,12 +6917,6 @@
             "preference": "Not interested in NFL football content.",
             "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -7040,12 +6998,6 @@
             "preference": "Not interested in NFL football content.",
             "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -7125,12 +7077,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL football content.",
             "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -8672,24 +8618,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -8747,24 +8691,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -9016,14 +8958,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -9118,24 +9059,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -9368,12 +9307,6 @@
             "preference": "Not interested in NFL football content.",
             "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -9425,14 +9358,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -9778,14 +9710,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -10023,14 +9954,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -10150,14 +10080,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -10321,14 +10250,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -10849,24 +10777,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -11169,12 +11095,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -11265,12 +11185,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -11338,24 +11252,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -11685,41 +11597,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in Tom Brady-focused sports content.",
-        "category": "player-specific sports following",
-        "confidence_score_init": 0.64,
-        "confidence_cross_referenced": 115.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -11848,12 +11725,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -12073,12 +11944,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -12208,12 +12073,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -12405,12 +12264,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -12679,24 +12532,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -12915,14 +12766,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -13099,14 +12949,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -13613,24 +13462,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -14110,13 +13957,15 @@
             "update_type": "contradicted",
             "preference": "Interested in mystical or esoteric spirituality topics.",
             "formatted_timestamp": "07:35, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "616443"
           },
           {
             "update_type": "contradicted",
             "preference": "Interested in Christian faith content and identity-centered expressions of Christianity.",
             "formatted_timestamp": "11:43, 04/03/2026",
-            "source_app": "Facebook"
+            "source_app": "Facebook",
+            "source_object_id": "608606"
           },
           {
             "update_type": "faded",
@@ -14126,13 +13975,15 @@
             "update_type": "contradicted",
             "preference": "Interested in mystical or esoteric spirituality topics.",
             "formatted_timestamp": "07:35, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "616443"
           },
           {
             "update_type": "contradicted",
             "preference": "Interested in Christian faith content and identity-centered expressions of Christianity.",
             "formatted_timestamp": "11:43, 04/03/2026",
-            "source_app": "Facebook"
+            "source_app": "Facebook",
+            "source_object_id": "608606"
           }
         ],
         "time_horizon": "long_term"
@@ -14251,14 +14102,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -14585,14 +14435,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -14679,14 +14528,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -15064,43 +14912,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in Tom Brady-focused sports content.",
-        "category": "player-specific sports following",
-        "confidence_score_init": 0.64,
-        "confidence_cross_referenced": 115.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -15189,43 +15000,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in Tom Brady-focused sports content.",
-        "category": "player-specific sports following",
-        "confidence_score_init": 0.64,
-        "confidence_cross_referenced": 115.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -15417,12 +15191,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -15730,14 +15498,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -15835,14 +15602,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -16068,14 +15834,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -16189,14 +15954,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -16270,14 +16034,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -16464,14 +16227,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -16626,41 +16388,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in Tom Brady-focused sports content.",
-        "category": "player-specific sports following",
-        "confidence_score_init": 0.64,
-        "confidence_cross_referenced": 115.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -16934,12 +16661,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -17681,14 +17402,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -18107,14 +17827,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -20059,12 +19778,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -20148,12 +19861,6 @@
             "update_type": "similar",
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
             "source_app": ""
           }
         ],
@@ -20421,24 +20128,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -20991,24 +20696,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -21179,24 +20882,22 @@
         ],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -21997,24 +21698,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -22202,115 +21901,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "reinforced",
@@ -22323,115 +22041,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           }
         ],
         "time_horizon": "long_term"
@@ -22663,115 +22400,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "reinforced",
@@ -22791,115 +22547,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           }
         ],
         "time_horizon": "long_term"
@@ -23052,14 +22827,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -23316,14 +23090,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -23597,24 +23370,22 @@
         "hidden_persona_labels": [],
         "update_history": [
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys short-form funny video content.",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "465618"
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Enjoys lighthearted comedic social media content, especially funny clips or memes.",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "Instagram",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "positive",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "202911"
           },
           {
             "update_type": "similar",
@@ -23929,12 +23700,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -24080,12 +23845,6 @@
             "preference": "Not interested in NFL fandom content.",
             "formatted_timestamp": "20:49, 04/06/2026",
             "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
           }
         ],
         "time_horizon": "long_term"
@@ -24157,14 +23916,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -25474,14 +25232,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",

@@ -1159,14 +1159,23 @@ Respond with ONLY a single JSON array of modifications, sorted by `ts` ascending
 
 
 def contradiction_pair_check_prompt(pairs: list[dict]) -> str:
-    """Build a batched LLM prompt that confirms whether candidate pairs of
-    (positive_canonical, negative_canonical) are truly semantically
-    opposite stances on the same topic.
+    """Build a batched LLM prompt that classifies each pair as
+    contradiction / ambivalence / unrelated.
 
-    This filters out false positives like "interested in boxing technique"
-    (positive) vs "dislikes boxing commentary" (negative) — technically
-    related but not contradictory. Only pairs where the positive and
-    negative describe the SAME topic with opposite stance return True.
+    Three-way output:
+      - "contradiction"  — same topic AND same granularity, opposite stance
+                           (e.g., "Interested in NFL" vs "Not interested in
+                           NFL"). Downstream: triggers dominance + precedent
+                           gates; may drop the weaker canonical.
+      - "ambivalence"    — same topic but DIFFERENT granularities
+                           (e.g., "Interested in NFL" vs "Not interested in
+                           NFL training-camp team-specific debate content").
+                           Both sides reflect REAL user stances at different
+                           levels of specificity — they coexist, neither
+                           is noise. Downstream: both survive, tagged
+                           `ambivalent` in update_history.
+      - "unrelated"      — topic mismatch, non-opposing stances, or
+                           related-but-non-contradictory. Skip entirely.
     """
     pair_lines = []
     for i, p in enumerate(pairs):
@@ -1179,14 +1188,36 @@ def contradiction_pair_check_prompt(pairs: list[dict]) -> str:
     pair_block = "\n".join(pair_lines)
 
     return f"""\
-You are labeling whether each pair is a TRUE stance contradiction.
+You are classifying each (positive, negative) canonical pair.
 
-A pair is contradictory iff BOTH sides are about the SAME topic AND the
-stances are opposite (interested-in-X vs. not-interested-in-X, enjoys-X
-vs. dislikes-X). Different granularities are NOT contradictions
-(e.g., "interested in boxing technique" vs "dislikes boxing commentary"
-— both positive on boxing-adjacent but with different focuses, NOT
-contradictory).
+Three labels — pick exactly one per pair:
+
+- **contradiction**: the positive and negative describe the SAME TOPIC at
+  the SAME GRANULARITY with OPPOSITE stances. Examples:
+    - "Interested in NFL football content" vs "Not interested in NFL football content"
+    - "Enjoys boxing" vs "Dislikes boxing"
+    - "Interested in MMA" vs "Not interested in MMA"
+  The negation is direct and unqualified — you could turn one into the
+  other by just flipping the polarity word.
+
+- **ambivalence**: same TOPIC but DIFFERENT GRANULARITIES. These are
+  plausibly both true stances — the user engages positively at one
+  level and negatively at another. Examples:
+    - "Interested in NFL football content" (general)
+      vs "Not interested in NFL training-camp and team-specific content" (specific)
+    - "Interested in professional boxing" (general sport)
+      vs "Not interested in boxing commentary shows" (commentary narrower)
+    - "Enjoys short-form comedy" (general)
+      vs "Not interested in generic viral short-form trends" (specific slice)
+  The two items aren't direct negations — the negative restricts by
+  a modifier (training-camp, commentary, viral-trend, team-specific, etc.)
+  that the positive lacks.
+
+- **unrelated**: different topics, or the same topic with compatible
+  stances, or a tangential relationship that doesn't qualify as either
+  of the above. Example: "Interested in boxing technique" vs "Dislikes
+  boxing commentary" — both about boxing-adjacent things but not stance
+  negations OR different-granularity conflicts.
 
 ## Pairs to label
 {pair_block}
@@ -1196,7 +1227,7 @@ Respond with ONLY a JSON array in the SAME ORDER as input:
 
 ```json
 [
-  {{"id": 0, "is_contradiction": true | false, "reason": "<=15 words"}},
+  {{"id": 0, "classification": "contradiction" | "ambivalence" | "unrelated", "reason": "<=15 words"}},
   ...
 ]
 ```"""
