@@ -8,10 +8,10 @@
 
 Recent additions on top of the base pipeline, roughly in dependency order:
 
-- **R7 — Ad injection (Step 13c):** ~6% of commerce-adjacent events become sponsored ads with ad-shaped content (`ad_metadata`). New `AD_ACTIONS` (`clicked_ad`, `hidden_ad`, `dismissed_ad`) on IG/FB/Threads; Chatbot never carries them. Invariant: `event.is_ad ⇔ action ∈ AD_ACTIONS`.
-- **R6 — Time horizon + stop conditions (Step 3.5):** every surviving canonical carries `time_horizon ∈ {"short_term", "long_term"}`. Short-term (bounded intents — travel, event prep, purchase, how-to, medical) uses `XREF_THRESHOLD_SHORT_TERM = 3.0` instead of the 20/50 long-term bars. An LLM pass emits structured `stop_condition: {type, description, expected_stop_ts}`. LLM can demote short→long but not promote long→short.
-- **R1 — Cross-polarity contradiction causality gate (Step 5b):** the positive/negative cross-ref pipelines are now cross-checked. Pos/neg canonical pairs sharing ≥2 hashtags are LLM-confirmed as semantically opposite, then must pass a temporal-precedent rule: the later stance survives only with ≥ `MIN_STANCE_FLIP_PRIOR` same-polarity rows before the first opposing row. Failed gates drop the later canonical; `update_history` entries carry `resolution: "suppressed_insufficient_precedent"` or `"stance_shift_with_precedent"`. Fixes the 115-boxing bug (stance flip 1h apart with no prior evidence).
-- **R5 — Per-session geolocation + calendar modification stream (Steps 11b, 11c):** each event carries `event_location` shared across all rows in its session. `backend/{uid}/calendar.json` holds an add/update/remove stream for synthetic calendar events. `BackendQuery.get_calendar_state(T)` folds modifications with `ts ≤ T` into the live calendar state at time T. Home-only + up to 2 travel cities cap for an 8-day window.
+- **R7 — Ad injection (Step 20):** ~6% of commerce-adjacent events become sponsored ads with ad-shaped content (`ad_metadata`). New `AD_ACTIONS` (`clicked_ad`, `hidden_ad`, `dismissed_ad`) on IG/FB/Threads; Chatbot never carries them. Invariant: `event.is_ad ⇔ action ∈ AD_ACTIONS`.
+- **R6 — Time horizon + stop conditions (Step 4):** every surviving canonical carries `time_horizon ∈ {"short_term", "long_term"}`. Short-term (bounded intents — travel, event prep, purchase, how-to, medical) uses `XREF_THRESHOLD_SHORT_TERM = 3.0` instead of the 20/50 long-term bars. An LLM pass emits structured `stop_condition: {type, description, expected_stop_ts}`. LLM can demote short→long but not promote long→short.
+- **R1 — Cross-polarity contradiction causality gate (Step 7):** the positive/negative cross-ref pipelines are now cross-checked. Pos/neg canonical pairs sharing ≥2 hashtags are LLM-confirmed as semantically opposite, then must pass a temporal-precedent rule: the later stance survives only with ≥ `MIN_STANCE_FLIP_PRIOR` same-polarity rows before the first opposing row. Failed gates drop the later canonical; `update_history` entries carry `resolution: "suppressed_insufficient_precedent"` or `"stance_shift_with_precedent"`. Fixes the 115-boxing bug (stance flip 1h apart with no prior evidence).
+- **R5 — Per-session geolocation + calendar modification stream (Steps 15, 16):** each event carries `event_location` shared across all rows in its session. `backend/{uid}/calendar.json` holds an add/update/remove stream for synthetic calendar events. `BackendQuery.get_calendar_state(T)` folds modifications with `ts ≤ T` into the live calendar state at time T. Home-only + up to 2 travel cities cap for an 8-day window.
 - **R8 — Drop split / over_personalization_irrelevant:** the data-gen output is pure history. Eval picks its own test moments dynamically by cutting the timeline — no pre-flagged train/test partition.
 - **R9 — Benchmark CSV + contradiction-aware GT:** `build_benchmark` additionally emits `benchmark/{uid}/benchmark.csv` for HuggingFace publication. `BackendQuery.get_preferences(..., include_superseded=False)` filters canonicals superseded at T (via the `"stance_shift_with_precedent"` update_history entry).
 
@@ -61,31 +61,31 @@ Three interaction pillars:
 ```
 Input CSV (hashtag interactions per user)
   |
-  +- Step 1:  Infer atomic personas           [LLM]      -- 1-3 per row, init 0.0-1.0
-  +- Step 2:  Promote implicit negatives       [Algo+LLM] -- net-sentiment gate
-  +- Step 3:  Cross-reference & filter         [Algo+LLM] -- cross_ref scores (uncapped)
-  +- Step 3.5: Classify horizons + stops        [LLM]      -- short_term confirmation + stop_condition
-  +- Step 4:  Temporal contradiction graph     [LLM]      -- timeline grouping
-  +- Step 5:  Build update histories           [Algo+LLM] -- reinforced/faded/evolved
-  +- Step 6:  Generate user profile            [LLM]      -- demographics + Big Five
-  +- Step 7:  Infer hidden personas            [Algo+LLM] -- cross-row hashtag clustering
-  +- Step 7b: Infer MBTI                       [LLM]      -- type + per-dimension probabilities
-  +- Step 8:  Generate per-app sub-personas    [LLM]      -- 4 AppPersonas
-  +- Step 9:  Build sessions                   [Algo]     -- temporal grouping
-  +- Step 10: Route preferences to apps        [LLM+Algo] -- ~40/20/20/20 distribution
-  +- Step 11: Assign rows to apps              [Algo]     -- session majority vote + 8% noise
-  +- Step 11b: Assign session locations         [LLM]      -- home + up to 2 travel cities
-  +- Step 11c: Generate calendar modifications  [LLM]      -- scattered add/update/remove stream
-  +- Step 12: Generate interaction formats     [Algo+LLM] -- per-user perturbed weights
-  +- Step 13: Generate chatbot conversations   [LLM]      -- multi-turn, ask-to-forget
-  +- Step 13b: Generate synthetic content      [LLM]      -- text / image / short_video per event
-  +- Step 13c: Inject ad events                [LLM]      -- ~6% of commerce-adjacent events become ads
-  +- Step 14: Annotate stereotype marks        [LLM]      -- demographics-only
-  +- (Step 15 removed in R8 — eval picks test moments from the full timeline)
-  +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user + calendar.json
+  +- Step 1:  Infer atomic personas             [LLM]      -- 1-3 per row, init 0.0-1.0
+  +- Step 2:  Promote implicit negatives        [Algo+LLM] -- net-sentiment gate
+  +- Step 3:  Cross-reference & filter          [Algo+LLM] -- cross_ref scores (uncapped)
+  +- Step 4:  Classify horizons + stops         [LLM]      -- short_term confirmation + stop_condition
+  +- Step 5:  Temporal contradiction graph      [LLM]      -- timeline grouping
+  +- Step 6:  Build update histories            [Algo+LLM] -- reinforced/faded/evolved
+  +- Step 7:  Resolve cross-polarity contradicts[Algo+LLM] -- temporal-precedent stance-flip gate
+  +- Step 8:  Generate user profile             [LLM]      -- demographics + Big Five
+  +- Step 9:  Infer hidden personas             [Algo+LLM] -- cross-row hashtag clustering
+  +- Step 10: Infer MBTI                        [LLM]      -- type + per-dimension probabilities
+  +- Step 11: Generate per-app sub-personas     [LLM]      -- 4 AppPersonas
+  +- Step 12: Build sessions                    [Algo]     -- temporal grouping (5-sec gap)
+  +- Step 13: Route preferences to apps         [LLM+Algo] -- mini-tier; ~40/20/20/20 distribution
+  +- Step 14: Assign rows to apps               [Algo]     -- session majority vote + 8% noise
+  +- Step 15: Assign session locations          [LLM]      -- mini-tier; home + up to 2 travel cities
+  +- Step 16: Generate calendar modifications   [LLM]      -- mini-tier; scattered add/update/remove
+  +- Step 17: Generate interaction formats      [Algo+LLM] -- per-user perturbed weights
+  +- Step 18: Generate chatbot conversations    [LLM]      -- multi-turn, ask-to-forget
+  +- Step 19: Generate synthetic content        [LLM]      -- text / image / short_video per event
+  +- Step 20: Inject ad events                  [LLM]      -- ~6% of commerce-adjacent events become ads
+  +- Step 21: Annotate stereotype marks         [LLM]      -- demographics-only
+  +- Step 22: Save to backend                   [Algo]     -- 5 JSON files per user + calendar.json
 ```
 
-**Model tiers:** the pipeline uses two LLM clients. The **flagship** model (`gpt-5-chat`) handles reasoning-heavy steps — 1 (atomic persona), 3-6 (cross-ref, temporal, histories, profile), 7b/7c (hidden personas + summary), 7b-MBTI, 8 (app personas), 13 (chatbot conversations), 15 (train/test split). The **mini** model (`gpt-5.4-mini`, configurable via `--mini_model`) handles mechanical steps — 7a (intimate-hashtag detection), 10 (app routing), 12 (interaction formats), 13b (synthetic content), 14 (stereotype marks). Mini falls back to flagship when no mini client is configured.
+**Model tiers:** the pipeline uses two LLM clients. The **flagship** model (`gpt-5-chat`) handles reasoning-heavy steps — 1 (atomic persona), 3/5/6 (cross-ref, temporal, histories), 7 (cross-polarity gate), 8 (profile), 9 (hidden personas), 10 (MBTI), 11 (app personas), 18 (chatbot conversations). The **mini** model (`gpt-5.4-mini`, configurable via `--mini_model`) handles mechanical and stylistic steps — 4 (horizon refinement), 9a (intimate-hashtag detection), 13 (app routing), 15 (geolocation), 16 (calendar modifications), 17 (interaction formats), 19 (synthetic content), 20 (ad content), 21 (stereotype marks). Mini falls back to flagship when no mini client is configured.
 
 ---
 
@@ -190,7 +190,7 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 **Negative cross-referencing** runs the same pipeline independently (within negatives only). Differences: canonicals with only implicit evidence need >= 10 distinct source rows to survive; the bottom-20% step is skipped; the per-canonical xref threshold in step 7 still applies (same recency window as positives).
 
-### Step 3.5 — Time Horizon + Stop Conditions
+### Step 4 — Time Horizon + Stop Conditions
 
 With the observation window being short (~8 days), time horizons must be inferred from category + span fraction + row count rather than raw span in days.
 
@@ -198,7 +198,7 @@ With the observation window being short (~8 days), time horizons must be inferre
 
 Short-term canonicals use `XREF_THRESHOLD_SHORT_TERM = 3.0` instead of the long-term 20/50 interpolation, letting legitimate one-off intents (hotel recon, how-to search, upcoming event prep) survive despite little corroborating evidence.
 
-**LLM refinement (Step 3.5 — new step):** one batched mini-tier call per ~20 rule-labeled short-term candidates. The LLM may:
+**LLM refinement (Step 4 — new step):** one batched mini-tier call per ~20 rule-labeled short-term candidates. The LLM may:
 - **Confirm** `short_term` and emit a structured `stop_condition`:
   ```json
   {"type": "event"|"date"|"mastery"|"relocation",
@@ -217,7 +217,7 @@ The prompt explicitly tells the LLM that in an 8-day window, "long_term" means "
 
 **Step 4 — Contradiction Graph:** Contradictory preferences grouped by topic with chronological timelines showing stance shifts.
 
-**Step 5b — Cross-Polarity Contradiction Gate (R1 fix):** Positive and negative canonicals can survive their independent cross-ref pipelines with no awareness of each other. Step 5b walks the Cartesian product of surviving (positive, negative) canonicals, filtering to pairs sharing ≥ `HASHTAG_OVERLAP_MIN = 2` source hashtags. An LLM call (batched, mini-tier) confirms which pairs are semantically opposite stances on the same topic (filters out "interested in technique" vs. "dislikes commentary" — related but not contradictory).
+**Step 7 — Cross-Polarity Contradiction Gate (R1 fix):** Positive and negative canonicals can survive their independent cross-ref pipelines with no awareness of each other. Step 7 walks the Cartesian product of surviving (positive, negative) canonicals, filtering to pairs sharing ≥ `HASHTAG_OVERLAP_MIN = 2` source hashtags. An LLM call (batched, mini-tier) confirms which pairs are semantically opposite stances on the same topic (filters out "interested in technique" vs. "dislikes commentary" — related but not contradictory).
 
 For each confirmed pair, the **temporal-precedent rule** decides which stance survives: the LATER-emerging stance is kept only if `same_polarity_rows_before_opposite_first_row >= MIN_STANCE_FLIP_PRIOR` (3 for long_term, `MIN_STANCE_FLIP_PRIOR_SHORT = 1` for short_term). When the gate FAILS, the later canonical is demoted (dropped from `cross_referenced_*`) and the survivor gets a `"contradicted"` update_history entry with `resolution: "suppressed_insufficient_precedent"`. When the gate PASSES (Case B), both survive and BOTH carry mutual `"contradicted"` entries with `resolution: "stance_shift_with_precedent"`, keeping the legitimate stance shift visible.
 
@@ -329,7 +329,7 @@ Four `AppPersona` objects per user:
 
 ---
 
-## 11b. Step 11b — Per-Session Geolocation
+## Step 15 — Per-Session Geolocation
 
 Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_SECONDS`, so locality comes for free. One batched mini-tier LLM call per user takes the session manifest + user profile and returns `{session_idx → event_location}`.
 
@@ -345,7 +345,7 @@ Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_S
 - Travel appears as a contiguous 2–4-day block; no scattered travel days.
 - No teleporting: sessions within 6h share a city unless transit hashtags justify the shift.
 
-## 11c. Step 11c — Synthetic Calendar Modification Stream
+## Step 16 — Synthetic Calendar Modification Stream
 
 The calendar is not static. Instead, the user performs CRUD modifications (add / update / remove) on their calendar at scattered timestamps, and the calendar state at any time T is the result of folding modifications with ts ≤ T. This makes the calendar naturally time-maskable for eval.
 
@@ -365,7 +365,7 @@ Persisted to `backend/{uid}/calendar.json`:
 ]}
 ```
 
-**Calibration** for an 8-day window: one LLM call per user producing 8–15 modifications. Target split 65% added / 20% updated / 15% removed (`CALENDAR_MOD_WEIGHTS`). Entries are ~40% preference-linked, ~60% plausible-noise (dentist, haircut, sprint review) — NOT limited to social-media hashtags. Locations stay consistent with Step 11b (home-day entries are local; travel-day entries are in the travel city).
+**Calibration** for an 8-day window: one LLM call per user producing 8–15 modifications. Target split 65% added / 20% updated / 15% removed (`CALENDAR_MOD_WEIGHTS`). Entries are ~40% preference-linked, ~60% plausible-noise (dentist, haircut, sprint review) — NOT limited to social-media hashtags. Locations stay consistent with Step 15 (home-day entries are local; travel-day entries are in the travel city).
 
 HTML rendering interleaves modification cards into the main event timeline at their `ts`, labeled with action verb + title + scheduled date.
 
@@ -408,7 +408,7 @@ Every chatbot event gets a multi-turn conversation embedding ALL of that event's
 
 ---
 
-## 13b. Step 13b — Synthetic Per-Event Content
+## Step 19 — Synthetic Per-Event Content
 
 Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `short_video`) plus a `content` payload describing the post the user actually saw. Chatbot events skip this step (their `conversation` already serves as the content). Implicit-negative stub events stay content-less and continue rendering as greyscale timeline markers.
 
@@ -421,7 +421,7 @@ Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `sho
 
 **Per-event resolution:** `content_type` is deterministic from the action when the hint is unambiguous; otherwise sampled from the user's posterior mix with an `(user_id, oid)`-seeded RNG, so different events with the same ambiguous action land on different content types.
 
-**Action pre-sampling:** Step 13b also pre-samples the per-event action + itype (consuming `event_rng` in the same order `save_to_backend` would) so the final displayed action matches the content_type it chose. `save_to_backend` then reads actions from `self._action_by_oid` rather than re-sampling.
+**Action pre-sampling:** Step 19 also pre-samples the per-event action + itype (consuming `event_rng` in the same order `save_to_backend` would) so the final displayed action matches the content_type it chose. `save_to_backend` then reads actions from `self._action_by_oid` rather than re-sampling.
 
 **Content schemas:**
 - `text` → `{ text }` (30–180 words, platform voice).
@@ -432,9 +432,9 @@ Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `sho
 
 ---
 
-## 13c. Step 13c — Inject Ad Events
+## Step 20 — Inject Ad Events
 
-After 13b generates organic content, a small fraction of commerce-adjacent events is converted to sponsored ads. This materializes the `AD_ACTIONS` (`clicked_ad`, `hidden_ad`, `dismissed_ad`) with ad-shaped content so downstream evaluation can test ad-interaction signals.
+After Step 19 generates organic content, a small fraction of commerce-adjacent events is converted to sponsored ads. This materializes the `AD_ACTIONS` (`clicked_ad`, `hidden_ad`, `dismissed_ad`) with ad-shaped content so downstream evaluation can test ad-interaction signals.
 
 **Eligibility:** social-app events (Instagram / Facebook / Threads — never Chatbot) whose hashtags map into `HASHTAG_TO_AD_CATEGORY` (food, apparel, electronics, travel, finance, fitness/wellness, education, home, auto, entertainment, services). Implicit_negative stubs and events with no surviving atoms are skipped.
 
@@ -466,13 +466,13 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 
 ---
 
-## 15. Step 16 — Save (no test-split label)
+## Step 22 — Save (no test-split label)
 
 As of R8, **data-gen no longer produces a train/test split.** The eval harness (see EVAL.md) picks test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — so pre-flagging a held-out subset in the emitted data was redundant and limiting. Both `split` and `over_personalization_irrelevant` have been dropped from per-preference output; `build_test_split` has been removed from the pipeline.
 
 Eval tasks now select test moments by task-specific criteria (e.g., @ai directive timestamps for E2, day tertiles for E3/E4, short-term canonicals for E5). The inferrability gate that used to live in data-gen is available to the eval harness at benchmark-build time if any task needs it — but it's no longer a pipeline step.
 
-**Step 16:**
+**Step 22:**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
 - `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
 - `hidden_persona_labels` are derived by **backward lookup** (row → cluster via `evidence_oids`), so causality is guaranteed by construction: a preference is labeled iff its own source row is part of the cluster's evidence. No separate availability gate needed.
@@ -489,8 +489,8 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | Per-user action weights | Step 12 | `noise_strength = 0.6`, seed=user_id | Lognormal perturbation |
 | Session reassignment | Step 11 | `NOISE_REASSIGN_PROBABILITY = 0.08` | 8% sessions re-routed |
 | Conversation type | Step 13 | `CHATBOT_CONVERSATION_TYPES` weights | Per-user conversation mix |
-| Per-user content mix | Step 13b | `CONTENT_MIX_NOISE_SIGMA = 0.3`, seed=(user_id, app) | Lognormal perturbation of the posterior mix |
-| Per-event content type | Step 13b | seed=(user_id, oid) | Ambiguous-action events sample from user mix |
+| Per-user content mix | Step 19 | `CONTENT_MIX_NOISE_SIGMA = 0.3`, seed=(user_id, app) | Lognormal perturbation of the posterior mix |
+| Per-event content type | Step 19 | seed=(user_id, oid) | Ambiguous-action events sample from user mix |
 | Ask-to-forget / don't-personalize | Step 13 | `ASK_TO_FORGET_FRACTION = 0.20` | 20% of chatbot events split 50/50 |
 | Correction (negatives only) | Step 13 | `CORRECTION_FRACTION_NEGATIVE = 0.50` | 50% of remaining negatives |
 
@@ -526,7 +526,7 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `MAX_REINFORCED_ENTRIES` | 5 | Max recurrence samples |
 | `ASK_TO_FORGET_FRACTION` | 0.20 | Share of chatbot events with ask-to-forget / don't-personalize variants |
 | `CORRECTION_FRACTION_NEGATIVE` | 0.50 | Share of remaining negatives that get the correction variant |
-| `AD_INJECTION_RATE` | 0.06 | Fraction of commerce-adjacent events converted to ads in Step 13c |
+| `AD_INJECTION_RATE` | 0.06 | Fraction of commerce-adjacent events converted to ads in Step 20 |
 | `AD_POLARITY_WEIGHTS` | `{clicked_ad: 0.70, dismissed_ad: 0.20, hidden_ad: 0.10}` | Ad-event polarity mix |
 | `SHORT_TERM_MAX_SPAN_FRAC` | 0.35 | Span/obs_window cutoff for short-term horizon eligibility |
 | `SHORT_TERM_MAX_ROWS` | 8 | Row-count cutoff for short-term horizon eligibility |
