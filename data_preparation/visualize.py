@@ -281,6 +281,11 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.platform.p-Chatbot {{ background: #C8956C; color: #fff; }}
   .badge.action {{ background: #E8E8ED; color: #48484A; font-weight: 500; }}
   .badge.hidden-persona {{ background: #EDE9FE; color: #6D28D9; font-weight: 500; }}
+  .badge.sponsored {{ background: #FFF7ED; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #FED7AA; }}
+  .ad-meta {{ margin-top: 6px; padding: 6px 10px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 6px; font-size: 11px; color: #7C2D12; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }}
+  .ad-meta .ad-sponsor {{ font-weight: 600; }}
+  .ad-meta .ad-cta {{ background: #9A3412; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }}
+  .event-card.is-ad .content-block {{ border-color: #FED7AA; background: #FFFBF5; }}
 
   .hidden-section {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 40px; box-shadow: var(--shadow); }}
   .hidden-section h2 {{ font-size: 18px; font-weight: 600; margin-bottom: 14px; letter-spacing: -0.2px; }}
@@ -503,6 +508,17 @@ function renderContentMeta(meta) {{
   return chips ? `<div class="c-meta">${{chips}}</div>` : '';
 }}
 
+function renderAdMeta(content) {{
+  if (!content || typeof content !== 'object') return '';
+  const md = content.ad_metadata;
+  if (!md || typeof md !== 'object') return '';
+  const sponsor = md.sponsor_name ? `<span class="ad-sponsor">${{escapeHtml(md.sponsor_name)}}</span>` : '';
+  const cat = md.ad_category ? `<span>${{escapeHtml(md.ad_category.replace(/_/g, ' '))}}</span>` : '';
+  const cta = md.cta_label ? `<span class="ad-cta">${{escapeHtml(md.cta_label)}}</span>` : '';
+  const dest = md.cta_destination_kind ? `<span style="opacity:0.7">${{escapeHtml(md.cta_destination_kind.replace(/_/g, ' '))}}</span>` : '';
+  return `<div class="ad-meta">${{sponsor}}${{cat}}${{cta}}${{dest}}</div>`;
+}}
+
 function renderContent(ev) {{
   const ctype = ev.content_type;
   const content = ev.content;
@@ -510,9 +526,10 @@ function renderContent(ev) {{
 
   const typeLabel = ctype.replace(/_/g, ' ');
   const header = `<div class="c-type c-${{ctype}}">${{typeLabel}}</div>`;
+  const adMetaHtml = renderAdMeta(content);
 
   if (ctype === 'text') {{
-    return `<div class="content-block">${{header}}<div class="c-text-body">${{escapeHtml(content.text || '')}}</div></div>`;
+    return `<div class="content-block">${{header}}<div class="c-text-body">${{escapeHtml(content.text || '')}}</div>${{adMetaHtml}}</div>`;
   }}
 
   if (ctype === 'image') {{
@@ -528,7 +545,7 @@ function renderContent(ev) {{
     const metaWrapped = metaBlock
       ? `<details><summary>metadata</summary>${{metaBlock}}</details>`
       : '';
-    return `<div class="content-block">${{header}}${{caption}}${{desc}}${{partsBlock}}${{metaWrapped}}</div>`;
+    return `<div class="content-block">${{header}}${{caption}}${{desc}}${{partsBlock}}${{metaWrapped}}${{adMetaHtml}}</div>`;
   }}
 
   if (ctype === 'short_video') {{
@@ -549,7 +566,7 @@ function renderContent(ev) {{
     const metaWrapped = metaBlock
       ? `<details><summary>metadata</summary>${{metaBlock}}</details>`
       : '';
-    return `<div class="content-block">${{header}}${{title}}${{caption}}${{desc}}${{framesBlock}}${{transcript}}${{metaWrapped}}</div>`;
+    return `<div class="content-block">${{header}}${{title}}${{caption}}${{desc}}${{framesBlock}}${{transcript}}${{metaWrapped}}${{adMetaHtml}}</div>`;
   }}
 
   return '';
@@ -587,8 +604,9 @@ if (eventsData.length === 0) {{
     const itype = ev.source_interaction_type || '';
     const isImplicitNeg = itype === 'implicit_negative';
 
+    const isAd = !!ev.is_ad;
     const card = document.createElement('div');
-    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}`;
+    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}`;
 
     // Event header
     let headerHtml = `
@@ -602,6 +620,7 @@ if (eventsData.length === 0) {{
           <span class="badge platform p-${{app}}">${{app}}</span>
           <span class="badge interaction-type ${{itype}}">${{itype.replace(/_/g, ' ')}}</span>
           ${{fmt.action_label ? `<span class="badge action">${{fmt.action_label}}</span>` : ''}}
+          ${{isAd ? `<span class="badge sponsored">Sponsored</span>` : ''}}
         </div>
         ${{hashtags.length ? `<div class="hashtags">${{hashtags.join('  ')}}</div>` : ''}}
       </div>

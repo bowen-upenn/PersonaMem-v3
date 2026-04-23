@@ -450,6 +450,7 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "reposted", "label": "Reposted", "weight": 1.0},
             {"action": "at_ai_recommend_more", "label": "@ai comment: asked the in-feed assistant for MORE like this", "weight": 12.2},
             {"action": "at_ai_focus_topic", "label": "@ai comment: asked the in-feed assistant to focus on this topic", "weight": 12.2},
+            {"action": "clicked_ad", "label": "Tapped through on a sponsored post", "weight": 1.5},
         ],
         "implicit_positive": [
             {"action": "viewed_reel_75", "label": "Viewed more than 75% of the reel", "weight": 40.0},
@@ -467,6 +468,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "at_ai_stop_recommending", "label": "@ai comment: asked the in-feed assistant to STOP showing this", "weight": 1.7},
             {"action": "at_ai_not_interested", "label": "@ai comment: told the in-feed assistant they're not interested right now", "weight": 1.7},
             {"action": "at_ai_feels_off", "label": "@ai comment: told the in-feed assistant this feels off-base", "weight": 1.7},
+            {"action": "hidden_ad", "label": "Tapped 'Hide this ad'", "weight": 2.5},
+            {"action": "dismissed_ad", "label": "Dismissed the ad without engagement", "weight": 1.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -491,6 +494,7 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "at_ai_recommend_more", "label": "@ai comment: asked Meta AI in the comments for MORE like this", "weight": 14.4},
             {"action": "at_ai_focus_topic", "label": "@ai comment: asked Meta AI in the comments to focus on this topic", "weight": 14.4},
             {"action": "rsvp_event", "label": "Marked Interested / Going on an event", "weight": 0.5},
+            {"action": "clicked_ad", "label": "Tapped through on a sponsored post", "weight": 1.5},
         ],
         "implicit_positive": [
             {"action": "lingered_on_post", "label": "Stayed on a post for more than 5 seconds", "weight": 40.0},
@@ -507,6 +511,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "at_ai_stop_recommending", "label": "@ai comment: asked Meta AI in the comments to STOP showing this", "weight": 2.3},
             {"action": "at_ai_not_interested", "label": "@ai comment: told Meta AI in the comments they're not interested", "weight": 2.3},
             {"action": "at_ai_feels_off", "label": "@ai comment: told Meta AI in the comments this feels off-base", "weight": 2.3},
+            {"action": "hidden_ad", "label": "Tapped 'Hide this ad'", "weight": 2.5},
+            {"action": "dismissed_ad", "label": "Dismissed the ad without engagement", "weight": 1.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -525,6 +531,7 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "shared_externally", "label": "Shared externally (copy link / DM)", "weight": 2.0},
             {"action": "at_ai_recommend_more", "label": "@ai reply: asked the in-feed assistant for MORE like this", "weight": 12.4},
             {"action": "at_ai_focus_topic", "label": "@ai reply: asked the in-feed assistant to focus on this topic", "weight": 12.4},
+            {"action": "clicked_ad", "label": "Tapped through on a sponsored post", "weight": 1.5},
         ],
         "implicit_positive": [
             {"action": "lingered_on_thread", "label": "Stayed on the thread for more than 5 seconds", "weight": 40.0},
@@ -539,6 +546,8 @@ PLATFORM_INTERACTION_FORMATS: dict[str, dict[str, list[dict]]] = {
             {"action": "at_ai_stop_recommending", "label": "@ai reply: asked the in-feed assistant to STOP showing this", "weight": 1.5},
             {"action": "at_ai_not_interested", "label": "@ai reply: told the in-feed assistant they're not interested", "weight": 1.5},
             {"action": "at_ai_feels_off", "label": "@ai reply: told the in-feed assistant this feels off-base", "weight": 1.5},
+            {"action": "hidden_ad", "label": "Tapped 'Hide this ad'", "weight": 2.5},
+            {"action": "dismissed_ad", "label": "Dismissed the ad without engagement", "weight": 1.0},
             {"action": "reported", "label": "Reported", "weight": 0.5},
         ],
         "implicit_negative": [
@@ -645,6 +654,12 @@ ACTION_CONTENT_HINTS: dict[str, dict[str, str]] = {
     },
 }
 
+# Ad actions are added to every social app's ACTION_CONTENT_HINTS as
+# "ambiguous" (falls through to per-user mix sampling). The final content_type
+# on an ad is decided by `generate_synthetic_content` (step 13b) BEFORE
+# `inject_ad_events` runs — 13c reuses whatever content_type was already
+# assigned to preserve per-user mix consistency. No hint needed here.
+
 
 def _perturb_weights(base_weights: list[float], rng: random.Random, noise_strength: float = 0.6) -> list[float]:
     """Perturb a list of action weights with per-user lognormal noise.
@@ -720,6 +735,114 @@ CHATBOT_TURN_ACTIONS: set[str] = {
     "asked_to_forget",
     "asked_not_to_personalize",
     "corrected_assumption",
+}
+
+# Ad interaction actions — social apps only. Events marked with one of these
+# carry `is_ad: true` at the event root and ad-shaped content (with
+# `ad_metadata.sponsor_name`, `cta_label`, etc.). The invariant is:
+#
+#   is_ad == true  ⇔  interaction_format.action ∈ AD_ACTIONS
+#
+# Ad events are synthesized by `inject_ad_events()` (Step 13c), which converts
+# a small fraction (~5-8%) of commerce-adjacent organic events into ads by
+# overriding their sampled action and regenerating their content block.
+AD_ACTIONS: set[str] = {
+    "clicked_ad",
+    "hidden_ad",
+    "dismissed_ad",
+}
+
+# Fixed vocabulary for ad content classification. Keep this list small and
+# stable — downstream consumers (including HuggingFace publication and LLM
+# judges) rely on it as a controlled category set.
+AD_CATEGORIES: list[str] = [
+    "food_and_beverage",
+    "apparel",
+    "electronics",
+    "travel",
+    "finance",
+    "fitness_wellness",
+    "education",
+    "home_garden",
+    "auto",
+    "entertainment",
+    "services",
+]
+
+# Small vocabulary for call-to-action labels. Verbatim list — the prompt
+# requires the LLM to pick one of these rather than invent new copy.
+AD_CTA_LABELS: list[str] = [
+    "Shop now",
+    "Learn more",
+    "Sign up",
+    "Download",
+    "Get quote",
+    "Book now",
+]
+
+AD_CTA_DESTINATION_KINDS: list[str] = [
+    "product_page",
+    "landing_page",
+    "app_store",
+    "signup_form",
+    "checkout",
+]
+
+# Map from lowercased hashtag token (without `#`) to ad_category. A hashtag
+# appearing on an event makes that event ad-eligible AND seeds the ad_category
+# of any ad we synthesize over it. Eligibility is permissive — any hashtag on
+# an event that hits this map suffices. The per-event sampling rate
+# (AD_INJECTION_RATE) controls actual ad density.
+HASHTAG_TO_AD_CATEGORY: dict[str, str] = {
+    # Food / beverage
+    "food": "food_and_beverage", "foodie": "food_and_beverage", "coffee": "food_and_beverage",
+    "recipe": "food_and_beverage", "cooking": "food_and_beverage", "baking": "food_and_beverage",
+    "wine": "food_and_beverage", "cocktails": "food_and_beverage", "brunch": "food_and_beverage",
+    "restaurant": "food_and_beverage", "specialtycoffee": "food_and_beverage",
+    # Apparel / beauty
+    "fashion": "apparel", "ootd": "apparel", "streetwear": "apparel", "style": "apparel",
+    "sneakers": "apparel", "makeup": "apparel", "skincare": "apparel", "beauty": "apparel",
+    # Electronics
+    "tech": "electronics", "gadgets": "electronics", "iphone": "electronics",
+    "android": "electronics", "laptop": "electronics", "camera": "electronics",
+    "photography": "electronics", "headphones": "electronics",
+    # Travel
+    "travel": "travel", "wanderlust": "travel", "vacation": "travel", "airbnb": "travel",
+    "hotel": "travel", "flights": "travel", "roadtrip": "travel",
+    # Finance
+    "finance": "finance", "investing": "finance", "crypto": "finance",
+    "personalfinance": "finance", "stocks": "finance",
+    # Fitness / wellness
+    "fitness": "fitness_wellness", "gym": "fitness_wellness", "running": "fitness_wellness",
+    "yoga": "fitness_wellness", "workout": "fitness_wellness", "wellness": "fitness_wellness",
+    "nutrition": "fitness_wellness", "bjj": "fitness_wellness",
+    # Education
+    "education": "education", "learning": "education", "course": "education",
+    "coding": "education", "programming": "education", "bootcamp": "education",
+    # Home / garden
+    "home": "home_garden", "homedecor": "home_garden", "interiordesign": "home_garden",
+    "gardening": "home_garden", "diy": "home_garden",
+    # Auto
+    "cars": "auto", "automotive": "auto", "tesla": "auto", "evs": "auto", "bmw": "auto",
+    # Entertainment
+    "movies": "entertainment", "film": "entertainment", "netflix": "entertainment",
+    "gaming": "entertainment", "music": "entertainment", "concert": "entertainment",
+    # Services
+    "smallbusiness": "services", "entrepreneur": "services", "consulting": "services",
+}
+
+# Fraction of ad-eligible events to convert into ad events. 0.06 = ~6% of
+# commerce-adjacent events become sponsored. The final overall ad density
+# across ALL events depends on how many are commerce-adjacent in the source
+# data (typically 15-30%), so the final ad share is ~1-2% of total events.
+AD_INJECTION_RATE: float = 0.06
+
+# Polarity split among ad events. 70% clicked_ad, 20% dismissed_ad,
+# 10% hidden_ad — aggressive rejection is rare relative to passive dismissal.
+AD_POLARITY_WEIGHTS: dict[str, float] = {
+    "clicked_ad": 0.70,
+    "dismissed_ad": 0.20,
+    "hidden_ad": 0.10,
 }
 
 
@@ -838,6 +961,12 @@ class PersonaAgent:
         # available so step 13b's content_type stays consistent with the
         # final displayed action. Empty when step 13b didn't run (legacy path).
         self._action_by_oid: dict[str, dict] = {}
+
+        # Ad events injected by `inject_ad_events()` (Step 13c). Members of
+        # this set are emitted with `is_ad: true` at the event root and carry
+        # ad-shaped content (with `ad_metadata` block). Non-members have
+        # `is_ad: false` by default and ordinary organic content.
+        self._ad_oids: set[str] = set()
 
         # Thread-safe set of known categories, built up during Step 1
         self._known_categories: set[str] = set()
@@ -3593,6 +3722,232 @@ class PersonaAgent:
                   f"{n_placeholder} placeholders.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
+    # Ad injection (Step 13c)
+    # ------------------------------------------------------------------
+
+    def inject_ad_events(self) -> None:
+        """Step 13c: Convert a small fraction of commerce-adjacent events into
+        sponsored-ad events with overridden action + ad-shaped content.
+
+        Runs AFTER `generate_synthetic_content` so organic content has already
+        been produced. For each event selected as an ad:
+          - action is swapped to an AD_ACTIONS entry (70% clicked_ad,
+            20% dismissed_ad, 10% hidden_ad)
+          - content is regenerated via one LLM call using the
+            `synthesize_ad_content_prompt` (includes `ad_metadata` with
+            sponsor_name, ad_category, cta_label, etc.)
+          - the event's oid is added to `self._ad_oids`, which save_to_backend
+            reads to emit `is_ad: true` at the event root.
+
+        Social apps only (Instagram / Facebook / Threads). Skipped entirely
+        for Chatbot events and implicit_negative stubs. Eligibility requires
+        at least one hashtag mapping into `HASHTAG_TO_AD_CATEGORY`.
+        """
+        if not self.user_profile:
+            return
+        client = self.llm_client_mini or self.llm_client
+        if client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping ad injection (no llm client).{utils.Colors.ENDC}")
+            return
+        if not self._action_by_oid:
+            return  # Step 13b didn't run — nothing to inject ads into
+
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        # Deterministic RNG per user — shares the same namespace as Step 13b
+        # but offset so ad selection is decoupled from content-type sampling.
+        try:
+            _ad_seed = int(str(self.user_id)) * 8831 + 419
+        except (ValueError, TypeError):
+            _ad_seed = abs(hash(str(self.user_id))) % (2**31)
+        rng = random.Random(_ad_seed)
+
+        # Build the eligibility roster — one pass over existing events.
+        from collections import defaultdict as _dd
+        atomics_by_oid: dict[str, list] = _dd(list)
+        for ap in self.atomic_personas:
+            atomics_by_oid[ap.source_object_id].append(ap)
+        for ap in self.negative_personas:
+            atomics_by_oid[ap.source_object_id].append(ap)
+
+        def _event_ad_category(oid: str, atoms: list) -> str:
+            """Return an ad_category if any hashtag on the event maps to one,
+            else empty string. Prefers the first-matching lowercased token."""
+            tags: list[str] = []
+            for ap in atoms:
+                tags.extend(ap.source_hashtags or [])
+            for tag in tags:
+                t = tag.lstrip("#").lower()
+                if t in HASHTAG_TO_AD_CATEGORY:
+                    return HASHTAG_TO_AD_CATEGORY[t]
+            return ""
+
+        eligible: list[tuple[str, str]] = []  # (oid, ad_category)
+        for oid, meta in self._action_by_oid.items():
+            app = self._row_app.get(oid) or ""
+            if app not in ("Instagram", "Facebook", "Threads"):
+                continue
+            if meta.get("itype") == "implicit_negative":
+                continue
+            atoms = atomics_by_oid.get(oid, [])
+            if not atoms:
+                continue
+            cat = _event_ad_category(oid, atoms)
+            if not cat:
+                continue
+            eligible.append((oid, cat))
+
+        if not eligible:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"Step 13c: no ad-eligible events (no commerce hashtags).{utils.Colors.ENDC}")
+            return
+
+        n_target = max(1, int(round(len(eligible) * AD_INJECTION_RATE)))
+        rng.shuffle(eligible)
+        selected = eligible[:n_target]
+
+        # Pick polarities up front so content-gen prompts know whether to
+        # frame the copy as click-worthy (clicked_ad) or dismissable
+        # (hidden/dismissed).
+        polarity_keys = list(AD_POLARITY_WEIGHTS.keys())
+        polarity_weights = [AD_POLARITY_WEIGHTS[k] for k in polarity_keys]
+        ad_plan: list[dict] = []
+        for oid, ad_category in selected:
+            action = rng.choices(polarity_keys, weights=polarity_weights, k=1)[0]
+            # Map action → canonical label via the catalog (keeps copy in sync)
+            app = self._row_app.get(oid, "Instagram")
+            action_label = self._ad_label_for_action(app, action)
+            itype = "explicit_positive" if action == "clicked_ad" else "explicit_negative"
+            atoms = atomics_by_oid.get(oid, [])
+            tags: list[str] = []
+            for ap in atoms:
+                tags.extend(ap.source_hashtags or [])
+            hashtags = list(dict.fromkeys(tags))
+            # Keep the content_type from the pre-existing content_by_oid
+            # entry when available; default to image otherwise (ads are
+            # overwhelmingly visual on social apps).
+            existing_content = self._content_by_oid.get(oid, {})
+            content_type = existing_content.get("content_type") or "image"
+            ad_plan.append({
+                "oid": oid,
+                "app": app,
+                "action": action,
+                "action_label": action_label,
+                "itype": itype,
+                "ad_category": ad_category,
+                "content_type": content_type,
+                "hashtags": hashtags,
+            })
+
+        # Profile context for ad prompt (so the synthesized copy is tailored
+        # to the persona's demographic / career / style without betraying
+        # specific preferences).
+        user_profile_dict = {
+            "name": self.user_profile.name,
+            "gender": self.user_profile.gender,
+            "race_ethnicity": self.user_profile.race_ethnicity,
+            "career": self.user_profile.career,
+            "education": self.user_profile.education,
+            "bio": self.user_profile.bio,
+        }
+
+        def _gen_ad(ev: dict):
+            try:
+                prompt = prompts.synthesize_ad_content_prompt(
+                    content_type=ev["content_type"],
+                    app=ev["app"],
+                    ad_category=ev["ad_category"],
+                    action=ev["action"],
+                    action_label=ev["action_label"],
+                    hashtags=ev["hashtags"],
+                    user_profile=user_profile_dict,
+                )
+                response = self._query_mini_with_retry(prompt)
+                content = None
+                if response:
+                    parsed = utils.extract_json_from_response(response)
+                    if isinstance(parsed, dict):
+                        if "content" in parsed and isinstance(parsed["content"], dict):
+                            content = parsed["content"]
+                        elif set(parsed.keys()) >= {"text"} or set(parsed.keys()) >= {"caption"}:
+                            content = parsed
+                return ev["oid"], ev, content
+            except Exception:
+                return ev["oid"], ev, None
+
+        pbar = tqdm(total=len(ad_plan),
+                    desc=f"[User {self.user_id}] Step 13c: Ad content",
+                    unit="ad", disable=not self.verbose)
+
+        n_success = 0
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            futures = {executor.submit(_gen_ad, ev): ev for ev in ad_plan}
+            for future in as_completed(futures):
+                pbar.update(1)
+                try:
+                    oid, ev, content = future.result()
+                    if not content:
+                        # LLM failed — skip this ad; the organic event stays.
+                        continue
+                    # Ensure ad_metadata is present; if the LLM dropped it,
+                    # build a minimal fallback so the invariant holds.
+                    if "ad_metadata" not in content or not isinstance(content.get("ad_metadata"), dict):
+                        content["ad_metadata"] = {
+                            "sponsor_name": "Sponsored Brand",
+                            "ad_category": ev["ad_category"],
+                            "cta_label": "Learn more",
+                            "cta_destination_kind": "landing_page",
+                            "disclosure_label": "Sponsored",
+                        }
+                    else:
+                        # Normalize required fields.
+                        md = content["ad_metadata"]
+                        md.setdefault("sponsor_name", "Sponsored Brand")
+                        md.setdefault("ad_category", ev["ad_category"])
+                        md.setdefault("cta_label", "Learn more")
+                        md.setdefault("cta_destination_kind", "landing_page")
+                        md.setdefault("disclosure_label", "Sponsored")
+                    # Override content + action + itype for this event.
+                    self._content_by_oid[oid] = {
+                        "content_type": ev["content_type"],
+                        "content": content,
+                    }
+                    self._action_by_oid[oid] = {
+                        "action": ev["action"],
+                        "action_label": ev["action_label"],
+                        "itype": ev["itype"],
+                    }
+                    self._ad_oids.add(oid)
+                    n_success += 1
+                except Exception as e:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                          f"Ad-gen future failed: {e}{utils.Colors.ENDC}")
+        pbar.close()
+
+        if self.verbose:
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"Ad injection: {n_success}/{len(ad_plan)} ads synthesized "
+                  f"({n_success}/{len(eligible)} of eligible events; "
+                  f"rate={AD_INJECTION_RATE:.0%}).{utils.Colors.ENDC}")
+
+    def _ad_label_for_action(self, app: str, action: str) -> str:
+        """Look up the canonical label for an ad action from the catalog.
+
+        Falls back to a reasonable default if the app/action combination
+        isn't present (shouldn't happen — every social app has all three
+        ad actions).
+        """
+        bucket_name = "explicit_positive" if action == "clicked_ad" else "explicit_negative"
+        app_cat = PLATFORM_INTERACTION_FORMATS.get(app, {})
+        for entry in app_cat.get(bucket_name, []):
+            if entry.get("action") == action:
+                return entry.get("label", action)
+        return action.replace("_", " ").title()
+
+    # ------------------------------------------------------------------
     # Test split — LLM-gated, with LLM-picked distractors
     # ------------------------------------------------------------------
 
@@ -3879,6 +4234,7 @@ class PersonaAgent:
          12.  generate interaction formats (weighted catalog sampling)
          13.  generate chatbot conversations (multi-turn, implicit embedding)
          13b. generate synthetic per-event content (text/image/short_video)
+         13c. inject ad events (convert ~6% of commerce-adjacent events to ads)
          14.  annotate stereotype marks
          15.  build test split (cross-app, latest-20% high-conf by time)
          16.  save to backend/{uid}/ subfolder
@@ -3902,6 +4258,7 @@ class PersonaAgent:
             ("12. Generate interaction formats",     self.generate_interaction_formats),
             ("13. Generate chatbot conversations",   self.generate_chatbot_conversations),
             ("13b. Generate synthetic content",      self.generate_synthetic_content),
+            ("13c. Inject ad events",                self.inject_ad_events),
             ("14. Annotate stereotype marks",        self.annotate_stereotype_marks),
             ("15. Build test split",                 self.build_test_split),
             ("16. Save to backend",                  self.save_to_backend),
@@ -4261,6 +4618,11 @@ class PersonaAgent:
                 "source_interaction_type": itype,
                 "interaction_format": fmt,
             }
+
+            # Ad marker (Step 13c). Invariant: is_ad ⇔ action ∈ AD_ACTIONS.
+            if oid in self._ad_oids or sampled_entry["action"] in AD_ACTIONS:
+                event["is_ad"] = True
+                self._ad_oids.add(oid)  # keep set coherent if only action matched
 
             # Attach synthetic content (step 13b). Chatbot and stubs are never
             # in self._content_by_oid, so those events render unchanged.

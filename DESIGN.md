@@ -63,6 +63,7 @@ Input CSV (hashtag interactions per user)
   +- Step 12: Generate interaction formats     [Algo+LLM] -- per-user perturbed weights
   +- Step 13: Generate chatbot conversations   [LLM]      -- multi-turn, ask-to-forget
   +- Step 13b: Generate synthetic content      [LLM]      -- text / image / short_video per event
+  +- Step 13c: Inject ad events                [LLM]      -- ~6% of commerce-adjacent events become ads
   +- Step 14: Annotate stereotype marks        [LLM]      -- demographics-only
   +- Step 15: Build test split                 [LLM+Algo] -- newest-first ≥10, inferrability-labelled
   +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user
@@ -346,6 +347,32 @@ Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `sho
 
 ---
 
+## 13c. Step 13c — Inject Ad Events
+
+After 13b generates organic content, a small fraction of commerce-adjacent events is converted to sponsored ads. This materializes the `AD_ACTIONS` (`clicked_ad`, `hidden_ad`, `dismissed_ad`) with ad-shaped content so downstream evaluation can test ad-interaction signals.
+
+**Eligibility:** social-app events (Instagram / Facebook / Threads — never Chatbot) whose hashtags map into `HASHTAG_TO_AD_CATEGORY` (food, apparel, electronics, travel, finance, fitness/wellness, education, home, auto, entertainment, services). Implicit_negative stubs and events with no surviving atoms are skipped.
+
+**Sampling:** `AD_INJECTION_RATE = 0.06` — ~6% of eligible events become ads. Final ad share of total events is ~1–2% (ads are concentrated on commerce-adjacent content). Polarity mix per ad event: 70% `clicked_ad` / 20% `dismissed_ad` / 10% `hidden_ad` (`AD_POLARITY_WEIGHTS`).
+
+**Content regeneration:** the ad prompt (`synthesize_ad_content_prompt`) does NOT condition on the user's specific preferences — ads target audience segments, not individuals. The LLM emits an `ad_metadata` block required on every ad:
+
+```json
+{ "sponsor_name": "Bean & Barrel Coffee Co.",
+  "ad_category": "food_and_beverage",
+  "cta_label": "Shop now",
+  "cta_destination_kind": "product_page",
+  "disclosure_label": "Sponsored" }
+```
+
+Sponsor names are invented (not real brands). `ad_category` is from a fixed 11-item vocabulary; `cta_label` from a fixed 6-item list; `cta_destination_kind` from a fixed 5-item list.
+
+**Invariant:** `event.is_ad == true`  ⇔  `event.interaction_format.action ∈ AD_ACTIONS`. `save_to_backend` enforces this on emit. Non-ad events never carry `ad_metadata` in their content block; ad events always do.
+
+**Cost:** one LLM call per selected ad event (mini-tier). ~20–60 calls per persona depending on commerce-hashtag density. LLM-failure events are silently skipped (their original organic content is retained).
+
+---
+
 ## 14. Step 14 — Stereotype Annotation
 
 Each preference gets a stereotype mark based on demographics **only** (gender, sexual orientation, race/ethnicity — not career/education/personality).
@@ -420,6 +447,8 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `MAX_REINFORCED_ENTRIES` | 5 | Max recurrence samples |
 | `ASK_TO_FORGET_FRACTION` | 0.20 | Share of chatbot events with ask-to-forget / don't-personalize variants |
 | `CORRECTION_FRACTION_NEGATIVE` | 0.50 | Share of remaining negatives that get the correction variant |
+| `AD_INJECTION_RATE` | 0.06 | Fraction of commerce-adjacent events converted to ads in Step 13c |
+| `AD_POLARITY_WEIGHTS` | `{clicked_ad: 0.70, dismissed_ad: 0.20, hidden_ad: 0.10}` | Ad-event polarity mix |
 | Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
 | Test fraction | 0.20 | Latest 20% of high-confidence positives |
 | Test floor | 10 | Min test items per user (only reduced when the high-conf pool itself is smaller) |
