@@ -2,20 +2,20 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775192400,
-      "formatted_timestamp": "09:00, 04/03/2026",
+      "ts": 1775203200,
+      "formatted_timestamp": "08:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Repair backlog planning block",
-        "start_ts": 1775192400,
-        "end_ts": 1775199600,
+        "title": "Pre-dawn pump log check",
+        "start_ts": 1775203200,
+        "end_ts": 1775206800,
         "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
           "precision": "city"
         },
         "type": "work",
@@ -26,150 +26,179 @@
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775217600,
-      "formatted_timestamp": "16:00, 04/03/2026",
+      "ts": 1775214000,
+      "formatted_timestamp": "11:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "Lunch job board scan",
-        "start_ts": 1775217600,
-        "end_ts": 1775221200,
+        "title": "River trail run",
+        "start_ts": 1775214000,
+        "end_ts": 1775219700,
         "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [
+          "distance running and run-focused fitness content"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_003",
+      "ts": 1775242800,
+      "formatted_timestamp": "19:00, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_003",
+        "title": "Simple weeknight dinner: turkey tacos",
+        "start_ts": 1775242800,
+        "end_ts": 1775246400,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "Actively interested in job searching and finding a new role (professional development)."
+          "food and home cooking",
+          "easy homemade cooking recipes"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_003",
-      "ts": 1775235600,
-      "formatted_timestamp": "21:00, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_003",
-        "title": "Leg day at no-frills gym",
-        "start_ts": 1775235600,
-        "end_ts": 1775242800,
-        "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "Interested in strength training and gym-based fitness."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
       "mod_id": "mod_004",
-      "ts": 1775260800,
-      "formatted_timestamp": "04:00, 04/04/2026",
-      "action": "updated",
-      "entry_id": "cal_003",
-      "diff": {
-        "end_ts": {
-          "from": 1775242800,
-          "to": 1775244600
-        },
-        "notes": {
-          "from": "",
-          "to": "added extra time for stretching and cooldown"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_005",
-      "ts": 1775278800,
+      "ts": 1775293200,
       "formatted_timestamp": "09:00, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Saturday family dinner at home",
-        "start_ts": 1775278800,
-        "end_ts": 1775289600,
+        "title": "Weekend boxing card stream",
+        "start_ts": 1775293200,
+        "end_ts": 1775304000,
         "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
           "precision": "city"
         },
         "type": "social",
         "linked_preferences": [
-          "Values family-centered content and spending quality time with loved ones."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_006",
-      "ts": 1775301600,
-      "formatted_timestamp": "15:20, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_005",
-        "title": "Pizza dough experiment",
-        "start_ts": 1775301600,
-        "end_ts": 1775308800,
-        "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys making pizza at home.",
-          "Steak- and meat-focused food content."
+          "boxing fandom",
+          "combat sports fandom",
+          "professional boxing, especially high-profile championship matchups"
         ],
         "is_preference_driven": true,
         "relation_to_social": "adjacent"
       }
     },
     {
-      "mod_id": "mod_007",
-      "ts": 1775363400,
-      "formatted_timestamp": "08:30, 04/05/2026",
-      "action": "removed",
-      "entry_id": "cal_002",
-      "removal_reason": "moved: found a better time to search during lunch break"
+      "mod_id": "mod_005",
+      "ts": 1775332800,
+      "formatted_timestamp": "20:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_005",
+        "title": "Dinner with family at South Side",
+        "start_ts": 1775332800,
+        "end_ts": 1775343600,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
     },
     {
-      "mod_id": "mod_008",
+      "mod_id": "mod_006",
       "ts": 1775386800,
-      "formatted_timestamp": "15:00, 04/05/2026",
+      "formatted_timestamp": "11:00, 04/05/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_006",
-        "title": "Dentist cleaning",
+        "title": "Foraging notebook walk in Frick Park",
         "start_ts": 1775386800,
-        "end_ts": 1775392200,
+        "end_ts": 1775397600,
         "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "foraging and identifying edible wild plants",
+          "nature"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775430000,
+      "formatted_timestamp": "23:00, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Chatbot: meal prep ideas for the workweek",
+        "start_ts": 1775430000,
+        "end_ts": 1775431800,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "food and home cooking",
+          "personal growth and self-improvement"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775476800,
+      "formatted_timestamp": "12:00, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Dentist cleaning",
+        "start_ts": 1775476800,
+        "end_ts": 1775479500,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
           "precision": "city"
         },
         "type": "health",
@@ -180,89 +209,37 @@
     },
     {
       "mod_id": "mod_009",
-      "ts": 1775430000,
-      "formatted_timestamp": "03:00, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_007",
-        "title": "Community-center footwork session",
-        "start_ts": 1775430000,
-        "end_ts": 1775437200,
-        "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "Enjoys breakdancing and street dance moves."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_010",
-      "ts": 1775482200,
-      "formatted_timestamp": "17:30, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Operations role interview prep",
-        "start_ts": 1775482200,
-        "end_ts": 1775489400,
-        "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "Actively interested in job searching and finding a new role (professional development)."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_011",
-      "ts": 1775523600,
-      "formatted_timestamp": "05:00, 04/07/2026",
+      "ts": 1775505600,
+      "formatted_timestamp": "20:00, 04/06/2026",
       "action": "updated",
       "entry_id": "cal_004",
       "diff": {
         "end_ts": {
-          "from": 1775289600,
-          "to": 1775291400
+          "from": 1775304000,
+          "to": 1775307600
         },
         "notes": {
           "from": "",
-          "to": "added dessert stop after dinner"
+          "to": "Move start 30 min later; main event runs long"
         }
       }
     },
     {
-      "mod_id": "mod_012",
-      "ts": 1775595600,
-      "formatted_timestamp": "01:00, 04/08/2026",
+      "mod_id": "mod_010",
+      "ts": 1775559600,
+      "formatted_timestamp": "11:00, 04/07/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_009",
-        "title": "Bus depot safety walkthrough",
-        "start_ts": 1775595600,
-        "end_ts": 1775601000,
+        "title": "Safety training refresher",
+        "start_ts": 1775559600,
+        "end_ts": 1775566800,
         "location": {
-          "city": "Saitama",
-          "region": "Saitama",
-          "country": "Japan",
-          "lat": 35.8617,
-          "lon": 139.6455,
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
           "precision": "city"
         },
         "type": "work",
@@ -272,12 +249,65 @@
       }
     },
     {
-      "mod_id": "mod_013",
-      "ts": 1775664000,
-      "formatted_timestamp": "20:00, 04/08/2026",
+      "mod_id": "mod_011",
+      "ts": 1775594400,
+      "formatted_timestamp": "21:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Wife dinner + sappy catch-up",
+        "start_ts": 1775594400,
+        "end_ts": 1775601300,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "values public expressions of appreciation for a spouse or long-term romantic partner"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775644200,
+      "formatted_timestamp": "10:30, 04/08/2026",
       "action": "removed",
-      "entry_id": "cal_007",
-      "removal_reason": "canceled: studio unavailable"
+      "entry_id": "cal_008",
+      "removal_reason": "rescheduled by provider due to cancellation"
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775689200,
+      "formatted_timestamp": "23:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Quick thread reaction: fight card results",
+        "start_ts": 1775689200,
+        "end_ts": 1775691000,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "combat sports",
+          "boxing fandom"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
     }
   ]
 }
