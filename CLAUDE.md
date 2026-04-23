@@ -8,6 +8,15 @@
 
 ## Regeneration
 - **NEVER** start the persona pipeline (reprocess/regenerate data) without explicitly asking the user first. LLM calls are expensive and other sessions may be editing code concurrently.
+- When running a regen (via `scripts/run_persona_pipeline.py` or similar), always redirect stdout + stderr to files under `/tmp/persona_regen/{user_id}.{stdout,stderr}` AND launch a tmux session named `persona{user_id}` that tails both so the user can watch progress live. tqdm progress bars write to stderr, so stderr is the stream that carries real-time per-row progress. Example:
+  ```bash
+  mkdir -p /tmp/persona_regen
+  /usr/bin/time -v python scripts/run_persona_pipeline.py --user_id 115 --verbose \
+      > /tmp/persona_regen/115.stdout 2> /tmp/persona_regen/115.stderr &
+  tmux new-session -d -s persona115 -x 220 -y 50 \
+      "tail -F /tmp/persona_regen/115.stdout /tmp/persona_regen/115.stderr"
+  ```
+  Then tell the user: `tmux attach -t persona115` (read-only: add `-r`). Detach with `Ctrl-b d`.
 
 ## Design Document
 - Whenever you make changes to the pipeline design (new features, changed thresholds, altered logic, new steps, etc.), update `DESIGN.md` accordingly. Keep it clean and concise — match the existing style.
