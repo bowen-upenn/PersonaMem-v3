@@ -1363,6 +1363,57 @@
     ]
   },
   {
+    "source_object_id": "fa_thr_115_000",
+    "source_timestamp": 1775229581,
+    "formatted_timestamp": "15:19, 04/03/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_1",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_000",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_1"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_000_m_00",
+        "sender": "friend_1",
+        "timestamp": 1775229085,
+        "text": "Bro that Marvin Gaye track you had on your story took me out lol"
+      },
+      {
+        "msg_id": "fa_thr_115_000_m_01",
+        "sender": "self",
+        "timestamp": 1775229515,
+        "text": "Late night cleanup music lol. 90s slow jams + teardown = survival kit"
+      },
+      {
+        "msg_id": "fa_thr_115_000_m_02",
+        "sender": "friend_1",
+        "timestamp": 1775229581,
+        "text": "Send me that playlist when you get a sec"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Send me that playlist when you get a sec",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "829970",
     "source_timestamp": 1775236617,
     "formatted_timestamp": "17:16, 04/03/2026",
@@ -6111,6 +6162,51 @@
     ]
   },
   {
+    "source_object_id": "fa_thr_115_001",
+    "source_timestamp": 1775382827,
+    "formatted_timestamp": "09:53, 04/05/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_4",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_001",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_4"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_001_m_00",
+        "sender": "friend_4",
+        "timestamp": 1775382422,
+        "text": "Hey man who did the drape for that garden wedding you posted? Looked clean"
+      },
+      {
+        "msg_id": "fa_thr_115_001_m_01",
+        "sender": "self",
+        "timestamp": 1775382827,
+        "text": "Thanks. That was Bloomside Events, ask for Nina"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Thanks. That was Bloomside Events, ask for Nina",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "486070",
     "source_timestamp": 1775384388,
     "formatted_timestamp": "10:19, 04/05/2026",
@@ -6347,6 +6443,45 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "fa_thr_115_002",
+    "source_timestamp": 1775403151,
+    "formatted_timestamp": "15:32, 04/05/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_7",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_002",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_7"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_002_m_00",
+        "sender": "friend_7",
+        "timestamp": 1775403151,
+        "text": "You still training at Eastside? Thinking of dropping in this week"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "You still training at Eastside? Thinking of dropping in this week",
+      "n_messages": 1
+    },
+    "preferences": []
   },
   {
     "source_object_id": "510390",
@@ -12282,6 +12417,63 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "fa_thr_115_003",
+    "source_timestamp": 1775555094,
+    "formatted_timestamp": "09:44, 04/07/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_3",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_003",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_3"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_003_m_00",
+        "sender": "friend_3",
+        "timestamp": 1775554305,
+        "text": "Your auntie's holiday dinner plate looked crazy lol save me a seat next time"
+      },
+      {
+        "msg_id": "fa_thr_115_003_m_01",
+        "sender": "self",
+        "timestamp": 1775554495,
+        "text": "You already know she'd force 3 plates on you"
+      },
+      {
+        "msg_id": "fa_thr_115_003_m_02",
+        "sender": "friend_3",
+        "timestamp": 1775554465,
+        "text": "That's the kind of love I need honestly"
+      },
+      {
+        "msg_id": "fa_thr_115_003_m_03",
+        "sender": "self",
+        "timestamp": 1775555094,
+        "text": "Come through next one then"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Come through next one then",
+      "n_messages": 4
+    },
+    "preferences": []
   },
   {
     "source_object_id": "612373",
@@ -19534,6 +19726,57 @@
     ]
   },
   {
+    "source_object_id": "fa_thr_115_004",
+    "source_timestamp": 1775669186,
+    "formatted_timestamp": "17:26, 04/08/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_2",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_004",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_2"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_004_m_00",
+        "sender": "self",
+        "timestamp": 1775668038,
+        "text": "You free Sunday morning to help me load some uplights for a small setup? I'll buy post-workout food"
+      },
+      {
+        "msg_id": "fa_thr_115_004_m_01",
+        "sender": "friend_2",
+        "timestamp": 1775668364,
+        "text": "Yeah I got you. What time?"
+      },
+      {
+        "msg_id": "fa_thr_115_004_m_02",
+        "sender": "self",
+        "timestamp": 1775669186,
+        "text": "8:30. Easy one, mostly candles and warm wash"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "8:30. Easy one, mostly candles and warm wash",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "250231",
     "source_timestamp": 1775669680,
     "formatted_timestamp": "17:34, 04/08/2026",
@@ -21146,6 +21389,57 @@
     ]
   },
   {
+    "source_object_id": "fa_thr_115_005",
+    "source_timestamp": 1775706969,
+    "formatted_timestamp": "03:56, 04/09/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_5",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_005",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_5"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_005_m_00",
+        "sender": "self",
+        "timestamp": 1775706187,
+        "text": "That battle you posted was wild lol third round was a body"
+      },
+      {
+        "msg_id": "fa_thr_115_005_m_01",
+        "sender": "friend_5",
+        "timestamp": 1775706352,
+        "text": "Facts. Crowd missed half the bars too"
+      },
+      {
+        "msg_id": "fa_thr_115_005_m_02",
+        "sender": "self",
+        "timestamp": 1775706969,
+        "text": "Had me rewinding like 4 times"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Had me rewinding like 4 times",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "108007",
     "source_timestamp": 1775707232,
     "formatted_timestamp": "04:00, 04/09/2026",
@@ -22364,6 +22658,51 @@
     ]
   },
   {
+    "source_object_id": "fa_thr_115_006",
+    "source_timestamp": 1775744057,
+    "formatted_timestamp": "14:14, 04/09/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_6",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_006",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_6"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_006_m_00",
+        "sender": "self",
+        "timestamp": 1775743628,
+        "text": "Hey if your community event still needs a basic lighting package, I might have that Saturday open"
+      },
+      {
+        "msg_id": "fa_thr_115_006_m_01",
+        "sender": "friend_6",
+        "timestamp": 1775744057,
+        "text": "Actually maybe yes. Let me confirm budget with them tonight"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Actually maybe yes. Let me confirm budget with them tonight",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "30695",
     "source_timestamp": 1775757136,
     "formatted_timestamp": "17:52, 04/09/2026",
@@ -23545,6 +23884,51 @@
     ]
   },
   {
+    "source_object_id": "fa_thr_115_007",
+    "source_timestamp": 1775787792,
+    "formatted_timestamp": "02:23, 04/10/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_negative",
+    "author_id": "stranger_1",
+    "recipient_id": "self",
+    "relationship": "stranger",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_007",
+    "is_group_dm": false,
+    "thread_kind": "stranger",
+    "participants": [
+      "self",
+      "stranger_1"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_007_m_00",
+        "sender": "stranger_1",
+        "timestamp": 1775787590,
+        "text": "Hi! Saw your wedding lighting photos. Are you available for a reception in Fremont next month?"
+      },
+      {
+        "msg_id": "fa_thr_115_007_m_01",
+        "sender": "stranger_1",
+        "timestamp": 1775787792,
+        "text": "Just need pricing for something simple"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Just need pricing for something simple",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "410635",
     "source_timestamp": 1775795087,
     "formatted_timestamp": "04:24, 04/10/2026",
@@ -24313,6 +24697,45 @@
       "action": "scrolled_past_video",
       "action_label": "Scrolled past the video without watching",
       "user_message": null
+    },
+    "preferences": []
+  },
+  {
+    "source_object_id": "fa_thr_115_008",
+    "source_timestamp": 1775809495,
+    "formatted_timestamp": "08:24, 04/10/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_negative",
+    "author_id": "stranger_2",
+    "recipient_id": "self",
+    "relationship": "stranger",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_008",
+    "is_group_dm": false,
+    "thread_kind": "stranger",
+    "participants": [
+      "self",
+      "stranger_2"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_008_m_00",
+        "sender": "stranger_2",
+        "timestamp": 1775809495,
+        "text": "yo you train bjj? what gym and how much they charge"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "yo you train bjj? what gym and how much they charge",
+      "n_messages": 1
     },
     "preferences": []
   },
@@ -26461,6 +26884,65 @@
       "action": "skipped_post",
       "action_label": "Skipped the post with no interaction",
       "user_message": null
+    },
+    "preferences": []
+  },
+  {
+    "source_object_id": "fa_thr_115_009",
+    "source_timestamp": 1775874237,
+    "formatted_timestamp": "02:23, 04/11/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_1",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "fa_thr_115_009",
+    "is_group_dm": true,
+    "thread_kind": "group",
+    "participants": [
+      "self",
+      "friend_1",
+      "friend_2",
+      "friend_3"
+    ],
+    "messages": [
+      {
+        "msg_id": "fa_thr_115_009_m_00",
+        "sender": "friend_1",
+        "timestamp": 1775873907,
+        "text": "Lakers on tonight or are we all pretending to be productive"
+      },
+      {
+        "msg_id": "fa_thr_115_009_m_01",
+        "sender": "friend_3",
+        "timestamp": 1775873981,
+        "text": "I'm only here for snacks and complaining"
+      },
+      {
+        "msg_id": "fa_thr_115_009_m_02",
+        "sender": "self",
+        "timestamp": 1775874237,
+        "text": "I got a late teardown but I'll catch second half if traffic doesn't cook me"
+      },
+      {
+        "msg_id": "fa_thr_115_009_m_03",
+        "sender": "friend_2",
+        "timestamp": 1775874162,
+        "text": "Jovian watching box score from the loading dock again"
+      }
+    ],
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "I got a late teardown but I'll catch second half if traffic doesn't cook me",
+      "n_messages": 4
     },
     "preferences": []
   },

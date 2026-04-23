@@ -4371,6 +4371,57 @@
     "preferences": []
   },
   {
+    "source_object_id": "in_thr_115_000",
+    "source_timestamp": 1775294637,
+    "formatted_timestamp": "09:23, 04/04/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_1",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "in_thr_115_000",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_1"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_000_m_00",
+        "sender": "friend_1",
+        "timestamp": 1775293459,
+        "text": "bro that room flip was crazy lol"
+      },
+      {
+        "msg_id": "in_thr_115_000_m_01",
+        "sender": "friend_1",
+        "timestamp": 1775293951,
+        "text": "the amber uplights looked expensive"
+      },
+      {
+        "msg_id": "in_thr_115_000_m_02",
+        "sender": "self",
+        "timestamp": 1775294637,
+        "text": "appreciate it bro. couple wanted warm/dramatic so we went all in"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "appreciate it bro. couple wanted warm/dramatic so we went all in",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "737836",
     "source_timestamp": 1775297254,
     "formatted_timestamp": "10:07, 04/04/2026",
@@ -5921,6 +5972,51 @@
     ]
   },
   {
+    "source_object_id": "in_thr_115_001",
+    "source_timestamp": 1775331215,
+    "formatted_timestamp": "19:33, 04/04/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_3",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "in_thr_115_001",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_3"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_001_m_00",
+        "sender": "friend_3",
+        "timestamp": 1775330893,
+        "text": "this Story got me playing Jodeci again 😂"
+      },
+      {
+        "msg_id": "in_thr_115_001_m_01",
+        "sender": "self",
+        "timestamp": 1775331215,
+        "text": "as you should lol"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "as you should lol",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "803655",
     "source_timestamp": 1775337224,
     "formatted_timestamp": "21:13, 04/04/2026",
@@ -6263,6 +6359,51 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "in_thr_115_002",
+    "source_timestamp": 1775361825,
+    "formatted_timestamp": "04:03, 04/05/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_7",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "in_thr_115_002",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_7"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_002_m_00",
+        "sender": "friend_7",
+        "timestamp": 1775361384,
+        "text": "you still training sat mornings?"
+      },
+      {
+        "msg_id": "in_thr_115_002_m_01",
+        "sender": "friend_7",
+        "timestamp": 1775361825,
+        "text": "thinking of dropping in"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "thinking of dropping in",
+      "n_messages": 2
+    },
+    "preferences": []
   },
   {
     "source_object_id": "801557",
@@ -21020,6 +21161,51 @@
     ]
   },
   {
+    "source_object_id": "in_thr_115_003",
+    "source_timestamp": 1775545383,
+    "formatted_timestamp": "07:03, 04/07/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_4",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "in_thr_115_003",
+    "is_group_dm": false,
+    "thread_kind": "inbound_friend",
+    "participants": [
+      "self",
+      "friend_4"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_003_m_00",
+        "sender": "friend_4",
+        "timestamp": 1775544873,
+        "text": "yo who did the drape on that garden wedding? clean setup"
+      },
+      {
+        "msg_id": "in_thr_115_003_m_01",
+        "sender": "self",
+        "timestamp": 1775545383,
+        "text": "think it was Ivory Lane Events. they were solid"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "think it was Ivory Lane Events. they were solid",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "538436",
     "source_timestamp": 1775548545,
     "formatted_timestamp": "07:55, 04/07/2026",
@@ -24850,6 +25036,57 @@
     ]
   },
   {
+    "source_object_id": "in_thr_115_004",
+    "source_timestamp": 1775591285,
+    "formatted_timestamp": "19:48, 04/07/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_2",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "in_thr_115_004",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_2"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_004_m_00",
+        "sender": "self",
+        "timestamp": 1775590273,
+        "text": "you working that hotel ballroom this weekend?"
+      },
+      {
+        "msg_id": "in_thr_115_004_m_01",
+        "sender": "friend_2",
+        "timestamp": 1775590482,
+        "text": "yeah saturday. why"
+      },
+      {
+        "msg_id": "in_thr_115_004_m_02",
+        "sender": "self",
+        "timestamp": 1775591285,
+        "text": "might need to borrow 2 wireless uplights if mine don't come back in time"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "might need to borrow 2 wireless uplights if mine don't come back in time",
+      "n_messages": 3
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "411560",
     "source_timestamp": 1775591669,
     "formatted_timestamp": "19:54, 04/07/2026",
@@ -26402,6 +26639,51 @@
       "action": "skipped_image",
       "action_label": "Skipped the image with no interaction",
       "user_message": null
+    },
+    "preferences": []
+  },
+  {
+    "source_object_id": "in_thr_115_005",
+    "source_timestamp": 1775633067,
+    "formatted_timestamp": "07:24, 04/08/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_5",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "in_thr_115_005",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_5"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_005_m_00",
+        "sender": "self",
+        "timestamp": 1775632720,
+        "text": "that battle rap clip you posted was nasty lol who was that"
+      },
+      {
+        "msg_id": "in_thr_115_005_m_01",
+        "sender": "friend_5",
+        "timestamp": 1775633067,
+        "text": "Nitty. first round only too"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Nitty. first round only too",
+      "n_messages": 2
     },
     "preferences": []
   },
@@ -28087,6 +28369,90 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "in_thr_115_006",
+    "source_timestamp": 1775655697,
+    "formatted_timestamp": "13:41, 04/08/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_6",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "in_thr_115_006",
+    "is_group_dm": false,
+    "thread_kind": "outbound",
+    "participants": [
+      "self",
+      "friend_6"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_006_m_00",
+        "sender": "self",
+        "timestamp": 1775655173,
+        "text": "hey saw your community event post. if you need extra hands on lighting lmk"
+      },
+      {
+        "msg_id": "in_thr_115_006_m_01",
+        "sender": "friend_6",
+        "timestamp": 1775655697,
+        "text": "appreciate that. might hit you up for next month"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "appreciate that. might hit you up for next month",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
+    "source_object_id": "in_thr_115_007",
+    "source_timestamp": 1775659998,
+    "formatted_timestamp": "14:53, 04/08/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_negative",
+    "author_id": "stranger_1",
+    "recipient_id": "self",
+    "relationship": "stranger",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "in_thr_115_007",
+    "is_group_dm": false,
+    "thread_kind": "stranger",
+    "participants": [
+      "self",
+      "stranger_1"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_007_m_00",
+        "sender": "stranger_1",
+        "timestamp": 1775659998,
+        "text": "hey! love your vibe. do you shoot weddings too or just lighting?"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "hey! love your vibe. do you shoot weddings too or just lighting?",
+      "n_messages": 1
+    },
+    "preferences": []
   },
   {
     "source_object_id": "205405",
@@ -30146,6 +30512,51 @@
     "preferences": []
   },
   {
+    "source_object_id": "in_thr_115_008",
+    "source_timestamp": 1775710079,
+    "formatted_timestamp": "04:47, 04/09/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "stranger_2",
+    "relationship": "stranger",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "in_thr_115_008",
+    "is_group_dm": false,
+    "thread_kind": "stranger",
+    "participants": [
+      "self",
+      "stranger_2"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_008_m_00",
+        "sender": "stranger_2",
+        "timestamp": 1775709634,
+        "text": "yo where was that burger spot from your Story"
+      },
+      {
+        "msg_id": "in_thr_115_008_m_01",
+        "sender": "self",
+        "timestamp": 1775710079,
+        "text": "Burger District in Alhambra"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "Burger District in Alhambra",
+      "n_messages": 2
+    },
+    "preferences": []
+  },
+  {
     "source_object_id": "747135",
     "source_timestamp": 1775710885,
     "formatted_timestamp": "05:01, 04/09/2026",
@@ -31605,6 +32016,65 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "in_thr_115_009",
+    "source_timestamp": 1775737547,
+    "formatted_timestamp": "12:25, 04/09/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "implicit_positive",
+    "author_id": "friend_3",
+    "recipient_id": "self",
+    "relationship": "friend",
+    "is_self_authored": false,
+    "is_dm": true,
+    "thread_id": "in_thr_115_009",
+    "is_group_dm": true,
+    "thread_kind": "group",
+    "participants": [
+      "self",
+      "friend_1",
+      "friend_3",
+      "friend_8"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_009_m_00",
+        "sender": "friend_8",
+        "timestamp": 1775736935,
+        "text": "lakers look old man"
+      },
+      {
+        "msg_id": "in_thr_115_009_m_01",
+        "sender": "friend_1",
+        "timestamp": 1775737248,
+        "text": "don't start lol"
+      },
+      {
+        "msg_id": "in_thr_115_009_m_02",
+        "sender": "self",
+        "timestamp": 1775737479,
+        "text": "season not even settled yet but yeah they need legs"
+      },
+      {
+        "msg_id": "in_thr_115_009_m_03",
+        "sender": "friend_3",
+        "timestamp": 1775737547,
+        "text": "i'm just here for the chaos"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "i'm just here for the chaos",
+      "n_messages": 4
+    },
+    "preferences": []
   },
   {
     "source_object_id": "104759",
@@ -39711,6 +40181,65 @@
         "time_horizon": "long_term"
       }
     ]
+  },
+  {
+    "source_object_id": "in_thr_115_010",
+    "source_timestamp": 1775918822,
+    "formatted_timestamp": "14:47, 04/11/2026",
+    "source_hashtags": [],
+    "source_interaction_type": "explicit_positive",
+    "author_id": "self",
+    "recipient_id": "friend_2",
+    "relationship": "friend",
+    "is_self_authored": true,
+    "is_dm": true,
+    "thread_id": "in_thr_115_010",
+    "is_group_dm": true,
+    "thread_kind": "group",
+    "participants": [
+      "self",
+      "friend_2",
+      "friend_4",
+      "friend_6"
+    ],
+    "messages": [
+      {
+        "msg_id": "in_thr_115_010_m_00",
+        "sender": "friend_6",
+        "timestamp": 1775917932,
+        "text": "anyone got a spare dimmer pack for friday night?"
+      },
+      {
+        "msg_id": "in_thr_115_010_m_01",
+        "sender": "friend_4",
+        "timestamp": 1775918011,
+        "text": "mine's out on a job"
+      },
+      {
+        "msg_id": "in_thr_115_010_m_02",
+        "sender": "self",
+        "timestamp": 1775918822,
+        "text": "i have one if you can grab it thursday"
+      },
+      {
+        "msg_id": "in_thr_115_010_m_03",
+        "sender": "friend_6",
+        "timestamp": 1775918307,
+        "text": "clutch thank you"
+      }
+    ],
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "dm_conversation",
+      "action_label": "DM conversation",
+      "user_message": null
+    },
+    "content_type": "text",
+    "content": {
+      "caption": "i have one if you can grab it thursday",
+      "n_messages": 4
+    },
+    "preferences": []
   },
   {
     "source_object_id": "386336",

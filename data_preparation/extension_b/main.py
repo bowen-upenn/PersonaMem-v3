@@ -87,27 +87,25 @@ def run_extension_b(
         per_app_events[app] = posts
         report[f"self_posts_{app}"] = len(posts)
 
-    # 3) DM threads per social app (needs friend graph).
-    dm_threads_per_app: dict[str, list[dict]] = {}
-    dm_mirrors_per_app: dict[str, list[dict]] = {}
+    # 3) DM threads per social app (needs friend graph). Each thread is
+    #    emitted as ONE event-shaped entry appended directly to {app}.json
+    #    with is_dm=true + full messages[] — no separate {app}_dms.json.
+    dm_events_per_app: dict[str, list[dict]] = {}
     for i, app in enumerate(SOCIAL_APPS):
         app_path = base / f"{app}.json"
         if not app_path.exists():
-            dm_threads_per_app[app] = []
-            dm_mirrors_per_app[app] = []
+            dm_events_per_app[app] = []
             continue
         existing = json.loads(app_path.read_text())
         if llm_client is not None and not dry_run:
             if verbose: print(f"[ext_b] generating DM threads on {app} …")
-            threads, mirrors = generate_dm_threads(
+            dm_events = generate_dm_threads(
                 user_id, app, profile, friends, existing, llm_client, rng_seed=rng_seed + 100 + i
             )
         else:
-            threads, mirrors = [], []
-        dm_threads_per_app[app] = threads
-        dm_mirrors_per_app[app] = mirrors
-        report[f"dm_threads_{app}"] = len(threads)
-        report[f"dm_mirror_events_{app}"] = len(mirrors)
+            dm_events = []
+        dm_events_per_app[app] = dm_events
+        report[f"dm_threads_{app}"] = len(dm_events)
 
     # 4) Trending hashtags — deterministic, no LLM.
     if verbose: print("[ext_b] computing trending hashtags …")
@@ -126,13 +124,13 @@ def run_extension_b(
     profile["friends"] = friends
     profile_path.write_text(json.dumps(profile, ensure_ascii=False, indent=2))
 
-    # (b) Append self-posts + DM mirror events to each app JSON (re-sort by ts).
+    # (b) Append self-posts + DM thread events to each app JSON (re-sort by ts).
     for app in SOCIAL_APPS:
         app_path = base / f"{app}.json"
         if not app_path.exists():
             continue
         existing = json.loads(app_path.read_text())
-        new_events = per_app_events[app] + dm_mirrors_per_app[app]
+        new_events = per_app_events[app] + dm_events_per_app[app]
         # Ensure existing events have the new Extension B fields default-populated
         # (so MCP servers see consistent schema).
         for e in existing:
@@ -145,16 +143,12 @@ def run_extension_b(
         merged.sort(key=lambda x: int(x.get("source_timestamp", 0)))
         app_path.write_text(json.dumps(merged, ensure_ascii=False, indent=2))
 
-    # (c) Write {app}_dms.json per app.
-    for app in SOCIAL_APPS:
-        dm_path = base / f"{app}_dms.json"
-        dm_path.write_text(json.dumps(dm_threads_per_app[app], ensure_ascii=False, indent=2))
-
-    # (d) Write trending.json.
+    # (c) Write trending.json. DM threads live inside {app}.json (is_dm=true)
+    #     — no separate {app}_dms.json file anymore.
     (base / "trending.json").write_text(json.dumps(trending, ensure_ascii=False, indent=2))
 
     if verbose:
-        print("[ext_b] wrote: profile.json, {app}.json × 3 (appended), {app}_dms.json × 3, trending.json")
+        print("[ext_b] wrote: profile.json, {app}.json × 3 (appended with DM threads inline), trending.json")
         print(f"[ext_b] report: {report}")
     return report
 
