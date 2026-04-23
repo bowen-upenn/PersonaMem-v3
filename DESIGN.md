@@ -224,15 +224,21 @@ The prompt explicitly tells the LLM that in an 8-day window, "long_term" means "
 
 **Step 4 — Contradiction Graph:** Contradictory preferences grouped by topic with chronological timelines showing stance shifts.
 
-**Step 7 — Cross-Polarity Contradiction Gate (R1 fix):** Positive and negative canonicals can survive their independent cross-ref pipelines with no awareness of each other. Step 7 walks the Cartesian product of surviving (positive, negative) canonicals, filtering to pairs sharing ≥ `HASHTAG_OVERLAP_MIN = 2` source hashtags. An LLM call (batched, mini-tier) confirms which pairs are semantically opposite stances on the same topic (filters out "interested in technique" vs. "dislikes commentary" — related but not contradictory).
+**Step 7 — Cross-Polarity Contradiction Gate (R1 fix):** Positive and negative canonicals can survive their independent cross-ref pipelines with no awareness of each other. Step 7 walks the Cartesian product of surviving (positive, negative) canonicals, filtering to pairs sharing ≥ `HASHTAG_OVERLAP_MIN = 2` source hashtags. A mini-tier LLM call classifies each candidate pair into ONE of:
 
-Each confirmed pair is resolved in three stages:
+- **`contradiction`** — same topic AND same granularity, opposite stance (e.g., "Interested in NFL football content" vs "Not interested in NFL football content"). Gets the full dominance + precedent + ambivalence resolution pipeline below.
+- **`ambivalence`** — same topic but DIFFERENT granularities (e.g., "Interested in NFL football content" vs "Not interested in NFL training-camp and team-specific football content"). Both sides are real user stances at different levels of specificity. BOTH survive, marked `update_type: "ambivalent"` with `resolution: "different_granularity"`. No dominance check, no precedent check — they're legitimate coexistence, not rivals.
+- **`unrelated`** — no opposing stance relationship; skipped.
 
-1. **Dominance check.** If `stronger_rows / weaker_rows >= DOMINANCE_DROP_RATIO` (2.5), the weaker canonical is dropped as noise regardless of temporal order. The survivor's `update_history` gets an entry with `resolution: "suppressed_weak_minority"` + the ratio. Fires first because a 51-vs-7 row split is obviously noise, not a legitimate stance shift. (Closes the persona-115 NFL bug where "Interested in NFL football content" [51 rows] coexisted with "Not interested in NFL football content" [7 rows].)
-2. **Temporal-precedent rule** (only when dominance doesn't fire). The LATER-emerging stance is kept only if `same_polarity_rows_before_opposite_first_row >= MIN_STANCE_FLIP_PRIOR` (5 for long_term, `MIN_STANCE_FLIP_PRIOR_SHORT = 1` for short_term). When the gate FAILS, the later canonical is demoted with `resolution: "suppressed_insufficient_precedent"`.
-3. **Concurrent-ambivalence detection** (only when dominance + precedent both pass). If the earlier side still has ≥ `MIN_EARLIER_POST_FLIP_FOR_CONCURRENT` (5) rows AFTER the later side's first row, both polarities are interleaved — not a clean temporal shift. Both survive with `resolution: "concurrent_ambivalence"`. Otherwise it's a clean shift and the entries carry `resolution: "stance_shift_with_precedent"`.
+Each **contradiction** pair is resolved in three further stages:
 
-Dropped canonicals are stored in `self._suppressed_stance_flips` for audit. The visualizer renders the three resolutions distinctly: `stance_shift_with_precedent` (red, emphatic), `concurrent_ambivalence` (amber, "mixed feelings"), `suppressed_weak_minority` / `suppressed_insufficient_precedent` (grey, strikethrough).
+1. **Dominance check.** If `stronger_rows / weaker_rows >= DOMINANCE_DROP_RATIO` (2.5), the weaker canonical is dropped as noise regardless of temporal order. The survivor's `update_history` gets an entry with `resolution: "suppressed_weak_minority"` + the ratio.
+2. **Temporal-precedent rule.** The LATER-emerging stance is kept only if `same_polarity_rows_before_opposite_first_row >= MIN_STANCE_FLIP_PRIOR` (5 for long_term, `MIN_STANCE_FLIP_PRIOR_SHORT = 1` for short_term). When the gate FAILS, the later canonical is demoted with `resolution: "suppressed_insufficient_precedent"`.
+3. **Concurrent-ambivalence detection** (when both previous stages pass). If the earlier side still has ≥ `MIN_EARLIER_POST_FLIP_FOR_CONCURRENT` (5) rows AFTER the later side's first row, both polarities are interleaved — not a clean temporal shift. Both survive with `resolution: "concurrent_ambivalence"`. Otherwise it's a clean shift and the entries carry `resolution: "stance_shift_with_precedent"`.
+
+Dropped canonicals are stored in `self._suppressed_stance_flips` for audit. The visualizer distinguishes the resolution labels: `stance_shift_with_precedent` (red, emphatic), `concurrent_ambivalence` / `different_granularity` (amber, "mixed feelings"), `suppressed_weak_minority` / `suppressed_insufficient_precedent` (grey, strikethrough). `update_type` is `"contradicted"` for same-granularity pairs and `"ambivalent"` for different-granularity pairs — terminology difference makes the nature of the disagreement explicit in the history.
+
+**History causality:** every cross-polarity entry now carries the `source_object_id` of the opposing canonical's first event. The `save_to_backend` causality filter then uses lexicographic `(ts, oid)` ordering so entries are emitted strictly before the current event in the HTML display order. Entries with no `source_object_id` fall back to strict `ts < event_ts` (drop same-timestamp).
 
 **Step 5 — Update Histories:** Each preference gets a temporal `update_history[]` array with entries tagged by `update_type`:
 
@@ -241,16 +247,17 @@ Dropped canonicals are stored in `self._suppressed_stance_flips` for audit. The 
 | `new` | First appearance (filtered from serialization — redundant with event timestamp) |
 | `reinforced` | Multiple distinct source rows; up to 5 samples, evenly spaced |
 | `faded` | Inactive > 48h before user's last activity (`FADE_THRESHOLD_SECONDS = 172,800`) |
-| `contradicted` | Contradicting preference discovered in cross-ref |
+| `contradicted` | **Same-granularity** contradicting preference — "Interested in NFL" vs "Not interested in NFL" (detected by Step 7's `contradiction` classification) |
+| `ambivalent` | **Different-granularity** coexisting preference — "Interested in NFL football" vs "Not interested in NFL training-camp" (Step 7's `ambivalence` classification). Both stances are real; neither is noise |
 | `deepened` | General interest became more specific over time |
 | `branched` | Interest expanded into new sub-direction |
 | `shifted` | Focus moved within same domain |
 | `intensified` | Engagement grew demonstrably stronger |
 | `similar` | Semantically similar preference discovered in cross-ref |
 
-Entry fields: `update_type` (all), `preference` (contradicted/deepened/branched/shifted/similar), `formatted_timestamp` (all), `source_app` (reinforced/deepened/branched/shifted/similar), `occurrence`+`total_occurrences` (reinforced), `description` (deepened/branched/shifted/intensified).
+Entry fields: `update_type` (all), `preference` (contradicted/ambivalent/deepened/branched/shifted/similar), `formatted_timestamp` (all), `source_object_id` (reinforced/contradicted/ambivalent, for lexicographic causality ordering), `source_app` (reinforced/deepened/branched/shifted/similar/contradicted/ambivalent), `occurrence`+`total_occurrences` (reinforced), `description` (deepened/branched/shifted/intensified), `resolution` (contradicted/ambivalent — see Step 7).
 
-**Causality filter:** only entries with `timestamp <= event timestamp` are included — no knowledge leakage.
+**Causality filter:** `save_to_backend` emits each entry only if its `(timestamp, source_object_id)` is strictly less than the current event's `(timestamp, source_object_id)` — i.e., the referenced event appears BEFORE the current event in the HTML display order. Entries without `source_object_id` fall back to strict `timestamp < event_timestamp` (same-timestamp entries are dropped as indeterminate).
 
 ---
 
@@ -519,7 +526,7 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `XREF_THRESHOLD_NEGATIVE` | 5.0 | Xref bar for negatives (decoupled from positive scale — negatives are structurally rarer) |
 | `RECENCY_WINDOW_SECONDS` | 7 * 86400 | Only rows within the trailing 7 days contribute to xref counting |
 | `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (contradictories still exempt) |
-| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 10 | Implicit-only negative survival threshold (capped count, see IMPL_NEG_DAILY_CAP) + net-sentiment floor |
+| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 15 | Implicit-only negative survival threshold (capped count, see IMPL_NEG_DAILY_CAP) + net-sentiment floor |
 | `IMPL_NEG_DAILY_CAP` | 3 | Per-day cap on implicit_negative rows per hashtag — stops a single-day mood burst from driving promotion |
 | `MIN_TEMPORAL_DAYS` | 3 | Implicit negatives must span at least this many distinct calendar days to promote |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag before LLM call |

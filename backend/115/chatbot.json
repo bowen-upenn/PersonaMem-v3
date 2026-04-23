@@ -2000,14 +2000,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -2855,14 +2854,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -3581,14 +3579,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -3731,14 +3728,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -3956,14 +3952,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -4721,14 +4716,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -4875,7 +4869,8 @@
             "update_type": "contradicted",
             "preference": "Interested in car-sharing services as an alternative to personal car ownership",
             "formatted_timestamp": "15:43, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "724729"
           },
           {
             "update_type": "reinforced",
@@ -4888,7 +4883,8 @@
             "update_type": "contradicted",
             "preference": "Interested in car-sharing services as an alternative to personal car ownership",
             "formatted_timestamp": "15:43, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "724729"
           }
         ],
         "time_horizon": "long_term"
@@ -4912,7 +4908,8 @@
             "update_type": "contradicted",
             "preference": "Interested in car-sharing services as an alternative to personal car ownership",
             "formatted_timestamp": "15:43, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "724729"
           },
           {
             "update_type": "reinforced",
@@ -4925,7 +4922,8 @@
             "update_type": "contradicted",
             "preference": "Interested in car-sharing services as an alternative to personal car ownership",
             "formatted_timestamp": "15:43, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "724729"
           }
         ],
         "time_horizon": "long_term"
@@ -5287,7 +5285,8 @@
             "update_type": "contradicted",
             "preference": "Interested in car-sharing services as an alternative to personal car ownership",
             "formatted_timestamp": "15:43, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "724729"
           },
           {
             "update_type": "reinforced",
@@ -5307,7 +5306,8 @@
             "update_type": "contradicted",
             "preference": "Interested in car-sharing services as an alternative to personal car ownership",
             "formatted_timestamp": "15:43, 04/03/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "724729"
           }
         ],
         "time_horizon": "long_term"
@@ -5516,14 +5516,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -5752,14 +5751,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -6145,14 +6143,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -6414,14 +6411,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -6497,14 +6493,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -6598,14 +6593,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -7599,14 +7593,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -8171,14 +8164,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -8549,14 +8541,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -9119,14 +9110,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -9707,14 +9697,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -9815,14 +9804,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -10734,14 +10722,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -10928,14 +10915,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -11090,14 +11076,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -11613,14 +11598,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -12499,14 +12483,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -12558,14 +12541,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -14306,14 +14288,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -14403,14 +14384,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -14618,229 +14598,267 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           }
         ],
         "time_horizon": "long_term"
@@ -14978,14 +14996,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -15521,14 +15538,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -16721,14 +16737,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -17422,14 +17437,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -17582,14 +17596,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -18915,115 +18928,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "reinforced",
@@ -19036,115 +19068,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           }
         ],
         "time_horizon": "long_term"
@@ -19914,14 +19965,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -20423,14 +20473,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -20520,115 +20569,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "reinforced",
@@ -20648,115 +20716,134 @@
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           },
           {
             "update_type": "contradicted",
             "preference": "Identifies with or is interested in non-religious, secular worldviews.",
             "formatted_timestamp": "09:00, 04/08/2026",
-            "source_app": "Chatbot"
+            "source_app": "Chatbot",
+            "source_object_id": "800106"
           }
         ],
         "time_horizon": "long_term"
@@ -21102,14 +21189,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -21866,14 +21952,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -22936,14 +23021,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -23218,14 +23302,13 @@
             "total_occurrences": 20
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "06:45, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           }
         ],
         "time_horizon": "long_term"
@@ -23313,14 +23396,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
@@ -24099,14 +24181,13 @@
             "total_occurrences": 134
           },
           {
-            "update_type": "contradicted",
+            "update_type": "ambivalent",
             "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
             "formatted_timestamp": "08:00, 04/03/2026",
             "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "resolution": "different_granularity",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 4,
-            "required_precedent": 3
+            "source_object_id": "671869"
           },
           {
             "update_type": "contradicted",
