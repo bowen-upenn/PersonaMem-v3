@@ -89,9 +89,6 @@ TASK_ALIASES = {
     "agentic": AGENTIC_TASK_IDS,
     # Individual agentic shortcuts: t6, t7, ..., t19.
     **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
-    # Legacy v1 names.
-    "chatbot_response": ["chatbot_response"],
-    "c1_fatigue": ["c1_fatigue"],
 }
 
 MODES = ("agent_tools", "mcp_agent", "agent_longctx", "llm_longctx")
@@ -136,9 +133,6 @@ BENCHMARK_TASK_KEYS = {
     "e5_horizon_lifecycle":"e5_horizon_lifecycle",
     # Agentic T6-T19 — key in benchmark JSON is same as task_id.
     **{tid: tid for tid in AGENTIC_TASK_IDS},
-    # Legacy v1.
-    "chatbot_response": "chatbot_response",
-    "c1_fatigue":       "c1_fatigue",
 }
 
 
@@ -160,14 +154,12 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
     )
     if name == "slate_ranking":
         return slate_ranking.run_task_a(**common)
-    if name in ("chatbot_response", "chatbot_response_proactive", "chatbot_response_control"):
+    if name in ("chatbot_response_proactive", "chatbot_response_control"):
         return chatbot_response.run_task_b(**common)
     if name == "c1a_pairs":
         return over_personalization.run_task_c1a(**common)
     if name == "c1b_sequences":
         return over_personalization.run_task_c1b(**common)
-    if name == "c1_fatigue":
-        return over_personalization.run_task_c1(**common)
     if name == "c2_scenarios":
         return over_personalization.run_task_c2(**common)
     if name == "c3_restraint":
