@@ -50,45 +50,242 @@ class TestItem:
 
 # --- Test-item discovery ---------------------------------------------------
 
+# Per-app selection cap when we have to pick test moments ourselves
+# (R8 data — no `split: "test"` labels in the backend anymore).
+#
+# The legacy pipeline produced a floor of 10 test items per user total
+# (see old `build_test_split` docstring). Ten per social app + up to 15
+# chatbot moments gives ~45 total for a rich user — within the old range
+# but not requiring any LLM call to select.
+_PER_APP_SELECTION_CAP = 10
+_CHATBOT_SELECTION_CAP = 15
+# Same floor the removed pipeline step used:
+# `init >= 0.75 AND cross_ref > canonical_xref_threshold(mix)`. We
+# approximate the mix-dependent bar with a conservative single floor of
+# 20.0 (the XREF_THRESHOLD_EXPLICIT floor) since splitting by mix means
+# reading atomic-level counts we no longer persist. For the purposes of
+# test-item selection this is strictly MORE selective than the old gate,
+# not less — we only lose a few borderline implicit-heavy canonicals.
+_MIN_INIT_FOR_TEST = 0.75
+_MIN_XREF_FOR_TEST = 20.0
+# Jaccard overlap below this counts as "topically irrelevant" when we
+# synthesize `over_personalization_irrelevant` on the fly.
+_DISTRACTOR_MAX_JACCARD = 0.15
+_DISTRACTOR_POOL_SIZE = 3
+
+
+def _hashtag_jaccard_norm(a: Iterable[str], b: Iterable[str]) -> float:
+    sa = {h.lstrip("#").lower() for h in (a or []) if h}
+    sb = {h.lstrip("#").lower() for h in (b or []) if h}
+    if not sa or not sb:
+        return 0.0
+    return len(sa & sb) / len(sa | sb)
+
+
+def _select_test_items_from_timeline(
+    raw_events_by_app: dict[str, list[dict]],
+    user_id: str,
+) -> list[TestItem]:
+    """R8 selector: pick test items when the backend no longer emits
+    `split: "test"`. Deterministic, LLM-free.
+
+    Per social app: pick up to `_PER_APP_SELECTION_CAP` positive preferences
+    by (confidence_cross_referenced DESC, source_timestamp DESC), de-duped
+    by persona_item (one TestItem per canonical, newest occurrence wins).
+
+    Chatbot: pick up to `_CHATBOT_SELECTION_CAP` positive chatbot events
+    whose first user turn is a standalone query (the test moment is the
+    chatbot turn itself, not a held-out preference per se).
+
+    `over_personalization_irrelevant` is computed on the fly via hashtag
+    Jaccard against the full pool of high-confidence preferences (lowest
+    overlap wins, up to `_DISTRACTOR_POOL_SIZE`).
+    """
+    # Step 1: flatten all positive-preference occurrences, annotated with their event.
+    pool: list[dict] = []
+    for app, events in raw_events_by_app.items():
+        for e in events:
+            it = e.get("source_interaction_type", "")
+            if "positive" not in it:
+                continue
+            for pref in e.get("preferences", []):
+                init = float(pref.get("confidence_score_init") or 0.0)
+                xref = float(pref.get("confidence_cross_referenced") or 0.0)
+                if init < _MIN_INIT_FOR_TEST or xref < _MIN_XREF_FOR_TEST:
+                    continue
+                pool.append({
+                    "app": app,
+                    "event": e,
+                    "pref": pref,
+                    "persona_item": pref.get("persona_item") or "",
+                    "hashtags": list(e.get("source_hashtags") or []),
+                    "xref": xref,
+                    "ts": int(e.get("source_timestamp") or 0),
+                })
+
+    # Step 2: per social app, pick top-N by xref/ts, de-duped by persona_item.
+    picked: list[dict] = []
+    for app in ("instagram", "facebook", "threads"):
+        app_items = [p for p in pool if p["app"] == app]
+        # Latest occurrence per canonical
+        by_canonical: dict[str, dict] = {}
+        for p in app_items:
+            key = p["persona_item"]
+            if not key:
+                continue
+            prev = by_canonical.get(key)
+            if prev is None or p["ts"] > prev["ts"]:
+                by_canonical[key] = p
+        ranked = sorted(
+            by_canonical.values(),
+            key=lambda p: (p["xref"], p["ts"]),
+            reverse=True,
+        )[:_PER_APP_SELECTION_CAP]
+        picked.extend(ranked)
+
+    # Step 3: chatbot picks — pick events whose first user turn looks like
+    # a standalone query (ignore events that are pure continuations).
+    chatbot_items = [p for p in pool if p["app"] == "chatbot"]
+    chatbot_by_event: dict[str, dict] = {}
+    for p in chatbot_items:
+        eid = str(p["event"].get("source_object_id") or "")
+        if not eid:
+            continue
+        prev = chatbot_by_event.get(eid)
+        if prev is None or p["xref"] > prev["xref"]:
+            chatbot_by_event[eid] = p
+    chatbot_ranked = sorted(
+        chatbot_by_event.values(),
+        key=lambda p: (p["xref"], p["ts"]),
+        reverse=True,
+    )[:_CHATBOT_SELECTION_CAP]
+    picked.extend(chatbot_ranked)
+
+    # Step 4: build distractor shortlists on the fly. The distractor pool
+    # is "all high-confidence preferences OTHER than this test's canonical,
+    # with hashtag Jaccard <= _DISTRACTOR_MAX_JACCARD against this test's
+    # event hashtags". Keep up to _DISTRACTOR_POOL_SIZE per test item.
+    distractor_pool = [
+        {
+            "persona_item": p["persona_item"],
+            "category": p["pref"].get("category", ""),
+            "source_hashtags": p["hashtags"],
+        }
+        for p in pool if p["persona_item"]
+    ]
+    # De-dup by persona_item
+    seen: set[str] = set()
+    unique_distractor_pool = []
+    for d in distractor_pool:
+        if d["persona_item"] in seen:
+            continue
+        seen.add(d["persona_item"])
+        unique_distractor_pool.append(d)
+
+    # Step 5: emit TestItems
+    out: list[TestItem] = []
+    for p in picked:
+        e = p["event"]
+        app = p["app"]
+        pref = p["pref"]
+        test_hashtags = p["hashtags"]
+        # Pick topically-disjoint candidates; sort by lowest Jaccard to break ties
+        ranked_distractors = sorted(
+            (
+                (d, _hashtag_jaccard_norm(d["source_hashtags"], test_hashtags))
+                for d in unique_distractor_pool
+                if d["persona_item"] != p["persona_item"]
+            ),
+            key=lambda pair: pair[1],
+        )
+        chosen = [
+            d for d, j in ranked_distractors
+            if j <= _DISTRACTOR_MAX_JACCARD
+        ][:_DISTRACTOR_POOL_SIZE]
+        out.append(TestItem(
+            user_id=user_id,
+            app=app,
+            source_object_id=str(e.get("source_object_id", "")),
+            source_timestamp=int(e.get("source_timestamp", 0)),
+            formatted_timestamp=e.get("formatted_timestamp", ""),
+            source_interaction_type=e.get("source_interaction_type", ""),
+            source_hashtags=list(e.get("source_hashtags", [])),
+            content=e.get("content", {}),
+            interaction_format=e.get("interaction_format", {}),
+            preference=pref,
+            over_personalization_irrelevant=chosen,
+            conversation=e.get("conversation") if app == "chatbot" else None,
+            conversation_type=e.get("conversation_type") if app == "chatbot" else None,
+        ))
+    out.sort(key=lambda t: t.source_timestamp)
+    return out
+
+
 def load_test_items(
     backend_dir: str | Path,
     user_id: str,
     apps: Iterable[str] = APPS,
 ) -> list[TestItem]:
-    """Walk app JSONs and emit one TestItem per preference with split=="test".
+    """Emit one TestItem per test moment for this user.
+
+    Two selection paths:
+
+    1. **Legacy (pre-R8 backends):** if any preference in the raw events
+       carries `split: "test"`, use exactly that filter. Preserves
+       reproducibility of benchmarks built against pre-R8 data.
+
+    2. **R8 backends:** data-gen no longer emits `split` or
+       `over_personalization_irrelevant`. Fall back to the deterministic
+       selector (`_select_test_items_from_timeline`): per-app top-N high-
+       confidence preferences (init >= 0.75, xref >= 20.0), time-newest
+       first, de-duped by canonical. Distractors are computed on the fly
+       via hashtag Jaccard.
 
     We read the raw JSON (not the stripped BackendQuery view) because the
-    harness itself needs the split label + irrelevant distractors.
+    harness itself needs the un-stripped preference + hashtags for
+    distractor pairing and ground-truth building.
     """
     base = Path(backend_dir) / user_id
-    out: list[TestItem] = []
+    raw_by_app: dict[str, list[dict]] = {}
     for app in apps:
         path = base / f"{app}.json"
         if not path.exists():
+            raw_by_app[app] = []
             continue
         with path.open() as f:
-            events = json.load(f)
+            raw_by_app[app] = json.load(f)
+
+    # Legacy path: any `split: "test"` preference present?
+    legacy_items: list[TestItem] = []
+    has_legacy_split = False
+    for app, events in raw_by_app.items():
         for e in events:
             for pref in e.get("preferences", []):
-                if pref.get("split") != "test":
-                    continue
-                out.append(TestItem(
-                    user_id=user_id,
-                    app=app,
-                    source_object_id=str(e.get("source_object_id", "")),
-                    source_timestamp=int(e.get("source_timestamp", 0)),
-                    formatted_timestamp=e.get("formatted_timestamp", ""),
-                    source_interaction_type=e.get("source_interaction_type", ""),
-                    source_hashtags=list(e.get("source_hashtags", [])),
-                    content=e.get("content", {}),
-                    interaction_format=e.get("interaction_format", {}),
-                    preference=pref,
-                    over_personalization_irrelevant=list(pref.get("over_personalization_irrelevant", [])),
-                    conversation=e.get("conversation") if app == "chatbot" else None,
-                    conversation_type=e.get("conversation_type") if app == "chatbot" else None,
-                ))
-    out.sort(key=lambda t: t.source_timestamp)
-    return out
+                if pref.get("split") == "test":
+                    has_legacy_split = True
+                    legacy_items.append(TestItem(
+                        user_id=user_id,
+                        app=app,
+                        source_object_id=str(e.get("source_object_id", "")),
+                        source_timestamp=int(e.get("source_timestamp", 0)),
+                        formatted_timestamp=e.get("formatted_timestamp", ""),
+                        source_interaction_type=e.get("source_interaction_type", ""),
+                        source_hashtags=list(e.get("source_hashtags", [])),
+                        content=e.get("content", {}),
+                        interaction_format=e.get("interaction_format", {}),
+                        preference=pref,
+                        over_personalization_irrelevant=list(
+                            pref.get("over_personalization_irrelevant") or []
+                        ),
+                        conversation=e.get("conversation") if app == "chatbot" else None,
+                        conversation_type=e.get("conversation_type") if app == "chatbot" else None,
+                    ))
+    if has_legacy_split:
+        legacy_items.sort(key=lambda t: t.source_timestamp)
+        return legacy_items
+
+    # R8 path: pick test moments from the full timeline
+    return _select_test_items_from_timeline(raw_by_app, user_id)
 
 
 # --- Same-day ground-truth slice (Task B) ----------------------------------

@@ -8,8 +8,11 @@ Two consumers:
   to the snapshot, so its Read/Glob/Grep tools physically cannot reach outside it —
   no "please don't" prompt engineering, just filesystem scoping.
 
-Fields that would leak train/test state (`split`, `over_personalization_irrelevant`,
-`update_history`, cross-ref scores) are stripped from every materialized file.
+Scoring-side fields (`update_history`, cross-ref scores, stereotype mark,
+hidden persona labels) are stripped from every materialized file. As of R8
+the data-gen pipeline no longer emits `split` / `over_personalization_irrelevant`;
+those entries in `_LEAK_FIELDS_*` remain for backward-compatibility with
+pre-R8 backends.
 """
 
 from __future__ import annotations
@@ -674,9 +677,11 @@ def materialize_snapshot(
 
 This directory contains user {user_id}'s interaction history as of a specific
 test moment. Every event has `source_timestamp < T_test`; future events are
-absent and the `split` / `over_personalization_irrelevant` labels have been
-stripped — you are seeing the same view a recommender would have at inference
-time.
+absent. Scoring fields (`update_history`, `confidence_*`, `stereotype_mark`,
+`hidden_persona_labels`) are stripped — you are seeing the same view a
+recommender would have at inference time. Newer backends no longer carry
+`split` / `over_personalization_irrelevant`; the eval harness now picks test
+moments dynamically from the full timeline.
 
 ## Files (use `Read` to open any of them)
 
