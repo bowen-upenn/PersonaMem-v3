@@ -202,6 +202,12 @@ The prompt explicitly tells the LLM that in an 8-day window, "long_term" means "
 
 **Step 4 — Contradiction Graph:** Contradictory preferences grouped by topic with chronological timelines showing stance shifts.
 
+**Step 5b — Cross-Polarity Contradiction Gate (R1 fix):** Positive and negative canonicals can survive their independent cross-ref pipelines with no awareness of each other. Step 5b walks the Cartesian product of surviving (positive, negative) canonicals, filtering to pairs sharing ≥ `HASHTAG_OVERLAP_MIN = 2` source hashtags. An LLM call (batched, mini-tier) confirms which pairs are semantically opposite stances on the same topic (filters out "interested in technique" vs. "dislikes commentary" — related but not contradictory).
+
+For each confirmed pair, the **temporal-precedent rule** decides which stance survives: the LATER-emerging stance is kept only if `same_polarity_rows_before_opposite_first_row >= MIN_STANCE_FLIP_PRIOR` (3 for long_term, `MIN_STANCE_FLIP_PRIOR_SHORT = 1` for short_term). When the gate FAILS, the later canonical is demoted (dropped from `cross_referenced_*`) and the survivor gets a `"contradicted"` update_history entry with `resolution: "suppressed_insufficient_precedent"`. When the gate PASSES (Case B), both survive and BOTH carry mutual `"contradicted"` entries with `resolution: "stance_shift_with_precedent"`, keeping the legitimate stance shift visible.
+
+Demoted canonicals are stored in `self._suppressed_stance_flips` for audit. This closes the 115-boxing bug: a positive "Interested in boxing" and a negative "Not interested in boxing" event 1h apart with no prior positive evidence now yield a single surviving canonical instead of both.
+
 **Step 5 — Update Histories:** Each preference gets a temporal `update_history[]` array with entries tagged by `update_type`:
 
 | `update_type` | Definition |
@@ -474,6 +480,9 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `SHORT_TERM_MAX_SPAN_FRAC` | 0.35 | Span/obs_window cutoff for short-term horizon eligibility |
 | `SHORT_TERM_MAX_ROWS` | 8 | Row-count cutoff for short-term horizon eligibility |
 | `XREF_THRESHOLD_SHORT_TERM` | 3.0 | Relaxed xref survival floor for short_term canonicals |
+| `MIN_STANCE_FLIP_PRIOR` | 3 | Same-polarity rows required before a contradictory stance is admitted (long_term) |
+| `MIN_STANCE_FLIP_PRIOR_SHORT` | 1 | Relaxed precedent requirement for short_term canonicals |
+| `HASHTAG_OVERLAP_MIN` | 2 | Pos/neg canonical pairs must share ≥ this many hashtags for cross-polarity check |
 | Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
 | Test fraction | 0.20 | Latest 20% of high-confidence positives |
 | Test floor | 10 | Min test items per user (only reduced when the high-conf pool itself is smaller) |
