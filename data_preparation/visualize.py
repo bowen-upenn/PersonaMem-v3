@@ -304,12 +304,16 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .stop-condition .sc-type {{ text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; margin-right: 6px; }}
   .badge.sponsored {{ background: #FFF7ED; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #FED7AA; }}
   .event-location {{ font-size: 11px; color: var(--text-tertiary); }}
-  .calendar-card {{ background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 3px solid #16A34A; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 12px; color: #14532D; }}
+  .calendar-card {{ background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 12px; color: #14532D; box-shadow: 0 1px 2px rgba(22,163,74,0.08); }}
   .calendar-card .cal-head {{ display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-weight: 600; }}
   .calendar-card .cal-action {{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; color: #fff; background: #16A34A; font-weight: 700; }}
   .calendar-card .cal-action.removed {{ background: #DC2626; }}
   .calendar-card .cal-action.updated {{ background: #CA8A04; }}
   .calendar-card .cal-meta {{ font-size: 11px; opacity: 0.75; margin-top: 2px; }}
+  .calendar-summary {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 40px; box-shadow: var(--shadow); }}
+  .calendar-summary .section-title {{ margin-bottom: 12px; font-size: 18px; font-weight: 600; letter-spacing: -0.2px; }}
+  .calendar-summary .calendar-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }}
+  .calendar-summary .calendar-card {{ margin-bottom: 0; }}
   .ad-meta {{ margin-top: 6px; padding: 6px 10px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 6px; font-size: 11px; color: #7C2D12; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }}
   .ad-meta .ad-sponsor {{ font-weight: 600; }}
   .ad-meta .ad-cta {{ background: #9A3412; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }}
@@ -408,6 +412,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
   <div id="profile-section"></div>
   <div id="hidden-personas-section"></div>
+  <div id="calendar-summary-section"></div>
 
   <div class="section">
     <div class="section-title">Interaction Events (earliest &rarr; latest)</div>
@@ -665,6 +670,32 @@ function renderCalendarMod(mod) {{
     </div>
   `;
 }}
+
+// -- Calendar summary section (so mods are visible without scrolling
+//    through hundreds of event cards to find them inline) --
+(function () {{
+  const holder = document.getElementById('calendar-summary-section');
+  if (!holder) return;
+  if (!calendarMods || !calendarMods.length) return;
+  const added = calendarMods.filter(m => m.action === 'added').length;
+  const updated = calendarMods.filter(m => m.action === 'updated').length;
+  const removed = calendarMods.filter(m => m.action === 'removed').length;
+  let cards = '';
+  calendarMods.forEach(m => {{
+    cards += renderCalendarMod(m);
+  }});
+  holder.innerHTML = `
+    <div class="section calendar-summary">
+      <div class="section-title">
+        📅 Calendar modifications
+        <span style="font-size:12px;font-weight:400;color:var(--text-secondary);margin-left:8px;">
+          ${{calendarMods.length}} total · ${{added}} added · ${{updated}} updated · ${{removed}} removed
+        </span>
+      </div>
+      <div class="calendar-grid">${{cards}}</div>
+    </div>
+  `;
+}})();
 
 // -- Chronological timeline of interaction events + calendar modifications --
 const timeline = document.getElementById('timeline-section');
