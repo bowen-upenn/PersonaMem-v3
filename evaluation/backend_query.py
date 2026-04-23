@@ -410,16 +410,23 @@ class BackendQuery:
         }
 
     def get_trending(self, user_id: str) -> list[dict]:
-        """Return trending.json content (Extension B addendum 3).
+        """Return the trending-hashtag list for this user.
 
-        If the file doesn't exist (v1 backend), returns the user's top-20
-        hashtags as a degraded fallback — labeled as such so the caller knows
-        it's not "real" trending.
+        Reads trending.json (Extension B addendum 3) and returns the inner
+        `hashtags` list. If the file is missing (v1 backend), returns a
+        degraded fallback derived from the user's top-20 hashtags, labeled
+        with `degraded_fallback: True` so the caller knows it's synthesized.
+        Always returns a list — callers can uniformly do `len(...)`, `[:5]`, etc.
         """
         path = self.base / user_id / "trending.json"
         if path.exists():
             with path.open() as f:
-                return json.load(f)
+                data = json.load(f)
+            # v2 format: {"built_at": ..., "hashtags": [...]}. Unwrap.
+            if isinstance(data, dict) and "hashtags" in data:
+                return data["hashtags"]
+            if isinstance(data, list):
+                return data
         # Degraded fallback.
         counts: dict[str, int] = {}
         for app in APPS:
