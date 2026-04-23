@@ -334,6 +334,19 @@ MIN_STANCE_FLIP_PRIOR_SHORT: int = 1   # relaxed for short_term canonicals
 STANCE_FLIP_WINDOW_HOURS: int = 48     # (informational; all pairs are checked regardless)
 HASHTAG_OVERLAP_MIN: int = 2           # pos/neg pair must share ≥ this many hashtags
 
+# --------------------------------------------------------------------------
+# Geolocation + calendar (Step 11b/11c).
+MAX_LOCATIONS_PER_USER: int = 3         # Home + up to 2 travel cities
+HOME_LOCATION_MIN_SHARE: float = 0.90   # ≥90% of sessions share the home location
+MIN_CALENDAR_ENTRIES: int = 5
+MAX_CALENDAR_ENTRIES: int = 10
+# Rough split of calendar modification actions
+CALENDAR_MOD_WEIGHTS: dict[str, float] = {
+    "added": 0.65,
+    "updated": 0.20,
+    "removed": 0.15,
+}
+
 # NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
 # side. A preference corroborated by 200 distinct rows should be strictly
 # more confident than one corroborated by 10 — they can't both be 1.0. Only
@@ -1083,6 +1096,19 @@ class PersonaAgent:
         # canonical, the opposing surviving canonical, and the reason.
         # Informational only; never written to disk.
         self._suppressed_stance_flips: list[dict] = []
+
+        # Per-session geolocation (Step 11b). Keyed by session index →
+        # {"city", "region", "country", "lat", "lon", "precision"}. Filled
+        # by `assign_event_locations()`. save_to_backend emits the session's
+        # location on each event.
+        self._session_location: dict[int, dict] = {}
+
+        # Calendar modification stream (Step 11c). List of CRUD events on
+        # synthetic calendar entries — added / updated / removed at
+        # scattered timestamps across the observation window. Persisted
+        # to `backend/{uid}/calendar.json` as a single object
+        # `{"modifications": [...]}`.
+        self._calendar_modifications: list[dict] = []
 
         # Thread-safe set of known categories, built up during Step 1
         self._known_categories: set[str] = set()
@@ -3728,6 +3754,305 @@ class PersonaAgent:
             return bucket[0]
         return rng.choices(bucket, weights=weights, k=1)[0]
 
+    # ------------------------------------------------------------------
+    # Per-session geolocation (Step 11b)
+    # ------------------------------------------------------------------
+
+    def assign_event_locations(self) -> None:
+        """Step 11b: Infer a geolocation for each session via a batched
+        LLM call, then fan it out to every row in that session.
+
+        Populates `self._session_location[session_idx]`. Events in
+        save_to_backend pick up the location via the session index.
+        Skipped when there are no sessions or no LLM client.
+        """
+        if not self._sessions:
+            return
+        if not self.user_profile:
+            return
+        client = self.llm_client_mini or self.llm_client
+        if client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping location assignment (no llm client).{utils.Colors.ENDC}")
+            return
+
+        # Condense the session manifest — one line per session
+        manifest: list[dict] = []
+        for idx, session in enumerate(self._sessions):
+            if not session:
+                continue
+            start_ts = session[0].interaction_time
+            end_ts = session[-1].interaction_time
+            # Dominant hashtags: most frequent across the session's rows
+            from collections import Counter as _Counter
+            tag_counts: _Counter = _Counter()
+            for row in session:
+                for t in self._extract_hashtags(row.object_text):
+                    tag_counts[t.lstrip("#").lower()] += 1
+            dominant = [t for t, _ in tag_counts.most_common(6)]
+            dominant_app = self._row_app.get(session[0].object_id, "") or ""
+            manifest.append({
+                "idx": idx,
+                "start_ts": start_ts,
+                "end_ts": end_ts,
+                "start_formatted": utils.unix_to_formatted(start_ts),
+                "end_formatted": utils.unix_to_formatted(end_ts),
+                "dominant_app": dominant_app,
+                "dominant_hashtags": dominant,
+            })
+
+        if not manifest:
+            return
+
+        user_profile_dict = {
+            "name": self.user_profile.name,
+            "gender": self.user_profile.gender,
+            "race_ethnicity": self.user_profile.race_ethnicity,
+            "career": self.user_profile.career,
+            "education": self.user_profile.education,
+            "bio": self.user_profile.bio,
+        }
+
+        obs_window_days = self._obs_window_days()
+        prompt = prompts.assign_session_locations_prompt(
+            user_profile=user_profile_dict,
+            obs_window_days=obs_window_days,
+            session_manifest=manifest,
+            max_locations=MAX_LOCATIONS_PER_USER,
+            home_share=HOME_LOCATION_MIN_SHARE,
+        )
+
+        response = self._query_mini_with_retry(prompt)
+        if not response:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Location assignment: LLM returned nothing.{utils.Colors.ENDC}")
+            return
+        parsed = utils.extract_json_from_response(response)
+        if not isinstance(parsed, dict):
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Location assignment: LLM output was not a dict.{utils.Colors.ENDC}")
+            return
+
+        # Populate per-session locations; coerce keys to int
+        n_set = 0
+        for k, loc in parsed.items():
+            try:
+                idx = int(k)
+            except (ValueError, TypeError):
+                continue
+            if not isinstance(loc, dict):
+                continue
+            self._session_location[idx] = {
+                "city": loc.get("city", ""),
+                "region": loc.get("region", ""),
+                "country": loc.get("country", ""),
+                "lat": loc.get("lat"),
+                "lon": loc.get("lon"),
+                "precision": loc.get("precision", "city"),
+            }
+            n_set += 1
+
+        # Count distinct cities for audit
+        cities = {loc.get("city", "") for loc in self._session_location.values() if loc.get("city")}
+        if self.verbose:
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"Locations assigned: {n_set}/{len(manifest)} sessions, "
+                  f"{len(cities)} distinct cities: {sorted(cities)}.{utils.Colors.ENDC}")
+
+    # ------------------------------------------------------------------
+    # Synthetic calendar modification stream (Step 11c)
+    # ------------------------------------------------------------------
+
+    def generate_calendar_modifications(self) -> None:
+        """Step 11c: Generate a small, scattered timeline of calendar CRUD
+        events. Persisted later by save_to_backend to `calendar.json`.
+
+        The calendar is a MODIFICATION STREAM (add/update/remove) rather
+        than a static list, so the state at any T_test is derived by
+        folding modifications with ts <= T. Eval tasks (E5 horizon
+        lifecycle) consume this naturally with the same time-mask used
+        for event history.
+        """
+        if not self.user_profile or not self.interactions:
+            return
+        client = self.llm_client_mini or self.llm_client
+        if client is None:
+            return
+
+        # Derive home + travel windows from session locations
+        home_location: dict = {}
+        travel_windows: list[dict] = []
+        if self._session_location:
+            from collections import Counter as _Counter
+            city_counts = _Counter(
+                loc.get("city", "") for loc in self._session_location.values()
+                if loc.get("city")
+            )
+            if city_counts:
+                home_city, _ = city_counts.most_common(1)[0]
+                # Find the full home location record
+                for loc in self._session_location.values():
+                    if loc.get("city") == home_city:
+                        home_location = loc
+                        break
+                # Travel windows: contiguous session runs NOT at home
+                current_run: list[int] = []
+                sorted_sessions = sorted(self._session_location.items(), key=lambda kv: kv[0])
+                for idx, loc in sorted_sessions:
+                    if loc.get("city") != home_city:
+                        current_run.append(idx)
+                    else:
+                        if current_run:
+                            start_idx = current_run[0]
+                            end_idx = current_run[-1]
+                            start_ts = self._sessions[start_idx][0].interaction_time if start_idx < len(self._sessions) else 0
+                            end_ts = self._sessions[end_idx][-1].interaction_time if end_idx < len(self._sessions) else 0
+                            away_loc = self._session_location.get(start_idx, {})
+                            travel_windows.append({
+                                "city": away_loc.get("city", ""),
+                                "start_ts": start_ts,
+                                "end_ts": end_ts,
+                            })
+                            current_run = []
+                if current_run:
+                    start_idx = current_run[0]
+                    end_idx = current_run[-1]
+                    start_ts = self._sessions[start_idx][0].interaction_time if start_idx < len(self._sessions) else 0
+                    end_ts = self._sessions[end_idx][-1].interaction_time if end_idx < len(self._sessions) else 0
+                    away_loc = self._session_location.get(start_idx, {})
+                    travel_windows.append({
+                        "city": away_loc.get("city", ""),
+                        "start_ts": start_ts,
+                        "end_ts": end_ts,
+                    })
+
+        # User profile + app personas for grounding
+        user_profile_dict = {
+            "name": self.user_profile.name,
+            "gender": self.user_profile.gender,
+            "career": self.user_profile.career,
+            "education": self.user_profile.education,
+            "bio": self.user_profile.bio,
+        }
+        app_personas_dict = {}
+        for app_name, persona in (self.user_profile.app_personas or {}).items():
+            if isinstance(persona, AppPersona):
+                app_personas_dict[app_name] = {
+                    "use_purposes": persona.use_purposes,
+                    "topical_focus": persona.topical_focus,
+                    "posting_frequency": persona.posting_frequency,
+                }
+            elif isinstance(persona, dict):
+                app_personas_dict[app_name] = {
+                    "use_purposes": persona.get("use_purposes", []),
+                    "topical_focus": persona.get("topical_focus", []),
+                    "posting_frequency": persona.get("posting_frequency", ""),
+                }
+
+        preference_list = [
+            {"persona_item": cr.persona_item, "category": cr.category}
+            for cr in (self.cross_referenced_personas or [])
+        ]
+
+        ts_all = [r.interaction_time for r in self.interactions if r.interaction_time]
+        if not ts_all:
+            return
+        obs_start_ts = min(ts_all)
+        obs_end_ts = max(ts_all)
+        obs_window_days = (obs_end_ts - obs_start_ts) / 86400.0
+
+        n_mods = min(
+            MAX_CALENDAR_ENTRIES + 5,  # upper cap for total modifications
+            max(MIN_CALENDAR_ENTRIES, int(obs_window_days * 1.2) + 3),
+        )
+
+        prompt = prompts.generate_calendar_modifications_prompt(
+            user_profile=user_profile_dict,
+            app_personas=app_personas_dict,
+            obs_window_days=obs_window_days,
+            obs_start_ts=obs_start_ts,
+            obs_end_ts=obs_end_ts,
+            home_location=home_location,
+            travel_windows=travel_windows,
+            preference_list=preference_list,
+            n_modifications=n_mods,
+        )
+
+        response = self._query_mini_with_retry(prompt)
+        if not response:
+            return
+        parsed = utils.extract_json_from_response(response)
+        if not isinstance(parsed, list):
+            return
+
+        # Filter + normalize modifications
+        known_entry_ids: set[str] = set()
+        sanitized: list[dict] = []
+        for entry in parsed:
+            if not isinstance(entry, dict):
+                continue
+            action = entry.get("action")
+            if action not in ("added", "updated", "removed"):
+                continue
+            ts = entry.get("ts")
+            if not isinstance(ts, int):
+                continue
+            if action == "added":
+                payload = entry.get("entry")
+                if not isinstance(payload, dict):
+                    continue
+                entry_id = payload.get("entry_id") or f"cal_{len(sanitized) + 1:03d}"
+                payload["entry_id"] = entry_id
+                known_entry_ids.add(entry_id)
+                sanitized.append({
+                    "mod_id": entry.get("mod_id", f"mod_{len(sanitized) + 1:03d}"),
+                    "ts": ts,
+                    "formatted_timestamp": entry.get("formatted_timestamp") or utils.unix_to_formatted(ts),
+                    "action": "added",
+                    "entry": payload,
+                })
+            elif action == "updated":
+                ref_id = entry.get("entry_id")
+                if ref_id not in known_entry_ids:
+                    continue
+                diff = entry.get("diff")
+                if not isinstance(diff, dict):
+                    continue
+                sanitized.append({
+                    "mod_id": entry.get("mod_id", f"mod_{len(sanitized) + 1:03d}"),
+                    "ts": ts,
+                    "formatted_timestamp": entry.get("formatted_timestamp") or utils.unix_to_formatted(ts),
+                    "action": "updated",
+                    "entry_id": ref_id,
+                    "diff": diff,
+                })
+            elif action == "removed":
+                ref_id = entry.get("entry_id")
+                if ref_id not in known_entry_ids:
+                    continue
+                known_entry_ids.discard(ref_id)
+                sanitized.append({
+                    "mod_id": entry.get("mod_id", f"mod_{len(sanitized) + 1:03d}"),
+                    "ts": ts,
+                    "formatted_timestamp": entry.get("formatted_timestamp") or utils.unix_to_formatted(ts),
+                    "action": "removed",
+                    "entry_id": ref_id,
+                    "removal_reason": entry.get("removal_reason", ""),
+                })
+
+        sanitized.sort(key=lambda m: m["ts"])
+        self._calendar_modifications = sanitized
+        if self.verbose:
+            n_add = sum(1 for m in sanitized if m["action"] == "added")
+            n_upd = sum(1 for m in sanitized if m["action"] == "updated")
+            n_rem = sum(1 for m in sanitized if m["action"] == "removed")
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"Calendar modifications: {len(sanitized)} total "
+                  f"({n_add} added / {n_upd} updated / {n_rem} removed).{utils.Colors.ENDC}")
+
     def generate_interaction_formats(self) -> None:
         """For each routed preference, sample a concrete interaction_format
         from this user's perturbed catalog and generate a user_message if
@@ -4804,6 +5129,8 @@ class PersonaAgent:
           9.  build sessions
          10.  route preferences to apps (LLM + 8% noise)
          11.  assign rows to apps (session majority vote)
+         11b. assign per-session geolocations
+         11c. generate calendar modification stream
          12.  generate interaction formats (weighted catalog sampling)
          13.  generate chatbot conversations (multi-turn, implicit embedding)
          13b. generate synthetic per-event content (text/image/short_video)
@@ -4830,6 +5157,8 @@ class PersonaAgent:
             ("9.  Build sessions",                   self._build_sessions),
             ("10. Route preferences to apps",        self.route_personas_to_apps),
             ("11. Assign rows to apps",              self._assign_rows_to_apps),
+            ("11b. Assign session locations",        self.assign_event_locations),
+            ("11c. Generate calendar modifications", self.generate_calendar_modifications),
             ("12. Generate interaction formats",     self.generate_interaction_formats),
             ("13. Generate chatbot conversations",   self.generate_chatbot_conversations),
             ("13b. Generate synthetic content",      self.generate_synthetic_content),
@@ -5208,6 +5537,14 @@ class PersonaAgent:
                 event["is_ad"] = True
                 self._ad_oids.add(oid)  # keep set coherent if only action matched
 
+            # Per-session geolocation (Step 11b). Looked up via the session
+            # index for this row; absent when location assignment didn't run.
+            sess_idx = self._object_id_to_session.get(oid)
+            if sess_idx is not None:
+                loc = self._session_location.get(sess_idx)
+                if loc:
+                    event["event_location"] = loc
+
             # Attach synthetic content (step 13b). Chatbot and stubs are never
             # in self._content_by_oid, so those events render unchanged.
             content_entry = self._content_by_oid.get(oid)
@@ -5285,7 +5622,7 @@ class PersonaAgent:
             stub_hashtags = self._extract_hashtags(interaction.object_text)
             stub_fmt_ts = self._format_timestamp(interaction.interaction_time)
             sampled_entry = self._sample_action_from_bucket(stub_app, "implicit_negative", event_rng)
-            all_events.append({
+            stub_event = {
                 "source_object_id": interaction.object_id,
                 "source_timestamp": interaction.interaction_time,
                 "formatted_timestamp": stub_fmt_ts,
@@ -5298,7 +5635,13 @@ class PersonaAgent:
                     "user_message": None,
                 },
                 "preferences": [],
-            })
+            }
+            sess_idx = self._object_id_to_session.get(interaction.object_id)
+            if sess_idx is not None:
+                loc = self._session_location.get(sess_idx)
+                if loc:
+                    stub_event["event_location"] = loc
+            all_events.append(stub_event)
             n_stubs += 1
 
         if self.verbose and n_stubs:
@@ -5376,6 +5719,12 @@ class PersonaAgent:
             profile_path = os.path.join(user_dir, "profile.json")
             with open(profile_path, "w", encoding="utf-8") as f:
                 json.dump(profile_dict, f, indent=2, ensure_ascii=False)
+
+        # --- Write calendar.json (modification stream) ---
+        if self._calendar_modifications:
+            calendar_path = os.path.join(user_dir, "calendar.json")
+            with open(calendar_path, "w", encoding="utf-8") as f:
+                json.dump({"modifications": self._calendar_modifications}, f, indent=2, ensure_ascii=False)
 
         if self.verbose:
             total_events = len(all_events)

@@ -113,11 +113,27 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     profile = _load_profile(user_dir)
     events, flat_prefs = _load_app_events(user_dir)
 
+    # Load calendar modification stream (Step 11c output). Optional — older
+    # backends may not have it.
+    calendar_mods: list[dict] = []
+    calendar_path = os.path.join(user_dir, "calendar.json")
+    if os.path.exists(calendar_path):
+        try:
+            with open(calendar_path, "r", encoding="utf-8") as f:
+                cal_doc = json.load(f)
+            if isinstance(cal_doc, dict):
+                mods = cal_doc.get("modifications", [])
+                if isinstance(mods, list):
+                    calendar_mods = mods
+        except (ValueError, OSError):
+            pass
+
     now_str = datetime.now(tz=timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
-    # Serialize events for JS
+    # Serialize events + calendar mods for JS
     events_json = json.dumps(events)
     profile_json = json.dumps(profile) if profile else "null"
+    calendar_json = json.dumps(calendar_mods)
 
     # Counts
     n_events = len(events)
@@ -288,6 +304,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .stop-condition {{ margin-top: 4px; font-size: 10px; color: #7C3AED; opacity: 0.85; font-style: italic; }}
   .stop-condition .sc-type {{ text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; margin-right: 6px; }}
   .badge.sponsored {{ background: #FFF7ED; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #FED7AA; }}
+  .event-location {{ font-size: 11px; color: var(--text-tertiary); }}
+  .calendar-card {{ background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 3px solid #16A34A; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 12px; color: #14532D; }}
+  .calendar-card .cal-head {{ display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-weight: 600; }}
+  .calendar-card .cal-action {{ font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px; border-radius: 4px; color: #fff; background: #16A34A; font-weight: 700; }}
+  .calendar-card .cal-action.removed {{ background: #DC2626; }}
+  .calendar-card .cal-action.updated {{ background: #CA8A04; }}
+  .calendar-card .cal-meta {{ font-size: 11px; opacity: 0.75; margin-top: 2px; }}
   .ad-meta {{ margin-top: 6px; padding: 6px 10px; background: #FFF7ED; border: 1px solid #FED7AA; border-radius: 6px; font-size: 11px; color: #7C2D12; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }}
   .ad-meta .ad-sponsor {{ font-weight: 600; }}
   .ad-meta .ad-cta {{ background: #9A3412; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; }}
@@ -396,6 +419,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 <script>
 const eventsData = {events_json};
 const profileData = {profile_json};
+const calendarMods = {calendar_json};
 
 // Label -> motivation lookup for hidden persona badge tooltips.
 const hpMotivation = {{}};
@@ -601,7 +625,48 @@ function renderUpdateHistory(history) {{
   return `<div class="update-history">${{entries}}</div>`;
 }}
 
-// -- Chronological timeline of interaction events --
+// -- Calendar modification card renderer --
+function renderCalendarMod(mod) {{
+  const action = mod.action || '';
+  const actionCls = `cal-action ${{action}}`;
+  const actionLabel = action.toUpperCase();
+  let title = '';
+  let locChip = '';
+  let extraLine = '';
+  if (action === 'added' && mod.entry) {{
+    const e = mod.entry;
+    title = escapeHtml(e.title || '(untitled)');
+    if (e.location && e.location.city) {{
+      locChip = ` 📍 ${{escapeHtml(e.location.city)}}`;
+    }}
+    const start = e.start_ts ? new Date(e.start_ts * 1000).toISOString().slice(0, 16).replace('T', ' ') : '';
+    const typeLbl = e.type ? `<span style="opacity:0.7">[${{escapeHtml(e.type)}}]</span>` : '';
+    extraLine = `<div class="cal-meta">scheduled for ${{start}} ${{typeLbl}} ${{e.is_preference_driven ? '· preference-linked' : '· unrelated'}}</div>`;
+  }} else if (action === 'updated') {{
+    title = `update to ${{escapeHtml(mod.entry_id || '?')}}`;
+    const diff = mod.diff || {{}};
+    const fields = Object.keys(diff).join(', ');
+    extraLine = `<div class="cal-meta">changed: ${{escapeHtml(fields)}}</div>`;
+  }} else if (action === 'removed') {{
+    title = `removed ${{escapeHtml(mod.entry_id || '?')}}`;
+    if (mod.removal_reason) {{
+      extraLine = `<div class="cal-meta">${{escapeHtml(mod.removal_reason)}}</div>`;
+    }}
+  }}
+  const ts = mod.formatted_timestamp ? escapeHtml(mod.formatted_timestamp) : '';
+  return `
+    <div class="calendar-card">
+      <div class="cal-head">
+        <span class="${{actionCls}}">📅 ${{actionLabel}}</span>
+        <span>${{title}}${{locChip}}</span>
+      </div>
+      <div style="opacity:0.6;font-size:11px;">${{ts}}</div>
+      ${{extraLine}}
+    </div>
+  `;
+}}
+
+// -- Chronological timeline of interaction events + calendar modifications --
 const timeline = document.getElementById('timeline-section');
 if (eventsData.length === 0) {{
   timeline.innerHTML = '<div class="empty">No interaction events available.</div>';
@@ -609,7 +674,21 @@ if (eventsData.length === 0) {{
   const grid = document.createElement('div');
   grid.className = 'event-grid';
 
-  eventsData.forEach((ev, idx) => {{
+  // Build a merged timeline: events + calendar mods, sorted by timestamp.
+  const timelineItems = [];
+  eventsData.forEach((ev, i) => timelineItems.push({{ kind: 'event', ts: ev.source_timestamp || 0, data: ev, eventIdx: i }}));
+  (calendarMods || []).forEach(mod => timelineItems.push({{ kind: 'cal', ts: mod.ts || 0, data: mod }}));
+  timelineItems.sort((a, b) => (a.ts || 0) - (b.ts || 0));
+
+  timelineItems.forEach(item => {{
+    if (item.kind === 'cal') {{
+      const div = document.createElement('div');
+      div.innerHTML = renderCalendarMod(item.data);
+      grid.appendChild(div.firstElementChild);
+      return;
+    }}
+    const ev = item.data;
+    const idx = item.eventIdx;
     const app = ev._app || 'Instagram';
     const fmt = ev.interaction_format || {{}};
     const prefs = ev.preferences || [];
@@ -621,12 +700,23 @@ if (eventsData.length === 0) {{
     const card = document.createElement('div');
     card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}`;
 
+    // Location string
+    let locText = '';
+    if (ev.event_location && typeof ev.event_location === 'object') {{
+      const loc = ev.event_location;
+      const parts = [loc.city, loc.region].filter(x => x).map(escapeHtml);
+      if (parts.length > 0) {{
+        locText = `<span class="event-location">📍 ${{parts.join(', ')}}</span>`;
+      }}
+    }}
+
     // Event header
     let headerHtml = `
       <div class="event-header">
         <div class="event-meta">
           <span style="font-weight:600;color:var(--text);">Event #${{idx+1}}</span> &middot;
           ${{ev.formatted_timestamp || ''}} &middot;
+          ${{locText}}${{locText ? ' &middot; ' : ''}}
           ${{prefs.length}} preference${{prefs.length !== 1 ? 's' : ''}}
         </div>
         <div>
