@@ -142,14 +142,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     n_stereo = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "stereotypical")
     n_anti = sum(1 for r in flat_prefs if r.get("stereotype_mark") == "anti-stereotypical")
     # Pref-instance test counts (one per supporting event)
-    n_test_instances = sum(1 for r in flat_prefs if r.get("split") == "test")
-    n_history_instances = n_prefs - n_test_instances
-    # Canonical-level test counts: a canonical is "test" if any of its
-    # instances carries split=test (matches the pipeline summary's semantics).
-    test_canonicals = {r.get("persona_item", "") for r in flat_prefs if r.get("split") == "test"}
-    test_canonicals.discard("")
-    n_test_canonicals = len(test_canonicals)
-    n_history_canonicals = n_unique - n_test_canonicals
+    # R8: no more test/train split in data-gen output. Count short-term
+    # horizons instead — those are the actionable eval-facing signal.
+    n_short_term_instances = sum(1 for r in flat_prefs if r.get("time_horizon") == "short_term")
+    n_ad_events = sum(1 for e in events if e.get("is_ad"))
+    short_term_canonicals = {r.get("persona_item", "") for r in flat_prefs if r.get("time_horizon") == "short_term"}
+    short_term_canonicals.discard("")
+    n_short_term_canonicals = len(short_term_canonicals)
     per_app_counts = {}
     for app in APPS:
         per_app_counts[app] = sum(1 for e in events if e.get("_app") == app)
@@ -376,8 +375,9 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     <h1>User {user_id}</h1>
     <div class="meta">
       <span>{n_events} events</span>
-      <span>{n_prefs} pref instances ({n_test_instances} test, {n_history_instances} history)</span>
-      <span>{n_unique} canonicals ({n_test_canonicals} test, {n_history_canonicals} history)</span>
+      <span>{n_prefs} pref instances ({n_short_term_instances} short-term)</span>
+      <span>{n_unique} canonicals ({n_short_term_canonicals} short-term)</span>
+      <span>{n_ad_events} ad events</span>
       <span>{n_categories} categories</span>
       <span>{n_stereo} stereo</span>
       <span>{n_anti} anti-stereo</span>
@@ -736,7 +736,6 @@ if (eventsData.length === 0) {{
     }}
     prefs.forEach(p => {{
       let badges = `<span class="badge category">${{p.category || ''}}</span>`;
-      if (p.split === 'test') badges += `<span class="badge test">test</span>`;
       if (p.time_horizon === 'short_term') badges += `<span class="badge short-term">short-term</span>`;
       if (p.stereotype_mark && p.stereotype_mark !== 'neutral') badges += `<span class="badge ${{p.stereotype_mark}}">${{p.stereotype_mark}}</span>`;
       if (p.hidden_persona_labels && p.hidden_persona_labels.length > 0) {{
@@ -747,18 +746,8 @@ if (eventsData.length === 0) {{
         }});
       }}
 
-      let distractorLine = '';
-      if (p.split === 'test' && Array.isArray(p.over_personalization_irrelevant) && p.over_personalization_irrelevant.length > 0) {{
-        const distractorItems = p.over_personalization_irrelevant
-          .map(d => (d && d.persona_item) ? d.persona_item : '')
-          .filter(x => x)
-          .join(' | ');
-        if (distractorItems) {{
-          distractorLine = `<div style="margin-top:4px;font-size:10px;"><span class="badge distractor">distractors</span> ${{distractorItems}}</div>`;
-        }}
-      }} else if (p.split === 'test' && typeof p.over_personalization_irrelevant === 'string' && p.over_personalization_irrelevant) {{
-        distractorLine = `<div style="margin-top:4px;font-size:10px;"><span class="badge distractor">distractor</span> ${{p.over_personalization_irrelevant}}</div>`;
-      }}
+      // R8: split / over_personalization_irrelevant are no longer emitted
+      // by data-gen (eval picks its own test moments from the full history).
 
       const historyHtml = renderUpdateHistory(p.update_history);
 
@@ -781,7 +770,6 @@ if (eventsData.length === 0) {{
           <div class="pref-meta">${{badges}}</div>
           ${{stopConditionLine}}
           ${{historyHtml}}
-          ${{distractorLine}}
         </div>
       `;
     }});

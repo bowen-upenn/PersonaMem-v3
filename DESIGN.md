@@ -68,8 +68,8 @@ Input CSV (hashtag interactions per user)
   +- Step 13b: Generate synthetic content      [LLM]      -- text / image / short_video per event
   +- Step 13c: Inject ad events                [LLM]      -- ~6% of commerce-adjacent events become ads
   +- Step 14: Annotate stereotype marks        [LLM]      -- demographics-only
-  +- Step 15: Build test split                 [LLM+Algo] -- newest-first ≥10, inferrability-labelled
-  +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user
+  +- (Step 15 removed in R8 — eval picks test moments from the full timeline)
+  +- Step 16: Save to backend                  [Algo]     -- 5 JSON files per user + calendar.json
 ```
 
 **Model tiers:** the pipeline uses two LLM clients. The **flagship** model (`gpt-5-chat`) handles reasoning-heavy steps — 1 (atomic persona), 3-6 (cross-ref, temporal, histories, profile), 7b/7c (hidden personas + summary), 7b-MBTI, 8 (app personas), 13 (chatbot conversations), 15 (train/test split). The **mini** model (`gpt-5.4-mini`, configurable via `--mini_model`) handles mechanical steps — 7a (intimate-hashtag detection), 10 (app routing), 12 (interaction formats), 13b (synthetic content), 14 (stereotype marks). Mini falls back to flagship when no mini client is configured.
@@ -453,22 +453,16 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 
 ---
 
-## 15. Steps 15-16 — Test Split and Save
+## 15. Step 16 — Save (no test-split label)
 
-**Time-based, cross-app test selection (no "train" label):**
-1. Sort high-confidence positives (`init >= 0.75 AND cross_ref > canonical_xref_threshold(...)`) by latest-occurrence timestamp, newest-first.
-2. `n_test_target = min(pool_size, max(10, int(pool_size * 0.2)))`. Floor of 10 items per user when the pool is large enough, 20% otherwise.
-3. Walk the pool newest-first in batches of `n_test_target`. For each batch, the inferrability gate runs against "all cross_referenced_personas minus this batch". Inferrable items become `test` in strict newest-first order until the target is hit or the pool is exhausted.
-4. Items that fail the inferrability gate stay in `cross_referenced_personas` as interaction history — **never deleted**. Only "test" is written to the output; non-test preferences have no `split` field.
+As of R8, **data-gen no longer produces a train/test split.** The eval harness (see EVAL.md) picks test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — so pre-flagging a held-out subset in the emitted data was redundant and limiting. Both `split` and `over_personalization_irrelevant` have been dropped from per-preference output; `build_test_split` has been removed from the pipeline.
 
-**Inferrability gate:** LLM evaluates each candidate — can it be predicted from the rest of the history? The gate is informational only; it never removes canonicals from the pipeline.
-
-**Distractor pairing (3 per test item, causal):** For each test item, Python filters the non-test high-confidence pool to items whose first-occurrence timestamp `<=` the test item's last-occurrence timestamp (causality). LLM then ranks the top 3 most topically irrelevant / annoying items from a random shortlist of 15. Stored as a **list** of `{persona_item, category}` objects under `over_personalization_irrelevant`.
+Eval tasks now select test moments by task-specific criteria (e.g., @ai directive timestamps for E2, day tertiles for E3/E4, short-term canonicals for E5). The inferrability gate that used to live in data-gen is available to the eval harness at benchmark-build time if any task needs it — but it's no longer a pipeline step.
 
 **Step 16:**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
 - `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
-- `hidden_persona_labels` are now derived by **backward lookup** (row → cluster via `evidence_oids`), so causality is guaranteed by construction: a preference is labeled iff its own source row is part of the cluster's evidence. No separate availability gate needed.
+- `hidden_persona_labels` are derived by **backward lookup** (row → cluster via `evidence_oids`), so causality is guaranteed by construction: a preference is labeled iff its own source row is part of the cluster's evidence. No separate availability gate needed.
 
 ---
 

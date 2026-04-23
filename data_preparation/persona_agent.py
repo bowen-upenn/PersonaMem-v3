@@ -5136,7 +5136,9 @@ class PersonaAgent:
          13b. generate synthetic per-event content (text/image/short_video)
          13c. inject ad events (convert ~6% of commerce-adjacent events to ads)
          14.  annotate stereotype marks
-         15.  build test split (cross-app, latest-20% high-conf by time)
+         (Step 15 `build_test_split` removed in R8: eval picks its own test
+          moments from the full timeline; data-gen no longer emits
+          split / over_personalization_irrelevant.)
          16.  save to backend/{uid}/ subfolder
         """
         print(f"{utils.Colors.BOLD}[User {self.user_id}] Starting persona pipeline...{utils.Colors.ENDC}")
@@ -5164,7 +5166,9 @@ class PersonaAgent:
             ("13b. Generate synthetic content",      self.generate_synthetic_content),
             ("13c. Inject ad events",                self.inject_ad_events),
             ("14. Annotate stereotype marks",        self.annotate_stereotype_marks),
-            ("15. Build test split",                 self.build_test_split),
+            # Step 15 (build_test_split) removed in R8 — eval harness picks
+            # test moments from the full timeline at T_test cuts instead of
+            # relying on data-gen-frozen test labels.
             ("16. Save to backend",                  self.save_to_backend),
         ]
 
@@ -5175,9 +5179,6 @@ class PersonaAgent:
             total_elapsed = time.time() - pipeline_start
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] {step_name}: "
                   f"{elapsed:.1f}s (total: {total_elapsed:.1f}s){utils.Colors.ENDC}")
-
-        n_test = sum(1 for v in self.split_labels.values() if v == "test")
-        n_history = len(self.cross_referenced_personas) - n_test
 
         summary = {
             "user_id": self.user_id,
@@ -5196,9 +5197,12 @@ class PersonaAgent:
                 len(self.user_profile.app_personas) if self.user_profile else 0
             ),
             "annotated_personas": len(self.annotated_personas),
-            "split_test": n_test,
-            "interaction_history_preferences": n_history,
-            "distractors_assigned": len(self.test_distractors),
+            "n_short_term": sum(
+                1 for p in self.cross_referenced_personas if p.time_horizon == "short_term"
+            ),
+            "n_ad_events": len(self._ad_oids),
+            "n_calendar_modifications": len(self._calendar_modifications),
+            "n_suppressed_stance_flips": len(self._suppressed_stance_flips),
             "total_time_seconds": round(time.time() - pipeline_start, 1),
         }
         total_time = time.time() - pipeline_start
@@ -5350,16 +5354,10 @@ class PersonaAgent:
                     continue  # this atomic's canonical was filtered out
 
                 ann = all_annotated_items.get(cr.persona_item)
-                # Only label as "test" if this event is in the latest 20%
-                raw_split = self.split_labels.get(cr.persona_item, "")
-                split_label = "test" if raw_split == "test" and ap.source_timestamp >= test_ts_cutoff else ""
-                distractor_list = (
-                    self.test_distractors.get(cr.persona_item, []) if split_label == "test" else []
-                )
-                # Tolerate the legacy single-dict shape from older cached
-                # state so we don't need a migration sweep.
-                if isinstance(distractor_list, dict):
-                    distractor_list = [distractor_list]
+                # R8: `split` and `over_personalization_irrelevant` are no longer
+                # emitted by data-gen. Eval tasks pick their own test moments
+                # by cutting the timeline at any T_test they choose; the
+                # history is just the history.
 
                 # Build merged update_history: temporal entries (no raw timestamp)
                 # + related_personas folded in as similar/contradictory entries.
@@ -5448,16 +5446,6 @@ class PersonaAgent:
                     sc = getattr(cr, "stop_condition", {}) or {}
                     if sc:
                         pref["stop_condition"] = sc
-                if split_label == "test":
-                    pref["split"] = "test"
-                    # A list of distractor dicts, each {persona_item, category}.
-                    pref["over_personalization_irrelevant"] = [
-                        {
-                            "persona_item": d.get("persona_item", ""),
-                            "category": d.get("category", ""),
-                        }
-                        for d in distractor_list
-                    ]
 
                 preferences.append(pref)
 
@@ -5649,11 +5637,9 @@ class PersonaAgent:
                   f"(no preferences, greyscale in HTML).{utils.Colors.ENDC}")
 
         # Assertion: no negative interaction event should have test-labeled preferences
-        for event in all_events:
-            if "negative" in event.get("source_interaction_type", ""):
-                assert all(
-                    p.get("split") != "test" for p in event["preferences"]
-                ), f"BUG: negative interaction {event.get('source_object_id')} leaked into test split"
+        # R8: removed the "no test label on negative events" assertion — split
+        # labels are no longer emitted by data-gen. Eval picks test moments
+        # itself from the full history.
 
         # Sort strictly chronological
         all_events.sort(key=lambda e: (int(e.get("source_timestamp") or 0), e.get("source_object_id", "")))
