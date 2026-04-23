@@ -275,6 +275,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .ut-contradicted {{ color: #B04050; }}
   .stance-res {{ font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; padding: 1px 6px; border-radius: 3px; margin-left: 4px; }}
   .stance-res.stance-passed {{ background: #FEE2E2; color: #7F1D1D; }}
+  .stance-res.stance-ambivalence {{ background: #FFEDD5; color: #9A3412; }}
   .stance-res.stance-suppressed {{ background: #F3F4F6; color: #6B7280; text-decoration: line-through; }}
   .ut-faded {{ color: var(--text-tertiary); }}
   .ut-expanded {{ color: #1D4ED8; }}
@@ -619,7 +620,9 @@ function renderUpdateHistory(history) {{
     if (h.source_app) text += ` <span class="badge platform p-${{h.source_app}}" style="font-size:9px;padding:1px 6px;">${{h.source_app}}</span>`;
     if (h.total_occurrences) text += ` <span style="opacity:0.6">[occ ${{h.occurrence}}/${{h.total_occurrences}}]</span>`;
     if (h.resolution) {{
-      const resCls = h.resolution === 'stance_shift_with_precedent' ? 'stance-passed' : 'stance-suppressed';
+      const resCls = h.resolution === 'stance_shift_with_precedent' ? 'stance-passed'
+                   : h.resolution === 'concurrent_ambivalence'     ? 'stance-ambivalence'
+                   : 'stance-suppressed';
       text += ` <span class="stance-res ${{resCls}}">${{h.resolution.replace(/_/g, ' ')}}</span>`;
       if (typeof h.prior_corroboration_count === 'number') {{
         text += ` <span style="opacity:0.6">prior ${{h.prior_corroboration_count}}/${{h.required_precedent}}</span>`;

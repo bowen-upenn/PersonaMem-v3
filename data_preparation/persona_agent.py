@@ -270,7 +270,10 @@ SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 # cross-ref step requires N distinct source rows for any canonical supported
 # only by implicit evidence. Canonicals with any explicit-negative evidence
 # are unaffected.
-MIN_IMPLICIT_NEGATIVE_REPETITION = 5   # distinct source rows for implicit-only negative to survive
+MIN_IMPLICIT_NEGATIVE_REPETITION = 10  # distinct source rows for implicit-only negative to survive
+                                       # (raised from 5 — the lower bar let spurious negatives through
+                                       # that then survived cross-ref and produced the 115 NFL
+                                       # "Interested in NFL" / "Not interested in NFL" both-survive bug)
 IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to bother with LLM call
 
 # Recency window on cross-reference counting. Only evidence rows whose
@@ -329,10 +332,24 @@ SHORT_TERM_ALLOWED_CATEGORIES: set[str] = {
 # boxing" ~1h apart, no causal story). Step 7 enforces temporal
 # precedent: the later-emerging stance survives only when it has enough
 # prior same-polarity evidence to justify the flip.
-MIN_STANCE_FLIP_PRIOR: int = 3
+MIN_STANCE_FLIP_PRIOR: int = 5         # raised from 3 — marginal stance flips were passing
+                                       # (e.g., a few lingers followed by unfollow minutes later)
 MIN_STANCE_FLIP_PRIOR_SHORT: int = 1   # relaxed for short_term canonicals
 STANCE_FLIP_WINDOW_HOURS: int = 48     # (informational; all pairs are checked regardless)
 HASHTAG_OVERLAP_MIN: int = 2           # pos/neg pair must share ≥ this many hashtags
+# Dominance check: when the stronger canonical has ≥ this multiple of the
+# weaker one's supporting rows, the weaker is treated as noise (over-inferred
+# minority opinion) and dropped regardless of precedent. Fires BEFORE the
+# temporal-precedent check. Without this, a user with 51 positive NFL rows
+# and 7 negative NFL rows keeps both canonicals as a "stance shift with
+# precedent", which is wrong — the 7 is noise, not a shift.
+DOMINANCE_DROP_RATIO: float = 2.5
+# When both sides survive (dominance ratio < DOMINANCE_DROP_RATIO AND
+# precedent is met), detect whether the earlier side kept substantial
+# activity AFTER the later side's first row. If so, it's concurrent
+# ambivalence, not a clean stance shift. Labeled differently in
+# update_history so eval/HTML can tell them apart.
+MIN_EARLIER_POST_FLIP_FOR_CONCURRENT: int = 5
 
 # --------------------------------------------------------------------------
 # Geolocation + calendar (Steps 15 + 16).
@@ -2214,17 +2231,69 @@ class PersonaAgent:
 
             pos_first = pos_tss[0]
             neg_first = neg_tss[0]
+            pos_n = len(pos_tss)
+            neg_n = len(neg_tss)
 
-            # Determine which side is the LATER-emerging stance
+            # ---- Dominance check ---------------------------------------
+            # If one side is much stronger by row count, the weaker is
+            # over-inferred noise, not a legitimate counter-stance. Drop
+            # it regardless of precedent.
+            stronger_n = max(pos_n, neg_n)
+            weaker_n = min(pos_n, neg_n)
+            if weaker_n > 0 and (stronger_n / weaker_n) >= DOMINANCE_DROP_RATIO:
+                if pos_n >= neg_n:
+                    stronger_cr, weaker_cr = pos_cr, neg_cr
+                    stronger_pol, weaker_pol = "positive", "negative"
+                else:
+                    stronger_cr, weaker_cr = neg_cr, pos_cr
+                    stronger_pol, weaker_pol = "negative", "positive"
+                survivor_entry = {
+                    "update_type": "contradicted",
+                    "preference": weaker_cr.persona_item,
+                    "timestamp": min(pos_first, neg_first),
+                    "formatted_timestamp": utils.unix_to_formatted(min(pos_first, neg_first)),
+                    "opposing_polarity": weaker_pol,
+                    "resolution": "suppressed_weak_minority",
+                    "stronger_row_count": stronger_n,
+                    "weaker_row_count": weaker_n,
+                    "dominance_ratio": round(stronger_n / weaker_n, 2),
+                }
+                stronger_cr.update_history = list(stronger_cr.update_history or []) + [survivor_entry]
+                if weaker_pol == "positive":
+                    to_drop_pos.add(weaker_cr.persona_item)
+                else:
+                    to_drop_neg.add(weaker_cr.persona_item)
+                self._suppressed_stance_flips.append({
+                    "dropped_persona_item": weaker_cr.persona_item,
+                    "dropped_polarity": weaker_pol,
+                    "kept_persona_item": stronger_cr.persona_item,
+                    "kept_polarity": stronger_pol,
+                    "reason": "dominance",
+                    "stronger_row_count": stronger_n,
+                    "weaker_row_count": weaker_n,
+                    "dominance_ratio": round(stronger_n / weaker_n, 2),
+                    "shared_hashtags": sorted(shared),
+                })
+                pair_results.append({
+                    "pos": pos_cr.persona_item, "neg": neg_cr.persona_item,
+                    "resolution": "suppressed_weak_minority",
+                    "dominance_ratio": round(stronger_n / weaker_n, 2),
+                    "shared_hashtags": sorted(shared),
+                })
+                continue
+
+            # ---- Determine later-emerging stance (temporal precedent) ---
             if neg_first > pos_first:
                 later_cr, later_polarity = neg_cr, "negative"
                 earlier_cr, earlier_polarity = pos_cr, "positive"
                 earlier_tss = pos_tss
+                later_tss_local = neg_tss
                 later_first = neg_first
             elif pos_first > neg_first:
                 later_cr, later_polarity = pos_cr, "positive"
                 earlier_cr, earlier_polarity = neg_cr, "negative"
                 earlier_tss = neg_tss
+                later_tss_local = pos_tss
                 later_first = pos_first
             else:
                 # Simultaneous first occurrences — treat the negative as
@@ -2233,9 +2302,13 @@ class PersonaAgent:
                 later_cr, later_polarity = neg_cr, "negative"
                 earlier_cr, earlier_polarity = pos_cr, "positive"
                 earlier_tss = pos_tss
+                later_tss_local = neg_tss
                 later_first = neg_first
 
             prior_count = sum(1 for t in earlier_tss if t < later_first)
+            # How much the earlier side continued AFTER the later side emerged.
+            # High continuation = concurrent ambivalence, not a stance shift.
+            earlier_after = sum(1 for t in earlier_tss if t >= later_first)
 
             # Short-term horizon uses a relaxed precedent bar
             required = (
@@ -2245,7 +2318,11 @@ class PersonaAgent:
             )
 
             if prior_count >= required:
-                resolution = "stance_shift_with_precedent"
+                resolution = (
+                    "concurrent_ambivalence"
+                    if earlier_after >= MIN_EARLIER_POST_FLIP_FOR_CONCURRENT
+                    else "stance_shift_with_precedent"
+                )
                 # Both survive; add mutual "contradicted" entries
                 entry_for_later = {
                     "update_type": "contradicted",
@@ -2256,6 +2333,7 @@ class PersonaAgent:
                     "resolution": resolution,
                     "prior_corroboration_count": prior_count,
                     "required_precedent": required,
+                    "earlier_rows_after_flip": earlier_after,
                 }
                 entry_for_earlier = {
                     "update_type": "contradicted",
@@ -2266,6 +2344,7 @@ class PersonaAgent:
                     "resolution": resolution,
                     "prior_corroboration_count": prior_count,
                     "required_precedent": required,
+                    "earlier_rows_after_flip": earlier_after,
                 }
                 later_cr.update_history = list(later_cr.update_history or []) + [entry_for_later]
                 earlier_cr.update_history = list(earlier_cr.update_history or []) + [entry_for_earlier]
@@ -5369,7 +5448,9 @@ class PersonaAgent:
                                       "source_app", "occurrence", "total_occurrences", "description",
                                       # Cross-polarity contradiction metadata (Step 7)
                                       "resolution", "opposing_polarity",
-                                      "prior_corroboration_count", "required_precedent"]
+                                      "prior_corroboration_count", "required_precedent",
+                                      "earlier_rows_after_flip",
+                                      "stronger_row_count", "weaker_row_count", "dominance_ratio"]
                 event_ts = ap.source_timestamp  # this atomic's source row timestamp
 
                 merged_history = []
