@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable
 
-from evaluation.backend_query import APPS, BackendQuery
+from evaluation.backend_query import APPS, BackendQuery, materialize_snapshot
 
 
 # --- Data classes ----------------------------------------------------------
@@ -285,6 +285,90 @@ def serialize_history_for_context(
         "truncated": truncated,
     }
     return text, stats
+
+
+# --- Mode dispatch helper (shared across task drivers) ---------------------
+
+def dispatch_agent_run(
+    mode: str,
+    prompt: str,
+    *,
+    bq: BackendQuery,
+    user_id: str,
+    t: int,
+    claude_model: str,
+    llm_client,
+    run_dir: Path | None = None,
+    enabled_mcp_apps: tuple[str, ...] = ("instagram", "facebook", "threads", "chatbot"),
+) -> tuple[str, int, dict]:
+    """Single point of truth for how each inference mode gets an agent response.
+
+    Returns `(text, tool_call_count, subagent_stats_dict)`.
+
+    - `agent_tools`: Claude Code subagent with filesystem Read on a snapshot.
+    - `mcp_agent`:   Claude Code subagent with MCP tools (writes to overlay).
+    - `agent_longctx`: Claude Code subagent, no tools, history in prompt.
+    - `llm_longctx`: single QueryLLM call (non-Claude provider baseline).
+    """
+    from evaluation.claude_subagent import run_subagent
+
+    if mode == "agent_tools":
+        snap = materialize_snapshot(bq, user_id, t)
+        sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model)
+        return sub.text, sub.turns, _pack_stats(sub, include_denials=True)
+
+    if mode == "agent_longctx":
+        snap = materialize_snapshot(bq, user_id, t)
+        sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model, allowed_tools=())
+        return sub.text, 0, _pack_stats(sub)
+
+    if mode == "mcp_agent":
+        from evaluation.mcp_config_builder import build_mcp_config, mcp_allowed_tools, write_mcp_config
+        # Snapshot still used as cwd (Claude Code needs a scope dir even with MCP only),
+        # but filesystem tools are denied so it's inert.
+        snap = materialize_snapshot(bq, user_id, t)
+        run_base = Path(run_dir) if run_dir else Path("benchmark") / user_id / "runs" / "_tmp" / str(t)
+        run_base.mkdir(parents=True, exist_ok=True)
+        overlay_path = run_base / f"writes_{t}.jsonl"
+        cfg_path = run_base / f"mcp_config_{t}.json"
+        cfg = build_mcp_config(
+            user_id=user_id, t_test=t,
+            overlay_path=overlay_path,
+            backend_dir=str(bq.base),
+            enabled_apps=enabled_mcp_apps,
+        )
+        write_mcp_config(cfg_path, cfg)
+        mcp_patterns = mcp_allowed_tools(enabled_mcp_apps)
+        sub = run_subagent(
+            prompt=prompt, snapshot_dir=snap, model=claude_model,
+            allowed_tools=(),  # no filesystem tools in MCP mode
+            mcp_config_path=cfg_path,
+            mcp_tool_patterns=tuple(mcp_patterns),
+            timeout_seconds=600,
+        )
+        # Return the overlay path in stats so the grader can read writes.jsonl.
+        stats = _pack_stats(sub, include_denials=True)
+        stats["overlay_path"] = str(overlay_path)
+        stats["mcp_config_path"] = str(cfg_path)
+        return sub.text, sub.turns, stats
+
+    # llm_longctx — non-Claude baseline via QueryLLM.
+    if llm_client is None:
+        return "", 0, {"error": "llm_longctx mode requires a QueryLLM client but none was passed"}
+    return (llm_client.query_llm(prompt) or ""), 0, {}
+
+
+def _pack_stats(sub, include_denials: bool = False) -> dict:
+    out = {
+        "duration_ms": sub.duration_ms,
+        "cost_usd": sub.cost_usd,
+        "input_tokens": sub.input_tokens,
+        "output_tokens": sub.output_tokens,
+        "cache_read_tokens": sub.cache_read_tokens,
+    }
+    if include_denials:
+        out["permission_denials"] = len(sub.permission_denials)
+    return out
 
 
 # --- Snapshot cache (shared time masking) -----------------------------------

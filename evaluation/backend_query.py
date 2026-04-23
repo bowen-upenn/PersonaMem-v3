@@ -14,6 +14,7 @@ Fields that would leak train/test state (`split`, `over_personalization_irreleva
 
 from __future__ import annotations
 
+import base64
 import json
 from pathlib import Path
 from typing import Any, Iterable
@@ -241,6 +242,245 @@ class BackendQuery:
     def get_full_profile(self, user_id: str) -> dict:
         """Full profile — for judge / eval-side use only, never pass to the agent."""
         return dict(self._load_profile(user_id))
+
+    # -- MCP-support queries (Extension A′) ---------------------------------
+    # Cursor pagination: opaque base64(f"{ts}:{eid}").
+    # Sorted descending by (timestamp, event_id) — newest first.
+
+    def get_event_by_id(self, user_id: str, app: str, event_id: str) -> dict | None:
+        """O(1) lookup after first call caches the index. Returns a stripped event."""
+        for e in self._load_events(user_id, app):
+            if str(e.get("source_object_id", "")) == event_id:
+                return _strip_event(e)
+        return None
+
+    def search_events(
+        self,
+        user_id: str,
+        app: str | Iterable[str],
+        query: str,
+        search_type: str = "post",
+        since_timestamp: int | None = None,
+        cursor: str | None = None,
+        limit: int = 20,
+    ) -> dict:
+        """Paginated search. search_type ∈ {post, user, hashtag}.
+
+        - `post`: substring search over title/caption/overall_description.
+        - `hashtag`: exact hashtag match (normalized, #-stripped).
+        - `user`: placeholder — returns matching author_ids (needs Ext B; for
+          v1 backend returns empty list).
+        """
+        apps: list[str] = list(APPS) if app == "all" else ([app] if isinstance(app, str) else list(app))
+        q_lower = (query or "").lower().lstrip("#")
+        out: list[dict] = []
+        for a in apps:
+            if a not in APPS:
+                continue
+            for e in self._load_events(user_id, a):
+                ts = e.get("source_timestamp", 0)
+                if since_timestamp is not None and ts >= since_timestamp:
+                    continue
+                match = False
+                if search_type == "hashtag":
+                    tags = [h.lower().lstrip("#") for h in (e.get("source_hashtags") or [])]
+                    match = q_lower in tags
+                elif search_type == "user":
+                    # Ext B: match on author_id. v1: no-op.
+                    match = str(e.get("author_id", "")).lower() == q_lower if e.get("author_id") else False
+                else:  # post
+                    content = e.get("content") or {}
+                    haystack = " ".join(str(v) for v in [
+                        content.get("title"), content.get("caption"), content.get("overall_description"),
+                    ] if v).lower()
+                    match = q_lower in haystack
+                if match:
+                    stripped = _strip_event(e)
+                    stripped["_app"] = a
+                    out.append(stripped)
+        out.sort(key=lambda x: (x.get("source_timestamp", 0), str(x.get("source_object_id", ""))), reverse=True)
+        return _paginate(out, cursor, limit)
+
+    def list_dm_threads(
+        self,
+        user_id: str,
+        app: str,
+        since_timestamp: int | None = None,
+        cursor: str | None = None,
+        limit: int = 20,
+    ) -> dict:
+        """List DM threads for an app. v1: reads from {app}_dms.json if present
+        (Ext B output); v2: also falls back to scanning events with `is_dm: True`.
+        """
+        # Preferred path: per-app DM file from Extension B.
+        dm_path = self.base / user_id / f"{app}_dms.json"
+        threads: list[dict] = []
+        if dm_path.exists():
+            with dm_path.open() as f:
+                threads = json.load(f)
+        else:
+            # Graceful degradation: group is_dm events in {app}.json by thread_id.
+            by_thread: dict[str, list[dict]] = {}
+            for e in self._load_events(user_id, app):
+                if not e.get("is_dm"):
+                    continue
+                tid = e.get("thread_id") or f"__solo__{e.get('source_object_id')}"
+                by_thread.setdefault(tid, []).append(e)
+            for tid, msgs in by_thread.items():
+                msgs.sort(key=lambda m: m.get("source_timestamp", 0))
+                threads.append({
+                    "thread_id": tid,
+                    "participants": sorted({m.get("author_id", "unknown") for m in msgs}
+                                            | {m.get("recipient_id", "unknown") for m in msgs if m.get("recipient_id")}),
+                    "is_group": False,
+                    "messages": [
+                        {"msg_id": str(m.get("source_object_id")), "sender": m.get("author_id", "unknown"),
+                         "timestamp": m.get("source_timestamp"),
+                         "text": (m.get("content") or {}).get("caption") or (m.get("interaction_format") or {}).get("user_message") or ""}
+                        for m in msgs
+                    ],
+                })
+        # Apply time mask.
+        filtered = []
+        for t in threads:
+            msgs = t.get("messages") or []
+            if since_timestamp is not None:
+                msgs = [m for m in msgs if (m.get("timestamp") or 0) < since_timestamp]
+            if not msgs:
+                continue
+            latest_ts = max(m.get("timestamp") or 0 for m in msgs)
+            filtered.append({
+                "thread_id": t["thread_id"],
+                "participants": t.get("participants") or [],
+                "is_group": bool(t.get("is_group")),
+                "latest_ts": latest_ts,
+                "last_message_preview": (msgs[-1].get("text") or "")[:80],
+                "unread_count": 0,
+            })
+        filtered.sort(key=lambda x: x["latest_ts"], reverse=True)
+        return _paginate(filtered, cursor, limit, key=lambda x: (x["latest_ts"], x["thread_id"]))
+
+    def get_dm_thread(
+        self,
+        user_id: str,
+        app: str,
+        thread_id: str,
+        since_timestamp: int | None = None,
+        cursor: str | None = None,
+        limit: int = 50,
+    ) -> dict | None:
+        """Paginated messages in one DM thread. Returns None if thread not found."""
+        dm_path = self.base / user_id / f"{app}_dms.json"
+        thread: dict | None = None
+        if dm_path.exists():
+            with dm_path.open() as f:
+                for t in json.load(f):
+                    if t.get("thread_id") == thread_id:
+                        thread = t
+                        break
+        if thread is None:
+            # Fallback: reconstruct from events.
+            msgs = [e for e in self._load_events(user_id, app)
+                    if e.get("is_dm") and e.get("thread_id") == thread_id]
+            if not msgs:
+                return None
+            msgs.sort(key=lambda m: m.get("source_timestamp", 0))
+            thread = {
+                "thread_id": thread_id,
+                "participants": sorted({m.get("author_id", "unknown") for m in msgs}
+                                        | {m.get("recipient_id", "unknown") for m in msgs if m.get("recipient_id")}),
+                "is_group": False,
+                "messages": [
+                    {"msg_id": str(m.get("source_object_id")), "sender": m.get("author_id", "unknown"),
+                     "timestamp": m.get("source_timestamp"),
+                     "text": (m.get("content") or {}).get("caption") or (m.get("interaction_format") or {}).get("user_message") or ""}
+                    for m in msgs
+                ],
+            }
+        msgs = thread.get("messages") or []
+        if since_timestamp is not None:
+            msgs = [m for m in msgs if (m.get("timestamp") or 0) < since_timestamp]
+        msgs.sort(key=lambda m: m.get("timestamp") or 0)
+        page = _paginate(msgs, cursor, limit, key=lambda m: (m.get("timestamp", 0), str(m.get("msg_id", ""))))
+        return {
+            "thread_id": thread_id,
+            "participants": thread.get("participants") or [],
+            "is_group": bool(thread.get("is_group")),
+            **page,
+        }
+
+    def get_trending(self, user_id: str) -> list[dict]:
+        """Return trending.json content (Extension B addendum 3).
+
+        If the file doesn't exist (v1 backend), returns the user's top-20
+        hashtags as a degraded fallback — labeled as such so the caller knows
+        it's not "real" trending.
+        """
+        path = self.base / user_id / "trending.json"
+        if path.exists():
+            with path.open() as f:
+                return json.load(f)
+        # Degraded fallback.
+        counts: dict[str, int] = {}
+        for app in APPS:
+            for e in self._load_events(user_id, app):
+                for h in e.get("source_hashtags", []):
+                    counts[h] = counts.get(h, 0) + 1
+        top = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:20]
+        return [{"hashtag": h, "rank": i + 1, "degraded_fallback": True} for i, (h, _) in enumerate(top)]
+
+    def get_friend(self, user_id: str, friend_id: str) -> dict | None:
+        """Resolve a friend_id from profile.friends[] (Ext B addendum 1).
+
+        Returns None if the friend graph isn't populated (v1 backend).
+        """
+        prof = self._load_profile(user_id)
+        friends = prof.get("friends") or []
+        for fr in friends:
+            if fr.get("friend_id") == friend_id:
+                return dict(fr)
+        return None
+
+
+# -- Cursor pagination helpers ----------------------------------------------
+
+def _encode_cursor(ts: int, eid: str) -> str:
+    return base64.urlsafe_b64encode(f"{ts}:{eid}".encode()).decode()
+
+
+def _decode_cursor(c: str) -> tuple[int, str]:
+    try:
+        ts_s, eid = base64.urlsafe_b64decode(c.encode()).decode().split(":", 1)
+        return int(ts_s), eid
+    except Exception:
+        return 0, ""
+
+
+def _paginate(items: list[dict], cursor: str | None, limit: int, key=None) -> dict:
+    """Slice `items` based on `cursor`. Returns {results, nextCursor?}.
+
+    Default key: (source_timestamp desc, source_object_id).
+    """
+    if key is None:
+        key = lambda x: (x.get("source_timestamp", 0), str(x.get("source_object_id", "")))
+    start = 0
+    if cursor:
+        ts, eid = _decode_cursor(cursor)
+        # Linear scan to find the cursor position (fine for per-user scale).
+        for i, it in enumerate(items):
+            k = key(it)
+            if k[0] < ts or (k[0] == ts and k[1] > eid):
+                start = i
+                break
+        else:
+            start = len(items)
+    page = items[start:start + limit]
+    out = {"results": page}
+    if start + limit < len(items):
+        last = page[-1]
+        k = key(last)
+        out["nextCursor"] = _encode_cursor(int(k[0]), str(k[1]))
+    return out
 
 
 DEFAULT_SNAPSHOT_ROOT = Path("/tmp/pm3_eval_snapshots")
