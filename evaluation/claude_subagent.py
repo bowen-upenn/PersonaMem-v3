@@ -72,6 +72,8 @@ def run_subagent(
     timeout_seconds: int = 300,
     max_budget_usd: float | None = None,
     extra_env: dict | None = None,
+    mcp_config_path: Path | None = None,
+    mcp_tool_patterns: tuple[str, ...] | None = None,
 ) -> SubagentResult:
     """Run a one-shot Claude Code subagent against the given snapshot directory.
 
@@ -92,7 +94,11 @@ def run_subagent(
     # absolute path. Without `--setting-sources ""` the subprocess inherits
     # permissive project / user / local settings from the caller's Claude
     # Code session, which silently overrides these allow patterns.
-    allowed_patterns = [f"{tool}(/{snapshot_abs}/**)" for tool in allowed_tools]
+    fs_allowed_patterns = [f"{tool}(/{snapshot_abs}/**)" for tool in allowed_tools]
+    # MCP patterns (e.g., "mcp__instagram__*") are added directly — no path
+    # scoping needed because the MCP server enforces its own scope.
+    mcp_patterns = list(mcp_tool_patterns or [])
+    allowed_patterns = fs_allowed_patterns + mcp_patterns
 
     cmd = [
         claude_bin,
@@ -100,13 +106,17 @@ def run_subagent(
         "--output-format", "json",
         "--model", model,
         "--setting-sources", "",
-        "--allowedTools", *allowed_patterns,
-        "--disallowedTools", *DEFAULT_DENY_TOOLS,
-        "--add-dir", snapshot_abs,
         "--permission-mode", "dontAsk",
         "--no-session-persistence",
         "--disable-slash-commands",
+        "--add-dir", snapshot_abs,
     ]
+    if allowed_patterns:
+        cmd += ["--allowedTools", *allowed_patterns]
+    # Always deny the listed built-in tools (Bash, Edit, Write, WebFetch, etc.).
+    cmd += ["--disallowedTools", *DEFAULT_DENY_TOOLS]
+    if mcp_config_path:
+        cmd += ["--mcp-config", str(Path(mcp_config_path).resolve()), "--strict-mcp-config"]
     if max_budget_usd is not None:
         cmd += ["--max-budget-usd", str(max_budget_usd)]
 

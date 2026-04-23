@@ -57,13 +57,13 @@ TASK_ALIASES = {
     "c1_fatigue": ["c1_fatigue"],
 }
 
-MODES = ("agent_tools", "agent_longctx", "llm_longctx")
+MODES = ("agent_tools", "mcp_agent", "agent_longctx", "llm_longctx")
 
 
 def _build_llm_clients(args):
-    """Only the llm_longctx mode + optional judge go through QueryLLM; the two
+    """Only the llm_longctx mode + optional judge go through QueryLLM; the
     Claude Code modes use the subscription-authed `claude` CLI directly."""
-    if args.dry_run or args.mode in ("agent_tools", "agent_longctx"):
+    if args.dry_run or args.mode in ("agent_tools", "agent_longctx", "mcp_agent"):
         baseline_client = None
     else:
         from query_llm import QueryLLM

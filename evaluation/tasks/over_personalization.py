@@ -14,30 +14,8 @@ from evaluation.inference_utils import (
     SnapshotCache,
     TestItem,
     build_judge_evidence,
+    dispatch_agent_run as _dispatch_agent,
 )
-
-
-def _dispatch_agent(mode: str, prompt: str, *, bq, user_id, t, claude_model, llm_client) -> tuple[str, int, dict]:
-    """Shared mode-dispatch for Task C1/C2/C3. Returns (text, tool_calls, stats)."""
-    if mode == "agent_tools":
-        snap = materialize_snapshot(bq, user_id, t)
-        sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model)
-        return sub.text, sub.turns, {
-            "duration_ms": sub.duration_ms, "cost_usd": sub.cost_usd,
-            "input_tokens": sub.input_tokens, "output_tokens": sub.output_tokens,
-            "cache_read_tokens": sub.cache_read_tokens,
-            "permission_denials": len(sub.permission_denials),
-        }
-    if mode == "agent_longctx":
-        snap = materialize_snapshot(bq, user_id, t)
-        sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model, allowed_tools=())
-        return sub.text, 0, {
-            "duration_ms": sub.duration_ms, "cost_usd": sub.cost_usd,
-            "input_tokens": sub.input_tokens, "output_tokens": sub.output_tokens,
-            "cache_read_tokens": sub.cache_read_tokens,
-        }
-    # llm_longctx
-    return (llm_client.query_llm(prompt) or ""), 0, {}
 
 
 # --- C1: repetition fatigue ------------------------------------------------

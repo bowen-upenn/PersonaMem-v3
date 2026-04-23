@@ -15,6 +15,7 @@ from evaluation.inference_utils import (
     SnapshotCache,
     TestItem,
     build_judge_evidence,
+    dispatch_agent_run,
 )
 
 
@@ -101,26 +102,10 @@ def run_task_b(
             })
             continue
 
-        tool_call_count = 0
-        subagent_stats: dict = {}
-        if mode == "agent_tools":
-            snap = materialize_snapshot(bq, user_id, t)
-            sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model)
-            raw_response = sub.text
-            tool_call_count = sub.turns
-            subagent_stats = {"duration_ms": sub.duration_ms, "cost_usd": sub.cost_usd,
-                              "input_tokens": sub.input_tokens, "output_tokens": sub.output_tokens,
-                              "cache_read_tokens": sub.cache_read_tokens,
-                              "permission_denials": len(sub.permission_denials)}
-        elif mode == "agent_longctx":
-            snap = materialize_snapshot(bq, user_id, t)
-            sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model, allowed_tools=())
-            raw_response = sub.text
-            subagent_stats = {"duration_ms": sub.duration_ms, "cost_usd": sub.cost_usd,
-                              "input_tokens": sub.input_tokens, "output_tokens": sub.output_tokens,
-                              "cache_read_tokens": sub.cache_read_tokens}
-        else:
-            raw_response = llm_client.query_llm(prompt) or ""
+        raw_response, tool_call_count, subagent_stats = dispatch_agent_run(
+            mode, prompt, bq=bq, user_id=user_id, t=t,
+            claude_model=claude_model, llm_client=llm_client,
+        )
 
         parsed = extract_json_from_response(raw_response) or {}
         response_text = parsed.get("response") or raw_response
