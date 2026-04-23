@@ -48,6 +48,7 @@ TASK_ALIASES = {
         "c2_scenarios",
         "c3_restraint",
         "c4_button_regen",
+        "e2_at_ai_followup",
         *AGENTIC_TASK_IDS,
     ],
     "a": ["slate_ranking"],
@@ -61,6 +62,8 @@ TASK_ALIASES = {
     "c2": ["c2_scenarios"],
     "c3": ["c3_restraint"],
     "c4": ["c4_button_regen"],
+    "e": ["e2_at_ai_followup"],
+    "e2": ["e2_at_ai_followup"],
     "agentic": AGENTIC_TASK_IDS,
     # Individual agentic shortcuts: t6, t7, ..., t19.
     **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
@@ -104,6 +107,8 @@ BENCHMARK_TASK_KEYS = {
     "c2_scenarios":     "c2_scenarios",
     "c3_restraint":     "c3_restraint",
     "c4_button_regen":  "c4_button_regen",
+    # Task E (R9+): @ai proactive recommendation, multi-day briefing, etc.
+    "e2_at_ai_followup":"e2_at_ai_followup",
     # Agentic T6-T19 — key in benchmark JSON is same as task_id.
     **{tid: tid for tid in AGENTIC_TASK_IDS},
     # Legacy v1.
@@ -144,6 +149,9 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
         return over_personalization.run_task_c3(**common)
     if name == "c4_button_regen":
         return over_personalization.run_task_c4(**common)
+    if name == "e2_at_ai_followup":
+        from evaluation.tasks import e2_at_ai_followup as _e2
+        return _e2.run_e2_at_ai_followup(**common)
     if name in AGENTIC_TASK_IDS:
         return agentic_tasks.run_task(task_id=name, **common)
     raise ValueError(f"unknown task: {name}")

@@ -917,6 +917,14 @@ def build_benchmark(
             agentic_buckets[task_id] = []
             print(f"[build_benchmark] WARN: {task_id} builder failed: {exc}")
 
+    # Task E2 — @ai proactive recommendation (R9 addition)
+    try:
+        from evaluation.tasks.e2_at_ai_followup import build_e2_at_ai_followup
+        e2_instances = build_e2_at_ai_followup(bq, user_id, rng_seed=rng_seed)
+    except Exception as exc:
+        e2_instances = []
+        print(f"[build_benchmark] WARN: e2_at_ai_followup builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -943,6 +951,7 @@ def build_benchmark(
             "c2_scenarios": len(c2_instances),
             "c3_restraint": len(c3_instances),
             "c4_button_regen": len(c4_instances),
+            "e2_at_ai_followup": len(e2_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
         "slate_ranking": slate_instances,
@@ -953,6 +962,7 @@ def build_benchmark(
         "c2_scenarios": c2_instances,
         "c3_restraint": c3_instances,
         "c4_button_regen": c4_instances,
+        "e2_at_ai_followup": e2_instances,
         **agentic_buckets,
     }
 

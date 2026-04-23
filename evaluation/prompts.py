@@ -62,6 +62,83 @@ The list must be a permutation of every `idx` in the slate above.
 """
 
 
+def e2_at_ai_followup_prompt(
+    directive_action: str,
+    directive_hashtags: list[str],
+    directive_user_message: str,
+    candidates: list[dict],
+    history_block: str | None = None,
+) -> str:
+    """Build a prompt for Task E2: proactive rec after an @ai directive.
+
+    The user just posted an `@ai ...` comment on a social-app event (e.g.
+    `@ai recommend more like this`). The agent must rank the candidate
+    feed items consistent with the directive:
+      - `at_ai_recommend_more` / `at_ai_focus_topic` → surface items
+        matching the directive hashtags first.
+      - `at_ai_stop_recommending` / `at_ai_not_interested` / `at_ai_feels_off`
+        → AVOID matching items at top-1 (hard fail if violated).
+    """
+    history = f"\n## User history (time-masked)\n{history_block}\n" if history_block else ""
+    hashtag_str = " ".join(directive_hashtags) if directive_hashtags else "(no hashtags on the directive event)"
+
+    if directive_action in ("at_ai_recommend_more", "at_ai_focus_topic"):
+        directive_summary = (
+            f"The user just posted **{directive_action}** on a feed item, "
+            f"asking the in-feed AI to surface MORE content like it "
+            f"(topic signal: {hashtag_str})."
+        )
+        ranking_rule = (
+            "Rank candidates by how well they ALIGN with the topic signal above, "
+            "while still respecting the user's broader history. Top-ranked candidates "
+            "should match the directive's hashtag space."
+        )
+    else:
+        directive_summary = (
+            f"The user just posted **{directive_action}** on a feed item, "
+            f"telling the in-feed AI to STOP recommending content like it "
+            f"(topic signal: {hashtag_str})."
+        )
+        ranking_rule = (
+            "Rank candidates by how well they AVOID the topic signal above. "
+            "Top-ranked candidates must NOT match the directive's hashtag space — "
+            "putting a matching candidate in the top spot is a hard failure."
+        )
+
+    user_msg_block = (
+        f"\n## The user's actual @ai message\n> {directive_user_message}\n"
+        if directive_user_message else ""
+    )
+
+    cand_lines = "\n".join(
+        f"- idx {i}: content_type={c.get('content_type', '?')} | hashtags={c.get('hashtags', [])} | "
+        f"title={c.get('title', '')!r} | caption={c.get('caption', '')!r}"
+        f"{' | sponsored' if c.get('is_sponsored') else ''}"
+        for i, c in enumerate(candidates)
+    )
+
+    return f"""# Task: respond to the user's in-feed @ai directive
+
+{directive_summary}
+{user_msg_block}{history}
+## Candidates (order is random, no labels)
+{cand_lines}
+
+## Your job
+{ranking_rule}
+
+## Output
+Respond with ONE fenced ```json block:
+```json
+{{
+  "ranked_indices": [<idx>, <idx>, ...],
+  "reasoning": "short explanation (<=3 sentences)"
+}}
+```
+The list must be a permutation of every idx above.
+"""
+
+
 # --- Task B: chatbot response ----------------------------------------------
 
 def chatbot_response_prompt(
