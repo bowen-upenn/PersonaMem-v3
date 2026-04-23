@@ -42,29 +42,6 @@
         "time_horizon": "long_term"
       },
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -352,6 +329,36 @@
             "source_app": "Instagram",
             "occurrence": 2,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -400,6 +407,36 @@
             "source_app": "Instagram",
             "occurrence": 2,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -448,6 +485,36 @@
             "source_app": "Instagram",
             "occurrence": 2,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -1283,6 +1350,36 @@
             "source_app": "Instagram",
             "occurrence": 2,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -1458,6 +1555,36 @@
             "source_app": "Facebook",
             "occurrence": 3,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -1996,6 +2123,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -2074,6 +2211,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -2386,6 +2533,16 @@
             "source_app": "Instagram",
             "occurrence": 2,
             "total_occurrences": 102
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -2536,6 +2693,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -3174,35 +3341,6 @@
         "time_horizon": "long_term"
       },
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -3653,35 +3791,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -3806,6 +3915,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -3932,6 +4051,36 @@
             "source_app": "Facebook",
             "occurrence": 3,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -4008,6 +4157,36 @@
             "source_app": "Facebook",
             "occurrence": 3,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -4084,6 +4263,36 @@
             "source_app": "Facebook",
             "occurrence": 3,
             "total_occurrences": 51
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL football content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -4578,6 +4787,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -4885,6 +5104,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -5291,6 +5520,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -5418,6 +5657,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -5640,6 +5889,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -6072,37 +6331,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [
-          "Private need for low-stakes emotional warmth through wholesome couple-and-home rituals"
-        ],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -6279,23 +6507,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -6368,6 +6606,16 @@
             "source_app": "Threads",
             "occurrence": 2,
             "total_occurrences": 36
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Avoids martial arts and fighting-themed media.",
+            "formatted_timestamp": "06:33, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 36,
+            "weaker_row_count": 7,
+            "dominance_ratio": 5.14
           }
         ],
         "time_horizon": "long_term"
@@ -6626,6 +6874,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -6882,15 +7140,6 @@
             "source_app": "Facebook",
             "occurrence": 3,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -7087,23 +7336,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -7223,6 +7482,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -7403,23 +7672,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -7756,59 +8035,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in NFL-related content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.67,
-        "confidence_cross_referenced": 141.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Avoids football highlight clips and recap-style sports content.",
         "category": "sports highlights",
         "confidence_score_init": 0.58,
@@ -7877,53 +8103,6 @@
             "update_type": "similar",
             "preference": "Not interested in Tom Brady-focused sports content.",
             "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in NFL football content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.72,
-        "confidence_cross_referenced": 102.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
           }
         ],
@@ -9759,23 +9938,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -9959,35 +10148,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -10080,35 +10240,6 @@
       "text": "Pulled into a downtown garage tonight and ended up stuck behind three trikes all trying to thread the same narrow ramp at once. One little kid was laughing so hard he could barely steer, and the whole scene had that chaotic city energy where nobody’s in a hurry except the people honking. Atlanta really does turn an ordinary parking deck into its own kind of adventure."
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -10423,6 +10554,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -10477,41 +10618,6 @@
       "text": "A street performer in Manhattan somehow turned a folding chair, a loop pedal, and two traffic cones into a whole little show. People kept stopping in the crosswalk to watch, and by the end the sidewalk crowd was laughing and clapping like it was a tiny concert. I’ll admit, the energy was good — just not the kind of thing I need my whole feed full of. Still, you have to respect someone who can hold a crowd that long on a random afternoon."
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in generic viral short-form trend content.",
-        "category": "viral internet culture",
-        "confidence_score_init": 0.68,
-        "confidence_cross_referenced": 45.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids quick-hit social comedy clips framed as broadly funny viral content.",
-            "formatted_timestamp": "17:51, 04/05/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in gaming-centered streamer personality content.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Avoids quick-hit social comedy clips framed as broadly funny viral content.",
         "category": "comedy videos",
@@ -10590,35 +10696,6 @@
       "text": "Watched a street interview clip where the host kept asking people to translate simple English phrases into Spanish on the spot. The funny part was how the meaning completely changed depending on tone, and one guy’s “music to my ears” line had everybody cracking up. I actually like these little language moments when they’re more clever than forced — you can tell when someone is playing with the words versus just rushing to the punchline."
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -10937,23 +11014,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -11017,59 +11104,6 @@
       }
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in NFL-related content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.67,
-        "confidence_cross_referenced": 141.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Avoids football highlight clips and recap-style sports content.",
         "category": "sports highlights",
@@ -11139,53 +11173,6 @@
             "update_type": "similar",
             "preference": "Not interested in Tom Brady-focused sports content.",
             "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in NFL football content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.72,
-        "confidence_cross_referenced": 102.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
           }
         ],
@@ -11339,41 +11326,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in generic viral short-form trend content.",
-        "category": "viral internet culture",
-        "confidence_score_init": 0.68,
-        "confidence_cross_referenced": 45.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids quick-hit social comedy clips framed as broadly funny viral content.",
-            "formatted_timestamp": "17:51, 04/05/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in gaming-centered streamer personality content.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Avoids quick-hit social comedy clips framed as broadly funny viral content.",
         "category": "comedy videos",
         "confidence_score_init": 0.61,
@@ -11457,6 +11409,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -11800,6 +11762,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -11993,6 +11965,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -12118,15 +12100,6 @@
             "source_app": "Facebook",
             "occurrence": 3,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -12171,6 +12144,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -12332,6 +12315,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -12864,35 +12857,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -13111,23 +13075,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -13202,89 +13176,6 @@
       "text": "Sunday at the station and somehow we turned a routine production meeting into a full-on comparison of old Browns stories, bad takes, and who actually still believes this season is different. I’m mostly here for the coffee and the laughs, but I can’t lie, the group chat energy was better than the meeting agenda. If nothing else, football season definitely keeps the break room lively."
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in NFL-related content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.67,
-        "confidence_cross_referenced": 141.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in New England Patriots fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Tom Brady–centered sports content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Tom Brady-centered sports content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by New England Patriots fan identity content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Avoids football highlight clips and recap-style sports content.",
         "category": "sports highlights",
@@ -13563,35 +13454,6 @@
       }
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -15139,6 +15001,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -15732,6 +15604,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -15790,89 +15672,6 @@
       }
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in NFL-related content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.67,
-        "confidence_cross_referenced": 141.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in New England Patriots fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Tom Brady–centered sports content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Tom Brady-centered sports content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by New England Patriots fan identity content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Avoids football highlight clips and recap-style sports content.",
         "category": "sports highlights",
@@ -16744,35 +16543,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -17043,6 +16813,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -17217,6 +16997,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -17274,23 +17064,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -17435,23 +17235,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -17685,35 +17495,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -17893,6 +17674,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -18171,15 +17962,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -18395,6 +18177,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -18459,6 +18251,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -18813,6 +18615,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -19482,89 +19294,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in NFL-related content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.67,
-        "confidence_cross_referenced": 141.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in New England Patriots fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Tom Brady–centered sports content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Tom Brady-centered sports content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in Tom Brady-focused sports content.",
-            "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by New England Patriots fan identity content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Avoids football highlight clips and recap-style sports content.",
         "category": "sports highlights",
         "confidence_score_init": 0.58,
@@ -19827,15 +19556,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -20259,15 +19979,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -20312,6 +20023,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -20407,6 +20128,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -20493,15 +20224,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -20588,15 +20310,6 @@
             "source_app": "Facebook",
             "occurrence": 4,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -20648,6 +20361,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -20710,15 +20433,6 @@
             "source_app": "Facebook",
             "occurrence": 5,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -20768,6 +20482,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -20839,6 +20563,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -21023,6 +20757,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -21365,23 +21109,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -21543,59 +21297,6 @@
             "update_type": "similar",
             "preference": "Not interested in Tom Brady-focused sports content.",
             "formatted_timestamp": "13:54, 04/03/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
-        "persona_item": "Not interested in NFL football content.",
-        "category": "nfl fandom",
-        "confidence_score_init": 0.72,
-        "confidence_cross_referenced": 102.0,
-        "stereotype_mark": "anti-stereotypical",
-        "hidden_persona_labels": [
-          "Ambivalent sports fan who prefers argument, personalities, and outcomes over routine game footage"
-        ],
-        "update_history": [
-          {
-            "update_type": "contradicted",
-            "preference": "Interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "Facebook",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "positive",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL fandom content.",
-            "formatted_timestamp": "20:49, 04/06/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in NFL training-camp and team-specific football content.",
-            "formatted_timestamp": "01:02, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids football highlight clips and recap-style sports content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Avoids Lamar Jackson and Baltimore Ravens-focused highlight content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
             "source_app": ""
           }
         ],
@@ -22386,6 +22087,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -22802,6 +22513,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -23860,23 +23581,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -25120,41 +24851,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in generic viral short-form trend content.",
-        "category": "viral internet culture",
-        "confidence_score_init": 0.68,
-        "confidence_cross_referenced": 45.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids quick-hit social comedy clips framed as broadly funny viral content.",
-            "formatted_timestamp": "17:51, 04/05/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Not interested in gaming-centered streamer personality content.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Avoids quick-hit social comedy clips framed as broadly funny viral content.",
         "category": "comedy videos",
         "confidence_score_init": 0.61,
@@ -25390,35 +25086,6 @@
       }
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -26180,35 +25847,6 @@
     },
     "preferences": [
       {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
-      {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
         "confidence_score_init": 0.61,
@@ -26412,37 +26050,6 @@
       "text": "Interesting conversation on this one about how couples handle different expectations around planning, money, and who usually carries the emotional load. Some of it felt pretty honest, especially the part about how small habits can matter more than big gestures. Not everything landed for me, but it did make me think about how much of a relationship is just two people trying to stay clear with each other and not keep score."
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [
-          "Private need for low-stakes emotional warmth through wholesome couple-and-home rituals"
-        ],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -26793,6 +26400,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -27034,15 +26651,6 @@
             "source_app": "Chatbot",
             "occurrence": 6,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -27290,35 +26898,6 @@
       }
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -27937,6 +27516,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -28409,6 +27998,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -28557,6 +28156,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -28663,6 +28272,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -28777,6 +28396,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"
@@ -28917,35 +28546,6 @@
       "text": "Tried one of those old-school kitchen skit recipes tonight, and I’ve got to admit it was the kind of simple comfort food that makes a house smell like somebody actually lives there. The joke in the video was the grandma measuring everything by instinct, but the real win was how easy it looked to throw together. Definitely one of those clips that makes you want to raid the pantry and see what happens."
     },
     "preferences": [
-      {
-        "persona_item": "Not interested in family-centered social media comedy or wholesome family-page content",
-        "category": "family content",
-        "confidence_score_init": 0.66,
-        "confidence_cross_referenced": 82.0,
-        "stereotype_mark": "neutral",
-        "hidden_persona_labels": [],
-        "update_history": [
-          {
-            "update_type": "similar",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by generic short-form comedy skits and funny-moments entertainment",
-            "formatted_timestamp": "01:18, 04/03/2026",
-            "source_app": ""
-          },
-          {
-            "update_type": "similar",
-            "preference": "Turned off by short-form internet comedy clips framed as funny or relatable moments.",
-            "formatted_timestamp": "07:17, 04/04/2026",
-            "source_app": ""
-          }
-        ],
-        "time_horizon": "long_term"
-      },
       {
         "persona_item": "Turned off by generic short-form comedy skits and funny-moments entertainment",
         "category": "comedy media",
@@ -29254,12 +28854,12 @@
           {
             "update_type": "contradicted",
             "preference": "Avoids martial arts and fighting-themed media.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "06:33, 04/03/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 36,
+            "weaker_row_count": 7,
+            "dominance_ratio": 5.14
           }
         ],
         "time_horizon": "long_term"
@@ -29687,6 +29287,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -30595,15 +30205,6 @@
             "source_app": "Chatbot",
             "occurrence": 6,
             "total_occurrences": 34
-          },
-          {
-            "update_type": "contradicted",
-            "preference": "Avoids couples-goals and relationship-themed light comedy content",
-            "formatted_timestamp": "01:41, 04/04/2026",
-            "resolution": "stance_shift_with_precedent",
-            "opposing_polarity": "negative",
-            "prior_corroboration_count": 5,
-            "required_precedent": 3
           }
         ],
         "time_horizon": "long_term"
@@ -30906,12 +30507,12 @@
           {
             "update_type": "contradicted",
             "preference": "Avoids martial arts and fighting-themed media.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "06:33, 04/03/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 36,
+            "weaker_row_count": 7,
+            "dominance_ratio": 5.14
           }
         ],
         "time_horizon": "long_term"
@@ -31023,6 +30624,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 4,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in generic viral short-form trend content.",
+            "formatted_timestamp": "08:00, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 137,
+            "weaker_row_count": 7,
+            "dominance_ratio": 19.57
           }
         ],
         "time_horizon": "long_term"
@@ -31145,12 +30756,12 @@
           {
             "update_type": "contradicted",
             "preference": "Avoids martial arts and fighting-themed media.",
-            "formatted_timestamp": "15:03, 04/06/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "06:33, 04/03/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 14,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 36,
+            "weaker_row_count": 7,
+            "dominance_ratio": 5.14
           }
         ],
         "time_horizon": "long_term"
@@ -31391,23 +31002,33 @@
           },
           {
             "update_type": "contradicted",
-            "preference": "Not interested in NFL-related content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "preference": "Not interested in NFL fandom content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 5,
+            "dominance_ratio": 10.2
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in NFL-related content.",
+            "formatted_timestamp": "23:47, 04/02/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 12,
+            "dominance_ratio": 4.25
           },
           {
             "update_type": "contradicted",
             "preference": "Not interested in NFL football content.",
-            "formatted_timestamp": "11:36, 04/04/2026",
-            "source_app": "",
-            "resolution": "stance_shift_with_precedent",
+            "formatted_timestamp": "23:47, 04/02/2026",
             "opposing_polarity": "negative",
-            "prior_corroboration_count": 18,
-            "required_precedent": 3
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 51,
+            "weaker_row_count": 7,
+            "dominance_ratio": 7.29
           }
         ],
         "time_horizon": "long_term"
@@ -31516,6 +31137,16 @@
             "opposing_polarity": "negative",
             "prior_corroboration_count": 14,
             "required_precedent": 3
+          },
+          {
+            "update_type": "contradicted",
+            "preference": "Not interested in family-centered social media comedy or wholesome family-page content",
+            "formatted_timestamp": "01:18, 04/03/2026",
+            "opposing_polarity": "negative",
+            "resolution": "suppressed_weak_minority",
+            "stronger_row_count": 102,
+            "weaker_row_count": 37,
+            "dominance_ratio": 2.76
           }
         ],
         "time_horizon": "long_term"

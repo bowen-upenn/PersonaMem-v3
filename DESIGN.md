@@ -219,9 +219,13 @@ The prompt explicitly tells the LLM that in an 8-day window, "long_term" means "
 
 **Step 7 — Cross-Polarity Contradiction Gate (R1 fix):** Positive and negative canonicals can survive their independent cross-ref pipelines with no awareness of each other. Step 7 walks the Cartesian product of surviving (positive, negative) canonicals, filtering to pairs sharing ≥ `HASHTAG_OVERLAP_MIN = 2` source hashtags. An LLM call (batched, mini-tier) confirms which pairs are semantically opposite stances on the same topic (filters out "interested in technique" vs. "dislikes commentary" — related but not contradictory).
 
-For each confirmed pair, the **temporal-precedent rule** decides which stance survives: the LATER-emerging stance is kept only if `same_polarity_rows_before_opposite_first_row >= MIN_STANCE_FLIP_PRIOR` (3 for long_term, `MIN_STANCE_FLIP_PRIOR_SHORT = 1` for short_term). When the gate FAILS, the later canonical is demoted (dropped from `cross_referenced_*`) and the survivor gets a `"contradicted"` update_history entry with `resolution: "suppressed_insufficient_precedent"`. When the gate PASSES (Case B), both survive and BOTH carry mutual `"contradicted"` entries with `resolution: "stance_shift_with_precedent"`, keeping the legitimate stance shift visible.
+Each confirmed pair is resolved in three stages:
 
-Demoted canonicals are stored in `self._suppressed_stance_flips` for audit. This closes the 115-boxing bug: a positive "Interested in boxing" and a negative "Not interested in boxing" event 1h apart with no prior positive evidence now yield a single surviving canonical instead of both.
+1. **Dominance check.** If `stronger_rows / weaker_rows >= DOMINANCE_DROP_RATIO` (2.5), the weaker canonical is dropped as noise regardless of temporal order. The survivor's `update_history` gets an entry with `resolution: "suppressed_weak_minority"` + the ratio. Fires first because a 51-vs-7 row split is obviously noise, not a legitimate stance shift. (Closes the persona-115 NFL bug where "Interested in NFL football content" [51 rows] coexisted with "Not interested in NFL football content" [7 rows].)
+2. **Temporal-precedent rule** (only when dominance doesn't fire). The LATER-emerging stance is kept only if `same_polarity_rows_before_opposite_first_row >= MIN_STANCE_FLIP_PRIOR` (5 for long_term, `MIN_STANCE_FLIP_PRIOR_SHORT = 1` for short_term). When the gate FAILS, the later canonical is demoted with `resolution: "suppressed_insufficient_precedent"`.
+3. **Concurrent-ambivalence detection** (only when dominance + precedent both pass). If the earlier side still has ≥ `MIN_EARLIER_POST_FLIP_FOR_CONCURRENT` (5) rows AFTER the later side's first row, both polarities are interleaved — not a clean temporal shift. Both survive with `resolution: "concurrent_ambivalence"`. Otherwise it's a clean shift and the entries carry `resolution: "stance_shift_with_precedent"`.
+
+Dropped canonicals are stored in `self._suppressed_stance_flips` for audit. The visualizer renders the three resolutions distinctly: `stance_shift_with_precedent` (red, emphatic), `concurrent_ambivalence` (amber, "mixed feelings"), `suppressed_weak_minority` / `suppressed_insufficient_precedent` (grey, strikethrough).
 
 **Step 5 — Update Histories:** Each preference gets a temporal `update_history[]` array with entries tagged by `update_type`:
 
@@ -508,7 +512,7 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `XREF_THRESHOLD_NEGATIVE` | 5.0 | Xref bar for negatives (decoupled from positive scale — negatives are structurally rarer) |
 | `RECENCY_WINDOW_SECONDS` | 7 * 86400 | Only rows within the trailing 7 days contribute to xref counting |
 | `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (contradictories still exempt) |
-| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 5 | Implicit-only negative survival threshold (distinct rows) and net-sentiment floor |
+| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 10 | Implicit-only negative survival threshold (distinct rows) and net-sentiment floor |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Hot-hashtag LLM calls needed |
 | `MIN_TEMPORAL_DAYS` | 1 | Calendar days negatives must span |
@@ -531,8 +535,10 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `SHORT_TERM_MAX_SPAN_FRAC` | 0.35 | Span/obs_window cutoff for short-term horizon eligibility |
 | `SHORT_TERM_MAX_ROWS` | 8 | Row-count cutoff for short-term horizon eligibility |
 | `XREF_THRESHOLD_SHORT_TERM` | 3.0 | Relaxed xref survival floor for short_term canonicals |
-| `MIN_STANCE_FLIP_PRIOR` | 3 | Same-polarity rows required before a contradictory stance is admitted (long_term) |
+| `MIN_STANCE_FLIP_PRIOR` | 5 | Same-polarity rows required before a contradictory stance is admitted (long_term) |
 | `MIN_STANCE_FLIP_PRIOR_SHORT` | 1 | Relaxed precedent requirement for short_term canonicals |
+| `DOMINANCE_DROP_RATIO` | 2.5 | Stronger/weaker row-count ratio above which the weaker cross-polarity canonical is treated as noise and dropped |
+| `MIN_EARLIER_POST_FLIP_FOR_CONCURRENT` | 5 | Earlier-side rows continuing after the flip that mark the pair as `concurrent_ambivalence` instead of `stance_shift_with_precedent` |
 | `HASHTAG_OVERLAP_MIN` | 2 | Pos/neg canonical pairs must share ≥ this many hashtags for cross-polarity check |
 | `MAX_LOCATIONS_PER_USER` | 3 | Cap on distinct cities across the 8-day observation window |
 | `HOME_LOCATION_MIN_SHARE` | 0.90 | Minimum fraction of sessions assigned to the home city |
