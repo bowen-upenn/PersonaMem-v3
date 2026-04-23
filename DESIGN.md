@@ -271,6 +271,8 @@ Demographics sampled first; everything downstream (name, career, bio) must be co
 
 **LLM-generated fields:** Name (culturally appropriate), Career (consistent with *some* preferences), Education, Big Five personality (each low/medium/high), Bio (3-5 sentences). LLM instructed to avoid stereotypical demographic-career-hobby combinations.
 
+**Mobility class (v0 / e6 substrate):** Each user is assigned a `mobility_class ∈ {homebody, domestic, international, nomadic}` at profile generation time using an MD5-seeded per-user RNG (deterministic across regen runs). Distribution across the cohort: ~30% homebody, ~40% domestic, ~20% international, ~10% nomadic. Not every user moves around in an 8-day window — homebodies stay in their home city for the full window and are explicitly NOT forced into a trip arc. The class drives class-adaptive constraints in Step 15 (city count, home-share floor, trip-arc presence) and Step 16 (class-conditional transit entries).
+
 ---
 
 ## 9. Step 7 — Hidden Persona Inference
@@ -347,9 +349,9 @@ Four `AppPersona` objects per user:
 
 ---
 
-## Step 15 — Per-Session Geolocation
+## Step 15 — Per-Session Geolocation (class-adaptive, v0)
 
-Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_SECONDS`, so locality comes for free. One batched mini-tier LLM call per user takes the session manifest + user profile and returns `{session_idx → event_location}`.
+Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_SECONDS`, so locality comes for free. One batched mini-tier LLM call per user takes the session manifest + user profile + mobility_class and returns `{session_idx → event_location}`.
 
 **Schema** (per event, written by save_to_backend):
 ```json
@@ -357,13 +359,23 @@ Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_S
                    "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}
 ```
 
-**Constraints baked into the prompt** (for the ~8-day window):
-- ≥ `HOME_LOCATION_MIN_SHARE` (0.90) of sessions assigned to the inferred home city.
-- At most `MAX_LOCATIONS_PER_USER` (3) distinct cities: home + up to 2 travel destinations.
-- Travel appears as a contiguous 2–4-day block; no scattered travel days.
-- No teleporting: sessions within 6h share a city unless transit hashtags justify the shift.
+**Class-adaptive constraints** (the LLM prompt branches on `mobility_class`):
 
-## Step 16 — Synthetic Calendar Modification Stream
+| Class | Cities | Home share | Trip arc |
+|---|---|---|---|
+| Homebody | 1 | 100% | None |
+| Domestic | ≤ 3 | ≥ 85% | 1–3-day same-country block |
+| International | ≤ 3 | ≥ 85% | 2–4-day foreign-locale block |
+| Nomadic | ≥ 3 | ≤ 40% (no dominant home) | multiple shorter blocks |
+
+**Other constraints (all classes):**
+- No teleporting: sessions within 6h share a city unless transit hashtags justify the shift.
+- Per-class geo-coverage floor: ≥ 20% of events for homebody, ≥ 30% for others (previously ~4.4% uniformly).
+- Prompt directive: assign a location to as many sessions as the class permits, not only hashtag-evident ones.
+
+**Trip arc extraction:** after LLM-assigned locations are resolved, `assign_event_locations` extracts contiguous away-from-home runs and writes them to `profile.geo_trip_arcs: [{city, region, country, start_ts, end_ts, kind: "domestic"|"international"}]`. Homebody users get `[]`. Downstream (Step 16 calendar generation, e6 discovery) consume these arcs to ground transit and trip-scoped entries.
+
+## Step 16 — Synthetic Calendar Modification Stream (v0: density floor + required cancellation)
 
 The calendar is not static. Instead, the user performs CRUD modifications (add / update / remove) on their calendar at scattered timestamps, and the calendar state at any time T is the result of folding modifications with ts ≤ T. This makes the calendar naturally time-maskable for eval.
 
@@ -373,7 +385,8 @@ Persisted to `backend/{uid}/calendar.json`:
   {"mod_id": "mod_001", "ts": <unix>, "formatted_timestamp": "...",
    "action": "added",
    "entry": {"entry_id": "cal_001", "title": "...", "start_ts": ..., "end_ts": ...,
-             "location": {...}, "type": "work|personal|social|health",
+             "location": {...}, "type": "work|personal|social|health|travel",
+             "attendees": ["self", "Ana", "Renz"],
              "linked_preferences": [...], "is_preference_driven": true|false,
              "relation_to_social": "related|adjacent|unrelated"}},
   {"mod_id": "mod_002", ..., "action": "updated", "entry_id": "cal_001",
@@ -383,7 +396,12 @@ Persisted to `backend/{uid}/calendar.json`:
 ]}
 ```
 
-**Calibration** for an 8-day window: one LLM call per user producing 8–15 modifications. Target split 65% added / 20% updated / 15% removed (`CALENDAR_MOD_WEIGHTS`). Entries are ~40% preference-linked, ~60% plausible-noise (dentist, haircut, sprint review) — NOT limited to social-media hashtags. Locations stay consistent with Step 15 (home-day entries are local; travel-day entries are in the travel city).
+**v0 calibration** for an 8-day window: one LLM call per user producing ~20–28 modifications (previously 8–15). Target split 65% added / 20% updated / 15% removed (`CALENDAR_MOD_WEIGHTS`). Entries ~40% preference-linked, ~60% plausible-noise (dentist, haircut, sprint review). Locations stay consistent with Step 15 (home-day entries are local; travel-day entries are in the travel city).
+
+**v0 required diversity** — the prompt now enforces:
+- **Transit entry**: at least 1 flight (for travel classes) or local transit (homebody/domestic) entry, with `type: "travel"`.
+- **Multi-attendee meeting**: at least 1 added entry with ≥ 2 non-self attendees.
+- **Recent cancellation**: exactly 1 `removed` modification in the last 6 hours of the window (grounds e6's canceled-event-reference form example).
 
 HTML rendering interleaves modification cards into the main event timeline at their `ts`, labeled with action verb + title + scheduled date.
 
@@ -484,14 +502,32 @@ Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with rec
 
 ---
 
-## Step 22 — Save (no test-split label)
+## Step 22 — Enrich Substrate (v0, e6 grounding)
+
+A small, targeted enrichment pass that runs AFTER all content is generated and BEFORE persistence. It plants cross-signal evidence that the `e6_active_mistake_prevention` discovery pipeline (see plan in `~/.claude/plans/`) relies on, so discovery LLM calls have real grounded signals to find rather than racing against thin data.
+
+**What it does (v0):**
+
+1. **Chatbot constraint planting** — Picks the 2 earliest chatbot conversation events by `source_timestamp` and prepends a synthetic `user`/`assistant` turn pair to each. The planted user turn states a personal constraint drawn from a small fixed pool (dietary / equipment / deadline / preference) using a user-seeded RNG so the selection is deterministic across regen runs. Tracked in `self._planted_chatbot_constraints` for downstream audit.
+
+2. **Persona-safety aggravation audit** — For each privacy-flagged hidden persona (type ∈ `{covert_concern, compensatory_need, intimate_interest}` OR `privacy_ratio > 0.7`), checks that the last 48h of the activity window contains ≥ 1 event whose hashtags overlap the persona's `evidence_hashtags`. Emits a warning per missing persona so operators can decide whether to regenerate. v0 **audits only**; synthesizing an aggravation event is deferred to a follow-up.
+
+**What it deliberately does NOT do (v0):**
+
+- **DM commitment tagging** happens in Extension B (`data_preparation/extension_b/`) where DMs are materialized, not here.
+- **Planting new synthetic interactions** beyond the 2 chatbot constraint turns — we avoid inflating event counts or disturbing Steps 7 (cross-polarity contradictions) / 9 (hidden persona inference) / 12-14 (app routing) which already ran.
+
+**Cost:** No LLM calls (fixed phrasing pool). ~O(ms) per user.
+
+## Step 23 — Save (no test-split label)
 
 As of R8, **data-gen no longer produces a train/test split.** The eval harness (see EVAL.md) picks test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — so pre-flagging a held-out subset in the emitted data was redundant and limiting. Both `split` and `over_personalization_irrelevant` have been dropped from per-preference output; `build_test_split` has been removed from the pipeline.
 
 Eval tasks now select test moments by task-specific criteria (e.g., @ai directive timestamps for E2, day tertiles for E3/E4, short-term canonicals for E5). The inferrability gate that used to live in data-gen is available to the eval harness at benchmark-build time if any task needs it — but it's no longer a pipeline step.
 
-**Step 22:**
+**Step 23 (formerly Step 22 before v0):**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
+- `profile.json` now also carries `mobility_class` and `geo_trip_arcs` (see Step 6 / Step 15).
 - `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
 - `hidden_persona_labels` are derived by **backward lookup** (row → cluster via `evidence_oids`), so causality is guaranteed by construction: a preference is labeled iff its own source row is part of the cluster's evidence. No separate availability gate needed.
 

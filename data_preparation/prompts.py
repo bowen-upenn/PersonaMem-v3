@@ -968,20 +968,15 @@ def assign_session_locations_prompt(
     session_manifest: list[dict],
     max_locations: int = 3,
     home_share: float = 0.90,
+    mobility_class: str = "domestic",
 ) -> str:
     """Build a single prompt that assigns a geolocation to every session.
 
-    Input: a condensed session manifest — one entry per session with
-    timestamp, dominant hashtags, dominant app. Output: session_idx →
-    {city, region, country, lat, lon, precision}.
+    Input: a condensed session manifest + the user's mobility class. Output:
+    session_idx → {city, region, country, lat, lon, precision}.
 
-    Constraints baked into the prompt:
-      - Infer home city from the user's profile (career / education / bio).
-      - ≥ home_share of sessions must be at home.
-      - At most `max_locations` distinct cities across the window.
-      - Travel appears as a contiguous block of 2-4 days, motivated by
-        travel-adjacent hashtags or calendar hints.
-      - No teleporting.
+    The mobility class drives class-adaptive constraints so the cohort
+    contains real diversity (homebody / domestic / international / nomadic).
     """
     manifest_lines = []
     for s in session_manifest:
@@ -995,6 +990,44 @@ def assign_session_locations_prompt(
 
     user_profile_json = json.dumps(user_profile or {}, indent=2)
 
+    # Class-adaptive instructions — the hard lift that makes each class look
+    # distinctive. Trip-arc language + city counts are conditioned here.
+    if mobility_class == "homebody":
+        class_block = (
+            "This user is a HOMEBODY for this window. They do NOT travel.\n"
+            "- Assign every session to the home city (exactly 1 city total).\n"
+            "- Do NOT invent a trip or travel block.\n"
+            "- Within-day intra-city moves (home → office → gym) are still allowed."
+        )
+    elif mobility_class == "domestic":
+        class_block = (
+            "This user takes a SHORT DOMESTIC TRIP during this window.\n"
+            f"- Pick a home city + 1 (optionally 2) other SAME-COUNTRY city.\n"
+            f"- Travel appears as a contiguous block of 1-3 days.\n"
+            f"- No foreign-locale visits. Stay within the home country."
+        )
+    elif mobility_class == "international":
+        class_block = (
+            "This user takes an INTERNATIONAL TRIP during this window.\n"
+            f"- Pick a home city + ≥ 1 FOREIGN-COUNTRY city.\n"
+            f"- Travel appears as a contiguous block of 2-4 days.\n"
+            f"- The foreign visit must have a different `country` field from home."
+        )
+    elif mobility_class == "nomadic":
+        class_block = (
+            "This user is NOMADIC — no single dominant home this window.\n"
+            f"- Spread sessions across ≥ 3 cities (mix of domestic and/or foreign).\n"
+            f"- No single city should exceed ~{int(home_share * 100)}% of sessions.\n"
+            f"- Multiple shorter blocks are fine, not one long trip."
+        )
+    else:
+        # Unknown class — fall back to prior behavior.
+        class_block = (
+            "- Infer a HOME city from the user's profile (career, education, bio).\n"
+            f"- AT LEAST {int(home_share * 100)}% of sessions at home.\n"
+            f"- At most {max_locations} distinct cities across the window."
+        )
+
     return f"""\
 You are assigning realistic geolocations to every session of one user's
 {obs_window_days:.1f}-day activity window.
@@ -1004,23 +1037,22 @@ You are assigning realistic geolocations to every session of one user's
 {user_profile_json}
 ```
 
+## User's mobility class: `{mobility_class}`
+{class_block}
+
 ## Session manifest (one entry per session)
 {manifest_block}
 
 ## Constraints
-1. Infer a HOME city from the user's profile (career, education, bio).
-2. AT LEAST {int(home_share * 100)}% of sessions must be assigned to the
-   home city. Home-only users are a valid and common outcome.
-3. At most {max_locations} distinct cities across the whole window
-   (home + up to {max_locations - 1} travel destinations).
-4. Travel is a contiguous block of 2-4 days, motivated by
-   travel-adjacent hashtags OR by a clear temporal cluster of
-   away-from-home sessions. Don't scatter travel days.
-5. No teleporting: sessions within 6 hours of each other must share a
+1. Home city: infer from the user's profile (career, education, bio).
+2. Respect the class-adaptive constraints above — do NOT override them.
+3. At most {max_locations} distinct cities across the whole window.
+4. No teleporting: sessions within 6 hours of each other must share a
    city unless transit-implying hashtags justify a shift.
-6. Within-day intra-city moves (home → office → gym) are allowed and
-   add realism but do NOT count toward the {max_locations}-city cap.
-7. Each location object must include `city`, `region`, `country`,
+5. GEO COVERAGE: assign a location to AS MANY sessions as you can. The
+   goal is to maximize the fraction of sessions carrying a location,
+   not to emit only hashtag-evident sessions.
+6. Each location object must include `city`, `region`, `country`,
    `lat`, `lon`, `precision` ("city" | "neighborhood" | "venue").
 
 ## Output Format
@@ -1045,6 +1077,9 @@ def generate_calendar_modifications_prompt(
     travel_windows: list[dict],
     preference_list: list[dict],
     n_modifications: int,
+    mobility_class: str = "domestic",
+    require_recent_cancellation: bool = False,
+    recent_cancellation_window_hours: int = 6,
 ) -> str:
     """Build a prompt that produces a timeline of calendar CRUD events.
 
@@ -1053,6 +1088,10 @@ def generate_calendar_modifications_prompt(
     added / updated / removed. Entries can be preference-driven (matching a
     surviving canonical) or plausible-noise (daily-life activities unrelated
     to social: dentist, haircut, gym class).
+
+    v0 adds class-adaptive transit, required diversity (flight or local
+    transit; multi-attendee meeting), and a required recent cancellation
+    window to ground e6 discovery archetypes.
     """
     user_profile_json = json.dumps(user_profile or {}, indent=2)
     app_personas_json = json.dumps(app_personas or {}, indent=2)
@@ -1065,6 +1104,36 @@ def generate_calendar_modifications_prompt(
             f"- {p.get('persona_item', '')} ({p.get('category', '')})"
         )
     pref_block = "\n".join(pref_lines) if pref_lines else "(no surviving preferences)"
+
+    # Class-adaptive transit requirement
+    has_trip = bool(travel_windows)
+    if has_trip and mobility_class in ("domestic", "international", "nomadic"):
+        transit_rule = (
+            f"- TRANSIT ENTRY: because this user travels ({mobility_class}), add "
+            f"at least 1 flight or transit entry whose start aligns with "
+            f"the beginning of a travel window and at least 1 return transit "
+            f"at the end. International class requires a flight; domestic "
+            f"class may use flight / train / intercity bus. Use entry "
+            f"`type: \"travel\"` for these."
+        )
+    else:
+        transit_rule = (
+            "- LOCAL TRANSIT: add at least 1 timed local-transit entry "
+            "(train commute, intercity bus, medical transport) realistic "
+            "for this user's life. Use entry `type: \"travel\"` or `\"personal\"`."
+        )
+
+    if require_recent_cancellation:
+        cancellation_rule = (
+            f"- REQUIRED RECENT CANCELLATION: exactly 1 action=\"removed\" "
+            f"modification MUST fall in the last {recent_cancellation_window_hours} "
+            f"hours of the window (`ts` in [{obs_end_ts} - {recent_cancellation_window_hours}*3600, "
+            f"{obs_end_ts}]). The canceled entry should have been added earlier "
+            f"in the window so the cancellation has a meaningful reference. "
+            f"Its `removal_reason` should be a plausible short sentence."
+        )
+    else:
+        cancellation_rule = ""
 
     return f"""\
 You are generating a small timeline of CALENDAR MODIFICATIONS for one
@@ -1079,6 +1148,8 @@ user over their {obs_window_days:.1f}-day activity window.
 ```json
 {app_personas_json}
 ```
+
+## Mobility class: `{mobility_class}`
 
 ## Location context
 - home: {home_json}
@@ -1102,6 +1173,12 @@ Entries should come from DAILY-LIFE activities, not only from
 social-media hashtags. Aim ~40% preference-linked + ~60%
 persona-plausible noise (dentist, haircut, car inspection, gym class,
 family dinner, work sprint review, one-on-one meeting, etc.).
+
+### Required diversity
+{transit_rule}
+- MULTI-ATTENDEE MEETING: add at least 1 entry with ≥ 2 named
+  attendees beyond the user (use entry field `attendees: ["self", "Ana", "Renz"]`).
+{cancellation_rule}
 
 Each scheduled entry's `location` MUST be consistent with the user's
 trajectory — on a home day → home; on a travel day → travel city.
