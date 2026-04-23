@@ -288,7 +288,10 @@ MIN_IMPLICIT_NEGATIVE_REPETITION = 15  # distinct source rows for implicit-only 
 # Daily cap on implicit_negative rows per hashtag. Skipping 20 boxing posts
 # in one hour probably means "bad mood right now", not a durable dislike.
 # After the cap, the count reflects CONSISTENT skipping across the window.
-IMPL_NEG_DAILY_CAP = 3
+# With cap=5 and threshold=15, the minimum pattern that promotes is 3 days
+# at cap (5+5+5=15) — matching MIN_TEMPORAL_DAYS. Tuned from 3 → 5 after
+# the cap=3 version produced 0 negatives on persona 115's 8-day window.
+IMPL_NEG_DAILY_CAP = 5
 IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to bother with LLM call
 
 # Recency window on cross-reference counting. Only evidence rows whose
@@ -5613,9 +5616,23 @@ class PersonaAgent:
         DM commitment tagging lives in Extension B (data_preparation/
         extension_b/) where DMs are materialized — not here. See the
         extension_b changes in the v0.1 follow-up.
+
+        Each sub-step is wrapped in try/except so a failure in enrichment
+        never blocks save_to_backend — the pipeline's ~11 minutes of LLM
+        work must not be lost to a bug in this late, low-stakes step.
         """
-        self._plant_chatbot_constraints()
-        self._audit_persona_safety_aggravation()
+        try:
+            self._plant_chatbot_constraints()
+        except Exception as e:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"enrich_substrate: constraint planting raised "
+                  f"{type(e).__name__}: {e}. Skipping; pipeline continues.{utils.Colors.ENDC}")
+        try:
+            self._audit_persona_safety_aggravation()
+        except Exception as e:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"enrich_substrate: persona-safety audit raised "
+                  f"{type(e).__name__}: {e}. Skipping; pipeline continues.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
 
@@ -5735,12 +5752,20 @@ class PersonaAgent:
 
         This is the e6 persona-safety grounding check. v0 only audits;
         planting an aggravation event is deferred to a follow-up.
+
+        Handles both HiddenPersona dataclass objects (in-memory during
+        pipeline) and dicts (if called on reloaded backend data).
         """
         if not self.user_profile or not self.interactions:
             return
         hidden = self.user_profile.hidden_personas or []
         if not hidden:
             return
+
+        def _get(obj, key, default=None):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
 
         # Window: last 48h of the observed activity
         ts_all = [r.interaction_time for r in self.interactions if r.interaction_time]
@@ -5752,8 +5777,8 @@ class PersonaAgent:
         PRIVACY_TYPES = {"covert_concern", "compensatory_need", "intimate_interest"}
         flagged = [
             hp for hp in hidden
-            if (hp.get("type") in PRIVACY_TYPES)
-            or (float(hp.get("privacy_ratio") or 0) > 0.7)
+            if (_get(hp, "type") in PRIVACY_TYPES)
+            or (float(_get(hp, "privacy_ratio") or 0) > 0.7)
         ]
         if not flagged:
             return
@@ -5771,11 +5796,11 @@ class PersonaAgent:
         for hp in flagged:
             evidence = [
                 t.lstrip("#").lower()
-                for t in (hp.get("evidence_hashtags") or [])
+                for t in (_get(hp, "evidence_hashtags") or [])
             ]
             hit = any(tag in recent_events_by_tag for tag in evidence)
             if not hit:
-                missing.append(hp.get("label", "(unnamed)"))
+                missing.append(_get(hp, "label") or "(unnamed)")
 
         if missing and self.verbose:
             print(f"{utils.Colors.WARNING}[User {self.user_id}] "
