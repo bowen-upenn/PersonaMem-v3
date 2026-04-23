@@ -33,11 +33,15 @@ AVOID leaks are treated as **hard-constraint failures** — a response gets flag
 
 | Task | Input source | Manual prep? |
 |---|---|---|
-| **A (slate ranking)** | Each preference with `split: "test"` in `{instagram,facebook,threads}.json`. Slate = held-out positive + pre-paired `over_personalization_irrelevant` + sampled known-negatives + randoms from unused hashtags. | None |
-| **B (chatbot response)** | Each preference with `split: "test"` in `chatbot.json`. User query read from `interaction_format.user_message` (or the last user turn). Same-day TARGET/AVOID slice also frozen at build time. | None |
+| **A (slate ranking)** | Legacy Task A builders still read `split: "test"` from events; after R8 data regen, those paths will return zero instances until the builders are refactored to pick test moments from the full timeline. | None (refactor after regen) |
+| **B (chatbot response)** | Same as A — legacy split-dependent builders need a follow-up refactor once R8 data is live. | None (refactor after regen) |
 | **C1 (repetition fatigue)** | Top saturated hashtags via `hashtag_summary` + 5–7 recent events each. | None |
 | **C2 (scenario library)** | Five templates in [evaluation/scenarios.py](evaluation/scenarios.py) (sympathy card, educated rejection, tax question, ask-to-forget, third-party gift), instantiated per-user from the user's own top preferences, negatives, and carve-outs. | None — templates are in the repo |
-| **C3 (irrelevant-distractor restraint)** | Each Task A test preference's held-out positive + its `over_personalization_irrelevant` list, shuffled. | None |
+| **C3 (irrelevant-distractor restraint)** | Legacy split-dependent; same follow-up refactor note as A/B. | None (refactor after regen) |
+| **E2 (@ai proactive followup)** | All events with `interaction_format.action ∈ AT_AI_ACTIONS` on social apps. Cuts timeline at `t_test = t_ai + 1`; pool of 10–15 post-T_test events, Jaccard-labeled vs directive hashtags. | None |
+| **E3 (multi-day daily briefing)** | 3 day-midpoints stratified by event-volume tertile (1 high/mid/low). | None |
+| **E4 (Google Search) [opt-in]** | Reuses E3 day sampler. Requires `--enable_e4` at run time; live API requires `--e4_allow_live` + GOOGLE_API_KEY/GOOGLE_CSE_ID; default mode is cache replay from `benchmark/{uid}/google_search_cache/`. | None |
+| **E5 (horizon lifecycle)** | Each short-term canonical (from Step 3.5 horizon classification) with `stop_condition.expected_stop_ts`. Emits paired `pre`/`post` probes; post uses Phase 4 geo + calendar context. | None |
 
 Each instance carries a stable `test_id` / `probe_id` / `scenario_id` plus enough ground-truth fields (held-out position, origin labels, irrelevant set, TARGET/AVOID slice) for scoring. Per-item seeding means adding or removing one test item doesn't cascade-shift every other slate.
 
@@ -112,6 +116,20 @@ All tasks share a single time-gated view: for each test moment `T_test`, events 
 ### Task D — Aggregate negative avoidance
 Rolled up from Task A — no separate run. Reports `negative_in_top1_rate`, `negative_in_top3_rate`, `irrelevant_in_top1_rate` across all Task A test moments.
 
+### Task E — Cross-cutting proactive / horizon probes (Phases 7–10)
+
+Four new top-level tasks keyed to PersonaMem-v3's new data-gen signals. Each picks its own `T_test` from the full timeline (no split required).
+
+- **E2 `e2_at_ai_followup` — @ai proactive recommendation.** For every event whose `interaction_format.action ∈ AT_AI_ACTIONS`, cut the timeline at `t_ai + 1` and ask the agent to rank 10–15 post-T_test candidates. Candidate pool is stripped of all preferences / labels (raw content only). For `at_ai_recommend_more` / `at_ai_focus_topic`, matching candidates are positives; for `at_ai_stop_recommending` / `at_ai_not_interested` / `at_ai_feels_off`, matching candidates are carve-outs (hard-fail at top-1). Metrics: `hit@1`, `recall@{3,5}`, `mrr`, `directive_respect@1`, `carveout_violation@{1,3}`.
+
+- **E3 `e3_daily_briefing_multi` — multi-day proactive briefing.** 3 stratified day-midpoints per user (1 high / 1 mid / 1 low event-volume tertile). Same query ("what should I catch up on today"), different `t_test`s. Build-time expansion (not run-time loop) keeps mode comparisons deterministic. Read-only — any write-action tool call is a hard fail.
+
+- **E4 `e4_google_search` — Google Search personalization (opt-in).** Agent uses the new `search_google(query, num_results)` MCP tool (`evaluation/mcp_servers/google_search_mcp_server.py`) to issue 1–3 personalized queries and rank results. Three-level gating: `--enable_e4` (master switch), `--e4_allow_live` (enables live API on cache miss), `--e4_quota_per_day` (daily live-call cap, default 20). Default mode is cache replay from `benchmark/{uid}/google_search_cache/`. NOT included in the default `all` alias — use `--task e4` or `--task all_with_e4`.
+
+- **E5 `e5_horizon_lifecycle` — short-term horizon lifecycle.** Paired `pre`/`post` probes per surviving short-term canonical (Phase 2 R6) with a non-null `expected_stop_ts`. The `pre` probe lands during the active window, the `post` probe past expiry. Candidate pool stripped like E2; matching hashtag Jaccard ≥ 0.3. The post-probe prompt injects geo (`event_location.city`) and calendar state (`BackendQuery.get_calendar_state`) so the agent has context for deciding whether the intent has ended. After scoring all instances, pairs are joined by `canonical_id` and `lifecycle_score = pre.match_rate_at_3 − post.match_rate_at_3` is emitted (+1 = perfect horizon compliance). Also tracks `post.hard_violation_at_1` for top-1 matches after expiry.
+
+**Contradiction-aware ground truth** applies to all of the above (and to existing A/B/C once they're refactored to stop reading `split`): `BackendQuery.get_preferences(..., include_superseded=False)` filters out canonicals that were contradicted-and-superseded (Phase 3 Case B) before `T_test`, so the ground truth at any moment is the LATER stance only.
+
 ## Modes
 
 | Mode | Runner | Backend access | What it isolates |
@@ -126,7 +144,7 @@ Running all four answers: (a) does structured MCP access beat raw filesystem sea
 ### How the `agent_tools` sandbox works
 
 Each test moment, the harness **materializes a filesystem snapshot** from the backend:
-1. Write filtered per-app JSONs (events with `source_timestamp < T_test`; leak-sensitive fields like `split`, `over_personalization_irrelevant`, `update_history` stripped) to `/tmp/pm3_eval_snapshots/{user_id}/T_{t_test}/`.
+1. Write filtered per-app JSONs (events with `source_timestamp < T_test`; leak-sensitive fields like `update_history`, `confidence_*`, `stereotype_mark`, `hidden_persona_labels` stripped — as of R8 `split` / `over_personalization_irrelevant` are no longer emitted by data-gen) to `/tmp/pm3_eval_snapshots/{user_id}/T_{t_test}/`.
 2. Write a `README.md` inside the snapshot that enumerates the files (the subagent has Read only, no Glob/Grep).
 3. Spawn `claude -p <prompt>` with `cwd = snapshot_dir`, `--setting-sources ""` (blocks inheritance from parent Claude Code session's permissive config), `--allowedTools "Read(/<abs>/**)"` (path-scoped permission), `--disallowedTools Bash,Edit,Write,WebFetch,WebSearch,Task,NotebookEdit`, and `--permission-mode dontAsk`.
 

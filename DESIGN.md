@@ -4,6 +4,19 @@
 
 > Design rationale for the PersonaMem-v3 data generation pipeline. For implementation, see `persona_agent.py`, `prompts.py`, and `skill.md`.
 
+## What's in this release (R1, R5–R9)
+
+Recent additions on top of the base pipeline, roughly in dependency order:
+
+- **R7 — Ad injection (Step 13c):** ~6% of commerce-adjacent events become sponsored ads with ad-shaped content (`ad_metadata`). New `AD_ACTIONS` (`clicked_ad`, `hidden_ad`, `dismissed_ad`) on IG/FB/Threads; Chatbot never carries them. Invariant: `event.is_ad ⇔ action ∈ AD_ACTIONS`.
+- **R6 — Time horizon + stop conditions (Step 3.5):** every surviving canonical carries `time_horizon ∈ {"short_term", "long_term"}`. Short-term (bounded intents — travel, event prep, purchase, how-to, medical) uses `XREF_THRESHOLD_SHORT_TERM = 3.0` instead of the 20/50 long-term bars. An LLM pass emits structured `stop_condition: {type, description, expected_stop_ts}`. LLM can demote short→long but not promote long→short.
+- **R1 — Cross-polarity contradiction causality gate (Step 5b):** the positive/negative cross-ref pipelines are now cross-checked. Pos/neg canonical pairs sharing ≥2 hashtags are LLM-confirmed as semantically opposite, then must pass a temporal-precedent rule: the later stance survives only with ≥ `MIN_STANCE_FLIP_PRIOR` same-polarity rows before the first opposing row. Failed gates drop the later canonical; `update_history` entries carry `resolution: "suppressed_insufficient_precedent"` or `"stance_shift_with_precedent"`. Fixes the 115-boxing bug (stance flip 1h apart with no prior evidence).
+- **R5 — Per-session geolocation + calendar modification stream (Steps 11b, 11c):** each event carries `event_location` shared across all rows in its session. `backend/{uid}/calendar.json` holds an add/update/remove stream for synthetic calendar events. `BackendQuery.get_calendar_state(T)` folds modifications with `ts ≤ T` into the live calendar state at time T. Home-only + up to 2 travel cities cap for an 8-day window.
+- **R8 — Drop split / over_personalization_irrelevant:** the data-gen output is pure history. Eval picks its own test moments dynamically by cutting the timeline — no pre-flagged train/test partition.
+- **R9 — Benchmark CSV + contradiction-aware GT:** `build_benchmark` additionally emits `benchmark/{uid}/benchmark.csv` for HuggingFace publication. `BackendQuery.get_preferences(..., include_superseded=False)` filters canonicals superseded at T (via the `"stance_shift_with_precedent"` update_history entry).
+
+See EVAL.md for the corresponding E2/E3/E4/E5 evaluation tasks that consume these signals.
+
 ## Core Research Questions
 
 1. How can we simulate data reflecting real-world distributions/formats to create a personalization dataset mimicking all-day digital behavior?
