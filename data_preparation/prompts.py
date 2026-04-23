@@ -962,6 +962,50 @@ Respond with ONLY a single JSON object. No prose outside the JSON fence.
 ```"""
 
 
+def contradiction_pair_check_prompt(pairs: list[dict]) -> str:
+    """Build a batched LLM prompt that confirms whether candidate pairs of
+    (positive_canonical, negative_canonical) are truly semantically
+    opposite stances on the same topic.
+
+    This filters out false positives like "interested in boxing technique"
+    (positive) vs "dislikes boxing commentary" (negative) — technically
+    related but not contradictory. Only pairs where the positive and
+    negative describe the SAME topic with opposite stance return True.
+    """
+    pair_lines = []
+    for i, p in enumerate(pairs):
+        pair_lines.append(
+            f"- id: {i}\n"
+            f"  positive: {p.get('positive')}\n"
+            f"  negative: {p.get('negative')}\n"
+            f"  shared_hashtags: {p.get('shared_hashtags', [])}"
+        )
+    pair_block = "\n".join(pair_lines)
+
+    return f"""\
+You are labeling whether each pair is a TRUE stance contradiction.
+
+A pair is contradictory iff BOTH sides are about the SAME topic AND the
+stances are opposite (interested-in-X vs. not-interested-in-X, enjoys-X
+vs. dislikes-X). Different granularities are NOT contradictions
+(e.g., "interested in boxing technique" vs "dislikes boxing commentary"
+— both positive on boxing-adjacent but with different focuses, NOT
+contradictory).
+
+## Pairs to label
+{pair_block}
+
+## Output Format
+Respond with ONLY a JSON array in the SAME ORDER as input:
+
+```json
+[
+  {{"id": 0, "is_contradiction": true | false, "reason": "<=15 words"}},
+  ...
+]
+```"""
+
+
 def horizon_and_stop_prompt(
     candidates: list[dict],
     user_profile: dict,

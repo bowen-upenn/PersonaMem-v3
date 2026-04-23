@@ -320,6 +320,20 @@ SHORT_TERM_ALLOWED_CATEGORIES: set[str] = {
     "trip",
 }
 
+# --------------------------------------------------------------------------
+# Cross-polarity contradiction gate (Step 3b).
+#
+# Independent positive + negative cross-ref pipelines can both produce
+# surviving canonicals about the same topic, creating immediate
+# contradictions ("Interested in boxing" alongside "Not interested in
+# boxing" ~1h apart, no causal story). Step 3b enforces temporal
+# precedent: the later-emerging stance survives only when it has enough
+# prior same-polarity evidence to justify the flip.
+MIN_STANCE_FLIP_PRIOR: int = 3
+MIN_STANCE_FLIP_PRIOR_SHORT: int = 1   # relaxed for short_term canonicals
+STANCE_FLIP_WINDOW_HOURS: int = 48     # (informational; all pairs are checked regardless)
+HASHTAG_OVERLAP_MIN: int = 2           # pos/neg pair must share ≥ this many hashtags
+
 # NOTE: confidence_cross_referenced is intentionally UNCAPPED on the upper
 # side. A preference corroborated by 200 distinct rows should be strictly
 # more confident than one corroborated by 10 — they can't both be 1.0. Only
@@ -1063,6 +1077,12 @@ class PersonaAgent:
         # ad-shaped content (with `ad_metadata` block). Non-members have
         # `is_ad: false` by default and ordinary organic content.
         self._ad_oids: set[str] = set()
+
+        # Audit trail for canonicals dropped by the cross-polarity
+        # contradiction gate (Step 3b). Each entry records the demoted
+        # canonical, the opposing surviving canonical, and the reason.
+        # Informational only; never written to disk.
+        self._suppressed_stance_flips: list[dict] = []
 
         # Thread-safe set of known categories, built up during Step 1
         self._known_categories: set[str] = set()
@@ -2024,6 +2044,266 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
                   f"Horizon classification: {n_confirmed} short_term confirmed, "
                   f"{n_demoted} demoted to long_term.{utils.Colors.ENDC}")
+
+    def resolve_cross_polarity_contradictions(self) -> None:
+        """Step 3b: Cross-polarity contradiction causality gate.
+
+        Positive and negative cross-ref pipelines run independently, which
+        can produce surviving canonicals about the same topic (one pos,
+        one neg) with no temporal-causality check between them. This step
+        enforces a temporal-precedent rule:
+
+          - The later-emerging stance (pos or neg) survives only if the
+            count of same-polarity rows strictly BEFORE the first
+            opposite-polarity row meets `MIN_STANCE_FLIP_PRIOR` (or
+            `MIN_STANCE_FLIP_PRIOR_SHORT` for short-term horizons).
+          - Otherwise the later canonical is demoted (dropped from
+            cross_referenced_{personas,negatives}) and recorded in
+            `self._suppressed_stance_flips` for audit. The surviving
+            canonical gets a "contradicted" entry in update_history with
+            `resolution: "suppressed_insufficient_precedent"`.
+
+        When both stances survive (Case B), mutual "contradicted" entries
+        with `resolution: "stance_shift_with_precedent"` are added to both
+        canonicals' update_history, keeping the stance shift visible in
+        the HTML + eval harness.
+
+        Runs AFTER Step 3.5 (so horizon-aware precedent thresholds are
+        available) and BEFORE Step 4 (so the temporal graph sees only
+        surviving canonicals). Requires both the positive and negative
+        cross-ref lookups already populated.
+        """
+        if not self.cross_referenced_personas or not self.cross_referenced_negatives:
+            return
+
+        # Build hashtag → (positives, negatives) index
+        from collections import defaultdict as _ddict
+
+        def _hashtags_for(cr: CrossReferencedPersona, polarity: str) -> set[str]:
+            groups = (
+                self._canonical_groups if polarity == "positive"
+                else self._negative_canonical_groups
+            )
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = groups.get(key, []) if groups else []
+            tags: set[str] = set()
+            for a in atoms:
+                for t in (a.source_hashtags or []):
+                    tags.add(t.lstrip("#").lower())
+            return tags
+
+        pos_tags: dict[str, set[str]] = {
+            cr.persona_item: _hashtags_for(cr, "positive")
+            for cr in self.cross_referenced_personas
+        }
+        neg_tags: dict[str, set[str]] = {
+            cr.persona_item: _hashtags_for(cr, "negative")
+            for cr in self.cross_referenced_negatives
+        }
+
+        # Candidate pairs share ≥ HASHTAG_OVERLAP_MIN hashtags
+        candidate_pairs: list[tuple[CrossReferencedPersona, CrossReferencedPersona, set[str]]] = []
+        for pos_cr in self.cross_referenced_personas:
+            p_tags = pos_tags.get(pos_cr.persona_item, set())
+            if not p_tags:
+                continue
+            for neg_cr in self.cross_referenced_negatives:
+                n_tags = neg_tags.get(neg_cr.persona_item, set())
+                if not n_tags:
+                    continue
+                shared = p_tags & n_tags
+                if len(shared) >= HASHTAG_OVERLAP_MIN:
+                    candidate_pairs.append((pos_cr, neg_cr, shared))
+
+        if not candidate_pairs:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"Step 3b: no candidate pos/neg pairs share ≥{HASHTAG_OVERLAP_MIN} hashtags.{utils.Colors.ENDC}")
+            return
+
+        # LLM-confirm opposition semantics (batched)
+        client = self.llm_client_mini or self.llm_client
+        confirmed_pairs: list[tuple[CrossReferencedPersona, CrossReferencedPersona, set[str]]] = []
+        if client is None:
+            # Without an LLM, conservatively treat all shared-hashtag pairs as
+            # contradictions. This is the pre-Phase-3 behavior modulo the
+            # hashtag-overlap gate, so it still improves over no gate at all.
+            confirmed_pairs = list(candidate_pairs)
+        else:
+            BATCH = 10
+            for start in range(0, len(candidate_pairs), BATCH):
+                batch = candidate_pairs[start:start + BATCH]
+                prompt_pairs = [
+                    {
+                        "positive": pos.persona_item,
+                        "negative": neg.persona_item,
+                        "shared_hashtags": sorted(shared),
+                    }
+                    for (pos, neg, shared) in batch
+                ]
+                prompt = prompts.contradiction_pair_check_prompt(prompt_pairs)
+                resp = self._query_mini_with_retry(prompt)
+                if not resp:
+                    # On LLM failure, default to treating all as confirmed
+                    confirmed_pairs.extend(batch)
+                    continue
+                parsed = utils.extract_json_from_response(resp)
+                if not isinstance(parsed, list):
+                    confirmed_pairs.extend(batch)
+                    continue
+                by_id = {}
+                for entry in parsed:
+                    if isinstance(entry, dict) and "id" in entry:
+                        by_id[int(entry["id"])] = entry
+                for i, pair in enumerate(batch):
+                    res = by_id.get(i)
+                    if res is None or bool(res.get("is_contradiction")):
+                        confirmed_pairs.append(pair)
+
+        if not confirmed_pairs:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"Step 3b: no confirmed cross-polarity contradictions.{utils.Colors.ENDC}")
+            return
+
+        # For each confirmed pair, apply the temporal-precedent rule
+        def _row_tss(cr: CrossReferencedPersona, polarity: str) -> list[int]:
+            groups = (
+                self._canonical_groups if polarity == "positive"
+                else self._negative_canonical_groups
+            )
+            key = _normalize_persona_text(cr.persona_item)
+            atoms = groups.get(key, []) if groups else []
+            return sorted(a.source_timestamp for a in atoms if a.source_timestamp)
+
+        to_drop_pos: set[str] = set()
+        to_drop_neg: set[str] = set()
+        pair_results: list[dict] = []  # audit
+
+        for pos_cr, neg_cr, shared in confirmed_pairs:
+            pos_tss = _row_tss(pos_cr, "positive")
+            neg_tss = _row_tss(neg_cr, "negative")
+            if not pos_tss or not neg_tss:
+                continue
+
+            pos_first = pos_tss[0]
+            neg_first = neg_tss[0]
+
+            # Determine which side is the LATER-emerging stance
+            if neg_first > pos_first:
+                later_cr, later_polarity = neg_cr, "negative"
+                earlier_cr, earlier_polarity = pos_cr, "positive"
+                earlier_tss = pos_tss
+                later_first = neg_first
+            elif pos_first > neg_first:
+                later_cr, later_polarity = pos_cr, "positive"
+                earlier_cr, earlier_polarity = neg_cr, "negative"
+                earlier_tss = neg_tss
+                later_first = pos_first
+            else:
+                # Simultaneous first occurrences — treat the negative as
+                # "later" since negatives are structurally rarer and more
+                # likely to be the inferred-later stance.
+                later_cr, later_polarity = neg_cr, "negative"
+                earlier_cr, earlier_polarity = pos_cr, "positive"
+                earlier_tss = pos_tss
+                later_first = neg_first
+
+            prior_count = sum(1 for t in earlier_tss if t < later_first)
+
+            # Short-term horizon uses a relaxed precedent bar
+            required = (
+                MIN_STANCE_FLIP_PRIOR_SHORT
+                if later_cr.time_horizon == "short_term"
+                else MIN_STANCE_FLIP_PRIOR
+            )
+
+            if prior_count >= required:
+                resolution = "stance_shift_with_precedent"
+                # Both survive; add mutual "contradicted" entries
+                entry_for_later = {
+                    "update_type": "contradicted",
+                    "preference": earlier_cr.persona_item,
+                    "timestamp": later_first,
+                    "formatted_timestamp": utils.unix_to_formatted(later_first),
+                    "opposing_polarity": earlier_polarity,
+                    "resolution": resolution,
+                    "prior_corroboration_count": prior_count,
+                    "required_precedent": required,
+                }
+                entry_for_earlier = {
+                    "update_type": "contradicted",
+                    "preference": later_cr.persona_item,
+                    "timestamp": later_first,
+                    "formatted_timestamp": utils.unix_to_formatted(later_first),
+                    "opposing_polarity": later_polarity,
+                    "resolution": resolution,
+                    "prior_corroboration_count": prior_count,
+                    "required_precedent": required,
+                }
+                later_cr.update_history = list(later_cr.update_history or []) + [entry_for_later]
+                earlier_cr.update_history = list(earlier_cr.update_history or []) + [entry_for_earlier]
+                pair_results.append({
+                    "pos": pos_cr.persona_item, "neg": neg_cr.persona_item,
+                    "resolution": resolution,
+                    "prior_count": prior_count, "required": required,
+                    "shared_hashtags": sorted(shared),
+                })
+            else:
+                resolution = "suppressed_insufficient_precedent"
+                # Drop the later canonical; add an annotation to the survivor
+                survivor_entry = {
+                    "update_type": "contradicted",
+                    "preference": later_cr.persona_item,
+                    "timestamp": later_first,
+                    "formatted_timestamp": utils.unix_to_formatted(later_first),
+                    "opposing_polarity": later_polarity,
+                    "resolution": resolution,
+                    "prior_corroboration_count": prior_count,
+                    "required_precedent": required,
+                }
+                earlier_cr.update_history = list(earlier_cr.update_history or []) + [survivor_entry]
+                if later_polarity == "positive":
+                    to_drop_pos.add(later_cr.persona_item)
+                else:
+                    to_drop_neg.add(later_cr.persona_item)
+                self._suppressed_stance_flips.append({
+                    "dropped_persona_item": later_cr.persona_item,
+                    "dropped_polarity": later_polarity,
+                    "kept_persona_item": earlier_cr.persona_item,
+                    "kept_polarity": earlier_polarity,
+                    "prior_count": prior_count,
+                    "required": required,
+                    "later_first_ts": later_first,
+                    "shared_hashtags": sorted(shared),
+                })
+                pair_results.append({
+                    "pos": pos_cr.persona_item, "neg": neg_cr.persona_item,
+                    "resolution": resolution,
+                    "prior_count": prior_count, "required": required,
+                    "shared_hashtags": sorted(shared),
+                })
+
+        # Apply drops
+        if to_drop_pos:
+            self.cross_referenced_personas = [
+                cr for cr in self.cross_referenced_personas
+                if cr.persona_item not in to_drop_pos
+            ]
+        if to_drop_neg:
+            self.cross_referenced_negatives = [
+                cr for cr in self.cross_referenced_negatives
+                if cr.persona_item not in to_drop_neg
+            ]
+
+        if self.verbose:
+            n_passed = sum(1 for r in pair_results if r["resolution"] == "stance_shift_with_precedent")
+            n_suppressed = sum(1 for r in pair_results if r["resolution"] == "suppressed_insufficient_precedent")
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"Cross-polarity gate: {len(candidate_pairs)} candidate pairs, "
+                  f"{len(confirmed_pairs)} confirmed, "
+                  f"{n_passed} stance-shifts passed, "
+                  f"{n_suppressed} suppressed.{utils.Colors.ENDC}")
 
     def _cross_reference_negatives(self, groups_factory=None) -> None:
         """Run merge → init filter → weighted corroboration → LLM cross-ref
@@ -4517,6 +4797,7 @@ class PersonaAgent:
           3.5 classify horizons + stop conditions (LLM refinement of short-term)
           4.  temporal contradiction graph
           5.  build update histories
+          5b. resolve cross-polarity contradictions (Step 3b — enforces temporal precedent for stance flips)
           6.  generate user profile (demographics + big_five + bio)
           7.  infer hidden personas (cross-row hashtag clustering)
           8.  generate per-app sub-personas
@@ -4541,6 +4822,7 @@ class PersonaAgent:
             ("3.5 Classify horizons + stops",       self.classify_horizons_and_stop_conditions),
             ("4.  Temporal contradiction graph",     self.build_temporal_contradiction_graph),
             ("5.  Build update histories",           self.build_update_histories),
+            ("5b. Resolve cross-polarity contradictions", self.resolve_cross_polarity_contradictions),
             ("6.  Generate user profile",            self.generate_user_profile),
             ("7.  Infer hidden personas",            self.infer_hidden_personas),
             ("7b. Infer MBTI",                       self.infer_mbti),
@@ -4755,7 +5037,10 @@ class PersonaAgent:
                 # Causality: only keep entries whose timestamp <= this event's time.
                 # Key order: update_type, preference, formatted_timestamp, then extras.
                 _HISTORY_KEY_ORDER = ["update_type", "preference", "formatted_timestamp",
-                                      "source_app", "occurrence", "total_occurrences", "description"]
+                                      "source_app", "occurrence", "total_occurrences", "description",
+                                      # Cross-polarity contradiction metadata (Step 3b)
+                                      "resolution", "opposing_polarity",
+                                      "prior_corroboration_count", "required_precedent"]
                 event_ts = ap.source_timestamp  # this atomic's source row timestamp
 
                 merged_history = []
