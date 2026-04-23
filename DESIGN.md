@@ -61,6 +61,8 @@ Input CSV (hashtag interactions per user)
   +- Step 9:  Build sessions                   [Algo]     -- temporal grouping
   +- Step 10: Route preferences to apps        [LLM+Algo] -- ~40/20/20/20 distribution
   +- Step 11: Assign rows to apps              [Algo]     -- session majority vote + 8% noise
+  +- Step 11b: Assign session locations         [LLM]      -- home + up to 2 travel cities
+  +- Step 11c: Generate calendar modifications  [LLM]      -- scattered add/update/remove stream
   +- Step 12: Generate interaction formats     [Algo+LLM] -- per-user perturbed weights
   +- Step 13: Generate chatbot conversations   [LLM]      -- multi-turn, ask-to-forget
   +- Step 13b: Generate synthetic content      [LLM]      -- text / image / short_video per event
@@ -314,6 +316,48 @@ Four `AppPersona` objects per user:
 
 ---
 
+## 11b. Step 11b — Per-Session Geolocation
+
+Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_SECONDS`, so locality comes for free. One batched mini-tier LLM call per user takes the session manifest + user profile and returns `{session_idx → event_location}`.
+
+**Schema** (per event, written by save_to_backend):
+```json
+"event_location": {"city": "Brooklyn", "region": "NY", "country": "USA",
+                   "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}
+```
+
+**Constraints baked into the prompt** (for the ~8-day window):
+- ≥ `HOME_LOCATION_MIN_SHARE` (0.90) of sessions assigned to the inferred home city.
+- At most `MAX_LOCATIONS_PER_USER` (3) distinct cities: home + up to 2 travel destinations.
+- Travel appears as a contiguous 2–4-day block; no scattered travel days.
+- No teleporting: sessions within 6h share a city unless transit hashtags justify the shift.
+
+## 11c. Step 11c — Synthetic Calendar Modification Stream
+
+The calendar is not static. Instead, the user performs CRUD modifications (add / update / remove) on their calendar at scattered timestamps, and the calendar state at any time T is the result of folding modifications with ts ≤ T. This makes the calendar naturally time-maskable for eval.
+
+Persisted to `backend/{uid}/calendar.json`:
+```json
+{"modifications": [
+  {"mod_id": "mod_001", "ts": <unix>, "formatted_timestamp": "...",
+   "action": "added",
+   "entry": {"entry_id": "cal_001", "title": "...", "start_ts": ..., "end_ts": ...,
+             "location": {...}, "type": "work|personal|social|health",
+             "linked_preferences": [...], "is_preference_driven": true|false,
+             "relation_to_social": "related|adjacent|unrelated"}},
+  {"mod_id": "mod_002", ..., "action": "updated", "entry_id": "cal_001",
+   "diff": {"end_ts": {"from": ..., "to": ...}}},
+  {"mod_id": "mod_003", ..., "action": "removed", "entry_id": "cal_003",
+   "removal_reason": "canceled: friend sick"}
+]}
+```
+
+**Calibration** for an 8-day window: one LLM call per user producing 8–15 modifications. Target split 65% added / 20% updated / 15% removed (`CALENDAR_MOD_WEIGHTS`). Entries are ~40% preference-linked, ~60% plausible-noise (dentist, haircut, sprint review) — NOT limited to social-media hashtags. Locations stay consistent with Step 11b (home-day entries are local; travel-day entries are in the travel city).
+
+HTML rendering interleaves modification cards into the main event timeline at their `ts`, labeled with action verb + title + scheduled date.
+
+---
+
 ## 12. Step 12 — Interaction Formats
 
 `PLATFORM_INTERACTION_FORMATS` is the single source of truth. Actions picked verbatim — never invented. Each entry has `action` identifier, `action_label`, and `weight`.
@@ -483,6 +527,10 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `MIN_STANCE_FLIP_PRIOR` | 3 | Same-polarity rows required before a contradictory stance is admitted (long_term) |
 | `MIN_STANCE_FLIP_PRIOR_SHORT` | 1 | Relaxed precedent requirement for short_term canonicals |
 | `HASHTAG_OVERLAP_MIN` | 2 | Pos/neg canonical pairs must share ≥ this many hashtags for cross-polarity check |
+| `MAX_LOCATIONS_PER_USER` | 3 | Cap on distinct cities across the 8-day observation window |
+| `HOME_LOCATION_MIN_SHARE` | 0.90 | Minimum fraction of sessions assigned to the home city |
+| `MIN_CALENDAR_ENTRIES` / `MAX_CALENDAR_ENTRIES` | 5 / 10 | Calendar entry-count targets per user |
+| `CALENDAR_MOD_WEIGHTS` | `{added: 0.65, updated: 0.20, removed: 0.15}` | Calendar modification action mix |
 | Chatbot turn pool | `{2,4,6,8}` pos / `{2,4,6}` neg | Per-event random choice, clamped by `min(n_prefs*2, 8)` |
 | Test fraction | 0.20 | Latest 20% of high-confidence positives |
 | Test floor | 10 | Min test items per user (only reduced when the high-conf pool itself is smaller) |

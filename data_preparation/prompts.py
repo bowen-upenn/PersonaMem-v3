@@ -962,6 +962,202 @@ Respond with ONLY a single JSON object. No prose outside the JSON fence.
 ```"""
 
 
+def assign_session_locations_prompt(
+    user_profile: dict,
+    obs_window_days: float,
+    session_manifest: list[dict],
+    max_locations: int = 3,
+    home_share: float = 0.90,
+) -> str:
+    """Build a single prompt that assigns a geolocation to every session.
+
+    Input: a condensed session manifest — one entry per session with
+    timestamp, dominant hashtags, dominant app. Output: session_idx →
+    {city, region, country, lat, lon, precision}.
+
+    Constraints baked into the prompt:
+      - Infer home city from the user's profile (career / education / bio).
+      - ≥ home_share of sessions must be at home.
+      - At most `max_locations` distinct cities across the window.
+      - Travel appears as a contiguous block of 2-4 days, motivated by
+        travel-adjacent hashtags or calendar hints.
+      - No teleporting.
+    """
+    manifest_lines = []
+    for s in session_manifest:
+        tags = " ".join(s.get("dominant_hashtags", []) or []) or "(no hashtags)"
+        manifest_lines.append(
+            f"- idx {s.get('idx')} | "
+            f"{s.get('start_formatted', '')} -> {s.get('end_formatted', '')} | "
+            f"app {s.get('dominant_app', '')} | {tags}"
+        )
+    manifest_block = "\n".join(manifest_lines)
+
+    user_profile_json = json.dumps(user_profile or {}, indent=2)
+
+    return f"""\
+You are assigning realistic geolocations to every session of one user's
+{obs_window_days:.1f}-day activity window.
+
+## User profile
+```json
+{user_profile_json}
+```
+
+## Session manifest (one entry per session)
+{manifest_block}
+
+## Constraints
+1. Infer a HOME city from the user's profile (career, education, bio).
+2. AT LEAST {int(home_share * 100)}% of sessions must be assigned to the
+   home city. Home-only users are a valid and common outcome.
+3. At most {max_locations} distinct cities across the whole window
+   (home + up to {max_locations - 1} travel destinations).
+4. Travel is a contiguous block of 2-4 days, motivated by
+   travel-adjacent hashtags OR by a clear temporal cluster of
+   away-from-home sessions. Don't scatter travel days.
+5. No teleporting: sessions within 6 hours of each other must share a
+   city unless transit-implying hashtags justify a shift.
+6. Within-day intra-city moves (home → office → gym) are allowed and
+   add realism but do NOT count toward the {max_locations}-city cap.
+7. Each location object must include `city`, `region`, `country`,
+   `lat`, `lon`, `precision` ("city" | "neighborhood" | "venue").
+
+## Output Format
+Respond with ONLY a single JSON object mapping session_idx → location:
+
+```json
+{{
+  "0": {{"city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}},
+  "1": {{"city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}},
+  ...
+}}
+```"""
+
+
+def generate_calendar_modifications_prompt(
+    user_profile: dict,
+    app_personas: dict,
+    obs_window_days: float,
+    obs_start_ts: int,
+    obs_end_ts: int,
+    home_location: dict,
+    travel_windows: list[dict],
+    preference_list: list[dict],
+    n_modifications: int,
+) -> str:
+    """Build a prompt that produces a timeline of calendar CRUD events.
+
+    The output is a list of `{mod_id, ts, action, entry|entry_id|diff|removal_reason}`
+    modifications scattered across the window. `action` is one of
+    added / updated / removed. Entries can be preference-driven (matching a
+    surviving canonical) or plausible-noise (daily-life activities unrelated
+    to social: dentist, haircut, gym class).
+    """
+    user_profile_json = json.dumps(user_profile or {}, indent=2)
+    app_personas_json = json.dumps(app_personas or {}, indent=2)
+    home_json = json.dumps(home_location or {})
+    travel_json = json.dumps(travel_windows or [])
+
+    pref_lines = []
+    for p in preference_list[:25]:
+        pref_lines.append(
+            f"- {p.get('persona_item', '')} ({p.get('category', '')})"
+        )
+    pref_block = "\n".join(pref_lines) if pref_lines else "(no surviving preferences)"
+
+    return f"""\
+You are generating a small timeline of CALENDAR MODIFICATIONS for one
+user over their {obs_window_days:.1f}-day activity window.
+
+## User profile
+```json
+{user_profile_json}
+```
+
+## Per-app personas (context for how the user uses social)
+```json
+{app_personas_json}
+```
+
+## Location context
+- home: {home_json}
+- travel_windows: {travel_json}
+
+## A sample of the user's preferences (for grounding, NOT a requirement that calendar entries match these)
+{pref_block}
+
+## What to generate
+A chronological list of ~{n_modifications} calendar MODIFICATIONS
+scattered at REALISTIC timestamps across the window
+[{obs_start_ts} .. {obs_end_ts}]. People don't edit their calendar every
+hour — space these out.
+
+Distribution (target):
+  - ~65% action="added"
+  - ~20% action="updated"
+  - ~15% action="removed"
+
+Entries should come from DAILY-LIFE activities, not only from
+social-media hashtags. Aim ~40% preference-linked + ~60%
+persona-plausible noise (dentist, haircut, car inspection, gym class,
+family dinner, work sprint review, one-on-one meeting, etc.).
+
+Each scheduled entry's `location` MUST be consistent with the user's
+trajectory — on a home day → home; on a travel day → travel city.
+
+### Required modification shape
+
+For action="added":
+```json
+{{
+  "mod_id": "mod_001",
+  "ts": <unix seconds>,
+  "formatted_timestamp": "HH:MM, MM/DD/YYYY",
+  "action": "added",
+  "entry": {{
+    "entry_id": "cal_001",
+    "title": "...",
+    "start_ts": <unix seconds>,
+    "end_ts": <unix seconds>,
+    "location": {{"city": "...", "region": "...", "country": "...", "lat": ..., "lon": ..., "precision": "..."}},
+    "type": "work" | "personal" | "social" | "health",
+    "linked_preferences": ["<persona_item>"] | [],
+    "is_preference_driven": true | false,
+    "relation_to_social": "related" | "adjacent" | "unrelated"
+  }}
+}}
+```
+
+For action="updated" (reference an already-added entry_id; provide a diff):
+```json
+{{
+  "mod_id": "mod_002",
+  "ts": <unix seconds>,
+  "formatted_timestamp": "...",
+  "action": "updated",
+  "entry_id": "cal_001",
+  "diff": {{"end_ts": {{"from": <old>, "to": <new>}}, "notes": {{"from": "", "to": "bring backup gels"}}}}
+}}
+```
+
+For action="removed":
+```json
+{{
+  "mod_id": "mod_003",
+  "ts": <unix seconds>,
+  "formatted_timestamp": "...",
+  "action": "removed",
+  "entry_id": "cal_001",
+  "removal_reason": "canceled: friend sick"
+}}
+```
+
+## Output Format
+Respond with ONLY a single JSON array of modifications, sorted by `ts` ascending. No prose outside the JSON.
+"""
+
+
 def contradiction_pair_check_prompt(pairs: list[dict]) -> str:
     """Build a batched LLM prompt that confirms whether candidate pairs of
     (positive_canonical, negative_canonical) are truly semantically
