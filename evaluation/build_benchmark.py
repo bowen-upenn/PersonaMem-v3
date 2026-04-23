@@ -941,6 +941,14 @@ def build_benchmark(
         e4_instances = []
         print(f"[build_benchmark] WARN: e4_google_search builder failed: {exc}")
 
+    # Task E5 — short-term horizon lifecycle
+    try:
+        from evaluation.tasks.e5_horizon_lifecycle import build_e5_horizon_lifecycle
+        e5_instances = build_e5_horizon_lifecycle(bq, user_id, rng_seed=rng_seed)
+    except Exception as exc:
+        e5_instances = []
+        print(f"[build_benchmark] WARN: e5_horizon_lifecycle builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -970,6 +978,7 @@ def build_benchmark(
             "e2_at_ai_followup": len(e2_instances),
             "e3_daily_briefing_multi": len(e3_instances),
             "e4_google_search": len(e4_instances),
+            "e5_horizon_lifecycle": len(e5_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
         "slate_ranking": slate_instances,
@@ -983,6 +992,7 @@ def build_benchmark(
         "e2_at_ai_followup": e2_instances,
         "e3_daily_briefing_multi": e3_instances,
         "e4_google_search": e4_instances,
+        "e5_horizon_lifecycle": e5_instances,
         **agentic_buckets,
     }
 

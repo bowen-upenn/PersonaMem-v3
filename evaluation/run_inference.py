@@ -50,6 +50,7 @@ TASK_ALIASES = {
         "c4_button_regen",
         "e2_at_ai_followup",
         "e3_daily_briefing_multi",
+        "e5_horizon_lifecycle",
         # e4_google_search is NOT in "all" by default — opt in via --task e4
         # or --task all_with_e4 (requires --enable_e4 too).
         *AGENTIC_TASK_IDS,
@@ -66,6 +67,7 @@ TASK_ALIASES = {
         "e2_at_ai_followup",
         "e3_daily_briefing_multi",
         "e4_google_search",
+        "e5_horizon_lifecycle",
         *AGENTIC_TASK_IDS,
     ],
     "a": ["slate_ranking"],
@@ -79,10 +81,11 @@ TASK_ALIASES = {
     "c2": ["c2_scenarios"],
     "c3": ["c3_restraint"],
     "c4": ["c4_button_regen"],
-    "e": ["e2_at_ai_followup", "e3_daily_briefing_multi"],
+    "e": ["e2_at_ai_followup", "e3_daily_briefing_multi", "e5_horizon_lifecycle"],
     "e2": ["e2_at_ai_followup"],
     "e3": ["e3_daily_briefing_multi"],
     "e4": ["e4_google_search"],
+    "e5": ["e5_horizon_lifecycle"],
     "agentic": AGENTIC_TASK_IDS,
     # Individual agentic shortcuts: t6, t7, ..., t19.
     **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
@@ -130,6 +133,7 @@ BENCHMARK_TASK_KEYS = {
     "e2_at_ai_followup":"e2_at_ai_followup",
     "e3_daily_briefing_multi":"e3_daily_briefing_multi",
     "e4_google_search":"e4_google_search",
+    "e5_horizon_lifecycle":"e5_horizon_lifecycle",
     # Agentic T6-T19 — key in benchmark JSON is same as task_id.
     **{tid: tid for tid in AGENTIC_TASK_IDS},
     # Legacy v1.
@@ -179,6 +183,9 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
     if name == "e4_google_search":
         from evaluation.tasks import e4_google_search as _e4
         return _e4.run_e4_google_search(**common)
+    if name == "e5_horizon_lifecycle":
+        from evaluation.tasks import e5_horizon_lifecycle as _e5
+        return _e5.run_e5_horizon_lifecycle(**common)
     if name in AGENTIC_TASK_IDS:
         return agentic_tasks.run_task(task_id=name, **common)
     raise ValueError(f"unknown task: {name}")
