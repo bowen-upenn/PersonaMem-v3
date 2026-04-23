@@ -925,6 +925,14 @@ def build_benchmark(
         e2_instances = []
         print(f"[build_benchmark] WARN: e2_at_ai_followup builder failed: {exc}")
 
+    # Task E3 — multi-day proactive daily briefing
+    try:
+        from evaluation.tasks.e3_daily_briefing_multi import build_e3_daily_briefing_multi
+        e3_instances = build_e3_daily_briefing_multi(bq, user_id, t_probe)
+    except Exception as exc:
+        e3_instances = []
+        print(f"[build_benchmark] WARN: e3_daily_briefing_multi builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -952,6 +960,7 @@ def build_benchmark(
             "c3_restraint": len(c3_instances),
             "c4_button_regen": len(c4_instances),
             "e2_at_ai_followup": len(e2_instances),
+            "e3_daily_briefing_multi": len(e3_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
         "slate_ranking": slate_instances,
@@ -963,6 +972,7 @@ def build_benchmark(
         "c3_restraint": c3_instances,
         "c4_button_regen": c4_instances,
         "e2_at_ai_followup": e2_instances,
+        "e3_daily_briefing_multi": e3_instances,
         **agentic_buckets,
     }
 
