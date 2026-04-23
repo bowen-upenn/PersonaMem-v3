@@ -48,8 +48,37 @@ class QueryLLM:
         self._current_cache_key = None       # Set by inference.py before each query
         self._gemini_caches = {}             # {cache_key: (CachedContent, GenerativeModel)}
 
+        # Thread-safe usage accumulator. Populated from response.usage on each
+        # API call so the caller can report totals at end of run.
+        self._usage_lock = threading.Lock()
+        self._usage_totals = {
+            "calls": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_input_tokens": 0,  # tokens served from provider-side cache
+            "errors": 0,
+        }
+
         load_dotenv(override=True)
         self._setup_client()
+
+    def _record_usage(
+        self,
+        input_tokens: int = 0,
+        output_tokens: int = 0,
+        cached_input_tokens: int = 0,
+    ) -> None:
+        """Thread-safe accumulator for API usage. Called after each response."""
+        with self._usage_lock:
+            self._usage_totals["calls"] += 1
+            self._usage_totals["input_tokens"] += int(input_tokens or 0)
+            self._usage_totals["output_tokens"] += int(output_tokens or 0)
+            self._usage_totals["cached_input_tokens"] += int(cached_input_tokens or 0)
+
+    def get_usage_totals(self) -> dict:
+        """Return a snapshot of accumulated usage. Call after run completes."""
+        with self._usage_lock:
+            return dict(self._usage_totals)
 
 
     def _setup_client(self):
@@ -440,10 +469,19 @@ class QueryLLM:
                 if cache_read > 0 or cache_write > 0:
                     print(f"  Claude cache: read={cache_read}, write={cache_write}, uncached={usage.input_tokens}")
 
+                # Accumulate for run-total reporting.
+                self._record_usage(
+                    input_tokens=(usage.input_tokens or 0) + cache_write,
+                    output_tokens=getattr(usage, 'output_tokens', 0) or 0,
+                    cached_input_tokens=cache_read,
+                )
+
                 content = response.content[0].text
             except Exception as e:
                 print(utils.Colors.WARNING + f'Error getting Claude response: {e}' + utils.Colors.ENDC)
                 content = None
+                with self._usage_lock:
+                    self._usage_totals["errors"] += 1
         else:
             # Call OpenAI/Azure OpenAI Chat Completions API.
             # Azure OpenAI and OpenAI both auto-cache prompt prefixes >= 1024 tokens
@@ -463,15 +501,22 @@ class QueryLLM:
                 print(utils.Colors.WARNING + f'Error getting response: {e}' + utils.Colors.ENDC)
                 content = None
 
-            # Log OpenAI/Azure OpenAI prompt-cache hits when available.
+            # Log OpenAI/Azure OpenAI prompt-cache hits when available and
+            # accumulate usage for run-total reporting.
             try:
                 usage = response.usage
                 details = getattr(usage, 'prompt_tokens_details', None)
                 cached = getattr(details, 'cached_tokens', 0) if details is not None else 0
                 if cached:
                     print(f"  OpenAI cache hit: cached={cached}, total_prompt={usage.prompt_tokens}")
+                self._record_usage(
+                    input_tokens=getattr(usage, 'prompt_tokens', 0) or 0,
+                    output_tokens=getattr(usage, 'completion_tokens', 0) or 0,
+                    cached_input_tokens=cached,
+                )
             except Exception:
-                pass
+                with self._usage_lock:
+                    self._usage_totals["errors"] += 1
 
         if use_history:
             if isinstance(prompt, list):

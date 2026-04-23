@@ -107,6 +107,22 @@ def main():
             print(f"  {utils.Colors.OKGREEN}[{uid}] {r.get('total_cross_referenced', '?')} personas, "
                   f"{r.get('temporal_topics', '?')} temporal topics{utils.Colors.ENDC}")
 
+    # API usage summary (both flagship + mini clients).
+    def _fmt(t: dict, model_name: str) -> str:
+        calls = t.get("calls", 0)
+        ti = t.get("input_tokens", 0)
+        to = t.get("output_tokens", 0)
+        tc = t.get("cached_input_tokens", 0)
+        errs = t.get("errors", 0)
+        cache_pct = (tc / ti * 100.0) if ti else 0.0
+        return (f"    model={model_name:25s}  calls={calls:>5}  "
+                f"input_tokens={ti:>10}  output_tokens={to:>9}  "
+                f"cached_input={tc:>10} ({cache_pct:.0f}%)  errors={errs}")
+
+    print(f"\n{utils.Colors.BOLD}=== API Usage (this run) ==={utils.Colors.ENDC}")
+    print(_fmt(llm_client.get_usage_totals(), actual_model))
+    print(_fmt(llm_client_mini.get_usage_totals(), args.mini_model))
+
 
 if __name__ == "__main__":
     main()
