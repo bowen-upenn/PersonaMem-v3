@@ -2,7 +2,16 @@
 
 ## Overview
 
-Offline evaluation harness for cross-platform personalization. Scores a recommendation / chatbot agent against each user's held-out test items already flagged in-place in [backend/{user_id}/{app}.json](backend/) (`split: "test"`). All test preferences carry LLM-picked topically-irrelevant distractors in `over_personalization_irrelevant` — the harness re-uses these for both ranking and restraint probes.
+Offline evaluation harness for cross-platform personalization.
+
+**As of R8**, data-gen no longer emits `split: "test"` or `over_personalization_irrelevant`. The harness picks its own test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — different tasks cut at different criteria (e.g., E2 at `@ai` directive timestamps, E3/E4 at stratified calendar days, E5 at short-term canonical mid-windows). `BackendQuery.get_events(since_timestamp=T)` time-masks the history at T_test; `BackendQuery.get_preferences(..., include_superseded=False)` additionally filters out preferences whose canonical was contradicted-and-superseded (Phase 3 cross-polarity gate, Case B) before T_test — so the ground truth at any time is the LATER stance only, never the superseded earlier one.
+
+Two new BackendQuery helpers support Phase 4 (calendar):
+
+- `get_calendar_modifications(user_id, since_timestamp=T)` — the CRUD modification stream time-masked at T.
+- `get_calendar_state(user_id, as_of_timestamp=T)` — the folded calendar state derived from modifications with `ts ≤ T`.
+
+Also new: `build_benchmark` now writes a flat `benchmark/{user_id}/benchmark.csv` alongside `benchmark.json`. The CSV has stable columns (`instance_id, task, user_id, t_test, t_test_iso, query, query_type, candidates_json, ground_truth_json, carveout_json, metadata_json`) suitable for HuggingFace publication. The runner continues to consume the structured JSON; the CSV is a publication-friendly projection.
 
 ## Motivation
 

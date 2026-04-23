@@ -961,6 +961,102 @@ def default_benchmark_path(user_id: str) -> Path:
     return Path("benchmark") / user_id / "benchmark.json"
 
 
+def default_benchmark_csv_path(user_id: str) -> Path:
+    return Path("benchmark") / user_id / "benchmark.csv"
+
+
+def export_benchmark_csv(benchmark: dict, user_id: str, out_path: Path | None = None) -> Path:
+    """Project a `benchmark.json` blob into a flat CSV for HuggingFace publication.
+
+    Columns (stable, narrow):
+      instance_id, task, user_id, t_test, t_test_iso, query, query_type,
+      candidates_json, ground_truth_json, carveout_json, metadata_json
+
+    Task-specific fields that don't fit the narrow schema are JSON-packed
+    into `metadata_json`. The runner continues to consume the structured
+    JSON; the CSV is a publication-friendly projection.
+    """
+    import csv
+    import datetime as _dt
+
+    out_path = Path(out_path) if out_path else default_benchmark_csv_path(user_id)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Iterate task buckets. A benchmark dict has two kinds of top-level keys:
+    # metadata (counts, backend_hash, etc.) and task buckets (lists of instances).
+    columns = [
+        "instance_id", "task", "user_id", "t_test", "t_test_iso",
+        "query", "query_type", "candidates_json", "ground_truth_json",
+        "carveout_json", "metadata_json",
+    ]
+
+    def _isoformat_ts(ts) -> str:
+        if not isinstance(ts, (int, float)) or ts <= 0:
+            return ""
+        try:
+            return _dt.datetime.fromtimestamp(int(ts), tz=_dt.timezone.utc).isoformat()
+        except (OverflowError, OSError, ValueError):
+            return ""
+
+    def _project_row(task: str, inst: dict) -> dict | None:
+        if not isinstance(inst, dict):
+            return None
+        t_test = inst.get("t_test") or inst.get("test_timestamp") or inst.get("source_timestamp") or 0
+        query = inst.get("query") or inst.get("user_message") or ""
+        query_type = inst.get("query_type") or inst.get("entry_point") or ""
+        candidates = inst.get("candidates") or inst.get("slate") or []
+        # Ground truth — task-specific; collect the commonly named ones
+        gt = {
+            k: inst[k] for k in (
+                "held_out_preference", "held_out_indices", "positive_indices",
+                "target_match", "target_ids", "forbidden_items", "matching_indices",
+                "post_test_positives", "post_test_negatives", "post_test_engagements",
+            )
+            if k in inst
+        }
+        carveout = {
+            k: inst[k] for k in ("carveout_indices", "carve_out_topic", "carveout_topic")
+            if k in inst
+        }
+        # Everything else goes into metadata_json
+        known_keys = {
+            "instance_id", "task_id", "t_test", "test_timestamp", "source_timestamp",
+            "query", "user_message", "query_type", "entry_point",
+            "candidates", "slate",
+        } | set(gt.keys()) | set(carveout.keys())
+        metadata = {k: v for k, v in inst.items() if k not in known_keys}
+        return {
+            "instance_id": str(inst.get("instance_id") or ""),
+            "task": task,
+            "user_id": str(user_id),
+            "t_test": int(t_test) if isinstance(t_test, (int, float)) else 0,
+            "t_test_iso": _isoformat_ts(t_test),
+            "query": str(query) if query is not None else "",
+            "query_type": str(query_type) if query_type else "",
+            "candidates_json": json.dumps(candidates, ensure_ascii=False) if candidates else "",
+            "ground_truth_json": json.dumps(gt, ensure_ascii=False) if gt else "",
+            "carveout_json": json.dumps(carveout, ensure_ascii=False) if carveout else "",
+            "metadata_json": json.dumps(metadata, ensure_ascii=False) if metadata else "",
+        }
+
+    rows: list[dict] = []
+    for task_key, bucket in benchmark.items():
+        if not isinstance(bucket, list):
+            continue  # skip metadata keys
+        for inst in bucket:
+            row = _project_row(task_key, inst)
+            if row is not None:
+                rows.append(row)
+
+    with out_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=columns)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow(row)
+
+    return out_path
+
+
 def _make_blind_check_llm(model: str):
     """Return a callable `llm(prompt) -> str` that goes through the Claude Code
     subscription via `claude -p`. No API key, no QueryLLM — subscription-covered.
@@ -1014,6 +1110,10 @@ def main():
     print(f"[build_benchmark] counts: {bm['counts']}")
     print(f"[build_benchmark] backend_hash: {bm['backend_hash']}")
     print(f"[build_benchmark] blind_check_enabled: {bm['blind_check_enabled']}")
+
+    # R9: also export a flat benchmark.csv projection for HuggingFace publication
+    csv_path = export_benchmark_csv(bm, args.user_id)
+    print(f"[build_benchmark] wrote {csv_path} (CSV projection for HF publication)")
 
 
 if __name__ == "__main__":
