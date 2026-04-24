@@ -962,75 +962,85 @@ Respond with ONLY a single JSON object. No prose outside the JSON fence.
 ```"""
 
 
-def assign_session_locations_prompt(
+def assign_location_segments_prompt(
     user_profile: dict,
     obs_window_days: float,
-    session_manifest: list[dict],
-    max_locations: int = 3,
-    home_share: float = 0.90,
+    obs_start_ts: int,
+    obs_end_ts: int,
+    gap_candidates: list[dict],
     mobility_class: str = "domestic",
 ) -> str:
-    """Build a single prompt that assigns a geolocation to every session.
+    """Build a prompt that returns the user's LOCATION SEGMENTS across the
+    observation window, anchored at large idle gaps.
 
-    Input: a condensed session manifest + the user's mobility class. Output:
-    session_idx → {city, region, country, lat, lon, precision}.
+    The pipeline pre-computes gap candidates (periods of inactivity ≥ 4h)
+    that are potential travel-transition points. The LLM only needs to
+    decide WHETHER a city shift happened at each gap, and if so, WHICH
+    city — not where every session is. Python interpolation then fills
+    all sessions from segment boundaries, giving 100% geo coverage.
 
-    The mobility class drives class-adaptive constraints so the cohort
-    contains real diversity (homebody / domestic / international / nomadic).
+    Input:
+      - user_profile, mobility_class
+      - obs_start_ts / obs_end_ts bounds
+      - gap_candidates: one entry per gap ≥ 4h, with before/after hashtags
+
+    Output: JSON list of segments, each with start_ts + city/region/country/
+    lat/lon. First segment's start_ts must equal obs_start_ts.
     """
-    manifest_lines = []
-    for s in session_manifest:
-        tags = " ".join(s.get("dominant_hashtags", []) or []) or "(no hashtags)"
-        manifest_lines.append(
-            f"- idx {s.get('idx')} | "
-            f"{s.get('start_formatted', '')} -> {s.get('end_formatted', '')} | "
-            f"app {s.get('dominant_app', '')} | {tags}"
-        )
-    manifest_block = "\n".join(manifest_lines)
+    gaps_block = "\n".join(
+        f"- gap#{g['idx']}: {g['gap_hours']:.1f}h "
+        f"from {g.get('before_formatted','')} to {g.get('after_formatted','')}, "
+        f"before-tags: {' '.join(g.get('before_hashtags', []) or []) or '(none)'}, "
+        f"after-tags: {' '.join(g.get('after_hashtags', []) or []) or '(none)'}"
+        for g in gap_candidates
+    ) or "(no gaps ≥ 4h — the user was active throughout the window)"
 
     user_profile_json = json.dumps(user_profile or {}, indent=2)
 
-    # Class-adaptive instructions — the hard lift that makes each class look
-    # distinctive. Trip-arc language + city counts are conditioned here.
+    # Class-adaptive segment expectations
     if mobility_class == "homebody":
         class_block = (
-            "This user is a HOMEBODY for this window. They do NOT travel.\n"
-            "- Assign every session to the home city (exactly 1 city total).\n"
-            "- Do NOT invent a trip or travel block.\n"
-            "- Within-day intra-city moves (home → office → gym) are still allowed."
+            "This user is a HOMEBODY — they do NOT travel this window.\n"
+            "- Return exactly 1 segment: the home city for the whole window.\n"
+            "- The home city is inferred from profile (career, education, bio)."
         )
     elif mobility_class == "domestic":
         class_block = (
-            "This user takes a SHORT DOMESTIC TRIP during this window.\n"
-            f"- Pick a home city + 1 (optionally 2) other SAME-COUNTRY city.\n"
-            f"- Travel appears as a contiguous block of 1-3 days.\n"
-            f"- No foreign-locale visits. Stay within the home country."
+            "This user takes a SHORT DOMESTIC TRIP within-country.\n"
+            "- Return 1-4 segments. Segment 1 = home city. Optionally 1 short\n"
+            "  block at a same-country city (another US city if home is US,\n"
+            "  etc.), then a return segment to home.\n"
+            "- Travel block lasts 1-3 days."
         )
     elif mobility_class == "international":
         class_block = (
-            "This user takes an INTERNATIONAL TRIP during this window.\n"
-            f"- Pick a home city + ≥ 1 FOREIGN-COUNTRY city.\n"
-            f"- Travel appears as a contiguous block of 2-4 days.\n"
-            f"- The foreign visit must have a different `country` field from home."
+            "This user takes an INTERNATIONAL TRIP this window.\n"
+            "- Return 2-4 segments. Segment 1 = home city. At least one\n"
+            "  segment must be in a DIFFERENT country from home. A return\n"
+            "  segment to home is typical.\n"
+            "- Foreign block lasts 2-4 days."
         )
     elif mobility_class == "nomadic":
         class_block = (
-            "This user is NOMADIC — no single dominant home this window.\n"
-            f"- Spread sessions across ≥ 3 cities (mix of domestic and/or foreign).\n"
-            f"- No single city should exceed ~{int(home_share * 100)}% of sessions.\n"
-            f"- Multiple shorter blocks are fine, not one long trip."
+            "This user is NOMADIC — they bounce between ≥ 3 cities.\n"
+            "- Return 3+ segments spread across cities.\n"
+            "- No single city dominates more than 40% of the window."
         )
     else:
-        # Unknown class — fall back to prior behavior.
         class_block = (
-            "- Infer a HOME city from the user's profile (career, education, bio).\n"
-            f"- AT LEAST {int(home_share * 100)}% of sessions at home.\n"
-            f"- At most {max_locations} distinct cities across the window."
+            "Return segments representing the user's location over the window.\n"
+            "Segment 1 starts at obs_start_ts; each later segment marks a shift."
         )
 
     return f"""\
-You are assigning realistic geolocations to every session of one user's
+You are determining the user's LOCATION SEGMENTS across their
 {obs_window_days:.1f}-day activity window.
+
+A location segment is a stretch of time where the user was in the same
+city. Segments only change at periods of inactivity (idle gaps). Python
+code has pre-computed the candidate gaps where a shift COULD plausibly
+have happened. Your job: decide if any shift actually occurred, and if
+so, to which city.
 
 ## User profile
 ```json
@@ -1040,30 +1050,39 @@ You are assigning realistic geolocations to every session of one user's
 ## User's mobility class: `{mobility_class}`
 {class_block}
 
-## Session manifest (one entry per session)
-{manifest_block}
+## Observation window
+- start_ts: {obs_start_ts}
+- end_ts:   {obs_end_ts}
 
-## Constraints
-1. Home city: infer from the user's profile (career, education, bio).
-2. Respect the class-adaptive constraints above — do NOT override them.
-3. At most {max_locations} distinct cities across the whole window.
-4. No teleporting: sessions within 6 hours of each other must share a
-   city unless transit-implying hashtags justify a shift.
-5. GEO COVERAGE: assign a location to AS MANY sessions as you can. The
-   goal is to maximize the fraction of sessions carrying a location,
-   not to emit only hashtag-evident sessions.
-6. Each location object must include `city`, `region`, `country`,
-   `lat`, `lon`, `precision` ("city" | "neighborhood" | "venue").
+## Candidate transition gaps (idle periods ≥ 4h)
+These are moments a shift COULD have happened. Most won't correspond to
+actual travel — e.g., most overnight gaps end with the user waking up in
+the same city. Only flag a shift when hashtags, time, or class justify.
 
-## Output Format
-Respond with ONLY a single JSON object mapping session_idx → location:
+{gaps_block}
 
+## Output format
+Respond with a single JSON list of segments, ordered by start_ts ascending.
+Each segment MUST include: `start_ts`, `city`, `region`, `country`, `lat`,
+`lon`, `precision` ("city" | "neighborhood" | "venue").
+
+The FIRST segment's `start_ts` must be {obs_start_ts} (or earlier).
+The LAST segment implicitly runs to {obs_end_ts}.
+
+Example (domestic-class user taking a weekend trip):
 ```json
-{{
-  "0": {{"city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}},
-  "1": {{"city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}},
-  ...
-}}
+[
+  {{"start_ts": {obs_start_ts}, "city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "city"}},
+  {{"start_ts": 1775000000, "city": "Boston", "region": "MA", "country": "USA", "lat": 42.3601, "lon": -71.0589, "precision": "city"}},
+  {{"start_ts": 1775250000, "city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "city"}}
+]
+```
+
+For a HOMEBODY user, a single-segment output is the expected answer:
+```json
+[
+  {{"start_ts": {obs_start_ts}, "city": "Brooklyn", "region": "NY", "country": "USA", "lat": 40.6782, "lon": -73.9442, "precision": "city"}}
+]
 ```"""
 
 
@@ -1176,8 +1195,9 @@ family dinner, work sprint review, one-on-one meeting, etc.).
 
 ### Required diversity
 {transit_rule}
-- MULTI-ATTENDEE MEETING: add at least 1 entry with ≥ 2 named
-  attendees beyond the user (use entry field `attendees: ["self", "Ana", "Renz"]`).
+- NAMED-ATTENDEE MEETING: add at least 1 entry with ≥ 1 non-self named
+  attendee (use entry field `attendees: ["self", "Ana"]`). Multi-attendee
+  group meetings are welcome but not required.
 {cancellation_rule}
 
 Each scheduled entry's `location` MUST be consistent with the user's

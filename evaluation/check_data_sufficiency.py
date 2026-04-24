@@ -280,21 +280,22 @@ def check_e6(user_id: str, backend_dir: str | Path) -> list[tuple[str, bool, str
         True,
     ))
 
-    # Multi-attendee meeting
+    # Multi-attendee meeting — relaxed to ≥1 non-self attendee (was ≥2).
+    # e6 archetype 4 (audience-shift in chat) only needs ONE named attendee
+    # (the person the user is supposedly meeting with).
     multi_attendee_ok = False
     for m in mods:
         if m.get("action") != "added":
             continue
         entry = m.get("entry") or {}
         attendees = entry.get("attendees") or []
-        # Exclude "self" when counting attendees
         others = [a for a in attendees if str(a).lower() != "self"]
-        if len(others) >= 2:
+        if len(others) >= 1:
             multi_attendee_ok = True
             break
     out.append((
-        "e6_calendar_multi_attendee", multi_attendee_ok,
-        f"≥1 added entry with ≥2 non-self attendees: {multi_attendee_ok}",
+        "e6_calendar_named_attendee", multi_attendee_ok,
+        f"≥1 added entry with ≥1 non-self attendee: {multi_attendee_ok}",
         True,
     ))
 
