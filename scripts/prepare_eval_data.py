@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
-"""Flatten each persona's `benchmark/{uid}/benchmark.json` into a
-temporally-ordered query manifest at `benchmark/{uid}/queries.csv`.
+"""Build the per-persona eval benchmark as ONE CSV per user.
 
-The CSV is the eval harness's sequential-execution manifest AND the
-HuggingFace-friendly view of the benchmark. It is narrow and readable —
-full instance payloads stay in benchmark.json and are looked up at run
-time by `(task_type, instance_id)`.
+This is the SINGLE entry point for benchmark construction — no separate
+`benchmark.json` step. The CSV at `benchmark/{uid}/queries.csv` contains
+both:
+
+  - Narrow scannable columns (query_id, task_type, ts, query_text, etc.)
+    for the HuggingFace-facing view of the benchmark.
+  - An `instance_json` column with the full instance payload the runner
+    needs for scoring. This makes the CSV the single source of truth
+    for both eval ordering and eval execution — no JSON sidecar.
+
+E6 (Active Mistake Prevention) is built INLINE here, same as every
+other task family. An LLM client is built from env config automatically
+for the discovery step; if no LLM is available, E6 yields zero instances.
 
 Sort order:
     primary   : `ts` ascending (strict temporal order)
@@ -15,11 +23,10 @@ Sort order:
 CLI:
     python scripts/prepare_eval_data.py --user_id 115
     python scripts/prepare_eval_data.py --user_range 100-200 --parallel 8
-    python scripts/prepare_eval_data.py --all --parallel 16 --force_rebuild
+    python scripts/prepare_eval_data.py --all --parallel 16
 
 Missing `backend/{uid}` → user is skipped and logged to
-`benchmark/_prepare_eval_data.skipped.txt`. Missing `benchmark.json`
-triggers a build unless the caller also omitted `--force_rebuild`.
+`benchmark/_prepare_eval_data.skipped.txt`.
 """
 
 from __future__ import annotations
@@ -37,10 +44,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
-from evaluation.build_benchmark import (  # noqa: E402
-    build_benchmark,
-    default_benchmark_path,
-)
+# Load .env BEFORE any os.getenv for LLM credentials (AZURE_OPENAI_*, etc.)
+try:
+    from dotenv import load_dotenv
+    load_dotenv(REPO_ROOT / ".env", override=False)
+except Exception:
+    pass
+
+from evaluation.build_benchmark import build_benchmark  # noqa: E402
 from evaluation.task_registry import (  # noqa: E402
     QUERIES_CSV_VERSION,
     TASK_TYPE_META,
@@ -48,7 +59,9 @@ from evaluation.task_registry import (  # noqa: E402
 )
 
 
-# CSV columns (narrow, human-readable, stable)
+# CSV columns: 15 narrow scannable columns + 1 `instance_json` payload
+# column for the runner. HF data viewers render the narrow columns
+# front-and-center; instance_json is big and trailing.
 COLUMNS: list[str] = [
     "query_id",
     "seq",
@@ -65,7 +78,27 @@ COLUMNS: list[str] = [
     "state_write_policy",
     "expected_response_kind",
     "rubric_tags",
+    "instance_json",
 ]
+
+
+def _build_llm_client() -> object | None:
+    """Best-effort LLM client for the E6 discovery step. Returns None
+    when no credentials are configured — E6 then yields zero instances.
+    """
+    model = os.getenv("EVAL_DISCOVERY_MODEL") or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+    if not model:
+        print("[prepare_eval_data] no LLM model in env "
+              "(EVAL_DISCOVERY_MODEL / AZURE_OPENAI_DEPLOYMENT_NAME) — E6 will be skipped")
+        return None
+    try:
+        from query_llm import QueryLLM
+        client = QueryLLM({"models": {"llm_model": model}}, rate_limit_per_min=50)
+        print(f"[prepare_eval_data] E6 discovery client ready (model={model})")
+        return client
+    except Exception as exc:
+        print(f"[prepare_eval_data] WARN: could not build LLM client for E6: {exc}")
+        return None
 
 
 def _skipped_log_path() -> Path:
@@ -157,6 +190,9 @@ def _project_row(
     query_text = _inst_field(inst, "query", "user_message", "user_query")
     app_context = _inst_field(inst, "app", "target_app")
     entry_point = _inst_field(inst, "entry_point", "query_type")
+    # instance_json — full payload for the runner. Separator compact to
+    # keep the column narrow-ish in HF viewers (default=', ' → ',').
+    instance_json = json.dumps(inst, ensure_ascii=False, separators=(",", ":"))
     return {
         "query_id": f"{user_id}:{seq:04d}:{instance_id}",
         "seq": seq,
@@ -173,43 +209,50 @@ def _project_row(
         "state_write_policy": meta["state_write_policy"],
         "expected_response_kind": meta["expected_response_kind"],
         "rubric_tags": ";".join(meta["rubric_tags"]),
+        "instance_json": instance_json,
     }
 
 
-def _load_or_build_benchmark(
+def _build_benchmark_in_memory(
     user_id: str,
     backend_dir: Path,
-    force_rebuild: bool,
+    llm_client=None,
 ) -> dict | None:
-    bm_path = default_benchmark_path(user_id)
-    if bm_path.exists() and not force_rebuild:
-        try:
-            return json.loads(bm_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as e:
-            _append_skipped(user_id, f"failed to read benchmark.json: {e}")
-            return None
+    """Build the benchmark dict in memory. No disk persistence of JSON.
 
+    The CSV written by prepare_one() is the sole on-disk artifact.
+    """
     user_backend = backend_dir / user_id
     if not user_backend.exists():
         _append_skipped(user_id, f"backend/{user_id} missing — nothing to build from")
         return None
 
-    # Build the benchmark (best-effort; some task families may skip due to
-    # missing data, and build_benchmark tolerates that internally).
-    bm = build_benchmark(backend_dir=str(backend_dir), user_id=user_id)
-    bm_path.parent.mkdir(parents=True, exist_ok=True)
-    bm_path.write_text(json.dumps(bm, indent=2, ensure_ascii=False), encoding="utf-8")
-    return bm
+    try:
+        return build_benchmark(
+            backend_dir=str(backend_dir),
+            user_id=user_id,
+            discovery_llm=llm_client,
+        )
+    except SystemExit as e:
+        _append_skipped(user_id, f"build_benchmark raised SystemExit: {e}")
+        return None
+    except Exception as e:
+        _append_skipped(user_id, f"build_benchmark raised {type(e).__name__}: {e}")
+        return None
 
 
 def prepare_one(
     user_id: str,
     backend_dir: Path,
-    force_rebuild: bool = False,
+    llm_client=None,
     verbose: bool = True,
 ) -> dict:
-    """Build queries.csv for one user. Returns a small report dict."""
-    bm = _load_or_build_benchmark(user_id, backend_dir, force_rebuild)
+    """Build queries.csv for one user. Returns a small report dict.
+
+    No benchmark.json is written. The CSV (with an `instance_json`
+    column) is the sole on-disk artifact.
+    """
+    bm = _build_benchmark_in_memory(user_id, backend_dir, llm_client=llm_client)
     if bm is None:
         return {"user_id": user_id, "rows": 0, "status": "skipped"}
 
@@ -276,6 +319,13 @@ def prepare_one(
     }
 
 
+def _prepare_one_worker(user_id: str, backend_dir_str: str, skip_e6: bool) -> dict:
+    """ProcessPool entry. Each worker rebuilds its own LLM client from
+    env (QueryLLM instances don't pickle across processes)."""
+    client = None if skip_e6 else _build_llm_client()
+    return prepare_one(user_id, Path(backend_dir_str), client)
+
+
 def _resolve_user_ids(args: argparse.Namespace) -> list[str]:
     if args.user_id:
         return [args.user_id]
@@ -295,7 +345,7 @@ def _resolve_user_ids(args: argparse.Namespace) -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Flatten per-persona benchmarks into temporally-ordered queries.csv"
+        description="Build per-persona eval benchmark as a single CSV."
     )
     grp = parser.add_mutually_exclusive_group(required=True)
     grp.add_argument("--user_id", help="Single user id, e.g. 115")
@@ -303,10 +353,10 @@ def main() -> int:
     grp.add_argument("--all", action="store_true",
                      help="All users under --backend_dir")
     parser.add_argument("--backend_dir", default="backend")
-    parser.add_argument("--force_rebuild", action="store_true",
-                        help="Rebuild benchmark.json even if present")
     parser.add_argument("--parallel", type=int, default=1,
                         help="Cross-user parallelism (ProcessPool)")
+    parser.add_argument("--skip_e6", action="store_true",
+                        help="Skip E6 discovery (no LLM call for this task)")
     args = parser.parse_args()
 
     user_ids = _resolve_user_ids(args)
@@ -315,14 +365,19 @@ def main() -> int:
         return 2
 
     backend_dir = Path(args.backend_dir)
+
+    # Build an LLM client for E6 discovery (unless --skip_e6). Other task
+    # families do not require an LLM at benchmark-build time; they reuse
+    # pre-generated content from the backend pipeline.
     print(f"Preparing queries.csv for {len(user_ids)} user(s) "
-          f"(parallel={args.parallel}, force_rebuild={args.force_rebuild})")
+          f"(parallel={args.parallel}, e6_discovery={'off' if args.skip_e6 else 'on'})")
 
     reports: list[dict] = []
     if args.parallel <= 1 or len(user_ids) == 1:
+        client = None if args.skip_e6 else _build_llm_client()
         for uid in user_ids:
             try:
-                reports.append(prepare_one(uid, backend_dir, args.force_rebuild))
+                reports.append(prepare_one(uid, backend_dir, client))
             except Exception as e:
                 _append_skipped(uid, f"exception: {type(e).__name__}: {e}")
                 reports.append({"user_id": uid, "rows": 0, "status": "error",
@@ -330,7 +385,7 @@ def main() -> int:
     else:
         with ProcessPoolExecutor(max_workers=args.parallel) as pool:
             futs = {
-                pool.submit(prepare_one, uid, backend_dir, args.force_rebuild): uid
+                pool.submit(_prepare_one_worker, uid, str(backend_dir), args.skip_e6): uid
                 for uid in user_ids
             }
             for fut in as_completed(futs):
