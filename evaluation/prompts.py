@@ -141,6 +141,50 @@ The list must be a permutation of every idx above.
 
 # --- Task B: chatbot response ----------------------------------------------
 
+def e6_active_mistake_prevention_prompt(
+    user_query: str,
+    history_block: str | None = None,
+) -> str:
+    """Prompt for E6 — active mistake prevention.
+
+    The agent sees the user's in-chat message and the user's cross-app
+    history / calendar / geo (when `history_block` is provided). The
+    agent must decide whether to proactively warn about a real-world
+    mistake detectable by linking ≥ 2 signals. The instance itself does
+    NOT disclose which pair polarity (warn/foil) the agent is facing —
+    that is precisely what we are measuring.
+    """
+    history = f"\n## Cross-app user history (time-masked)\n{history_block}\n" if history_block else ""
+    return f"""# Task: respond to the user; proactively warn only if you detect a real mistake
+
+The user is chatting with an AI assistant. You have access to the user's cross-app
+history (calendar, geo, Instagram, Facebook, Threads, prior chatbot turns) via the
+history block below.
+
+Your job:
+- Answer the user's question helpfully.
+- If, and ONLY if, the user's query + cross-app signals together reveal a concrete
+  real-world mistake the user is about to make (contradicting calendar, geo in a
+  city whose norm the user doesn't know, DM commitment not followed through, etc.),
+  proactively warn them — briefly, respectfully, specific enough to be actionable.
+- If there is no such contradiction, do NOT warn. Answer the user's question
+  directly and stay silent on hypothetical concerns. False alarms are costly.
+{history}
+## Current user query
+{user_query}
+
+## Output
+Respond with a single fenced ```json``` block:
+```json
+{{
+  "response": "the assistant's reply to the user, as plain text",
+  "warned": true | false,
+  "reasoning": "<=2 sentences on why you chose to warn or stay silent"
+}}
+```
+"""
+
+
 def chatbot_response_prompt(
     user_query: str,
     prior_conversation: list[dict],
