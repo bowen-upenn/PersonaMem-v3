@@ -94,17 +94,8 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
         from evaluation.tasks import e5_horizon_lifecycle as _e5
         rows = _e5.run_e5_horizon_lifecycle(**common)
     elif task_type == "e6_active_mistake_prevention":
-        # E6 runner not yet wired into the agentic dispatcher; produce a
-        # stub result that captures the instance + a skipped marker so the
-        # sequential harness doesn't blow up on these rows. Real e6
-        # scoring comes in a follow-up.
-        return {
-            "task": task_type,
-            "instance_id": inst.get("instance_id", ""),
-            "metrics": {},
-            "status": "skipped_no_runner",
-            "note": "e6 runner not yet implemented; instance was built but eval dispatch is a follow-up",
-        }
+        from evaluation.tasks import e6_active_mistake_prevention as _e6
+        rows = _e6.run_e6_active_mistake_prevention(**common)
     elif task_type in AGENTIC_TASK_IDS:
         rows = agentic_tasks.run_task(task_id=task_type, **common)
     else:

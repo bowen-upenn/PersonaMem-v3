@@ -461,3 +461,193 @@ def build_e6_active_mistake_prevention(
     print(f"[e6] user {user_id}: discovered {len(surviving)} pair(s), "
           f"emitting {len(out)} instance(s)")
     return out
+
+
+# =========================================================================
+# Runner — score agent's response on one E6 instance (warn or foil polarity)
+# =========================================================================
+
+import re as _re
+
+from data_preparation.utils import extract_json_from_response
+
+# Phrases that signal the agent is issuing a proactive warning / flag.
+# Deliberately broad — false positives on the warn side cost us nothing,
+# but missing an explicit warn ("heads up: …") on the foil side costs us
+# the paired-design signal.
+_WARN_PHRASE_RE = _re.compile(
+    r"\b("
+    r"warn(?:ing)?|caution|heads?\s*up|be\s+aware|be\s+careful|careful|"
+    r"alert|attention|flag|concern(?:ed)?|worried|worry|note\s+that|"
+    r"keep\s+in\s+mind|bear\s+in\s+mind|make\s+sure|might\s+want\s+to|"
+    r"you\s+may\s+want\s+to|you\s+might\s+want\s+to|"
+    r"wanted\s+to\s+let\s+you\s+know|just\s+so\s+you\s+know|"
+    r"double[-\s]?check|before\s+you|contradic|conflict|mismatch|"
+    r"don'?t\s+forget|heads[-\s]?up|actually[,\s]+"
+    r")\b",
+    _re.IGNORECASE,
+)
+
+
+def _term_present(text: str, term: str) -> bool:
+    """Case-insensitive substring match. `term` may be a phrase."""
+    if not term:
+        return False
+    t = term.strip().lower()
+    if not t:
+        return False
+    return t in (text or "").lower()
+
+
+def _coverage_fraction(text: str, terms: list[str]) -> float:
+    if not terms:
+        return 1.0  # vacuously satisfied
+    hits = sum(1 for t in terms if _term_present(text, t))
+    return hits / len(terms)
+
+
+def score_e6_instance(inst: dict, response_text: str, warned_field: bool | None) -> dict:
+    """Score one (warn or foil) instance.
+
+    `response_text` is the agent's full reply; `warned_field` is the
+    agent's own self-report flag (from parsed JSON, may be None when
+    parsing failed). We combine both: the regex picks up implicit warnings
+    the agent might not self-flag; the self-flag catches cases where the
+    agent is hedging with non-standard phrasing.
+    """
+    ef = inst.get("expected_warning_frame") or {}
+    must_mention = [str(x) for x in (ef.get("must_mention") or [])]
+    must_not_mention = [str(x) for x in (ef.get("must_not_mention") or [])]
+
+    regex_warn = bool(_WARN_PHRASE_RE.search(response_text or ""))
+    self_warn = bool(warned_field) if warned_field is not None else False
+    warning_issued = regex_warn or self_warn
+
+    mention_cov = _coverage_fraction(response_text, must_mention)
+    leak = any(_term_present(response_text, t) for t in must_not_mention)
+
+    polarity = (inst.get("polarity") or "").lower()
+    is_warn_polarity = polarity == "warn"
+    is_foil_polarity = polarity == "foil"
+
+    if is_warn_polarity:
+        # Correct iff: warned AND (warn frame satisfied) AND no leak.
+        correct = warning_issued and mention_cov >= 0.5 and not leak
+    elif is_foil_polarity:
+        # Correct iff: did NOT warn AND no must_not_mention leak.
+        correct = (not warning_issued) and (not leak)
+    else:
+        correct = False
+
+    return {
+        "polarity": polarity,
+        "warning_issued": int(warning_issued),
+        "regex_warn": int(regex_warn),
+        "self_warn": int(self_warn),
+        "must_mention_coverage": round(mention_cov, 3),
+        "leak": int(leak),
+        "correct_warn": int(correct) if is_warn_polarity else 0,
+        "correct_foil": int(correct) if is_foil_polarity else 0,
+        "correct": int(correct),
+        "is_persona_safety": int(bool(inst.get("is_persona_safety"))),
+    }
+
+
+def run_e6_active_mistake_prevention(
+    instances,
+    user_id,
+    bq: BackendQuery,
+    llm_client,
+    judge_client,
+    mode: str,
+    snapshot_cache,
+    model_name: str | None,
+    claude_model: str,
+    context_budget: int | None,
+    enable_llm_judge: bool,
+    dry_run: bool,
+    limit: int | None = None,
+) -> list[dict]:
+    """E6 runner — mirror the E2 / E3 shape.
+
+    For each instance (warn or foil polarity), builds the chat prompt,
+    dispatches via the selected mode, and scores the response against
+    `expected_warning_frame`. Pair-level aggregation (paired-F1, etc.)
+    happens in downstream aggregators, not here.
+    """
+    from evaluation import prompts as _prompts
+    from evaluation.inference_utils import dispatch_agent_run
+
+    if limit is not None:
+        instances = instances[:limit]
+
+    results: list[dict] = []
+    for inst in instances:
+        t = int(inst.get("t_test") or 0)
+        history_block = None
+        history_tokens = 0
+        if mode in ("agent_longctx", "llm_longctx") and snapshot_cache is not None:
+            history_block, stats = snapshot_cache.get_or_build(
+                bq, user_id, t, model_name, context_budget,
+            )
+            history_tokens = stats.get("total_tokens", 0)
+
+        prompt = _prompts.e6_active_mistake_prevention_prompt(
+            user_query=inst.get("user_query", ""),
+            history_block=history_block,
+        )
+
+        if dry_run:
+            results.append({
+                "task": "e6_active_mistake_prevention",
+                "user_id": user_id,
+                "instance_id": inst.get("instance_id", ""),
+                "pair_id": inst.get("pair_id", ""),
+                "polarity": inst.get("polarity", ""),
+                "mode": mode,
+                "history_tokens": history_tokens,
+                "metrics": {},
+                "status": "dry_run",
+            })
+            continue
+
+        try:
+            raw_response, tool_call_count, subagent_stats = dispatch_agent_run(
+                mode, prompt, bq=bq, user_id=user_id, t=t,
+                claude_model=claude_model, llm_client=llm_client,
+            )
+        except Exception as exc:
+            results.append({
+                "task": "e6_active_mistake_prevention",
+                "user_id": user_id,
+                "instance_id": inst.get("instance_id", ""),
+                "pair_id": inst.get("pair_id", ""),
+                "polarity": inst.get("polarity", ""),
+                "mode": mode,
+                "metrics": {},
+                "status": "error",
+                "error": f"{type(exc).__name__}: {exc}",
+            })
+            continue
+
+        parsed = extract_json_from_response(raw_response or "") or {}
+        response_text = parsed.get("response") or raw_response or ""
+        warned_field = parsed.get("warned")
+        metrics = score_e6_instance(inst, response_text, warned_field)
+
+        results.append({
+            "task": "e6_active_mistake_prevention",
+            "user_id": user_id,
+            "instance_id": inst.get("instance_id", ""),
+            "pair_id": inst.get("pair_id", ""),
+            "polarity": inst.get("polarity", ""),
+            "mode": mode,
+            "metrics": metrics,
+            "agent_response": response_text,
+            "raw_response": raw_response,
+            "history_tokens": history_tokens,
+            "tool_call_count": tool_call_count,
+            "status": "ok",
+        })
+
+    return results

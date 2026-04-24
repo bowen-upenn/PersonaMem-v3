@@ -7,6 +7,7 @@ Layered on top of `backend_query.BackendQuery`.
 from __future__ import annotations
 
 import json
+import os
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -526,7 +527,10 @@ def dispatch_agent_run(
         snap = materialize_snapshot(bq, user_id, t)
         run_base = Path(run_dir) if run_dir else Path("benchmark") / user_id / "runs" / "_tmp" / str(t)
         run_base.mkdir(parents=True, exist_ok=True)
-        overlay_path = run_base / f"writes_{t}.jsonl"
+        # Honor PM3_OVERLAY_PATH when the sequential harness is driving —
+        # one overlay per persona-run so writes accumulate across queries.
+        env_overlay = os.environ.get("PM3_OVERLAY_PATH")
+        overlay_path = Path(env_overlay) if env_overlay else run_base / f"writes_{t}.jsonl"
         cfg_path = run_base / f"mcp_config_{t}.json"
         cfg = build_mcp_config(
             user_id=user_id, t_test=t,
@@ -573,20 +577,31 @@ def _pack_stats(sub, include_denials: bool = False) -> dict:
 class SnapshotCache:
     """Per-test-moment view cache. Modes 1b and 2 reuse the same materialized
     concatenated text across tasks for the same (user_id, T_test, model) key.
+
+    LRU-bounded so a long sequential run (~175 queries × distinct t_test)
+    doesn't balloon memory — each cached entry can be several MB.
     """
 
-    def __init__(self):
-        self._store: dict[tuple, tuple[str, dict]] = {}
+    MAX_ENTRIES = 8
+
+    def __init__(self, max_entries: int | None = None):
+        from collections import OrderedDict
+        self._store: OrderedDict[tuple, tuple[str, dict]] = OrderedDict()
         self._lock = threading.Lock()
+        self._max = max_entries if max_entries is not None else self.MAX_ENTRIES
 
     def get_or_build(self, bq: BackendQuery, user_id: str, t_test: int, model: str | None, budget: int | None) -> tuple[str, dict]:
         key = (user_id, t_test, model, budget)
         with self._lock:
             if key in self._store:
+                self._store.move_to_end(key)
                 return self._store[key]
         text, stats = serialize_history_for_context(bq, user_id, t_test, model=model, budget_tokens=budget)
         with self._lock:
             self._store[key] = (text, stats)
+            self._store.move_to_end(key)
+            while len(self._store) > self._max:
+                self._store.popitem(last=False)
         return text, stats
 
 
