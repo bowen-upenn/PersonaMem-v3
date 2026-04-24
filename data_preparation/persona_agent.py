@@ -2178,6 +2178,13 @@ class PersonaAgent:
         BATCH = 20
         n_confirmed = 0
         n_demoted = 0
+        n_batches = (len(shortterm_candidates) + BATCH - 1) // BATCH
+        pbar = tqdm(
+            total=n_batches,
+            desc=f"[User {self.user_id}] Step 4: Horizon classification",
+            unit="batch",
+            disable=not self.verbose,
+        )
         for start in range(0, len(shortterm_candidates), BATCH):
             batch = shortterm_candidates[start:start + BATCH]
             # Strip internal references before serializing
@@ -2191,6 +2198,7 @@ class PersonaAgent:
                 obs_window_days=obs_window_days,
             )
             response = self._query_mini_with_retry(prompt)
+            pbar.update(1)
             if not response:
                 continue
             parsed = utils.extract_json_from_response(response)
@@ -2224,6 +2232,7 @@ class PersonaAgent:
                     else:
                         cr.stop_condition = {}
                     n_confirmed += 1
+        pbar.close()
 
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
@@ -2321,6 +2330,13 @@ class PersonaAgent:
                                for (pos, neg, shared) in candidate_pairs]
         else:
             BATCH = 10
+            n_batches = (len(candidate_pairs) + BATCH - 1) // BATCH
+            pbar = tqdm(
+                total=n_batches,
+                desc=f"[User {self.user_id}] Step 7: Cross-polarity check",
+                unit="batch",
+                disable=not self.verbose,
+            )
             for start in range(0, len(candidate_pairs), BATCH):
                 batch = candidate_pairs[start:start + BATCH]
                 prompt_pairs = [
@@ -2333,6 +2349,7 @@ class PersonaAgent:
                 ]
                 prompt = prompts.contradiction_pair_check_prompt(prompt_pairs)
                 resp = self._query_mini_with_retry(prompt)
+                pbar.update(1)
                 if not resp:
                     # On LLM failure, default to conservative "contradiction"
                     for (pos, neg, shared) in batch:
@@ -2365,6 +2382,7 @@ class PersonaAgent:
                         continue
                     elif bool(res.get("is_contradiction")):
                         confirmed_pairs.append((pos, neg, shared, "contradiction"))
+            pbar.close()
 
         if not confirmed_pairs:
             if self.verbose:
