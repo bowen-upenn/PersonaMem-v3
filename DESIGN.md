@@ -365,9 +365,9 @@ Four `AppPersona` objects per user:
 
 ---
 
-## Step 15 — Per-Session Geolocation (class-adaptive, v0)
+## Step 15 — Per-Session Geolocation (gap-anchored + Python interpolation)
 
-Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_SECONDS`, so locality comes for free. One batched mini-tier LLM call per user takes the session manifest + user profile + mobility_class and returns `{session_idx → event_location}`.
+Sessions (from Step 12) already group rows with timestamp gaps ≤ `SESSION_GAP_SECONDS`. Step 15 assigns a location to EVERY session via a compact gap-anchored LLM call + Python interpolation — guaranteeing **100% geo coverage** (previously ~2–4% because the LLM conservatively tagged only hashtag-evident sessions).
 
 **Schema** (per event, written by save_to_backend):
 ```json
@@ -375,21 +375,24 @@ Sessions (from Step 9) already group rows with timestamp gaps ≤ `SESSION_GAP_S
                    "lat": 40.6782, "lon": -73.9442, "precision": "neighborhood"}
 ```
 
-**Class-adaptive constraints** (the LLM prompt branches on `mobility_class`):
+**Algorithm:**
 
-| Class | Cities | Home share | Trip arc |
-|---|---|---|---|
-| Homebody | 1 | 100% | None |
-| Domestic | ≤ 3 | ≥ 85% | 1–3-day same-country block |
-| International | ≤ 3 | ≥ 85% | 2–4-day foreign-locale block |
-| Nomadic | ≥ 3 | ≤ 40% (no dominant home) | multiple shorter blocks |
+1. Sort sessions by timestamp. Compute `gap = session[i+1].start_ts − session[i].end_ts` between consecutive sessions.
+2. Identify **transition candidates** — gaps ≥ `GEO_GAP_THRESHOLD_HOURS = 4`. For a typical 8-day window this yields 7–12 candidates (overnights + any travel). Capped at `MAX_GAP_CANDIDATES = 20` (prioritize longest gaps if more).
+3. One mini-tier LLM call per user with: profile, mobility class, the gap manifest. Output: a list of **location segments**, one per stay-at-single-city stretch, with `start_ts + city/region/country/lat/lon`.
+4. **Python interpolation**: each session is bound to the segment whose `start_ts ≤ session.start_ts` is latest. 100% coverage.
+5. `geo_trip_arcs` derived from non-home segments; written to `profile.geo_trip_arcs`.
 
-**Other constraints (all classes):**
-- No teleporting: sessions within 6h share a city unless transit hashtags justify the shift.
-- Per-class geo-coverage floor: ≥ 20% of events for homebody, ≥ 30% for others (previously ~4.4% uniformly).
-- Prompt directive: assign a location to as many sessions as the class permits, not only hashtag-evident ones.
+**Class-adaptive segment expectations** (in the prompt):
 
-**Trip arc extraction:** after LLM-assigned locations are resolved, `assign_event_locations` extracts contiguous away-from-home runs and writes them to `profile.geo_trip_arcs: [{city, region, country, start_ts, end_ts, kind: "domestic"|"international"}]`. Homebody users get `[]`. Downstream (Step 16 calendar generation, e6 discovery) consume these arcs to ground transit and trip-scoped entries.
+| Class | Expected segments | Notes |
+|---|---|---|
+| Homebody | 1 | Single home city; no trip. Interpolation fills every session with it. |
+| Domestic | 1–4 | Home → 1 same-country city → home. 1–3 day trip. |
+| International | 2–4 | Home + ≥ 1 foreign-country segment. 2–4 day trip. |
+| Nomadic | 3+ | ≥ 3 cities; no single city > 40% of window. |
+
+**Why gap-anchored:** the LLM's comparative advantage is deciding *whether* travel happened given profile + hashtag signals — not tagging each of ~2000 sessions. Asking it to return a handful of segments at natural transition points is a much better fit. Python handles the routine per-session lookup.
 
 ## Step 16 — Synthetic Calendar Modification Stream (v0: density floor + required cancellation)
 
@@ -414,10 +417,12 @@ Persisted to `backend/{uid}/calendar.json`:
 
 **v0 calibration** for an 8-day window: one LLM call per user producing ~20–28 modifications (previously 8–15). Target split 65% added / 20% updated / 15% removed (`CALENDAR_MOD_WEIGHTS`). Entries ~40% preference-linked, ~60% plausible-noise (dentist, haircut, sprint review). Locations stay consistent with Step 15 (home-day entries are local; travel-day entries are in the travel city).
 
-**v0 required diversity** — the prompt now enforces:
+**v0 required diversity** — the prompt asks for each + deterministic post-repair (`_repair_calendar_diversity`) injects any missing:
 - **Transit entry**: at least 1 flight (for travel classes) or local transit (homebody/domestic) entry, with `type: "travel"`.
-- **Multi-attendee meeting**: at least 1 added entry with ≥ 2 non-self attendees.
-- **Recent cancellation**: exactly 1 `removed` modification in the last 6 hours of the window (grounds e6's canceled-event-reference form example).
+- **Named-attendee meeting**: at least 1 added entry with ≥ 1 non-self named attendee. Multi-person group meetings welcome but not required; the soft ≥ 2 bar was relaxed to ≥ 1 because e6 archetype 4 (audience-shift) only needs one named person. The repair pass injects `"Coffee with <friend>"` using a name from the user's app-persona friend_zones if the LLM's output has no named attendee.
+- **Recent cancellation**: exactly 1 `removed` modification in the last 6 hours of the window (grounds e6's canceled-event-reference form example). If missing, the repair pass picks an earlier-window added entry and injects a late-window `removed` mod with a plausible `removal_reason`.
+
+**Why deterministic repair:** the LLM juggles ~7 simultaneous constraints (density, split, preference-linking, location consistency, transit, attendees, cancellation). Adherence per-constraint is ~90%, so compound adherence ~48%. Post-LLM validation + injection guarantees 100% adherence on the three e6-critical clauses at a cost of ~20 lines of deterministic code, no extra API calls.
 
 HTML rendering interleaves modification cards into the main event timeline at their `ts`, labeled with action verb + title + scheduled date.
 

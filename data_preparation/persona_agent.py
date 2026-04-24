@@ -432,6 +432,13 @@ MOBILITY_CLASS_MIN_GEO_COVERAGE: dict[str, float] = {
 MAX_LOCATIONS_PER_USER: int = 3         # Legacy default — kept for back-compat
 HOME_LOCATION_MIN_SHARE: float = 0.90   # Legacy default — kept for back-compat
 
+# Step 15 gap-based anchoring. An idle period this long between consecutive
+# sessions is treated as a TRANSITION CANDIDATE where the user could
+# plausibly have travelled. Tuned to catch most overnight gaps (so the LLM
+# sees per-day boundaries) without firing on short browsing breaks. The
+# LLM then decides which candidates are actual travel and returns segments.
+GEO_GAP_THRESHOLD_HOURS: float = 4.0
+
 # Step 16 calendar-modification density.
 # v0 raises the floor from 5 → ~20 to ensure e6 discovery has enough calendar
 # grounding for airport-mismatch, canceled-event-reference, and forgotten-
@@ -4085,18 +4092,30 @@ class PersonaAgent:
     # ------------------------------------------------------------------
 
     def assign_event_locations(self) -> None:
-        """Step 15: Infer a geolocation for each session via a batched
-        LLM call, then fan it out to every row in that session.
+        """Step 15: Assign a geolocation to EVERY session via a compact
+        gap-anchored LLM call + Python interpolation (100% coverage).
 
-        Class-adaptive: the user's `mobility_class` (assigned in Step 8)
-        drives city count, home-share floor, and whether a trip arc must
-        appear. Trip arcs are extracted post-hoc from the assigned
-        locations and written to `self.user_profile.geo_trip_arcs` so
-        downstream steps (calendar, e6 discovery) can consume them.
+        Algorithm:
+          1. Sort sessions by time; compute gaps between consecutive sessions.
+          2. Identify TRANSITION CANDIDATES — gaps ≥ GEO_GAP_THRESHOLD_HOURS (4h).
+             These are moments a user COULD have traveled. Typical 8-day
+             window: 7-12 candidates (mostly overnight sleep).
+          3. Build a compact manifest: one entry per gap with before/after
+             hashtags and gap duration.
+          4. Single LLM call: "Given this user's profile + mobility class +
+             these gaps, return the location SEGMENTS (one per stay-at-
+             single-city stretch)." LLM decides where, when, and whether
+             shifts happened.
+          5. Python interpolation: for each session, bind city = segment
+             whose start_ts ≤ session.start_ts is latest → 100% coverage.
+          6. Derive geo_trip_arcs from non-home segments.
 
-        Populates `self._session_location[session_idx]`. Events in
-        save_to_backend pick up the location via the session index.
-        Skipped when there are no sessions or no LLM client.
+        This replaces the previous per-session LLM assignment, which left
+        most sessions untagged (LLM conservatively only emitted a location
+        when hashtags clearly named a place → ~2-4% coverage for homebody
+        users). The gap-anchor approach gives the LLM the hard question
+        (did travel happen, when, where?) and lets deterministic code fill
+        the routine per-session lookups.
         """
         if not self._sessions:
             return
@@ -4110,37 +4129,60 @@ class PersonaAgent:
             return
 
         mobility_class = self.user_profile.mobility_class or "domestic"
-        max_cities = MOBILITY_CLASS_MAX_CITIES.get(mobility_class, MAX_LOCATIONS_PER_USER)
-        home_share = MOBILITY_CLASS_HOME_SHARE.get(mobility_class, HOME_LOCATION_MIN_SHARE)
 
-        # Condense the session manifest — one line per session
-        manifest: list[dict] = []
+        # ---- 1. Build session time index ----
+        session_bounds: list[tuple[int, int, int, list[str], str]] = []
         for idx, session in enumerate(self._sessions):
             if not session:
                 continue
             start_ts = session[0].interaction_time
             end_ts = session[-1].interaction_time
-            # Dominant hashtags: most frequent across the session's rows
             from collections import Counter as _Counter
             tag_counts: _Counter = _Counter()
             for row in session:
                 for t in self._extract_hashtags(row.object_text):
                     tag_counts[t.lstrip("#").lower()] += 1
-            dominant = [t for t, _ in tag_counts.most_common(6)]
+            dominant = [t for t, _ in tag_counts.most_common(5)]
             dominant_app = self._row_app.get(session[0].object_id, "") or ""
-            manifest.append({
-                "idx": idx,
-                "start_ts": start_ts,
-                "end_ts": end_ts,
-                "start_formatted": utils.unix_to_formatted(start_ts),
-                "end_formatted": utils.unix_to_formatted(end_ts),
-                "dominant_app": dominant_app,
-                "dominant_hashtags": dominant,
-            })
+            session_bounds.append((idx, start_ts, end_ts, dominant, dominant_app))
 
-        if not manifest:
+        if not session_bounds:
             return
+        session_bounds.sort(key=lambda t: t[1])
+        obs_start_ts = session_bounds[0][1]
+        obs_end_ts = session_bounds[-1][2]
 
+        # ---- 2. Identify transition candidates (gaps ≥ threshold) ----
+        gap_threshold_sec = GEO_GAP_THRESHOLD_HOURS * 3600
+        gap_candidates: list[dict] = []
+        for i in range(1, len(session_bounds)):
+            prev_end = session_bounds[i - 1][2]
+            curr_start = session_bounds[i][1]
+            gap = curr_start - prev_end
+            if gap >= gap_threshold_sec:
+                gap_candidates.append({
+                    "idx": i,
+                    "gap_hours": gap / 3600.0,
+                    "before_ts": prev_end,
+                    "after_ts": curr_start,
+                    "before_formatted": utils.unix_to_formatted(prev_end),
+                    "after_formatted": utils.unix_to_formatted(curr_start),
+                    "before_hashtags": session_bounds[i - 1][3],
+                    "after_hashtags": session_bounds[i][3],
+                    "before_app": session_bounds[i - 1][4],
+                    "after_app": session_bounds[i][4],
+                })
+
+        # Cap the candidate list to keep the prompt compact. If there are
+        # many short gaps (dense activity), we prioritize longer gaps which
+        # are more likely to be travel.
+        MAX_GAP_CANDIDATES = 20
+        if len(gap_candidates) > MAX_GAP_CANDIDATES:
+            gap_candidates.sort(key=lambda g: -g["gap_hours"])
+            gap_candidates = gap_candidates[:MAX_GAP_CANDIDATES]
+            gap_candidates.sort(key=lambda g: g["before_ts"])
+
+        # ---- 3. Build LLM prompt ----
         user_profile_dict = {
             "name": self.user_profile.name,
             "gender": self.user_profile.gender,
@@ -4149,14 +4191,13 @@ class PersonaAgent:
             "education": self.user_profile.education,
             "bio": self.user_profile.bio,
         }
-
         obs_window_days = self._obs_window_days()
-        prompt = prompts.assign_session_locations_prompt(
+        prompt = prompts.assign_location_segments_prompt(
             user_profile=user_profile_dict,
             obs_window_days=obs_window_days,
-            session_manifest=manifest,
-            max_locations=max_cities,
-            home_share=home_share,
+            obs_start_ts=obs_start_ts,
+            obs_end_ts=obs_end_ts,
+            gap_candidates=gap_candidates,
             mobility_class=mobility_class,
         )
 
@@ -4164,50 +4205,84 @@ class PersonaAgent:
         if not response:
             if self.verbose:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                      f"Location assignment: LLM returned nothing.{utils.Colors.ENDC}")
+                      f"Location segments: LLM returned nothing.{utils.Colors.ENDC}")
             return
         parsed = utils.extract_json_from_response(response)
-        if not isinstance(parsed, dict):
+        if not isinstance(parsed, list) or not parsed:
             if self.verbose:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                      f"Location assignment: LLM output was not a dict.{utils.Colors.ENDC}")
+                      f"Location segments: LLM output was not a non-empty list.{utils.Colors.ENDC}")
             return
 
-        # Populate per-session locations; coerce keys to int
-        n_set = 0
-        for k, loc in parsed.items():
+        # ---- 4. Parse + validate segments ----
+        segments: list[dict] = []
+        for s in parsed:
+            if not isinstance(s, dict):
+                continue
             try:
-                idx = int(k)
+                start_ts = int(s.get("start_ts") or 0)
             except (ValueError, TypeError):
                 continue
-            if not isinstance(loc, dict):
+            if not s.get("city"):
                 continue
-            self._session_location[idx] = {
-                "city": loc.get("city", ""),
-                "region": loc.get("region", ""),
-                "country": loc.get("country", ""),
-                "lat": loc.get("lat"),
-                "lon": loc.get("lon"),
-                "precision": loc.get("precision", "city"),
-            }
-            n_set += 1
+            segments.append({
+                "start_ts": start_ts,
+                "city": s.get("city", ""),
+                "region": s.get("region", ""),
+                "country": s.get("country", ""),
+                "lat": s.get("lat"),
+                "lon": s.get("lon"),
+                "precision": s.get("precision", "city"),
+            })
 
-        # Compute trip arcs from the assigned locations and cache them on
-        # the profile. For homebody users this is [].
+        if not segments:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Location segments: no valid segments parsed.{utils.Colors.ENDC}")
+            return
+
+        segments.sort(key=lambda s: s["start_ts"])
+        # Force first segment to obs_start_ts so interpolation covers from the
+        # very first session (LLM may drift a bit).
+        segments[0]["start_ts"] = min(segments[0]["start_ts"], obs_start_ts)
+
+        # ---- 5. Interpolate: each session gets the segment active at its start ----
+        n_assigned = 0
+        for idx, start_ts, end_ts, _, _ in session_bounds:
+            seg = segments[0]
+            for s in segments:
+                if s["start_ts"] <= start_ts:
+                    seg = s
+                else:
+                    break
+            self._session_location[idx] = {
+                "city": seg["city"],
+                "region": seg["region"],
+                "country": seg["country"],
+                "lat": seg["lat"],
+                "lon": seg["lon"],
+                "precision": seg["precision"],
+            }
+            n_assigned += 1
+
+        # ---- 6. Derive trip arcs ----
+        home_share = MOBILITY_CLASS_HOME_SHARE.get(mobility_class, HOME_LOCATION_MIN_SHARE)
         self.user_profile.geo_trip_arcs = self._compute_geo_trip_arcs(
             home_share_floor=home_share,
             mobility_class=mobility_class,
         )
 
-        # Count distinct cities for audit
+        # Audit log
         cities = {loc.get("city", "") for loc in self._session_location.values() if loc.get("city")}
-        coverage = n_set / max(1, len(manifest))
+        coverage = n_assigned / max(1, len(session_bounds))
         if self.verbose:
             n_arcs = len(self.user_profile.geo_trip_arcs)
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
-                  f"Locations assigned: {n_set}/{len(manifest)} sessions "
+                  f"Locations assigned: {n_assigned}/{len(session_bounds)} sessions "
                   f"(coverage={coverage:.0%}, class={mobility_class}, "
-                  f"{len(cities)} cities, {n_arcs} trip arcs).{utils.Colors.ENDC}")
+                  f"{len(segments)} segments, {len(cities)} cities, "
+                  f"{n_arcs} trip arcs, {len(gap_candidates)} gaps considered)."
+                  f"{utils.Colors.ENDC}")
 
     def _compute_geo_trip_arcs(
         self,
@@ -4469,6 +4544,20 @@ class PersonaAgent:
                 })
 
         sanitized.sort(key=lambda m: m["ts"])
+
+        # ----- Step 16 Option A: deterministic repair of required diversity -----
+        # The LLM juggles many constraints (density, split, transit, multi-attendee,
+        # recent cancellation, preference-linking). With ~7 simultaneous clauses,
+        # one typically drops. Rather than re-prompting, we validate + repair here
+        # so e6 substrate floors are met deterministically.
+        sanitized = self._repair_calendar_diversity(
+            sanitized,
+            obs_start_ts=obs_start_ts,
+            obs_end_ts=obs_end_ts,
+            home_location=home_location,
+            mobility_class=mobility_class,
+        )
+
         self._calendar_modifications = sanitized
         if self.verbose:
             n_add = sum(1 for m in sanitized if m["action"] == "added")
@@ -4477,6 +4566,195 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
                   f"Calendar modifications: {len(sanitized)} total "
                   f"({n_add} added / {n_upd} updated / {n_rem} removed).{utils.Colors.ENDC}")
+
+    def _repair_calendar_diversity(
+        self,
+        mods: list[dict],
+        obs_start_ts: int,
+        obs_end_ts: int,
+        home_location: dict,
+        mobility_class: str,
+    ) -> list[dict]:
+        """Enforce Step 16 required-diversity clauses deterministically.
+
+        Checks three hard requirements and injects minimal repairs if any
+        is missing. Injected entries use templated text drawn from the
+        user's friends graph where possible (falling back to generic names
+        when the graph is empty).
+
+        Requirements:
+          (a) ≥ 1 added entry with ≥ 1 non-self attendee
+          (b) ≥ 1 `removed` modification in the last 6h of the window
+          (c) ≥ 1 `travel`-type added entry (flight for travel classes, else
+              local transit)
+        """
+        # Home location fallback
+        home = home_location if isinstance(home_location, dict) else {}
+
+        # Determine friends pool for attendee names
+        friends_pool: list[str] = []
+        if self.user_profile and getattr(self.user_profile, "app_personas", None):
+            # Pull named friends from any app_persona's friend_zones
+            for ap in (self.user_profile.app_personas or {}).values():
+                if isinstance(ap, dict):
+                    for friend in (ap.get("friend_zones") or []):
+                        if isinstance(friend, str) and friend not in friends_pool:
+                            friends_pool.append(friend)
+                elif isinstance(ap, AppPersona):
+                    for friend in (ap.friend_zones or []):
+                        if friend not in friends_pool:
+                            friends_pool.append(friend)
+        if not friends_pool:
+            friends_pool = ["Alex", "Sam", "Jordan"]  # generic fallback
+
+        # ---- Check (a): multi-attendee meeting ----
+        has_named_attendee = False
+        for m in mods:
+            if m.get("action") != "added":
+                continue
+            attendees = (m.get("entry") or {}).get("attendees") or []
+            others = [a for a in attendees if str(a).lower() != "self"]
+            if len(others) >= 1:
+                has_named_attendee = True
+                break
+
+        # ---- Check (b): recent cancellation in last 6h ----
+        recent_cancel_window_start = obs_end_ts - E6_RECENT_CANCELLATION_WINDOW_HOURS * 3600
+        has_recent_cancel = any(
+            m.get("action") == "removed" and m.get("ts", 0) >= recent_cancel_window_start
+            for m in mods
+        )
+
+        # ---- Check (c): transit entry ----
+        has_transit = any(
+            m.get("action") == "added"
+            and (m.get("entry") or {}).get("type") == "travel"
+            for m in mods
+        )
+
+        next_mod_id = len(mods) + 1
+        next_entry_id = sum(1 for m in mods if m.get("action") == "added") + 1
+
+        injected: list[str] = []
+
+        # Repair (a): inject a coffee/meeting with named friend earlier in window
+        if not has_named_attendee:
+            friend = friends_pool[0]
+            # Pick a ts ~1/3 into the window, aligned to a reasonable hour
+            meet_start = obs_start_ts + int((obs_end_ts - obs_start_ts) * 0.35)
+            # Mod created slightly before the meeting
+            mod_ts = max(obs_start_ts, meet_start - 6 * 3600)
+            entry_id = f"cal_rep_{next_entry_id:03d}"
+            next_entry_id += 1
+            mods.append({
+                "mod_id": f"mod_rep_{next_mod_id:03d}",
+                "ts": mod_ts,
+                "formatted_timestamp": utils.unix_to_formatted(mod_ts),
+                "action": "added",
+                "entry": {
+                    "entry_id": entry_id,
+                    "title": f"Coffee with {friend}",
+                    "start_ts": meet_start,
+                    "end_ts": meet_start + 3600,
+                    "location": home,
+                    "type": "social",
+                    "attendees": ["self", friend],
+                    "linked_preferences": [],
+                    "is_preference_driven": False,
+                    "relation_to_social": "unrelated",
+                },
+            })
+            next_mod_id += 1
+            injected.append("multi-attendee")
+
+        # Repair (b): inject a cancellation in last 6h of window
+        if not has_recent_cancel:
+            # Find an added entry with ts < recent_cancel_window_start to remove,
+            # or inject a throwaway add+remove pair
+            candidate_removal_id = None
+            for m in reversed(mods):
+                if (m.get("action") == "added"
+                        and m.get("ts", 0) < recent_cancel_window_start):
+                    candidate_removal_id = (m.get("entry") or {}).get("entry_id")
+                    if candidate_removal_id:
+                        break
+            if candidate_removal_id is None:
+                # Inject an early added entry first, then remove it
+                add_ts = obs_start_ts + 3600
+                entry_id = f"cal_rep_{next_entry_id:03d}"
+                next_entry_id += 1
+                mods.append({
+                    "mod_id": f"mod_rep_{next_mod_id:03d}",
+                    "ts": add_ts,
+                    "formatted_timestamp": utils.unix_to_formatted(add_ts),
+                    "action": "added",
+                    "entry": {
+                        "entry_id": entry_id,
+                        "title": "Tentative dinner plans",
+                        "start_ts": obs_end_ts - 3600,
+                        "end_ts": obs_end_ts,
+                        "location": home,
+                        "type": "social",
+                        "attendees": ["self"],
+                        "linked_preferences": [],
+                        "is_preference_driven": False,
+                        "relation_to_social": "unrelated",
+                    },
+                })
+                next_mod_id += 1
+                candidate_removal_id = entry_id
+
+            remove_ts = obs_end_ts - 1800  # 30 minutes before end
+            mods.append({
+                "mod_id": f"mod_rep_{next_mod_id:03d}",
+                "ts": remove_ts,
+                "formatted_timestamp": utils.unix_to_formatted(remove_ts),
+                "action": "removed",
+                "entry_id": candidate_removal_id,
+                "removal_reason": "Rescheduled at last minute",
+            })
+            next_mod_id += 1
+            injected.append("recent-cancellation")
+
+        # Repair (c): inject a transit entry
+        if not has_transit:
+            transit_title = (
+                "Flight home" if mobility_class in ("international", "nomadic")
+                else "Train to Center City"
+            )
+            transit_start = obs_start_ts + int((obs_end_ts - obs_start_ts) * 0.50)
+            mod_ts = max(obs_start_ts, transit_start - 12 * 3600)
+            entry_id = f"cal_rep_{next_entry_id:03d}"
+            next_entry_id += 1
+            mods.append({
+                "mod_id": f"mod_rep_{next_mod_id:03d}",
+                "ts": mod_ts,
+                "formatted_timestamp": utils.unix_to_formatted(mod_ts),
+                "action": "added",
+                "entry": {
+                    "entry_id": entry_id,
+                    "title": transit_title,
+                    "start_ts": transit_start,
+                    "end_ts": transit_start + 2 * 3600,
+                    "location": home,
+                    "type": "travel",
+                    "attendees": ["self"],
+                    "linked_preferences": [],
+                    "is_preference_driven": False,
+                    "relation_to_social": "unrelated",
+                },
+            })
+            next_mod_id += 1
+            injected.append("transit")
+
+        if injected and self.verbose:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"Calendar repair: injected {len(injected)} entries "
+                  f"for missing diversity clauses [{', '.join(injected)}]."
+                  f"{utils.Colors.ENDC}")
+
+        mods.sort(key=lambda m: m["ts"])
+        return mods
 
     def generate_interaction_formats(self) -> None:
         """For each routed preference, sample a concrete interaction_format
