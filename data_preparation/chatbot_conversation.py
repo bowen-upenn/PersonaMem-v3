@@ -17,6 +17,18 @@ from typing import Callable
 
 from data_preparation import prompts, utils
 
+try:
+    from tqdm import tqdm
+except ImportError:
+    # Minimal fallback when tqdm is not installed — silent no-op wrapper.
+    def tqdm(iterable=None, **kwargs):  # type: ignore[misc]
+        if iterable is not None:
+            return iterable
+        class _Stub:
+            def update(self, _n=1): pass
+            def close(self): pass
+        return _Stub()
+
 
 # ---------------------------------------------------------------------------
 # Conversation-type catalog
@@ -374,9 +386,15 @@ def generate_chatbot_conversations(
         return idx, None, conv_type, variant
 
     failed_count = 0
+    pbar = tqdm(
+        total=len(work_items),
+        desc="Step 18: Chatbot conversations",
+        unit="conv",
+    )
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(_call_llm_with_retry, item): item for item in work_items}
         for future in as_completed(futures):
+            pbar.update(1)
             try:
                 idx, parsed, conv_type, variant = future.result()
             except Exception:
@@ -411,6 +429,7 @@ def generate_chatbot_conversations(
                     "Corrected the assistant's wrong assumption about a preference"
                 )
                 rec["interaction_format"]["user_message"] = parsed[-2]["content"] if len(parsed) >= 2 else None
+    pbar.close()
 
     if failed_count > 0:
         print(f"{utils.Colors.WARNING}[chatbot_conversation] "
