@@ -153,7 +153,7 @@ Scores must use two decimal places and be spread across the full range to preven
 
 ---
 
-## 5. Step 2 — Implicit Negative Promotion
+## 5. Step 2 — Implicit Negative Promotion (user-adaptive)
 
 `implicit_negative` rows are skipped in Step 1 (a single scroll-past is too weak). Instead, aggregated via net-sentiment filtering to distinguish genuine dislike from baseline scrolling. A user skipping 30 boxing posts in one bad-mood evening doesn't *durably* dislike boxing; a user skipping 2-3 boxing posts per day across a week probably does.
 
@@ -164,16 +164,32 @@ capped_neg = sum(min(day_count, IMPL_NEG_DAILY_CAP) for day_count in negs_by_day
 net = (capped_neg × 1.0) - (explicit_pos_count × 2.0) - (implicit_pos_count × 1.0)
 ```
 
-The per-day cap (`IMPL_NEG_DAILY_CAP = 3`) prevents a single mood-driven skipping burst from driving promotion. Positive counter-signals (`explicit_pos_count`, `implicit_pos_count`) are NOT capped — they represent deliberate engagement that should always weigh against the negative signal.
+The per-day cap (`IMPL_NEG_DAILY_CAP = 5`) prevents a single mood-driven skipping burst from driving promotion. Positive counter-signals (`explicit_pos_count`, `implicit_pos_count`) are NOT capped — they represent deliberate engagement that should always weigh against the negative signal.
 
-**Promotion gate** — all three must hold:
-1. `net >= 10` (`MIN_IMPLICIT_NEGATIVE_REPETITION`)
-2. Negative rows span `>= 3` distinct calendar days (`MIN_TEMPORAL_DAYS`)
-3. (raised from 5/1 respectively — the old bar let transient mood bursts slip through and produced spurious same-topic cross-polarity canonicals like the persona-115 NFL/MMA/boxing duplicates).
+**User-adaptive promotion gate** — different users have very different scroll-and-skip volumes. A user generating 3000 implicit_negative rows in a window has a much higher "noise floor" than one generating 500. A single global threshold over-promotes the heavy skipper and under-promotes the light one, so the gate scales with each user's volume:
+
+```
+user_threshold = NEG_PROMOTION_RATIO × user_total_impl_neg   # 0.008 × N
+```
+
+All three must hold:
+1. `net >= user_threshold` — a durable dislike must carry ≥ 0.8% of this user's total skip volume as net-negative signal on one tag.
+2. Negative rows span `>= 3` distinct calendar days (`MIN_TEMPORAL_DAYS`).
+3. After the per-day cap (`IMPL_NEG_DAILY_CAP = 5`).
+
+Examples from the 10-user gistbench sample (cap=5, days=3):
+
+| User | user_impl_neg | threshold | promoted hashtags |
+|---|---:|---:|---:|
+| 115 | 872 | 7.0 | 3 (#fightfans + 2 others) |
+| 755 | 1909 | 15.3 | 10 (#parenting, #spiritualgrowth, #faith, …) |
+| 655 | 2617 | 20.9 | dominated by positive counter-signal → 0 |
+| 760 | 3155 | 25.2 | dominated by positive counter-signal → 0 |
+| 251 | 2 | 0.02 | 0 (fails MIN_TEMPORAL_DAYS floor) |
+
+`MIN_IMPLICIT_NEGATIVE_REPETITION = 15` is retained for a **different** gate — the cross-ref init filter in Step 3, which requires an implicit-only negative *canonical* to have ≥ 15 distinct source rows to survive. It is NOT the promotion threshold.
 
 **Processing:** One LLM call per "hot" hashtag on a representative row (single hashtag only). Inferred preferences must be independently produced by >= 2 different hot-hashtag LLM calls (`MIN_PREF_CORROBORATION = 2`). Promoted rows become `explicit_negative` at BOTH the atomic level (`source_interaction_type = "explicit_negative"` on every promoted atomic) and the event level. Non-promoted implicit_negative rows remain as stub events with empty `preferences: []` (rendered greyscale in HTML).
-
-**Downstream implications:** the tighter gate reduces spurious negatives reaching Step 3 (cross-reference) and therefore makes Step 7 (cross-polarity contradiction gate) have less over-inference to clean up. In persona 115, retroactively applying this gate dropped 28 of 31 negative canonicals — most were single-day mood bursts that should never have promoted (e.g., "Not interested in tiny home living content" with 33 rows all on one day, `capped_neg=3`).
 
 ---
 
@@ -562,8 +578,9 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 | `XREF_THRESHOLD_NEGATIVE` | 5.0 | Xref bar for negatives (decoupled from positive scale — negatives are structurally rarer) |
 | `RECENCY_WINDOW_SECONDS` | 7 * 86400 | Only rows within the trailing 7 days contribute to xref counting |
 | `bottom_20_min_exempt` | `inf` | Bottom-20% exemption disabled (contradictories still exempt) |
-| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 15 | Implicit-only negative survival threshold (capped count, see IMPL_NEG_DAILY_CAP) + net-sentiment floor |
-| `IMPL_NEG_DAILY_CAP` | 3 | Per-day cap on implicit_negative rows per hashtag — stops a single-day mood burst from driving promotion |
+| `MIN_IMPLICIT_NEGATIVE_REPETITION` | 15 | Step 3 cross-ref init filter: distinct source rows required for an implicit-only negative canonical to survive. (NOT the promotion threshold — that is now user-adaptive, see `NEG_PROMOTION_RATIO`.) |
+| `NEG_PROMOTION_RATIO` | 0.008 | Step 2 user-adaptive promotion threshold: a hashtag must carry ≥ 0.8% of that user's total implicit_negative volume as net-negative signal to be promoted. Replaces the previous fixed `net >= 15` gate so that heavy-skip-volume users don't get over-promoted nor light-skip users under-promoted. |
+| `IMPL_NEG_DAILY_CAP` | 5 | Per-day cap on implicit_negative rows per hashtag — stops a single-day mood burst from driving promotion. Tuned with `MIN_IMPLICIT_NEGATIVE_REPETITION = 15` so the minimum promotion pattern is 3 days at cap (5+5+5 = 15), matching `MIN_TEMPORAL_DAYS`. |
 | `MIN_TEMPORAL_DAYS` | 3 | Implicit negatives must span at least this many distinct calendar days to promote |
 | `IMPLICIT_NEGATIVE_PREFILTER_K` | 3 | Rows per hashtag before LLM call |
 | `MIN_PREF_CORROBORATION` | 2 | Hot-hashtag LLM calls needed |

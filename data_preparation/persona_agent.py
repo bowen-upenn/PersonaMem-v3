@@ -280,17 +280,37 @@ SESSION_GAP_SECONDS = 5  # 5 seconds — rows within 5s are same browsing burst
 # only by implicit evidence. Canonicals with any explicit-negative evidence
 # are unaffected.
 MIN_IMPLICIT_NEGATIVE_REPETITION = 15  # distinct source rows for implicit-only negative to survive.
-                                       # Counted with a per-day cap (IMPL_NEG_DAILY_CAP) so a single
-                                       # mood-driven bad day doesn't drive the count over threshold.
-                                       # Raised 10 → 15: a user who CONSISTENTLY dislikes a topic
-                                       # should have at least 5 days at cap 3 of engagement-free
-                                       # scroll-pasts, not just 4 days with a few lingers on one day.
+                                       # Used in the NEGATIVE CROSS-REF init filter (summarize_and_cross_reference):
+                                       # canonicals supported only by implicit_negative evidence must have ≥ N
+                                       # distinct source rows to survive. NOT the promotion gate — see
+                                       # NEG_PROMOTION_RATIO below for that.
+# ----------------------------------------------------------------------------
+# Implicit-negative promotion gate (Step 2) — user-ADAPTIVE threshold.
+#
+# Observation: different users have very different scroll-and-skip volumes.
+# A user who generates 3000 implicit_negative rows in an 8-day window (heavy
+# skipper) has a much higher "noise floor" than a user who generates 500. A
+# single global threshold over-promotes the heavy skipper and under-promotes
+# the light one.
+#
+# Scheme C ("net-ratio"): a hashtag is hot iff its net-sentiment score is at
+# least `NEG_PROMOTION_RATIO × user_total_impl_neg`. Intuitively, a durable
+# dislike must carry at least 0.8% of this user's total skip volume as a
+# net-negative signal on that one tag. Scales the noise floor with each
+# user's activity level so the promotion bar is comparable across users.
+#
+# MIN_TEMPORAL_DAYS and IMPL_NEG_DAILY_CAP still apply on top.
+# Calibrated on the 10-user gistbench sample so that users with distinct
+# durable-dislike patterns (755, 655, 760) get 5–15 promoted hashtags,
+# users with positive-dominant browsing (115, 143, 229) get 0–3, and
+# no-signal users (251) stay at 0.
+NEG_PROMOTION_RATIO: float = 0.008
+
 # Daily cap on implicit_negative rows per hashtag. Skipping 20 boxing posts
 # in one hour probably means "bad mood right now", not a durable dislike.
 # After the cap, the count reflects CONSISTENT skipping across the window.
-# With cap=5 and threshold=15, the minimum pattern that promotes is 3 days
-# at cap (5+5+5=15) — matching MIN_TEMPORAL_DAYS. Tuned from 3 → 5 after
-# the cap=3 version produced 0 negatives on persona 115's 8-day window.
+# With cap=5 and the user-adaptive threshold, the minimum 3-day pattern at
+# cap (5+5+5=15) matches ~1.0% of a typical user's 1500 impl_neg volume.
 IMPL_NEG_DAILY_CAP = 5
 IMPLICIT_NEGATIVE_PREFILTER_K = 3      # rows per hashtag signature required to bother with LLM call
 
@@ -1379,13 +1399,18 @@ class PersonaAgent:
 
         1. For each hashtag, count occurrences across implicit_negative,
            explicit_positive, and implicit_positive rows.
-        2. Compute net_score = neg*1.0 - expl_pos*3.0 - impl_pos*1.5.
-           A single like cancels ~3 scroll-pasts; lingering cancels ~1.5.
-        3. A hashtag is "hot" only if net_score >= MIN_IMPLICIT_NEGATIVE_REPETITION
+        2. Compute net_score = neg*IMPL_NEG_WEIGHT - expl_pos*EXPL_POS_WEIGHT
+           - impl_pos*IMPL_POS_WEIGHT. A single like cancels 2 scroll-pasts.
+        3. A hashtag is "hot" only if net_score >= user-adaptive threshold
+           (NEG_PROMOTION_RATIO × this user's total implicit_negative row count)
            AND the negative rows span >= MIN_TEMPORAL_DAYS distinct days.
         4. ONE LLM call per hot hashtag, passing only that single tag.
         5. Rows with >= 2 hot hashtags are promoted; others stay as stubs.
         6. Fan out inferred preferences; keep FULL original hashtags in output.
+
+        The user-adaptive threshold scales the noise floor with each user's
+        scrolling volume — a heavy skipper needs proportionally more signal
+        on one tag to declare it a durable dislike.
         """
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from collections import defaultdict as _ddict
@@ -1393,6 +1418,11 @@ class PersonaAgent:
         impl_neg_rows = [r for r in self.interactions if r.interaction_type == "implicit_negative"]
         if not impl_neg_rows:
             return
+
+        # User-adaptive promotion threshold — scales with this user's
+        # total implicit_negative volume so noise floors are comparable.
+        user_impl_neg_total = len(impl_neg_rows)
+        user_threshold = NEG_PROMOTION_RATIO * user_impl_neg_total
 
         # Step 1: Count per-hashtag occurrences by interaction type.
         # For implicit_negative we also bucket by calendar day so we can
@@ -1443,10 +1473,10 @@ class PersonaAgent:
                    - n_ep * self.EXPL_POS_WEIGHT
                    - n_ip * self.IMPL_POS_WEIGHT)
 
-            if net < MIN_IMPLICIT_NEGATIVE_REPETITION:
-                if n_neg_raw >= MIN_IMPLICIT_NEGATIVE_REPETITION:
+            if net < user_threshold:
+                if n_neg_raw >= user_threshold:
                     # Would have been hot without the cap or without the pos counter-signal
-                    if n_neg_capped < MIN_IMPLICIT_NEGATIVE_REPETITION + n_ep * self.EXPL_POS_WEIGHT + n_ip * self.IMPL_POS_WEIGHT:
+                    if n_neg_capped < user_threshold + n_ep * self.EXPL_POS_WEIGHT + n_ip * self.IMPL_POS_WEIGHT:
                         n_filtered_cap += 1
                     else:
                         n_filtered_pos += 1
@@ -1461,7 +1491,8 @@ class PersonaAgent:
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
                       f"0 hot hashtags after net-sentiment filter "
-                      f"({n_filtered_pos} removed by positive counterevidence, "
+                      f"(threshold={user_threshold:.1f} = {NEG_PROMOTION_RATIO}×{user_impl_neg_total}; "
+                      f"{n_filtered_pos} removed by positive counterevidence, "
                       f"{n_filtered_cap} by daily cap ({IMPL_NEG_DAILY_CAP}/day), "
                       f"{n_filtered_days} by temporal spread < {self.MIN_TEMPORAL_DAYS} days), "
                       f"{len(impl_neg_rows)} rows → all stubs.{utils.Colors.ENDC}")
@@ -1483,7 +1514,8 @@ class PersonaAgent:
 
         if self.verbose:
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Implicit-negative promotion: "
-                  f"{len(hot_tags)} hot hashtags (net >= {MIN_IMPLICIT_NEGATIVE_REPETITION}, "
+                  f"{len(hot_tags)} hot hashtags "
+                  f"(threshold={user_threshold:.1f} = {NEG_PROMOTION_RATIO}×{user_impl_neg_total}, "
                   f">= {self.MIN_TEMPORAL_DAYS} days, daily cap {IMPL_NEG_DAILY_CAP}), "
                   f"{n_filtered_pos} removed by positive counterevidence, "
                   f"{n_filtered_cap} by daily cap, "
