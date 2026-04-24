@@ -5831,7 +5831,7 @@ class PersonaAgent:
     def run_pipeline(self) -> dict:
         """Run the full persona inference pipeline.
 
-        Order (23 sequential steps — renumbered so every addition slots in
+        Order (24 sequential steps — renumbered so every addition slots in
         cleanly rather than carrying .5 / b / c suffixes):
 
            1. infer atomic personas
@@ -5858,7 +5858,10 @@ class PersonaAgent:
           20. inject ad events (~6% of commerce-adjacent events become ads)
           21. annotate stereotype marks
           22. enrich substrate (plant cross-signal evidence for e6)
-          23. save to backend/{uid}/ subfolder
+          23. save pipeline outputs to backend/{uid}/ subfolder
+          24. run Extension B layer (self-posts, DM threads, friends graph,
+              trending hashtags) directly on top of the just-saved files —
+              produces a fully-complete backend in one invocation.
 
         (R8 dropped the old "build test split" step entirely — eval picks
         its own test moments from the full timeline at any T_test cut.)
@@ -5890,6 +5893,8 @@ class PersonaAgent:
             ("21. Annotate stereotype marks",           self.annotate_stereotype_marks),
             ("22. Enrich substrate (e6 grounding)",     self.enrich_substrate),
             ("23. Save to backend",                     self.save_to_backend),
+            ("24. Extension B (self-posts + DMs + friends + trending)",
+                                                        self.run_extension_b),
         ]
 
         for step_name, step_fn in steps:
@@ -6684,6 +6689,58 @@ class PersonaAgent:
                   f"({total_events} events, {total_prefs} preference instances, per-app: "
                   f"{ {k: len(v) for k, v in per_app.items()} }){utils.Colors.ENDC}")
         return user_dir
+
+    def run_extension_b(self) -> None:
+        """Step 24: Run the Extension B layer — self-authored posts, DM
+        threads, friends graph, and trending hashtags — on top of the
+        files just written by save_to_backend. Merges Extension B
+        into the main pipeline so a single `run_persona_pipeline.py`
+        invocation produces a fully-complete persona backend, no separate
+        CLI invocation required.
+
+        Idempotent: rerunning replaces self-post events, DM threads,
+        friends list, and trending with fresh generations while
+        preserving all pipeline-authored events. Writes back to
+        backend/{uid}/{profile.json, {app}.json ×3, trending.json}.
+
+        Skipped gracefully when no LLM client is configured (Claude Code
+        subagent mode handles this inline via skill.md).
+        """
+        if self.llm_client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping Extension B (no llm client; subagent mode "
+                      f"handles it inline).{utils.Colors.ENDC}")
+            return
+        try:
+            # Local import to avoid pulling extension_b unless this step runs
+            from data_preparation.extension_b.main import run_extension_b
+        except Exception as e:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"Extension B import failed ({type(e).__name__}: {e}) — "
+                  f"skipping. Profile/self-posts/DMs/friends/trending will "
+                  f"be empty.{utils.Colors.ENDC}")
+            return
+        try:
+            # Deterministic per-user seed for Ext B RNG so regens are stable.
+            try:
+                seed = int(str(self.user_id)) * 8609 + 19
+            except (ValueError, TypeError):
+                seed = abs(hash(str(self.user_id))) % (2**31)
+            run_extension_b(
+                user_id=str(self.user_id),
+                backend_dir=self.backend_dir,
+                llm_client=self.llm_client,
+                rng_seed=seed,
+                dry_run=False,
+                verbose=self.verbose,
+            )
+        except Exception as e:
+            # Do not let Extension B failure wipe the pipeline's completed
+            # main output. Log and continue.
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"Extension B raised {type(e).__name__}: {e}. "
+                  f"Main pipeline output preserved.{utils.Colors.ENDC}")
 
     def load_from_backend(self) -> bool:
         """Load persisted JSON data back into instance variables.
