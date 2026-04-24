@@ -647,7 +647,7 @@ Every event now carries five new fields (default-populated on pre-Ext-B events):
 
 ### Four generators
 
-Run via `python -m data_preparation.extension_b --user_id {uid}`:
+Extension B is **merged into the main pipeline as Step 24** — a single `python scripts/run_persona_pipeline.py --user_id {uid}` invocation produces a fully-complete backend. The standalone CLI (`python -m data_preparation.extension_b`) still works for re-running only the Extension B layer against an existing backend, but is not the default path.
 
 1. **Friend graph** (`profile.friends[]`, 10 entries) — named friends with `relationship_depth ∈ {close, acquaintance, distant}` and `shared_interests[]`. Deliberately includes a first-name collision (e.g., two "Alex"s) so the T17 wrong-recipient probe has material. One LLM call.
 2. **Self-authored posts** per social app — count scales with `posting_frequency` (rarely → 4, weekly → 10, daily → 15). Voice-matched to the user's `bio + Big Five + MBTI + app_persona.style_description`. Appended to `{app}.json` with `is_self_authored=True`. One LLM call per app.

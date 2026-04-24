@@ -323,8 +323,9 @@ def main():
     print()
     if failed:
         print(f"{red}{len(failed)} check(s) failed:{end} {', '.join(failed)}")
-        print("Run Extension B to close the gap:")
-        print(f"  python -m data_preparation.extension_b --user_id {args.user_id}")
+        print("Re-run the main pipeline to close the gap (Extension B is")
+        print("now Step 24 of the merged pipeline — no separate invocation):")
+        print(f"  python scripts/run_persona_pipeline.py --user_id {args.user_id}")
 
     # e6 block — separate pass-count with class-adaptive floor.
     if args.e6:
