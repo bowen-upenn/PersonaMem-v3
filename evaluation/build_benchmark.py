@@ -876,7 +876,14 @@ def build_benchmark(
     rng_seed: int = 0,
     blind_check_llm=None,
     blind_check_limit: int | None = None,
+    discovery_llm=None,
 ) -> dict:
+    """Build the full per-user benchmark.
+
+    `discovery_llm` — optional LLM client used by E6 (active mistake
+    prevention) for per-user discovery of paired (warn, foil) scenarios.
+    When None, E6 yields zero instances; other tasks are unaffected.
+    """
     bq = BackendQuery(backend_dir)
     test_items = load_test_items(backend_dir, user_id)
     if not test_items:
@@ -949,6 +956,20 @@ def build_benchmark(
         e5_instances = []
         print(f"[build_benchmark] WARN: e5_horizon_lifecycle builder failed: {exc}")
 
+    # Task E6 — active mistake prevention (paired warn/foil discovery)
+    try:
+        from evaluation.tasks.e6_active_mistake_prevention import build_e6_active_mistake_prevention
+        if discovery_llm is None:
+            print("[build_benchmark] e6: no discovery_llm — skipping E6 instances")
+            e6_instances = []
+        else:
+            e6_instances = build_e6_active_mistake_prevention(
+                bq, user_id, llm_client=discovery_llm, rng_seed=rng_seed,
+            )
+    except Exception as exc:
+        e6_instances = []
+        print(f"[build_benchmark] WARN: e6_active_mistake_prevention builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -979,6 +1000,7 @@ def build_benchmark(
             "e3_daily_briefing_multi": len(e3_instances),
             "e4_google_search": len(e4_instances),
             "e5_horizon_lifecycle": len(e5_instances),
+            "e6_active_mistake_prevention": len(e6_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
         "slate_ranking": slate_instances,
@@ -993,6 +1015,7 @@ def build_benchmark(
         "e3_daily_briefing_multi": e3_instances,
         "e4_google_search": e4_instances,
         "e5_horizon_lifecycle": e5_instances,
+        "e6_active_mistake_prevention": e6_instances,
         **agentic_buckets,
     }
 
