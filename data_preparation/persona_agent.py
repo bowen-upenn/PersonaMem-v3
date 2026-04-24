@@ -1621,7 +1621,9 @@ class PersonaAgent:
             hashtags=[hot_tag],  # single hot hashtag only
             existing_categories=existing_cats,
         )
-        response = self._query_llm_with_retry(prompt)
+        # Tier A: mini-tier is sufficient for this structured single-hashtag
+        # dislike extraction (low volume, highly constrained output).
+        response = self._query_mini_with_retry(prompt)
         if not response:
             return []
         parsed = utils.extract_json_from_response(response)
@@ -1898,7 +1900,9 @@ class PersonaAgent:
             """Cross-reference within one (large) category. Returns #relationships."""
             personas_for_prompt = [{"persona_item": c.persona_item, "category": c.category} for c in items]
             prompt = prompts.summarize_and_cross_reference_prompt(personas_for_prompt)
-            response = self._query_llm_with_retry(prompt)
+            # Tier A: relationship classification ("similar"/"contradictory"/"none")
+            # is structured semantic reasoning that mini handles well.
+            response = self._query_mini_with_retry(prompt)
             if not response:
                 return 0
             parsed = utils.extract_json_from_response(response)
@@ -1919,7 +1923,8 @@ class PersonaAgent:
                 for cat, items in batch
             ]
             prompt = prompts.summarize_and_cross_reference_batched_prompt(categories_payload)
-            response = self._query_llm_with_retry(prompt)
+            # Tier A: same structured relationship classification as _xref_one_category.
+            response = self._query_mini_with_retry(prompt)
             if not response:
                 return 0
             parsed = utils.extract_json_from_response(response)
@@ -2790,7 +2795,8 @@ class PersonaAgent:
                 for c in neg_survivors
             ]
             prompt = prompts.summarize_and_cross_reference_prompt(neg_for_prompt)
-            response = self._query_llm_with_retry(prompt)
+            # Tier A: same structured relationship classification; negatives version.
+            response = self._query_mini_with_retry(prompt)
 
             if response:
                 neg_by_norm = {_normalize_persona_text(c.persona_item): c for c in neg_survivors}
@@ -2942,7 +2948,8 @@ class PersonaAgent:
             return
 
         prompt = prompts.temporal_contradiction_graph_prompt(contradictions)
-        response = self._query_llm_with_retry(prompt)
+        # Tier A: single-call structured timeline output; mini is sufficient.
+        response = self._query_mini_with_retry(prompt)
 
         if not response:
             print(f"{utils.Colors.WARNING}[User {self.user_id}] Temporal graph LLM call failed.{utils.Colors.ENDC}")
@@ -3106,7 +3113,9 @@ class PersonaAgent:
         evolution_entries: dict[str, list] = _ddict(list)  # source_preference -> list of entries
         if categories_for_llm and self.llm_client is not None:
             prompt = prompts.preference_evolution_prompt(categories_for_llm)
-            response = self._query_llm_with_retry(prompt)
+            # Tier A: narrative entries are semi-structured and formulaic;
+            # mini handles the evolution schema reliably.
+            response = self._query_mini_with_retry(prompt)
             if response:
                 parsed = utils.extract_json_from_response(response)
                 if isinstance(parsed, list):
@@ -3684,9 +3693,13 @@ class PersonaAgent:
             top_hashtags=top_tags,
         )
 
+        # Tier A: MBTI inference is a structured map from (big_five,
+        # hidden_personas, top_hashtags) → type + dim scores. Mini is
+        # sufficient; fall back to flagship if mini client is unset.
+        mbti_client = self.llm_client_mini or self.llm_client
         for attempt in range(self.MAX_RETRIES):
             try:
-                response = self.llm_client.query_llm(prompt_text)
+                response = mbti_client.query_llm(prompt_text)
                 parsed = utils.extract_json_from_response(response)
                 if isinstance(parsed, dict) and "type" in parsed and "dimensions" in parsed:
                     self.user_profile.mbti = parsed
