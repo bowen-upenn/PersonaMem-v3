@@ -10,7 +10,7 @@ from data_preparation.utils import extract_json_from_response
 from evaluation import judges, metrics, prompts
 from evaluation.backend_query import BackendQuery, materialize_snapshot
 from evaluation.claude_subagent import run_subagent
-from evaluation.inference_utils import SnapshotCache, dispatch_agent_run
+from evaluation.inference_utils import SnapshotCache, dispatch_agent_run, merge_token_metrics
 
 
 # Graded-relevance gain map. Held-out is the truly soonest-coming engagement
@@ -152,6 +152,9 @@ def run_task_a(
                 query_context=f"Ranking slate on {app} at {inst.get('formatted_timestamp', '')}.",
             )
 
+        metrics = {**ranking_metrics, **judge_scores}
+        merge_token_metrics(metrics, prompt=prompt, response=raw_response or "",
+                            stats=subagent_stats, model=model_name)
         results.append({
             "task": "slate_ranking",
             "user_id": user_id,
@@ -166,6 +169,6 @@ def run_task_a(
             "held_out_idx": inst["held_out_idx"],
             "ranked_indices": ranked,
             "agent_response": raw_response,
-            "metrics": {**ranking_metrics, **judge_scores},
+            "metrics": metrics,
         })
     return results

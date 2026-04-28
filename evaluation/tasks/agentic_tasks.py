@@ -220,6 +220,20 @@ def _dispatch_and_score(
         elif output_quality_report.get("output_quality_failed", 0) > 0:
             status = "failed_quality"
 
+    from evaluation.inference_utils import merge_token_metrics
+    metrics = {
+        **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
+        "tool_call_rules_pass": sum(1 for v in tool_call_report.values() if v == "pass"),
+        "tool_call_rules_fail": sum(1 for v in tool_call_report.values() if v.startswith("fail")),
+        "final_state_rules_passed": final_state_report.get("final_state_rules_passed", 0),
+        "final_state_rules_failed": final_state_report.get("final_state_rules_failed", 0),
+        "must_contain_failed": final_state_report.get("must_contain_failed", 0),
+        "must_not_contain_failed": final_state_report.get("must_not_contain_failed", 0),
+        "output_quality_passed": output_quality_report.get("output_quality_passed", 0),
+        "output_quality_failed": output_quality_report.get("output_quality_failed", 0),
+    }
+    merge_token_metrics(metrics, prompt=prompt, response=raw or "", stats=stats)
+
     return {
         "status": status,
         "agent_response": response_text,
@@ -231,17 +245,7 @@ def _dispatch_and_score(
         "tool_call_rules": tool_call_report,
         "final_state_diff": final_state_report,
         "output_quality": output_quality_report,
-        "metrics": {
-            **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
-            "tool_call_rules_pass": sum(1 for v in tool_call_report.values() if v == "pass"),
-            "tool_call_rules_fail": sum(1 for v in tool_call_report.values() if v.startswith("fail")),
-            "final_state_rules_passed": final_state_report.get("final_state_rules_passed", 0),
-            "final_state_rules_failed": final_state_report.get("final_state_rules_failed", 0),
-            "must_contain_failed": final_state_report.get("must_contain_failed", 0),
-            "must_not_contain_failed": final_state_report.get("must_not_contain_failed", 0),
-            "output_quality_passed": output_quality_report.get("output_quality_passed", 0),
-            "output_quality_failed": output_quality_report.get("output_quality_failed", 0),
-        },
+        "metrics": metrics,
     }
 
 
