@@ -83,6 +83,76 @@ def _preference_to_item(pref: dict) -> dict:
     }
 
 
+# Tokens to ignore when comparing caption overlap — keeps the similarity-floor
+# from rejecting candidates that share only stopwords with the held-out.
+_STOPWORDS = frozenset(
+    "a an and are as at be but by do does for from has have in is it its of "
+    "on or so that the their them they this to was were will with you your "
+    "i me my we our us he she him her his hers what where when how why which "
+    "than then there here some any all not no yes if just like".split()
+)
+
+
+def _tokens(s: str) -> set[str]:
+    return {w for w in (s or "").lower().split() if w.isalpha() and w not in _STOPWORDS}
+
+
+def _jaccard(a: set, b: set) -> float:
+    if not a and not b:
+        return 0.0
+    return len(a & b) / max(1, len(a | b))
+
+
+def _too_similar_to_target(cand: dict, target: dict, hashtag_max: float = 0.6, caption_max: float = 0.5) -> bool:
+    """Reject hard-negative candidates that look like near-duplicates of the
+    held-out target — keeps the held-out as the unique best answer.
+    """
+    ah = {h.lower().lstrip("#") for h in (cand.get("hashtags") or [])}
+    bh = {h.lower().lstrip("#") for h in (target.get("hashtags") or [])}
+    if _jaccard(ah, bh) > hashtag_max:
+        return True
+    at = _tokens(cand.get("caption") or "")
+    bt = _tokens(target.get("caption") or "")
+    if at and bt and _jaccard(at, bt) > caption_max:
+        return True
+    return False
+
+
+def _positive_engagement_items(
+    bq: BackendQuery,
+    user_id: str,
+    exclude_ids: set,
+    window_lo: int,
+    window_hi: int,
+) -> list[tuple[dict, str, int]]:
+    """Sample positive-engagement events in a [window_lo, window_hi] timestamp range.
+
+    Returns `(candidate_dict, source_object_id, ts)` for every event whose
+    `source_interaction_type` is explicit_positive or implicit_positive,
+    excluding the held-out target by `source_object_id`. Caller is
+    responsible for shuffling + similarity-floor filtering + capping.
+    """
+    out: list[tuple[dict, str, int]] = []
+    for app in APPS:
+        # since_timestamp = 10**12 ⇒ no upper-bound mask, scan everything.
+        for e in bq.get_events(user_id=user_id, app=app, since_timestamp=10**12):
+            ts = int(e.get("source_timestamp") or 0)
+            if not (window_lo <= ts <= window_hi):
+                continue
+            src_oid = str(e.get("source_object_id", ""))
+            if src_oid in exclude_ids:
+                continue
+            itype = (e.get("source_interaction_type") or "").lower()
+            if itype not in ("explicit_positive", "implicit_positive"):
+                continue
+            content = e.get("content") or {}
+            hashtags = e.get("source_hashtags") or []
+            content_type = content.get("content_type") or e.get("content_type") or "text"
+            item = _content_to_item(content, hashtags, content_type)
+            out.append((item, src_oid, ts))
+    return out
+
+
 def build_slate_instance(test: TestItem, bq: BackendQuery, rng: random.Random) -> dict:
     candidates: list[dict] = []
     t = test.source_timestamp
@@ -108,6 +178,44 @@ def build_slate_instance(test: TestItem, bq: BackendQuery, rng: random.Random) -
         c["_origin"] = "negative"
         candidates.append(c)
 
+    # 3x past-positive (events the user already engaged with at ts < t_test).
+    # Filtered for low similarity to held_out so they're plausible alternatives,
+    # not near-duplicates that would muddy the unique best answer.
+    SEVEN_D = 7 * 86400
+    past_pool = _positive_engagement_items(
+        bq, test.user_id,
+        exclude_ids={test.source_object_id},
+        window_lo=0, window_hi=t - 1,
+    )
+    rng.shuffle(past_pool)
+    past_kept = 0
+    for item, _, _ in past_pool:
+        if past_kept >= 3:
+            break
+        if _too_similar_to_target(item, held_out):
+            continue
+        item["_origin"] = "past_positive"
+        candidates.append(item)
+        past_kept += 1
+
+    # 3x future-positive (events the user WILL engage with in the next 7d, but
+    # not the soonest one — that's the held-out). Same similarity floor.
+    fut_pool = _positive_engagement_items(
+        bq, test.user_id,
+        exclude_ids={test.source_object_id},
+        window_lo=t + 1, window_hi=t + SEVEN_D,
+    )
+    rng.shuffle(fut_pool)
+    fut_kept = 0
+    for item, _, _ in fut_pool:
+        if fut_kept >= 3:
+            break
+        if _too_similar_to_target(item, held_out):
+            continue
+        item["_origin"] = "future_positive"
+        candidates.append(item)
+        fut_kept += 1
+
     # 3x plausible-random from unused hashtags
     used = {h.lower() for p in bq.get_preferences(user_id=test.user_id, since_timestamp=t) for h in p.get("source_hashtags", [])}
     unused_hashtags: list[str] = []
@@ -126,14 +234,30 @@ def build_slate_instance(test: TestItem, bq: BackendQuery, rng: random.Random) -
             "_origin": "random",
         })
 
-    while len(candidates) < 10:
-        candidates.append({
-            "title": "General content",
-            "caption": "Unspecified item.",
-            "hashtags": [],
-            "content_type": "text",
-            "_origin": "filler",
-        })
+    # Top up to 16 slots: prefer additional low-similarity past/future positives,
+    # then fall back to generic filler if the persona doesn't have enough events
+    # at all (rare — only on extremely sparse personas).
+    while len(candidates) < 16:
+        topup_pool = past_pool + fut_pool
+        added = False
+        for item, _, _ in topup_pool:
+            if any(item is c for c in candidates):
+                continue
+            if _too_similar_to_target(item, held_out):
+                continue
+            item["_origin"] = "filler_lowsim"
+            candidates.append(item)
+            added = True
+            if len(candidates) >= 16:
+                break
+        if not added:
+            candidates.append({
+                "title": "General content",
+                "caption": "Unspecified item.",
+                "hashtags": [],
+                "content_type": "text",
+                "_origin": "filler",
+            })
 
     rng.shuffle(candidates)
     slate = []
