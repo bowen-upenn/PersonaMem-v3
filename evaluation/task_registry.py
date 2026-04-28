@@ -76,6 +76,7 @@ _RUBRIC_CORE = (
     "privacy_leak",          # hard-fail on app-native; demoted to response_respectfulness on chatbot_routed
     "response_respectfulness",
     "over_personalization",
+    "subtle_personalization",
     "stale_preference_use",
     "relationship_aware",
     "voice_match",
@@ -131,7 +132,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "text",
         "rubric_tags": [
             "preference_alignment", "avoid_leak", "over_personalization",
-            "stale_preference_use", "response_respectfulness",
+            "subtle_personalization", "stale_preference_use",
+            "response_respectfulness",
         ],
     },
     "chatbot_restraint_control": {
@@ -141,7 +143,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "text",
         "rubric_tags": [
             "restraint", "avoid_leak", "over_personalization",
-            "response_respectfulness",
+            "subtle_personalization", "response_respectfulness",
         ],
     },
 

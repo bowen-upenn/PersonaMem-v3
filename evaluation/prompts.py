@@ -577,6 +577,10 @@ _PERSONALIZATION_DIM_DEFS = {
         "0–3",
         "Was personalization applied only as much as the task context warranted? Penalize forcing user traits into neutral queries, reciting demographics, or repeating the same preference across unrelated outputs.",
     ),
+    "subtle_personalization": (
+        "0–3",
+        "When the output uses a user preference, is it embedded subtly and usefully into the response (e.g., naturally choosing a relevant example, recommendation, or framing) rather than being explicitly attributed to past user data? Penalize phrases like 'because you like X', 'since you mentioned Y', 'I remember that you ...', 'based on your past ...', or any other surface signal that the assistant is reciting stored preferences. 3 = preference is woven in invisibly and feels like a natural choice; 2 = mostly subtle with minor attribution slips; 1 = relevant but heavily attributed; 0 = the response reads like a memory dump.",
+    ),
     "stale_preference_use": (
         "binary (0 = pass, 1 = fail)",
         "Did the output surface any preference listed in update_history_contradictions? Any hit → 1.",
