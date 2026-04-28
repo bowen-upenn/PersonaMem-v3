@@ -31,80 +31,423 @@ APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 # Per-task ground-truth extractor — given the parsed instance_json from
 # benchmark/{uid}/queries.csv, return a {ground_truth, rubric_tags} dict.
 # Default extractor returns the task_id only with empty GT.
+# ---------------------------------------------------------------------------
+# Per-task GROUND-TRUTH extractor — returns a rich dict the JS template
+# renders as multiple sections on the test card. Keys (all optional):
+#   ground_truth        : str   short headline blurb
+#   candidates          : list[(idx, title, origin)]  for ranking tasks
+#   held_out_pref       : str   the persona-item text the agent should align to
+#   target_prefs        : list[str]  preferences the agent SHOULD surface
+#   privacy_flagged     : list[str]  preferences the agent must NOT surface
+#   tool_call_rules     : list[str]  agentic write/read constraints
+#   final_state_expected: dict  {must_contain_count, must_not_contain}
+#   warn_frame          : {must_mention, must_not_mention, polarity}
+#   signal_evidence     : list  active_mistake_prevention cross-signal trace
+#   rubric_tags         : list[str]
+# ---------------------------------------------------------------------------
+
 def _gt_default(inst: dict) -> dict:
     return {"ground_truth": "", "rubric_tags": []}
+
+
+def _truncate(s, n=120):
+    s = s if isinstance(s, str) else str(s or "")
+    return s[: n - 1] + "…" if len(s) > n else s
 
 
 def _gt_personalized_feed_ranking(inst: dict) -> dict:
     held = inst.get("held_out_idx")
     slate = inst.get("slate") or []
+    origins = inst.get("origin_by_idx") or []
     title = ""
     if isinstance(held, int) and 0 <= held < len(slate):
-        title = (slate[held].get("title") or slate[held].get("caption") or "")[:80]
-    return {"ground_truth": f"held_out: {title}", "rubric_tags": ["preference_alignment", "behavioral_hit"]}
+        title = slate[held].get("title") or slate[held].get("caption") or ""
+    cands = []
+    for i, c in enumerate(slate):
+        origin = origins[i] if i < len(origins) else "?"
+        cands.append({
+            "idx": i,
+            "title": _truncate(c.get("title") or c.get("caption") or "", 90),
+            "hashtags": c.get("hashtags") or [],
+            "origin": origin,
+            "is_held_out": (i == held),
+        })
+    return {
+        "ground_truth": f"held-out (rank-1 target): {_truncate(title, 100)}",
+        "candidates": cands,
+        "rubric_tags": ["preference_alignment", "behavioral_hit", "ndcg_graded@5"],
+    }
 
 
 def _gt_chatbot_proactive(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
+    held_pi = held.get("persona_item") or ""
+    gt_slice = inst.get("gt_slice") or {}
+    target = [p.get("persona_item") for p in (gt_slice.get("target") or []) if p.get("persona_item")]
+    avoid = [p.get("persona_item") for p in (gt_slice.get("avoid") or []) if p.get("persona_item")]
+    top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
+    privacy = [p.get("persona_item") for p in (inst.get("privacy_flagged_prefs") or [])[:5] if p.get("persona_item")]
     return {
-        "ground_truth": (held.get("persona_item") or "")[:120],
-        "rubric_tags": ["preference_alignment", "over_personalization"],
+        "ground_truth": _truncate(held_pi or (target[0] if target else "(no held-out preference; rubric checks restraint + privacy)"), 200),
+        "held_out_pref": held_pi,
+        "target_prefs": target[:6],
+        "privacy_flagged": privacy,
+        "top_k_relevant": top_k,
+        "rubric_tags": ["preference_alignment", "over_personalization", "privacy_leak", "carve_out_respect"],
     }
 
 
+def _gt_chatbot_restraint(inst: dict) -> dict:
+    base = _gt_chatbot_proactive(inst)
+    base["ground_truth"] = "Restraint test — agent must NOT volunteer personalization for this generic question."
+    base["rubric_tags"] = ["restraint", "personalization_leak_rate (lower=better)", "privacy_leak"]
+    return base
+
+
 def _gt_at_ai_directive(inst: dict) -> dict:
+    cands = inst.get("candidates") or []
+    pos = set(inst.get("positive_indices") or [])
+    carve = set(inst.get("carveout_indices") or [])
+    cand_list = []
+    for i, c in enumerate(cands):
+        cand_list.append({
+            "idx": i,
+            "title": _truncate(c.get("title") or c.get("caption") or "", 90),
+            "hashtags": c.get("hashtags") or [],
+            "origin": "match" if i in pos else ("carve_out" if i in carve else "filler"),
+            "is_held_out": (i in pos),
+        })
     return {
-        "ground_truth": f"directive_action={inst.get('directive_action', '')}, hashtags={inst.get('directive_hashtags', [])}",
-        "rubric_tags": ["preference_alignment", "stale_preference_use"],
+        "ground_truth": f"directive: {inst.get('directive_action', '')} on hashtags {inst.get('directive_hashtags', [])}; positive_indices={sorted(pos)}; carveout_indices={sorted(carve)}",
+        "candidates": cand_list,
+        "rubric_tags": ["preference_alignment", "stale_preference_use", "directive_respect"],
     }
 
 
 def _gt_active_mistake_prevention(inst: dict) -> dict:
-    polarity = inst.get("polarity", "")
-    summary = inst.get("mistake_summary", "")
     ef = inst.get("expected_warning_frame") or {}
-    must = ef.get("must_mention") or []
+    sigs = (inst.get("cross_signal_signals") or {}).get("signal_evidence") or []
     return {
-        "ground_truth": f"[{polarity}] {summary} | must_mention={must}",
-        "rubric_tags": ["mistake_prevention_recall", "false_alarm_emission"],
+        "ground_truth": f"[{inst.get('polarity', '?')}] {_truncate(inst.get('mistake_summary', ''), 200)}",
+        "warn_frame": {
+            "polarity": inst.get("polarity", ""),
+            "must_mention": ef.get("must_mention") or [],
+            "must_not_mention": ef.get("must_not_mention") or [],
+        },
+        "signal_evidence": [
+            {
+                "source": s.get("source", ""),
+                "ts": s.get("ts", ""),
+                "ref": s.get("ref", ""),
+                "quote": _truncate(s.get("quote", ""), 140),
+            } for s in sigs
+        ][:6],
+        "rubric_tags": ["mistake_prevention_recall", "false_alarm_emission", "cross_signal_attribution",
+                        "actionable_specificity", "warning_respectfulness"],
     }
 
 
-def _gt_agentic_default(inst: dict) -> dict:
-    target = inst.get("target_app") or ""
+def _gt_irrelevant_query_restraint(inst: dict) -> dict:
+    cands = inst.get("candidates") or []
+    origins = inst.get("origin_by_idx") or []
+    held_text = inst.get("held_out_persona_item") or ""
+    irrels = inst.get("irrelevant_persona_items") or []
+    cand_list = [{
+        "idx": i,
+        "title": _truncate(c.get("persona_item") or c.get("title") or str(c), 100),
+        "origin": origins[i] if i < len(origins) else "?",
+        "is_held_out": (origins[i] == "held_out") if i < len(origins) else False,
+    } for i, c in enumerate(cands)]
     return {
-        "ground_truth": f"target_app={target}",
-        "rubric_tags": ["tool_call_rules", "final_state_diff", "voice_match"],
+        "ground_truth": f"On app={inst.get('app', '')}: held-out persona item = {_truncate(held_text, 120)}",
+        "candidates": cand_list,
+        "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
+        "rubric_tags": ["irrelevant_rejection_precision", "irrelevant_rejection_recall", "privacy_leak", "over_personalization"],
+    }
+
+
+def _gt_preference_removal_regen(inst: dict) -> dict:
+    held = inst.get("held_out_preference") or {}
+    return {
+        "ground_truth": f"removed preference to test if agent stops using it: {_truncate(held.get('persona_item', ''), 160)}",
+        "held_out_pref": held.get("persona_item", ""),
+        "top_k_relevant": [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")],
+        "rubric_tags": ["over_personalization", "removal_success", "regen_identical_fail (lower=better)"],
+    }
+
+
+def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
+    return {
+        "ground_truth": f"pair_id={inst.get('pair_id', '')} on {inst.get('target_app', '')}; tests recency_sensitivity to category={inst.get('shift_category', '')}",
+        "extra_meta": {
+            "dominant_category_pre": inst.get("dominant_category_pre"),
+            "shift_category": inst.get("shift_category"),
+            "t_early": inst.get("t_early"),
+            "t_late": inst.get("t_late"),
+        },
+        "rubric_tags": ["over_personalization", "response_divergence", "recency_sensitivity"],
+    }
+
+
+def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
+    queries = inst.get("queries") or []
+    return {
+        "ground_truth": f"sequence_id={inst.get('sequence_id', '')} — {len(queries)} successive queries; agent must reduce repetition over the sequence",
+        "extra_meta": {"n_queries": len(queries)},
+        "rubric_tags": ["over_personalization", "preference_repetition_rate (lower=better)", "wrong_preference_reuse"],
+    }
+
+
+def _gt_context_shift_scenarios(inst: dict) -> dict:
+    return {
+        "ground_truth": f"scenario={inst.get('name', inst.get('scenario_id', ''))} — {_truncate(inst.get('notes', ''), 160)}",
+        "carve_out": _truncate(inst.get("carve_out", ""), 200),
+        "forbidden_items": [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]],
+        "rubric_tags": ["restraint", "avoid_leak", "privacy_leak", "over_personalization", "relationship_aware"],
+    }
+
+
+def _gt_daily_personalized_briefing(inst: dict) -> dict:
+    return {
+        "ground_truth": f"day {inst.get('day_index', '?')}: {inst.get('day_label', '')}; agent must surface relevant preferences without staleness",
+        "rubric_tags": ["preference_alignment", "temporal_boundedness", "stale_preference_use"],
+    }
+
+
+def _gt_personalized_search_ranking(inst: dict) -> dict:
+    return {
+        "ground_truth": f"day {inst.get('day_index', '?')}: {inst.get('day_label', '')}; recent prefs: {_truncate(json.dumps(inst.get('recent_pref_summary', '')), 200)}",
+        "rubric_tags": ["preference_alignment", "over_personalization"],
+    }
+
+
+def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
+    return {
+        "ground_truth": f"horizon={inst.get('horizon_type', '?')}; tests when short-term preferences should fade",
+        "rubric_tags": ["preference_alignment", "stale_preference_use", "temporal_boundedness"],
+    }
+
+
+def _gt_agentic(inst: dict) -> dict:
+    """Generic agentic GT — surfaces tool_call_rules + final_state_expected
+    + the natural query-shaped fields per task variant."""
+    bits: list[str] = []
+    target = inst.get("target_app") or ""
+    if target:
+        bits.append(f"target_app={target}")
+    for k in ("update", "context", "draft", "topic", "moment", "thread_id", "recipient_name", "inbound_message"):
+        if inst.get(k):
+            bits.append(f"{k}={_truncate(str(inst[k]), 100)}")
+    if inst.get("source_post"):
+        sp = inst["source_post"]
+        bits.append(f"source_post.caption={_truncate(sp.get('caption', ''), 100)}")
+    return {
+        "ground_truth": " | ".join(bits) if bits else "(agentic task; see tool rules + final state)",
+        "tool_call_rules": inst.get("tool_call_rules") or [],
+        "final_state_expected": inst.get("final_state_expected") or {},
+        "rubric_tags": ["tool_call_rules", "final_state_diff", "output_quality", "voice_match", "preference_alignment"],
     }
 
 
 TEST_GT_EXTRACTORS = {
-    "personalized_feed_ranking":         _gt_personalized_feed_ranking,
-    "slate_ranking":                     _gt_personalized_feed_ranking,  # v1 alias
-    "chatbot_proactive_personalization": _gt_chatbot_proactive,
-    "chatbot_response_proactive":        _gt_chatbot_proactive,           # v1 alias
-    "at_ai_directive_followup":          _gt_at_ai_directive,
-    "e2_at_ai_followup":                 _gt_at_ai_directive,             # v1 alias
-    "active_mistake_prevention":         _gt_active_mistake_prevention,
-    "e6_active_mistake_prevention":      _gt_active_mistake_prevention,   # v1 alias
+    "personalized_feed_ranking":           _gt_personalized_feed_ranking,
+    "slate_ranking":                       _gt_personalized_feed_ranking,  # v1 alias
+    "chatbot_proactive_personalization":   _gt_chatbot_proactive,
+    "chatbot_response_proactive":          _gt_chatbot_proactive,           # v1 alias
+    "chatbot_restraint_control":           _gt_chatbot_restraint,
+    "chatbot_response_control":            _gt_chatbot_restraint,           # v1 alias
+    "at_ai_directive_followup":            _gt_at_ai_directive,
+    "e2_at_ai_followup":                   _gt_at_ai_directive,             # v1 alias
+    "active_mistake_prevention":           _gt_active_mistake_prevention,
+    "e6_active_mistake_prevention":        _gt_active_mistake_prevention,   # v1 alias
+    "irrelevant_query_restraint":          _gt_irrelevant_query_restraint,
+    "preference_removal_regen":            _gt_preference_removal_regen,
+    "repetition_fatigue_pairs":            _gt_repetition_fatigue_pairs,
+    "repetition_fatigue_sequences":        _gt_repetition_fatigue_sequences,
+    "context_shift_scenarios":             _gt_context_shift_scenarios,
+    "daily_personalized_briefing":         _gt_daily_personalized_briefing,
+    "personalized_search_ranking":         _gt_personalized_search_ranking,
+    "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
+    # All agentic_* tasks share the generic agentic extractor
+    "agentic_community_digest":            _gt_agentic,
+    "agentic_moment_recommendation":       _gt_agentic,
+    "agentic_dm_digest":                   _gt_agentic,
+    "agentic_cross_app_repost":            _gt_agentic,
+    "agentic_auto_reply":                  _gt_agentic,
+    "agentic_vague_refind":                _gt_agentic,
+    "agentic_composed_post":               _gt_agentic,
+    "agentic_chatbot_dispatch":            _gt_agentic,
+    "agentic_draft_audit":                 _gt_agentic,
+    "agentic_collection_curation":         _gt_agentic,
+    "agentic_group_dm_summary":            _gt_agentic,
+    "agentic_wrong_recipient_check":       _gt_agentic,
+    "agentic_proactive_daily_catchup":     _gt_agentic,
+    "agentic_trending_alert":              _gt_agentic,
 }
 
 
-def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> tuple[dict, list]:
-    """Walk benchmark/{uid}/queries.csv, build (event_id_map, synthetic_list).
+def _gt_agentic_default(inst: dict) -> dict:
+    """Fallback for unknown agentic tasks — defers to the generic agentic extractor."""
+    return _gt_agentic(inst)
 
-    `event_id_map` maps `source_object_id` → list of test-info dicts
-    `{task_type, task_family, ts, ts_iso, query_id, ground_truth, rubric_tags}`.
-    Multiple tests can anchor on the same event; we keep them all.
 
-    `synthetic_list` is the same shape but for tests with no anchoring
-    backend event (E6 t_test = obs_end_ts, etc.) — rendered separately.
+# ---------------------------------------------------------------------------
+# Per-task USER-QUERY extractor — what the test card SHOWS as the "user's
+# message at this time and place." Some tasks carry a natural user message
+# (chatbot, agentic_auto_reply, e6); for ranking-style tasks we synthesize a
+# task-shaped intent ("what should I be shown next on Instagram?") so the
+# card has something readable.
+# ---------------------------------------------------------------------------
+
+def _q_default(inst: dict) -> str:
+    return inst.get("user_query") or inst.get("user_message") or inst.get("query_text") or ""
+
+
+def _q_personalized_feed_ranking(inst: dict) -> str:
+    app = inst.get("app") or "this app"
+    return f"[ranking task] What should I be shown next on {app}?"
+
+
+def _q_chatbot(inst: dict) -> str:
+    return inst.get("user_query") or inst.get("user_message") or "[chatbot turn]"
+
+
+def _q_at_ai_directive(inst: dict) -> str:
+    msg = inst.get("directive_user_message") or ""
+    action = inst.get("directive_action") or ""
+    return f"@ai {action}: {msg}" if msg else f"@ai {action}"
+
+
+def _q_active_mistake_prevention(inst: dict) -> str:
+    return inst.get("user_query") or inst.get("triggering_user_query") or "[mistake-prevention probe]"
+
+
+def _q_agentic_community_digest(inst: dict) -> str:
+    return f"[agentic] post a community digest on {inst.get('target_app', '')}"
+
+
+def _q_agentic_moment_recommendation(inst: dict) -> str:
+    return f"[agentic] recommend something for {inst.get('moment', '')}"
+
+
+def _q_agentic_dm_digest(inst: dict) -> str:
+    return f"[agentic] summarize my recent DMs on {inst.get('target_app', '')}"
+
+
+def _q_agentic_cross_app_repost(inst: dict) -> str:
+    src = inst.get("source_post") or {}
+    cap = (src.get("caption") or "")[:120]
+    return f"[agentic] repost this to {inst.get('target_app', '')}: {cap}"
+
+
+def _q_agentic_auto_reply(inst: dict) -> str:
+    sender = inst.get("sender_id") or "friend"
+    msg = inst.get("inbound_message") or ""
+    return f"[incoming DM from {sender}] {msg}"
+
+
+def _q_agentic_vague_refind(inst: dict) -> str:
+    return f"find that post I saw about {inst.get('topic', '')}"
+
+
+def _q_agentic_composed_post(inst: dict) -> str:
+    return f"[agentic] post on {inst.get('target_app', '')}: {inst.get('update', '')}"
+
+
+def _q_agentic_chatbot_dispatch(inst: dict) -> str:
+    return inst.get("context") or "[agentic dispatch]"
+
+
+def _q_agentic_draft_audit(inst: dict) -> str:
+    draft = (inst.get("draft") or "")[:160]
+    return f"[agentic] audit this draft for {inst.get('target_app', '')}: {draft}"
+
+
+def _q_agentic_collection_curation(inst: dict) -> str:
+    return f"[agentic] curate collections on {inst.get('target_app', '')}"
+
+
+def _q_agentic_group_dm_summary(inst: dict) -> str:
+    return f"[agentic] summarize the group thread on {inst.get('target_app', '')}"
+
+
+def _q_agentic_wrong_recipient_check(inst: dict) -> str:
+    return f"[agentic] DM to {inst.get('recipient_name', '?')}: {(inst.get('draft') or '')[:120]}"
+
+
+def _q_agentic_proactive_daily_catchup(inst: dict) -> str:
+    return "what should I catch up on today?"
+
+
+def _q_agentic_trending_alert(inst: dict) -> str:
+    return "anything trending I care about right now?"
+
+
+def _q_daily_personalized_briefing(inst: dict) -> str:
+    return "[daily briefing] give me a personalized morning brief"
+
+
+def _q_personalized_search_ranking(inst: dict) -> str:
+    return f"[search] {inst.get('query_text') or inst.get('user_query') or inst.get('query', '')}"
+
+
+def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
+    return "[lifecycle ranking] short-term vs long-term preference test"
+
+
+TEST_QUERY_EXTRACTORS = {
+    "personalized_feed_ranking":           _q_personalized_feed_ranking,
+    "slate_ranking":                       _q_personalized_feed_ranking,
+    "chatbot_proactive_personalization":   _q_chatbot,
+    "chatbot_response_proactive":          _q_chatbot,
+    "chatbot_restraint_control":           _q_chatbot,
+    "chatbot_response_control":            _q_chatbot,
+    "at_ai_directive_followup":            _q_at_ai_directive,
+    "e2_at_ai_followup":                   _q_at_ai_directive,
+    "active_mistake_prevention":           _q_active_mistake_prevention,
+    "e6_active_mistake_prevention":        _q_active_mistake_prevention,
+    "agentic_community_digest":            _q_agentic_community_digest,
+    "agentic_moment_recommendation":       _q_agentic_moment_recommendation,
+    "agentic_dm_digest":                   _q_agentic_dm_digest,
+    "agentic_cross_app_repost":            _q_agentic_cross_app_repost,
+    "agentic_auto_reply":                  _q_agentic_auto_reply,
+    "agentic_vague_refind":                _q_agentic_vague_refind,
+    "agentic_composed_post":               _q_agentic_composed_post,
+    "agentic_chatbot_dispatch":            _q_agentic_chatbot_dispatch,
+    "agentic_draft_audit":                 _q_agentic_draft_audit,
+    "agentic_collection_curation":         _q_agentic_collection_curation,
+    "agentic_group_dm_summary":            _q_agentic_group_dm_summary,
+    "agentic_wrong_recipient_check":       _q_agentic_wrong_recipient_check,
+    "agentic_proactive_daily_catchup":     _q_agentic_proactive_daily_catchup,
+    "agentic_trending_alert":              _q_agentic_trending_alert,
+    "daily_personalized_briefing":         _q_daily_personalized_briefing,
+    "personalized_search_ranking":         _q_personalized_search_ranking,
+    "short_vs_long_term_lifecycle":        _q_short_vs_long_term_lifecycle,
+}
+
+
+def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> list[dict]:
+    """Walk benchmark/{uid}/queries.csv → list of test-sample dicts.
+
+    Each test sample is rendered as a STANDALONE timeline card at its own
+    timestamp (sorted alongside regular events + calendar mods), with a
+    distinct background color. Geo location is computed JS-side by walking
+    backwards through events to find the nearest preceding event_location.
+
+    Per-sample fields:
+      ts (int)         — the moment the user is notionally asking
+      ts_iso (str)     — formatted timestamp
+      task_type        — e.g. "personalized_feed_ranking"
+      task_family      — e.g. "agentic"
+      query_id         — e.g. "115:0042:e6_115_p1_warn"
+      query_text       — what the user (or the agent's prompt) effectively says
+      ground_truth     — short blurb describing the expected answer
+      rubric_tags      — list[str] of which rubric dimensions apply
     """
     qcsv = os.path.join(benchmark_dir, str(uid), "queries.csv")
-    event_map: dict[str, list[dict]] = {}
-    synthetic: list[dict] = []
+    out: list[dict] = []
     if not os.path.exists(qcsv):
-        return event_map, synthetic
+        return out
     csv.field_size_limit(10_000_000)
     with open(qcsv, "r", encoding="utf-8") as f:
         first = f.readline()
@@ -115,34 +458,45 @@ def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> tuple[dict
                 inst = json.loads(r.get("instance_json") or "{}")
             except Exception:
                 inst = {}
-            extractor = (
-                TEST_GT_EXTRACTORS.get(r.get("task_type", ""))
-                or (_gt_agentic_default if (r.get("task_family") == "agentic") else _gt_default)
+            task_type = r.get("task_type", "")
+            task_family = r.get("task_family", "")
+            gt_extractor = (
+                TEST_GT_EXTRACTORS.get(task_type)
+                or (_gt_agentic_default if task_family == "agentic" else _gt_default)
             )
+            q_extractor = TEST_QUERY_EXTRACTORS.get(task_type, _q_default)
             try:
-                gt = extractor(inst)
+                gt = gt_extractor(inst)
+            except Exception as exc:
+                gt = {"ground_truth": f"(extractor crashed: {type(exc).__name__})", "rubric_tags": []}
+            try:
+                q_text = q_extractor(inst) or ""
             except Exception:
-                gt = _gt_default(inst)
-            info = {
-                "task_type": r.get("task_type", ""),
-                "task_family": r.get("task_family", ""),
-                "ts": r.get("ts", ""),
+                q_text = ""
+            try:
+                ts_int = int(r.get("ts") or 0)
+            except Exception:
+                ts_int = 0
+            sample = {
+                "ts": ts_int,
                 "ts_iso": r.get("ts_iso", ""),
+                "task_type": task_type,
+                "task_family": task_family,
                 "query_id": r.get("query_id", ""),
+                "query_text": q_text,
                 "ground_truth": gt.get("ground_truth", ""),
                 "rubric_tags": gt.get("rubric_tags") or (r.get("rubric_tags", "").split(";") if r.get("rubric_tags") else []),
             }
-            anchor = (
-                inst.get("source_object_id")
-                or inst.get("test_id")
-                or inst.get("event_id")
-                or inst.get("source_post_id")
-            )
-            if anchor:
-                event_map.setdefault(str(anchor), []).append(info)
-            else:
-                synthetic.append(info)
-    return event_map, synthetic
+            # Pass through optional rich fields when present — JS template
+            # renders each one as its own labeled section on the test card.
+            for k in ("candidates", "held_out_pref", "target_prefs", "privacy_flagged",
+                     "top_k_relevant", "tool_call_rules", "final_state_expected",
+                     "warn_frame", "signal_evidence", "irrelevant_persona_items",
+                     "carve_out", "forbidden_items", "extra_meta"):
+                if k in gt:
+                    sample[k] = gt[k]
+            out.append(sample)
+    return out
 
 
 def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
@@ -257,12 +611,11 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     profile_json = json.dumps(profile) if profile else "null"
     calendar_json = json.dumps(calendar_mods)
 
-    # Test-sample annotation: load benchmark/{uid}/queries.csv (when present)
-    # so each event card knows whether it's a test anchor + which task type
-    # uses it. Synthetic moments (E6) are surfaced in a separate section.
-    test_sample_map, synthetic_tests = _load_test_samples(user_id)
-    test_sample_map_json = json.dumps(test_sample_map)
-    synthetic_tests_json = json.dumps(synthetic_tests)
+    # Test-sample annotation: load benchmark/{uid}/queries.csv (when present).
+    # Each test sample becomes a standalone timeline card at its own ts +
+    # nearest preceding event's geo location, with a distinct background color.
+    test_samples = _load_test_samples(user_id)
+    test_samples_json = json.dumps(test_samples)
 
     # Counts
     n_events = len(events)
@@ -444,19 +797,53 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.none {{ display: none; }}
   .badge.stereotypical {{ background: #FFF8E1; color: #8B6914; }}
   .badge.anti-stereotypical {{ background: #EEF2FF; color: #4A5DA8; }}
-  .badge.test {{ background: #FDF2F8; color: #9B3068; border: 1px solid #d4af37; font-weight: 600; }}
   .badge.train {{ background: #F2F2F7; color: var(--text-secondary); }}
   .badge.distractor {{ background: #FEF2F2; color: #9B2C2C; }}
-  /* Test-anchor card: gold left border so test events stand out in the timeline */
-  .event-card.is-test {{ border-left: 3px solid #d4af37 !important; box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.15); }}
-  .test-info {{ font-size: 10px; color: var(--text-secondary); margin-top: 4px; padding: 4px 8px; background: #FFFBEB; border-radius: 4px; border-left: 2px solid #d4af37; }}
-  .test-info code {{ background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 2px; font-size: 9px; }}
-  /* Synthetic-test summary panel above the timeline */
-  details.synthetic-tests {{ background: #FFFBEB; border: 1px solid #d4af37; border-radius: 6px; padding: 10px 14px; margin: 10px 0 18px 0; }}
-  details.synthetic-tests > summary {{ font-weight: 600; cursor: pointer; color: #7B5C00; }}
-  details.synthetic-tests ul {{ margin: 8px 0 0 0; padding-left: 20px; }}
-  details.synthetic-tests li {{ margin: 6px 0; font-size: 12px; }}
-  details.synthetic-tests li code {{ font-size: 11px; }}
+  /* Standalone test-sample card — distinct gold-amber background so it stands
+     out from regular events without needing inline annotations. */
+  .event-card.test-sample-card {{
+    background: #FFFBEB !important;
+    border-left: 3px solid #d4af37 !important;
+  }}
+  .event-card.test-sample-card .event-header .event-meta code {{
+    background: #FFF; padding: 1px 6px; border-radius: 3px; font-size: 11px;
+    color: #7B5C00;
+  }}
+  .test-sample-query {{
+    font-size: 14px; line-height: 1.45; color: var(--text);
+    padding: 12px 14px; background: #fff; border-radius: 5px; margin: 8px 0;
+    border: 1px solid #FBE9A1;
+  }}
+  .test-sample-meta {{
+    font-size: 11px; color: var(--text-secondary); padding: 4px 6px;
+  }}
+  .test-sample-footer {{
+    margin-top: 8px; padding-top: 6px; border-top: 1px dashed rgba(212,175,55,0.4);
+  }}
+  /* Rich-info sections inside a test card */
+  .ts-section {{
+    margin: 8px 0 4px 0; padding: 6px 10px; background: rgba(255,255,255,0.7);
+    border-radius: 4px; border: 1px solid rgba(212,175,55,0.25);
+  }}
+  .ts-section-warn {{ background: #FEF2F2; border-color: #FCA5A5; }}
+  .ts-section.ts-rubric-bar {{ background: #FFF8E1; }}
+  .ts-label {{ font-weight: 600; font-size: 11px; color: #7B5C00; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }}
+  .ts-section-warn .ts-label {{ color: #B91C1C; }}
+  .ts-sublabel {{ font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.3px; }}
+  .ts-body {{ font-size: 12px; color: var(--text); line-height: 1.45; }}
+  .ts-body.ts-mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; white-space: pre-wrap; }}
+  .ts-list {{ margin: 4px 0 0 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }}
+  .ts-list.ts-mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }}
+  .ts-list li {{ margin: 3px 0; }}
+  .ts-origin {{ display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; background: #E5E7EB; color: #374151; margin: 0 2px; text-transform: uppercase; letter-spacing: 0.3px; }}
+  .ts-origin-held_out {{ background: #D4AF37; color: #fff; }}
+  .ts-origin-future_positive {{ background: #BFDBFE; color: #1E40AF; }}
+  .ts-origin-past_positive {{ background: #BBF7D0; color: #166534; }}
+  .ts-origin-negative {{ background: #FECACA; color: #7F1D1D; }}
+  .ts-origin-irrelevant, .ts-origin-random, .ts-origin-filler, .ts-origin-filler_lowsim {{ background: #F3F4F6; color: #6B7280; }}
+  .ts-origin-match {{ background: #D4AF37; color: #fff; }}
+  .ts-origin-carve_out {{ background: #FECACA; color: #7F1D1D; }}
+  .ts-target {{ font-size: 10px; color: #B45309; font-weight: 700; }}
   .badge.platform {{ font-weight: 600; font-size: 11px; padding: 2px 10px; }}
   .badge.platform.p-Instagram {{ background: #C13584; color: #fff; }}
   .badge.platform.p-Facebook {{ background: #4A6FA5; color: #fff; }}
@@ -589,10 +976,10 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 const eventsData = {events_json};
 const profileData = {profile_json};
 const calendarMods = {calendar_json};
-// Test-sample annotation (Phase A4): event_id -> [test_info...]; plus
-// synthetic moments (no anchoring backend event — e.g., active_mistake_prevention).
-const testSampleMap = {test_sample_map_json};
-const syntheticTests = {synthetic_tests_json};
+// Test-sample annotation (Phase A4 v2): each test sample becomes a standalone
+// timeline card at its own ts + nearest-preceding event's location, with a
+// distinct background color. No annotations are merged into regular event cards.
+const testSamples = {test_samples_json};
 
 // Label -> motivation lookup for hidden persona badge tooltips.
 const hpMotivation = {{}};
@@ -842,25 +1229,11 @@ function renderCalendarMod(mod) {{
   `;
 }}
 
-// -- Chronological timeline of interaction events + calendar modifications --
+// -- Chronological timeline of interaction events + calendar modifications +
+//    test-sample cards (Phase A4 v2). Test samples sit at their own ts in
+//    the same timeline, with a distinct background color, no annotations on
+//    regular event cards. --
 const timeline = document.getElementById('timeline-section');
-
-// Synthetic-test summary panel (Phase A4): tests with no anchoring backend
-// event (active_mistake_prevention paired warn/foil instances, etc.).
-if (Array.isArray(syntheticTests) && syntheticTests.length > 0) {{
-  const det = document.createElement('details');
-  det.className = 'synthetic-tests';
-  det.open = false;
-  let html = `<summary>Test samples without an anchoring event (${{syntheticTests.length}})</summary><ul>`;
-  syntheticTests.forEach(t => {{
-    const ts = t.ts_iso || t.ts || '';
-    const tags = (t.rubric_tags || []).join(', ');
-    html += `<li><code>${{escapeHtml(t.task_type || '')}}</code> at <code>${{escapeHtml(String(ts))}}</code> — ${{escapeHtml(t.ground_truth || '')}}<br><small>rubric: ${{escapeHtml(tags)}}</small></li>`;
-  }});
-  html += '</ul>';
-  det.innerHTML = html;
-  timeline.appendChild(det);
-}}
 
 if (eventsData.length === 0) {{
   timeline.innerHTML = '<div class="empty">No interaction events available.</div>';
@@ -868,10 +1241,25 @@ if (eventsData.length === 0) {{
   const grid = document.createElement('div');
   grid.className = 'event-grid';
 
-  // Build a merged timeline: events + calendar mods, sorted by timestamp.
+  // Pre-sort regular events by ts so test-sample location-lookup is O(log n).
+  const sortedEvents = eventsData.slice().sort((a, b) => (a.source_timestamp || 0) - (b.source_timestamp || 0));
+  // Find nearest preceding event's location for a given ts.
+  function _locationAtTs(ts) {{
+    let lo = 0, hi = sortedEvents.length - 1, best = null;
+    while (lo <= hi) {{
+      const mid = (lo + hi) >> 1;
+      const evTs = sortedEvents[mid].source_timestamp || 0;
+      if (evTs <= ts) {{ best = sortedEvents[mid]; lo = mid + 1; }}
+      else hi = mid - 1;
+    }}
+    return (best && best.event_location) ? best.event_location : null;
+  }}
+
+  // Build merged timeline: events + calendar mods + test samples, sorted by ts.
   const timelineItems = [];
   eventsData.forEach((ev, i) => timelineItems.push({{ kind: 'event', ts: ev.source_timestamp || 0, data: ev, eventIdx: i }}));
   (calendarMods || []).forEach(mod => timelineItems.push({{ kind: 'cal', ts: mod.ts || 0, data: mod }}));
+  (testSamples || []).forEach(t => timelineItems.push({{ kind: 'test', ts: t.ts || 0, data: t, location: _locationAtTs(t.ts || 0) }}));
   timelineItems.sort((a, b) => (a.ts || 0) - (b.ts || 0));
 
   timelineItems.forEach(item => {{
@@ -879,6 +1267,101 @@ if (eventsData.length === 0) {{
       const div = document.createElement('div');
       div.innerHTML = renderCalendarMod(item.data);
       grid.appendChild(div.firstElementChild);
+      return;
+    }}
+    if (item.kind === 'test') {{
+      // Standalone test-sample card — distinct background, same shape as
+      // a regular event so the timeline reads naturally. Renders every
+      // ground-truth field the extractor populated.
+      const t = item.data;
+      const loc = item.location;
+      let locText = '';
+      if (loc && typeof loc === 'object') {{
+        const parts = [loc.city, loc.region].filter(x => x).map(escapeHtml);
+        if (parts.length > 0) locText = `<span class="event-location">📍 ${{parts.join(', ')}}</span>`;
+      }}
+      const tsIso = t.ts_iso || (t.ts ? new Date(t.ts * 1000).toISOString().slice(0, 19).replace('T', ' ') + ' UTC' : '');
+
+      // Build rich-info sections — only render keys the extractor populated.
+      let sections = '';
+      if (t.ground_truth) {{
+        sections += `<div class="ts-section"><div class="ts-label">Expected (ground truth)</div><div class="ts-body">${{escapeHtml(t.ground_truth)}}</div></div>`;
+      }}
+      if (Array.isArray(t.candidates) && t.candidates.length > 0) {{
+        const items = t.candidates.map(c => {{
+          const tag = `<span class="ts-origin ts-origin-${{escapeHtml(c.origin || '')}}">${{escapeHtml(c.origin || '')}}</span>`;
+          const star = c.is_held_out ? ' <span class="ts-target">★ target</span>' : '';
+          const tags = (c.hashtags || []).slice(0, 4).map(escapeHtml).join(' ');
+          return `<li><code>idx=${{c.idx}}</code> ${{tag}}${{star}} ${{escapeHtml(c.title || '')}}${{tags ? ` <small>${{tags}}</small>` : ''}}</li>`;
+        }}).join('');
+        sections += `<div class="ts-section"><div class="ts-label">Candidate pool (${{t.candidates.length}} items)</div><ul class="ts-list">${{items}}</ul></div>`;
+      }}
+      if (t.held_out_pref) {{
+        sections += `<div class="ts-section"><div class="ts-label">Held-out preference</div><div class="ts-body">${{escapeHtml(t.held_out_pref)}}</div></div>`;
+      }}
+      if (Array.isArray(t.target_prefs) && t.target_prefs.length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Target preferences agent SHOULD surface</div><ul class="ts-list">${{t.target_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+      }}
+      if (Array.isArray(t.privacy_flagged) && t.privacy_flagged.length > 0) {{
+        sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Privacy-flagged (must NOT surface)</div><ul class="ts-list">${{t.privacy_flagged.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+      }}
+      if (Array.isArray(t.top_k_relevant) && t.top_k_relevant.length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Top-k relevant prefs (context)</div><ul class="ts-list">${{t.top_k_relevant.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+      }}
+      if (Array.isArray(t.tool_call_rules) && t.tool_call_rules.length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Tool-call rules</div><ul class="ts-list ts-mono">${{t.tool_call_rules.map(r => `<li><code>${{escapeHtml(r)}}</code></li>`).join('')}}</ul></div>`;
+      }}
+      if (t.final_state_expected && Object.keys(t.final_state_expected).length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Final-state expected (writes.jsonl diff)</div><div class="ts-body ts-mono">${{escapeHtml(JSON.stringify(t.final_state_expected, null, 2))}}</div></div>`;
+      }}
+      if (t.warn_frame) {{
+        const wf = t.warn_frame;
+        const mm = (wf.must_mention || []).map(escapeHtml).map(s => `<li>${{s}}</li>`).join('');
+        const mn = (wf.must_not_mention || []).map(escapeHtml).map(s => `<li>${{s}}</li>`).join('');
+        sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Expected warning frame [polarity=${{escapeHtml(wf.polarity || '')}}]</div>` +
+                    (mm ? `<div class="ts-sublabel">must_mention</div><ul class="ts-list">${{mm}}</ul>` : '') +
+                    (mn ? `<div class="ts-sublabel">must_not_mention</div><ul class="ts-list">${{mn}}</ul>` : '') +
+                    `</div>`;
+      }}
+      if (Array.isArray(t.signal_evidence) && t.signal_evidence.length > 0) {{
+        const items = t.signal_evidence.map(s => `<li><code>${{escapeHtml(s.source || '')}}</code> @${{escapeHtml(String(s.ts || ''))}} <small>${{escapeHtml(s.ref || '')}}</small><br>${{escapeHtml(s.quote || '')}}</li>`).join('');
+        sections += `<div class="ts-section"><div class="ts-label">Cross-signal evidence (mistake reasoning)</div><ul class="ts-list">${{items}}</ul></div>`;
+      }}
+      if (Array.isArray(t.irrelevant_persona_items) && t.irrelevant_persona_items.length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Irrelevant prefs (distractors agent must reject)</div><ul class="ts-list">${{t.irrelevant_persona_items.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+      }}
+      if (t.carve_out) {{
+        sections += `<div class="ts-section"><div class="ts-label">Carve-out (context shift)</div><div class="ts-body">${{escapeHtml(t.carve_out)}}</div></div>`;
+      }}
+      if (Array.isArray(t.forbidden_items) && t.forbidden_items.length > 0) {{
+        sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Forbidden items</div><ul class="ts-list">${{t.forbidden_items.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+      }}
+      if (t.extra_meta && Object.keys(t.extra_meta).length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Meta</div><div class="ts-body ts-mono">${{escapeHtml(JSON.stringify(t.extra_meta, null, 2))}}</div></div>`;
+      }}
+      const tags = (t.rubric_tags || []).filter(Boolean).join(', ');
+      if (tags) {{
+        sections += `<div class="ts-section ts-rubric-bar"><div class="ts-label">Rubric dimensions</div><div class="ts-body">${{escapeHtml(tags)}}</div></div>`;
+      }}
+
+      const card = document.createElement('div');
+      card.className = 'event-card test-sample-card';
+      card.innerHTML = `
+        <div class="event-header">
+          <div class="event-meta">
+            <span style="font-weight:600;color:#7B5C00;">Test sample</span> &middot;
+            ${{escapeHtml(tsIso)}} &middot;
+            ${{locText}}${{locText ? ' &middot; ' : ''}}
+            <code>${{escapeHtml(t.task_type || '')}}</code>
+          </div>
+        </div>
+        <div class="test-sample-query">${{escapeHtml(t.query_text || '')}}</div>
+        ${{sections}}
+        <div class="test-sample-footer">
+          <small style="opacity:0.55">${{escapeHtml(t.query_id || '')}}</small>
+        </div>
+      `;
+      grid.appendChild(card);
       return;
     }}
     const ev = item.data;
@@ -891,11 +1374,8 @@ if (eventsData.length === 0) {{
     const isImplicitNeg = itype === 'implicit_negative';
 
     const isAd = !!ev.is_ad;
-    // Test-anchor lookup: does benchmark/{{uid}}/queries.csv reference this event?
-    const testInfos = (testSampleMap[ev.source_object_id] || []);
-    const isTest = testInfos.length > 0;
     const card = document.createElement('div');
-    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}${{isTest ? ' is-test' : ''}}`;
+    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}`;
 
     // Location string
     let locText = '';
@@ -907,27 +1387,8 @@ if (eventsData.length === 0) {{
       }}
     }}
 
-    // Test-sample badges + tooltip — appears in the header bar so it's
-    // immediately visible when scanning the timeline.
-    let testBadgesHtml = '';
-    let testInfoHtml = '';
-    if (isTest) {{
-      testBadgesHtml = testInfos.map(t => {{
-        const tt = escapeHtml(t.task_type || '');
-        const gt = escapeHtml(t.ground_truth || '');
-        return `<span class="badge test" title="${{gt}}">test: ${{tt}}</span>`;
-      }}).join(' ');
-      testInfoHtml = '<div class="test-info"><strong>Test anchor</strong>'
-        + testInfos.map(t => {{
-            const tt = escapeHtml(t.task_type || '');
-            const gt = escapeHtml(t.ground_truth || '');
-            const tags = escapeHtml((t.rubric_tags || []).join(', '));
-            return ` &middot; <code>${{tt}}</code> &mdash; ${{gt}}<br><small>rubric: ${{tags}}</small>`;
-          }}).join('')
-        + '</div>';
-    }}
-
-    // Event header
+    // Event header (test annotations now live on standalone test cards,
+    // not on regular event cards — keeps regular events uncluttered.)
     let headerHtml = `
       <div class="event-header">
         <div class="event-meta">
@@ -941,10 +1402,8 @@ if (eventsData.length === 0) {{
           <span class="badge interaction-type ${{itype}}">${{itype.replace(/_/g, ' ')}}</span>
           ${{fmt.action_label ? `<span class="badge action">${{fmt.action_label}}</span>` : ''}}
           ${{isAd ? `<span class="badge sponsored">Ads</span>` : ''}}
-          ${{testBadgesHtml}}
         </div>
         ${{hashtags.length ? `<div class="hashtags">${{hashtags.join('  ')}}</div>` : ''}}
-        ${{testInfoHtml}}
       </div>
     `;
 
