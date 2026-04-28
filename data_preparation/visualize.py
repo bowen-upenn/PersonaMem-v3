@@ -13,6 +13,7 @@ No external dependencies — pure HTML/CSS/JS.
 
 from __future__ import annotations
 
+import csv
 import os
 import json
 from datetime import datetime, timezone
@@ -21,6 +22,127 @@ from data_preparation import utils
 
 
 APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
+
+
+# ---------------------------------------------------------------------------
+# Test-sample annotation (Phase A4)
+# ---------------------------------------------------------------------------
+
+# Per-task ground-truth extractor — given the parsed instance_json from
+# benchmark/{uid}/queries.csv, return a {ground_truth, rubric_tags} dict.
+# Default extractor returns the task_id only with empty GT.
+def _gt_default(inst: dict) -> dict:
+    return {"ground_truth": "", "rubric_tags": []}
+
+
+def _gt_personalized_feed_ranking(inst: dict) -> dict:
+    held = inst.get("held_out_idx")
+    slate = inst.get("slate") or []
+    title = ""
+    if isinstance(held, int) and 0 <= held < len(slate):
+        title = (slate[held].get("title") or slate[held].get("caption") or "")[:80]
+    return {"ground_truth": f"held_out: {title}", "rubric_tags": ["preference_alignment", "behavioral_hit"]}
+
+
+def _gt_chatbot_proactive(inst: dict) -> dict:
+    held = inst.get("held_out_preference") or {}
+    return {
+        "ground_truth": (held.get("persona_item") or "")[:120],
+        "rubric_tags": ["preference_alignment", "over_personalization"],
+    }
+
+
+def _gt_at_ai_directive(inst: dict) -> dict:
+    return {
+        "ground_truth": f"directive_action={inst.get('directive_action', '')}, hashtags={inst.get('directive_hashtags', [])}",
+        "rubric_tags": ["preference_alignment", "stale_preference_use"],
+    }
+
+
+def _gt_active_mistake_prevention(inst: dict) -> dict:
+    polarity = inst.get("polarity", "")
+    summary = inst.get("mistake_summary", "")
+    ef = inst.get("expected_warning_frame") or {}
+    must = ef.get("must_mention") or []
+    return {
+        "ground_truth": f"[{polarity}] {summary} | must_mention={must}",
+        "rubric_tags": ["mistake_prevention_recall", "false_alarm_emission"],
+    }
+
+
+def _gt_agentic_default(inst: dict) -> dict:
+    target = inst.get("target_app") or ""
+    return {
+        "ground_truth": f"target_app={target}",
+        "rubric_tags": ["tool_call_rules", "final_state_diff", "voice_match"],
+    }
+
+
+TEST_GT_EXTRACTORS = {
+    "personalized_feed_ranking":         _gt_personalized_feed_ranking,
+    "slate_ranking":                     _gt_personalized_feed_ranking,  # v1 alias
+    "chatbot_proactive_personalization": _gt_chatbot_proactive,
+    "chatbot_response_proactive":        _gt_chatbot_proactive,           # v1 alias
+    "at_ai_directive_followup":          _gt_at_ai_directive,
+    "e2_at_ai_followup":                 _gt_at_ai_directive,             # v1 alias
+    "active_mistake_prevention":         _gt_active_mistake_prevention,
+    "e6_active_mistake_prevention":      _gt_active_mistake_prevention,   # v1 alias
+}
+
+
+def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> tuple[dict, list]:
+    """Walk benchmark/{uid}/queries.csv, build (event_id_map, synthetic_list).
+
+    `event_id_map` maps `source_object_id` → list of test-info dicts
+    `{task_type, task_family, ts, ts_iso, query_id, ground_truth, rubric_tags}`.
+    Multiple tests can anchor on the same event; we keep them all.
+
+    `synthetic_list` is the same shape but for tests with no anchoring
+    backend event (E6 t_test = obs_end_ts, etc.) — rendered separately.
+    """
+    qcsv = os.path.join(benchmark_dir, str(uid), "queries.csv")
+    event_map: dict[str, list[dict]] = {}
+    synthetic: list[dict] = []
+    if not os.path.exists(qcsv):
+        return event_map, synthetic
+    csv.field_size_limit(10_000_000)
+    with open(qcsv, "r", encoding="utf-8") as f:
+        first = f.readline()
+        if not first.startswith("#"):
+            f.seek(0)
+        for r in csv.DictReader(f):
+            try:
+                inst = json.loads(r.get("instance_json") or "{}")
+            except Exception:
+                inst = {}
+            extractor = (
+                TEST_GT_EXTRACTORS.get(r.get("task_type", ""))
+                or (_gt_agentic_default if (r.get("task_family") == "agentic") else _gt_default)
+            )
+            try:
+                gt = extractor(inst)
+            except Exception:
+                gt = _gt_default(inst)
+            info = {
+                "task_type": r.get("task_type", ""),
+                "task_family": r.get("task_family", ""),
+                "ts": r.get("ts", ""),
+                "ts_iso": r.get("ts_iso", ""),
+                "query_id": r.get("query_id", ""),
+                "ground_truth": gt.get("ground_truth", ""),
+                "rubric_tags": gt.get("rubric_tags") or (r.get("rubric_tags", "").split(";") if r.get("rubric_tags") else []),
+            }
+            anchor = (
+                inst.get("source_object_id")
+                or inst.get("test_id")
+                or inst.get("event_id")
+                or inst.get("source_post_id")
+            )
+            if anchor:
+                event_map.setdefault(str(anchor), []).append(info)
+            else:
+                synthetic.append(info)
+    return event_map, synthetic
 
 
 def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
@@ -135,6 +257,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     profile_json = json.dumps(profile) if profile else "null"
     calendar_json = json.dumps(calendar_mods)
 
+    # Test-sample annotation: load benchmark/{uid}/queries.csv (when present)
+    # so each event card knows whether it's a test anchor + which task type
+    # uses it. Synthetic moments (E6) are surfaced in a separate section.
+    test_sample_map, synthetic_tests = _load_test_samples(user_id)
+    test_sample_map_json = json.dumps(test_sample_map)
+    synthetic_tests_json = json.dumps(synthetic_tests)
+
     # Counts
     n_events = len(events)
     n_prefs = len(flat_prefs)
@@ -196,6 +325,30 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
     # Number of distinct preference categories
     n_categories = len({r.get("category", "") for r in flat_prefs if r.get("category")})
+
+    # Unique geo locations across all events (ordered by frequency desc).
+    location_counts: dict[tuple[str, str, str], int] = {}
+    for e in events:
+        loc = e.get("event_location") or {}
+        city = (loc.get("city") or "").strip()
+        if not city:
+            continue
+        key = (city, (loc.get("region") or "").strip(), (loc.get("country") or "").strip())
+        location_counts[key] = location_counts.get(key, 0) + 1
+    if location_counts:
+        location_parts = []
+        for (city, region, country), cnt in sorted(
+            location_counts.items(), key=lambda kv: (-kv[1], kv[0])
+        ):
+            label = city
+            if region:
+                label += f", {region}"
+            if country and country not in ("USA", "US"):
+                label += f", {country}"
+            location_parts.append(f"<span>{label} ({cnt})</span>")
+        locations_html = "".join(location_parts)
+    else:
+        locations_html = '<span>—</span>'
 
     html = f"""\
 <!DOCTYPE html>
@@ -291,9 +444,19 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.none {{ display: none; }}
   .badge.stereotypical {{ background: #FFF8E1; color: #8B6914; }}
   .badge.anti-stereotypical {{ background: #EEF2FF; color: #4A5DA8; }}
-  .badge.test {{ background: #FDF2F8; color: #9B3068; }}
+  .badge.test {{ background: #FDF2F8; color: #9B3068; border: 1px solid #d4af37; font-weight: 600; }}
   .badge.train {{ background: #F2F2F7; color: var(--text-secondary); }}
   .badge.distractor {{ background: #FEF2F2; color: #9B2C2C; }}
+  /* Test-anchor card: gold left border so test events stand out in the timeline */
+  .event-card.is-test {{ border-left: 3px solid #d4af37 !important; box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.15); }}
+  .test-info {{ font-size: 10px; color: var(--text-secondary); margin-top: 4px; padding: 4px 8px; background: #FFFBEB; border-radius: 4px; border-left: 2px solid #d4af37; }}
+  .test-info code {{ background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 2px; font-size: 9px; }}
+  /* Synthetic-test summary panel above the timeline */
+  details.synthetic-tests {{ background: #FFFBEB; border: 1px solid #d4af37; border-radius: 6px; padding: 10px 14px; margin: 10px 0 18px 0; }}
+  details.synthetic-tests > summary {{ font-weight: 600; cursor: pointer; color: #7B5C00; }}
+  details.synthetic-tests ul {{ margin: 8px 0 0 0; padding-left: 20px; }}
+  details.synthetic-tests li {{ margin: 6px 0; font-size: 12px; }}
+  details.synthetic-tests li code {{ font-size: 11px; }}
   .badge.platform {{ font-weight: 600; font-size: 11px; padding: 2px 10px; }}
   .badge.platform.p-Instagram {{ background: #C13584; color: #fff; }}
   .badge.platform.p-Facebook {{ background: #4A6FA5; color: #fff; }}
@@ -406,6 +569,10 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
       <span>AI: {per_app_counts.get("Chatbot", 0)}</span>
       <span>Generated {now_str}</span>
     </div>
+    <div class="meta" style="margin-top: 4px;">
+      <span title="Geo locations across all events">Locations:</span>
+      {locations_html}
+    </div>
   </div>
 
   <div id="profile-section"></div>
@@ -422,6 +589,10 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 const eventsData = {events_json};
 const profileData = {profile_json};
 const calendarMods = {calendar_json};
+// Test-sample annotation (Phase A4): event_id -> [test_info...]; plus
+// synthetic moments (no anchoring backend event — e.g., active_mistake_prevention).
+const testSampleMap = {test_sample_map_json};
+const syntheticTests = {synthetic_tests_json};
 
 // Label -> motivation lookup for hidden persona badge tooltips.
 const hpMotivation = {{}};
@@ -673,6 +844,24 @@ function renderCalendarMod(mod) {{
 
 // -- Chronological timeline of interaction events + calendar modifications --
 const timeline = document.getElementById('timeline-section');
+
+// Synthetic-test summary panel (Phase A4): tests with no anchoring backend
+// event (active_mistake_prevention paired warn/foil instances, etc.).
+if (Array.isArray(syntheticTests) && syntheticTests.length > 0) {{
+  const det = document.createElement('details');
+  det.className = 'synthetic-tests';
+  det.open = false;
+  let html = `<summary>Test samples without an anchoring event (${{syntheticTests.length}})</summary><ul>`;
+  syntheticTests.forEach(t => {{
+    const ts = t.ts_iso || t.ts || '';
+    const tags = (t.rubric_tags || []).join(', ');
+    html += `<li><code>${{escapeHtml(t.task_type || '')}}</code> at <code>${{escapeHtml(String(ts))}}</code> — ${{escapeHtml(t.ground_truth || '')}}<br><small>rubric: ${{escapeHtml(tags)}}</small></li>`;
+  }});
+  html += '</ul>';
+  det.innerHTML = html;
+  timeline.appendChild(det);
+}}
+
 if (eventsData.length === 0) {{
   timeline.innerHTML = '<div class="empty">No interaction events available.</div>';
 }} else {{
@@ -702,8 +891,11 @@ if (eventsData.length === 0) {{
     const isImplicitNeg = itype === 'implicit_negative';
 
     const isAd = !!ev.is_ad;
+    // Test-anchor lookup: does benchmark/{{uid}}/queries.csv reference this event?
+    const testInfos = (testSampleMap[ev.source_object_id] || []);
+    const isTest = testInfos.length > 0;
     const card = document.createElement('div');
-    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}`;
+    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}${{isTest ? ' is-test' : ''}}`;
 
     // Location string
     let locText = '';
@@ -713,6 +905,26 @@ if (eventsData.length === 0) {{
       if (parts.length > 0) {{
         locText = `<span class="event-location">📍 ${{parts.join(', ')}}</span>`;
       }}
+    }}
+
+    // Test-sample badges + tooltip — appears in the header bar so it's
+    // immediately visible when scanning the timeline.
+    let testBadgesHtml = '';
+    let testInfoHtml = '';
+    if (isTest) {{
+      testBadgesHtml = testInfos.map(t => {{
+        const tt = escapeHtml(t.task_type || '');
+        const gt = escapeHtml(t.ground_truth || '');
+        return `<span class="badge test" title="${{gt}}">test: ${{tt}}</span>`;
+      }}).join(' ');
+      testInfoHtml = '<div class="test-info"><strong>Test anchor</strong>'
+        + testInfos.map(t => {{
+            const tt = escapeHtml(t.task_type || '');
+            const gt = escapeHtml(t.ground_truth || '');
+            const tags = escapeHtml((t.rubric_tags || []).join(', '));
+            return ` &middot; <code>${{tt}}</code> &mdash; ${{gt}}<br><small>rubric: ${{tags}}</small>`;
+          }}).join('')
+        + '</div>';
     }}
 
     // Event header
@@ -728,9 +940,11 @@ if (eventsData.length === 0) {{
           <span class="badge platform p-${{app}}">${{app}}</span>
           <span class="badge interaction-type ${{itype}}">${{itype.replace(/_/g, ' ')}}</span>
           ${{fmt.action_label ? `<span class="badge action">${{fmt.action_label}}</span>` : ''}}
-          ${{isAd ? `<span class="badge sponsored">Sponsored</span>` : ''}}
+          ${{isAd ? `<span class="badge sponsored">Ads</span>` : ''}}
+          ${{testBadgesHtml}}
         </div>
         ${{hashtags.length ? `<div class="hashtags">${{hashtags.join('  ')}}</div>` : ''}}
+        ${{testInfoHtml}}
       </div>
     `;
 
