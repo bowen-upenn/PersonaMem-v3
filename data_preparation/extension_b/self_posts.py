@@ -134,17 +134,62 @@ def generate_self_posts(
     event_ts = [int(e.get("source_timestamp", 0)) for e in existing_events if e.get("source_timestamp")]
     timestamps = _sample_timestamps(event_ts, len(posts), rng_seed)
 
+    # Build a hashtag → canonical-preference index from the existing events
+    # so self-posts can carry the same `preferences` list shape that regular
+    # explicit_positive events do. Dedupe by persona_item + remember the
+    # earliest occurrence of each pref so update_history reflects "this is a
+    # post that REINFORCES an existing canonical preference".
+    pref_index: dict[str, list[dict]] = {}
+    for e in existing_events:
+        for pref in (e.get("preferences") or []):
+            if not isinstance(pref, dict):
+                continue
+            for h in (pref.get("source_hashtags") or e.get("source_hashtags") or []):
+                pref_index.setdefault(_norm_tag(h), []).append(pref)
+
+    # Sort existing events by ts once for the location-lookup binary search.
+    sorted_evs = sorted(
+        (e for e in existing_events if e.get("event_location")),
+        key=lambda e: int(e.get("source_timestamp", 0)),
+    )
+
     out: list[dict] = []
     for i, p in enumerate(posts):
         if not p.get("caption"):
             continue
         ts = timestamps[i] if i < len(timestamps) else (timestamps[-1] + 60 if timestamps else 0)
         formatted_ts = _format_ts(ts)
+        post_hashtags = p.get("hashtags", []) or []
+        # Match this post's hashtags against the canonical pref index.
+        # A self-post with #LegDay #StrengthTraining picks up "Loves working
+        # out" / "Strength training enthusiast" canonical prefs the same way
+        # a non-self explicit_positive on those tags would.
+        seen_pi: set[str] = set()
+        post_prefs: list[dict] = []
+        for h in post_hashtags:
+            for cand in pref_index.get(_norm_tag(h), []):
+                pi = cand.get("persona_item") or ""
+                if not pi or pi in seen_pi:
+                    continue
+                seen_pi.add(pi)
+                # Shallow-copy + add a "reinforced via self-post" update entry
+                # so the timeline shows this self-post strengthens the pref.
+                copy = {k: v for k, v in cand.items() if k != "update_history"}
+                hist = list(cand.get("update_history") or [])
+                hist.append({
+                    "update_type": "reinforced",
+                    "formatted_timestamp": formatted_ts,
+                    "source_app": app_pretty,
+                    "occurrence": "self_post",
+                })
+                copy["update_history"] = hist
+                post_prefs.append(copy)
+        event_location = _location_at(ts, sorted_evs)
         event = {
             "source_object_id": f"self_{app}_{user_id}_{i:03d}",
             "source_timestamp": ts,
             "formatted_timestamp": formatted_ts,
-            "source_hashtags": p.get("hashtags", []) or [],
+            "source_hashtags": post_hashtags,
             "source_interaction_type": "explicit_positive",
             "author_id": "self",
             "recipient_id": "",
@@ -163,10 +208,32 @@ def generate_self_posts(
                 "caption": p.get("caption", ""),
                 "overall_description": p.get("overall_description", "") or "",
             },
-            "preferences": [],  # inference of personas from self-posts is a future enhancement; leave empty for v2
+            "preferences": post_prefs,
         }
+        if event_location:
+            event["event_location"] = event_location
         out.append(event)
     return out
+
+
+def _norm_tag(h: str) -> str:
+    return (h or "").lower().lstrip("#").strip()
+
+
+def _location_at(ts: int, sorted_events_with_loc: list[dict]) -> dict | None:
+    """Binary-search the nearest preceding event with event_location set."""
+    if not sorted_events_with_loc:
+        return None
+    lo, hi, best = 0, len(sorted_events_with_loc) - 1, None
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        ev_ts = int(sorted_events_with_loc[mid].get("source_timestamp", 0))
+        if ev_ts <= ts:
+            best = sorted_events_with_loc[mid]
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best.get("event_location") if best else sorted_events_with_loc[0].get("event_location")
 
 
 def _format_ts(ts: int) -> str:
