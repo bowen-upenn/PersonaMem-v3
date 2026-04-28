@@ -13,21 +13,52 @@ from evaluation.claude_subagent import run_subagent
 from evaluation.inference_utils import SnapshotCache, dispatch_agent_run
 
 
+# Graded-relevance gain map. Held-out is the truly soonest-coming engagement
+# (highest gain). Past/future positives are real things the user likes but
+# not the soonest one. Everything else is gain 0.
+ORIGIN_GAIN: dict[str, float] = {
+    "held_out":         3.0,
+    "future_positive":  2.0,
+    "past_positive":    1.0,
+    "filler_lowsim":    0.0,
+    "filler":           0.0,
+    "random":           0.0,
+    "irrelevant":       0.0,
+    "negative":         0.0,  # known dislikes — wrong answers, gain 0
+}
+
+
 def compute_ranking_metrics(ranked: list[int], instance: dict) -> dict:
     held_out_idx = instance["held_out_idx"]
     origins = instance["origin_by_idx"]
     slate = instance["slate"]
     target = {held_out_idx}
     k = len(slate)
+    # Graded gains in the agent's chosen order — used for nDCG.
+    graded_gains = [ORIGIN_GAIN.get(origins[i], 0.0) for i in ranked]
+    # k=5 is the headline cutoff for the token-accuracy table; full-list nDCG
+    # kept as legacy `ndcg@k` for back-compat with prior runs.
+    binary_gains = [1.0 if i == held_out_idx else 0.0 for i in ranked]
+    recall_at_1 = metrics.recall_at_k(ranked, target, 1)
     return {
-        "recall@1": metrics.recall_at_k(ranked, target, 1),
+        # Headline accuracy = simple top-1: did the agent pick the held-out?
+        "accuracy": recall_at_1,
+        "recall@1": recall_at_1,
         "recall@3": metrics.recall_at_k(ranked, target, 3),
         "recall@5": metrics.recall_at_k(ranked, target, 5),
         "hit@1": metrics.hit_at_k(ranked, target, 1),
         "hit@3": metrics.hit_at_k(ranked, target, 3),
         "mrr": metrics.mrr(ranked, target),
-        "ndcg@k": metrics.ndcg_at_k([1.0 if i == held_out_idx else 0.0 for i in ranked], k),
+        # Graded nDCG@5 — credits putting past/future positives high even when
+        # the agent missed the exact held-out target.
+        "ndcg_graded@5": metrics.ndcg_at_k(graded_gains, 5),
+        # Legacy binary nDCG@k for back-compat.
+        "ndcg@k": metrics.ndcg_at_k(binary_gains, k),
         "ild_topk": metrics.intra_list_diversity([slate[i].get("hashtags", []) for i in ranked[:k]]),
+        # Origin-of-top-1 reporting: tells us when the agent picked a "real but
+        # wrong" past/future positive vs. a clearly-bad distractor.
+        "past_positive_in_top1": int(origins[ranked[0]] == "past_positive") if ranked else 0,
+        "future_positive_in_top1": int(origins[ranked[0]] == "future_positive") if ranked else 0,
         "negative_in_top1": int(origins[ranked[0]] == "negative") if ranked else 0,
         "negative_in_top3": int(any(origins[i] == "negative" for i in ranked[:3])),
         "irrelevant_in_top1": int(origins[ranked[0]] == "irrelevant") if ranked else 0,
