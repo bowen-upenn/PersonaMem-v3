@@ -421,6 +421,41 @@ def count_tokens(text: str, model: str | None = None) -> int:
     return len(_TIKTOKEN_ENC.encode(text))
 
 
+# --- Token-cost helpers (Phase B) ------------------------------------------
+
+# Canonical keys every task runner can spread into its `metrics` dict for
+# uniform cost reporting. cache_read_tokens + cost_usd are subagent-specific
+# (Claude Code reports them); for llm_longctx mode they default to 0.
+_TOKEN_KEYS: tuple[str, ...] = ("input_tokens", "output_tokens", "cache_read_tokens", "cost_usd")
+
+
+def token_metrics_from_subagent(stats: dict) -> dict:
+    """Pull canonical token keys from a Claude Code subagent stats dict."""
+    return {k: stats.get(k) or 0 for k in _TOKEN_KEYS}
+
+
+def token_metrics_from_text(prompt: str, response: str, model: str | None = None) -> dict:
+    """Compute prompt + response token counts for non-subagent (e.g., llm_longctx) modes."""
+    return {
+        "input_tokens": count_tokens(prompt, model),
+        "output_tokens": count_tokens(response, model),
+        "cache_read_tokens": 0,
+        "cost_usd": 0.0,
+    }
+
+
+def merge_token_metrics(metrics: dict, *, prompt: str, response: str, stats: dict, model: str | None = None) -> dict:
+    """Spread token cost into `metrics`. Pulls from subagent stats when present
+    (Claude Code mode), else counts locally (llm_longctx). In-place + returns.
+    """
+    if any(stats.get(k) for k in _TOKEN_KEYS):
+        toks = token_metrics_from_subagent(stats)
+    else:
+        toks = token_metrics_from_text(prompt, response, model)
+    metrics.update(toks)
+    return metrics
+
+
 def serialize_history_for_context(
     bq: BackendQuery,
     user_id: str,
@@ -556,7 +591,17 @@ def dispatch_agent_run(
     # llm_longctx — non-Claude baseline via QueryLLM.
     if llm_client is None:
         return "", 0, {"error": "llm_longctx mode requires a QueryLLM client but none was passed"}
-    return (llm_client.query_llm(prompt) or ""), 0, {}
+    response = llm_client.query_llm(prompt) or ""
+    # Phase B: count tokens locally so the per-task metrics_json gets
+    # input/output token counts even in llm_longctx mode (Claude Code modes
+    # already populate these via _pack_stats).
+    stats = {
+        "input_tokens": count_tokens(prompt),
+        "output_tokens": count_tokens(response),
+        "cache_read_tokens": 0,
+        "cost_usd": 0.0,
+    }
+    return response, 0, stats
 
 
 def _pack_stats(sub, include_denials: bool = False) -> dict:

@@ -199,6 +199,18 @@ def run_task_b(
             judge_client=(judge_client if enable_llm_judge else None),
         )
 
+        from evaluation.inference_utils import merge_token_metrics
+        result_metrics = {
+            **slice_metrics,
+            **arm_metrics,
+            **priv_metrics,
+            **behavioral,
+            "carve_out_respect": carve_out_respect,
+            **judge_scores,
+            **{f"pr_{k}": v for k, v in pers_rubric.items() if isinstance(v, (int, float, str))},
+        }
+        merge_token_metrics(result_metrics, prompt=prompt, response=raw_response or "",
+                            stats=subagent_stats, model=model_name)
         results.append({
             "task": "chatbot_response",
             "arm": arm,
@@ -216,14 +228,6 @@ def run_task_b(
             "distance_tokens": dist_tokens,
             "distance_bin": dist_bin,
             "agent_response": response_text,
-            "metrics": {
-                **slice_metrics,
-                **arm_metrics,
-                **priv_metrics,
-                **behavioral,
-                "carve_out_respect": carve_out_respect,
-                **judge_scores,
-                **{f"pr_{k}": v for k, v in pers_rubric.items() if isinstance(v, (int, float, str))},
-            },
+            "metrics": result_metrics,
         })
     return results

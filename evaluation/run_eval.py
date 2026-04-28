@@ -42,6 +42,11 @@ from evaluation.inference_utils import SnapshotCache
 from evaluation.run_eval_dispatch import DispatchContext, dispatch_single
 from evaluation.task_registry import QUERIES_CSV_VERSION
 
+try:
+    from tqdm import tqdm
+except Exception:  # pragma: no cover
+    tqdm = None
+
 
 # Runner-side CSV limit — some instance_json cells are ~256 KB.
 csv.field_size_limit(10_000_000)
@@ -245,6 +250,20 @@ def main() -> int:
     out_file, writer = _open_results_writer(results_csv, args.resume)
     written_results: list[dict] = []
 
+    # Progress bar — starts at the number of already-done rows when resuming
+    # so the bar reflects true completion (not just this-session's work).
+    if tqdm is not None:
+        bar = tqdm(
+            total=len(rows),
+            initial=len(done),
+            desc=f"eval user={args.user_id} mode={args.mode}",
+            unit="q",
+            dynamic_ncols=True,
+            smoothing=0.1,
+        )
+    else:
+        bar = None
+
     try:
         for i, row in enumerate(rows):
             qid = row["query_id"]
@@ -279,13 +298,23 @@ def main() -> int:
                         "duration_ms": duration_ms, "error": "",
                     }
                 else:
+                    # Pull token counts from subagent_stats (Claude Code modes
+                    # populate them) and inject into metrics_json so the
+                    # aggregator can build the token-vs-accuracy table without
+                    # having to peek into nested dicts. Per-task runners that
+                    # already populate these (slate, chatbot, agentic) get a
+                    # no-op merge — the keys overwrite to the same values.
+                    metrics_dict = dict(result.get("metrics") or {})
+                    sub = result.get("subagent_stats") or {}
+                    for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cost_usd"):
+                        v = sub.get(k)
+                        if v is not None and k not in metrics_dict:
+                            metrics_dict[k] = v
                     rec = {
                         "query_id": qid, "seq": row["seq"],
                         "user_id": args.user_id, "task_type": row["task_type"],
                         "ts": row["ts"],
-                        "metrics_json": json.dumps(
-                            result.get("metrics") or {}, ensure_ascii=False,
-                        ),
+                        "metrics_json": json.dumps(metrics_dict, ensure_ascii=False),
                         "status": result.get("status", "ok"),
                         "duration_ms": duration_ms,
                         "error": result.get("error", "") or "",
@@ -304,11 +333,19 @@ def main() -> int:
             out_file.flush()
             written_results.append(rec)
 
-            if (i + 1) % 10 == 0 or i == len(rows) - 1:
+            if bar is not None:
+                bar.set_postfix_str(
+                    f"{row['task_type']}/{rec['status']} {rec['duration_ms']}ms",
+                    refresh=False,
+                )
+                bar.update(1)
+            elif (i + 1) % 10 == 0 or i == len(rows) - 1:
                 print(f"[run_eval] {i + 1}/{len(rows)} done "
                       f"(latest: {row['task_type']} {row['seq']} {rec['status']} "
                       f"{rec['duration_ms']}ms)")
     finally:
+        if bar is not None:
+            bar.close()
         out_file.close()
 
     # Per-persona summary
