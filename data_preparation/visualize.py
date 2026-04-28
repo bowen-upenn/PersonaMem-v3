@@ -1551,6 +1551,9 @@ if (eventsData.length === 0) {{
 
       const card = document.createElement('div');
       card.className = 'event-card test-sample-card';
+      // Render User Query as a regular ts-section (label INSIDE the
+      // section block) so it visually matches every other section.
+      const queryBlock = `<div class="ts-section"><div class="ts-label">User Query</div><div class="ts-body">${{escapeHtml(t.query_text || '')}}</div></div>`;
       card.innerHTML = `
         <div class="event-header">
           <div class="event-meta">
@@ -1560,8 +1563,7 @@ if (eventsData.length === 0) {{
             <code>${{escapeHtml(t.task_type || '')}}</code>
           </div>
         </div>
-        <div class="ts-label" style="margin-top:6px;">User Query</div>
-        <div class="test-sample-query">${{escapeHtml(t.query_text || '')}}</div>
+        ${{queryBlock}}
         ${{sections}}
       `;
       grid.appendChild(card);
