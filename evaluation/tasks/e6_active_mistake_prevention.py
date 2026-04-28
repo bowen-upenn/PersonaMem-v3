@@ -313,7 +313,7 @@ def _build_instance(
     instance_id = f"{pair_id}_{polarity}"
     return {
         "instance_id": instance_id,
-        "task_id": "e6_active_mistake_prevention",
+        "task_id": "active_mistake_prevention",
         "pair_id": pair_id,
         "polarity": polarity,
         "entry_point": "chatbot_routed",
@@ -599,7 +599,7 @@ def run_e6_active_mistake_prevention(
 
         if dry_run:
             results.append({
-                "task": "e6_active_mistake_prevention",
+                "task": "active_mistake_prevention",
                 "user_id": user_id,
                 "instance_id": inst.get("instance_id", ""),
                 "pair_id": inst.get("pair_id", ""),
@@ -618,7 +618,7 @@ def run_e6_active_mistake_prevention(
             )
         except Exception as exc:
             results.append({
-                "task": "e6_active_mistake_prevention",
+                "task": "active_mistake_prevention",
                 "user_id": user_id,
                 "instance_id": inst.get("instance_id", ""),
                 "pair_id": inst.get("pair_id", ""),
@@ -636,7 +636,7 @@ def run_e6_active_mistake_prevention(
         metrics = score_e6_instance(inst, response_text, warned_field)
 
         results.append({
-            "task": "e6_active_mistake_prevention",
+            "task": "active_mistake_prevention",
             "user_id": user_id,
             "instance_id": inst.get("instance_id", ""),
             "pair_id": inst.get("pair_id", ""),
