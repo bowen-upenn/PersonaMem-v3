@@ -1013,13 +1013,32 @@ def build_benchmark(
     if not test_items:
         raise SystemExit(f"No test items found for user {user_id} under {backend_dir}/")
 
-    # Task A slates — per-item seeded.
+    # Task A slates — per-item seeded with audit-and-regenerate retry loop.
+    from evaluation.audit_helpers import audit_instance, BuildAuditReporter
+    auditor = BuildAuditReporter(user_id=user_id)
     slate_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS:
             continue
+
+        def _build_with_seed_bump(_inst, bump: int):
+            # Re-roll the per-instance RNG with a different salt — re-shuffles
+            # distractor order + which past/future positives get picked.
+            rng_retry = _instance_rng(rng_seed + bump, f"slate:{t.source_object_id}")
+            return build_slate_instance(t, bq, rng_retry)
+
         rng = _instance_rng(rng_seed, f"slate:{t.source_object_id}")
-        slate_instances.append(build_slate_instance(t, bq, rng))
+        candidate = build_slate_instance(t, bq, rng)
+        kept, audit_report = audit_instance(
+            candidate, "personalized_feed_ranking",
+            rebuild_fn=_build_with_seed_bump, max_attempts=3,
+        )
+        auditor.record("personalized_feed_ranking", audit_report, kept is not None)
+        if kept is not None:
+            slate_instances.append(kept)
+        else:
+            print(f"[build_benchmark] WARN: dropping personalized_feed_ranking "
+                  f"instance for test_id={t.source_object_id} after 3 failed audit attempts")
 
     # Task B (v2) — proactive + control arms with build-time curation.
     b_arms = build_task_b_arms(
@@ -1103,6 +1122,14 @@ def build_benchmark(
         if inst is not None:
             c3_instances.append(inst)
 
+    # Persist Phase D audit report.
+    try:
+        out_dir = Path("benchmark") / user_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+        auditor.write(out_dir)
+    except Exception as exc:
+        print(f"[build_benchmark] WARN: failed to write build_audit.json: {exc}")
+
     return {
         "benchmark_version": BENCHMARK_VERSION,
         "user_id": user_id,
@@ -1110,6 +1137,7 @@ def build_benchmark(
         "rng_seed": rng_seed,
         "backend_hash": compute_backend_hash(backend_dir, user_id),
         "blind_check_enabled": blind_check_llm is not None,
+        "build_audit": auditor._stats,
         "counts": {
             "test_items": len(test_items),
             "personalized_feed_ranking": len(slate_instances),
