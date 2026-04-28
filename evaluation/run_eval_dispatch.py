@@ -67,33 +67,38 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     common = ctx.common()
     common["instances"] = [inst]
 
-    if task_type == "slate_ranking":
+    # Translate any v1 task_type that snuck in (defensive — runner refuses
+    # CSVs whose version header doesn't match QUERIES_CSV_VERSION).
+    from evaluation.task_registry import normalize_task_type
+    task_type = normalize_task_type(task_type)
+
+    if task_type == "personalized_feed_ranking":
         rows = slate_ranking.run_task_a(**common)
-    elif task_type in ("chatbot_response_proactive", "chatbot_response_control"):
+    elif task_type in ("chatbot_proactive_personalization", "chatbot_restraint_control"):
         rows = chatbot_response.run_task_b(**common)
-    elif task_type == "c1a_pairs":
+    elif task_type == "repetition_fatigue_pairs":
         rows = over_personalization.run_task_c1a(**common)
-    elif task_type == "c1b_sequences":
+    elif task_type == "repetition_fatigue_sequences":
         rows = over_personalization.run_task_c1b(**common)
-    elif task_type == "c2_scenarios":
+    elif task_type == "context_shift_scenarios":
         rows = over_personalization.run_task_c2(**common)
-    elif task_type == "c3_restraint":
+    elif task_type == "irrelevant_query_restraint":
         rows = over_personalization.run_task_c3(**common)
-    elif task_type == "c4_button_regen":
+    elif task_type == "preference_removal_regen":
         rows = over_personalization.run_task_c4(**common)
-    elif task_type == "e2_at_ai_followup":
+    elif task_type == "at_ai_directive_followup":
         from evaluation.tasks import e2_at_ai_followup as _e2
         rows = _e2.run_e2_at_ai_followup(**common)
-    elif task_type == "e3_daily_briefing_multi":
+    elif task_type == "daily_personalized_briefing":
         from evaluation.tasks import e3_daily_briefing_multi as _e3
         rows = _e3.run_e3_daily_briefing_multi(**common)
-    elif task_type == "e4_google_search":
+    elif task_type == "personalized_search_ranking":
         from evaluation.tasks import e4_google_search as _e4
         rows = _e4.run_e4_google_search(**common)
-    elif task_type == "e5_horizon_lifecycle":
+    elif task_type == "short_vs_long_term_lifecycle":
         from evaluation.tasks import e5_horizon_lifecycle as _e5
         rows = _e5.run_e5_horizon_lifecycle(**common)
-    elif task_type == "e6_active_mistake_prevention":
+    elif task_type == "active_mistake_prevention":
         from evaluation.tasks import e6_active_mistake_prevention as _e6
         rows = _e6.run_e6_active_mistake_prevention(**common)
     elif task_type in AGENTIC_TASK_IDS:

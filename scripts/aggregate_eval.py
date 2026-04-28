@@ -89,7 +89,7 @@ def _e6_paired_f1(rows: list[dict]) -> dict[str, float]:
       - Foil-precision: foil-polarity accuracy (true-silent rate).
       - Macro-F1: harmonic mean of the two.
     """
-    e6 = [r for r in rows if r.get("task_type") == "e6_active_mistake_prevention"]
+    e6 = [r for r in rows if r.get("task_type") == "active_mistake_prevention"]
     if not e6:
         return {}
     pairs: dict[str, dict[str, dict]] = defaultdict(dict)

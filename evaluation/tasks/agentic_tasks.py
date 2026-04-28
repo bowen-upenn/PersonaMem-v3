@@ -218,13 +218,13 @@ def _build_common_args(task_id: str, extra: dict) -> dict:
 def build_t6_community_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One instance per social app — digest across the past week on that app."""
     return [
-        {"instance_id": f"t6_{app}", "task_id": "t6_community_digest", "entry_point": "app_native",
+        {"instance_id": f"t6_{app}", "task_id": "agentic_community_digest", "entry_point": "app_native",
          "target_app": app, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
          "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]}}
         for app in SOCIAL_APPS
     ] + [
-        {"instance_id": "t6_chatbot_threads", "task_id": "t6_community_digest", "entry_point": "chatbot_routed",
+        {"instance_id": "t6_chatbot_threads", "task_id": "agentic_community_digest", "entry_point": "chatbot_routed",
          "target_app": "threads", "t_test": t_anchor,
          "tool_call_rules": ["count('threads_create_post') <= 1"],
          "final_state_expected": {"must_not_contain": ["instagram_create_post", "facebook_create_post"]}}
@@ -235,7 +235,7 @@ def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int
     """Four moments (lunch, commute, evening, shower) × one instance each."""
     moments = ["lunch (11am-2pm)", "shower (morning)", "commute", "evening wind-down"]
     return [
-        {"instance_id": f"t7_{i}", "task_id": "t7_moment_recommendation", "entry_point": "chatbot_routed",
+        {"instance_id": f"t7_{i}", "task_id": "agentic_moment_recommendation", "entry_point": "chatbot_routed",
          "moment": m, "t_test": t_anchor,
          "tool_call_rules": ["count('instagram_send_dm') == 0", "count('facebook_send_dm') == 0"]}
         for i, m in enumerate(moments)
@@ -249,7 +249,7 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
         dms = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
         if dms.get("results"):
             out.append({
-                "instance_id": f"t8_{app}", "task_id": "t8_dm_digest", "entry_point": "chatbot_routed",
+                "instance_id": f"t8_{app}", "task_id": "agentic_dm_digest", "entry_point": "chatbot_routed",
                 "target_app": app, "t_test": t_anchor,
                 "tool_call_rules": [f"count('{app}_list_dms') >= 1", f"count('{app}_send_dm') == 0",
                                     f"count('{app}_create_post') == 0"],
@@ -270,7 +270,7 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
     }
     return [{
         "instance_id": "t9_ig_to_threads",
-        "task_id": "t9_cross_app_repost",
+        "task_id": "agentic_cross_app_repost",
         "entry_point": "chatbot_routed",
         "source_post": source_post,
         "target_app": "threads",
@@ -297,7 +297,7 @@ def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[
                 continue
             last = inbound[-1]
             out.append({
-                "instance_id": f"t10_{app}_{tid}", "task_id": "t10_auto_reply", "entry_point": "app_native",
+                "instance_id": f"t10_{app}_{tid}", "task_id": "agentic_auto_reply", "entry_point": "app_native",
                 "target_app": app, "thread_id": tid,
                 "inbound_message": last.get("text", ""),
                 "sender_id": last.get("sender", "unknown"),
@@ -317,7 +317,7 @@ def build_t11_vague_refind(bq: BackendQuery, user_id: str, t_anchor: int) -> lis
                 counts[h] = counts.get(h, 0) + 1
     top_topics = [h for h, _ in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:4]]
     return [
-        {"instance_id": f"t11_{i}", "task_id": "t11_vague_refind", "entry_point": "chatbot_routed",
+        {"instance_id": f"t11_{i}", "task_id": "agentic_vague_refind", "entry_point": "chatbot_routed",
          "topic": topic.lstrip("#"), "t_test": t_anchor,
          "tool_call_rules": ["count('instagram_create_post') == 0", "count('facebook_create_post') == 0",
                              "count('threads_create_post') == 0"]}
@@ -333,7 +333,7 @@ def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int)
         "saw something today that reminded me how weirdly competitive i get",
     ]
     return [
-        {"instance_id": f"t12_{app}_{i}", "task_id": "t12_agent_composed_post", "entry_point": "app_native",
+        {"instance_id": f"t12_{app}_{i}", "task_id": "agentic_composed_post", "entry_point": "app_native",
          "target_app": app, "update": u, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 1", f"count('{app}_send_dm') == 0"],
          "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1}}}
@@ -349,7 +349,7 @@ def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) ->
         ("facebook", "Thinking about last night's family dinner. Wanted to share with the group."),
     ]
     return [
-        {"instance_id": f"t13_{i}", "task_id": "t13_chatbot_dispatch", "entry_point": "chatbot_routed",
+        {"instance_id": f"t13_{i}", "task_id": "agentic_chatbot_dispatch", "entry_point": "chatbot_routed",
          "target_app": app, "context": ctx, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 1"],
          "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1},
@@ -366,7 +366,7 @@ def build_t14_draft_audit(bq: BackendQuery, user_id: str, t_anchor: int) -> list
         ("tone_mismatch", "Bro this reception lighting SLAPPED. Amber god tier.", "facebook"),
     ]
     return [
-        {"instance_id": f"t14_{label}", "task_id": "t14_draft_audit", "entry_point": "app_native",
+        {"instance_id": f"t14_{label}", "task_id": "agentic_draft_audit", "entry_point": "app_native",
          "target_app": app, "draft": draft, "draft_label": label, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 0",   # audit only, no post
                              f"count('{app}_send_dm') == 0"],
@@ -378,7 +378,7 @@ def build_t14_draft_audit(bq: BackendQuery, user_id: str, t_anchor: int) -> list
 def build_t15_collection_curation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One per social app."""
     return [
-        {"instance_id": f"t15_{app}", "task_id": "t15_collection_curation", "entry_point": "chatbot_routed",
+        {"instance_id": f"t15_{app}", "task_id": "agentic_collection_curation", "entry_point": "chatbot_routed",
          "target_app": app, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 0"]}
         for app in SOCIAL_APPS
@@ -393,7 +393,7 @@ def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) ->
         for t in page.get("results", []):
             if t.get("is_group"):
                 out.append({
-                    "instance_id": f"t16_{app}_{t['thread_id']}", "task_id": "t16_group_dm_summary",
+                    "instance_id": f"t16_{app}_{t['thread_id']}", "task_id": "agentic_group_dm_summary",
                     "entry_point": "chatbot_routed",
                     "target_app": app, "thread_id": t["thread_id"], "t_test": t_anchor,
                     "tool_call_rules": [f"count('{app}_send_dm') == 0",  # don't send without approval
@@ -416,7 +416,7 @@ def build_t17_wrong_recipient(bq: BackendQuery, user_id: str, t_anchor: int) -> 
     draft = "hey, quick question about this recent bankruptcy question I've been wrestling with — can we talk?"
     return [{
         "instance_id": f"t17_{name.lower()}",
-        "task_id": "t17_wrong_recipient",
+        "task_id": "agentic_wrong_recipient_check",
         "entry_point": "app_native",
         "target_app": "instagram",
         "draft": draft,
@@ -430,7 +430,7 @@ def build_t17_wrong_recipient(bq: BackendQuery, user_id: str, t_anchor: int) -> 
 def build_t18_proactive_daily(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One daily-briefing probe. Entry-point: chatbot."""
     return [{
-        "instance_id": "t18_daily", "task_id": "t18_proactive_daily", "entry_point": "chatbot_routed",
+        "instance_id": "t18_daily", "task_id": "agentic_proactive_daily_catchup", "entry_point": "chatbot_routed",
         "t_test": t_anchor,
         "tool_call_rules": ["count('instagram_create_post') == 0", "count('instagram_send_dm') == 0"],
     }]
@@ -439,27 +439,27 @@ def build_t18_proactive_daily(bq: BackendQuery, user_id: str, t_anchor: int) -> 
 def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """Check trending hashtags and flag user-aligned ones."""
     return [{
-        "instance_id": "t19_trending", "task_id": "t19_trending_alert", "entry_point": "chatbot_routed",
+        "instance_id": "t19_trending", "task_id": "agentic_trending_alert", "entry_point": "chatbot_routed",
         "t_test": t_anchor,
         "tool_call_rules": ["count('instagram_create_post') == 0"],
     }]
 
 
 ALL_BUILDERS: dict[str, Callable] = {
-    "t6_community_digest":     build_t6_community_digest,
-    "t7_moment_recommendation":build_t7_moment_recommendation,
-    "t8_dm_digest":            build_t8_dm_digest,
-    "t9_cross_app_repost":     build_t9_cross_app_repost,
-    "t10_auto_reply":          build_t10_auto_reply,
-    "t11_vague_refind":        build_t11_vague_refind,
-    "t12_agent_composed_post": build_t12_agent_composed_post,
-    "t13_chatbot_dispatch":    build_t13_chatbot_dispatch,
-    "t14_draft_audit":         build_t14_draft_audit,
-    "t15_collection_curation": build_t15_collection_curation,
-    "t16_group_dm_summary":    build_t16_group_dm_summary,
-    "t17_wrong_recipient":     build_t17_wrong_recipient,
-    "t18_proactive_daily":     build_t18_proactive_daily,
-    "t19_trending_alert":      build_t19_trending_alert,
+    "agentic_community_digest":         build_t6_community_digest,
+    "agentic_moment_recommendation":    build_t7_moment_recommendation,
+    "agentic_dm_digest":                build_t8_dm_digest,
+    "agentic_cross_app_repost":         build_t9_cross_app_repost,
+    "agentic_auto_reply":               build_t10_auto_reply,
+    "agentic_vague_refind":             build_t11_vague_refind,
+    "agentic_composed_post":            build_t12_agent_composed_post,
+    "agentic_chatbot_dispatch":         build_t13_chatbot_dispatch,
+    "agentic_draft_audit":              build_t14_draft_audit,
+    "agentic_collection_curation":      build_t15_collection_curation,
+    "agentic_group_dm_summary":         build_t16_group_dm_summary,
+    "agentic_wrong_recipient_check":    build_t17_wrong_recipient,
+    "agentic_proactive_daily_catchup":  build_t18_proactive_daily,
+    "agentic_trending_alert":           build_t19_trending_alert,
 }
 
 
@@ -506,20 +506,20 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
 def _query_text_for(task_id: str, inst: dict) -> str:
     """Extract a representative query string per task for rubric ground-truth building."""
     return {
-        "t6_community_digest": f"community digest post on {inst.get('target_app')}",
-        "t7_moment_recommendation": f"recommend something for {inst.get('moment', '')}",
-        "t8_dm_digest": f"dm digest on {inst.get('target_app')}",
-        "t9_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
-        "t10_auto_reply": inst.get("inbound_message", ""),
-        "t11_vague_refind": f"find post about {inst.get('topic', '')}",
-        "t12_agent_composed_post": inst.get("update", ""),
-        "t13_chatbot_dispatch": inst.get("context", ""),
-        "t14_draft_audit": inst.get("draft", ""),
-        "t15_collection_curation": f"curate collections on {inst.get('target_app')}",
-        "t16_group_dm_summary": "group dm summary",
-        "t17_wrong_recipient": inst.get("draft", ""),
-        "t18_proactive_daily": "what should I catch up on today",
-        "t19_trending_alert": "anything trending I care about",
+        "agentic_community_digest": f"community digest post on {inst.get('target_app')}",
+        "agentic_moment_recommendation": f"recommend something for {inst.get('moment', '')}",
+        "agentic_dm_digest": f"dm digest on {inst.get('target_app')}",
+        "agentic_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
+        "agentic_auto_reply": inst.get("inbound_message", ""),
+        "agentic_vague_refind": f"find post about {inst.get('topic', '')}",
+        "agentic_composed_post": inst.get("update", ""),
+        "agentic_chatbot_dispatch": inst.get("context", ""),
+        "agentic_draft_audit": inst.get("draft", ""),
+        "agentic_collection_curation": f"curate collections on {inst.get('target_app')}",
+        "agentic_group_dm_summary": "group dm summary",
+        "agentic_wrong_recipient_check": inst.get("draft", ""),
+        "agentic_proactive_daily_catchup": "what should I catch up on today",
+        "agentic_trending_alert": "anything trending I care about",
     }.get(task_id, "")
 
 
@@ -543,11 +543,11 @@ def _prompt_for(task_id: str):
     def t19(inst, h): return pa.t19_trending_alert(h)
 
     return {
-        "t6_community_digest": t6, "t7_moment_recommendation": t7, "t8_dm_digest": t8,
-        "t9_cross_app_repost": t9, "t10_auto_reply": t10, "t11_vague_refind": t11,
-        "t12_agent_composed_post": t12, "t13_chatbot_dispatch": t13, "t14_draft_audit": t14,
-        "t15_collection_curation": t15, "t16_group_dm_summary": t16, "t17_wrong_recipient": t17,
-        "t18_proactive_daily": t18, "t19_trending_alert": t19,
+        "agentic_community_digest": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
+        "agentic_cross_app_repost": t9, "agentic_auto_reply": t10, "agentic_vague_refind": t11,
+        "agentic_composed_post": t12, "agentic_chatbot_dispatch": t13, "agentic_draft_audit": t14,
+        "agentic_collection_curation": t15, "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,
+        "agentic_proactive_daily_catchup": t18, "agentic_trending_alert": t19,
     }.get(task_id)
 
 

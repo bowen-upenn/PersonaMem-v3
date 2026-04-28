@@ -528,8 +528,8 @@ def build_task_b_arms(
         }
 
     return {
-        "chatbot_response_proactive": [_finalize(c, "proactive") for c in proactive],
-        "chatbot_response_control":   [_finalize(c, "control") for c in control],
+        "chatbot_proactive_personalization": [_finalize(c, "proactive") for c in proactive],
+        "chatbot_restraint_control":         [_finalize(c, "control") for c in control],
     }
 
 
@@ -910,9 +910,9 @@ def build_benchmark(
     # Task C1a/C1b/C2/C3/C4.
     t_probe = max(t.source_timestamp for t in test_items)
     c1a_pairs = build_c1a_pairs(bq, user_id, test_items)
-    c1b_sequences = build_c1b_sequence(b_arms["chatbot_response_proactive"])
+    c1b_sequences = build_c1b_sequence(b_arms["chatbot_proactive_personalization"])
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
-    c4_instances = build_c4_instances(b_arms["chatbot_response_proactive"])
+    c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
     # Agentic tasks T6-T19 — all share t_probe.
     from evaluation.tasks.agentic_tasks import ALL_BUILDERS as _AGENTIC_BUILDERS
@@ -988,34 +988,34 @@ def build_benchmark(
         "blind_check_enabled": blind_check_llm is not None,
         "counts": {
             "test_items": len(test_items),
-            "slate_ranking": len(slate_instances),
-            "chatbot_response_proactive": len(b_arms["chatbot_response_proactive"]),
-            "chatbot_response_control":   len(b_arms["chatbot_response_control"]),
-            "c1a_pairs": len(c1a_pairs),
-            "c1b_sequences": len(c1b_sequences),
-            "c2_scenarios": len(c2_instances),
-            "c3_restraint": len(c3_instances),
-            "c4_button_regen": len(c4_instances),
-            "e2_at_ai_followup": len(e2_instances),
-            "e3_daily_briefing_multi": len(e3_instances),
-            "e4_google_search": len(e4_instances),
-            "e5_horizon_lifecycle": len(e5_instances),
-            "e6_active_mistake_prevention": len(e6_instances),
+            "personalized_feed_ranking": len(slate_instances),
+            "chatbot_proactive_personalization": len(b_arms["chatbot_proactive_personalization"]),
+            "chatbot_restraint_control":         len(b_arms["chatbot_restraint_control"]),
+            "repetition_fatigue_pairs": len(c1a_pairs),
+            "repetition_fatigue_sequences": len(c1b_sequences),
+            "context_shift_scenarios": len(c2_instances),
+            "irrelevant_query_restraint": len(c3_instances),
+            "preference_removal_regen": len(c4_instances),
+            "at_ai_directive_followup": len(e2_instances),
+            "daily_personalized_briefing": len(e3_instances),
+            "personalized_search_ranking": len(e4_instances),
+            "short_vs_long_term_lifecycle": len(e5_instances),
+            "active_mistake_prevention": len(e6_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
-        "slate_ranking": slate_instances,
-        "chatbot_response_proactive": b_arms["chatbot_response_proactive"],
-        "chatbot_response_control":   b_arms["chatbot_response_control"],
-        "c1a_pairs": c1a_pairs,
-        "c1b_sequences": c1b_sequences,
-        "c2_scenarios": c2_instances,
-        "c3_restraint": c3_instances,
-        "c4_button_regen": c4_instances,
-        "e2_at_ai_followup": e2_instances,
-        "e3_daily_briefing_multi": e3_instances,
-        "e4_google_search": e4_instances,
-        "e5_horizon_lifecycle": e5_instances,
-        "e6_active_mistake_prevention": e6_instances,
+        "personalized_feed_ranking": slate_instances,
+        "chatbot_proactive_personalization": b_arms["chatbot_proactive_personalization"],
+        "chatbot_restraint_control":         b_arms["chatbot_restraint_control"],
+        "repetition_fatigue_pairs": c1a_pairs,
+        "repetition_fatigue_sequences": c1b_sequences,
+        "context_shift_scenarios": c2_instances,
+        "irrelevant_query_restraint": c3_instances,
+        "preference_removal_regen": c4_instances,
+        "at_ai_directive_followup": e2_instances,
+        "daily_personalized_briefing": e3_instances,
+        "personalized_search_ranking": e4_instances,
+        "short_vs_long_term_lifecycle": e5_instances,
+        "active_mistake_prevention": e6_instances,
         **agentic_buckets,
     }
 

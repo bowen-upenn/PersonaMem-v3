@@ -24,7 +24,47 @@ prepare script logs a warning so new tasks get registered promptly.
 from __future__ import annotations
 
 
-QUERIES_CSV_VERSION: str = "1"
+QUERIES_CSV_VERSION: str = "2"
+
+
+# Rename map for the v1 → v2 task-type taxonomy. Kept here so old benchmarks
+# / saved results can be translated by callers that need backwards compatibility
+# (the runner refuses CSVs whose version header doesn't match QUERIES_CSV_VERSION,
+# so the only legit consumer is `scripts/migrate_results_csv_v1_to_v2.py`).
+OLD_TO_NEW: dict[str, str] = {
+    "slate_ranking":                 "personalized_feed_ranking",
+    "chatbot_response_proactive":    "chatbot_proactive_personalization",
+    "chatbot_response_control":      "chatbot_restraint_control",
+    "c1a_pairs":                     "repetition_fatigue_pairs",
+    "c1b_sequences":                 "repetition_fatigue_sequences",
+    "c2_scenarios":                  "context_shift_scenarios",
+    "c3_restraint":                  "irrelevant_query_restraint",
+    "c4_button_regen":               "preference_removal_regen",
+    "e2_at_ai_followup":             "at_ai_directive_followup",
+    "e3_daily_briefing_multi":       "daily_personalized_briefing",
+    "e4_google_search":              "personalized_search_ranking",
+    "e5_horizon_lifecycle":          "short_vs_long_term_lifecycle",
+    "e6_active_mistake_prevention":  "active_mistake_prevention",
+    "t6_community_digest":           "agentic_community_digest",
+    "t7_moment_recommendation":      "agentic_moment_recommendation",
+    "t8_dm_digest":                  "agentic_dm_digest",
+    "t9_cross_app_repost":           "agentic_cross_app_repost",
+    "t10_auto_reply":                "agentic_auto_reply",
+    "t11_vague_refind":              "agentic_vague_refind",
+    "t12_agent_composed_post":       "agentic_composed_post",
+    "t13_chatbot_dispatch":          "agentic_chatbot_dispatch",
+    "t14_draft_audit":               "agentic_draft_audit",
+    "t15_collection_curation":       "agentic_collection_curation",
+    "t16_group_dm_summary":          "agentic_group_dm_summary",
+    "t17_wrong_recipient":           "agentic_wrong_recipient_check",
+    "t18_proactive_daily":           "agentic_proactive_daily_catchup",
+    "t19_trending_alert":            "agentic_trending_alert",
+}
+
+
+def normalize_task_type(name: str) -> str:
+    """Translate a possibly-old task_type to the canonical v2 name."""
+    return OLD_TO_NEW.get(name, name)
 
 
 # Rubric-dimension vocabulary (the canonical set used in evaluation/
@@ -67,10 +107,10 @@ DEFAULT_META: dict = {
 
 TASK_TYPE_META: dict[str, dict] = {
     # ------------------------------------------------------------------
-    # Task A — slate ranking
+    # Personalized feed ranking (was: slate_ranking)
     # ------------------------------------------------------------------
-    "slate_ranking": {
-        "task_family": "slate_ranking",
+    "personalized_feed_ranking": {
+        "task_family": "personalized_feed_ranking",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
@@ -82,9 +122,9 @@ TASK_TYPE_META: dict[str, dict] = {
     },
 
     # ------------------------------------------------------------------
-    # Task B — chatbot response (two arms)
+    # Chatbot response (two arms — was: chatbot_response_proactive / _control)
     # ------------------------------------------------------------------
-    "chatbot_response_proactive": {
+    "chatbot_proactive_personalization": {
         "task_family": "chatbot_response",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -94,7 +134,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "stale_preference_use", "response_respectfulness",
         ],
     },
-    "chatbot_response_control": {
+    "chatbot_restraint_control": {
         "task_family": "chatbot_response",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -106,23 +146,23 @@ TASK_TYPE_META: dict[str, dict] = {
     },
 
     # ------------------------------------------------------------------
-    # Task C — over-personalization probes
+    # Restraint / over-personalization probes (was: c1a/c1b/c2/c3/c4)
     # ------------------------------------------------------------------
-    "c1a_pairs": {
+    "repetition_fatigue_pairs": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": ["over_personalization"],
     },
-    "c1b_sequences": {
+    "repetition_fatigue_sequences": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": ["over_personalization"],
     },
-    "c2_scenarios": {
+    "context_shift_scenarios": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -132,14 +172,14 @@ TASK_TYPE_META: dict[str, dict] = {
             "over_personalization", "relationship_aware",
         ],
     },
-    "c3_restraint": {
+    "irrelevant_query_restraint": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": ["privacy_leak", "over_personalization"],
     },
-    "c4_button_regen": {
+    "preference_removal_regen": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -153,7 +193,7 @@ TASK_TYPE_META: dict[str, dict] = {
     # a `create_post` / `send_dm` count > 0 is writes_ok. Pure audit /
     # read-only surfaces are read_only.
     # ------------------------------------------------------------------
-    "t6_community_digest": {
+    "agentic_community_digest": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",       # exactly 1 create_post
@@ -165,7 +205,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "behavioral_hit",
         ],
     },
-    "t7_moment_recommendation": {
+    "agentic_moment_recommendation": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",        # no DM sends
@@ -176,7 +216,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "temporal_boundedness", "behavioral_hit",
         ],
     },
-    "t8_dm_digest": {
+    "agentic_dm_digest": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",        # list_dms + no sends
@@ -187,7 +227,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_rules",
         ],
     },
-    "t9_cross_app_repost": {
+    "agentic_cross_app_repost": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",        # exactly 1 threads_create_post
@@ -198,7 +238,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_rules", "final_state_diff", "behavioral_hit",
         ],
     },
-    "t10_auto_reply": {
+    "agentic_auto_reply": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",        # exactly 1 send_dm
@@ -209,7 +249,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_rules", "final_state_diff",
         ],
     },
-    "t11_vague_refind": {
+    "agentic_vague_refind": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",        # zero create_post
@@ -219,7 +259,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "stale_preference_use", "tool_call_rules", "behavioral_hit",
         ],
     },
-    "t12_agent_composed_post": {
+    "agentic_composed_post": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",        # exactly 1 create_post per app
@@ -230,7 +270,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "voice_match", "tool_call_rules", "final_state_diff",
         ],
     },
-    "t13_chatbot_dispatch": {
+    "agentic_chatbot_dispatch": {
         "task_family": "agentic",
         "mcp_tools_allowed": "all",                # chatbot + target social app
         "state_write_policy": "writes_ok",         # 1 create_post on target
@@ -241,7 +281,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_rules", "final_state_diff",
         ],
     },
-    "t14_draft_audit": {
+    "agentic_draft_audit": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "read_only",          # audit only — zero writes
@@ -251,7 +291,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "stale_preference_use", "tool_call_rules",
         ],
     },
-    "t15_collection_curation": {
+    "agentic_collection_curation": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
@@ -262,7 +302,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "behavioral_hit",
         ],
     },
-    "t16_group_dm_summary": {
+    "agentic_group_dm_summary": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",          # get_dm_thread only
@@ -273,7 +313,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_rules",
         ],
     },
-    "t17_wrong_recipient": {
+    "agentic_wrong_recipient_check": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",          # ≤1 send_dm, must ask first
@@ -283,7 +323,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "relationship_aware", "tool_call_rules", "final_state_diff",
         ],
     },
-    "t18_proactive_daily": {
+    "agentic_proactive_daily_catchup": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
@@ -294,7 +334,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "temporal_boundedness", "behavioral_hit",
         ],
     },
-    "t19_trending_alert": {
+    "agentic_trending_alert": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
@@ -306,16 +346,16 @@ TASK_TYPE_META: dict[str, dict] = {
     },
 
     # ------------------------------------------------------------------
-    # E-family (E2–E6)
+    # E-family (was: e2/e3/e4/e5/e6)
     # ------------------------------------------------------------------
-    "e2_at_ai_followup": {
+    "at_ai_directive_followup": {
         "task_family": "e_followup",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": ["preference_alignment", "stale_preference_use"],
     },
-    "e3_daily_briefing_multi": {
+    "daily_personalized_briefing": {
         "task_family": "e_followup",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
@@ -326,14 +366,14 @@ TASK_TYPE_META: dict[str, dict] = {
             "temporal_boundedness", "behavioral_hit",
         ],
     },
-    "e4_google_search": {
+    "personalized_search_ranking": {
         "task_family": "e_followup",
         "mcp_tools_allowed": "all",                 # includes google_search MCP
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": ["preference_alignment", "over_personalization"],
     },
-    "e5_horizon_lifecycle": {
+    "short_vs_long_term_lifecycle": {
         "task_family": "e_followup",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -343,7 +383,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "temporal_boundedness",
         ],
     },
-    "e6_active_mistake_prevention": {
+    "active_mistake_prevention": {
         "task_family": "e_followup",
         "mcp_tools_allowed": "all",
         "state_write_policy": "writes_ok",
