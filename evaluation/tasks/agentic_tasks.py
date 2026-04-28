@@ -193,19 +193,32 @@ def _dispatch_and_score(
         tool_call_report = _check_tool_call_rules(stats.get("tool_trace") or [], tool_call_rules)
 
     final_state_report: dict = {}
+    overlay_writes: list[dict] = []
     if final_state_expected and mode == "mcp_agent":
         final_state_report = _check_final_state(stats.get("overlay_path"), final_state_expected)
+    if mode == "mcp_agent":
+        overlay_writes = _read_overlay(stats.get("overlay_path"))
 
-    # Write-enforcement gate: in mcp_agent mode, if the task DECLARES it should
-    # write (`must_contain_count` rules present) and any of those rules failed,
-    # the agent semantically did NOT complete the task — flag as failed_writes.
-    # Tasks with only `must_not_contain` (audit-only, e.g., draft_audit) are
-    # never flagged. llm_longctx mode is never flagged (no MCP write capability).
+    # Per-task content verifier (Issue 6) — verifies the agent's actual output
+    # content, not just write counts. E.g., t12: did the post body actually
+    # reflect the user's update text? t10: did the reply address the inbound?
+    from evaluation.tasks.agentic_verifiers import run_output_verifier
+    output_quality_report = run_output_verifier(
+        task_id, instance, response_text, overlay_writes,
+    )
+
+    # Write-enforcement + output-quality gate: in mcp_agent mode, status is
+    # `failed_writes` if a required write didn't happen OR the output content
+    # is wrong (verifier failed). Tasks with only `must_not_contain` (audit-only,
+    # e.g., draft_audit) skip the must_contain check but still subject to
+    # output_quality. llm_longctx mode is never flagged (no MCP write capability).
     status = "ok"
     requires_write = bool((final_state_expected or {}).get("must_contain_count"))
-    if mode == "mcp_agent" and requires_write:
-        if final_state_report.get("must_contain_failed", 0) > 0:
+    if mode == "mcp_agent":
+        if requires_write and final_state_report.get("must_contain_failed", 0) > 0:
             status = "failed_writes"
+        elif output_quality_report.get("output_quality_failed", 0) > 0:
+            status = "failed_quality"
 
     return {
         "status": status,
@@ -217,6 +230,7 @@ def _dispatch_and_score(
         "personalization_rubric": pers,
         "tool_call_rules": tool_call_report,
         "final_state_diff": final_state_report,
+        "output_quality": output_quality_report,
         "metrics": {
             **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
             "tool_call_rules_pass": sum(1 for v in tool_call_report.values() if v == "pass"),
@@ -225,6 +239,8 @@ def _dispatch_and_score(
             "final_state_rules_failed": final_state_report.get("final_state_rules_failed", 0),
             "must_contain_failed": final_state_report.get("must_contain_failed", 0),
             "must_not_contain_failed": final_state_report.get("must_not_contain_failed", 0),
+            "output_quality_passed": output_quality_report.get("output_quality_passed", 0),
+            "output_quality_failed": output_quality_report.get("output_quality_failed", 0),
         },
     }
 
