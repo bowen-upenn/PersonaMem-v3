@@ -966,6 +966,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     border-left: 3px solid #d4af37 !important;
   }}
   .event-card.test-sample-card .event-header .event-meta code {{
+    font-family: inherit;
     background: #FFF; padding: 1px 6px; border-radius: 3px; font-size: 11px;
     color: #7B5C00;
   }}
@@ -988,9 +989,18 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .ts-section-warn .ts-label {{ color: #B91C1C; }}
   .ts-sublabel {{ font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.3px; }}
   .ts-body {{ font-size: 12px; color: var(--text); line-height: 1.45; }}
-  .ts-body.ts-mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; white-space: pre-wrap; }}
+  .ts-body.ts-mono {{ font-size: 11px; white-space: pre-wrap; color: var(--text-secondary); }}
   .ts-list {{ margin: 4px 0 0 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }}
-  .ts-list.ts-mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }}
+  .ts-list.ts-mono {{ font-size: 11px; color: var(--text-secondary); }}
+  /* Inline <code> in test cards inherits the page font — keep visually distinct
+     via subtle background + smaller size + grey, NOT a different font family. */
+  .test-sample-card code,
+  .ts-section code,
+  .test-sample-meta code,
+  .test-sample-card .event-meta code {{
+    font-family: inherit; font-size: 0.92em; padding: 1px 5px;
+    background: rgba(255,255,255,0.65); border-radius: 3px; color: var(--text-secondary);
+  }}
   .ts-list li {{ margin: 3px 0; }}
   .ts-origin {{ display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 3px; background: #E5E7EB; color: #374151; margin: 0 2px; text-transform: uppercase; letter-spacing: 0.3px; }}
   .ts-origin-held_out {{ background: #D4AF37; color: #fff; }}
