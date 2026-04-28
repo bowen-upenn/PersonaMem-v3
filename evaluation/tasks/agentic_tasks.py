@@ -114,21 +114,29 @@ def _check_final_state(overlay_path: str | None, expected: dict) -> dict:
     pass_rules = 0
     fail_rules = 0
     rule_results: list[tuple[str, str]] = []
+    must_contain_failed = 0
+    must_not_contain_failed = 0
     for tool, want in (expected.get("must_contain_count") or {}).items():
         n = actual_counts.get(tool, 0)
         if n == want:
             rule_results.append((f"count({tool})=={want}", "pass")); pass_rules += 1
         else:
-            rule_results.append((f"count({tool})=={want}", f"fail ({n})")); fail_rules += 1
+            rule_results.append((f"count({tool})=={want}", f"fail ({n})"))
+            fail_rules += 1
+            must_contain_failed += 1
     for tool in (expected.get("must_not_contain") or []):
         n = actual_counts.get(tool, 0)
         if n == 0:
             rule_results.append((f"count({tool})==0", "pass")); pass_rules += 1
         else:
-            rule_results.append((f"count({tool})==0", f"fail ({n})")); fail_rules += 1
+            rule_results.append((f"count({tool})==0", f"fail ({n})"))
+            fail_rules += 1
+            must_not_contain_failed += 1
     return {
         "final_state_rules_passed": pass_rules,
         "final_state_rules_failed": fail_rules,
+        "must_contain_failed": must_contain_failed,
+        "must_not_contain_failed": must_not_contain_failed,
         "final_state_rule_results": rule_results,
     }
 
@@ -188,7 +196,19 @@ def _dispatch_and_score(
     if final_state_expected and mode == "mcp_agent":
         final_state_report = _check_final_state(stats.get("overlay_path"), final_state_expected)
 
+    # Write-enforcement gate: in mcp_agent mode, if the task DECLARES it should
+    # write (`must_contain_count` rules present) and any of those rules failed,
+    # the agent semantically did NOT complete the task — flag as failed_writes.
+    # Tasks with only `must_not_contain` (audit-only, e.g., draft_audit) are
+    # never flagged. llm_longctx mode is never flagged (no MCP write capability).
+    status = "ok"
+    requires_write = bool((final_state_expected or {}).get("must_contain_count"))
+    if mode == "mcp_agent" and requires_write:
+        if final_state_report.get("must_contain_failed", 0) > 0:
+            status = "failed_writes"
+
     return {
+        "status": status,
         "agent_response": response_text,
         "raw_response": raw,
         "parsed": parsed,
@@ -203,6 +223,8 @@ def _dispatch_and_score(
             "tool_call_rules_fail": sum(1 for v in tool_call_report.values() if v.startswith("fail")),
             "final_state_rules_passed": final_state_report.get("final_state_rules_passed", 0),
             "final_state_rules_failed": final_state_report.get("final_state_rules_failed", 0),
+            "must_contain_failed": final_state_report.get("must_contain_failed", 0),
+            "must_not_contain_failed": final_state_report.get("must_not_contain_failed", 0),
         },
     }
 
