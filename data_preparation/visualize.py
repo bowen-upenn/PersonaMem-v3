@@ -1167,16 +1167,32 @@ function renderContent(ev) {{
 }}
 
 // -- Render update history --
+// Parse "HH:MM, MM/DD/YYYY" -> unix seconds (UTC). Used to filter
+// update_history entries that lack a numeric `timestamp` field.
+function _parseFormattedTs(s) {{
+  if (!s || typeof s !== 'string') return 0;
+  const m = s.match(/^(\d{{1,2}}):(\d{{2}}),\s*(\d{{1,2}})\/(\d{{1,2}})\/(\d{{4}})$/);
+  if (!m) return 0;
+  const [_, hh, mm, mo, dd, yyyy] = m;
+  return Math.floor(Date.UTC(+yyyy, +mo - 1, +dd, +hh, +mm, 0) / 1000);
+}}
+
 function renderUpdateHistory(history, asOfTs) {{
   if (!history || !history.length) return '';
-  // Filter to entries with timestamp <= asOfTs (the event being rendered).
-  // The pref's full update_history reflects GLOBAL cross-ref resolutions
-  // computed across the whole persona; at any given event we should only
-  // surface history that existed up to that moment in time.
-  let visible = history;
+  // Filter rules for what shows up on a per-event render:
+  //   1. Cross-ref entries (entries with a `resolution` field —
+  //      "suppressed_weak_minority", "different_granularity", etc.) are
+  //      GLOBAL findings about how this canonical relates to other
+  //      canonicals across the whole persona. They don't represent events
+  //      that happened at any specific time. We hide them from per-event
+  //      renders entirely; they belong on a canonical-preference detail view.
+  //   2. Temporal entries (`reinforced`, `new`, `faded`) ARE events. Show
+  //      only those whose timestamp <= asOfTs (parse formatted_timestamp
+  //      when no numeric ts is set).
+  let visible = history.filter(h => !h.resolution);
   if (typeof asOfTs === 'number' && asOfTs > 0) {{
-    visible = history.filter(h => {{
-      const ht = h.timestamp || h.ts || 0;
+    visible = visible.filter(h => {{
+      const ht = h.timestamp || h.ts || _parseFormattedTs(h.formatted_timestamp);
       return !ht || ht <= asOfTs;
     }});
   }}
