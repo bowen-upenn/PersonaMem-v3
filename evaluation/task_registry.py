@@ -398,3 +398,54 @@ TASK_TYPE_META: dict[str, dict] = {
 def get_meta(task_type: str) -> dict:
     """Look up metadata for a task_type, falling back to DEFAULT_META."""
     return TASK_TYPE_META.get(task_type, DEFAULT_META)
+
+
+# ---------------------------------------------------------------------------
+# Primary-metric registry — picks the headline accuracy per task for the
+# token-vs-accuracy table emitted by `scripts/aggregate_eval.py`.
+#
+# Each entry is `(metric_key, kind)` where:
+#   kind == "fraction"           -> accuracy_pct = 100 * value
+#   kind == "inverted_fraction"  -> accuracy_pct = 100 * (1 - value)  (lower=better)
+#   kind == "agentic_pass_rate"  -> computed in aggregator from
+#       (tool_pass + final_state_passed + output_quality_passed) /
+#       (those + their failures); rows with status="failed_writes"
+#       or "failed_quality" count as 0.
+#   kind == "paired_correct"     -> for active_mistake_prevention; computed
+#       in aggregator's _paired_f1 helper from pair_id + polarity grouping.
+# ---------------------------------------------------------------------------
+
+PRIMARY_METRIC: dict[str, tuple[str, str]] = {
+    # Ranking tasks — graded distractors, accuracy = top-1 match
+    "personalized_feed_ranking":         ("accuracy", "fraction"),
+    "at_ai_directive_followup":          ("hit@1", "fraction"),
+    "personalized_search_ranking":       ("recall@1", "fraction"),
+    "short_vs_long_term_lifecycle":      ("recall@1", "fraction"),
+    "repetition_fatigue_pairs":          ("response_divergence", "fraction"),
+    "repetition_fatigue_sequences":      ("preference_repetition_rate", "inverted_fraction"),
+    # Chatbot response — held-out preference alignment for proactive arm,
+    # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
+    "chatbot_proactive_personalization": ("held_out_score", "fraction"),
+    "chatbot_restraint_control":         ("personalization_leak_rate", "inverted_fraction"),
+    "context_shift_scenarios":           ("pr_personalization_hard_fail_count", "inverted_fraction"),
+    "irrelevant_query_restraint":        ("irrelevant_rejection_precision", "fraction"),
+    "preference_removal_regen":          ("removal_success", "fraction"),
+    "daily_personalized_briefing":       ("has_structured_output", "fraction"),
+    # E6 — paired warn/foil; aggregator computes paired-correct
+    "active_mistake_prevention":         ("paired_correct", "paired_correct"),
+    # Agentic — composite pass rate over tool_call + final_state + output_quality
+    "agentic_community_digest":          ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_moment_recommendation":     ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_dm_digest":                 ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_cross_app_repost":          ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_auto_reply":                ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_vague_refind":              ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_composed_post":             ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_chatbot_dispatch":          ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_draft_audit":               ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_collection_curation":       ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_group_dm_summary":          ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_wrong_recipient_check":     ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_proactive_daily_catchup":   ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_trending_alert":            ("agentic_pass_rate", "agentic_pass_rate"),
+}

@@ -28,6 +28,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 # results.csv cells can be large (agent responses); match the runner limit.
 csv.field_size_limit(10_000_000)
 
@@ -132,6 +133,155 @@ def _e6_paired_f1(rows: list[dict]) -> dict[str, float]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Phase C: token-vs-accuracy table
+# ---------------------------------------------------------------------------
+
+def _accuracy_value(task_type: str, metrics: dict, status: str, e6_paired: dict | None = None) -> float | None:
+    """Compute the headline accuracy_pct (0–100) for one row.
+
+    Returns None when no PRIMARY_METRIC is registered for the task_type
+    OR the metric value is missing — caller skips those rows.
+    """
+    from evaluation.task_registry import PRIMARY_METRIC, normalize_task_type
+    spec = PRIMARY_METRIC.get(normalize_task_type(task_type))
+    if not spec:
+        return None
+    key, kind = spec
+
+    # Status gate: rows that flagged failed_writes / failed_quality count as 0.
+    if status in ("failed_writes", "failed_quality", "error", "no_result"):
+        return 0.0
+
+    if kind == "agentic_pass_rate":
+        passed = (
+            (metrics.get("tool_call_rules_pass") or 0)
+            + (metrics.get("final_state_rules_passed") or 0)
+            + (metrics.get("output_quality_passed") or 0)
+        )
+        failed = (
+            (metrics.get("tool_call_rules_fail") or 0)
+            + (metrics.get("final_state_rules_failed") or 0)
+            + (metrics.get("output_quality_failed") or 0)
+        )
+        denom = passed + failed
+        return 100.0 * (passed / denom) if denom > 0 else 0.0
+
+    if kind == "paired_correct":
+        # For active_mistake_prevention rows we need the pair-level result;
+        # the per-row metric "correct" is itself binary, so we approximate
+        # as 100 * mean(correct). Pair-level macro-F1 is in summary_overall.
+        v = metrics.get("correct")
+        return 100.0 * float(v) if v is not None else None
+
+    v = metrics.get(key)
+    if v is None:
+        return None
+    if kind == "inverted_fraction":
+        return 100.0 * (1.0 - float(v))
+    return 100.0 * float(v)
+
+
+def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None) -> list[dict]:
+    """Group rows by task_type; produce one row of accuracy + token means.
+    Append a final ALL row with n-weighted accuracy + token means.
+    """
+    by_task: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        by_task[r.get("task_type", "")].append(r)
+
+    table: list[dict] = []
+    weighted_sum_acc = 0.0
+    weighted_n_acc = 0
+    sum_in_tok = 0.0
+    sum_out_tok = 0.0
+    sum_cost = 0.0
+    sum_dur = 0.0
+    sum_n_tok = 0
+    for task, task_rows in sorted(by_task.items()):
+        accs: list[float] = []
+        in_toks: list[float] = []
+        out_toks: list[float] = []
+        costs: list[float] = []
+        durs: list[float] = []
+        for r in task_rows:
+            m = r.get("_metrics") or {}
+            status = r.get("status", "ok")
+            a = _accuracy_value(task, m, status, e6_paired)
+            if a is not None:
+                accs.append(a)
+            try:
+                in_toks.append(float(m.get("input_tokens") or 0))
+                out_toks.append(float(m.get("output_tokens") or 0))
+                costs.append(float(m.get("cost_usd") or 0))
+            except Exception:
+                pass
+            try:
+                durs.append(float(r.get("duration_ms") or 0))
+            except Exception:
+                pass
+        n = len(task_rows)
+        acc_mean = _mean(accs) if accs else None
+        row = {
+            "task_type": task,
+            "n": n,
+            "accuracy_pct": round(acc_mean, 2) if acc_mean is not None else "",
+            "mean_input_tokens": round(_mean(in_toks), 1) if in_toks else 0,
+            "mean_output_tokens": round(_mean(out_toks), 1) if out_toks else 0,
+            "mean_cost_usd": round(_mean(costs), 4) if costs else 0,
+            "mean_duration_ms": round(_mean(durs), 1) if durs else 0,
+        }
+        table.append(row)
+        if accs:
+            weighted_sum_acc += acc_mean * len(accs)
+            weighted_n_acc += len(accs)
+        if in_toks:
+            sum_in_tok += sum(in_toks)
+            sum_out_tok += sum(out_toks)
+            sum_cost += sum(costs)
+            sum_n_tok += len(in_toks)
+        sum_dur += sum(durs)
+
+    # ALL row (n-weighted)
+    all_n = sum(r["n"] for r in table)
+    all_row = {
+        "task_type": "ALL",
+        "n": all_n,
+        "accuracy_pct": round(weighted_sum_acc / weighted_n_acc, 2) if weighted_n_acc else "",
+        "mean_input_tokens": round(sum_in_tok / sum_n_tok, 1) if sum_n_tok else 0,
+        "mean_output_tokens": round(sum_out_tok / sum_n_tok, 1) if sum_n_tok else 0,
+        "mean_cost_usd": round(sum_cost / sum_n_tok, 4) if sum_n_tok else 0,
+        "mean_duration_ms": round(sum_dur / max(1, all_n), 1),
+    }
+    table.append(all_row)
+    return table
+
+
+def _print_token_accuracy_table(table: list[dict]) -> None:
+    """Pretty-print to stdout — fixed-width columns, ALL row at the end."""
+    cols = [
+        ("task_type", 38),
+        ("n", 5),
+        ("accuracy_pct", 12),
+        ("mean_input_tokens", 17),
+        ("mean_output_tokens", 18),
+        ("mean_cost_usd", 13),
+        ("mean_duration_ms", 16),
+    ]
+    print()
+    header = "  ".join(name.ljust(w) for name, w in cols)
+    print(header)
+    print("  ".join("-" * w for _, w in cols))
+    for r in table:
+        cells = []
+        for name, w in cols:
+            v = r.get(name, "")
+            if isinstance(v, float):
+                v = f"{v:.2f}" if name == "accuracy_pct" else str(v)
+            cells.append(str(v).ljust(w))
+        print("  ".join(cells))
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--run", choices=("latest", "all"), default="latest")
@@ -214,6 +364,19 @@ def main() -> int:
               f"warn_recall={e6['warn_recall']:.3f}  "
               f"foil_precision={e6['foil_precision']:.3f}  "
               f"macro_f1={e6['macro_f1']:.3f}")
+
+    # Phase C: token-vs-accuracy table — single artifact for the eval report.
+    table = _build_token_accuracy_table(all_rows, overall["e6_paired"])
+    table_path = out_dir / "token_accuracy_table.csv"
+    cols = ["task_type", "n", "accuracy_pct",
+            "mean_input_tokens", "mean_output_tokens", "mean_cost_usd", "mean_duration_ms"]
+    with table_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=cols)
+        writer.writeheader()
+        for row in table:
+            writer.writerow({k: row.get(k, "") for k in cols})
+    print(f"[aggregate] wrote {table_path.relative_to(REPO_ROOT)}")
+    _print_token_accuracy_table(table)
     return 0
 
 
