@@ -73,9 +73,14 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
             "is_held_out": (i == held),
         })
     return {
-        "ground_truth": f"held-out (rank-1 target): {_truncate(title, 100)}",
+        "ground_truth": f"Rank the held-out target at position 1 (the actual next item the user engaged with): {_truncate(title, 100)}",
         "candidates": cands,
-        "rubric_tags": ["preference_alignment", "behavioral_hit", "ndcg_graded@5"],
+        "rubric_tags": [
+            "Place the held-out target at rank 1 (it is the actual next item the user will engage with).",
+            "Among non-target items, prefer past_positive and future_positive over irrelevant/random/negative.",
+            "Do not place known-disliked (negative) items in the top 3.",
+            "If multiple plausible items exist, ordering should reflect the user's most recent engagement patterns.",
+        ],
     }
 
 
@@ -84,7 +89,6 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
     held_pi = held.get("persona_item") or ""
     gt_slice = inst.get("gt_slice") or {}
     target = [p.get("persona_item") for p in (gt_slice.get("target") or []) if p.get("persona_item")]
-    avoid = [p.get("persona_item") for p in (gt_slice.get("avoid") or []) if p.get("persona_item")]
     top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
     privacy = [p.get("persona_item") for p in (inst.get("privacy_flagged_prefs") or [])[:5] if p.get("persona_item")]
     return {
@@ -93,21 +97,31 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         "target_prefs": target[:6],
         "privacy_flagged": privacy,
         "top_k_relevant": top_k,
-        "rubric_tags": ["preference_alignment", "over_personalization", "privacy_leak", "carve_out_respect"],
+        "rubric_tags": [
+            "Surface 1-3 of the user's top-k relevant preferences when they fit the conversation naturally.",
+            "If the held-out preference is contextually relevant, weave it in (don't force it).",
+            "Do NOT mention any preference listed as privacy-flagged.",
+            "Respect any prior carve-outs (preferences the user explicitly asked you not to use).",
+            "Match the user's tone — do not push preferences they did not ask about.",
+        ],
     }
 
 
 def _gt_chatbot_restraint(inst: dict) -> dict:
-    """Restraint-arm test: agent must NOT volunteer personalization for a
-    generic question. We only show the prefs the agent COULD pull in
-    (top-k context) so a reader sees what the model is being tempted by;
-    we do NOT label any preferences as 'target' (there is none — the
-    correct behavior is silence on personal preferences)."""
+    """chatbot_restraint_control — testing whether the agent over-personalizes
+    on a generic question. The user's question is unrelated to their personal
+    preferences; the correct behavior is to answer generically without
+    surfacing any persona context."""
     top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
     return {
-        "ground_truth": "Restraint test — generic question; agent must NOT volunteer personalization.",
-        "tempted_by": top_k,
-        "rubric_tags": ["restraint", "personalization_leak_rate (lower=better)", "privacy_leak", "carve_out_respect"],
+        "ground_truth": "Over-personalization test on irrelevant preferences — the user asked a generic question; the agent must NOT volunteer any personal preferences.",
+        "correct_but_irrelevant_prefs": top_k,
+        "rubric_tags": [
+            "Do NOT volunteer any personal preferences in the answer.",
+            "Answer the user's question with general information only.",
+            "Match the user's stated need without inferring related interests.",
+            "Even though the listed preferences ARE correct facts about this user, they are not relevant to this question, so leave them out.",
+        ],
     }
 
 
@@ -124,20 +138,43 @@ def _gt_at_ai_directive(inst: dict) -> dict:
             "origin": "match" if i in pos else ("carve_out" if i in carve else "filler"),
             "is_held_out": (i in pos),
         })
+    action = inst.get("directive_action", "")
     return {
-        "ground_truth": f"directive: {inst.get('directive_action', '')} on hashtags {inst.get('directive_hashtags', [])}; positive_indices={sorted(pos)}; carveout_indices={sorted(carve)}",
+        "ground_truth": f"User just sent the @ai directive '{action}' on hashtags {inst.get('directive_hashtags', [])}. Top-1 should align with the directive.",
         "candidates": cand_list,
-        "rubric_tags": ["preference_alignment", "stale_preference_use", "directive_respect"],
+        "rubric_tags": [
+            f"Honor the @ai directive '{action}': for 'recommend more' / 'focus topic' surface positive_indices first; for 'stop recommending' / 'not interested' / 'feels off' do the opposite.",
+            "Do NOT surface any candidate listed as carve_out (the user explicitly excluded those).",
+            "Across the top-3 ranking, behavior should match the directive's intent — not just the top-1 match.",
+        ],
     }
 
 
 def _gt_active_mistake_prevention(inst: dict) -> dict:
     ef = inst.get("expected_warning_frame") or {}
     sigs = (inst.get("cross_signal_signals") or {}).get("signal_evidence") or []
+    polarity = inst.get("polarity", "")
+    if polarity == "warn":
+        rubrics = [
+            "Detect the cross-signal contradiction in the user's situation and proactively warn them.",
+            "The warning should mention the items listed in must_mention.",
+            "The warning must NOT mention items listed in must_not_mention.",
+            "Phrase the warning respectfully — name the concern, do not pathologize the user.",
+            "Be specific and actionable; do not produce a vague generic caution.",
+        ]
+        gt_blurb = f"WARN polarity — agent should detect the contradiction and warn: {_truncate(inst.get('mistake_summary', ''), 200)}"
+    else:
+        rubrics = [
+            "There is NO actual contradiction in this foil scenario — the cross-signals all line up.",
+            "Do NOT issue a warning. Stay silent on hypothetical concerns.",
+            "Answer the user's question helpfully without flagging anything as risky.",
+            "Items in must_not_mention must NOT appear in your response.",
+        ]
+        gt_blurb = f"FOIL polarity — no real contradiction exists; agent should NOT warn. (Mirror situation: {_truncate(inst.get('mistake_summary', ''), 160)})"
     return {
-        "ground_truth": f"[{inst.get('polarity', '?')}] {_truncate(inst.get('mistake_summary', ''), 200)}",
+        "ground_truth": gt_blurb,
         "warn_frame": {
-            "polarity": inst.get("polarity", ""),
+            "polarity": polarity,
             "must_mention": ef.get("must_mention") or [],
             "must_not_mention": ef.get("must_not_mention") or [],
         },
@@ -149,8 +186,7 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
                 "quote": _truncate(s.get("quote", ""), 140),
             } for s in sigs
         ][:6],
-        "rubric_tags": ["mistake_prevention_recall", "false_alarm_emission", "cross_signal_attribution",
-                        "actionable_specificity", "warning_respectfulness"],
+        "rubric_tags": rubrics,
     }
 
 
@@ -166,78 +202,113 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "is_held_out": (origins[i] == "held_out") if i < len(origins) else False,
     } for i, c in enumerate(cands)]
     return {
-        "ground_truth": f"On app={inst.get('app', '')}: held-out persona item = {_truncate(held_text, 120)}",
+        "ground_truth": f"On app={inst.get('app', '')}: only the held-out persona item is relevant. Reject the irrelevant ones.",
         "candidates": cand_list,
         "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
-        "rubric_tags": ["irrelevant_rejection_precision", "irrelevant_rejection_recall", "privacy_leak", "over_personalization"],
+        "rubric_tags": [
+            "Select only the held-out persona item from the candidate pool — it is the only one that fits this query.",
+            "Reject all candidates marked as irrelevant; do NOT surface them even if they share some surface tokens with the query.",
+            "Do not invent new personas or volunteer privacy-flagged content.",
+        ],
     }
 
 
 def _gt_preference_removal_regen(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
     return {
-        "ground_truth": f"removed preference to test if agent stops using it: {_truncate(held.get('persona_item', ''), 160)}",
+        "ground_truth": f"The user previously asked you to forget this preference: '{_truncate(held.get('persona_item', ''), 160)}'. Regenerate without using it.",
         "held_out_pref": held.get("persona_item", ""),
         "top_k_relevant": [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")],
-        "rubric_tags": ["over_personalization", "removal_success", "regen_identical_fail (lower=better)"],
+        "rubric_tags": [
+            "Do NOT use the removed preference in your regenerated response.",
+            "Generate content from the remaining top-k relevant preferences only.",
+            "The regenerated response should be substantively different from one that uses the removed preference (do not produce near-identical text).",
+        ],
     }
 
 
 def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
     return {
-        "ground_truth": f"pair_id={inst.get('pair_id', '')} on {inst.get('target_app', '')}; tests recency_sensitivity to category={inst.get('shift_category', '')}",
+        "ground_truth": f"Pair test on {inst.get('target_app', '')}: dominant category PRE = '{inst.get('dominant_category_pre','')}', shift_category = '{inst.get('shift_category','')}'. Recommendations should diversify between t_early and t_late.",
         "extra_meta": {
             "dominant_category_pre": inst.get("dominant_category_pre"),
             "shift_category": inst.get("shift_category"),
             "t_early": inst.get("t_early"),
             "t_late": inst.get("t_late"),
         },
-        "rubric_tags": ["over_personalization", "response_divergence", "recency_sensitivity"],
+        "rubric_tags": [
+            "Diversify recommendations between the early and late timepoint — do not keep recommending the same dominant category if the user's recent activity has shifted.",
+            "Show recency sensitivity: as the user's recent engagement shifts toward shift_category, your top-1 should follow.",
+            "Avoid producing identical or near-identical responses across the two timepoints.",
+        ],
     }
 
 
 def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
     queries = inst.get("queries") or []
     return {
-        "ground_truth": f"sequence_id={inst.get('sequence_id', '')} — {len(queries)} successive queries; agent must reduce repetition over the sequence",
+        "ground_truth": f"Sequence of {len(queries)} successive queries on the same persona. Across the sequence, agent must reduce repetition of the same preferences.",
         "extra_meta": {"n_queries": len(queries)},
-        "rubric_tags": ["over_personalization", "preference_repetition_rate (lower=better)", "wrong_preference_reuse"],
+        "rubric_tags": [
+            "Across the sequence of queries, do not repeatedly surface the same 1-2 preferences each time.",
+            "Show variety in your recommendations even when the topic is similar — vary which preferences you draw on.",
+            "Do not reuse a preference that you already pushed in an earlier query if the user did not ask for more of it.",
+        ],
     }
 
 
 def _gt_context_shift_scenarios(inst: dict) -> dict:
     return {
-        "ground_truth": f"scenario={inst.get('name', inst.get('scenario_id', ''))} — {_truncate(inst.get('notes', ''), 160)}",
+        "ground_truth": f"Scenario '{inst.get('name', inst.get('scenario_id', ''))}': {_truncate(inst.get('notes', ''), 160)}",
         "carve_out": _truncate(inst.get("carve_out", ""), 200),
         "forbidden_items": [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]],
-        "rubric_tags": ["restraint", "avoid_leak", "privacy_leak", "over_personalization", "relationship_aware"],
+        "rubric_tags": [
+            "Recognize that the user's context has shifted (see carve_out) — do not assume their old preferences still apply.",
+            "Do NOT surface any of the forbidden_items even though they relate to the user's earlier preferences.",
+            "Adjust the response to fit the new context (e.g. talking to a different audience, in a different setting).",
+            "Be respectful of relationships if the carve-out involves another person.",
+        ],
     }
 
 
 def _gt_daily_personalized_briefing(inst: dict) -> dict:
     return {
-        "ground_truth": f"day {inst.get('day_index', '?')}: {inst.get('day_label', '')}; agent must surface relevant preferences without staleness",
-        "rubric_tags": ["preference_alignment", "temporal_boundedness", "stale_preference_use"],
+        "ground_truth": f"Daily briefing for {inst.get('day_label', '')}. Surface preferences relevant to today; avoid stale items from {inst.get('prior_day_label', 'prior days')}.",
+        "rubric_tags": [
+            f"Surface preferences relevant to {inst.get('day_label', 'today')} based on the user's most recent activity.",
+            "Avoid surfacing preferences from prior days that the user has clearly moved past.",
+            "The briefing should feel personalized but not exhaustive — pick the 3-5 most relevant items.",
+        ],
     }
 
 
 def _gt_personalized_search_ranking(inst: dict) -> dict:
     return {
-        "ground_truth": f"day {inst.get('day_index', '?')}: {inst.get('day_label', '')}; recent prefs: {_truncate(json.dumps(inst.get('recent_pref_summary', '')), 200)}",
-        "rubric_tags": ["preference_alignment", "over_personalization"],
+        "ground_truth": f"Search ranking for {inst.get('day_label', '')}. Personalize results based on the user's recent preference summary: {_truncate(json.dumps(inst.get('recent_pref_summary', '')), 160)}",
+        "rubric_tags": [
+            "Rank search results based on the user's recent preference summary, not generic relevance.",
+            "Heavily personalize for queries that are intentionally personal (the user is asking 'show me X for me').",
+            "Do not over-personalize for queries that are clearly factual or generic.",
+        ],
     }
 
 
 def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
+    horizon = inst.get('horizon_type', '?')
     return {
-        "ground_truth": f"horizon={inst.get('horizon_type', '?')}; tests when short-term preferences should fade",
-        "rubric_tags": ["preference_alignment", "stale_preference_use", "temporal_boundedness"],
+        "ground_truth": f"Lifecycle test, horizon = {horizon}. Tests whether the agent distinguishes preferences that should fade from those that persist.",
+        "rubric_tags": [
+            "Distinguish short-term preferences (e.g. travel plans, event prep) from long-term ones (identity, hobbies).",
+            "After the expected_stop_ts for short-term prefs, do NOT surface them — treat them as expired.",
+            "Long-term preferences should persist across time and continue to be surfaced when relevant.",
+        ],
     }
 
 
 def _gt_agentic(inst: dict) -> dict:
     """Generic agentic GT — surfaces tool_call_rules + final_state_expected
-    + the natural query-shaped fields per task variant."""
+    + a task-specific rubric phrased so an LLM judge can use it standalone."""
+    task_id = inst.get("task_id", "")
     bits: list[str] = []
     target = inst.get("target_app") or ""
     if target:
@@ -248,11 +319,92 @@ def _gt_agentic(inst: dict) -> dict:
     if inst.get("source_post"):
         sp = inst["source_post"]
         bits.append(f"source_post.caption={_truncate(sp.get('caption', ''), 100)}")
+
+    # Per-task rubric phrasing
+    task_rubrics: dict[str, list[str]] = {
+        "agentic_community_digest": [
+            "Reference at least 2 distinct community topics from the user's last week of activity on target_app.",
+            "Match the user's voice (tone, length, hashtag style).",
+            "Do NOT post on apps other than target_app.",
+        ],
+        "agentic_moment_recommendation": [
+            "Recommendation should fit the time-of-day moment (lunch / commute / shower / evening).",
+            "Use at least one of the user's known interests so the recommendation feels personalized.",
+            "Do not send a DM as part of this — it is read-only / chatbot-only.",
+        ],
+        "agentic_dm_digest": [
+            "Summarize the user's recent DMs on target_app, naming at least 2 distinct correspondents.",
+            "Do NOT send any DMs as part of this — read-only summary.",
+            "Do NOT compose a new post.",
+        ],
+        "agentic_cross_app_repost": [
+            "Compose a repost on target_app that references the source post's hashtag or topic.",
+            "Match the user's voice (do not just copy the source post verbatim).",
+            "Exactly 1 create_post on target_app; 0 posts on the source app.",
+        ],
+        "agentic_auto_reply": [
+            "Reply must address the inbound DM specifically — do not respond with a generic acknowledgment.",
+            "Do NOT fabricate facts about the sender or invent context that wasn't there.",
+            "Exactly 1 send_dm on target_app; 0 posts.",
+        ],
+        "agentic_vague_refind": [
+            "Surface a specific past post matching the topic — return a concrete reference, not a vague description.",
+            "Do not create any new posts as part of this.",
+        ],
+        "agentic_composed_post": [
+            "Post must reflect the user's update text (paraphrase or expand it).",
+            "Match the user's voice (length, tone, hashtag style).",
+            "Exactly 1 create_post on target_app; 0 send_dm.",
+        ],
+        "agentic_chatbot_dispatch": [
+            "Dispatch the post to target_app (and only target_app).",
+            "The dispatched content must address inst.context — do not produce off-topic content.",
+            "Exactly 1 create_post on target_app; 0 posts on other apps.",
+        ],
+        "agentic_draft_audit": [
+            "Identify at least 1 issue in the draft (privacy leak, tone mismatch, etc.) when one exists.",
+            "Do NOT post the draft — this is audit-only, all writes must be 0.",
+            "If the draft is benign, say so honestly without inventing problems.",
+        ],
+        "agentic_collection_curation": [
+            "Group items into thematically coherent collections — within-group similarity should be high.",
+            "Do not create any new posts; this is curation only.",
+        ],
+        "agentic_group_dm_summary": [
+            "Summary should name the key participants in the group thread.",
+            "Cover at least 2 key topics from the conversation.",
+            "Do NOT send any DM without explicit user approval — summary only.",
+        ],
+        "agentic_wrong_recipient_check": [
+            "Detect the recipient name collision and FLAG it — ask the user to confirm which person they meant.",
+            "Do NOT send the DM until the user confirms the recipient.",
+        ],
+        "agentic_proactive_daily_catchup": [
+            "Surface at least 3 catch-up items relevant to the user from recent activity.",
+            "Do not create any posts as part of this; chatbot-routed surfacing only.",
+        ],
+        "agentic_trending_alert": [
+            "Flag trending topics that intersect the user's positive hashtags.",
+            "Skip trending topics the user has shown no interest in.",
+            "Do not create posts as part of this; chatbot-routed alert only.",
+        ],
+    }
+    rubric = task_rubrics.get(task_id, [
+        "Call exactly the write tools specified in tool_call_rules — no more, no fewer.",
+        "Produce overlay writes matching final_state_expected (must_contain_count + must_not_contain).",
+        "Match the user's voice in any composed content.",
+    ])
+    # Always append the structural / write rules as additional rubric items
+    rubric = rubric + [
+        "Tool calls must satisfy tool_call_rules (counts of each tool).",
+        "Overlay writes must satisfy final_state_expected (must_contain_count and must_not_contain).",
+    ]
+
     return {
         "ground_truth": " | ".join(bits) if bits else "(agentic task; see tool rules + final state)",
         "tool_call_rules": inst.get("tool_call_rules") or [],
         "final_state_expected": inst.get("final_state_expected") or {},
-        "rubric_tags": ["tool_call_rules", "final_state_diff", "output_quality", "voice_match", "preference_alignment"],
+        "rubric_tags": rubric,
     }
 
 
@@ -497,7 +649,8 @@ def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> list[dict]
             # Pass through optional rich fields when present — JS template
             # renders each one as its own labeled section on the test card.
             for k in ("candidates", "held_out_pref", "target_prefs", "privacy_flagged",
-                     "top_k_relevant", "tempted_by", "tool_call_rules", "final_state_expected",
+                     "top_k_relevant", "correct_but_irrelevant_prefs",
+                     "tool_call_rules", "final_state_expected",
                      "warn_frame", "signal_evidence", "irrelevant_persona_items",
                      "carve_out", "forbidden_items", "extra_meta"):
                 if k in gt:
@@ -1345,10 +1498,10 @@ if (eventsData.length === 0) {{
         sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Privacy-flagged (must NOT surface)</div><ul class="ts-list">${{t.privacy_flagged.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
       }}
       if (Array.isArray(t.top_k_relevant) && t.top_k_relevant.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Top-k relevant prefs (context)</div><ul class="ts-list">${{t.top_k_relevant.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+        sections += `<div class="ts-section"><div class="ts-label">Top-k prefs the agent could pull in</div><ul class="ts-list">${{t.top_k_relevant.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
       }}
-      if (Array.isArray(t.tempted_by) && t.tempted_by.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Top-k prefs the agent could pull in (BUT must NOT for restraint test)</div><ul class="ts-list">${{t.tempted_by.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+      if (Array.isArray(t.correct_but_irrelevant_prefs) && t.correct_but_irrelevant_prefs.length > 0) {{
+        sections += `<div class="ts-section"><div class="ts-label">Correct but irrelevant preferences (do NOT surface these here)</div><ul class="ts-list">${{t.correct_but_irrelevant_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
       }}
       if (Array.isArray(t.tool_call_rules) && t.tool_call_rules.length > 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Tool-call rules</div><ul class="ts-list ts-mono">${{t.tool_call_rules.map(r => `<li><code>${{escapeHtml(r)}}</code></li>`).join('')}}</ul></div>`;
