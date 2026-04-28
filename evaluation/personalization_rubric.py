@@ -50,40 +50,40 @@ DAY_SECONDS = 24 * 60 * 60
 # True = applied (graded); False = omitted. From plan Extension C applicability grid.
 
 APPLICABILITY: dict[str, dict[str, bool]] = {
-    # Task B v2 arms
-    "chatbot_response_proactive": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "chatbot_response_control":   {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    # Task A
-    "slate_ranking":      {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    # Task C family
-    "c1a_pairs":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "c1b_sequences":      {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "c2_scenarios":       {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "c3_restraint":       {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "c4_button_regen":    {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    # Agentic tasks T6-T19
-    "t6_community_digest":    {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
-    "t7_moment_recommendation":{"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "t8_dm_digest":           {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "t9_cross_app_repost":    {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
-    "t10_auto_reply":         {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": True},
-    "t11_vague_refind":       {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "t12_agent_composed_post":{"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
-    "t13_chatbot_dispatch":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
-    "t14_draft_audit":        {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "t15_collection_curation":{"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "t16_group_dm_summary":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "t17_wrong_recipient":    {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "t18_proactive_daily":    {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "t19_trending_alert":     {"preference_alignment": True, "avoid_leak": True, "privacy_leak": False, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    # Chatbot response (was: chatbot_response_proactive / _control)
+    "chatbot_proactive_personalization": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "chatbot_restraint_control":         {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    # Personalized feed ranking (was: slate_ranking)
+    "personalized_feed_ranking":         {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    # Restraint family (was: c1a/c1b/c2/c3/c4)
+    "repetition_fatigue_pairs":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "repetition_fatigue_sequences":      {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "context_shift_scenarios":           {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
+    "irrelevant_query_restraint":        {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "preference_removal_regen":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    # Agentic family (was: t6..t19)
+    "agentic_community_digest":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
+    "agentic_moment_recommendation":     {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
+    "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
+    "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": True},
+    "agentic_vague_refind":              {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "agentic_composed_post":             {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
+    "agentic_chatbot_dispatch":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
+    "agentic_draft_audit":               {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "agentic_collection_curation":       {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "agentic_group_dm_summary":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
+    "agentic_wrong_recipient_check":     {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
+    "agentic_proactive_daily_catchup":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "agentic_trending_alert":            {"preference_alignment": True, "avoid_leak": True, "privacy_leak": False, "over_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
 }
 
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
 SOURCE_B_APPLICABLE = {
-    "slate_ranking", "chatbot_response_proactive",
-    "t6_community_digest", "t7_moment_recommendation", "t9_cross_app_repost",
-    "t11_vague_refind", "t15_collection_curation",
-    "t18_proactive_daily", "t19_trending_alert",
+    "personalized_feed_ranking", "chatbot_proactive_personalization",
+    "agentic_community_digest", "agentic_moment_recommendation", "agentic_cross_app_repost",
+    "agentic_vague_refind", "agentic_collection_curation",
+    "agentic_proactive_daily_catchup", "agentic_trending_alert",
 }
 
 HARD_RULE_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use"}
@@ -319,6 +319,10 @@ def score(
 
     Returns a flat dict of dimension_name → score (and hard_fail flags).
     """
+    # Phase 0: support v1 task names that may flow in from older queries.csv
+    # files via runner. Normalize to the v2 name before APPLICABILITY lookup.
+    from evaluation.task_registry import normalize_task_type
+    task_id = normalize_task_type(task_id)
     applicable = APPLICABILITY.get(task_id, {})
     out: dict = {"task_id": task_id, "applicable_dims": [k for k, v in applicable.items() if v]}
 
