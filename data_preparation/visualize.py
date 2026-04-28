@@ -17,6 +17,7 @@ import csv
 import os
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 from data_preparation import utils
 
@@ -27,6 +28,75 @@ APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 # ---------------------------------------------------------------------------
 # Test-sample annotation (Phase A4)
 # ---------------------------------------------------------------------------
+
+# Per-render persona context bank — populated by _load_test_samples and
+# threaded into every GT extractor so abstract tasks (search, briefing,
+# trending alert, etc.) can build CONCRETE expected-answer shapes that
+# reference the user's actual recent preferences / hashtags / categories.
+_PERSONA_CONTEXT: dict = {}
+
+
+def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
+    """Walk backend/{uid}/*.json once; produce the lookup bank.
+
+    Returns:
+      top_prefs        : list[(persona_item, count)]  recency-weighted
+      top_categories   : list[(category, count)]
+      top_hashtags     : list[(hashtag, count)]
+      recent_self_posts: list[caption-strings] (last 5)
+      recent_reactions : list[(content_summary, action)] (last 10 explicit positives)
+    """
+    from collections import Counter
+    pref_counter: Counter = Counter()
+    pref_meta: dict = {}  # persona_item -> latest seen pref dict
+    cat_counter: Counter = Counter()
+    hashtag_counter: Counter = Counter()
+    self_posts: list = []
+    recent_pos: list = []
+    for app_file in ("instagram.json", "facebook.json", "threads.json", "chatbot.json"):
+        p = Path(backend_dir) / str(uid) / app_file
+        if not p.exists():
+            continue
+        try:
+            evs = json.loads(p.read_text())
+        except Exception:
+            continue
+        # Sort recent-first within each app
+        evs_sorted = sorted(evs, key=lambda e: e.get("source_timestamp", 0), reverse=True)
+        for e in evs_sorted:
+            for h in (e.get("source_hashtags") or []):
+                if h:
+                    hashtag_counter[h.lower().lstrip("#")] += 1
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                pi = pref.get("persona_item") or ""
+                if pi:
+                    pref_counter[pi] += 1
+                    pref_meta.setdefault(pi, pref)
+                cat = pref.get("category")
+                if cat:
+                    cat_counter[cat] += 1
+            if e.get("is_self_authored") and not e.get("is_dm") and len(self_posts) < 5:
+                cap = (e.get("content") or {}).get("caption", "")
+                if cap:
+                    self_posts.append(cap)
+            itype = e.get("source_interaction_type", "")
+            if itype.startswith("explicit_positive") and len(recent_pos) < 10:
+                cap = (e.get("content") or {}).get("caption", "") or (e.get("content") or {}).get("title", "")
+                action = (e.get("interaction_format") or {}).get("action", "")
+                if cap:
+                    recent_pos.append((cap[:80], action))
+    return {
+        "top_prefs": [(pi, n) for pi, n in pref_counter.most_common(8)],
+        "pref_meta": pref_meta,
+        "top_categories": [(c, n) for c, n in cat_counter.most_common(6)],
+        "top_hashtags": [(h, n) for h, n in hashtag_counter.most_common(15)],
+        "recent_self_posts": self_posts,
+        "recent_pos": recent_pos,
+    }
+
+
 
 # Per-task ground-truth extractor — given the parsed instance_json from
 # benchmark/{uid}/queries.csv, return a {ground_truth, rubric_tags} dict.
@@ -272,45 +342,98 @@ def _gt_context_shift_scenarios(inst: dict) -> dict:
 
 
 def _gt_daily_personalized_briefing(inst: dict) -> dict:
+    day_label = inst.get('day_label', '')
+    prior = inst.get('prior_day_label', 'prior days')
+    top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
+    top_cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:4]
+    pref_lines = "\n".join(f"  - {pi}" for pi in top_prefs) or "  (no recent prefs available)"
+    template = (
+        f"Example shape of a good briefing for {day_label}:\n\n"
+        f"  \"Good morning! Here's what's worth your time today:\n"
+        f"   1. Quick update on {top_cats[0] if top_cats else 'your top interest'} — this morning a few new items popped up.\n"
+        f"   2. Something in {top_cats[1] if len(top_cats) > 1 else 'your second top area'} you'd probably want to see.\n"
+        f"   3. One item from {top_cats[2] if len(top_cats) > 2 else 'a third interest area'} that fits your usual taste.\"\n\n"
+        f"Concrete content: should reference at least 2 of these recent persona items:\n{pref_lines}"
+    )
     return {
-        "ground_truth": f"Daily briefing for {inst.get('day_label', '')}. Surface preferences relevant to today; avoid stale items from {inst.get('prior_day_label', 'prior days')}.",
+        "ground_truth": template,
         "rubric_tags": [
-            f"Surface preferences relevant to {inst.get('day_label', 'today')} based on the user's most recent activity.",
-            "Avoid surfacing preferences from prior days that the user has clearly moved past.",
-            "The briefing should feel personalized but not exhaustive — pick the 3-5 most relevant items.",
+            f"The briefing must reference at least 2 distinct items from the user's recent top preferences (e.g. one of: {', '.join(top_prefs[:3]) if top_prefs else '...'}).",
+            f"Length should be 3-5 distinct items, structured as a list or short paragraphs (no exhaustive dump).",
+            f"Do NOT include items the user has clearly moved past from {prior} — only what's currently relevant.",
+            "Each item should explain WHY it's relevant (1 sentence: \"based on your recent X\").",
+            "Tone should be light, concise, conversational — not formal or list-of-headlines.",
+            "Do not surface privacy-flagged preferences in the briefing.",
         ],
     }
 
 
 def _gt_personalized_search_ranking(inst: dict) -> dict:
+    day_label = inst.get('day_label', '')
+    recent = inst.get('recent_pref_summary', [])
+    top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
+    top_cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:3]
+    cat_str = ", ".join(top_cats) if top_cats else "the user's recent preferences"
+    pref_lines = "\n".join(f"  - {pi}" for pi in top_prefs) or "  (no recent prefs available)"
+    recent_str = "\n".join(f"  - {p.get('persona_item','?')} (recent count={p.get('count', '?')})"
+                           for p in (recent or [])[:5]) or "  (none recorded)"
+    template = (
+        f"This is a generic search query at {day_label}; the e4 builder did NOT carry a literal user-typed search string.\n"
+        f"What the agent receives instead: the user's recent preference summary.\n\n"
+        f"Recent pref summary in this instance:\n{recent_str}\n\n"
+        f"Example shape of an ideal personalized ranking (top-5 search results):\n"
+        f"  rank 1: an item primarily on {top_cats[0] if top_cats else cat_str} (most-engaged recent topic)\n"
+        f"  rank 2: an item on {top_cats[1] if len(top_cats) > 1 else 'a second top topic'} (cross-topic variety)\n"
+        f"  rank 3: an item that bridges multiple of the user's interests\n"
+        f"  rank 4: a high-quality item only loosely matching the user's preferences (universal relevance)\n"
+        f"  rank 5: filler / generic relevance\n\n"
+        f"Concrete acceptance — the top-3 should each map to one of these recent persona items:\n{pref_lines}"
+    )
     return {
-        "ground_truth": f"Search ranking for {inst.get('day_label', '')}. Personalize results based on the user's recent preference summary: {_truncate(json.dumps(inst.get('recent_pref_summary', '')), 160)}",
+        "ground_truth": template,
         "rubric_tags": [
-            "Rank search results based on the user's recent preference summary, not generic relevance.",
-            "Heavily personalize for queries that are intentionally personal (the user is asking 'show me X for me').",
-            "Do not over-personalize for queries that are clearly factual or generic.",
+            f"Top-1 must align with the user's most-engaged category among: {', '.join(top_cats) if top_cats else 'top categories'}.",
+            "Top-3 should collectively cover at least 2 distinct user preference categories — do not stack 3 items on the same topic.",
+            "Items below rank 3 may be generically relevant; do NOT need to be heavily personalized.",
+            "Do not over-personalize: if a search query were clearly factual or generic (and this one is generic), still keep some non-persona items in the lower ranks for variety.",
+            "Do not surface privacy-flagged preferences in the search results.",
         ],
     }
 
 
 def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
     horizon = inst.get('horizon_type', '?')
+    top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
+    pref_meta = _PERSONA_CONTEXT.get("pref_meta") or {}
+    short_examples = [pi for pi in top_prefs if (pref_meta.get(pi) or {}).get("time_horizon") == "short_term"][:2]
+    long_examples = [pi for pi in top_prefs if (pref_meta.get(pi) or {}).get("time_horizon") != "short_term"][:2]
+    template = (
+        f"Lifecycle test (horizon={horizon}). The agent must distinguish ephemeral preferences from durable ones.\n\n"
+        f"Long-term preferences in this user's profile (should still be surfaced when relevant):\n"
+        + ("\n".join(f"  - {pi}" for pi in long_examples) or "  (none labeled long-term)") + "\n\n"
+        f"Short-term preferences in this user's profile (should fade after their stop_condition):\n"
+        + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)") + "\n\n"
+        f"Example correct behavior: at the test moment, surface long-term prefs naturally; for any short-term pref past its expected_stop_ts, treat it as expired and do NOT surface it."
+    )
     return {
-        "ground_truth": f"Lifecycle test, horizon = {horizon}. Tests whether the agent distinguishes preferences that should fade from those that persist.",
+        "ground_truth": template,
         "rubric_tags": [
-            "Distinguish short-term preferences (e.g. travel plans, event prep) from long-term ones (identity, hobbies).",
-            "After the expected_stop_ts for short-term prefs, do NOT surface them — treat them as expired.",
-            "Long-term preferences should persist across time and continue to be surfaced when relevant.",
+            "Long-term preferences (identity, hobbies, persistent interests) should persist across time — surface them when relevant.",
+            "Short-term preferences (travel plans, event prep, time-bounded interests) should fade after expected_stop_ts.",
+            "If a short-term pref is past its expected_stop_ts at this test moment, do NOT surface it (treat as expired).",
+            "If a short-term pref is still within its window, surface it normally.",
+            "Do not invent durability — if a pref's time_horizon=short_term, respect that even when it would be useful.",
         ],
     }
 
 
 def _gt_agentic(inst: dict) -> dict:
     """Generic agentic GT — surfaces tool_call_rules + final_state_expected
-    + a task-specific rubric phrased so an LLM judge can use it standalone."""
+    + a task-specific rubric + a CONCRETE example of what a good agent
+    response should look like, built from persona context."""
     task_id = inst.get("task_id", "")
-    bits: list[str] = []
     target = inst.get("target_app") or ""
+    bits: list[str] = []
     if target:
         bits.append(f"target_app={target}")
     for k in ("update", "context", "draft", "topic", "moment", "thread_id", "recipient_name", "inbound_message"):
@@ -319,6 +442,76 @@ def _gt_agentic(inst: dict) -> dict:
     if inst.get("source_post"):
         sp = inst["source_post"]
         bits.append(f"source_post.caption={_truncate(sp.get('caption', ''), 100)}")
+
+    # Build a CONCRETE example response per task using persona context.
+    top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
+    top_cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:3]
+    top_hashtags = [h for h, _ in (_PERSONA_CONTEXT.get("top_hashtags") or [])][:8]
+    recent_posts = (_PERSONA_CONTEXT.get("recent_self_posts") or [])[:3]
+    voice_sample = recent_posts[0] if recent_posts else ""
+
+    examples: dict[str, str] = {
+        "agentic_community_digest":
+            f"Example digest post on {target}: \"Catching up after the week — {top_hashtags[0] if top_hashtags else 'top topic'} had a few good moments, "
+            f"the {top_hashtags[1] if len(top_hashtags) > 1 else 'next topic'} crowd is heating up again, and a few new {top_cats[0] if top_cats else 'interest'} clips dropped. "
+            f"Anyone else watching?\" (~30-50 words, mentions ≥2 distinct community topics)",
+        "agentic_moment_recommendation":
+            f"Example response for {inst.get('moment','this moment')}: "
+            f"\"Try the new {top_cats[0] if top_cats else 'interest'} clip from this morning — quick watch, fits the {inst.get('moment', 'moment')} vibe. "
+            f"You'd also like the {top_cats[1] if len(top_cats) > 1 else 'second-interest'} thread from yesterday.\" (~20-40 words, fits time-of-day)",
+        "agentic_dm_digest":
+            f"Example DM digest: \"Recent DMs on {target}: friend_1 asked about Saturday plans (haven't replied yet), friend_2 shared a {top_hashtags[0] if top_hashtags else 'topic'} post, "
+            f"and there's an unread thread from a third friend about an {top_cats[0] if top_cats else 'interest'} event. Three things waiting on you.\" "
+            f"(names ≥2 distinct correspondents, summary only — no auto-replies)",
+        "agentic_cross_app_repost":
+            f"Example repost on {target}: paraphrase the source post's topic in the user's voice, keep the core hashtag, add 1-2 user-style adjectives. "
+            f"Source: \"{_truncate((inst.get('source_post') or {}).get('caption', ''), 100)}\" → "
+            f"Example output: \"crossposting from IG: still thinking about this — {top_hashtags[0] if top_hashtags else '#topic'}\"",
+        "agentic_auto_reply":
+            f"Example reply to inbound \"{_truncate(inst.get('inbound_message', ''), 80)}\": "
+            f"a 1-3 sentence DM that addresses what the friend said, doesn't fabricate facts about them, "
+            f"and matches the user's casual short style. E.g. \"yeah that works, see you saturday\" or \"hmm let me check and get back to you\".",
+        "agentic_vague_refind":
+            f"Example response for topic '{inst.get('topic','')}': surface a SPECIFIC past post the user previously engaged with on this topic, "
+            f"with its source_object_id and a 1-line description. Don't return a vague \"here are some posts\" response — find the actual one.",
+        "agentic_composed_post": (
+            f"Example post on {target}, paraphrasing the user's update \"{_truncate(inst.get('update',''), 80)}\":\n"
+            f"  \"{voice_sample[:120] if voice_sample else (chr(10).join(['use the users voice — short, casual, with hashtags from their typical pool']))}\"\n"
+            f"Should match the user's typical voice (length, hashtag style). Acceptable hashtags: {top_hashtags[:4] if top_hashtags else '...'}"
+        ),
+        "agentic_chatbot_dispatch":
+            f"Example dispatched post on {target} addressing context \"{_truncate(inst.get('context',''), 100)}\": "
+            f"a single post that captures the gist of the context, in the user's voice, with appropriate hashtags ({top_hashtags[:3] if top_hashtags else '...'}). "
+            f"Do NOT post on apps other than {target}.",
+        "agentic_draft_audit":
+            f"Example audit response for label='{inst.get('draft_label', '?')}': "
+            f"name the specific issue you found (privacy/tone/leak/etc.) and suggest a 1-line fix. "
+            f"For label='benign' say so honestly without inventing problems. Do NOT post the draft.",
+        "agentic_collection_curation":
+            f"Example curation on {target}: 3-4 thematic groups, each containing 4-8 items the user has saved/liked. "
+            f"Group themes should follow the user's top categories: {', '.join(top_cats) if top_cats else '...'}. "
+            f"Within each group, items should share ≥60% hashtag overlap. Read-only — no posts.",
+        "agentic_group_dm_summary":
+            f"Example summary of group thread on {target}: "
+            f"\"3 friends in the thread discussed [topic1] and [topic2]; friend_X is pushing for [decision], friend_Y disagreed. "
+            f"Outstanding question: [pending question].\" Names ≥2 participants + ≥2 topics, no unsolicited DMs.",
+        "agentic_wrong_recipient_check":
+            f"Example flag: \"Heads up — there are two contacts named '{inst.get('recipient_name', '?')}' "
+            f"in your friends list. Did you mean [Name A] (recent thread about X) or [Name B] (you've been talking about Y with them)?\" "
+            f"Do NOT send the DM.",
+        "agentic_proactive_daily_catchup":
+            f"Example catch-up: \"Three things to look at today: "
+            f"(1) new {top_cats[0] if top_cats else 'topic-1'} content from yesterday you haven't seen, "
+            f"(2) a friend's DM that's been sitting for a day, "
+            f"(3) an item in {top_cats[1] if len(top_cats) > 1 else 'topic-2'} matching your recent interest.\" "
+            f"≥3 distinct items, each tied to actual recent activity.",
+        "agentic_trending_alert":
+            f"Example alert: \"You'd probably care about these trending topics right now: "
+            f"#{top_hashtags[0] if top_hashtags else 'topic1'} (matches your {top_cats[0] if top_cats else 'top interest'}), "
+            f"#{top_hashtags[1] if len(top_hashtags) > 1 else 'topic2'} (cross-cuts your {top_cats[1] if len(top_cats) > 1 else 'second interest'}).\" "
+            f"Skip trends the user has shown no interest in.",
+    }
+    example = examples.get(task_id, "")
 
     # Per-task rubric phrasing
     task_rubrics: dict[str, list[str]] = {
@@ -400,8 +593,10 @@ def _gt_agentic(inst: dict) -> dict:
         "Overlay writes must satisfy final_state_expected (must_contain_count and must_not_contain).",
     ]
 
+    setup = " | ".join(bits) if bits else "(agentic task; see tool rules + final state)"
+    full_gt = setup + ("\n\n" + example if example else "")
     return {
-        "ground_truth": " | ".join(bits) if bits else "(agentic task; see tool rules + final state)",
+        "ground_truth": full_gt,
         "tool_call_rules": inst.get("tool_call_rules") or [],
         "final_state_expected": inst.get("final_state_expected") or {},
         "rubric_tags": rubric,
@@ -547,7 +742,16 @@ def _q_daily_personalized_briefing(inst: dict) -> str:
 
 
 def _q_personalized_search_ranking(inst: dict) -> str:
-    return f"[search] {inst.get('query_text') or inst.get('user_query') or inst.get('query', '')}"
+    explicit = inst.get('query_text') or inst.get('user_query') or inst.get('query', '')
+    if explicit:
+        return f"[search] {explicit}"
+    # The e4 builder doesn't carry a literal search query — synthesize a
+    # plausible "what's good for me right now" query from the user's top
+    # categories so the test card has something readable for the agent.
+    cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:2]
+    if cats:
+        return f"[search, no specific query — generic 'what should I look at right now' on {' / '.join(cats)} themes]"
+    return "[search, no specific query — generic 'what should I look at right now']"
 
 
 def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
@@ -585,7 +789,7 @@ TEST_QUERY_EXTRACTORS = {
 }
 
 
-def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> list[dict]:
+def _load_test_samples(uid: str, benchmark_dir: str = "benchmark", backend_dir: str = "backend") -> list[dict]:
     """Walk benchmark/{uid}/queries.csv → list of test-sample dicts.
 
     Each test sample is rendered as a STANDALONE timeline card at its own
@@ -607,6 +811,10 @@ def _load_test_samples(uid: str, benchmark_dir: str = "benchmark") -> list[dict]
     out: list[dict] = []
     if not os.path.exists(qcsv):
         return out
+    # Build the persona context bank ONCE; extractors use it to fill in
+    # concrete expected-answer shapes when the instance itself is sparse.
+    global _PERSONA_CONTEXT
+    _PERSONA_CONTEXT = _build_persona_context(uid, backend_dir)
     csv.field_size_limit(10_000_000)
     with open(qcsv, "r", encoding="utf-8") as f:
         first = f.readline()
@@ -1487,7 +1695,7 @@ if (eventsData.length === 0) {{
       // Build rich-info sections — only render keys the extractor populated.
       let sections = '';
       if (t.ground_truth) {{
-        sections += `<div class="ts-section"><div class="ts-label">Expected (ground truth)</div><div class="ts-body">${{escapeHtml(t.ground_truth)}}</div></div>`;
+        sections += `<div class="ts-section"><div class="ts-label">Expected (ground truth)</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.ground_truth)}}</div></div>`;
       }}
       if (Array.isArray(t.candidates) && t.candidates.length > 0) {{
         const items = t.candidates.map(c => {{
