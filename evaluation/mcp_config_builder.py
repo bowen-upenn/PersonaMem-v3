@@ -13,6 +13,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+# Repo root — needed because Claude Code spawns each MCP server with cwd=
+# the snapshot dir (where `evaluation/` doesn't exist). Without an explicit
+# `cwd` in the MCP server config, `python -m evaluation.mcp_servers.X`
+# fails with ModuleNotFoundError → tools show as "not available" to the
+# agent → 0 writes (Phase F + first Phase H smoke regression).
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
 
 SOCIAL_APP_MODULES = {
     "instagram": "evaluation.mcp_servers.instagram_mcp_server",
@@ -37,19 +44,25 @@ def build_mcp_config(
         "PM3_T_TEST": str(t_test),
         "PM3_BACKEND_DIR": backend_dir,
         "PM3_OVERLAY_PATH": str(overlay_path),
+        # Make sure `python -m evaluation.mcp_servers.X` resolves regardless
+        # of where Claude Code spawns this subprocess from.
+        "PYTHONPATH": str(REPO_ROOT),
     }
+    repo_root = str(REPO_ROOT)
     for app in enabled_apps:
         if app == "chatbot":
             servers["chatbot"] = {
                 "command": python_exe,
                 "args": ["-m", CHATBOT_MODULE],
                 "env": dict(base_env),
+                "cwd": repo_root,
             }
         elif app in SOCIAL_APP_MODULES:
             servers[app] = {
                 "command": python_exe,
                 "args": ["-m", SOCIAL_APP_MODULES[app]],
                 "env": {**base_env, "PM3_APP": app},
+                "cwd": repo_root,
             }
     return {"mcpServers": servers}
 
