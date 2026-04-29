@@ -27,18 +27,26 @@ from __future__ import annotations
 QUERIES_CSV_VERSION: str = "2"
 
 
-# Rename map for the v1 → v2 task-type taxonomy. Kept here so old benchmarks
-# / saved results can be translated by callers that need backwards compatibility
-# (the runner refuses CSVs whose version header doesn't match QUERIES_CSV_VERSION,
-# so the only legit consumer is `scripts/migrate_results_csv_v1_to_v2.py`).
+# Rename map for the v1 → v2 → v3 task-type taxonomy. Kept here so old
+# benchmarks / saved results can be translated by callers that need
+# backwards compatibility (the runner refuses CSVs whose version header
+# doesn't match QUERIES_CSV_VERSION, so the only legit consumer is
+# `scripts/migrate_results_csv_v1_to_v2.py`). v3 unified the two
+# over-personalization tasks (chatbot_restraint_control,
+# irrelevant_query_restraint) under the over_personalization_* prefix so
+# their family is obvious from the task_type alone — the aggregator
+# headline number was being read as "100 % restraint" when in fact the
+# tasks were testing the same capability with different surfaces.
 OLD_TO_NEW: dict[str, str] = {
     "slate_ranking":                 "personalized_feed_ranking",
     "chatbot_response_proactive":    "chatbot_proactive_personalization",
-    "chatbot_response_control":      "chatbot_restraint_control",
+    "chatbot_response_control":      "over_personalization_chatbot_text",
+    "chatbot_restraint_control":     "over_personalization_chatbot_text",
     "c1a_pairs":                     "repetition_fatigue_pairs",
     "c1b_sequences":                 "repetition_fatigue_sequences",
     "c2_scenarios":                  "context_shift_scenarios",
-    "c3_restraint":                  "irrelevant_query_restraint",
+    "c3_restraint":                  "over_personalization_distractor_reject",
+    "irrelevant_query_restraint":    "over_personalization_distractor_reject",
     "c4_button_regen":               "preference_removal_regen",
     "e2_at_ai_followup":             "at_ai_directive_followup",
     "e3_daily_briefing_multi":       "daily_personalized_briefing",
@@ -136,8 +144,8 @@ TASK_TYPE_META: dict[str, dict] = {
             "response_respectfulness",
         ],
     },
-    "chatbot_restraint_control": {
-        "task_family": "chatbot_response",
+    "over_personalization_chatbot_text": {
+        "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
@@ -174,12 +182,13 @@ TASK_TYPE_META: dict[str, dict] = {
             "over_personalization", "relationship_aware",
         ],
     },
-    "irrelevant_query_restraint": {
+    "over_personalization_distractor_reject": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
-        "expected_response_kind": "ranking",
-        "rubric_tags": ["privacy_leak", "over_personalization"],
+        # Phase I.3: converted from ranking to open-ended chatbot text response.
+        "expected_response_kind": "text",
+        "rubric_tags": ["privacy_leak", "over_personalization", "restraint"],
     },
     "preference_removal_regen": {
         "task_family": "over_personalization",
@@ -427,10 +436,14 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "repetition_fatigue_sequences":      ("preference_repetition_rate", "inverted_fraction"),
     # Chatbot response — held-out preference alignment for proactive arm,
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
-    "chatbot_proactive_personalization": ("held_out_score", "fraction"),
-    "chatbot_restraint_control":         ("personalization_leak_rate", "inverted_fraction"),
-    "context_shift_scenarios":           ("pr_personalization_hard_fail_count", "inverted_fraction"),
-    "irrelevant_query_restraint":        ("irrelevant_rejection_precision", "fraction"),
+    "chatbot_proactive_personalization":           ("held_out_score", "fraction"),
+    "over_personalization_chatbot_text":           ("personalization_leak_rate", "inverted_fraction"),
+    "context_shift_scenarios":                     ("pr_personalization_hard_fail_count", "inverted_fraction"),
+    # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was
+    # the headline before; F1 punishes both always-accept and always-reject.
+    # Phase I.3: now an open-ended chatbot task — graded by leak rate
+    # (lower personalization_leak_rate = better restraint).
+    "over_personalization_distractor_reject":      ("personalization_leak_rate", "inverted_fraction"),
     "preference_removal_regen":          ("removal_success", "fraction"),
     "daily_personalized_briefing":       ("has_structured_output", "fraction"),
     # E6 — paired warn/foil; aggregator computes paired-correct

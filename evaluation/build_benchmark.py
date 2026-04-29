@@ -1217,34 +1217,74 @@ def build_c2_instances(bq: BackendQuery, user_id: str, t_probe: int, rng_seed: i
 # --- Task C3: restraint instances ------------------------------------------
 
 def build_c3_instance(test: TestItem, rng: random.Random) -> dict | None:
+    """Build an over_personalization_distractor_reject instance (Phase I.3).
+
+    Converted from the old 4-way ranking task to an OPEN-ENDED CHATBOT
+    response. The user asks a generic question (synthesized from a small
+    set of universally-applicable templates) — the agent must NOT volunteer
+    any of the user's irrelevant preferences in the answer. Judged by the
+    chatbot_response runner using personalization_leak_rate over the
+    irrelevant_persona_items list as the "do-not-surface" pool.
+
+    Routing: `over_personalization_distractor_reject` is dispatched to
+    `chatbot_response.run_task_b` (the same runner that handles the
+    proactive + control + adversarial chatbot probes).
+    """
     if not test.over_personalization_irrelevant:
         return None
     irrels = list(test.over_personalization_irrelevant)
-    candidates_raw = [
-        {
-            "persona_item": test.preference.get("persona_item"),
-            "category": test.preference.get("category"),
-            "_origin": "held_out",
-        }
-    ] + [{**p, "_origin": "irrelevant"} for p in irrels]
-    rng.shuffle(candidates_raw)
-    candidates = []
-    origin_by_idx = []
-    for i, c in enumerate(candidates_raw):
-        candidates.append({"idx": i, "persona_item": c.get("persona_item"), "category": c.get("category")})
-        origin_by_idx.append(c["_origin"])
+
+    # Synthesize a generic question — choose deterministically by hashing
+    # the test_id so two regens produce the same question for the same test.
+    GENERIC_QUERIES = [
+        "What's a good way to organize my notes app on my phone?",
+        "Can you suggest a simple breathing exercise for stress?",
+        "What's the best way to learn a new word in a foreign language?",
+        "How do I get rid of static cling on my clothes in winter?",
+        "What's a quick warm-up before sitting at a desk for 4 hours?",
+        "How do I keep my keyboard from getting greasy when I eat at my desk?",
+        "What's a good way to remember someone's name when meeting them?",
+        "Any tips for falling asleep faster on a hot night?",
+    ]
+    seed = abs(hash(test.source_object_id)) % len(GENERIC_QUERIES)
+    user_query = GENERIC_QUERIES[seed]
+
+    # Same shape as chatbot_response control-arm instances so the
+    # existing _finalize() path in build_task_b_arms can handle it
+    # (we'll wire it in alongside the adversarial probes when we build the
+    # benchmark — for now the shape's enough that run_task_b can grade it).
     return {
-        "test_id": test.source_object_id,
-        "app": test.app,
+        "test_id": f"distractor_{test.source_object_id}",
+        "arm": "distractor_reject",
         "source_timestamp": test.source_timestamp,
-        "parent_event": {
-            "source_hashtags": test.source_hashtags,
-            "content": test.content,
-        },
-        "candidates": candidates,
-        "origin_by_idx": origin_by_idx,
-        "held_out_persona_item": test.preference.get("persona_item", ""),
+        "formatted_timestamp": test.formatted_timestamp,
+        "user_query": user_query,
+        "prior_conversation": [],
+        "action": "asked_chatbot",
+        "source_hashtags": [],
+        "held_out_preference": None,
+        "blind_check_score": None,
+        "blind_check_generic_answer": None,
+        # The KEY field for grading: any of these persona items appearing
+        # in the agent's response is a personalization-leak failure. We
+        # repurpose the chatbot_response runner's `privacy_flagged_prefs`
+        # field for this — the runner already grades leak_rate against it.
+        "privacy_flagged_prefs": [
+            {"persona_item": p.get("persona_item", ""), "category": p.get("category", "")}
+            for p in irrels if p.get("persona_item")
+        ],
+        # No top-k for this task — the whole point is the agent shouldn't
+        # surface ANY persona context.
+        "top_k_relevant_prefs": [],
+        # Empty gt_slice — control-arm scoring expects this shape.
+        "gt_slice": {"target": [], "avoid": [], "t_test": test.source_timestamp, "window_seconds": 86400},
+        # Empty post-test window — no behavioral signal needed for restraint.
+        "post_test_window": {"post_test_positives": [], "post_test_negatives": []},
+        # Keep the irrelevant_persona_items list as a flat string field so
+        # the HTML test-card extractor can render them. (Distinct from the
+        # privacy_flagged_prefs list which is what the runner grades on.)
         "irrelevant_persona_items": [p.get("persona_item", "") for p in irrels],
+        "_distractor_reject": True,
     }
 
 
