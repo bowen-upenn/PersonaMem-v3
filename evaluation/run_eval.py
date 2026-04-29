@@ -82,7 +82,12 @@ def _parse_args() -> argparse.Namespace:
                    help="Claude Code subagent model (haiku/sonnet/opus)")
     p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "claude-opus"))
     p.add_argument("--rate_limit", type=int, default=50)
-    p.add_argument("--enable_llm_judge", action="store_true")
+    # Phase I.1: judge is ON by default — chatbot tasks need pr_held_out_score
+    # which is judge-based; without it, chatbot_proactive_personalization
+    # scored 5.4% in Phase F purely because the judge wasn't running.
+    # Use --no_llm_judge to opt out (e.g., for cheap dry runs).
+    p.add_argument("--enable_llm_judge", action=argparse.BooleanOptionalAction, default=True,
+                   help="Run the LLM judge for pr_* dimensions (default: on). --no-enable_llm_judge to disable.")
     p.add_argument("--context_budget", type=int, default=None)
     p.add_argument("--limit", type=int, default=None,
                    help="Cap total query rows (for quick smoke tests)")
