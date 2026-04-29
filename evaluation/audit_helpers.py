@@ -115,6 +115,68 @@ def structural_audit(inst: dict, task_type: str) -> dict:
     return {"pass": passed, "checks": checks}
 
 
+def make_blind_baseline_for_ranking(llm_client) -> Callable[[dict], dict]:
+    """Phase I.4: blind-baseline LLM probe for ranking instances.
+
+    Returns a callable suitable for `audit_instance(blind_baseline=...)`.
+    Given a slate-ranking instance, asks a small LLM to pick the most-
+    likely-relevant candidate using ONLY the slate text — NO user history.
+    If the model picks the held-out target, the slate is contaminated
+    (text alone is sufficient to discriminate) → audit fails → instance
+    is regenerated with a different distractor pool.
+
+    The check is appropriate ONLY for ranking-style instances with
+    `slate` + `held_out_idx` + `origin_by_idx`. For other task types
+    return `{"correct": False, "skipped": True}` (no contamination
+    detected).
+    """
+    import json as _json
+
+    def _check(inst: dict) -> dict:
+        slate = inst.get("slate") or []
+        held_out = inst.get("held_out_idx")
+        if not slate or not isinstance(held_out, int) or llm_client is None:
+            return {"correct": False, "skipped": True}
+        # Build a context-free prompt: only the slate, no profile, no history,
+        # no recent activity. The "query" is just the app + query_hashtags
+        # (which the agent under test ALSO sees, so it's fair).
+        app = inst.get("app", "")
+        query_hashtags = inst.get("query_hashtags") or []
+        slate_lines = "\n".join(
+            f"- idx {c['idx']}: hashtags={c.get('hashtags', [])} | "
+            f"title={c.get('title','')!r} | caption={c.get('caption','')[:120]!r}"
+            for c in slate
+        )
+        prompt = (
+            f"You see a slate of {len(slate)} candidate items for an unknown user on {app}. "
+            f"Query hashtags: {query_hashtags}. You have NO information about the user.\n\n"
+            f"Slate:\n{slate_lines}\n\n"
+            f"Pick the SINGLE candidate idx most likely to match the query hashtags by topical relevance ALONE. "
+            f"Reply with ONLY a JSON object: {{\"idx\": <int>}}"
+        )
+        try:
+            resp = llm_client.query_llm(prompt) or ""
+        except Exception:
+            return {"correct": False, "error": "llm_call_failed"}
+        # Parse the answer
+        try:
+            import re as _re
+            m = _re.search(r"\{[^}]*\"idx\"\s*:\s*(\d+)[^}]*\}", resp)
+            if not m:
+                return {"correct": False, "no_parse": True, "raw": resp[:200]}
+            picked = int(m.group(1))
+        except Exception:
+            return {"correct": False, "parse_error": True}
+        # If blind model picks the held-out by text alone → contamination
+        return {
+            "correct": picked == held_out,
+            "blind_pick": picked,
+            "held_out": held_out,
+        }
+
+    return _check
+
+
 def audit_instance(
     inst: dict,
     task_type: str,
