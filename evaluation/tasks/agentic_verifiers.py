@@ -40,6 +40,7 @@ _STOPWORDS = frozenset(
 
 
 _PUNCT_RE = re.compile(r"[^a-z0-9\s]+")
+_HASHTAG_RE = re.compile(r"#[a-z0-9_]+")
 
 
 def _tokens(s: str) -> set[str]:
@@ -135,29 +136,47 @@ def _verify_community_digest(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_moment_recommendation(inst: dict, response: str, writes: list) -> dict:
-    """Recommendation should at least be substantive (≥ 8 tokens) and mention
-    something concrete (a noun-like word, not just chitchat).
+    """Recommendation must list ≥3 concrete items — not generic filler.
+
+    Concrete = either bullet-list lines OR sentences naming specific
+    artists/topics/items (≥1 capitalized phrase OR ≥1 hashtag per line).
     """
     text = response or ""
-    n = len(_tokens(text))
-    if n >= 8:
-        return _mk(1, 0, [("nontrivial_recommendation", "pass")])
-    return _mk(0, 1, [("nontrivial_recommendation", f"fail ({n} tokens)")])
+    n_tokens = len(_tokens(text))
+    bullet_count = sum(1 for line in text.split("\n") if line.strip() and line.strip()[0] in "-•*0123456789")
+    hashtag_count = len(set(_HASHTAG_RE.findall(text.lower())))
+    cap_phrases = sum(1 for w in text.split() if w[:1].isupper() and len(w) > 2)
+    has_items = bullet_count >= 3 or (hashtag_count >= 2 and cap_phrases >= 2)
+    if n_tokens >= 20 and has_items:
+        return _mk(1, 0, [(f"named_>=3_items (bullets={bullet_count}, hashtags={hashtag_count}, cap_phrases={cap_phrases})", "pass")])
+    return _mk(0, 1, [("named_>=3_items", f"fail (n={n_tokens}, bullets={bullet_count}, hashtags={hashtag_count}, cap={cap_phrases})")])
 
 
 def _verify_dm_digest(inst: dict, response: str, writes: list) -> dict:
-    """Summary must mention at least 2 distinct correspondent identifiers."""
-    text = (response or "").lower()
+    """Summary must mention specific correspondents.
+
+    Strict path: if `dm_correspondents` hint is on the instance, response must
+    name ≥2 of them. Fallback: must reference at least one specific entity
+    (capitalized name OR friend_N pattern OR @ mention) — pure-narrative
+    summaries with NO names get filtered out.
+    """
+    text = response or ""
+    text_lower = text.lower()
     recipients = inst.get("dm_correspondents") or []
-    if not recipients:
-        # Fall back to "non-trivial summary" if instance doesn't carry hint.
-        if len(_tokens(response)) >= 10:
-            return _mk(1, 0, [("nontrivial_summary", "pass")])
-        return _mk(0, 1, [("nontrivial_summary", "fail (too short)")])
-    hits = sum(1 for r in recipients if str(r).lower() in text)
-    if hits >= 2:
-        return _mk(1, 0, [(f"named_>=2_correspondents (got {hits})", "pass")])
-    return _mk(0, 1, [(f"named_>=2_correspondents", f"fail ({hits})")])
+    if recipients:
+        hits = sum(1 for r in recipients if str(r).lower() in text_lower)
+        if hits >= 2:
+            return _mk(1, 0, [(f"named_>=2_correspondents (got {hits})", "pass")])
+        return _mk(0, 1, [("named_>=2_correspondents", f"fail ({hits})")])
+    # Fallback when no hint: require ≥1 friend_N reference OR ≥2 capitalized
+    # nouns (proxies for specific named correspondents) AND a substantive body.
+    friend_refs = len(re.findall(r"\bfriend_\d+\b", text_lower))
+    at_refs = len(re.findall(r"@\w+", text))
+    cap_names = sum(1 for w in text.split() if w[:1].isupper() and len(w) > 2 and w[1:].islower())
+    n_tokens = len(_tokens(text))
+    if n_tokens >= 25 and (friend_refs >= 1 or at_refs >= 1 or cap_names >= 2):
+        return _mk(1, 0, [(f"specific_summary (friends={friend_refs}, @={at_refs}, cap={cap_names})", "pass")])
+    return _mk(0, 1, [("specific_summary", f"fail (n={n_tokens}, friends={friend_refs}, @={at_refs}, cap={cap_names})")])
 
 
 def _verify_cross_app_repost(inst: dict, response: str, writes: list) -> dict:
@@ -181,7 +200,13 @@ def _verify_cross_app_repost(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_auto_reply(inst: dict, response: str, writes: list) -> dict:
-    """Reply must address inbound (token overlap) and be sent (1 send_dm)."""
+    """Reply must address inbound + be sent (1 send_dm).
+
+    "Addresses inbound" = the reply contains AT LEAST ONE non-stopword content
+    token from the inbound message. Strict Jaccard is too punishing — a
+    natural reply ("obviously, see you there") legitimately uses few inbound
+    tokens but still addresses it.
+    """
     target_app = inst.get("target_app") or ""
     sent = _writes_for(writes, f"{target_app}_send_dm")
     inbound = inst.get("inbound_message") or ""
@@ -194,11 +219,13 @@ def _verify_auto_reply(inst: dict, response: str, writes: list) -> dict:
     reply_text = " ".join(captions) or response or ""
     inb_tokens = _tokens(inbound)
     rep_tokens = _tokens(reply_text)
-    overlap = _jaccard(inb_tokens, rep_tokens)
+    shared = inb_tokens & rep_tokens
     sent_check = ("dm_was_sent", "pass")
-    if overlap >= 0.2 or len(inb_tokens) <= 3:  # short inbound — relax
-        return _mk(2, 0, [sent_check, (f"addresses_inbound (j={overlap:.2f})", "pass")])
-    return _mk(1, 1, [sent_check, (f"addresses_inbound", f"fail (j={overlap:.2f})")])
+    # Pass if (a) reply shares ≥ 1 content token with the inbound, OR
+    # (b) inbound has very few content tokens (mostly chatter).
+    if len(shared) >= 1 or len(inb_tokens) <= 3:
+        return _mk(2, 0, [sent_check, (f"addresses_inbound (shared={sorted(shared)})", "pass")])
+    return _mk(1, 1, [sent_check, (f"addresses_inbound", f"fail (no content-word overlap)")])
 
 
 def _verify_vague_refind(inst: dict, response: str, writes: list) -> dict:
@@ -228,11 +255,14 @@ def _verify_composed_post(inst: dict, response: str, writes: list) -> dict:
     written_text = " ".join(captions)
     upd_tokens = _tokens(update)
     wri_tokens = _tokens(written_text)
-    overlap = _jaccard(upd_tokens, wri_tokens) if upd_tokens else 1.0
+    shared = upd_tokens & wri_tokens
     created_check = ("post_was_created", "pass")
-    if overlap >= 0.3:
-        return _mk(2, 0, [created_check, (f"reflects_update (j={overlap:.2f})", "pass")])
-    return _mk(1, 1, [created_check, (f"reflects_update", f"fail (j={overlap:.2f})")])
+    # Pass if the post shares ≥ 2 content tokens with the user's update
+    # (or the update has very few content words to share). Strict Jaccard
+    # was too punishing on creative paraphrases.
+    if len(shared) >= 2 or len(upd_tokens) <= 3:
+        return _mk(2, 0, [created_check, (f"reflects_update (shared={sorted(shared)})", "pass")])
+    return _mk(1, 1, [created_check, (f"reflects_update", f"fail (only {len(shared)} content words shared)")])
 
 
 def _verify_chatbot_dispatch(inst: dict, response: str, writes: list) -> dict:
@@ -249,11 +279,11 @@ def _verify_chatbot_dispatch(inst: dict, response: str, writes: list) -> dict:
     written_text = " ".join(captions)
     ctx_tokens = _tokens(context)
     wri_tokens = _tokens(written_text)
-    overlap = _jaccard(ctx_tokens, wri_tokens) if ctx_tokens else 1.0
+    shared = ctx_tokens & wri_tokens
     target_check = ("post_on_target_app", "pass")
-    if overlap >= 0.2:
-        return _mk(2, 0, [target_check, (f"addresses_context (j={overlap:.2f})", "pass")])
-    return _mk(1, 1, [target_check, (f"addresses_context", f"fail (j={overlap:.2f})")])
+    if len(shared) >= 2 or len(ctx_tokens) <= 3:
+        return _mk(2, 0, [target_check, (f"addresses_context (shared={sorted(shared)})", "pass")])
+    return _mk(1, 1, [target_check, (f"addresses_context", f"fail (only {len(shared)} shared)")])
 
 
 def _verify_draft_audit(inst: dict, response: str, writes: list) -> dict:
@@ -282,10 +312,21 @@ def _verify_draft_audit(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_collection_curation(inst: dict, response: str, writes: list) -> dict:
-    """Curated groups should be thematically coherent (≥ 5 substantive tokens)."""
-    if len(_tokens(response)) >= 10:
-        return _mk(1, 0, [("nontrivial_curation_text", "pass")])
-    return _mk(0, 1, [("nontrivial_curation_text", "fail (too short)")])
+    """Curated groups should be substantive AND themed.
+
+    A passing response has multiple distinct themes — not "ok let me organize
+    that for you" generic filler. Strict-ish: require ≥30 content tokens and
+    ≥2 distinct hashtag-shaped tokens (themes typically have hashtags) OR ≥3
+    distinct capitalized noun-phrases (theme names).
+    """
+    text = response or ""
+    n = len(_tokens(text))
+    hashtag_count = len(set(_HASHTAG_RE.findall(text.lower())))
+    cap_phrases = sum(1 for w in text.split() if w[:1].isupper() and len(w) > 2)
+    has_themes = hashtag_count >= 2 or cap_phrases >= 3
+    if n >= 30 and has_themes:
+        return _mk(1, 0, [(f"substantive_themed_curation (n={n}, themes={hashtag_count}h+{cap_phrases}cap)", "pass")])
+    return _mk(0, 1, [(f"substantive_themed_curation", f"fail (n={n} tokens, {hashtag_count} hashtags, {cap_phrases} cap-words)")])
 
 
 def _verify_group_dm_summary(inst: dict, response: str, writes: list) -> dict:
@@ -337,11 +378,17 @@ def _verify_proactive_daily_catchup(inst: dict, response: str, writes: list) -> 
 
 
 def _verify_trending_alert(inst: dict, response: str, writes: list) -> dict:
-    """Trending alert should reference at least 1 hashtag-like token."""
-    text = (response or "").lower()
-    if "#" in text or len(_tokens(text)) >= 6:
-        return _mk(1, 0, [("nontrivial_alert", "pass")])
-    return _mk(0, 1, [("nontrivial_alert", "fail")])
+    """Trending alert must name ≥2 specific hashtags.
+
+    Generic "music news today" doesn't count — the test is whether the agent
+    surfaced concrete trending tags. Empty-ish responses fail.
+    """
+    text = response or ""
+    hashtag_count = len(set(_HASHTAG_RE.findall(text.lower())))
+    n_tokens = len(_tokens(text))
+    if hashtag_count >= 2 and n_tokens >= 6:
+        return _mk(1, 0, [(f"named_>=2_trending_hashtags (got {hashtag_count})", "pass")])
+    return _mk(0, 1, [(f"named_>=2_trending_hashtags", f"fail ({hashtag_count} hashtags, {n_tokens} tokens)")])
 
 
 # ---------------------------------------------------------------------------
