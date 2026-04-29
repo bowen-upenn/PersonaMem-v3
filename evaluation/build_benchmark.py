@@ -735,13 +735,197 @@ def build_task_b_arms(
     # tempts it).
     adversarial = build_chatbot_restraint_adversarial(bq, user_id, profile, base_dir=backend_dir)
 
+    # Phase J.4: persona-internal contradiction probes — find canonicals where
+    # the user's stance has flipped over time; ask about the topic; agent
+    # must surface the CURRENT (later) stance, not the old one.
+    contradictions = build_persona_contradiction_probes(bq, user_id, profile)
+
+    # Phase J.5: stale-vs-fresh probes — short-term prefs past their
+    # expected_stop_ts; agent must NOT surface them as if still active.
+    stale = build_stale_vs_fresh_probes(bq, user_id)
+
     return {
-        "chatbot_proactive_personalization": [_finalize(c, "proactive") for c in proactive],
+        "chatbot_proactive_personalization": (
+            [_finalize(c, "proactive") for c in proactive]
+            + [_finalize(c, "contradiction") for c in contradictions]
+        ),
         "over_personalization_chatbot_text": (
             [_finalize(c, "control") for c in control]
             + [_finalize(c, "adversarial") for c in adversarial]
+            + [_finalize(c, "stale") for c in stale]
         ),
     }
+
+
+def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: dict) -> list[dict]:
+    """Phase J.4: probes where the user's recent activity contradicts an
+    earlier preference. Tests which signal the agent prioritizes.
+
+    Walk all events; find preferences whose update_history contains a
+    `contradicted` entry (the persona pipeline's Step 7 cross-polarity gate
+    marks these). For each, build an open-ended chatbot probe that asks
+    about the topic. The agent should prioritize the LATER (current) stance
+    over the OLD (now-flipped) one — surfacing the old stance is wrong.
+
+    Goes into the chatbot_proactive_personalization bucket since the agent
+    IS supposed to personalize, just with the correct (current) stance.
+    Routed through chatbot_response.run_task_b like the other chatbot arms.
+    """
+    # Find canonicals with contradicted history entries. Important: read the
+    # RAW per-app JSONs here, NOT via bq.get_events — `update_history` is in
+    # `_LEAK_FIELDS_PREF` and gets stripped by the agent-facing read path.
+    base = Path(getattr(bq, "base", "backend")) / user_id
+    seen: set = set()
+    contradicted_prefs: list[dict] = []
+    for app in APPS:
+        path = base / f"{app}.json"
+        if not path.exists():
+            continue
+        try:
+            evs = json.loads(path.read_text())
+        except Exception:
+            continue
+        for e in evs:
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                pi = pref.get("persona_item") or ""
+                if not pi or pi in seen:
+                    continue
+                hist = pref.get("update_history") or []
+                # Look for a "contradicted" entry where the OPPOSING side was
+                # suppressed or marked stance-flipped — these are the cases
+                # where the user's stance HAS changed.
+                contras = [h for h in hist if h.get("update_type") == "contradicted"]
+                if not contras:
+                    continue
+                seen.add(pi)
+                contradicted_prefs.append({
+                    "persona_item": pi,
+                    "category": pref.get("category"),
+                    "hashtags": pref.get("source_hashtags") or e.get("source_hashtags") or [],
+                    "current_stance_ts": int(e.get("source_timestamp") or 0),
+                    "old_stance": (contras[0].get("preference") or "")[:100],
+                })
+    contradicted_prefs.sort(key=lambda p: p["current_stance_ts"], reverse=True)
+    if not contradicted_prefs:
+        return []
+
+    # t_test should be AFTER the most-recent stance flip so the agent should
+    # surface the new stance.
+    latest_ts = max(p["current_stance_ts"] for p in contradicted_prefs)
+    formatted = utils.unix_to_formatted(latest_ts) if hasattr(utils, "unix_to_formatted") else ""
+
+    out: list[dict] = []
+    # Templates: ask about the TOPIC of the flipped pref. Different framings.
+    QUERY_TEMPLATES = [
+        "What's a good {topic} to look at this week?",
+        "Anything in {topic} you'd flag for me right now?",
+        "How do you feel about {topic} these days?",
+    ]
+    for i, p in enumerate(contradicted_prefs[:3]):
+        topic = (p.get("category") or "").lower()
+        if not topic:
+            # Fall back to a hashtag if no category
+            tags = p.get("hashtags") or []
+            topic = tags[0].lstrip("#").lower() if tags else "this topic"
+        q = QUERY_TEMPLATES[i % len(QUERY_TEMPLATES)].format(topic=topic)
+        out.append({
+            "source_object_id": f"contradiction_{user_id}_{i:02d}",
+            "source_timestamp": latest_ts - (60 * (i + 1)),
+            "formatted_timestamp": formatted,
+            "user_query": q,
+            "prior_conversation": [],
+            "action": "asked_chatbot",
+            "source_hashtags": p["hashtags"][:3],
+            # Held-out IS the current stance — that's what the agent should align to
+            "held_out_preference": {"persona_item": p["persona_item"], "category": p["category"]},
+            "blind_check_score": None,
+            "blind_check_generic_answer": None,
+            "_contradiction_probe": True,
+            "_old_stance": p["old_stance"],
+        })
+    return out
+
+
+def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str) -> list[dict]:
+    """Phase J.5: probes where a short-term preference has expired.
+
+    Walk all events; find prefs with `time_horizon == "short_term"` and a
+    `stop_condition.expected_stop_ts` in the past. Build chatbot probes
+    where t_test > expected_stop_ts. The agent should NOT surface the now-
+    expired preference (e.g., asking about a vacation that already ended).
+
+    Goes into chatbot_proactive_personalization bucket with the stale pref
+    as the "do-not-surface" item. Graded by leak_rate against that single pref.
+    """
+    # Read RAW JSON to access time_horizon / stop_condition (likely stripped
+    # by the agent-facing read path; safe to access at build time).
+    base = Path(getattr(bq, "base", "backend")) / user_id
+    seen: set = set()
+    stale_prefs: list[dict] = []
+    for app in APPS:
+        path = base / f"{app}.json"
+        if not path.exists():
+            continue
+        try:
+            evs = json.loads(path.read_text())
+        except Exception:
+            continue
+        for e in evs:
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                if pref.get("time_horizon") != "short_term":
+                    continue
+                pi = pref.get("persona_item") or ""
+                stop_cond = pref.get("stop_condition") or {}
+                stop_ts = stop_cond.get("expected_stop_ts")
+                if not pi or pi in seen or not stop_ts:
+                    continue
+                seen.add(pi)
+                stale_prefs.append({
+                    "persona_item": pi,
+                    "category": pref.get("category"),
+                    "hashtags": pref.get("source_hashtags") or e.get("source_hashtags") or [],
+                    "stop_ts": int(stop_ts),
+                    "stop_description": stop_cond.get("description", ""),
+                })
+    if not stale_prefs:
+        return []
+
+    out: list[dict] = []
+    DAY = 86400
+    QUERY_TEMPLATES = [
+        "What should I be looking at right now in {topic}?",
+        "Got any {topic} suggestions for the next few days?",
+        "Anything new in {topic} I should care about?",
+    ]
+    for i, p in enumerate(stale_prefs[:3]):
+        # t_test = stop_ts + 1 day — the pref is now expired.
+        t_test = p["stop_ts"] + DAY
+        topic = (p.get("category") or "").lower()
+        if not topic:
+            tags = p.get("hashtags") or []
+            topic = tags[0].lstrip("#").lower() if tags else "current topics"
+        q = QUERY_TEMPLATES[i % len(QUERY_TEMPLATES)].format(topic=topic)
+        formatted = utils.unix_to_formatted(t_test) if hasattr(utils, "unix_to_formatted") else ""
+        out.append({
+            "source_object_id": f"stale_{user_id}_{i:02d}",
+            "source_timestamp": t_test,
+            "formatted_timestamp": formatted,
+            "user_query": q,
+            "prior_conversation": [],
+            "action": "asked_chatbot",
+            "source_hashtags": p["hashtags"][:3],
+            "held_out_preference": None,  # No held-out — there's no new stance, just absence
+            "blind_check_score": None,
+            "blind_check_generic_answer": None,
+            "_stale_probe": True,
+            "_stale_pref": p["persona_item"],
+            "_expected_stop_ts": p["stop_ts"],
+        })
+    return out
 
 
 def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile: dict,
