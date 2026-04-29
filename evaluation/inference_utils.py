@@ -69,10 +69,25 @@ _CHATBOT_SELECTION_CAP = 15
 # not less — we only lose a few borderline implicit-heavy canonicals.
 _MIN_INIT_FOR_TEST = 0.75
 _MIN_XREF_FOR_TEST = 20.0
-# Jaccard overlap below this counts as "topically irrelevant" when we
-# synthesize `over_personalization_irrelevant` on the fly.
-_DISTRACTOR_MAX_JACCARD = 0.15
-_DISTRACTOR_POOL_SIZE = 3
+# Stratified Jaccard buckets for distractor selection — replaces the previous
+# single "Jaccard <= 0.15" filter. The old design picked seven *trivially*
+# topically-disjoint distractors which the model could reject by surface-level
+# keyword match; F1 trivially saturated. The new design mixes:
+#   - trivial: J <= 0.15 (clearly off-topic)
+#   - medium:  0.15 < J <= 0.40 (loosely related)
+#   - hard:    0.40 < J <= 0.70 (same topic family, contextually irrelevant)
+# All three buckets are still genuinely irrelevant to the test event's specific
+# preference — the held-out positive remains the unique correct answer — but
+# the model can no longer rely on hashtag overlap alone.
+_DISTRACTOR_J_TRIVIAL_MAX: float = 0.15
+_DISTRACTOR_J_MEDIUM_MAX: float = 0.40
+_DISTRACTOR_J_HARD_MAX: float = 0.70
+_DISTRACTOR_QUOTA_TRIVIAL: int = 2
+_DISTRACTOR_QUOTA_MEDIUM: int = 3
+_DISTRACTOR_QUOTA_HARD: int = 2
+_DISTRACTOR_POOL_SIZE: int = (
+    _DISTRACTOR_QUOTA_TRIVIAL + _DISTRACTOR_QUOTA_MEDIUM + _DISTRACTOR_QUOTA_HARD
+)  # = 7 distractors → 1 held-out + 7 = 8-item pool
 
 
 def _hashtag_jaccard_norm(a: Iterable[str], b: Iterable[str]) -> float:
@@ -190,19 +205,48 @@ def _select_test_items_from_timeline(
         app = p["app"]
         pref = p["pref"]
         test_hashtags = p["hashtags"]
-        # Pick topically-disjoint candidates; sort by lowest Jaccard to break ties
+        # Stratified distractor pick: quotas across trivial / medium / hard
+        # Jaccard buckets so the agent can't win the over-personalization
+        # rejection task by hashtag overlap alone. Within each bucket items
+        # are sorted by Jaccard so the most representative items are picked
+        # first; ties broken by persona_item lexically for determinism.
         ranked_distractors = sorted(
             (
                 (d, _hashtag_jaccard_norm(d["source_hashtags"], test_hashtags))
                 for d in unique_distractor_pool
                 if d["persona_item"] != p["persona_item"]
             ),
-            key=lambda pair: pair[1],
+            key=lambda pair: (pair[1], pair[0]["persona_item"] or ""),
         )
-        chosen = [
-            d for d, j in ranked_distractors
-            if j <= _DISTRACTOR_MAX_JACCARD
-        ][:_DISTRACTOR_POOL_SIZE]
+        bucket_trivial: list[dict] = []
+        bucket_medium: list[dict] = []
+        bucket_hard: list[dict] = []
+        for d, j in ranked_distractors:
+            if j <= _DISTRACTOR_J_TRIVIAL_MAX:
+                bucket_trivial.append(d)
+            elif j <= _DISTRACTOR_J_MEDIUM_MAX:
+                bucket_medium.append(d)
+            elif j <= _DISTRACTOR_J_HARD_MAX:
+                bucket_hard.append(d)
+            # j > _DISTRACTOR_J_HARD_MAX is dropped — too on-topic to be
+            # genuinely "irrelevant".
+
+        chosen: list[dict] = []
+        chosen.extend(bucket_trivial[:_DISTRACTOR_QUOTA_TRIVIAL])
+        chosen.extend(bucket_medium[:_DISTRACTOR_QUOTA_MEDIUM])
+        chosen.extend(bucket_hard[:_DISTRACTOR_QUOTA_HARD])
+        # Backfill from any remaining bucket if a quota was short — keeps the
+        # pool size stable for users with sparse hashtag overlap.
+        leftover = (
+            bucket_trivial[_DISTRACTOR_QUOTA_TRIVIAL:]
+            + bucket_medium[_DISTRACTOR_QUOTA_MEDIUM:]
+            + bucket_hard[_DISTRACTOR_QUOTA_HARD:]
+        )
+        for d in leftover:
+            if len(chosen) >= _DISTRACTOR_POOL_SIZE:
+                break
+            chosen.append(d)
+        chosen = chosen[:_DISTRACTOR_POOL_SIZE]
         out.append(TestItem(
             user_id=user_id,
             app=app,
@@ -474,12 +518,10 @@ def serialize_history_for_context(
     running_tokens = 0
     truncated = False
 
-    # Profile preface (safe slice only).
-    profile = bq.get_profile_summary(user_id)
-    preface = "# User profile\n" + json.dumps(profile, ensure_ascii=False, indent=2)
-    preface_tokens = count_tokens(preface, model)
-    sections.append(preface + f"\n\n[Preface tokens: {preface_tokens}; running total: {preface_tokens}]\n")
-    running_tokens += preface_tokens
+    # NOTE: profile preface is DELIBERATELY NOT prepended here. The eval-side
+    # firewall (Phase G) hides profile.json from the agent so personalization
+    # must be inferred from the event timeline alone — no demographic / app
+    # personas / hidden-persona scaffolding that would shortcut the test.
 
     for app in APPS:
         events = bq.get_events(user_id=user_id, app=app, since_timestamp=since_timestamp)

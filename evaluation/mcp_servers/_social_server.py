@@ -108,10 +108,10 @@ def make_server(app: str) -> FastMCP:
             since_timestamp=t_test, cursor=cursor, limit=limit,
         )
 
-    @mcp.tool()
-    def get_profile() -> dict:
-        """Minimal user profile — app persona + bio only (no preferences)."""
-        return view.get_profile_summary(user_id)
+    # NOTE: get_profile() removed — the eval harness deliberately hides
+    # profile.json from the agent so personalization must be inferred from
+    # the event timeline alone. Re-introducing this tool would expose name,
+    # demographics, and app personas that count as ground-truth scaffolding.
 
     @mcp.tool()
     def list_dms(cursor: str | None = None, limit: int = 20) -> dict:
