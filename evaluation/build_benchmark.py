@@ -1310,8 +1310,12 @@ def build_benchmark(
         raise SystemExit(f"No test items found for user {user_id} under {backend_dir}/")
 
     # Task A slates — per-item seeded with audit-and-regenerate retry loop.
-    from evaluation.audit_helpers import audit_instance, BuildAuditReporter
+    from evaluation.audit_helpers import audit_instance, BuildAuditReporter, make_blind_baseline_for_ranking
     auditor = BuildAuditReporter(user_id=user_id)
+    # Phase I.4: when blind_check_llm is provided, run a blind-baseline LLM
+    # probe on every candidate slate. If the model can pick the held-out by
+    # text alone (no user history), the slate is contaminated → regenerate.
+    blind_check = make_blind_baseline_for_ranking(blind_check_llm) if blind_check_llm is not None else None
     slate_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS:
@@ -1328,6 +1332,7 @@ def build_benchmark(
         kept, audit_report = audit_instance(
             candidate, "personalized_feed_ranking",
             rebuild_fn=_build_with_seed_bump, max_attempts=3,
+            blind_baseline=blind_check,
         )
         auditor.record("personalized_feed_ranking", audit_report, kept is not None)
         if kept is not None:
