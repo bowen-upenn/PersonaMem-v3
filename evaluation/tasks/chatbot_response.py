@@ -119,23 +119,29 @@ def run_task_b(
         privacy_flagged = inst.get("privacy_flagged_prefs") or []
         post_test = inst.get("post_test_window") or {}
 
-        # Restraint-style arms (control, adversarial, distractor_reject) all
-        # measure leak_rate against the do-not-surface pool. The pool varies:
-        #   - control: top_k_relevant_prefs (any persona pref)
-        #   - adversarial: top_k_relevant_prefs (same — pull from user's full pref pool)
-        #   - distractor_reject: privacy_flagged_prefs is the irrelevant_persona_items
-        #     list (computed at build time). top_k_relevant_prefs is empty.
-        # The leak rate metric runs against whichever list is more relevant —
-        # for distractor_reject we use privacy_flagged_prefs as the pool.
-        if arm in ("control", "adversarial", "distractor_reject"):
-            leak_pool = privacy_flagged if arm == "distractor_reject" else top_k_prefs
+        # Arm scoring (Phase I + J extensions):
+        #   - control / adversarial / distractor_reject / stale: restraint —
+        #     measure personalization_leak_rate against a do-not-surface pool.
+        #   - proactive / contradiction: surface preferences — measure
+        #     top_k alignment.
+        # `stale` (J.5) puts the now-expired pref into a synthesized pool of one
+        # ([_stale_pref]) so the leak rate fires only when the agent surfaces
+        # that specific stale item.
+        if arm in ("control", "adversarial", "distractor_reject", "stale"):
+            if arm == "distractor_reject":
+                leak_pool = privacy_flagged
+            elif arm == "stale":
+                stale_pi = inst.get("_stale_pref") or ""
+                leak_pool = [{"persona_item": stale_pi}] if stale_pi else top_k_prefs
+            else:
+                leak_pool = top_k_prefs
             ctrl_leak = metrics.personalization_leak_rate(response_text, leak_pool)
             arm_metrics = {
                 "personalization_leak_rate": ctrl_leak["leak_rate"],
                 "personalization_leaks": ctrl_leak["leaked"],
             }
         else:
-            # Proactive: reward surfacing top-K relevant prefs.
+            # Proactive / contradiction: reward surfacing top-K relevant prefs.
             align = metrics.top_k_preference_alignment(response_text, top_k_prefs)
             arm_metrics = {
                 "top_k_alignment_rate": align["alignment_rate"],
@@ -189,8 +195,11 @@ def run_task_b(
             evidence = build_judge_evidence(bq, anchor, response_text)
             polarity = inst.get("polarity", "positive")
             # All restraint-style arms get negative polarity for the judge
-            # (agent under test should NOT personalize).
-            if action == "asked_not_to_personalize" or arm in ("control", "adversarial", "distractor_reject"):
+            # (agent under test should NOT personalize). `stale` (J.5) is also
+            # restraint — agent must NOT use the expired pref.
+            if action == "asked_not_to_personalize" or arm in (
+                "control", "adversarial", "distractor_reject", "stale"
+            ):
                 polarity = "negative"
             judge_scores = judges.judge_chatbot_rubric(judge_client, response_text, evidence, polarity)
 
