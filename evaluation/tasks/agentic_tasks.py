@@ -187,17 +187,31 @@ def _dispatch_and_score(
         judge_client=(judge_client if enable_llm_judge else None),
     )
 
+    # Read overlay writes first — needed for both final_state_diff AND for
+    # the synthesized tool_trace (Phase H.3 fix).
+    final_state_report: dict = {}
+    overlay_writes: list[dict] = []
+    if mode == "mcp_agent":
+        overlay_writes = _read_overlay(stats.get("overlay_path"))
+    if final_state_expected and mode == "mcp_agent":
+        final_state_report = _check_final_state(stats.get("overlay_path"), final_state_expected)
+
+    # Phase H.3: Claude Code's --output-format json doesn't expose individual
+    # tool_use messages by default (those would need --verbose streaming).
+    # Until that's wired up, synthesize a tool_trace from the overlay writes
+    # so write-tool rules (count('instagram_create_post') == 1, etc.) actually
+    # work. Read-tool rules (count('instagram_list_dms') >= 1) still can't be
+    # checked this way — those are essentially no-ops until Phase J adds
+    # verbose-mode tool-use parsing.
+    synthesized_trace = stats.get("tool_trace") or []
+    if mode == "mcp_agent" and not synthesized_trace and overlay_writes:
+        synthesized_trace = [{"name": w.get("tool", ""), "args": w.get("event") or {}}
+                             for w in overlay_writes]
+
     # Task-specific rule evaluation.
     tool_call_report: dict = {}
     if tool_call_rules:
-        tool_call_report = _check_tool_call_rules(stats.get("tool_trace") or [], tool_call_rules)
-
-    final_state_report: dict = {}
-    overlay_writes: list[dict] = []
-    if final_state_expected and mode == "mcp_agent":
-        final_state_report = _check_final_state(stats.get("overlay_path"), final_state_expected)
-    if mode == "mcp_agent":
-        overlay_writes = _read_overlay(stats.get("overlay_path"))
+        tool_call_report = _check_tool_call_rules(synthesized_trace, tool_call_rules)
 
     # Per-task content verifier (Issue 6) — verifies the agent's actual output
     # content, not just write counts. E.g., t12: did the post body actually
@@ -573,14 +587,14 @@ def _prompt_for(task_id: str):
     def t7(inst, h): return pa.t7_moment_recommendation(inst["moment"], h)
     def t8(inst, h): return pa.t8_dm_digest(inst["target_app"], h)
     def t9(inst, h): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h)
-    def t10(inst, h): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h)
+    def t10(inst, h): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"))
     def t11(inst, h): return pa.t11_vague_refind(inst["topic"], h)
     def t12(inst, h): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h)
     def t13(inst, h): return pa.t13_chatbot_dispatch(inst["target_app"], inst["context"], h)
     def t14(inst, h): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
     def t15(inst, h): return pa.t15_collection_curation(inst["target_app"], h)
-    def t16(inst, h): return pa.t16_group_dm_summary(inst["thread_id"], h)
-    def t17(inst, h): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h)
+    def t16(inst, h): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"))
+    def t17(inst, h): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h, target_app=inst.get("target_app", "instagram"))
     def t18(inst, h): return pa.t18_proactive_daily(h)
     def t19(inst, h): return pa.t19_trending_alert(h)
 
