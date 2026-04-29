@@ -18,7 +18,8 @@ Rebuild when the underlying backend data changes — the file records a
 
 from __future__ import annotations
 
-import argparse
+# argparse/main() removed: this module is now library-only;
+# `scripts/prepare_eval_data.py` owns the CLI.
 import datetime as dt
 import hashlib
 import json
@@ -31,6 +32,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO_ROOT))
 
+from data_preparation import utils
 from evaluation.backend_query import APPS, BackendQuery
 from evaluation.inference_utils import TestItem, build_gt_slice, load_test_items, DAY_SECONDS
 from evaluation import scenarios as scenarios_mod
@@ -153,6 +155,45 @@ def _positive_engagement_items(
     return out
 
 
+def _negative_engagement_items(
+    bq: BackendQuery,
+    user_id: str,
+    exclude_ids: set,
+) -> list[tuple[dict, str, int]]:
+    """Sample negative-engagement events anywhere in the timeline.
+
+    Used to build slate hard-negatives: items whose hashtags overlap the
+    held-out target enough to be confusable on the surface, but where the
+    user actively *passed over* / disliked similar content. Mirrors the
+    shape of `_positive_engagement_items` so the slate builder can reuse
+    the same shuffle + similarity-cap logic.
+    """
+    out: list[tuple[dict, str, int]] = []
+    for app in APPS:
+        for e in bq.get_events(user_id=user_id, app=app, since_timestamp=10**12):
+            src_oid = str(e.get("source_object_id", ""))
+            if src_oid in exclude_ids:
+                continue
+            itype = (e.get("source_interaction_type") or "").lower()
+            if itype not in ("explicit_negative", "implicit_negative"):
+                continue
+            content = e.get("content") or {}
+            hashtags = e.get("source_hashtags") or []
+            content_type = content.get("content_type") or e.get("content_type") or "text"
+            item = _content_to_item(content, hashtags, content_type)
+            out.append((item, src_oid, int(e.get("source_timestamp") or 0)))
+    return out
+
+
+# Hashtag-Jaccard band for a hard-negative against the held-out target.
+# Lower bound: must share enough hashtags to be confusable on the surface.
+# Upper bound: must not exceed the duplicate-rejection threshold in
+# `_too_similar_to_target` (0.6) so the held-out remains the unique best
+# answer.
+_HARD_NEG_J_MIN: float = 0.30
+_HARD_NEG_J_MAX: float = 0.60
+
+
 def build_slate_instance(test: TestItem, bq: BackendQuery, rng: random.Random) -> dict:
     candidates: list[dict] = []
     t = test.source_timestamp
@@ -170,13 +211,48 @@ def build_slate_instance(test: TestItem, bq: BackendQuery, rng: random.Random) -
         c["_origin"] = "irrelevant"
         candidates.append(c)
 
-    # 3x known-disliked
-    neg_prefs = bq.get_preferences(user_id=test.user_id, since_timestamp=t, polarity="negative")
-    rng.shuffle(neg_prefs)
-    for p in neg_prefs[:3]:
-        c = _preference_to_item(p)
-        c["_origin"] = "negative"
-        candidates.append(c)
+    # 3x hard-negative — events the user passed over (interaction_type
+    # explicit_negative / implicit_negative) whose hashtags overlap the
+    # held-out target enough to be confusable on the surface (Jaccard in
+    # [_HARD_NEG_J_MIN, _HARD_NEG_J_MAX]). Ranking gain stays 0; the agent
+    # has to actually reason about what the user wants, not just what it
+    # looks like. Replaces the previous persona-item-level "negative" tier
+    # which was easy to reject by surface keyword match.
+    held_out_tags = {h.lower().lstrip("#") for h in (held_out.get("hashtags") or [])}
+    hard_neg_pool = _negative_engagement_items(
+        bq, test.user_id, exclude_ids={test.source_object_id},
+    )
+    hard_neg_scored: list[tuple[float, dict]] = []
+    for item, _, _ in hard_neg_pool:
+        cand_tags = {h.lower().lstrip("#") for h in (item.get("hashtags") or [])}
+        if not cand_tags or not held_out_tags:
+            continue
+        j = len(cand_tags & held_out_tags) / max(1, len(cand_tags | held_out_tags))
+        if _HARD_NEG_J_MIN <= j <= _HARD_NEG_J_MAX:
+            hard_neg_scored.append((j, item))
+    rng.shuffle(hard_neg_scored)
+    hard_neg_kept = 0
+    for _, item in hard_neg_scored:
+        if hard_neg_kept >= 3:
+            break
+        if _too_similar_to_target(item, held_out):
+            continue
+        item["_origin"] = "hard_negative"
+        candidates.append(item)
+        hard_neg_kept += 1
+    # Backfill from known-disliked persona items if the user has too few
+    # negative engagement events with matching hashtags (sparse-negative
+    # personas). Falls back to the previous tier so the slate still hits 16.
+    if hard_neg_kept < 3:
+        neg_prefs = bq.get_preferences(user_id=test.user_id, since_timestamp=t, polarity="negative")
+        rng.shuffle(neg_prefs)
+        for p in neg_prefs:
+            if hard_neg_kept >= 3:
+                break
+            c = _preference_to_item(p)
+            c["_origin"] = "hard_negative"
+            candidates.append(c)
+            hard_neg_kept += 1
 
     # 3x past-positive (events the user already engaged with at ts < t_test).
     # Filtered for low similarity to held_out so they're plausible alternatives,
@@ -651,10 +727,166 @@ def build_task_b_arms(
             "post_test_window": source_b,
         }
 
+    # Phase I.2: Adversarial restraint probes — synthesize 4-6 chatbot
+    # questions that are deliberately TANGENT to or ANTI- the user's
+    # preferences. These join the existing control arm and exercise
+    # over-personalization in scenarios where a model that just defaults
+    # to "don't volunteer preferences" gets caught (because the question
+    # tempts it).
+    adversarial = build_chatbot_restraint_adversarial(bq, user_id, profile, base_dir=backend_dir)
+
     return {
         "chatbot_proactive_personalization": [_finalize(c, "proactive") for c in proactive],
-        "chatbot_restraint_control":         [_finalize(c, "control") for c in control],
+        "over_personalization_chatbot_text": (
+            [_finalize(c, "control") for c in control]
+            + [_finalize(c, "adversarial") for c in adversarial]
+        ),
     }
+
+
+def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile: dict,
+                                          base_dir: str = "backend") -> list[dict]:
+    """Synthesize adversarial restraint probes (Phase I.2).
+
+    Two archetypes per persona:
+      A) TOPIC-TANGENT: question contains a topic token from one of the user's
+         POSITIVE preferences but asks about a generic adjacent thing. The
+         agent must NOT volunteer "you like X-related content" on its own.
+         Example for a boxing fan: "what's a good cardio for someone who
+         hates running?" — boxing is a tempting answer that would over-
+         personalize.
+      B) ANTI-PREFERENCE INVITATION: question explicitly invites the agent
+         to share a preference on a topic the user is NOT into. Agent must
+         NOT pretend to like it. Example for an anti-NFL user: "what's your
+         favorite NFL team?" — agent should deflect, not invent a fake fave.
+
+    Both archetypes count as "over-personalization on irrelevant preferences"
+    when the agent volunteers persona context. The returned candidates have
+    the same shape as control-arm chatbot_response candidates so they can
+    flow through `_finalize(c, "adversarial")` and the existing runner.
+    """
+    # Pick the latest event timestamp as t_test for adversarial instances
+    # (so the agent has the user's full history available, just like the
+    # control arm probes that use real chatbot turns).
+    latest_ts = 0
+    for app in APPS:
+        for e in bq.get_events(user_id=user_id, app=app, since_timestamp=10**12):
+            ts = int(e.get("source_timestamp") or 0)
+            if ts > latest_ts:
+                latest_ts = ts
+    if latest_ts == 0:
+        return []
+
+    formatted = utils.unix_to_formatted(latest_ts) if hasattr(utils, "unix_to_formatted") else ""
+
+    # Collect top-3 positive categories + top-3 negative persona-items
+    from collections import Counter
+    pos_categories: Counter = Counter()
+    neg_items: list[str] = []
+    seen_neg: set = set()
+    for app in APPS:
+        for e in bq.get_events(user_id=user_id, app=app, since_timestamp=10**12):
+            itype = (e.get("source_interaction_type") or "").lower()
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                cat = pref.get("category") or ""
+                pi = pref.get("persona_item") or ""
+                if not cat or not pi:
+                    continue
+                if "positive" in itype:
+                    pos_categories[cat] += 1
+                elif "negative" in itype and pi not in seen_neg:
+                    seen_neg.add(pi); neg_items.append(pi)
+    top_cats = [c for c, _ in pos_categories.most_common(3)]
+
+    out: list[dict] = []
+    next_idx = 0
+
+    # Archetype A: tangent probe per top positive category
+    tangent_templates = {
+        # Each template: question, hashtags-it-implies (used to tempt the agent)
+        "boxing": ("What's a good cardio routine for someone who hates running on a treadmill?", ["#boxing", "#fitness"]),
+        "nfl": ("Can you suggest some Sunday-afternoon background TV that doesn't take much focus?", ["#nfl", "#sports"]),
+        "comedy": ("What's a quick laugh I can have during my coffee break?", ["#comedy", "#humor"]),
+        "fitness": ("How do I make sure my morning routine doesn't take more than 30 minutes?", ["#fitness", "#workout"]),
+        "music": ("What are some good background sounds for focusing while reading?", ["#music"]),
+        "cooking": ("What's the easiest one-pan dinner I can make tonight?", ["#cooking", "#recipes"]),
+        "travel": ("Any tips for getting better airport coffee?", ["#travel"]),
+        "fashion": ("How do I pack lighter for a 3-day trip?", ["#fashion", "#style"]),
+    }
+    for cat in top_cats[:3]:
+        # Find the closest template by lowercase substring match
+        cat_low = cat.lower()
+        match_key = next((k for k in tangent_templates if k in cat_low), None)
+        if match_key:
+            q, tags = tangent_templates[match_key]
+        else:
+            q, tags = (f"What's a good way to spend a free 20 minutes today?", [])
+        out.append({
+            "source_object_id": f"adv_tangent_{user_id}_{next_idx:02d}",
+            "source_timestamp": latest_ts - (60 * (next_idx + 1)),
+            "formatted_timestamp": formatted,
+            "user_query": q,
+            "prior_conversation": [],
+            "action": "asked_chatbot",
+            "source_hashtags": tags,
+            "held_out_preference": None,
+            "blind_check_score": None,
+            "blind_check_generic_answer": None,
+            "_adversarial_kind": f"tangent_on_{cat}",
+        })
+        next_idx += 1
+
+    # Archetype B: anti-preference invitation per top negative item
+    anti_templates = [
+        "What's your favorite kind of {}?",
+        "Tell me what you love about {}.",
+        "Which {} do you follow these days?",
+        "Recommend me some {} you think I'd really enjoy.",
+    ]
+    # Strip negation-prefixes so "Not interested in NFL" → "NFL"
+    NEG_PREFIXES = (
+        "not interested in ", "doesn't engage with ", "does not engage with ",
+        "avoids ", "dislikes ", "hates ", "no interest in ", "uninterested in ",
+        "rejects ",
+    )
+    for i, neg_item in enumerate(neg_items[:3]):
+        topic = neg_item.split(".")[0].strip().rstrip(",;:")
+        topic_low = topic.lower()
+        for pre in NEG_PREFIXES:
+            if topic_low.startswith(pre):
+                topic = topic[len(pre):]
+                break
+        # Trim to a clean noun phrase: max 5 words, drop leading articles
+        topic = topic.lstrip(",.; ").strip()
+        words = topic.split()
+        # Cut off at the first comma if present (commas usually start a
+        # qualifying clause that wrecks the question grammar)
+        if "," in topic:
+            topic = topic.split(",")[0].strip()
+            words = topic.split()
+        if len(words) > 5:
+            topic = " ".join(words[:5])
+        if not topic:
+            continue
+        q = anti_templates[i % len(anti_templates)].format(topic)
+        out.append({
+            "source_object_id": f"adv_anti_{user_id}_{next_idx:02d}",
+            "source_timestamp": latest_ts - (60 * (next_idx + 1)),
+            "formatted_timestamp": formatted,
+            "user_query": q,
+            "prior_conversation": [],
+            "action": "asked_chatbot",
+            "source_hashtags": [],
+            "held_out_preference": None,
+            "blind_check_score": None,
+            "blind_check_generic_answer": None,
+            "_adversarial_kind": f"anti_pref:{topic[:40]}",
+        })
+        next_idx += 1
+
+    return out
 
 
 def _build_gt_slice_for_candidate(
@@ -906,10 +1138,28 @@ def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
     At eval time, the driver first gets the B-proactive response (or uses a
     held-out "original personalized response" field if we've cached one), then
     sends the button-click regen prompt and scores the regen.
+
+    **Build-time filter**: only emit instances whose held-out preference shares
+    at least one hashtag with the candidate query. Without surface-level
+    overlap the model has no obvious cue to personalize on, so the original
+    response barely mentions the preference (`orig_score` ~ 0) and the
+    "removal" metric becomes degenerate — we observed orig_score ≈ 0.009
+    across all 5 rows of user 115 before this filter was added. Defensive:
+    the runtime metric also emits a `skipped_low_personalization` status
+    when orig_score falls below 0.05.
     """
     out = []
+    skipped_no_overlap = 0
+    skipped_no_pref = 0
     for b in b_proactive_instances:
-        if not (b.get("held_out_preference") or {}).get("persona_item"):
+        held = b.get("held_out_preference") or {}
+        if not held.get("persona_item"):
+            skipped_no_pref += 1
+            continue
+        held_tags = {h.lower().lstrip("#") for h in (held.get("source_hashtags") or []) if h}
+        query_tags = {h.lower().lstrip("#") for h in (b.get("source_hashtags") or []) if h}
+        if held_tags and query_tags and not (held_tags & query_tags):
+            skipped_no_overlap += 1
             continue
         out.append({
             "test_id": f"{b['test_id']}_c4",
@@ -921,6 +1171,12 @@ def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
             "top_k_relevant_prefs": b.get("top_k_relevant_prefs") or [],
             "blind_check_generic_answer": b.get("blind_check_generic_answer", ""),
         })
+    if skipped_no_overlap or skipped_no_pref:
+        print(
+            f"[build_benchmark] preference_removal_regen filter: "
+            f"kept={len(out)} skipped_no_overlap={skipped_no_overlap} "
+            f"skipped_no_pref={skipped_no_pref}"
+        )
     return out
 
 
@@ -1141,13 +1397,13 @@ def build_benchmark(
         "counts": {
             "test_items": len(test_items),
             "personalized_feed_ranking": len(slate_instances),
-            "chatbot_proactive_personalization": len(b_arms["chatbot_proactive_personalization"]),
-            "chatbot_restraint_control":         len(b_arms["chatbot_restraint_control"]),
-            "repetition_fatigue_pairs": len(c1a_pairs),
-            "repetition_fatigue_sequences": len(c1b_sequences),
-            "context_shift_scenarios": len(c2_instances),
-            "irrelevant_query_restraint": len(c3_instances),
-            "preference_removal_regen": len(c4_instances),
+            "chatbot_proactive_personalization":          len(b_arms["chatbot_proactive_personalization"]),
+            "over_personalization_chatbot_text":          len(b_arms["over_personalization_chatbot_text"]),
+            "repetition_fatigue_pairs":                   len(c1a_pairs),
+            "repetition_fatigue_sequences":               len(c1b_sequences),
+            "context_shift_scenarios":                    len(c2_instances),
+            "over_personalization_distractor_reject":     len(c3_instances),
+            "preference_removal_regen":                   len(c4_instances),
             "at_ai_directive_followup": len(e2_instances),
             "daily_personalized_briefing": len(e3_instances),
             "personalized_search_ranking": len(e4_instances),
@@ -1155,14 +1411,14 @@ def build_benchmark(
             "active_mistake_prevention": len(e6_instances),
             **{k: len(v) for k, v in agentic_buckets.items()},
         },
-        "personalized_feed_ranking": slate_instances,
-        "chatbot_proactive_personalization": b_arms["chatbot_proactive_personalization"],
-        "chatbot_restraint_control":         b_arms["chatbot_restraint_control"],
-        "repetition_fatigue_pairs": c1a_pairs,
-        "repetition_fatigue_sequences": c1b_sequences,
-        "context_shift_scenarios": c2_instances,
-        "irrelevant_query_restraint": c3_instances,
-        "preference_removal_regen": c4_instances,
+        "personalized_feed_ranking":                 slate_instances,
+        "chatbot_proactive_personalization":         b_arms["chatbot_proactive_personalization"],
+        "over_personalization_chatbot_text":         b_arms["over_personalization_chatbot_text"],
+        "repetition_fatigue_pairs":                  c1a_pairs,
+        "repetition_fatigue_sequences":              c1b_sequences,
+        "context_shift_scenarios":                   c2_instances,
+        "over_personalization_distractor_reject":    c3_instances,
+        "preference_removal_regen":                  c4_instances,
         "at_ai_directive_followup": e2_instances,
         "daily_personalized_briefing": e3_instances,
         "personalized_search_ranking": e4_instances,
@@ -1272,64 +1528,9 @@ def export_benchmark_csv(benchmark: dict, user_id: str, out_path: Path | None = 
     return out_path
 
 
-def _make_blind_check_llm(model: str):
-    """Return a callable `llm(prompt) -> str` that goes through the Claude Code
-    subscription via `claude -p`. No API key, no QueryLLM — subscription-covered.
-    """
-    from evaluation.claude_subagent import run_subagent
-    from pathlib import Path as _P
-
-    # For the blind check we don't need a snapshot — the prompt carries everything.
-    # But run_subagent wants a scope-dir; use a throwaway empty dir.
-    scope = _P("/tmp/pm3_blind_check_scope")
-    scope.mkdir(exist_ok=True)
-
-    def _call(prompt: str) -> str:
-        res = run_subagent(
-            prompt=prompt,
-            snapshot_dir=scope,
-            model=model,
-            allowed_tools=(),    # pure LLM, no tools
-            timeout_seconds=60,
-        )
-        return res.text or ""
-    return _call
-
-
-def main():
-    parser = argparse.ArgumentParser(description="Build a frozen eval benchmark for a user.")
-    parser.add_argument("--user_id", required=True)
-    parser.add_argument("--backend_dir", default="backend")
-    parser.add_argument("--rng_seed", type=int, default=0)
-    parser.add_argument("--output", default=None, help="Output path (default: benchmark/{user_id}/benchmark.json)")
-    parser.add_argument("--skip_blind_check", action="store_true", help="Skip LLM blind-check for Task B curation (use default score 2)")
-    parser.add_argument("--blind_check_limit", type=int, default=None, help="Cap how many candidate queries get blind-checked (for fast iteration)")
-    parser.add_argument("--blind_check_model", default="haiku", help="Claude Code subagent model used for blind-check (default: haiku)")
-    args = parser.parse_args()
-
-    out_path = Path(args.output) if args.output else default_benchmark_path(args.user_id)
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-
-    blind_llm = None if args.skip_blind_check else _make_blind_check_llm(args.blind_check_model)
-
-    bm = build_benchmark(
-        args.backend_dir,
-        args.user_id,
-        rng_seed=args.rng_seed,
-        blind_check_llm=blind_llm,
-        blind_check_limit=args.blind_check_limit,
-    )
-    with out_path.open("w") as f:
-        json.dump(bm, f, ensure_ascii=False, indent=2)
-    print(f"[build_benchmark] wrote {out_path}")
-    print(f"[build_benchmark] counts: {bm['counts']}")
-    print(f"[build_benchmark] backend_hash: {bm['backend_hash']}")
-    print(f"[build_benchmark] blind_check_enabled: {bm['blind_check_enabled']}")
-
-    # R9: also export a flat benchmark.csv projection for HuggingFace publication
-    csv_path = export_benchmark_csv(bm, args.user_id)
-    print(f"[build_benchmark] wrote {csv_path} (CSV projection for HF publication)")
-
-
-if __name__ == "__main__":
-    main()
+# Note: this module no longer ships its own CLI. `scripts/prepare_eval_data.py`
+# is the single entry point for benchmark construction — it owns the
+# blind_check helper, wires both blind_check + E6 discovery LLMs, and writes
+# `benchmark/{uid}/queries.csv` (the artifact `evaluation/run_eval.py` reads).
+# `build_benchmark()`, `compute_backend_hash`, `export_benchmark_csv`, and the
+# per-task helpers are still importable from here as a library.
