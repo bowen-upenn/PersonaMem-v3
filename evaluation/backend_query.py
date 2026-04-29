@@ -646,15 +646,17 @@ def materialize_snapshot(
     """
     base = Path(out_dir) if out_dir is not None else DEFAULT_SNAPSHOT_ROOT
     snap = base / user_id / f"T_{t_test}"
-    # Cheap cache: if all app files + profile.json exist, reuse.
-    expected = [snap / "profile.json"] + [snap / f"{a}.json" for a in APPS]
+    # Cheap cache: if all app files exist, reuse (profile.json deliberately
+    # excluded — see the firewall comment below).
+    expected = [snap / f"{a}.json" for a in APPS]
     if snap.exists() and all(p.exists() for p in expected):
         return snap
 
     snap.mkdir(parents=True, exist_ok=True)
-    # Profile: the safe slice only (no flat preferences, no hidden_personas).
-    profile = bq.get_profile_summary(user_id)
-    (snap / "profile.json").write_text(json.dumps(profile, ensure_ascii=False, indent=2))
+    # Profile is DELIBERATELY NOT written into the snapshot.
+    # The eval-side firewall (Phase G) hides profile.json from the agent so that
+    # personalization must be inferred from the event timeline alone — no
+    # demographic / app-persona scaffolding that would shortcut the test.
     # Per-app event lists, already time-masked + leak-stripped by BackendQuery.
     for app in APPS:
         events = bq.get_events(user_id=user_id, app=app, since_timestamp=t_test)
@@ -677,8 +679,11 @@ moments dynamically from the full timeline.
 
 ## Files (use `Read` to open any of them)
 
-- `profile.json` — demographic + app personas (Instagram, Facebook, Threads,
-  Chatbot). Safe summary; no ground-truth preferences.
+You see only the per-app event timelines. The user's profile (demographics, app
+personas, hidden persona summary, full preference list) is intentionally NOT
+included — you must infer who this user is from their actual interactions
+across the four apps below.
+
 - `instagram.json` — {len(instagram)} events, time-sorted ascending.
 - `facebook.json` — {len(facebook)} events.
 - `threads.json` — {len(threads)} events.
