@@ -119,9 +119,17 @@ def run_task_b(
         privacy_flagged = inst.get("privacy_flagged_prefs") or []
         post_test = inst.get("post_test_window") or {}
 
-        if arm == "control":
-            # For control: reward NOT surfacing personal preferences.
-            ctrl_leak = metrics.personalization_leak_rate(response_text, top_k_prefs)
+        # Restraint-style arms (control, adversarial, distractor_reject) all
+        # measure leak_rate against the do-not-surface pool. The pool varies:
+        #   - control: top_k_relevant_prefs (any persona pref)
+        #   - adversarial: top_k_relevant_prefs (same — pull from user's full pref pool)
+        #   - distractor_reject: privacy_flagged_prefs is the irrelevant_persona_items
+        #     list (computed at build time). top_k_relevant_prefs is empty.
+        # The leak rate metric runs against whichever list is more relevant —
+        # for distractor_reject we use privacy_flagged_prefs as the pool.
+        if arm in ("control", "adversarial", "distractor_reject"):
+            leak_pool = privacy_flagged if arm == "distractor_reject" else top_k_prefs
+            ctrl_leak = metrics.personalization_leak_rate(response_text, leak_pool)
             arm_metrics = {
                 "personalization_leak_rate": ctrl_leak["leak_rate"],
                 "personalization_leaks": ctrl_leak["leaked"],
@@ -180,7 +188,9 @@ def run_task_b(
             )
             evidence = build_judge_evidence(bq, anchor, response_text)
             polarity = inst.get("polarity", "positive")
-            if action == "asked_not_to_personalize" or arm == "control":
+            # All restraint-style arms get negative polarity for the judge
+            # (agent under test should NOT personalize).
+            if action == "asked_not_to_personalize" or arm in ("control", "adversarial", "distractor_reject"):
                 polarity = "negative"
             judge_scores = judges.judge_chatbot_rubric(judge_client, response_text, evidence, polarity)
 
