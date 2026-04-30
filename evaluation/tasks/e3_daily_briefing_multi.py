@@ -124,14 +124,77 @@ Respond with ONE fenced ```json block:
 ```"""
 
 
-def compute_e3_metrics(result_parsed: dict, instance: dict) -> dict:
-    """Per-instance minimal metrics. Cross-day drift aggregation happens
-    at the runner level after all instances are scored.
+_HASHTAG_RE = __import__("re").compile(r"#([A-Za-z0-9_]{2,})")
+
+
+def _extract_briefing_topics(suggestions: list[dict]) -> set[str]:
+    """Pull topical signal tokens out of a briefing's suggestions list.
+    Combines hashtags + lowercased title content tokens (≥ 4 chars,
+    stop-word filtered) so the comparison works whether the agent emits
+    explicit hashtags or just descriptive titles.
+    """
+    if not suggestions:
+        return set()
+    _STOP = {"the", "and", "for", "with", "your", "you", "from", "this", "that",
+             "today", "what", "about", "have", "their", "some", "more", "into",
+             "over", "than", "when", "where", "look", "want", "just"}
+    out: set[str] = set()
+    for s in suggestions:
+        if not isinstance(s, dict):
+            continue
+        text = " ".join(str(s.get(k, "")) for k in ("title", "why")).lower()
+        for m in _HASHTAG_RE.findall(text):
+            out.add(m.lower())
+        for tok in text.split():
+            tok = "".join(c for c in tok if c.isalpha())
+            if len(tok) >= 4 and tok not in _STOP:
+                out.add(tok)
+    return out
+
+
+def _prior_day_top_hashtags(bq: BackendQuery, user_id: str, t_test: int,
+                            window_seconds: int = 86400, top_n: int = 8) -> set[str]:
+    """Return the top N hashtags the user engaged with in the 24h before t_test."""
+    from collections import Counter
+    lo = t_test - window_seconds
+    hi = t_test
+    counts: Counter = Counter()
+    for app in ("instagram", "facebook", "threads", "chatbot"):
+        for e in bq._load_events(user_id, app):
+            ts = int(e.get("source_timestamp") or 0)
+            if not (lo <= ts < hi):
+                continue
+            for h in (e.get("source_hashtags") or []):
+                counts[h.lower().lstrip("#")] += 1
+    return {h for h, _ in counts.most_common(top_n)}
+
+
+def compute_e3_metrics(result_parsed: dict, instance: dict, bq: BackendQuery,
+                       user_id: str) -> dict:
+    """Per-instance metrics — Phase L.B.2 implements the cross-day signal.
+
+    `briefing_personalization_score`: jaccard between this briefing's topical
+    tokens and the user's top-engaged hashtags in the prior 24h. High = the
+    agent's briefing aligns with what the user actually engaged with
+    yesterday (good personalization). Low = generic / brittle / off-topic.
+    `briefing_topics` is the extracted token set, used downstream for
+    cross-day drift comparison in the runner.
     """
     suggestions = (result_parsed or {}).get("suggestions") or []
+    topics = _extract_briefing_topics(suggestions)
+    prior_top = _prior_day_top_hashtags(bq, user_id, instance.get("t_test", 0))
+    if topics and prior_top:
+        inter = len(topics & prior_top)
+        union = len(topics | prior_top)
+        align = inter / union if union else 0.0
+    else:
+        align = 0.0
     return {
         "n_suggestions": len(suggestions),
         "has_structured_output": int(bool(suggestions)),
+        "briefing_topics": sorted(topics)[:20],
+        "briefing_personalization_score": round(align, 3),
+        "n_prior_day_top_hashtags": len(prior_top),
     }
 
 
@@ -182,7 +245,7 @@ def run_e3_daily_briefing_multi(
             claude_model=claude_model, llm_client=llm_client,
         )
         parsed = extract_json_from_response(raw_response) or {}
-        m = compute_e3_metrics(parsed, inst)
+        m = compute_e3_metrics(parsed, inst, bq, user_id)
         results.append({
             "task": "e3_daily_briefing_multi",
             "user_id": user_id,
@@ -194,4 +257,20 @@ def run_e3_daily_briefing_multi(
             "history_tokens": history_tokens,
             "tool_call_count": tool_call_count,
         })
+
+    # Phase L.B.2: cross-day drift (post-loop). For each adjacent (day_N,
+    # day_{N+1}) pair, compute jaccard(briefing_topics_N, briefing_topics_{N+1}).
+    # Low jaccard = the agent adapts the briefing day-to-day; very high (≥0.7)
+    # = brittle repetition (same set of suggestions regardless of new history).
+    sorted_results = sorted(results, key=lambda r: r.get("day_label", ""))
+    for i in range(1, len(sorted_results)):
+        prev_topics = set(sorted_results[i - 1]["metrics"].get("briefing_topics") or [])
+        curr_topics = set(sorted_results[i]["metrics"].get("briefing_topics") or [])
+        if prev_topics and curr_topics:
+            inter = len(prev_topics & curr_topics)
+            union = len(prev_topics | curr_topics)
+            jacc = inter / union if union else 0.0
+        else:
+            jacc = 0.0
+        sorted_results[i]["metrics"]["cross_day_repetition_rate"] = round(jacc, 3)
     return results

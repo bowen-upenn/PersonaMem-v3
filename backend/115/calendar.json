@@ -2,20 +2,20 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775203200,
-      "formatted_timestamp": "08:00, 04/03/2026",
+      "ts": 1775181000,
+      "formatted_timestamp": "14:30, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Pre-dawn pump log check",
-        "start_ts": 1775203200,
-        "end_ts": 1775206800,
+        "title": "Court Records Digitization Sprint",
+        "start_ts": 1775182800,
+        "end_ts": 1775197200,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
         "type": "work",
@@ -26,220 +26,95 @@
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775214000,
-      "formatted_timestamp": "11:00, 04/03/2026",
+      "ts": 1775199000,
+      "formatted_timestamp": "19:10, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "River trail run",
-        "start_ts": 1775214000,
-        "end_ts": 1775219700,
+        "title": "Evening Brazilian Jiu-Jitsu Class",
+        "start_ts": 1775200800,
+        "end_ts": 1775208000,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
         "type": "health",
         "linked_preferences": [
-          "distance running and run-focused fitness content"
+          "Brazilian Jiu-Jitsu training or culture (martial arts)",
+          "gym-based strength training, especially back workouts and resistance exercises"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "adjacent"
+        "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775242800,
-      "formatted_timestamp": "19:00, 04/03/2026",
+      "ts": 1775246400,
+      "formatted_timestamp": "08:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "Simple weeknight dinner: turkey tacos",
-        "start_ts": 1775242800,
-        "end_ts": 1775246400,
+        "title": "Metro Ride to Downtown Office",
+        "start_ts": 1775248200,
+        "end_ts": 1775249700,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [
-          "food and home cooking",
-          "easy homemade cooking recipes"
-        ],
-        "is_preference_driven": true,
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775293200,
-      "formatted_timestamp": "09:00, 04/04/2026",
+      "ts": 1775257200,
+      "formatted_timestamp": "11:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Weekend boxing card stream",
-        "start_ts": 1775293200,
-        "end_ts": 1775304000,
+        "title": "Ana — Lunch Catch-Up",
+        "start_ts": 1775259000,
+        "end_ts": 1775262600,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
         "type": "social",
-        "linked_preferences": [
-          "boxing fandom",
-          "combat sports fandom",
-          "professional boxing, especially high-profile championship matchups"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "related"
       }
     },
     {
       "mod_id": "mod_005",
-      "ts": 1775332800,
-      "formatted_timestamp": "20:00, 04/04/2026",
+      "ts": 1775268000,
+      "formatted_timestamp": "14:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_005",
-        "title": "Dinner with family at South Side",
-        "start_ts": 1775332800,
-        "end_ts": 1775343600,
+        "title": "Transcript Cleanup and File Audit",
+        "start_ts": 1775271600,
+        "end_ts": 1775282400,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_006",
-      "ts": 1775386800,
-      "formatted_timestamp": "11:00, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_006",
-        "title": "Foraging notebook walk in Frick Park",
-        "start_ts": 1775386800,
-        "end_ts": 1775397600,
-        "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
-          "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "foraging and identifying edible wild plants",
-          "nature"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_007",
-      "ts": 1775430000,
-      "formatted_timestamp": "23:00, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_007",
-        "title": "Chatbot: meal prep ideas for the workweek",
-        "start_ts": 1775430000,
-        "end_ts": 1775431800,
-        "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
-          "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "food and home cooking",
-          "personal growth and self-improvement"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_008",
-      "ts": 1775476800,
-      "formatted_timestamp": "12:00, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Dentist cleaning",
-        "start_ts": 1775476800,
-        "end_ts": 1775479500,
-        "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
-          "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_009",
-      "ts": 1775505600,
-      "formatted_timestamp": "20:00, 04/06/2026",
-      "action": "updated",
-      "entry_id": "cal_004",
-      "diff": {
-        "end_ts": {
-          "from": 1775304000,
-          "to": 1775307600
-        },
-        "notes": {
-          "from": "",
-          "to": "Move start 30 min later; main event runs long"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_010",
-      "ts": 1775559600,
-      "formatted_timestamp": "11:00, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_009",
-        "title": "Safety training refresher",
-        "start_ts": 1775559600,
-        "end_ts": 1775566800,
-        "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
-          "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
         "type": "work",
@@ -249,65 +124,549 @@
       }
     },
     {
-      "mod_id": "mod_011",
-      "ts": 1775594400,
-      "formatted_timestamp": "21:00, 04/07/2026",
+      "mod_id": "mod_006",
+      "ts": 1775291400,
+      "formatted_timestamp": "20:30, 04/03/2026",
+      "action": "updated",
+      "entry_id": "cal_002",
+      "diff": {
+        "end_ts": {
+          "from": 1775208000,
+          "to": 1775209800
+        },
+        "notes": {
+          "from": "",
+          "to": "stay for sparring rounds"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775332800,
+      "formatted_timestamp": "08:00, 04/04/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_010",
-        "title": "Wife dinner + sappy catch-up",
-        "start_ts": 1775594400,
-        "end_ts": 1775601300,
+        "entry_id": "cal_006",
+        "title": "Dermatology Appointment",
+        "start_ts": 1775334600,
+        "end_ts": 1775337300,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
-        "type": "social",
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775343600,
+      "formatted_timestamp": "11:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Bakery Test Batch: Cardamom Buns",
+        "start_ts": 1775345400,
+        "end_ts": 1775356200,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "personal",
         "linked_preferences": [
-          "values public expressions of appreciation for a spouse or long-term romantic partner"
+          "home baking, especially making sweet pastries from scratch",
+          "music nostalgia"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775386800,
+      "formatted_timestamp": "23:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "WWE SmackDown Live Reactions",
+        "start_ts": 1775388600,
+        "end_ts": 1775395800,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "professional wrestling fandom"
         ],
         "is_preference_driven": true,
         "relation_to_social": "adjacent"
       }
     },
     {
-      "mod_id": "mod_012",
-      "ts": 1775644200,
-      "formatted_timestamp": "10:30, 04/08/2026",
-      "action": "removed",
-      "entry_id": "cal_008",
-      "removal_reason": "rescheduled by provider due to cancellation"
-    },
-    {
-      "mod_id": "mod_013",
-      "ts": 1775689200,
-      "formatted_timestamp": "23:00, 04/08/2026",
+      "mod_id": "mod_rep_029",
+      "ts": 1775419663,
+      "formatted_timestamp": "20:07, 04/05/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_011",
-        "title": "Quick thread reaction: fight card results",
-        "start_ts": 1775689200,
-        "end_ts": 1775691000,
+        "entry_id": "cal_rep_023",
+        "title": "Coffee with close friends",
+        "start_ts": 1775441263,
+        "end_ts": 1775444863,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Washington",
+          "region": "DC",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "social",
+        "attendees": [
+          "self",
+          "close friends"
+        ],
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775426400,
+      "formatted_timestamp": "10:00, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Local Farmers Market and Herb Walk",
+        "start_ts": 1775428200,
+        "end_ts": 1775439000,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "combat sports",
-          "boxing fandom"
+          "foraging and hiking",
+          "food and home baking"
         ],
         "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775440800,
+      "formatted_timestamp": "14:00, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_009",
+      "diff": {
+        "end_ts": {
+          "from": 1775439000,
+          "to": 1775440800
+        },
+        "notes": {
+          "from": "",
+          "to": "stop by spice stall"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775469600,
+      "formatted_timestamp": "22:00, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Weekly Planning and Inbox Triage",
+        "start_ts": 1775471400,
+        "end_ts": 1775476800,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "knowledge exploration",
+          "personal growth"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775512800,
+      "formatted_timestamp": "10:00, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Boxing Gym Technique Session",
+        "start_ts": 1775514600,
+        "end_ts": 1775521800,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [
+          "boxing culture",
+          "professional boxing",
+          "combat sports fandom"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775529600,
+      "formatted_timestamp": "15:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "District Archives Vendor Call",
+        "start_ts": 1775530800,
+        "end_ts": 1775534400,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775551200,
+      "formatted_timestamp": "21:20, 04/06/2026",
+      "action": "removed",
+      "entry_id": "cal_008",
+      "removal_reason": "canceled: got pulled into a late work wrap-up"
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775595600,
+      "formatted_timestamp": "10:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Dentist Cleaning",
+        "start_ts": 1775597400,
+        "end_ts": 1775601000,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775606400,
+      "formatted_timestamp": "13:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Transit Map Sorting Session",
+        "start_ts": 1775608200,
+        "end_ts": 1775615400,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "knowledge exploration"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775620800,
+      "formatted_timestamp": "17:00, 04/07/2026",
+      "action": "updated",
+      "entry_id": "cal_014",
+      "diff": {
+        "end_ts": {
+          "from": 1775615400,
+          "to": 1775617200
+        },
+        "notes": {
+          "from": "",
+          "to": "add Tokyo and Seoul maps to desk wall"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775685600,
+      "formatted_timestamp": "11:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Court Index QA Review",
+        "start_ts": 1775687400,
+        "end_ts": 1775696400,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775700000,
+      "formatted_timestamp": "15:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Gym: Back Day and Rows",
+        "start_ts": 1775701800,
+        "end_ts": 1775709000,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [
+          "gym-based strength training, especially back workouts and resistance exercises"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775732400,
+      "formatted_timestamp": "00:00, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Threads Notes: Boxing Main Event Reactions",
+        "start_ts": 1775734200,
+        "end_ts": 1775737800,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "boxing and combat sports"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775786400,
+      "formatted_timestamp": "15:00, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Team Check-In and Records Workflow Review",
+        "start_ts": 1775788200,
+        "end_ts": 1775793600,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775811600,
+      "formatted_timestamp": "22:00, 04/09/2026",
+      "action": "updated",
+      "entry_id": "cal_018",
+      "diff": {
+        "end_ts": {
+          "from": 1775793600,
+          "to": 1775795400
+        },
+        "notes": {
+          "from": "",
+          "to": "send revised workflow notes afterward"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775858400,
+      "formatted_timestamp": "11:00, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "Apartment Deep Clean and Laundry",
+        "start_ts": 1775860200,
+        "end_ts": 1775871000,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_025",
+      "ts": 1775872800,
+      "formatted_timestamp": "15:00, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_020",
+        "title": "Phone Call with Mom",
+        "start_ts": 1775874600,
+        "end_ts": 1775878200,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "related"
       }
+    },
+    {
+      "mod_id": "mod_026",
+      "ts": 1775901600,
+      "formatted_timestamp": "23:00, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_021",
+        "title": "NFL Draft Board Review",
+        "start_ts": 1775903400,
+        "end_ts": 1775908800,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "NFL football content"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_027",
+      "ts": 1775929200,
+      "formatted_timestamp": "06:20, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_022",
+        "title": "Morning Focus Block: Archive Backlog",
+        "start_ts": 1775931000,
+        "end_ts": 1775936400,
+        "location": {
+          "city": "Washington",
+          "region": "DC",
+          "country": "USA",
+          "lat": 38.9072,
+          "lon": -77.0369,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "knowledge exploration"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_028",
+      "ts": 1775937600,
+      "formatted_timestamp": "08:40, 04/11/2026",
+      "action": "removed",
+      "entry_id": "cal_022",
+      "removal_reason": "canceled: morning backlog got reassigned"
     }
   ]
 }

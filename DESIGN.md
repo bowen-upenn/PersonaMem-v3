@@ -123,7 +123,11 @@ Event:
   |     +- confidence_score_init, confidence_cross_referenced
   |     +- stereotype_mark, split ("test" on held-out items only; absent otherwise)
   |     +- update_history[], hidden_persona_labels
-  |     +- over_personalization_irrelevant (test items only — list of 3 {persona_item, category} distractors, ranked most- to least-jarring)
+  |     +- (R8: `split` and `over_personalization_irrelevant` are no longer
+  |        emitted by data-gen; the eval harness picks test moments and
+  |        builds distractor pools from the full timeline at build time.
+  |        See `EVAL.md` for the stratified-Jaccard distractor scheme used
+  |        by `over_personalization_distractor_reject`.)
   +- [Chatbot only] conversation[], conversation_type, ask_to_forget
 ```
 
@@ -456,6 +460,21 @@ Every chatbot event gets a multi-turn conversation embedding ALL of that event's
 **Conversation types** (selected from user's chatbot_contexts): knowledge_query (30%), writing_help (25%), therapy_reflection (20%), health_consultation (15%), troubleshooting (10%), translation (10%), casual_chat (5%).
 
 **Implicit embedding:** User never directly states preferences. Explicit interactions = "fairly apparent" through task topic. Implicit = "deeply embedded" as side details. Multiple preferences spread across turns.
+
+**Per-turn `embeds_pref_idx` schema (Phase L.A.1).** Each user turn declares which embedded preferences appear in THAT turn via a 1-based index list:
+
+```json
+[
+  {"role": "user", "content": "...", "embeds_pref_idx": [1]},
+  {"role": "assistant", "content": "..."},
+  {"role": "user", "content": "...", "embeds_pref_idx": [2, 3]},
+  ...
+]
+```
+
+The opener (turn 1) anchors on exactly ONE preference; subsequent user turns may embed 1-2 each. The eval harness's chatbot-proactive extractor (`evaluation/build_benchmark.py:_candidate_from_event`) reads these tags to pick the user turn that actually embeds the held-out test preference — replacing the legacy "always extract `interaction_format.user_message`" behavior that caused query/preference topical mismatches (e.g. a rings-themed opener paired with an NFL held-out pref). Legacy events without per-turn tags fall back to the legacy path plus a topical-alignment guard.
+
+**User voice contract.** Every user turn is generated under a strict natural-voice rule block in `data_preparation/prompts.py`: ≤ 30 words, mandatory contractions, varied sentence length, forbidden parallel-triplet lists / "I'm trying to X but Y" scaffolding / meta-framing verbs. Synthesis temperature is set explicitly to 0.7 (down from the API default ~1.0) at the call site to reduce overwrought prose.
 
 **Special variants — applied to ~20% of ALL chatbot conversations (any polarity), `ASK_TO_FORGET_FRACTION = 0.20`**, split 50/50 between:
 - **Ask-to-forget:** 4 turns — reveal → acknowledge → ask to forget → confirm. Sets `ask_to_forget = True` on the event.

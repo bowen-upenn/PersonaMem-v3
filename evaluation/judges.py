@@ -57,3 +57,43 @@ def judge_restraint(
         "restraint_score": parsed.get("restraint_score"),
         "judge_reasoning": parsed.get("reasoning"),
     }
+
+
+def judge_at_ai_directive(
+    judge_client,
+    directive_user_message: str,
+    directive_action: str,
+    top_candidates: list[dict],
+) -> dict:
+    """Score whether the agent's top-3 ranked candidates reflect the user's
+    @ai directive INTENT (not just the directive's hashtags).
+
+    The current `at_ai_directive_followup` scorer uses hashtag-Jaccard alone
+    (`positive_indices` / `carveout_indices` are derived from
+    Jaccard ≥ 0.15 against the directive event's hashtags). That misses
+    the user's actual ask: "@ai recommend more posts about hiking with my
+    dog" should NOT just match #hiking — it should match dog-hiking,
+    not solo-hiking, not group-hiking.
+
+    Returns:
+        {"intent_alignment_score": float in [0,1], "judge_reasoning": str}
+    """
+    prompt = prompts.judge_at_ai_directive_prompt(
+        directive_user_message, directive_action, top_candidates,
+    )
+    try:
+        resp = judge_client.query_llm(prompt)
+    except Exception as exc:
+        return {"intent_alignment_score": None, "judge_reasoning": f"judge_call_failed: {exc}"}
+    parsed = extract_json_from_response(resp) or {}
+    raw = parsed.get("intent_alignment_score")
+    try:
+        score = float(raw) if raw is not None else None
+        if score is not None:
+            score = max(0.0, min(1.0, score))
+    except (TypeError, ValueError):
+        score = None
+    return {
+        "intent_alignment_score": score,
+        "judge_reasoning": parsed.get("reasoning") or "",
+    }

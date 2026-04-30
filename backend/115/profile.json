@@ -1,41 +1,41 @@
 {
-  "name": "Minjae Kwon",
-  "gender": "cisgender male, heterosexual",
-  "race_ethnicity": "Korean",
-  "career": "Municipal water treatment operator",
-  "education": "Associate degree in Environmental Technology",
+  "name": "Mika Arden",
+  "gender": "non-binary, asexual",
+  "race_ethnicity": "Multiracial (Asian and White)",
+  "career": "Municipal archivist specializing in court records digitization",
+  "education": "Master's degree in Library and Information Science",
   "big_five": {
-    "openness": "medium",
+    "openness": "high",
     "conscientiousness": "high",
     "extraversion": "medium",
-    "agreeableness": "high",
+    "agreeableness": "medium",
     "neuroticism": "low"
   },
-  "bio": "Minjae starts most mornings before sunrise, checking pump logs at the treatment plant and squeezing in a few miles along the river trail before his shift. He keeps a tidy apartment full of houseplants, experiments with simple weeknight recipes, and has an oddly specific obsession with beautiful typefaces on old transit signs. On weekends he’ll stream a big boxing card or UFC fight, text his wife sappy compliments she pretends to roll her eyes at, and laugh way too hard at dry, dark meme pages. Every spring, he takes a notebook into the woods to sketch and identify edible wild plants, a hobby he picked up from a retired neighbor in his building.",
+  "bio": "Mika spends their weekdays preserving decades of public records, then heads to evening Brazilian Jiu-Jitsu classes or the gym for heavy back-day workouts. They keep up with boxing and WWE storylines the way some people follow prestige TV, and on quiet weekends they bake elaborate pastries while oldies and R&B play in the kitchen. Their closet leans hard into thrifted fall layers and practical sneakers, and they have a side hobby of identifying edible plants on local hikes. A little unexpectedly, they collect transit maps from cities they've never visited and pin them above their desk.",
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "use_purposes": [
-        "share polished slices of daily life",
-        "follow fitness and fight content",
-        "save cooking and plant inspiration",
-        "post affectionate moments with his wife"
+        "share curated lifestyle snapshots",
+        "browse inspiration",
+        "keep up with niche creators",
+        "stay lightly connected with friends"
       ],
       "friend_zones": [
         "close friends",
-        "coworkers",
-        "wife and mutual friends",
-        "public creators"
+        "gym and BJJ acquaintances",
+        "local creatives",
+        "strangers / public creators"
       ],
       "audience_type": "mixed",
-      "style_description": "Minjae uses Instagram as his most visually curated app. He posts clean, understated photos of runs, simple home-cooked meals, houseplants, and occasional couple shots with sincere but low-key captions. In Stories, he is looser and more playful, reposting boxing clips, dry memes, dance videos, and music snippets.",
+      "style_description": "Visually curated but not overly polished: thrifted fall outfits, pastry bakes, gym progress, and occasional hike finds. Mika posts like someone with strong taste and a good eye for composition, using Stories more casually than grid posts and keeping captions dry, understated, and a little witty.",
       "posting_frequency": "weekly",
       "topical_focus": [
         "fitness",
-        "food and home cooking",
-        "combat sports",
-        "music and entertainment",
-        "environmentally responsible habits and sustainability"
+        "food and home baking",
+        "affordable seasonal fashion styling",
+        "foraging and hiking",
+        "music and live performance"
       ],
       "chatbot_contexts": []
     },
@@ -44,123 +44,197 @@
       "use_purposes": [
         "keep up with extended family",
         "share life updates",
-        "follow local community info",
-        "browse events and practical neighborhood posts"
+        "follow local events and community pages",
+        "browse groups and marketplace-style local activity"
       ],
       "friend_zones": [
         "extended family",
         "longtime friends",
-        "neighbors",
-        "coworkers"
+        "former classmates",
+        "local community members"
       ],
       "audience_type": "mixed",
-      "style_description": "On Facebook, Minjae is more practical, familiar, and community-oriented than aesthetic. He posts infrequently, usually for holidays, family milestones, a nice photo with his wife, or the occasional proud cooking or outdoors post, and he is more likely to comment supportively than to debate.",
+      "style_description": "More practical and socially broad than their other apps. Mika uses Facebook for occasional major updates, event sharing, and community-oriented posting, with a warmer and less stylized tone than Instagram and very little hot-take energy.",
       "posting_frequency": "rarely",
       "topical_focus": [
-        "food and home cooking",
+        "food and home baking",
+        "local community news",
         "fitness",
-        "environmentally responsible habits and sustainability",
-        "combat sports"
+        "NFL football",
+        "NBA basketball"
       ],
       "chatbot_contexts": []
     },
     "Threads": {
       "app_name": "Threads",
       "use_purposes": [
-        "react to sports and pop culture in real time",
-        "follow public personalities and niche interests",
-        "drop quick jokes or observations",
-        "keep up with trending conversations"
+        "react to live sports and wrestling",
+        "follow public discourse",
+        "post quick observations and jokes",
+        "track creators and commentators"
       ],
       "friend_zones": [
         "strangers / public",
-        "public creators",
         "sports fans",
-        "niche hobby communities"
+        "wrestling and combat sports followers",
+        "mutuals from Instagram"
       ],
       "audience_type": "public",
-      "style_description": "Threads is where Minjae is quickest, drier, and a little more opinionated. He posts short reactions during boxing, UFC, NFL, or NBA moments, makes deadpan jokes, and occasionally shares niche enthusiasm about running, transit typography, or anime without much personal backstory.",
+      "style_description": "This is Mika's quickest, loosest, and most opinionated platform. They use short posts for amused commentary on WWE and boxing storylines, occasional self-improvement reflections, and dry humor that leans satirical without being aggressive.",
       "posting_frequency": "weekly",
       "topical_focus": [
-        "combat sports",
-        "NFL and basketball",
-        "music and entertainment",
-        "fitness",
-        "anime"
+        "boxing and combat sports",
+        "professional wrestling",
+        "hip-hop culture",
+        "comedy and satire",
+        "personal growth"
       ],
       "chatbot_contexts": []
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "use_purposes": [
-        "figure out work-related questions",
-        "learn about personal interests in more depth",
-        "draft thoughtful messages",
-        "reflect privately and organize thoughts"
+        "work through research and recordkeeping questions",
+        "draft and refine writing",
+        "organize thoughts privately",
+        "explore interests in depth"
       ],
       "friend_zones": [
         "self",
-        "private work context",
-        "private personal life"
+        "work-related scenarios",
+        "private drafting space"
       ],
       "audience_type": "private",
-      "style_description": "With a chatbot, Minjae is utilitarian but curious. He uses it to clarify technical or environmental questions, tighten up wording before sending messages, and think through personal goals or relationship communication in a private, low-drama way.",
+      "style_description": "Mika uses the chatbot as a quiet back-office tool and thinking partner. Their prompts are likely precise, information-seeking, and organized, but they also use it for private reflection and polishing wording they do not want to workshop publicly.",
       "posting_frequency": "daily",
       "topical_focus": [
-        "environmentally responsible habits and sustainability",
+        "knowledge exploration",
+        "personal growth",
         "fitness",
-        "food and home cooking",
-        "personal growth and self-improvement"
+        "food and home baking",
+        "foraging and hiking"
       ],
       "chatbot_contexts": [
+        "professional emails",
         "knowledge exploration",
-        "composing chat messages",
         "therapy and reflection"
       ]
     }
   },
   "hidden_personas": [
     {
-      "label": "Privately reassures himself through idealized marriage-and-home stability content",
+      "label": "Private romantic-script consumption despite low conventional couple signaling",
       "type": "compensatory_need",
-      "description": "His repeated, mostly private lingering on couple and domestic-life content suggests more than just being affectionate toward his wife: he appears to use social media to reinforce a vision of steady, low-drama partnership and cozy home order. For a pre-dawn municipal operator with routine-heavy work, this looks like a private emotional reset toward warmth, predictability, and appreciation at home.",
+      "description": "Mika repeatedly lingers on idealized relationship content without publicly endorsing it, suggesting a private fascination with how closeness, loyalty, and partnership are supposed to look rather than a public desire to perform romance. Given their asexual identity, this reads less like sexual aspiration and more like quietly studying emotionally legible companionship scripts.",
       "evidence_hashtags": [
         "#RelationshipGoals",
         "#relationshipgoals",
         "#couplegoals",
+        "#CoupleGoals",
         "#loveofmylife",
-        "#familygoals"
+        "#relationships"
       ],
-      "evidence_rows": 188,
-      "evidence_row_fraction": 0.0733,
+      "evidence_rows": 192,
+      "evidence_row_fraction": 0.0748,
       "interaction_breakdown": {
         "implicit_positive": 119,
-        "implicit_negative": 62,
-        "explicit_positive": 7
+        "implicit_negative": 64,
+        "explicit_positive": 9
       },
-      "privacy_ratio": 0.944,
+      "privacy_ratio": 0.93,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Facebook": 33,
-        "Threads": 64,
-        "Chatbot": 43,
-        "Instagram": 48
+        "Threads": 63,
+        "Facebook": 48,
+        "Instagram": 46,
+        "Chatbot": 35
       },
       "surface_connections": [
-        "Values public expressions of appreciation for a spouse or long-term romantic partner.",
-        "Enjoys trying easy homemade cooking recipes."
+        "Enjoys short-form funny video content",
+        "Values women's empowerment and female solidarity"
       ],
-      "inferred_motivation": "He likely consumes idealized partner content to soothe everyday stress and reaffirm that tenderness, loyalty, and domestic calm are central to the life he is building.",
+      "inferred_motivation": "This likely serves a compensatory need for observing stable intimacy models and emotionally safe partnership dynamics from a distance.",
       "already_captured": false
     },
     {
-      "label": "Micro-space domestic design fantasy",
+      "label": "Nostalgic Black-media comfort zone as cultural grounding",
+      "type": "identity_anchor",
+      "description": "Beyond generic music fandom, Mika appears anchored by a distinctly nostalgic Black entertainment ecosystem: legacy hip-hop figures, gossip/talk formats, throwback culture, and radio-style commentary. As a multiracial archivist who literally preserves records, this pattern fits someone who feels at home in curated cultural memory and lineage.",
+      "evidence_hashtags": [
+        "#Throwback",
+        "#Nostalgia",
+        "#HipHopHistory",
+        "#HipHopLegends",
+        "#TheBreakfastClub",
+        "#DrinkChamps"
+      ],
+      "evidence_rows": 92,
+      "evidence_row_fraction": 0.0359,
+      "interaction_breakdown": {
+        "implicit_negative": 26,
+        "implicit_positive": 63,
+        "explicit_positive": 3
+      },
+      "privacy_ratio": 0.955,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Threads": 26,
+        "Instagram": 26,
+        "Chatbot": 12,
+        "Facebook": 28
+      },
+      "surface_connections": [
+        "Interested in hip-hop culture and its historical legacy",
+        "Enjoys nostalgic music from the 1970s and classic oldies eras",
+        "Enjoys The Wendy Williams Show and similar celebrity-driven daytime talk content",
+        "Enjoys R&B music content"
+      ],
+      "inferred_motivation": "This content likely provides continuity, identity coherence, and a sense of belonging through familiar cultural archives rather than just entertainment.",
+      "already_captured": false
+    },
+    {
+      "label": "Humor as decompression from institutional heaviness",
+      "type": "emotional_pattern",
+      "description": "The sheer volume of comedy, relatable clips, satire, and absurd short-form video suggests Mika uses humor as a primary nervous-system reset. For someone working all day with court records and justice-adjacent material, comedy looks less like casual taste and more like emotional regulation through low-stakes absurdity.",
+      "evidence_hashtags": [
+        "#funnyvideos",
+        "#comedy",
+        "#humor",
+        "#ComedyGold",
+        "#relatable",
+        "#satire"
+      ],
+      "evidence_rows": 583,
+      "evidence_row_fraction": 0.2272,
+      "interaction_breakdown": {
+        "implicit_negative": 213,
+        "implicit_positive": 324,
+        "explicit_positive": 46
+      },
+      "privacy_ratio": 0.876,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 174,
+        "Threads": 135,
+        "Facebook": 162,
+        "Chatbot": 112
+      },
+      "surface_connections": [
+        "Enjoys short-form funny video content",
+        "Enjoys comedic content that uses satire and absurdity",
+        "Interested in prison reform and criminal justice advocacy"
+      ],
+      "inferred_motivation": "This pattern likely helps them metabolize bureaucratic and social heaviness by converting stress into laughter, irony, and shared relatability.",
+      "already_captured": false
+    },
+    {
+      "label": "Private longing for compact, controllable living spaces",
       "type": "aspiration",
-      "description": "The strong private skew on compact-living and decor tags points to a hidden fascination with tightly organized, aesthetically controlled living spaces rather than generic home content. This fits someone who keeps a tidy apartment, likes systems, and may enjoy the fantasy of making a modest space feel elegant, efficient, and self-sufficient.",
+      "description": "High-private engagement with tiny-home and small-space content points to a quiet fantasy about streamlined, manageable domestic life. For someone whose job centers on ordering archives and whose hobbies mix disciplined training with careful baking and collecting maps, compact living may symbolize control, calm, and intentionality.",
       "evidence_hashtags": [
         "#tinyhomes",
-        "#smallspaces",
         "#tinyhouseliving",
+        "#smallspaces",
         "#homedecor",
         "#lifestyle"
       ],
@@ -174,306 +248,210 @@
       "privacy_ratio": 0.947,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Facebook": 10,
-        "Chatbot": 5,
-        "Instagram": 12,
-        "Threads": 22
+        "Chatbot": 8,
+        "Instagram": 17,
+        "Threads": 15,
+        "Facebook": 9
       },
       "surface_connections": [
-        "Values environmentally responsible habits and sustainability.",
-        "Interested in typography and font aesthetics."
+        "Interested in affordable seasonal fashion styling, especially fall outfit inspiration",
+        "Enjoys home baking, especially making sweet pastries from scratch"
       ],
-      "inferred_motivation": "He seems drawn to compact-space design as a form of control, beauty, and simplicity—a visual counterpart to his orderly work habits and plant-filled apartment life.",
+      "inferred_motivation": "This likely reflects an aspiration toward a low-clutter, efficient personal environment that feels easier to master than the messiness of public life.",
       "already_captured": false
     },
     {
-      "label": "Quiet pull toward nurturing-caregiver humor and healthcare workplace culture",
-      "type": "personality_trait",
-      "description": "His mostly private engagement with mom-life and medical-workplace adjacent humor suggests a hidden soft spot for caregiving competence and exhausted-but-functional service workers. For someone in public utilities, this likely reflects identification with underappreciated essential-work culture and a fondness for deadpan humor built around duty.",
+      "label": "Embodied confidence and performance-aesthetic admiration",
+      "type": "intimate_interest",
+      "description": "Mika seems drawn not to overt sexual content but to polished public displays of body control: dance routines, confidence messaging, self-expression, and performance charisma. The attraction here appears centered on disciplined movement, poise, and presentation rather than explicit thirst—an admiration for bodies used skillfully and confidently in public space.",
       "evidence_hashtags": [
-        "#momlife",
-        "#healthcare and medical workplace humor content",
-        "#adulting",
-        "#CommunityFirst",
-        "#communityfirst"
-      ],
-      "evidence_rows": 62,
-      "evidence_row_fraction": 0.0242,
-      "interaction_breakdown": {
-        "implicit_positive": 47,
-        "implicit_negative": 13,
-        "explicit_positive": 2
-      },
-      "privacy_ratio": 0.959,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Threads": 19,
-        "Facebook": 12,
-        "Chatbot": 15,
-        "Instagram": 16
-      },
-      "surface_connections": [
-        "Enjoys healthcare and medical workplace humor content.",
-        "Enjoys dark, ironic humor."
-      ],
-      "inferred_motivation": "He likely sees in caregiver/workplace humor the same unglamorous responsibility he lives daily, and uses it to feel understood by other quietly burdened adults.",
-      "already_captured": false
-    },
-    {
-      "label": "East Coast old-head identity anchored in rap talk, label politics, and 2000s media personalities",
-      "type": "identity_anchor",
-      "description": "This is not just liking hip-hop music; the pattern centers on personalities, industry lore, and New York-coded rap discourse. His engagement suggests a deeper identity attachment to the argumentative, reference-heavy world of East Coast rap history and media ecosystems—the kind of content that signals insider literacy rather than casual listening.",
-      "evidence_hashtags": [
-        "#TheBreakfastClub",
-        "#Camron",
-        "#DameDash",
-        "#JayZ",
-        "#DrinkChamps",
-        "#HipHopHistory"
-      ],
-      "evidence_rows": 77,
-      "evidence_row_fraction": 0.03,
-      "interaction_breakdown": {
-        "implicit_negative": 22,
-        "implicit_positive": 54,
-        "explicit_positive": 1
-      },
-      "privacy_ratio": 0.982,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Threads": 27,
-        "Chatbot": 16,
-        "Instagram": 18,
-        "Facebook": 16
-      },
-      "surface_connections": [
-        "Interested in underground and classic East Coast hip-hop culture.",
-        "Enjoys hip-hop and rap music content."
-      ],
-      "inferred_motivation": "He likely uses rap-media content to maintain a masculine cultural identity built on taste, memory, wit, and knowing the backstory behind the art.",
-      "already_captured": false
-    },
-    {
-      "label": "Performance-aesthetic curiosity focused on choreography and stage presence",
-      "type": "private_hobby",
-      "description": "His dance and live-performance engagement is too repeated to dismiss as random algorithm spillover, yet it stays mostly private. This suggests a hidden appreciation for rhythm, coordination, and polished stagecraft—less about joining dance culture publicly, more about admiring execution, charisma, and movement as an art form.",
-      "evidence_hashtags": [
-        "#dance",
-        "#DancePerformance",
-        "#danceperformance",
-        "#dancemoves",
-        "#dancingqueen"
-      ],
-      "evidence_rows": 87,
-      "evidence_row_fraction": 0.0339,
-      "interaction_breakdown": {
-        "implicit_negative": 26,
-        "implicit_positive": 56,
-        "explicit_positive": 5
-      },
-      "privacy_ratio": 0.918,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Threads": 26,
-        "Instagram": 26,
-        "Chatbot": 18,
-        "Facebook": 17
-      },
-      "surface_connections": [
-        "Enjoys dance performance content on social media.",
-        "Enjoys live concert and stage performance content.",
-        "Enjoys Latin music, especially reggaeton and prominent Puerto Rican artists."
-      ],
-      "inferred_motivation": "He likely watches performance content for sensory pleasure and mastery appreciation—the same attraction to precision and style that shows up in his typography interest.",
-      "already_captured": false
-    },
-    {
-      "label": "Covert concern about maintaining discipline, physique, and confidence as adult routine hardens",
-      "type": "covert_concern",
-      "description": "The recurring self-improvement and confidence tags, paired with fitness content that is engaged more privately than publicly, point to a specific adult worry: not becoming sluggish, soft, or mentally flat under repetitive work-life routine. This fits a man balancing early shifts, running, combat-sports fandom, and a desire to stay sharp and self-respecting.",
-      "evidence_hashtags": [
-        "#fitnessmotivation",
-        "#PersonalGrowth",
-        "#Motivation",
         "#ConfidenceIsKey",
-        "#SelfImprovement",
-        "#fitnessjourney"
+        "#confidenceiskey",
+        "#danceperformance",
+        "#DancePerformance",
+        "#selfexpression",
+        "#dancemoves"
       ],
-      "evidence_rows": 169,
-      "evidence_row_fraction": 0.0659,
+      "evidence_rows": 75,
+      "evidence_row_fraction": 0.0292,
       "interaction_breakdown": {
-        "implicit_negative": 48,
-        "implicit_positive": 104,
-        "explicit_positive": 17
+        "implicit_negative": 24,
+        "explicit_positive": 8,
+        "implicit_positive": 43
       },
-      "privacy_ratio": 0.86,
+      "privacy_ratio": 0.843,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 44,
-        "Instagram": 42,
-        "Facebook": 39,
-        "Chatbot": 44
+        "Facebook": 16,
+        "Instagram": 27,
+        "Threads": 15,
+        "Chatbot": 17
       },
       "surface_connections": [
-        "Interested in personal growth and self-improvement content",
-        "Interested in distance running and run-focused fitness content.",
-        "Interested in Brazilian Jiu-Jitsu training and culture."
+        "Enjoys watching dance performance content, especially synchronized dance routines",
+        "Interested in gym-based strength training, especially back workouts and resistance exercises",
+        "Interested in Brazilian Jiu-Jitsu training or culture"
       ],
-      "inferred_motivation": "He appears to return to motivational content as reassurance against drift—using it to protect a self-image of competence, toughness, and disciplined adulthood.",
+      "inferred_motivation": "This serves a desire to witness and perhaps internalize forms of controlled, expressive physical confidence that align with their own disciplined relationship to the body.",
       "already_captured": false
     }
   ],
-  "hidden_persona_summary": "Beneath his public mix of sports, humor, and music fandom, he comes across as a routine-driven, quietly self-regulating adult who uses social media to reinforce steadiness, competence, and cultural identity: he privately lingers on idealized partner and home content such as #RelationshipGoals, #couplegoals, #loveofmylife, #familygoals, #tinyhomes, and #smallspaces, suggesting that domestic calm, loyalty, and orderly living function as an emotional reset rather than just casual browsing. That hidden layer helps explain why his visible interests cluster around disciplined masculine performance and grounded adulthood—NFL, NBA, boxing, UFC, BJJ, running, self-improvement, Christian identity, easy cooking, sustainability, and public appreciation for a spouse all fit a self-image organized around responsibility, resilience, and care. Several of his more personally revealing interests are consumed disproportionately privately, including compact-home decor fantasies, motivational and physique-maintenance content (#fitnessmotivation, #SelfImprovement, #ConfidenceIsKey), caregiver and essential-worker humor (#momlife, healthcare workplace humor, #adulting, #communityfirst), East Coast rap discourse (#TheBreakfastClub, #Camron, #DameDash, #JayZ, #DrinkChamps, #HipHopHistory), and dance or stagecraft content (#dance, #DancePerformance, #dancemoves), while his more publicly legible behaviors center on sports fandom, comedy, music, and affectionate partner-oriented values. Overall, the data suggests a man who privately seeks reassurance through controlled domestic imagery, mastery, and insider cultural literacy, while publicly presenting through safer, socially legible interests like combat sports, hip-hop, humor, and everyday adult devotion.",
+  "hidden_persona_summary": "Beneath their visible feed, Mika reads as someone who uses media to build emotional order: they privately study legible companionship scripts through high-privacy engagement with #RelationshipGoals, #couplegoals, and #loveofmylife, not as public romance performance but as a quiet reference point for stable, emotionally safe closeness. That same inward pattern helps explain why so many surface interests cluster around controlled expression and structured worlds—boxing, MMA, BJJ, gym training, WWE, synchronized dance, self-improvement, and even tiny-home content all echo a preference for discipline, containment, and skill, while their interest in prison reform and criminal justice likely resonates with the institutional heaviness they offset through very heavy comedy consumption such as #funnyvideos, #comedy, #relatable, and #satire. Publicly, they present more through sports fandom, humorous clips, hip-hop, wrestling, baking, and empowerment content; privately, they appear to reserve their strongest engagement for romance scripts, nostalgic cultural memory, compact-living fantasies, and admiration of embodied confidence through #DancePerformance, #ConfidenceIsKey, and #selfexpression. Their strong attachment to #Throwback, #Nostalgia, #HipHopHistory, #TheBreakfastClub, and #DrinkChamps also suggests that visible interests in hip-hop legacy, oldies, R&B, freestyle rap, and celebrity talk formats are not just entertainment tastes but part of a deeper need for cultural grounding, continuity, and familiar archive-like belonging.",
   "mbti": {
-    "type": "ISFJ",
+    "type": "INTJ",
     "dimensions": {
       "E_I": {
-        "E": 0.39,
-        "I": 0.61,
-        "reason": "Although he publicly engages with socially legible domains like sports, comedy, and music, the profile repeatedly emphasizes private, inward self-regulation through domestic fantasy, reassurance content, and quietly held niche interests."
+        "E": 0.28,
+        "I": 0.72,
+        "reason": "Their strongest patterns are private and inward-facing—quietly studying relationship scripts, consuming media in a highly selective way, and using humor as internal regulation rather than social performance."
       },
       "S_N": {
-        "S": 0.68,
-        "N": 0.32,
-        "reason": "His interests cluster around concrete, lived realities—routine work, sports performance, cooking, home order, relationship stability, and practical self-maintenance—more than abstract ideation or novelty-seeking."
+        "S": 0.38,
+        "N": 0.62,
+        "reason": "Although the interests are concrete and physical at the surface, the underlying attraction is to symbolic frameworks, archives, identity grounding, and abstract 'scripts' for closeness and meaning."
       },
       "T_F": {
-        "T": 0.36,
-        "F": 0.64,
-        "reason": "High agreeableness, spouse-oriented appreciation, loyalty themes, caregiving humor, Christian identity, and repeated gravitation toward warmth and domestic calm suggest decisions are more value-and-relationship anchored than impersonal."
+        "T": 0.56,
+        "F": 0.44,
+        "reason": "The profile leans slightly thinking due to the emphasis on discipline, structure, containment, and institutional interests, but the private focus on relationship safety and emotional order keeps feeling close behind."
       },
       "J_P": {
-        "J": 0.82,
-        "P": 0.18,
-        "reason": "The strongest pattern is disciplined, routine-driven self-regulation—tidiness, compact-space organization, early-shift responsibility, fitness upkeep, and preference for steadiness and orderly living all point clearly toward Judging."
+        "J": 0.67,
+        "P": 0.33,
+        "reason": "High conscientiousness, preference for controlled expression, and recurring attraction to structured worlds like training, archives, and compact living all point to a judging orientation."
       }
     }
   },
+  "mobility_class": "homebody",
+  "geo_trip_arcs": [],
   "user_id": "115",
   "preferences": [
-    "19:58, 04/11/2026 : Interested in anime, especially Naruto-related content.",
-    "19:56, 04/11/2026 : Interested in boxing content and boxing fan media.",
-    "19:56, 04/11/2026 : Follows elite boxers such as Terence Crawford and Canelo Alvarez.",
-    "19:54, 04/11/2026 : Enjoys dance performance content on social media.",
-    "19:40, 04/11/2026 : Enjoys comedic and satirical short-form entertainment content.",
-    "19:26, 04/11/2026 : Enjoys lighthearted comedy content and humorous conversational clips.",
-    "19:11, 04/11/2026 : Interested in professional rodeo culture and events.",
+    "19:54, 04/11/2026 : Enjoys watching dance performance content, especially synchronized dance routines.",
+    "19:26, 04/11/2026 : Enjoys short-form funny video content.",
     "19:08, 04/11/2026 : Interested in NFL football content",
-    "19:06, 04/11/2026 : Interested in typography and font aesthetics.",
-    "19:06, 04/11/2026 : Enjoys trying easy homemade cooking recipes.",
-    "19:06, 04/11/2026 : Interested in Brazilian Jiu-Jitsu training and culture.",
-    "19:05, 04/11/2026 : Interested in underground and classic East Coast hip-hop culture.",
-    "18:47, 04/11/2026 : Interested in UFC and MMA content.",
-    "18:26, 04/11/2026 : Enjoys humor-focused social media content.",
-    "17:40, 04/11/2026 : Enjoys hip-hop and rap music content.",
-    "17:34, 04/11/2026 : Interested in personal growth and self-improvement content",
-    "17:26, 04/11/2026 : Follows Terrence Crawford specifically within combat sports.",
-    "17:08, 04/11/2026 : Interested in distance running and run-focused fitness content.",
-    "16:59, 04/11/2026 : Interested in NBA and basketball-related content.",
-    "16:42, 04/11/2026 : Enjoys metal-themed meme humor",
-    "16:42, 04/11/2026 : Interested in Christian faith content and identity-centered expressions of Christianity.",
-    "16:24, 04/11/2026 : Enjoys nostalgic 1990s R&B music content.",
-    "16:19, 04/11/2026 : Values public expressions of appreciation for a spouse or long-term romantic partner.",
+    "19:06, 04/11/2026 : Enjoys home baking, especially making sweet pastries from scratch.",
+    "19:06, 04/11/2026 : Actively follows professional wrestling, especially WWE programming and events.",
+    "19:06, 04/11/2026 : Interested in Brazilian Jiu-Jitsu training or culture",
+    "19:05, 04/11/2026 : Interested in hip-hop culture and its historical legacy.",
+    "18:55, 04/11/2026 : Enjoys comedic content that uses satire and absurdity.",
+    "18:47, 04/11/2026 : Follows mixed martial arts as a fan.",
+    "17:40, 04/11/2026 : Enjoys hip-hop rap content, especially freestyle-focused material.",
+    "17:34, 04/11/2026 : Interested in personal growth and self-improvement content.",
+    "17:27, 04/11/2026 : Interested in BMX and stunt cycling content.",
+    "17:26, 04/11/2026 : Interested in Canelo Alvarez specifically as a combat sports athlete.",
+    "17:25, 04/11/2026 : Turned off by niche bully-breed fan culture and breed-specific dog identity signaling.",
+    "17:08, 04/11/2026 : Interested in gym-based strength training, especially back workouts and resistance exercises.",
+    "16:59, 04/11/2026 : Interested in NBA basketball, including teams and player storylines.",
+    "16:26, 04/11/2026 : Interested in affordable seasonal fashion styling, especially fall outfit inspiration.",
+    "16:26, 04/11/2026 : Values women's empowerment and female solidarity.",
+    "16:24, 04/11/2026 : Enjoys nostalgic music from the 1970s and classic oldies eras.",
+    "16:08, 04/11/2026 : Enjoys The Wendy Williams Show and similar celebrity-driven daytime talk content.",
     "15:40, 04/11/2026 : Interested in professional boxing, especially high-profile championship matchups.",
-    "15:10, 04/11/2026 : Enjoys live concert and stage performance content.",
-    "08:33, 04/11/2026 : Values environmentally responsible habits and sustainability.",
-    "20:51, 04/10/2026 : Interested in foraging and identifying edible wild plants.",
-    "15:53, 04/10/2026 : Enjoys healthcare and medical workplace humor content.",
-    "04:27, 04/10/2026 : Enjoys Latin music, especially reggaeton and prominent Puerto Rican artists.",
-    "08:48, 04/07/2026 : Enjoys dark, ironic humor."
+    "15:39, 04/11/2026 : Interested in prison reform and criminal justice advocacy.",
+    "15:35, 04/11/2026 : Interested in boxing culture and boxing-related content.",
+    "15:10, 04/11/2026 : Enjoys live concert experiences and performance-focused music events.",
+    "14:11, 04/11/2026 : Interested in foraging for wild edible plants.",
+    "12:16, 04/11/2026 : Enjoys R&B music content.",
+    "12:16, 04/11/2026 : Enjoys Marvel superhero film and TV franchise content.",
+    "02:52, 04/11/2026 : Turns away from short football highlight clips",
+    "18:40, 04/10/2026 : Interested in Honda Civic Type R performance cars.",
+    "04:07, 04/09/2026 : Dislikes content centered on Lamar Jackson specifically, rather than just football in general.",
+    "09:00, 04/08/2026 : Identifies with or is interested in non-religious, secular viewpoints.",
+    "17:05, 04/06/2026 : Interested in Biblical creationist interpretations of human origins.",
+    "16:30, 04/05/2026 : Interested in Islam-related discussions about scientific knowledge and historical contributions to science"
   ],
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Jisoo Park",
+      "display_name": "Jules Park",
       "relationship_depth": "close",
       "shared_interests": [
+        "BJJ",
         "boxing",
-        "UFC",
-        "dark memes"
+        "gym"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Eunji Kwon",
+      "display_name": "Samantha Reed",
       "relationship_depth": "close",
       "shared_interests": [
-        "weeknight recipes",
-        "houseplants",
-        "sappy texts"
+        "baking",
+        "oldies and R&B",
+        "local community events"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "David Lee",
+      "display_name": "Devon Nguyen",
       "relationship_depth": "close",
       "shared_interests": [
-        "river trail runs",
-        "boxing",
-        "old transit signs"
+        "thrifting",
+        "local hikes",
+        "edible plants"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Minseo Choi",
+      "display_name": "Alex Chen",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "houseplants",
-        "weeknight recipes"
+        "BJJ",
+        "gym"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Jisoo Han",
+      "display_name": "Marisol Vega",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "municipal water work",
-        "coworkers"
+        "local creatives",
+        "thrifting"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Kevin Kim",
+      "display_name": "Darius Coleman",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "UFC",
-        "sports fans"
-      ]
-    },
-    {
-      "friend_id": "friend_7",
-      "display_name": "Sora Yoon",
-      "relationship_depth": "acquaintance",
-      "shared_interests": [
-        "typefaces",
-        "old transit signs"
-      ]
-    },
-    {
-      "friend_id": "friend_8",
-      "display_name": "Hyunwoo Kwon",
-      "relationship_depth": "distant",
-      "shared_interests": [
-        "extended family",
+        "WWE",
         "boxing"
       ]
     },
     {
-      "friend_id": "friend_9",
-      "display_name": "Grace Shin",
+      "friend_id": "friend_7",
+      "display_name": "Priya Patel",
+      "relationship_depth": "acquaintance",
+      "shared_interests": [
+        "local community events",
+        "former classmates"
+      ]
+    },
+    {
+      "friend_id": "friend_8",
+      "display_name": "Alex Morgan",
       "relationship_depth": "distant",
       "shared_interests": [
-        "neighbors",
-        "houseplants"
+        "wrestling",
+        "Threads mutuals"
+      ]
+    },
+    {
+      "friend_id": "friend_9",
+      "display_name": "Ethan Walsh",
+      "relationship_depth": "distant",
+      "shared_interests": [
+        "sports fans",
+        "boxing"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Daniel Ryu",
+      "display_name": "Naomi Flores",
       "relationship_depth": "distant",
       "shared_interests": [
-        "public creators",
-        "dark memes"
+        "local community members",
+        "oldies and R&B"
       ]
     }
   ]

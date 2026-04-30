@@ -24,7 +24,8 @@ ORIGIN_GAIN: dict[str, float] = {
     "filler":           0.0,
     "random":           0.0,
     "irrelevant":       0.0,
-    "negative":         0.0,  # known dislikes — wrong answers, gain 0
+    "hard_negative":    0.0,  # adjacent-Jaccard items the user passed over
+    "negative":         0.0,  # legacy persona-item dislikes — gain 0
 }
 
 
@@ -59,8 +60,10 @@ def compute_ranking_metrics(ranked: list[int], instance: dict) -> dict:
         # wrong" past/future positive vs. a clearly-bad distractor.
         "past_positive_in_top1": int(origins[ranked[0]] == "past_positive") if ranked else 0,
         "future_positive_in_top1": int(origins[ranked[0]] == "future_positive") if ranked else 0,
-        "negative_in_top1": int(origins[ranked[0]] == "negative") if ranked else 0,
-        "negative_in_top3": int(any(origins[i] == "negative" for i in ranked[:3])),
+        "negative_in_top1": int(origins[ranked[0]] in ("negative", "hard_negative")) if ranked else 0,
+        "negative_in_top3": int(any(origins[i] in ("negative", "hard_negative") for i in ranked[:3])),
+        "hard_negative_in_top1": int(origins[ranked[0]] == "hard_negative") if ranked else 0,
+        "hard_negative_in_top3": int(any(origins[i] == "hard_negative" for i in ranked[:3])),
         "irrelevant_in_top1": int(origins[ranked[0]] == "irrelevant") if ranked else 0,
     }
 

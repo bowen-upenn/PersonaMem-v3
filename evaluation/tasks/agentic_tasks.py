@@ -274,13 +274,13 @@ def _build_common_args(task_id: str, extra: dict) -> dict:
 def build_t6_community_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One instance per social app — digest across the past week on that app."""
     return [
-        {"instance_id": f"t6_{app}", "task_id": "agentic_community_digest", "entry_point": "app_native",
+        {"instance_id": f"t6_{app}", "task_id": "agentic_user_voice_post", "entry_point": "app_native",
          "target_app": app, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
          "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]}}
         for app in SOCIAL_APPS
     ] + [
-        {"instance_id": "t6_chatbot_threads", "task_id": "agentic_community_digest", "entry_point": "chatbot_routed",
+        {"instance_id": "t6_chatbot_threads", "task_id": "agentic_user_voice_post", "entry_point": "chatbot_routed",
          "target_app": "threads", "t_test": t_anchor,
          "tool_call_rules": ["count('threads_create_post') <= 1"],
          "final_state_expected": {"must_not_contain": ["instagram_create_post", "facebook_create_post"]}}
@@ -502,7 +502,7 @@ def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> l
 
 
 ALL_BUILDERS: dict[str, Callable] = {
-    "agentic_community_digest":         build_t6_community_digest,
+    "agentic_user_voice_post":         build_t6_community_digest,
     "agentic_moment_recommendation":    build_t7_moment_recommendation,
     "agentic_dm_digest":                build_t8_dm_digest,
     "agentic_cross_app_repost":         build_t9_cross_app_repost,
@@ -562,7 +562,7 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
 def _query_text_for(task_id: str, inst: dict) -> str:
     """Extract a representative query string per task for rubric ground-truth building."""
     return {
-        "agentic_community_digest": f"community digest post on {inst.get('target_app')}",
+        "agentic_user_voice_post": f"compose a post in the user's voice on {inst.get('target_app')}",
         "agentic_moment_recommendation": f"recommend something for {inst.get('moment', '')}",
         "agentic_dm_digest": f"dm digest on {inst.get('target_app')}",
         "agentic_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
@@ -599,7 +599,7 @@ def _prompt_for(task_id: str):
     def t19(inst, h): return pa.t19_trending_alert(h)
 
     return {
-        "agentic_community_digest": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
+        "agentic_user_voice_post": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
         "agentic_cross_app_repost": t9, "agentic_auto_reply": t10, "agentic_vague_refind": t11,
         "agentic_composed_post": t12, "agentic_chatbot_dispatch": t13, "agentic_draft_audit": t14,
         "agentic_collection_curation": t15, "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,

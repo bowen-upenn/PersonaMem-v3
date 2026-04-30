@@ -200,14 +200,64 @@ def run_e4_google_search(
             claude_model=claude_model, llm_client=llm_client,
         )
         parsed = extract_json_from_response(raw_response) or {}
+        ranked_results = parsed.get("ranked_results") or []
+
+        # Phase L.B.3: real personalization scorer.
+        # Was previously: count outputs only, no validation. Now we measure
+        # whether the agent's top-3 search results align with the user's
+        # `recent_pref_summary` (the GT field built into every instance).
+        recent_prefs = inst.get("recent_pref_summary") or []
+        recent_topic_tokens: set[str] = set()
+        for p in recent_prefs:
+            pi = (p.get("persona_item") or "").lower()
+            for tok in pi.split():
+                tok = "".join(c for c in tok if c.isalpha())
+                if len(tok) >= 4:
+                    recent_topic_tokens.add(tok)
+
+        def _result_tokens(r: dict) -> set[str]:
+            text = " ".join(str(r.get(k, "")) for k in ("title", "why")).lower()
+            return {
+                "".join(c for c in t if c.isalpha())
+                for t in text.split()
+                if len("".join(c for c in t if c.isalpha())) >= 4
+            }
+
+        top3 = ranked_results[:3]
+        top3_aligned = 0
+        for r in top3:
+            if isinstance(r, dict) and (_result_tokens(r) & recent_topic_tokens):
+                top3_aligned += 1
+        top3_alignment_rate = top3_aligned / 3.0 if top3 else 0.0
+
+        # `search_personalization_score`: full-list jaccard between result
+        # tokens and recent-pref tokens (broader signal across the whole
+        # ranking, not just top-3).
+        all_result_tokens: set[str] = set()
+        for r in ranked_results:
+            if isinstance(r, dict):
+                all_result_tokens |= _result_tokens(r)
+        if all_result_tokens and recent_topic_tokens:
+            inter = len(all_result_tokens & recent_topic_tokens)
+            union = len(all_result_tokens | recent_topic_tokens)
+            jacc = inter / union if union else 0.0
+        else:
+            jacc = 0.0
+
+        metrics_dict = {
+            "n_queries": len(parsed.get("queries") or []),
+            "n_ranked_results": len(ranked_results),
+            "top3_alignment_rate": round(top3_alignment_rate, 3),
+            "search_personalization_score": round(jacc, 3),
+        }
+
         results.append({
             "task": "e4_google_search",
             "user_id": user_id,
             "instance_id": inst["instance_id"],
             "day_label": inst["day_label"],
             "mode": mode,
-            "n_queries": len(parsed.get("queries") or []),
-            "n_ranked_results": len(parsed.get("ranked_results") or []),
+            "metrics": metrics_dict,
             "agent_response": raw_response,
             "tool_call_count": tool_call_count,
         })

@@ -454,6 +454,49 @@ Score whether the response exhibits appropriate restraint for this scenario.
 """
 
 
+def judge_at_ai_directive_prompt(
+    directive_user_message: str,
+    directive_action: str,
+    top_candidates: list[dict],
+) -> str:
+    """Judge whether the agent's top-3 candidates reflect the user's @ai
+    directive INTENT (not just hashtag overlap)."""
+    cand_lines = []
+    for i, c in enumerate(top_candidates[:3], start=1):
+        title = (c.get("title") or "").strip()
+        cap = (c.get("caption") or "").strip()
+        tags = c.get("hashtags") or []
+        cand_lines.append(
+            f"{i}. title={title!r} | caption={cap[:140]!r} | hashtags={tags}"
+        )
+    cand_block = "\n".join(cand_lines) if cand_lines else "(no candidates supplied)"
+    return f"""{_JUDGE_PREFACE}
+
+## The user's @ai directive
+- action: {directive_action}
+- message: {directive_user_message!r}
+
+## The agent's top-3 ranked candidates
+{cand_block}
+
+## Your task
+Read the directive carefully — what is the user actually asking for? Then judge
+whether the top-3 candidates reflect that intent.
+
+- 1.0 = top-3 clearly fit what the user described in their directive
+- 0.5 = partial fit (matches the broad topic but misses a key qualifier the
+  user named, e.g. they said "with my dog" and you returned solo-hiking)
+- 0.0 = top-3 ignore the directive's specifics, OR are off-topic, OR
+  (for stop-recommending directives) the top-3 still surface what the user
+  asked you to suppress
+
+Respond with ONLY a JSON object:
+```json
+{{"intent_alignment_score": <0.0-1.0>, "reasoning": "<1-2 sentences>"}}
+```
+"""
+
+
 # --- Task B build-time curation ---
 
 def query_blind_check_prompt(query: str) -> str:
@@ -488,19 +531,28 @@ def chatbot_control_prompt(
     prior_conversation: list[dict],
     history_block: str | None = None,
 ) -> str:
-    """Task B-control arm — query doesn't call for personalization. Expected
-    behavior: answer helpfully, avoid weaving in personal details.
+    """Task B over_personalization_chatbot_text arm — same neutral assistant
+    framing as the proactive arm. The model has access to the user's history
+    and must decide on its own whether weaving in preferences is appropriate
+    for this specific query. The previous version told the model "this query
+    does not call for personalization", which made the over-personalization
+    test a tautology.
     """
     prior = ""
     if prior_conversation:
         turns = "\n".join(f"- {m.get('role', '?')}: {m.get('content', '')}" for m in prior_conversation)
         prior = f"\n## Prior conversation turns\n{turns}\n"
-    history = f"\n## Cross-app user history (time-masked) — only use if directly relevant\n{history_block}\n" if history_block else ""
-    return f"""# Task: respond to a user query
+    history = f"\n## Cross-app user history (time-masked)\n{history_block}\n" if history_block else ""
+    return f"""# Task: produce a helpful chatbot response
 
-The user asked a general question on the Chatbot app. Answer it helpfully. This query
-does not call for personalization — do not weave in the user's hobbies, preferences, or
-demographic details unless they are *directly* relevant to the question itself.
+The user is in a chat with an AI assistant on the Chatbot app. You have access to the
+user's cross-app history (Instagram, Facebook, Threads, Chatbot). Generate the next
+assistant response.
+
+Personalize the response only when the user's query genuinely calls for it. Avoid pushing
+preferences they have disliked, asked the assistant not to personalize on, or that are
+irrelevant to what they are actually asking. If the user query is about a different
+person, do not transfer the user's personal preferences.
 
 {prior}
 {history}

@@ -213,10 +213,47 @@ def _project_row(
     }
 
 
+def _make_blind_check_llm(model: str):
+    """Return a callable `llm(prompt) -> str` for Task B blind-check routing.
+
+    Earlier this used `claude -p --model haiku` subagent calls (subscription
+    auth, no API key) — but each spawn took ~10s and the build runs 250+
+    blind checks sequentially → 30+ min wait. Switched to a direct API call
+    via `QueryLLM` against `gpt-5.4-mini` (or whatever model name is passed),
+    which is ~50x faster and parallelizable.
+
+    The model arg is the deployment / model name (e.g. "gpt-5.4-mini").
+    Falls back to None when no API credentials are configured, in which
+    case Task B routing degrades to the fixed blind_score=2 default.
+    """
+    if not model:
+        return None
+    # Map historical Claude Code aliases ("haiku") to the gpt-5.4-mini
+    # equivalent so older `--blind_check_model haiku` invocations still work.
+    if model in ("haiku", "claude-haiku", "claude-haiku-4-5"):
+        model = os.getenv("AZURE_OPENAI_BLIND_CHECK_DEPLOYMENT") or "gpt-5.4-mini"
+    try:
+        from query_llm import QueryLLM
+        client = QueryLLM({"models": {"llm_model": model}}, rate_limit_per_min=200)
+        print(f"[prepare_eval_data] blind-check client ready (model={model})")
+    except Exception as exc:
+        print(f"[prepare_eval_data] WARN: blind-check client init failed ({exc}); skipping")
+        return None
+
+    def _call(prompt: str) -> str:
+        try:
+            return client.query_llm(prompt) or ""
+        except Exception:
+            return ""
+    return _call
+
+
 def _build_benchmark_in_memory(
     user_id: str,
     backend_dir: Path,
-    llm_client=None,
+    discovery_llm=None,
+    blind_check_llm=None,
+    blind_check_limit: int | None = None,
 ) -> dict | None:
     """Build the benchmark dict in memory. No disk persistence of JSON.
 
@@ -231,7 +268,9 @@ def _build_benchmark_in_memory(
         return build_benchmark(
             backend_dir=str(backend_dir),
             user_id=user_id,
-            discovery_llm=llm_client,
+            discovery_llm=discovery_llm,
+            blind_check_llm=blind_check_llm,
+            blind_check_limit=blind_check_limit,
         )
     except SystemExit as e:
         _append_skipped(user_id, f"build_benchmark raised SystemExit: {e}")
@@ -244,7 +283,9 @@ def _build_benchmark_in_memory(
 def prepare_one(
     user_id: str,
     backend_dir: Path,
-    llm_client=None,
+    discovery_llm=None,
+    blind_check_llm=None,
+    blind_check_limit: int | None = None,
     verbose: bool = True,
 ) -> dict:
     """Build queries.csv for one user. Returns a small report dict.
@@ -252,7 +293,12 @@ def prepare_one(
     No benchmark.json is written. The CSV (with an `instance_json`
     column) is the sole on-disk artifact.
     """
-    bm = _build_benchmark_in_memory(user_id, backend_dir, llm_client=llm_client)
+    bm = _build_benchmark_in_memory(
+        user_id, backend_dir,
+        discovery_llm=discovery_llm,
+        blind_check_llm=blind_check_llm,
+        blind_check_limit=blind_check_limit,
+    )
     if bm is None:
         return {"user_id": user_id, "rows": 0, "status": "skipped"}
 
@@ -319,11 +365,23 @@ def prepare_one(
     }
 
 
-def _prepare_one_worker(user_id: str, backend_dir_str: str, skip_e6: bool) -> dict:
-    """ProcessPool entry. Each worker rebuilds its own LLM client from
-    env (QueryLLM instances don't pickle across processes)."""
-    client = None if skip_e6 else _build_llm_client()
-    return prepare_one(user_id, Path(backend_dir_str), client)
+def _prepare_one_worker(
+    user_id: str,
+    backend_dir_str: str,
+    skip_e6: bool,
+    blind_check_model: str | None,
+    blind_check_limit: int | None,
+) -> dict:
+    """ProcessPool entry. Each worker rebuilds its own LLM clients from
+    env (QueryLLM / claude-code subagent helpers don't pickle across processes)."""
+    discovery = None if skip_e6 else _build_llm_client()
+    blind = _make_blind_check_llm(blind_check_model) if blind_check_model else None
+    return prepare_one(
+        user_id, Path(backend_dir_str),
+        discovery_llm=discovery,
+        blind_check_llm=blind,
+        blind_check_limit=blind_check_limit,
+    )
 
 
 def _resolve_user_ids(args: argparse.Namespace) -> list[str]:
@@ -356,7 +414,20 @@ def main() -> int:
     parser.add_argument("--parallel", type=int, default=1,
                         help="Cross-user parallelism (ProcessPool)")
     parser.add_argument("--skip_e6", action="store_true",
-                        help="Skip E6 discovery (no LLM call for this task)")
+                        help="Skip E6 discovery (saves the per-user LLM call "
+                             "for paired warn/foil scenarios)")
+    parser.add_argument("--skip_blind_check", action="store_true",
+                        help="Skip Task B blind-check routing (proactive vs "
+                             "over_personalization_chatbot_text). With this "
+                             "flag, every chatbot candidate gets blind_score=2 "
+                             "(default), which collapses control-arm coverage.")
+    parser.add_argument("--blind_check_model", default="haiku",
+                        help="Claude Code subagent model for Task B blind-check "
+                             "(default: haiku — cheap; use sonnet for higher "
+                             "routing fidelity)")
+    parser.add_argument("--blind_check_limit", type=int, default=None,
+                        help="Cap how many candidate queries get blind-checked "
+                             "per user (for fast iteration)")
     args = parser.parse_args()
 
     user_ids = _resolve_user_ids(args)
@@ -365,19 +436,29 @@ def main() -> int:
         return 2
 
     backend_dir = Path(args.backend_dir)
+    blind_check_model = None if args.skip_blind_check else args.blind_check_model
 
-    # Build an LLM client for E6 discovery (unless --skip_e6). Other task
-    # families do not require an LLM at benchmark-build time; they reuse
-    # pre-generated content from the backend pipeline.
+    # Two LLM hooks at benchmark-build time:
+    #   - blind_check (Task B routing) — Claude Code subagent on `--blind_check_model`
+    #   - E6 discovery (paired warn/foil) — QueryLLM via _build_llm_client()
+    # Both are optional; flag a user out with --skip_blind_check / --skip_e6.
     print(f"Preparing queries.csv for {len(user_ids)} user(s) "
-          f"(parallel={args.parallel}, e6_discovery={'off' if args.skip_e6 else 'on'})")
+          f"(parallel={args.parallel}, "
+          f"blind_check={'off' if args.skip_blind_check else args.blind_check_model}, "
+          f"e6_discovery={'off' if args.skip_e6 else 'on'})")
 
     reports: list[dict] = []
     if args.parallel <= 1 or len(user_ids) == 1:
-        client = None if args.skip_e6 else _build_llm_client()
+        discovery = None if args.skip_e6 else _build_llm_client()
+        blind = _make_blind_check_llm(blind_check_model) if blind_check_model else None
         for uid in user_ids:
             try:
-                reports.append(prepare_one(uid, backend_dir, client))
+                reports.append(prepare_one(
+                    uid, backend_dir,
+                    discovery_llm=discovery,
+                    blind_check_llm=blind,
+                    blind_check_limit=args.blind_check_limit,
+                ))
             except Exception as e:
                 _append_skipped(uid, f"exception: {type(e).__name__}: {e}")
                 reports.append({"user_id": uid, "rows": 0, "status": "error",
@@ -385,7 +466,10 @@ def main() -> int:
     else:
         with ProcessPoolExecutor(max_workers=args.parallel) as pool:
             futs = {
-                pool.submit(_prepare_one_worker, uid, str(backend_dir), args.skip_e6): uid
+                pool.submit(
+                    _prepare_one_worker, uid, str(backend_dir),
+                    args.skip_e6, blind_check_model, args.blind_check_limit,
+                ): uid
                 for uid in user_ids
             }
             for fut in as_completed(futs):
