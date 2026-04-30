@@ -53,7 +53,10 @@ OLD_TO_NEW: dict[str, str] = {
     "e4_google_search":              "personalized_search_ranking",
     "e5_horizon_lifecycle":          "short_vs_long_term_lifecycle",
     "e6_active_mistake_prevention":  "active_mistake_prevention",
-    "t6_community_digest":           "agentic_community_digest",
+    # Phase L.B.4: renamed — task is "compose an advisory post in the user's
+    # voice", not a community trends summary. Old aliases keep working.
+    "t6_community_digest":           "agentic_user_voice_post",
+    "agentic_community_digest":      "agentic_user_voice_post",
     "t7_moment_recommendation":      "agentic_moment_recommendation",
     "t8_dm_digest":                  "agentic_dm_digest",
     "t9_cross_app_repost":           "agentic_cross_app_repost",
@@ -204,7 +207,7 @@ TASK_TYPE_META: dict[str, dict] = {
     # a `create_post` / `send_dm` count > 0 is writes_ok. Pure audit /
     # read-only surfaces are read_only.
     # ------------------------------------------------------------------
-    "agentic_community_digest": {
+    "agentic_user_voice_post": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",       # exactly 1 create_post
@@ -429,8 +432,13 @@ def get_meta(task_type: str) -> dict:
 PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Ranking tasks — graded distractors, accuracy = top-1 match
     "personalized_feed_ranking":         ("accuracy", "fraction"),
-    "at_ai_directive_followup":          ("hit@1", "fraction"),
-    "personalized_search_ranking":       ("recall@1", "fraction"),
+    # Phase L.B.1: blended hit@1 + judge intent-alignment. Falls back to
+    # hit@1 alone when judge is disabled (directive_score key absent).
+    "at_ai_directive_followup":          ("directive_score", "fraction"),
+    # Phase L.B.3: real personalization scorer — top-3 result alignment with
+    # the user's recent_pref_summary. Was previously `recall@1` against an
+    # absent ground-truth (no scorer existed; metric was never populated).
+    "personalized_search_ranking":       ("top3_alignment_rate", "fraction"),
     "short_vs_long_term_lifecycle":      ("recall@1", "fraction"),
     "repetition_fatigue_pairs":          ("response_divergence", "fraction"),
     "repetition_fatigue_sequences":      ("preference_repetition_rate", "inverted_fraction"),
@@ -445,11 +453,14 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # (lower personalization_leak_rate = better restraint).
     "over_personalization_distractor_reject":      ("personalization_leak_rate", "inverted_fraction"),
     "preference_removal_regen":          ("removal_success", "fraction"),
-    "daily_personalized_briefing":       ("has_structured_output", "fraction"),
+    # Phase L.B.2: real personalization metric — jaccard(briefing topics,
+    # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
+    # JSON), which any non-empty response trivially passed.
+    "daily_personalized_briefing":       ("briefing_personalization_score", "fraction"),
     # E6 — paired warn/foil; aggregator computes paired-correct
     "active_mistake_prevention":         ("paired_correct", "paired_correct"),
     # Agentic — composite pass rate over tool_call + final_state + output_quality
-    "agentic_community_digest":          ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_user_voice_post":           ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_moment_recommendation":     ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_dm_digest":                 ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_cross_app_repost":          ("agentic_pass_rate", "agentic_pass_rate"),

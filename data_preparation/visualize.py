@@ -108,7 +108,6 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
 #   candidates          : list[(idx, title, origin)]  for ranking tasks
 #   held_out_pref       : str   the persona-item text the agent should align to
 #   target_prefs        : list[str]  preferences the agent SHOULD surface
-#   privacy_flagged     : list[str]  preferences the agent must NOT surface
 #   tool_call_rules     : list[str]  agentic write/read constraints
 #   final_state_expected: dict  {must_contain_count, must_not_contain}
 #   warn_frame          : {must_mention, must_not_mention, polarity}
@@ -156,23 +155,30 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
 
 def _gt_chatbot_proactive(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
-    held_pi = held.get("persona_item") or ""
-    gt_slice = inst.get("gt_slice") or {}
-    target = [p.get("persona_item") for p in (gt_slice.get("target") or []) if p.get("persona_item")]
-    top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
-    privacy = [p.get("persona_item") for p in (inst.get("privacy_flagged_prefs") or [])[:5] if p.get("persona_item")]
+    held_pi = (held.get("persona_item") or "").strip()
+    # Top-k relevant prefs are the query-relevant subset (hashtag-overlap
+    # filtered at build time). Dedup defensively — same persona_item can
+    # appear under multiple canonicals.
+    seen: set[str] = set()
+    top_k: list[str] = []
+    for p in (inst.get("top_k_relevant_prefs") or []):
+        pi = (p.get("persona_item") or "").strip()
+        if pi and pi != held_pi and pi not in seen:
+            top_k.append(pi)
+            seen.add(pi)
+        if len(top_k) >= 4:
+            break
+    prior = inst.get("prior_conversation") or []
     return {
-        "ground_truth": _truncate(held_pi or (target[0] if target else "(no held-out preference; rubric checks restraint + privacy)"), 200),
+        "ground_truth": _truncate(held_pi or "(no held-out preference; rubric checks restraint)", 200),
         "held_out_pref": held_pi,
-        "target_prefs": target[:6],
-        "privacy_flagged": privacy,
         "top_k_relevant": top_k,
+        "prior_conversation": prior[-6:] if prior else [],
         "rubric_tags": [
-            "Surface 1-3 of the user's top-k relevant preferences when they fit the conversation naturally.",
-            "If the held-out preference is contextually relevant, weave it in (don't force it).",
-            "Do NOT mention any preference listed as privacy-flagged.",
-            "Respect any prior carve-outs (preferences the user explicitly asked you not to use).",
-            "Match the user's tone — do not push preferences they did not ask about.",
+            "Weave in the held-out preference if (and only if) it fits the question.",
+            "Surface at most 1-2 supporting preferences from the top-k list, only when relevant.",
+            "Do not bring up unrelated preferences just because the user is known to like them.",
+            "Match the user's tone; never lecture.",
         ],
     }
 
@@ -278,7 +284,6 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "rubric_tags": [
             "Select only the held-out persona item from the candidate pool — it is the only one that fits this query.",
             "Reject all candidates marked as irrelevant; do NOT surface them even if they share some surface tokens with the query.",
-            "Do not invent new personas or volunteer privacy-flagged content.",
         ],
     }
 
@@ -363,7 +368,6 @@ def _gt_daily_personalized_briefing(inst: dict) -> dict:
             f"Do NOT include items the user has clearly moved past from {prior} — only what's currently relevant.",
             "Each item should explain WHY it's relevant (1 sentence: \"based on your recent X\").",
             "Tone should be light, concise, conversational — not formal or list-of-headlines.",
-            "Do not surface privacy-flagged preferences in the briefing.",
         ],
     }
 
@@ -396,7 +400,6 @@ def _gt_personalized_search_ranking(inst: dict) -> dict:
             "Top-3 should collectively cover at least 2 distinct user preference categories — do not stack 3 items on the same topic.",
             "Items below rank 3 may be generically relevant; do NOT need to be heavily personalized.",
             "Do not over-personalize: if a search query were clearly factual or generic (and this one is generic), still keep some non-persona items in the lower ranks for variety.",
-            "Do not surface privacy-flagged preferences in the search results.",
         ],
     }
 
@@ -451,7 +454,7 @@ def _gt_agentic(inst: dict) -> dict:
     voice_sample = recent_posts[0] if recent_posts else ""
 
     examples: dict[str, str] = {
-        "agentic_community_digest":
+        "agentic_user_voice_post":
             f"Example digest post on {target}: \"Catching up after the week — {top_hashtags[0] if top_hashtags else 'top topic'} had a few good moments, "
             f"the {top_hashtags[1] if len(top_hashtags) > 1 else 'next topic'} crowd is heating up again, and a few new {top_cats[0] if top_cats else 'interest'} clips dropped. "
             f"Anyone else watching?\" (~30-50 words, mentions ≥2 distinct community topics)",
@@ -515,7 +518,7 @@ def _gt_agentic(inst: dict) -> dict:
 
     # Per-task rubric phrasing
     task_rubrics: dict[str, list[str]] = {
-        "agentic_community_digest": [
+        "agentic_user_voice_post": [
             "Reference at least 2 distinct community topics from the user's last week of activity on target_app.",
             "Match the user's voice (tone, length, hashtag style).",
             "Do NOT post on apps other than target_app.",
@@ -608,13 +611,15 @@ TEST_GT_EXTRACTORS = {
     "slate_ranking":                       _gt_personalized_feed_ranking,  # v1 alias
     "chatbot_proactive_personalization":   _gt_chatbot_proactive,
     "chatbot_response_proactive":          _gt_chatbot_proactive,           # v1 alias
-    "chatbot_restraint_control":           _gt_chatbot_restraint,
+    "over_personalization_chatbot_text":   _gt_chatbot_restraint,
+    "chatbot_restraint_control":           _gt_chatbot_restraint,           # v2 alias
     "chatbot_response_control":            _gt_chatbot_restraint,           # v1 alias
     "at_ai_directive_followup":            _gt_at_ai_directive,
     "e2_at_ai_followup":                   _gt_at_ai_directive,             # v1 alias
     "active_mistake_prevention":           _gt_active_mistake_prevention,
     "e6_active_mistake_prevention":        _gt_active_mistake_prevention,   # v1 alias
-    "irrelevant_query_restraint":          _gt_irrelevant_query_restraint,
+    "over_personalization_distractor_reject": _gt_irrelevant_query_restraint,
+    "irrelevant_query_restraint":          _gt_irrelevant_query_restraint,  # v2 alias
     "preference_removal_regen":            _gt_preference_removal_regen,
     "repetition_fatigue_pairs":            _gt_repetition_fatigue_pairs,
     "repetition_fatigue_sequences":        _gt_repetition_fatigue_sequences,
@@ -623,7 +628,7 @@ TEST_GT_EXTRACTORS = {
     "personalized_search_ranking":         _gt_personalized_search_ranking,
     "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
     # All agentic_* tasks share the generic agentic extractor
-    "agentic_community_digest":            _gt_agentic,
+    "agentic_user_voice_post":            _gt_agentic,
     "agentic_moment_recommendation":       _gt_agentic,
     "agentic_dm_digest":                   _gt_agentic,
     "agentic_cross_app_repost":            _gt_agentic,
@@ -676,8 +681,8 @@ def _q_active_mistake_prevention(inst: dict) -> str:
     return inst.get("user_query") or inst.get("triggering_user_query") or "[mistake-prevention probe]"
 
 
-def _q_agentic_community_digest(inst: dict) -> str:
-    return f"[agentic] post a community digest on {inst.get('target_app', '')}"
+def _q_agentic_user_voice_post(inst: dict) -> str:
+    return f"[agentic] compose a post in the user's voice on {inst.get('target_app', '')}"
 
 
 def _q_agentic_moment_recommendation(inst: dict) -> str:
@@ -763,13 +768,14 @@ TEST_QUERY_EXTRACTORS = {
     "slate_ranking":                       _q_personalized_feed_ranking,
     "chatbot_proactive_personalization":   _q_chatbot,
     "chatbot_response_proactive":          _q_chatbot,
+    "over_personalization_chatbot_text":   _q_chatbot,
     "chatbot_restraint_control":           _q_chatbot,
     "chatbot_response_control":            _q_chatbot,
     "at_ai_directive_followup":            _q_at_ai_directive,
     "e2_at_ai_followup":                   _q_at_ai_directive,
     "active_mistake_prevention":           _q_active_mistake_prevention,
     "e6_active_mistake_prevention":        _q_active_mistake_prevention,
-    "agentic_community_digest":            _q_agentic_community_digest,
+    "agentic_user_voice_post":            _q_agentic_user_voice_post,
     "agentic_moment_recommendation":       _q_agentic_moment_recommendation,
     "agentic_dm_digest":                   _q_agentic_dm_digest,
     "agentic_cross_app_repost":            _q_agentic_cross_app_repost,
@@ -856,11 +862,11 @@ def _load_test_samples(uid: str, benchmark_dir: str = "benchmark", backend_dir: 
             }
             # Pass through optional rich fields when present — JS template
             # renders each one as its own labeled section on the test card.
-            for k in ("candidates", "held_out_pref", "target_prefs", "privacy_flagged",
+            for k in ("candidates", "held_out_pref",
                      "top_k_relevant", "correct_but_irrelevant_prefs",
                      "tool_call_rules", "final_state_expected",
                      "warn_frame", "signal_evidence", "irrelevant_persona_items",
-                     "carve_out", "forbidden_items", "extra_meta"):
+                     "carve_out", "forbidden_items", "prior_conversation", "extra_meta"):
                 if k in gt:
                     sample[k] = gt[k]
             out.append(sample)
@@ -1709,14 +1715,8 @@ if (eventsData.length === 0) {{
       if (t.held_out_pref) {{
         sections += `<div class="ts-section"><div class="ts-label">Held-out preference</div><div class="ts-body">${{escapeHtml(t.held_out_pref)}}</div></div>`;
       }}
-      if (Array.isArray(t.target_prefs) && t.target_prefs.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Target preferences agent SHOULD surface</div><ul class="ts-list">${{t.target_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
-      if (Array.isArray(t.privacy_flagged) && t.privacy_flagged.length > 0) {{
-        sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Privacy-flagged (must NOT surface)</div><ul class="ts-list">${{t.privacy_flagged.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
       if (Array.isArray(t.top_k_relevant) && t.top_k_relevant.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Top-k prefs the agent could pull in</div><ul class="ts-list">${{t.top_k_relevant.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
+        sections += `<div class="ts-section"><div class="ts-label">Other supporting preferences (use sparingly, only if relevant)</div><ul class="ts-list">${{t.top_k_relevant.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
       }}
       if (Array.isArray(t.correct_but_irrelevant_prefs) && t.correct_but_irrelevant_prefs.length > 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Correct but irrelevant preferences (do NOT surface these here)</div><ul class="ts-list">${{t.correct_but_irrelevant_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
@@ -1752,13 +1752,23 @@ if (eventsData.length === 0) {{
       if (t.extra_meta && Object.keys(t.extra_meta).length > 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Meta</div><div class="ts-body ts-mono">${{escapeHtml(JSON.stringify(t.extra_meta, null, 2))}}</div></div>`;
       }}
-      const tags = (t.rubric_tags || []).filter(Boolean).join(', ');
-      if (tags) {{
-        sections += `<div class="ts-section ts-rubric-bar"><div class="ts-label">Rubric dimensions</div><div class="ts-body">${{escapeHtml(tags)}}</div></div>`;
+      const tags = (t.rubric_tags || []).filter(Boolean);
+      if (tags.length > 0) {{
+        sections += `<div class="ts-section ts-rubric-bar"><div class="ts-label">Rubric dimensions</div><ul class="ts-list">${{tags.map(s => `<li>${{escapeHtml(s)}}</li>`).join('')}}</ul></div>`;
       }}
 
       const card = document.createElement('div');
       card.className = 'event-card test-sample-card';
+      // Render any preceding chat turns first so the User Query has context.
+      let priorBlock = '';
+      if (Array.isArray(t.prior_conversation) && t.prior_conversation.length > 0) {{
+        const bubbles = t.prior_conversation.map(m => {{
+          const role = m.role === 'user' ? 'You' : 'AI';
+          const cls = m.role === 'user' ? 'user-bubble' : 'assistant-bubble';
+          return `<div class="chat-bubble ${{cls}}"><div class="chat-role">${{role}}</div>${{escapeHtml(m.content || '')}}</div>`;
+        }}).join('');
+        priorBlock = `<div class="ts-section"><div class="ts-label">Prior conversation (last ${{t.prior_conversation.length}} turns)</div><div class="chat-thread">${{bubbles}}</div></div>`;
+      }}
       // Render User Query as a regular ts-section (label INSIDE the
       // section block) so it visually matches every other section.
       const queryBlock = `<div class="ts-section"><div class="ts-label">User Query</div><div class="ts-body">${{escapeHtml(t.query_text || '')}}</div></div>`;
@@ -1771,6 +1781,7 @@ if (eventsData.length === 0) {{
             <code>${{escapeHtml(t.task_type || '')}}</code>
           </div>
         </div>
+        ${{priorBlock}}
         ${{queryBlock}}
         ${{sections}}
       `;

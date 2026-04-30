@@ -299,7 +299,7 @@ class QueryLLM:
 
 
     # @timeout_decorator.timeout(60, timeout_exception=TimeoutError)  # Set timeout to 60 seconds
-    def query_llm(self, prompt, use_history=False, image=None, image_path=None, verbose=False, thread_id=None):
+    def query_llm(self, prompt, use_history=False, image=None, image_path=None, verbose=False, thread_id=None, temperature=None):
         # print(f"Querying LLM with prompt: {prompt}\n\n")
         """
         Send a message to the LLM. If use_history is True,
@@ -456,11 +456,14 @@ class QueryLLM:
                                 ],
                             }
 
-                response = self.client.messages.create(
-                    model=self.model,
-                    max_tokens=4096,
-                    messages=claude_messages
-                )
+                _claude_kwargs = {
+                    "model": self.model,
+                    "max_tokens": 4096,
+                    "messages": claude_messages,
+                }
+                if temperature is not None:
+                    _claude_kwargs["temperature"] = temperature
+                response = self.client.messages.create(**_claude_kwargs)
 
                 # Log cache usage stats
                 usage = response.usage
@@ -489,10 +492,13 @@ class QueryLLM:
             # prefix recurs within ~5-10 min. Nothing to enable in code — but we
             # log the cached-token count from the response so operators can tell
             # caching is actually firing.
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-            )
+            _openai_kwargs = {
+                "model": self.model,
+                "messages": messages,
+            }
+            if temperature is not None:
+                _openai_kwargs["temperature"] = temperature
+            response = self.client.chat.completions.create(**_openai_kwargs)
 
             # Extract content
             try:

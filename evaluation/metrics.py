@@ -240,8 +240,13 @@ def irrelevant_rejection_rate(
     held_out_item: str,
 ) -> dict:
     """Given the agent's rejection list (persona items it flagged "do not apply"),
-    measure precision/recall against the true irrelevant set, and check the
+    measure precision/recall/F1 against the true irrelevant set, and check the
     agent did NOT reject the legitimate held-out positive.
+
+    F1 is the headline (single-number) metric. Precision alone was the previous
+    headline and was gameable: the agent could reject nothing, get zero false
+    positives, and score 1.0 precision. F1 punishes both always-accept (recall=0)
+    and always-reject (precision drops as the held-out gets included).
     """
     rejected = {r.strip().lower() for r in agent_rejections if r}
     irrelevant = {s.strip().lower() for s in irrelevant_persona_items if s}
@@ -249,9 +254,11 @@ def irrelevant_rejection_rate(
     fp_held_out = 1 if (held_out_item or "").strip().lower() in rejected else 0
     recall = tp / len(irrelevant) if irrelevant else 0.0
     precision = tp / len(rejected) if rejected else 0.0
+    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0
     return {
         "irrelevant_rejection_recall": recall,
         "irrelevant_rejection_precision": precision,
+        "irrelevant_rejection_f1": f1,
         "held_out_wrongly_rejected": fp_held_out,
         "num_irrelevant": len(irrelevant),
         "num_rejected": len(rejected),
@@ -400,6 +407,10 @@ def preference_repetition_rate(
 
 # --- C4: do-not-personalize button regeneration ---
 
+_REMOVAL_RELATIVE_THRESHOLD: float = 0.5
+_REMOVAL_LOW_ORIG_FLOOR: float = 0.05
+
+
 def personalization_removal_delta(
     original_response: str,
     regen_response: str,
@@ -408,8 +419,16 @@ def personalization_removal_delta(
 ) -> dict:
     """Measures whether a regen successfully stripped the personalization.
 
-    Returns (delta, removal_rate, regen_identical_flag).
-    delta = pref_score(original) − pref_score(regen). Higher = more stripped.
+    Headline `removal_success` is now **relative**: a 50 % drop counts as
+    success at any starting magnitude. The previous absolute threshold
+    (`orig - regen >= 0.5`) was unreachable for users whose original
+    response barely personalized to begin with — user 115's orig_score was
+    ≈ 0.009, so a relative score of 1.0 would still register as failure
+    under the old rule. We also emit a `removal_status` of
+    `skipped_low_personalization` when `orig_score < _REMOVAL_LOW_ORIG_FLOOR`
+    so the aggregator can drop those rows from the macro denominator
+    instead of counting them as zeros (defence-in-depth — the build-time
+    filter in `build_c4_instances` should already have removed them).
     """
     txt = (held_out_pref.get("persona_item") or "") + " " + (held_out_pref.get("category") or "")
     tags = held_out_pref.get("source_hashtags") or []
@@ -419,11 +438,21 @@ def personalization_removal_delta(
     regen_identical = (
         1 if (original_response and regen_response and response_divergence(original_response, regen_response) < 0.05) else 0
     )
+    removal_delta = orig_score - regen_score
+    removal_delta_pct = removal_delta / max(orig_score, 1e-3)
+    if orig_score < _REMOVAL_LOW_ORIG_FLOOR:
+        removal_status = "skipped_low_personalization"
+        removal_success = 0
+    else:
+        removal_status = "scored"
+        removal_success = 1 if removal_delta_pct >= _REMOVAL_RELATIVE_THRESHOLD else 0
     return {
         "original_pref_score": orig_score,
         "regen_pref_score": regen_score,
-        "removal_delta": orig_score - regen_score,
-        "removal_success": 1 if (orig_score - regen_score) >= 0.5 else 0,
+        "removal_delta": removal_delta,
+        "removal_delta_pct": removal_delta_pct,
+        "removal_success": removal_success,
+        "removal_status": removal_status,
         "target_pref_bleed_through": 1 if regen_score >= threshold else 0,
         "regen_identical_fail": regen_identical,
     }

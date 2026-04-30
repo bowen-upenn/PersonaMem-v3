@@ -1291,11 +1291,17 @@ class PersonaAgent:
     # LLM helpers
     # ------------------------------------------------------------------
 
-    def _query_llm_with_retry(self, prompt: str) -> str | None:
-        """Call the flagship LLM with retry logic. Returns response text or None."""
+    def _query_llm_with_retry(self, prompt: str, temperature: float | None = None) -> str | None:
+        """Call the flagship LLM with retry logic. Returns response text or None.
+
+        `temperature` is plumbed through to the underlying client when set;
+        omit (or pass None) to use the API default.
+        """
         for attempt in range(self.MAX_RETRIES):
             try:
-                response = self.llm_client.query_llm(prompt, verbose=self.verbose)
+                response = self.llm_client.query_llm(
+                    prompt, verbose=self.verbose, temperature=temperature,
+                )
                 if response:
                     return response
             except Exception as e:
@@ -4976,11 +4982,19 @@ class PersonaAgent:
         except (ValueError, TypeError):
             user_seed = abs(hash(str(self.user_id))) % (2**31)
 
+        # Conversation synthesis at temperature=0.7 — empirically gives more
+        # natural, varied user voice than the default ~1.0 (which produces
+        # over-elaborate parallel-structure prose flagged in the user-voice
+        # contract block in `prompts.py`). Temperature is plumbed through to
+        # the LLM client via the optional kwarg added in `query_llm.py`.
+        def _conv_query_fn(prompt: str):
+            return self._query_llm_with_retry(prompt, temperature=0.7)
+
         chatbot_conversation.generate_chatbot_conversations(
             chatbot_records=chatbot_records,
             user_profile=user_profile_dict,
             chatbot_persona=chatbot_persona_dict,
-            llm_query_fn=self._query_llm_with_retry,
+            llm_query_fn=_conv_query_fn,
             user_seed=user_seed,
             max_workers=self.max_workers,
         )
@@ -5512,7 +5526,7 @@ class PersonaAgent:
                             "ad_category": ev["ad_category"],
                             "cta_label": "Learn more",
                             "cta_destination_kind": "landing_page",
-                            "disclosure_label": "Sponsored",
+                            "disclosure_label": "Ads",
                         }
                     else:
                         # Normalize required fields.
@@ -5521,7 +5535,7 @@ class PersonaAgent:
                         md.setdefault("ad_category", ev["ad_category"])
                         md.setdefault("cta_label", "Learn more")
                         md.setdefault("cta_destination_kind", "landing_page")
-                        md.setdefault("disclosure_label", "Sponsored")
+                        md.setdefault("disclosure_label", "Ads")
                     # Override content + action + itype for this event.
                     self._content_by_oid[oid] = {
                         "content_type": ev["content_type"],

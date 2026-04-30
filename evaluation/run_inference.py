@@ -1,10 +1,11 @@
-"""CLI orchestrator for the eval harness.
+"""LEGACY CLI orchestrator for the eval harness.
 
-Two-phase design: loads a pre-built benchmark file (`evaluation/benchmarks/{user_id}/benchmark.json`)
-and runs the selected agent over its frozen instances. If the benchmark file is
-missing or its `backend_hash` doesn't match the current backend, the harness
-refuses to run until you rebuild — this keeps results comparable across runs,
-modes, and models.
+Reads the pre-built `benchmark/{user_id}/benchmark.json` artifact, which
+the consolidated `scripts/prepare_eval_data.py` no longer writes (single
+source of truth is now `benchmark/{user_id}/queries.csv`). Use
+`evaluation/run_eval.py` for new work; this module is preserved for
+backward compatibility with snapshots that still have a benchmark.json
+sidecar on disk.
 """
 
 from __future__ import annotations
@@ -229,7 +230,7 @@ def _load_benchmark(args) -> dict:
     if not path.exists():
         sys.exit(
             f"Benchmark file not found at {path}. Build it first:\n"
-            f"  python -m evaluation.build_benchmark --user_id {args.user_id}"
+            f"  python scripts/prepare_eval_data.py --user_id {args.user_id}"
         )
     with path.open() as f:
         bm = json.load(f)
@@ -239,7 +240,7 @@ def _load_benchmark(args) -> dict:
     if bm.get("benchmark_version") != BENCHMARK_VERSION:
         sys.exit(
             f"Benchmark version mismatch: file is {bm.get('benchmark_version')!r}, harness expects {BENCHMARK_VERSION!r}. "
-            f"Rebuild with `python -m evaluation.build_benchmark --user_id {args.user_id}`."
+            f"Rebuild with `python scripts/prepare_eval_data.py --user_id {args.user_id}`."
         )
 
     current_hash = compute_backend_hash(args.backend_dir, args.user_id)
@@ -247,7 +248,7 @@ def _load_benchmark(args) -> dict:
         msg = (
             f"Backend data has changed since this benchmark was built "
             f"({bm.get('backend_hash')!r} → {current_hash!r}).\n"
-            f"  Rebuild: python -m evaluation.build_benchmark --user_id {args.user_id}\n"
+            f"  Rebuild: python scripts/prepare_eval_data.py --user_id {args.user_id}\n"
             f"  Or override with --allow_stale to run against the frozen inputs anyway."
         )
         if not args.allow_stale:

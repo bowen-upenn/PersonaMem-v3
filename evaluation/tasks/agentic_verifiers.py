@@ -396,7 +396,7 @@ def _verify_trending_alert(inst: dict, response: str, writes: list) -> dict:
 # ---------------------------------------------------------------------------
 
 OUTPUT_VERIFIERS: dict[str, Callable[[dict, str, list], dict]] = {
-    "agentic_community_digest":         _verify_community_digest,
+    "agentic_user_voice_post":          _verify_community_digest,
     "agentic_moment_recommendation":    _verify_moment_recommendation,
     "agentic_dm_digest":                _verify_dm_digest,
     "agentic_cross_app_repost":         _verify_cross_app_repost,

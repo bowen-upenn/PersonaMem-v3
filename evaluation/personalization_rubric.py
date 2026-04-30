@@ -52,17 +52,17 @@ DAY_SECONDS = 24 * 60 * 60
 APPLICABILITY: dict[str, dict[str, bool]] = {
     # Chatbot response (was: chatbot_response_proactive / _control)
     "chatbot_proactive_personalization": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "chatbot_restraint_control":         {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     # Personalized feed ranking (was: slate_ranking)
     "personalized_feed_ranking":         {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
     # Restraint family (was: c1a/c1b/c2/c3/c4)
     "repetition_fatigue_pairs":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     "repetition_fatigue_sequences":      {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     "context_shift_scenarios":           {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "irrelevant_query_restraint":        {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "over_personalization_distractor_reject": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     "preference_removal_regen":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     # Agentic family (was: t6..t19)
-    "agentic_community_digest":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
+    "agentic_user_voice_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
     "agentic_moment_recommendation":     {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
     "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
     "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
@@ -81,7 +81,7 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
 SOURCE_B_APPLICABLE = {
     "personalized_feed_ranking", "chatbot_proactive_personalization",
-    "agentic_community_digest", "agentic_moment_recommendation", "agentic_cross_app_repost",
+    "agentic_user_voice_post", "agentic_moment_recommendation", "agentic_cross_app_repost",
     "agentic_vague_refind", "agentic_collection_curation",
     "agentic_proactive_daily_catchup", "agentic_trending_alert",
 }

@@ -400,13 +400,78 @@ def _load_all_chatbot_events(backend_dir: str | Path, user_id: str) -> list[dict
 
 
 def _candidate_from_event(event: dict, held_out_preference: dict | None = None) -> dict | None:
-    """Extract a proactive-query candidate from a chatbot event. Returns None
-    if no usable user query is present.
+    """Extract a proactive-query candidate from a chatbot event.
+
+    Per-turn-aware: when the conversation carries `embeds_pref_idx` on user
+    turns (new persona-pipeline schema), pick the FIRST user turn whose
+    `embeds_pref_idx` includes the held-out preference's 1-based index in
+    `event["preferences"]`. Earlier turns become `prior_conversation` so the
+    agent sees the actual chat lead-up to the test query.
+
+    Legacy fallback: when no turn carries `embeds_pref_idx` (events synthesized
+    before the schema change), use `interaction_format.user_message` (or the
+    last user turn in the convo) — the topical-alignment guard
+    `_query_aligns_with_held_out` downstream filters misaligned candidates.
+
+    Returns None if no usable user query is present.
     """
     fmt = event.get("interaction_format") or {}
-    user_msg = fmt.get("user_message") or ""
     convo = event.get("conversation") or []
-    # Fallback: if no user_message, take the last user turn in the convo.
+    prefs = event.get("preferences") or []
+
+    # --- Per-turn-aware path -----------------------------------------------
+    # Compute the held-out preference's 1-based index inside event["preferences"].
+    held_idx_in_event: int | None = None
+    if held_out_preference and held_out_preference.get("persona_item"):
+        held_pi = held_out_preference["persona_item"].strip()
+        for i, p in enumerate(prefs, start=1):
+            if (p.get("persona_item") or "").strip() == held_pi:
+                held_idx_in_event = i
+                break
+
+    has_per_turn_tags = any(
+        m.get("role") == "user" and isinstance(m.get("embeds_pref_idx"), list)
+        for m in convo
+    )
+
+    if has_per_turn_tags and held_idx_in_event is not None:
+        chosen_turn_pos: int | None = None
+        for pos, m in enumerate(convo):
+            if m.get("role") != "user":
+                continue
+            tags = m.get("embeds_pref_idx") or []
+            if held_idx_in_event in tags:
+                chosen_turn_pos = pos
+                break
+        if chosen_turn_pos is None:
+            # No turn embeds the held-out pref — skip this candidate; the test
+            # would be misaligned and `_query_aligns_with_held_out` would drop
+            # it anyway. Better to drop early with no spurious candidate.
+            return None
+        user_msg = (convo[chosen_turn_pos].get("content") or "").strip()
+        if not user_msg:
+            return None
+        prior = list(convo[:chosen_turn_pos])
+        return {
+            "source_object_id": str(event.get("source_object_id", "")),
+            "source_timestamp": int(event.get("source_timestamp", 0)),
+            "formatted_timestamp": event.get("formatted_timestamp", ""),
+            "action": fmt.get("action", ""),
+            "user_query": user_msg,
+            "prior_conversation": prior,
+            "source_hashtags": event.get("source_hashtags", []),
+            "held_out_preference": held_out_preference,
+            # Per-turn tag is authoritative — the LLM placed the pref in THIS
+            # turn at synthesis time. Skip the token-overlap alignment guard
+            # downstream (which would false-fail when the user uses casual
+            # phrasing whose vocabulary doesn't overlap the persona_item text,
+            # e.g. user_query "got my fantasy roster locked" vs persona_item
+            # "Interested in NFL football").
+            "_alignment_confirmed_by_per_turn_tag": True,
+        }
+
+    # --- Legacy fallback (no per-turn tags) -------------------------------
+    user_msg = fmt.get("user_message") or ""
     if not user_msg and convo:
         for m in reversed(convo):
             if m.get("role") == "user":
@@ -414,11 +479,10 @@ def _candidate_from_event(event: dict, held_out_preference: dict | None = None) 
                 break
     if not user_msg:
         return None
-    # Build prior conversation = everything before the user's final message.
     prior: list[dict] = []
     if convo:
         for m in convo:
-            if m.get("role") == "user" and m.get("content", "").strip() == user_msg.strip():
+            if m.get("role") == "user" and (m.get("content", "") or "").strip() == user_msg.strip():
                 break
             prior.append(m)
     return {
@@ -436,9 +500,16 @@ def _candidate_from_event(event: dict, held_out_preference: dict | None = None) 
 def _fresh_start_ok(candidate: dict) -> bool:
     """Fresh-start filter: a *proactive* benchmark query must stand alone.
 
-    Strict: the user query must be the very first message of a session — no
-    prior assistant turns. Also rejects continuations-by-syntax as defensive
-    check.
+    For legacy-extracted candidates (no per-turn tags) we require the user
+    query to be the very first message of a session — no prior assistant
+    turns. The continuation-syntax check ("ok now what about…") still applies
+    universally.
+
+    For per-turn-tag-extracted candidates the prior_conversation is legitimate
+    chat context (the LLM intentionally placed the pref mid-conversation);
+    the agent-under-eval gets the same context at runtime, so the prior-
+    assistant-turns rule does not apply. We still drop continuation-syntax
+    queries because those phrasings aren't valid as standalone test prompts.
     """
     q = (candidate.get("user_query") or "").strip()
     if not q:
@@ -448,9 +519,8 @@ def _fresh_start_ok(candidate: dict) -> bool:
         return False
     if _CONTINUATION_RE.search(q_low):
         return False
-    # Hard requirement: no prior assistant turn. Prior user-only turns are fine
-    # (some conversations open with the user restating themselves before the
-    # assistant has responded), but any assistant turn means we're mid-conversation.
+    if candidate.get("_alignment_confirmed_by_per_turn_tag"):
+        return True
     if any(m.get("role") == "assistant" for m in (candidate.get("prior_conversation") or [])):
         return False
     return True
@@ -463,6 +533,54 @@ def _proactive_filter_ok(candidate: dict) -> bool:
     if _EXPLICIT_ASK_RE.search(candidate["user_query"] or ""):
         return False
     return True
+
+
+def _query_aligns_with_held_out(candidate: dict) -> bool:
+    """Topical-alignment guardrail: a chatbot event tags ONE held-out preference
+    on the whole event, but `_candidate_from_event` extracts only the LAST
+    user_message. Multi-topic conversations can leave the last turn unrelated
+    to the held-out pref (e.g. user opens with NFL, then asks about ring
+    photography — held-out is NFL, query is rings). Skip those: they create
+    nonsensical "the agent should weave NFL into a rings answer" tests.
+
+    Pass criteria — at least one must hold:
+      (a) user_query shares ≥ 1 non-stopword content token with the held-out
+          persona_item text;
+      (b) any candidate source_hashtag appears as a substring of user_query
+          (case-insensitive), OR user_query shares ≥ 1 token with any
+          source_hashtag (e.g. #nfl ↔ "nfl game tonight");
+      (c) candidate has no held_out_preference (control-arm path — alignment
+          irrelevant; we judge restraint, not surfacing).
+    """
+    # Phase L: trust the per-turn embeds_pref_idx tag when present — the LLM
+    # placed the pref in THIS user turn at synthesis time, so topical
+    # alignment is authoritatively confirmed even when natural-voice phrasing
+    # has no token overlap with the formal persona_item text.
+    if candidate.get("_alignment_confirmed_by_per_turn_tag"):
+        return True
+    held = candidate.get("held_out_preference") or {}
+    pi = (held.get("persona_item") or "").strip()
+    if not pi:
+        return True  # control arm — no alignment to enforce
+    q = (candidate.get("user_query") or "").strip()
+    if not q:
+        return False
+    q_tokens = _tokens(q)
+    if not q_tokens:
+        return False
+    pi_tokens = _tokens(pi)
+    if pi_tokens & q_tokens:
+        return True
+    q_low = q.lower()
+    for tag in (candidate.get("source_hashtags") or []):
+        tag_low = tag.lstrip("#").lower()
+        if not tag_low:
+            continue
+        if tag_low in q_low:
+            return True
+        if tag_low in q_tokens:
+            return True
+    return False
 
 
 def _blind_check(query: str, judge_llm) -> dict:
@@ -529,12 +647,60 @@ def _build_top_k_relevant_prefs(
     all_prefs: list[dict],
     query: str,
     query_hashtags: list[str],
-    k: int = 5,
+    k: int = 3,
+    held_out_preference: dict | None = None,
+    require_topical_alignment: bool = True,
 ) -> list[dict]:
+    """Build top-K prefs the agent could plausibly weave into a response.
+
+    Strict topical-alignment filter (Phase L.9): every kept pref must share
+    ≥ 1 source_hashtag with the held-out pref OR ≥ 1 content token with the
+    user_query. Without this filter the K=5 most-engaged prefs across the
+    user's whole history rise to the top regardless of query relevance — which
+    is exactly the rings-query / NFL-pref bug. With it, only topically anchored
+    prefs survive.
+
+    Cap default at k=3 (down from 5) — we want the test card to surface the
+    minimum necessary supporting context, not a kitchen-sink list.
+
+    `require_topical_alignment=False` disables the filter (used for the
+    distractor_reject arm, which intentionally surfaces irrelevant prefs).
+    """
     if not all_prefs:
         return []
     q_tokens = metrics_mod.tokenize(query)
     q_hash = {h.lower().lstrip("#") for h in (query_hashtags or [])}
+    held_hash: set[str] = set()
+    held_pi_tokens: set[str] = set()
+    if held_out_preference:
+        held_pi = (held_out_preference.get("persona_item") or "").strip()
+        held_pi_tokens = set(metrics_mod.tokenize(held_pi))
+        for h in (held_out_preference.get("source_hashtags") or []) + list(query_hashtags or []):
+            held_hash.add(h.lower().lstrip("#"))
+
+    def _topically_aligned(p: dict) -> bool:
+        if not require_topical_alignment:
+            return True
+        # Always keep the held-out preference itself (caller may re-include it)
+        if held_out_preference and (p.get("persona_item") or "").strip() == \
+                (held_out_preference.get("persona_item") or "").strip():
+            return True
+        p_hashes = {h.lower().lstrip("#") for h in (p.get("source_hashtags") or [])}
+        if held_hash and (p_hashes & held_hash):
+            return True
+        if q_hash and (p_hashes & q_hash):
+            return True
+        p_text = (p.get("persona_item") or "") + " " + (p.get("category") or "")
+        p_tokens = set(metrics_mod.tokenize(p_text))
+        if q_tokens and (p_tokens & set(q_tokens)):
+            return True
+        if held_pi_tokens and (p_tokens & held_pi_tokens):
+            return True
+        return False
+
+    aligned = [p for p in all_prefs if _topically_aligned(p)]
+    if not aligned:
+        return []
 
     def score(p: dict) -> float:
         txt = (p.get("persona_item") or "") + " " + (p.get("category") or "")
@@ -545,9 +711,11 @@ def _build_top_k_relevant_prefs(
         for h in (p.get("source_hashtags") or []):
             if h.lower().lstrip("#") in q_hash:
                 s += 1.0
+            if h.lower().lstrip("#") in held_hash:
+                s += 1.0
         return s
 
-    scored = sorted(all_prefs, key=score, reverse=True)
+    scored = sorted(aligned, key=score, reverse=True)
     top = scored[:k]
     return [
         {
@@ -675,22 +843,44 @@ def build_task_b_arms(
     candidates = [c for c in candidates if _fresh_start_ok(c)]
     # Stage 3: proactive filter.
     candidates = [c for c in candidates if _proactive_filter_ok(c)]
+    # Stage 3.5: held-out / user_query topical-alignment guardrail.
+    # Multi-turn chatbot events tag ONE pref on the whole convo; the last
+    # user_message can be on a different topic. Skip misaligned candidates.
+    candidates = [c for c in candidates if _query_aligns_with_held_out(c)]
     # Stage 4: dedup.
     candidates = _dedup_candidates(candidates)
 
     # Stage 5: blind-check → score each, split into proactive vs control.
+    # Parallelized across candidates (default 16 workers) — was sequential
+    # which made the blind-check stage the dominant build-time bottleneck.
     if blind_check_limit is not None:
         candidates = candidates[:blind_check_limit]
     proactive: list[dict] = []
     control: list[dict] = []
-    for c in candidates:
-        bc = _blind_check(c["user_query"], blind_check_llm)
-        c["blind_check_score"] = bc["blind_score"]
-        c["blind_check_generic_answer"] = bc["generic_answer"]
-        if bc["blind_score"] >= 2:
+    if blind_check_llm is not None and candidates:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        def _score_one(c: dict) -> tuple[dict, dict]:
+            return c, _blind_check(c["user_query"], blind_check_llm)
+
+        with ThreadPoolExecutor(max_workers=16) as pool:
+            futures = [pool.submit(_score_one, c) for c in candidates]
+            for fut in as_completed(futures):
+                c, bc = fut.result()
+                c["blind_check_score"] = bc["blind_score"]
+                c["blind_check_generic_answer"] = bc["generic_answer"]
+                if bc["blind_score"] >= 2:
+                    proactive.append(c)
+                else:
+                    control.append(c)
+    else:
+        # No client (--skip_blind_check): default every candidate to the
+        # proactive arm. Loses the natural control split; restraint coverage
+        # is still provided by the dedicated I.2/I.3/J.4/J.5 arms downstream.
+        for c in candidates:
+            c["blind_check_score"] = 2
+            c["blind_check_generic_answer"] = ""
             proactive.append(c)
-        else:
-            control.append(c)
 
     # Fallback: if control arm is empty, grab the 3 lowest-scoring candidates.
     if not control and len(candidates) >= 3:
@@ -699,15 +889,65 @@ def build_task_b_arms(
         proactive_ids = {c["source_object_id"] for c in control_picks}
         proactive = [c for c in proactive if c["source_object_id"] not in proactive_ids]
 
-    # Enrich instances with ground truth (TARGET/AVOID + top-K + privacy + Source B).
+    # Enrich instances with ground truth.
+    #
+    # Phase L.10 — minimal GT. The earlier code emitted a `gt_slice` (full
+    # same-day positives + negatives) and `privacy_flagged_prefs` on EVERY
+    # arm, which produced redundant test cards and let irrelevant prefs into
+    # the proactive metric. New rules:
+    #   - `gt_slice.target` and `gt_slice.avoid` are dropped from the emitted
+    #     instance (gt_slice carries only the t_test/window metadata kept for
+    #     run_task_b's score_response_against_slice — which now scores against
+    #     `held_out + top_k_relevant_prefs` as the natural target set).
+    #   - `privacy_flagged_prefs` is emitted ONLY for arms that score against
+    #     it (currently `distractor_reject` via the chatbot_response runner).
+    #     Other arms get an empty list — the privacy_leak metric trivially
+    #     returns 0 / no-fail in that case.
     def _finalize(c: dict, arm: str) -> dict:
         t_test = c["source_timestamp"]
-        # Dedup'd preferences from all events before this candidate's timestamp.
         all_prefs = _dedup_user_prefs(bq, user_id, t_test)
-        # Same-day slice anchored on this candidate's timestamp.
-        gt_slice = _build_gt_slice_for_candidate(bq, user_id, t_test, c["held_out_preference"], c["source_hashtags"])
-        top_k = _build_top_k_relevant_prefs(all_prefs, c["user_query"], c["source_hashtags"])
-        privacy_flagged = _build_privacy_flagged_prefs(profile, all_prefs)
+        # Phase L.9: strict topical-alignment filter on top-K (cap k=3).
+        # Control arm has no held_out, so only query-token alignment applies.
+        top_k = _build_top_k_relevant_prefs(
+            all_prefs, c["user_query"], c["source_hashtags"],
+            k=3, held_out_preference=c.get("held_out_preference"),
+            require_topical_alignment=True,
+        )
+        # Build target list = held_out + top_k (deduplicated). This becomes
+        # the `gt_slice.target` consumed by score_response_against_slice.
+        target_set: list[dict] = []
+        seen_pi: set[str] = set()
+        held = c.get("held_out_preference") or {}
+        if held.get("persona_item"):
+            target_set.append({
+                "persona_item": held["persona_item"],
+                "category": held.get("category", ""),
+                "source_hashtags": c.get("source_hashtags", []),
+                "polarity": "positive",
+            })
+            seen_pi.add(held["persona_item"])
+        for tk in top_k:
+            pi = tk.get("persona_item")
+            if pi and pi not in seen_pi:
+                target_set.append({
+                    "persona_item": pi,
+                    "category": tk.get("category", ""),
+                    "source_hashtags": tk.get("source_hashtags", []),
+                    "polarity": "positive",
+                })
+                seen_pi.add(pi)
+        gt_slice = {
+            "t_test": t_test,
+            "window_seconds": DAY_SECONDS,
+            "target": target_set,
+            "avoid": [],
+        }
+        # Privacy-flagged is meaningful only for the distractor_reject arm
+        # downstream — for other arms it produced misleading "must-not-surface"
+        # entries on otherwise-benign prefs (e.g. "values long-term romantic
+        # commitment" got flagged as privacy-sensitive when it isn't). Default
+        # empty; the dedicated build_c3_instance handles its own pool.
+        privacy_flagged: list[dict] = []
         source_b = _build_post_test_window(bq, user_id, t_test)
         return {
             "test_id": c["source_object_id"],
@@ -990,14 +1230,14 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
     # Archetype A: tangent probe per top positive category
     tangent_templates = {
         # Each template: question, hashtags-it-implies (used to tempt the agent)
-        "boxing": ("What's a good cardio routine for someone who hates running on a treadmill?", ["#boxing", "#fitness"]),
-        "nfl": ("Can you suggest some Sunday-afternoon background TV that doesn't take much focus?", ["#nfl", "#sports"]),
-        "comedy": ("What's a quick laugh I can have during my coffee break?", ["#comedy", "#humor"]),
-        "fitness": ("How do I make sure my morning routine doesn't take more than 30 minutes?", ["#fitness", "#workout"]),
-        "music": ("What are some good background sounds for focusing while reading?", ["#music"]),
-        "cooking": ("What's the easiest one-pan dinner I can make tonight?", ["#cooking", "#recipes"]),
-        "travel": ("Any tips for getting better airport coffee?", ["#travel"]),
-        "fashion": ("How do I pack lighter for a 3-day trip?", ["#fashion", "#style"]),
+        "boxing": ("good cardio that isn't running on a treadmill?", ["#boxing", "#fitness"]),
+        "nfl": ("any sunday-afternoon background tv that doesn't need focus?", ["#nfl", "#sports"]),
+        "comedy": ("something quick that'll make me laugh on my coffee break?", ["#comedy", "#humor"]),
+        "fitness": ("how do you keep a morning routine under 30 minutes?", ["#fitness", "#workout"]),
+        "music": ("background sounds for focusing while reading?", ["#music"]),
+        "cooking": ("easiest one-pan dinner I can make tonight?", ["#cooking", "#recipes"]),
+        "travel": ("any tips for better airport coffee?", ["#travel"]),
+        "fashion": ("how do you pack lighter for a 3-day trip?", ["#fashion", "#style"]),
     }
     for cat in top_cats[:3]:
         # Find the closest template by lowercase substring match
@@ -1006,7 +1246,7 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
         if match_key:
             q, tags = tangent_templates[match_key]
         else:
-            q, tags = (f"What's a good way to spend a free 20 minutes today?", [])
+            q, tags = ("what's a good way to spend a free 20 minutes?", [])
         out.append({
             "source_object_id": f"adv_tangent_{user_id}_{next_idx:02d}",
             "source_timestamp": latest_ts - (60 * (next_idx + 1)),
@@ -1024,10 +1264,10 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
 
     # Archetype B: anti-preference invitation per top negative item
     anti_templates = [
-        "What's your favorite kind of {}?",
-        "Tell me what you love about {}.",
-        "Which {} do you follow these days?",
-        "Recommend me some {} you think I'd really enjoy.",
+        "what's your favorite kind of {}?",
+        "tell me what you love about {}.",
+        "which {} do you follow these days?",
+        "recommend me some {} I'd really enjoy.",
     ]
     # Strip negation-prefixes so "Not interested in NFL" → "NFL"
     NEG_PREFIXES = (
@@ -1421,14 +1661,14 @@ def build_c3_instance(test: TestItem, rng: random.Random) -> dict | None:
     # Synthesize a generic question — choose deterministically by hashing
     # the test_id so two regens produce the same question for the same test.
     GENERIC_QUERIES = [
-        "What's a good way to organize my notes app on my phone?",
-        "Can you suggest a simple breathing exercise for stress?",
-        "What's the best way to learn a new word in a foreign language?",
-        "How do I get rid of static cling on my clothes in winter?",
-        "What's a quick warm-up before sitting at a desk for 4 hours?",
-        "How do I keep my keyboard from getting greasy when I eat at my desk?",
-        "What's a good way to remember someone's name when meeting them?",
-        "Any tips for falling asleep faster on a hot night?",
+        "how do you organize your notes app? mine's a mess.",
+        "any breathing exercise that actually works for stress?",
+        "best way to make a new word stick in another language?",
+        "static cling on my clothes is brutal in winter, fix?",
+        "quick desk warm-up before I sit for 4 hours?",
+        "keyboard's getting gross. how do you keep yours clean?",
+        "what's your trick for remembering someone's name?",
+        "can't sleep when it's hot. tips?",
     ]
     seed = abs(hash(test.source_object_id)) % len(GENERIC_QUERIES)
     user_query = GENERIC_QUERIES[seed]

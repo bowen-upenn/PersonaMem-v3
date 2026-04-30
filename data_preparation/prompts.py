@@ -730,17 +730,23 @@ def generate_interaction_format_prompt(
         "   (a) **Social-media `@ai` comment actions** (`at_ai_recommend_more`, `at_ai_focus_topic`, "
         "`at_ai_stop_recommending`, `at_ai_not_interested`, `at_ai_feels_off`). These model the user "
         "typing an `@ai` comment on a post's comment section to steer the in-feed AI. Message MUST "
-        "start with `@ai ` and be first-person, ~15–35 words, grounded in the specific preference "
-        "topic (not the persona_item verbatim). Example for 'Enjoys cooking Mexican food' + "
-        "`at_ai_recommend_more` on Instagram: `\"@ai can you show me more weeknight-friendly "
-        "authentic Mexican recipes? I want something quick but with real flavor, not gringo versions.\"`\n"
+        "start with `@ai ` and be first-person, ≤ 25 words, grounded in the specific preference "
+        "topic (not the persona_item verbatim). Examples: `\"@ai more like this please — quick "
+        "weeknight Mexican that's actually authentic\"` or `\"@ai stop recommending nfl. don't care.\"`\n"
         "   (b) **AI Chatbot natural-chat-turn actions** (`asked_followup`, `requested_more_detail`, "
         "`continued_topic`, `asked_to_change_topic`, `edited_prompt_and_retried`, `regenerated`). "
         "These model the user's next chat turn in an ongoing AI conversation. Message is a natural "
-        "first-person utterance, ~15–35 words, grounded in the specific preference topic. "
+        "first-person utterance, ≤ 25 words, grounded in the specific preference topic. "
         "**Do NOT prefix with `@ai `** — the user is already conversing with the AI, no mention is needed. "
         "Example for 'Enjoys cooking Mexican food' + `asked_followup` on Chatbot: "
-        "`\"Can you give me a few weeknight Mexican recipes that work for a toddler? Under 30 minutes, no specialty ingredients.\"`\n"
+        "`\"give me a few quick Mexican recipes that work for a toddler — under 30 minutes\"`.\n"
+        "   **User-voice rules — applies to BOTH cases:**\n"
+        "   - Use contractions: don't, I'm, it's, can't, won't, that's. Never expanded forms.\n"
+        "   - At least one contraction per message.\n"
+        "   - Allow fragments and lowercase opens (real phone typing).\n"
+        "   - FORBIDDEN: parallel-triplet lists (\"X, Y, or Z\"), \"I'm trying to X but Y\" "
+        "scaffolding, meta-framing verbs (troubleshoot/figure out/work through/navigate), "
+        "long noun phrases.\n"
         "   Otherwise, `user_message` is `null`."
         if requires_user_message else ""
     )
@@ -1542,7 +1548,7 @@ def synthesize_ad_content_prompt(
   "ad_category": "<MUST equal '{ad_category}'>",
   "cta_label": "<one of: {cta_labels_str}>",
   "cta_destination_kind": "<one of: {cta_kinds_str}>",
-  "disclosure_label": "Sponsored"
+  "disclosure_label": "Ads"
 }}
 ```
 `sponsor_name` must sound like a plausible independent brand (avoid
@@ -1589,7 +1595,7 @@ The user then took this action on it: **{action_label}** (`{action}`).
 ## Rules
 1. The ad must feel like an ad — brand voice, CTA, sponsor name visible via `ad_metadata`.
 2. Do NOT mention the user's name, specific preferences, or private data in the copy. Ads target segments, not individuals.
-3. `ad_metadata.ad_category` MUST equal `{ad_category}` (verbatim). `cta_label` MUST be one of the allowed values. `cta_destination_kind` MUST be one of the allowed values. `disclosure_label` MUST be "Sponsored".
+3. `ad_metadata.ad_category` MUST equal `{ad_category}` (verbatim). `cta_label` MUST be one of the allowed values. `cta_destination_kind` MUST be one of the allowed values. `disclosure_label` MUST be "Ads".
 4. `sponsor_name` must be invented (not a real well-known brand) and plausibly fit the ad_category.
 5. Keep hashtags OUT of body copy / captions / descriptions — hashtags live on the event separately.
 6. Keep the ad on-topic with the hashtags; but the ad reader should see a product/service offer, not organic content.
@@ -1677,7 +1683,7 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 
 ## Hidden preferences to embed
 
-The conversation must naturally reveal ALL of the following preferences. Each preference should appear at least once throughout the conversation — woven into the user's task content, questions, or material they provide. If there are many preferences, some may share a turn.
+The conversation must naturally reveal ALL of the following preferences. Each preference is identified by its 1-based index below. Each user turn must declare which preferences (by index) it embeds via the `embeds_pref_idx` field. Preferences spread across turns naturally; one turn can embed multiple, but the OPENER (turn 1) must clearly anchor on ONE specific preference.
 
 {prefs_block}
 
@@ -1695,23 +1701,38 @@ The conversation must naturally reveal ALL of the following preferences. Each pr
 
 4. **NEVER have the user directly state any preference.** The user should NOT say "I like X", "I enjoy X", "I'm into X", "I dislike X", or any similar direct declaration. Preferences must be inferable from the task content, not explicitly declared. Do NOT have the user explain why they are asking — real users just ask.
 
-5. **Match the user's voice.** Based on the Chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}"), write the user's messages in their natural tone — casual, formal, vulnerable, bossy, etc. Keep user messages concise and realistic (15-60 words each).
+5. **User voice — CRITICAL.** The user is a real person typing on their phone, not an essayist. Every user message must:
+   - Be ≤ 30 words. (The OPENER may go up to 35 words if it's pasting a short draft to edit; otherwise hard-cap at 30.)
+   - Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
+   - Vary sentence length. Mix one fragment ("brain mushy today") with one short sentence.
+   - Skip pleasantries. Real people don't say "Can you help me troubleshoot a setup?"; they say "this keeps coming out blurry, what am I doing wrong?".
+   - Match the Chatbot persona style ("{chatbot_persona.get("style_description", "")}") in register only — register can be casual/formal/vulnerable, but length and naturalness rules hold.
 
-6. **Assistant responses should be long, detailed, and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request.
+   FORBIDDEN patterns (never produce these):
+   - Parallel-triplet lists ("blow out white, show every dust speck, or reflect my whole phone")
+   - "I'm trying to X but the Y" parallel scaffolding
+   - Meta-framing verbs: troubleshoot, figure out, work through, navigate, walk through
+   - Explanatory hedging: "I want X but not Y", "looking for X without the Y"
+   - Long noun phrases: "engagement ring close-ups at home" — say "ring photos" instead
+
+6. **Assistant responses should be detailed and realistic** (150-300 words each). A real AI chatbot gives thorough, substantive replies — not terse summaries. Include specific details, examples, options, or elaboration relevant to the user's request.
 
 7. **Generate exactly {num_turns} turns total** (alternating user/assistant). The conversation MUST start with the user and end with the assistant. Every user message must receive a chatbot reply.
 
-8. **All {len(preferences)} preferences must be inferable from the conversation.** Spread them across turns naturally. The primary task topic can carry the most prominent preference(s), while others surface through details, follow-up questions, or contextual references.
+8. **All {len(preferences)} preferences must be inferable from the conversation.** Spread them across turns naturally. The opener anchors on ONE preference (its `embeds_pref_idx` should contain exactly one index). Subsequent user turns may embed 1-2 preferences each. Tag each user turn with `embeds_pref_idx` listing the 1-based indices of the preferences embedded in THAT turn.
 
 ## Output Format
 
 Respond with ONLY a JSON array. No explanation outside the JSON fence.
 
+User turns must include `embeds_pref_idx` (a list of 1-based preference indices). Assistant turns omit it.
+
 ```json
 [
-  {{"role": "user", "content": "..."}},
+  {{"role": "user", "content": "...", "embeds_pref_idx": [1]}},
   {{"role": "assistant", "content": "..."}},
-  ...
+  {{"role": "user", "content": "...", "embeds_pref_idx": [2, 3]}},
+  {{"role": "assistant", "content": "..."}}
 ]
 ```"""
 
@@ -1778,20 +1799,34 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 
 ## Conversation structure (exactly 4 turns)
 
-**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it concise and realistic (15-60 words).
+**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it ≤ 30 words (or up to 35 if pasting a short draft to edit).
 
 **Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information. Make this response long and detailed like a real AI chatbot would (150-300 words).
 
-**Turn 3 (user):** The user asks the chatbot to forget or not remember the specific personal detail that was revealed. This should sound natural — not robotic. Examples: "Actually, can you not remember that about me?", "Please forget that part — I'd rather keep that private", "Don't store that detail, I shouldn't have mentioned it." (15-40 words).
+**Turn 3 (user):** The user asks the chatbot to forget or not remember the specific personal detail that was revealed. This should sound natural — not robotic. Examples: "Actually, can you not remember that?", "forget that part — keep it private". Keep it ≤ 25 words.
 
 **Turn 4 (assistant):** The assistant acknowledges the request respectfully and reassuringly, then pivots back to helping with the original task to keep the conversation natural. A real chatbot wouldn't just say "done" — it would reassure and redirect (80-150 words).
 
 ## Rules
 
-- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}") in register only.
 - The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 should feel like a natural, human reaction — not a formal privacy request.
 - Any additional preferences should surface naturally throughout the conversation as side details.
+
+## User voice — CRITICAL (applies to Turns 1 and 3)
+
+The user is a real person typing on their phone, not an essayist. Every user message must:
+- Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
+- Vary sentence length. Mix one fragment ("brain mushy today") with one short sentence.
+- Skip pleasantries. Real people don't say "Can you help me troubleshoot a setup?"; they say "this keeps coming out blurry, what am I doing wrong?".
+
+FORBIDDEN patterns (never produce these):
+- Parallel-triplet lists ("blow out white, show every dust speck, or reflect my whole phone")
+- "I'm trying to X but the Y" parallel scaffolding
+- Meta-framing verbs: troubleshoot, figure out, work through, navigate, walk through
+- Explanatory hedging: "I want X but not Y", "looking for X without the Y"
+- Long noun phrases: "engagement ring close-ups at home" — say "ring photos" instead
 
 ## Output Format
 
@@ -1871,21 +1906,34 @@ The assistant wrongly believes this preference applies to the user. The user wil
 
 ## Conversation structure (exactly 4 turns)
 
-**Turn 1 (user):** The user sends a normal task-oriented message — asking for help, a recommendation, or starting a conversation. The topic is related to (or adjacent to) the preference category, giving the assistant an opening to make its wrong assumption. Concise and realistic (15-60 words).
+**Turn 1 (user):** The user sends a normal task-oriented message — asking for help, a recommendation, or starting a conversation. The topic is related to (or adjacent to) the preference category, giving the assistant an opening to make its wrong assumption. Keep it ≤ 30 words.
 
 **Turn 2 (assistant):** The assistant responds helpfully but incorporates the WRONG preference as if it remembered it from past conversations. It makes a recommendation, suggestion, or tailors its response based on this incorrect assumption. The assumption should feel natural, not forced — like the assistant is trying to be personalized. Make this response long and detailed like a real AI chatbot would (150-300 words).
 
-**Turn 3 (user):** The user corrects the assistant. This should sound natural: "That's not really me", "Actually I don't care about that", "Stop assuming I'm into X", "No, that's wrong — I'm not like that", etc. The user pushes back on the incorrect personalization (15-50 words).
+**Turn 3 (user):** The user corrects the assistant. This should sound natural: "that's not really me", "actually I don't care about that", "stop assuming I'm into X". Keep it ≤ 25 words.
 
 **Turn 4 (assistant):** The assistant acknowledges the correction, apologizes, and adjusts its approach. It should then re-engage with the original task using the corrected understanding — a real chatbot wouldn't just say "sorry" and stop (80-150 words).
 
 ## Rules
 
-- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}") in register only.
 - Turn 2 must clearly show the assistant making an assumption based on the listed preference.
 - Turn 3 must clearly reject or correct the assumption.
 - The user should NOT directly quote the persona_item — they correct it in their own natural words.
 - Any additional preferences should surface naturally throughout the conversation as side details.
+
+## User voice — CRITICAL (applies to Turns 1 and 3)
+
+The user is a real person typing on their phone, not an essayist. Every user message must:
+- Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
+- Vary sentence length. Mix one fragment with one short sentence.
+- Skip pleasantries and meta-framing.
+
+FORBIDDEN patterns (never produce):
+- Parallel-triplet lists ("X, Y, or Z")
+- "I'm trying to X but the Y" parallel scaffolding
+- Meta-framing verbs: troubleshoot, figure out, work through, navigate, walk through
+- Long noun phrases — say things plainly
 
 ## Output Format
 
@@ -1963,20 +2011,33 @@ You are generating a 4-turn conversation where a user reveals a personal prefere
 
 ## Conversation structure (exactly 4 turns)
 
-**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it concise and realistic (15-60 words).
+**Turn 1 (user):** The user sends a task-oriented message (ask for help with writing, a question, advice, etc.) that **implicitly** reveals the preference through context. The user does NOT directly say "I like/have X" — it comes through naturally in the details of their request. Keep it ≤ 30 words.
 
 **Turn 2 (assistant):** The assistant responds helpfully and, in doing so, acknowledges or builds upon the revealed preference. The assistant doesn't make a big deal of it — it just naturally incorporates the information. Make this response long and detailed like a real AI chatbot would (150-300 words).
 
-**Turn 3 (user):** The user asks the chatbot not to use this preference for future recommendations or personalization. The user is NOT asking to erase the fact — only to stop it influencing future suggestions. Examples: "By the way, please don't start recommending things based on that.", "Can you not personalize around this going forward? I'd rather keep it one-off.", "Please don't let this shape future suggestions — it's not really something I want in my feed." (15-50 words).
+**Turn 3 (user):** The user asks the chatbot not to use this preference for future recommendations or personalization. The user is NOT asking to erase the fact — only to stop it influencing future suggestions. Examples: "don't start recommending stuff based on that", "can you not personalize around this going forward?", "please don't let this shape future suggestions". Keep it ≤ 25 words.
 
 **Turn 4 (assistant):** The assistant acknowledges the request, clarifies how it will adjust its personalization approach, and then pivots back to helping with the original task. A real chatbot wouldn't just say "ok" — it would reassure, briefly explain, and redirect (80-150 words).
 
 ## Rules
 
-- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}").
+- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}") in register only.
 - The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 is about opting out of personalization, NOT about forgetting or retracting the fact. The distinction matters.
 - Any additional preferences should surface naturally throughout the conversation as side details.
+
+## User voice — CRITICAL (applies to Turns 1 and 3)
+
+The user is a real person typing on their phone, not an essayist. Every user message must:
+- Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
+- Vary sentence length. Mix one fragment with one short sentence.
+- Skip pleasantries and meta-framing.
+
+FORBIDDEN patterns (never produce):
+- Parallel-triplet lists ("X, Y, or Z")
+- "I'm trying to X but the Y" parallel scaffolding
+- Meta-framing verbs: troubleshoot, figure out, work through, navigate, walk through
+- Long noun phrases — say things plainly
 
 ## Output Format
 

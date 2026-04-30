@@ -81,6 +81,28 @@ Produce 3–5 paired candidates as JSON. For each pair emit BOTH polarities.
 Keep each `triggering_user_query` to ONE sentence and keep `foil_construction`
 to ONE short sentence. Brevity matters — we need room for all candidates.
 
+## triggering_user_query — voice rules (CRITICAL)
+
+The user is a real person typing on their phone, not an essayist. Each
+`triggering_user_query` MUST satisfy:
+
+- ≤ 25 words.
+- Use contractions: don't, I'm, it's, can't, won't, that's. Never expanded forms.
+- At least one contraction per query.
+- Allow fragments and lowercase opens (real phone typing).
+- Skip pleasantries. No "could you help me" / "I was wondering if".
+
+FORBIDDEN patterns (never produce):
+- Parallel-triplet lists ("X, Y, or Z")
+- "I'm trying to X but the Y" parallel scaffolding
+- Meta-framing verbs: troubleshoot, figure out, work through, navigate
+- Long noun phrases — say things plainly
+
+Good examples (form only):
+- "what time should I leave for the airport tomorrow?"
+- "can you draft something quick to dani about saturday?"
+- "what's a good takeout pick near here?"
+
 ```json
 [
   {{

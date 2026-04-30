@@ -359,8 +359,16 @@ def generate_chatbot_conversations(
     # --- Phase 2: Parallel LLM calls (with up to 4 retries) ---
     MAX_RETRIES = 4
 
-    def _validate_conversation(response: str | None) -> list[dict] | None:
-        """Parse and validate a conversation response. Returns turns or None."""
+    def _validate_conversation(response: str | None, n_prefs: int = 0) -> list[dict] | None:
+        """Parse and validate a conversation response. Returns turns or None.
+
+        Sanitizes per-turn `embeds_pref_idx` (1-based pref indices on user
+        turns). Tolerates missing field for legacy back-compat — but malformed
+        entries (non-list, non-int, out-of-range indices) get stripped, not
+        rejected. The downstream extractor in evaluation/build_benchmark.py
+        falls back to the legacy interaction_format.user_message path if
+        no user turn carries an `embeds_pref_idx`.
+        """
         if not response:
             return None
         parsed = utils.extract_json_from_response(response)
@@ -371,6 +379,31 @@ def generate_chatbot_conversations(
                 return None
             if turn["role"] not in ("user", "assistant"):
                 return None
+            # Sanitize embeds_pref_idx (only meaningful on user turns).
+            if turn["role"] == "user":
+                raw = turn.get("embeds_pref_idx")
+                if raw is not None:
+                    if not isinstance(raw, list):
+                        turn.pop("embeds_pref_idx", None)
+                    else:
+                        clean = []
+                        for v in raw:
+                            try:
+                                idx = int(v)
+                            except (TypeError, ValueError):
+                                continue
+                            # 1-based; if n_prefs known, clamp to range
+                            if n_prefs > 0 and not (1 <= idx <= n_prefs):
+                                continue
+                            if idx not in clean:
+                                clean.append(idx)
+                        if clean:
+                            turn["embeds_pref_idx"] = clean
+                        else:
+                            turn.pop("embeds_pref_idx", None)
+            else:
+                # Assistant turns should not carry pref indices; strip if present.
+                turn.pop("embeds_pref_idx", None)
         return parsed
 
     def _call_llm_with_retry(item):

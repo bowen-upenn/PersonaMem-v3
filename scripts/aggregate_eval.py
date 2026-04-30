@@ -153,6 +153,13 @@ def _accuracy_value(task_type: str, metrics: dict, status: str, e6_paired: dict 
     if status in ("failed_writes", "failed_quality", "error", "no_result"):
         return 0.0
 
+    # Removal-regen rows where the model never personalized in turn 1 are
+    # excluded from the denominator entirely — there's nothing to remove,
+    # so a 0 here would slander the model. The build-time filter in
+    # `build_c4_instances` should keep these rare; this is defence-in-depth.
+    if metrics.get("removal_status") == "skipped_low_personalization":
+        return None
+
     if kind == "agentic_pass_rate":
         passed = (
             (metrics.get("tool_call_rules_pass") or 0)
@@ -242,10 +249,10 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
             sum_n_tok += len(in_toks)
         sum_dur += sum(durs)
 
-    # ALL row (n-weighted)
+    # ALL row (n-weighted, micro): every row contributes 1/N
     all_n = sum(r["n"] for r in table)
     all_row = {
-        "task_type": "ALL",
+        "task_type": "ALL (micro, row-weighted)",
         "n": all_n,
         "accuracy_pct": round(weighted_sum_acc / weighted_n_acc, 2) if weighted_n_acc else "",
         "mean_input_tokens": round(sum_in_tok / sum_n_tok, 1) if sum_n_tok else 0,
@@ -254,13 +261,31 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
         "mean_duration_ms": round(sum_dur / max(1, all_n), 1),
     }
     table.append(all_row)
+
+    # ALL row (macro, task-weighted): each task_type contributes one data
+    # point in [0,1], averaged across task_types. This is the headline number.
+    per_task_accs = [
+        r["accuracy_pct"] for r in table
+        if r["task_type"] not in ("ALL (micro, row-weighted)",)
+        and isinstance(r.get("accuracy_pct"), (int, float))
+    ]
+    macro_row = {
+        "task_type": "ALL (macro, task-weighted)",
+        "n": len(per_task_accs),  # number of task_types contributing
+        "accuracy_pct": round(sum(per_task_accs) / len(per_task_accs), 2) if per_task_accs else "",
+        "mean_input_tokens": "",
+        "mean_output_tokens": "",
+        "mean_cost_usd": "",
+        "mean_duration_ms": "",
+    }
+    table.append(macro_row)
     return table
 
 
 def _print_token_accuracy_table(table: list[dict]) -> None:
     """Pretty-print to stdout — fixed-width columns, ALL row at the end."""
     cols = [
-        ("task_type", 38),
+        ("task_type", 40),
         ("n", 5),
         ("accuracy_pct", 12),
         ("mean_input_tokens", 17),
@@ -367,6 +392,17 @@ def main() -> int:
 
     # Phase C: token-vs-accuracy table — single artifact for the eval report.
     table = _build_token_accuracy_table(all_rows, overall["e6_paired"])
+    # Lift the headline numbers into summary_overall.json so other tools can
+    # read them without parsing the printed table.
+    for r in table:
+        if r["task_type"] == "ALL (macro, task-weighted)":
+            overall["accuracy_pct_macro"] = r["accuracy_pct"]
+            overall["n_task_types"] = r["n"]
+        elif r["task_type"] == "ALL (micro, row-weighted)":
+            overall["accuracy_pct_micro"] = r["accuracy_pct"]
+    (out_dir / "summary_overall.json").write_text(
+        json.dumps(overall, indent=2, ensure_ascii=False), encoding="utf-8",
+    )
     table_path = out_dir / "token_accuracy_table.csv"
     cols = ["task_type", "n", "accuracy_pct",
             "mean_input_tokens", "mean_output_tokens", "mean_cost_usd", "mean_duration_ms"]

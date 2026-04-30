@@ -4,6 +4,63 @@
 
 Offline evaluation harness for cross-platform personalization.
 
+### Task tightening (v3 post-115 audit)
+
+A first full mcp_agent run on user 115 surfaced several degenerate scores
+(100 % saturation on three tasks, 0 % on one). Diagnosis: the *tasks* were
+too easy or had unreachable thresholds, not the model. The fixes below ship
+together; rerun `build_benchmark` for any user before evaluating to pick
+them up.
+
+- **`at_ai_directive_followup`** — was `t_test = t_ai + 1 s`, so the test
+  reduced to "list the next post that matches the directive's hashtags."
+  Now stratified across **24 h / 72 h / 7 d** lags (3 instances per
+  directive, each carries `lag_bucket` so hit@1 can be broken down by lag).
+  Match-Jaccard threshold tightened 0.25 → 0.15 and **2 hard distractors**
+  per pool are pulled from adjacent (sub-threshold-Jaccard) hashtag
+  clusters in the user's broader timeline. Pool floor raised 6 → 12.
+- **Renames** — `chatbot_restraint_control` → `over_personalization_chatbot_text`;
+  `irrelevant_query_restraint` → `over_personalization_distractor_reject`.
+  Both task families were testing the same capability with different
+  surfaces; the unified prefix makes that obvious. Old strings still work
+  via `evaluation.task_registry.normalize_task_type` so historical
+  `results.csv` rows continue to aggregate.
+- **`over_personalization_chatbot_text`** — the prompt no longer reveals
+  the answer. The previous control-arm prompt said "this query does not
+  call for personalization — do not weave in the user's hobbies,
+  preferences, or demographic details" which made the over-personalization
+  test a tautology. The arm now uses the same neutral assistant framing as
+  the proactive arm and the model must decide on its own.
+- **`over_personalization_distractor_reject`** — pool size 4 → 8 (1
+  held-out + 7 distractors with stratified Jaccard quotas: 2 trivial
+  ≤ 0.15, 3 medium 0.15–0.40, 2 hard 0.40–0.70). Primary metric switched
+  precision → **F1** (`irrelevant_rejection_f1`) so always-accept and
+  always-reject both score 0.
+- **`personalized_feed_ranking`** — slate's previous `negative` tier
+  (3 known-disliked persona items, easy to reject by surface keyword
+  match) replaced with a `hard_negative` tier: 3 events the user
+  *passed over* whose hashtags overlap the held-out target by Jaccard
+  ∈ [0.30, 0.60] — adjacent enough to be confusable on the surface,
+  ranking gain stays 0. Slate still 16 items. New per-row metrics:
+  `hard_negative_in_top1`, `hard_negative_in_top3`. Backfill: when a
+  user has too few negative engagement events with matching hashtags,
+  the tier falls back to the legacy persona-level negative items so
+  the slate still hits 16.
+- **`preference_removal_regen`** — was 0/5 because `removal_success`
+  required `orig_score - regen_score ≥ 0.5` (absolute) but user 115's
+  orig_score ≈ 0.009. Now: (a) build-time filter drops rows where the
+  held-out preference and the candidate query share zero hashtags, and
+  (b) headline metric switched to **relative** drop:
+  `removal_success = 1 if (orig - regen) / max(orig, 1e-3) >= 0.5`.
+  New `removal_delta_pct` field carries the relative figure. Rows where
+  the model never personalized in turn 1 (`orig_score < 0.05`) emit
+  `removal_status: "skipped_low_personalization"` and the aggregator
+  drops them from the macro denominator instead of counting them as 0.
+- **Headline** — `scripts/aggregate_eval.py` reports both
+  `accuracy_pct_macro` (mean of per-task means — each task contributes
+  one data point regardless of row count) and `accuracy_pct_micro`
+  (n-weighted across rows). Macro is the published headline.
+
 **As of R8**, data-gen no longer emits `split: "test"` or `over_personalization_irrelevant`. The harness picks its own test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — different tasks cut at different criteria (e.g., E2 at `@ai` directive timestamps, E3/E4 at stratified calendar days, E5 at short-term canonical mid-windows). `BackendQuery.get_events(since_timestamp=T)` time-masks the history at T_test; `BackendQuery.get_preferences(..., include_superseded=False)` additionally filters out preferences whose canonical was contradicted-and-superseded (Phase 3 cross-polarity gate, Case B) before T_test — so the ground truth at any time is the LATER stance only, never the superseded earlier one.
 
 Two new BackendQuery helpers support Phase 4 (calendar):
@@ -38,7 +95,7 @@ AVOID leaks are treated as **hard-constraint failures** — a response gets flag
 | **C1 (repetition fatigue)** | Top saturated hashtags via `hashtag_summary` + 5–7 recent events each. | None |
 | **C2 (scenario library)** | Five templates in [evaluation/scenarios.py](evaluation/scenarios.py) (sympathy card, educated rejection, tax question, ask-to-forget, third-party gift), instantiated per-user from the user's own top preferences, negatives, and carve-outs. | None — templates are in the repo |
 | **C3 (irrelevant-distractor restraint)** | Legacy split-dependent; same follow-up refactor note as A/B. | None (refactor after regen) |
-| **E2 (@ai proactive followup)** | All events with `interaction_format.action ∈ AT_AI_ACTIONS` on social apps. Cuts timeline at `t_test = t_ai + 1`; pool of 10–15 post-T_test events, Jaccard-labeled vs directive hashtags. | None |
+| **E2 (@ai proactive followup)** | All events with `interaction_format.action ∈ AT_AI_ACTIONS` on social apps. **Stratified across 24 h / 72 h / 7 d lags** (3 instances per directive); each cuts timeline at `t_test = t_ai + lag`. Pool of ≥ 12 post-T_test events + 2 hard distractors from adjacent-Jaccard clusters; match-Jaccard threshold 0.15. | None |
 | **E3 (multi-day daily briefing)** | 3 day-midpoints stratified by event-volume tertile (1 high/mid/low). | None |
 | **E4 (Google Search) [opt-in]** | Reuses E3 day sampler. Requires `--enable_e4` at run time; live API requires `--e4_allow_live` + GOOGLE_API_KEY/GOOGLE_CSE_ID; default mode is cache replay from `benchmark/{uid}/google_search_cache/`. | None |
 | **E5 (horizon lifecycle)** | Each short-term canonical (from Step 3.5 horizon classification) with `stop_condition.expected_stop_ts`. Emits paired `pre`/`post` probes; post uses Phase 4 geo + calendar context. | None |
@@ -54,24 +111,24 @@ Each instance carries a stable `test_id` / `probe_id` / `scenario_id` plus enoug
 ### Workflow
 
 ```bash
-# 0. Build the benchmark once per user. Deterministic given --rng_seed and the backend data.
-python -m evaluation.build_benchmark --user_id 115
-# → writes benchmark/115/benchmark.json
+# 0. Build the benchmark once per user. Deterministic given --rng_seed and the
+#    backend data. Wires both LLMs (blind_check for Task B routing + E6 discovery
+#    for paired warn/foil). Use --skip_blind_check / --skip_e6 for cheap rebuilds.
+python scripts/prepare_eval_data.py --user_id 115
+# → writes benchmark/115/queries.csv (single artifact; no JSON sidecar)
 
-# 1. Sanity check (no LLM cost). Confirms the harness loads the frozen instances and builds prompts.
-python -m evaluation.run_inference --user_id 115 --mode llm_longctx --task all --dry_run
+# 1. Run the eval. `run_eval.py` reads benchmark/{uid}/queries.csv and dispatches
+#    each row to its task-specific runner. Output: benchmark/{uid}/runs/{ts}/results.csv.
+python -m evaluation.run_eval --user_id 115 --mode mcp_agent --claude_model sonnet
+# `--mode` ∈ {mcp_agent, agent_tools, agent_longctx, llm_longctx}; see "Modes" below.
 
-# 2. A small real run first (1 instance per task) to confirm model + keys + parsing.
-python -m evaluation.run_inference --user_id 115 --mode agent_tools --task all --limit 1
-
-# 3. Full run per mode. All three runs score identical inputs — directly comparable.
-python -m evaluation.run_inference --user_id 115 --mode agent_tools    --task all
-python -m evaluation.run_inference --user_id 115 --mode agent_longctx  --task all
-python -m evaluation.run_inference --user_id 115 --mode llm_longctx    --task all
-
-# 4. Optional LLM-judge layer on any mode.
-python -m evaluation.run_inference --user_id 115 --mode agent_tools --task all --enable_llm_judge
+# 2. Aggregate the results across runs. Emits per-task accuracy + macro/micro headline.
+python scripts/aggregate_eval.py
 ```
+
+(The legacy `evaluation/run_inference.py` runner is kept for back-compat with
+the deleted `benchmark.json` artifact and is no longer the canonical entry
+point. New work should target `run_eval.py`.)
 
 If the persona pipeline reprocesses a user (backend data changes), rerun step 0 to refresh the benchmark. The `backend_hash` guard will tell you when this is needed.
 
@@ -92,7 +149,7 @@ Only if you want to **add a new Task C scenario** (e.g., your own probe). Drop a
 All tasks share a single time-gated view: for each test moment `T_test`, events with `source_timestamp >= T_test` are masked across all four apps.
 
 ### Task A — Cross-app slate ranking (Instagram, Facebook, Threads)
-- **Input**: for each social-app test preference, build a K=10 slate = `1× held-out positive + 3× irrelevant (from over_personalization_irrelevant) + 3× known-disliked + 3× plausible-random`. Shuffled; agent sees only the slate, no labels.
+- **Input**: for each social-app test preference, build a K=16 slate = `1× held-out positive + 3× hard-negative (events the user passed over with adjacent-Jaccard hashtags) + 3× irrelevant (from over_personalization_irrelevant) + 3× past-positive + 3× future-positive + 3× plausible-random`. Topped up with `filler_lowsim` past/future positives if any tier is short. Shuffled; agent sees only the slate, no labels. Hard-negatives replace the v2 known-disliked tier — they look like the held-out on the surface, so the agent can no longer win top-1 by surface keyword match.
 - **Agent output**: permutation of indices (most → least likely positive engagement).
 - **Hard metrics**: Recall@{1,3,5}, NDCG@K, MRR, Hit@K, intra-list diversity, rate of negatives / irrelevants landing in top-1 / top-3.
 - **Judge (opt-in)**: when held-out positive is not top-1, scores whether the agent's top-1 pick is itself preference-aligned (0–3).
@@ -111,7 +168,7 @@ All tasks share a single time-gated view: for each test moment `T_test`, events 
 ### Task C — Over-personalization & back-off probes
 - **C1. Repetition fatigue** (constructed): saturate an app with 5–7 same-hashtag items in 24h, ask for the next recommendation. Hard metric: `diversification_rate` (fraction of new hashtags that are not the saturated one).
 - **C2. Scenario library** (constructed per-user): sympathy card (socially inappropriate), category-but-steer-away (educated rejection), out-of-domain tax question, ask-to-forget follow-up, third-party gift request. Hard metric: `keyword_leak_rate` against forbidden preferences + `carve_out_respect`. Optional judge: `restraint_score` (0–3).
-- **C3. Irrelevant-distractor restraint**: shuffled mix of held-out positive + the test item's `over_personalization_irrelevant` list — agent must identify which signals the system should refuse to apply. Hard metrics: `irrelevant_rejection_recall`, `precision`, and whether the held-out positive was wrongly rejected.
+- **C3. `over_personalization_distractor_reject`**: shuffled 8-item pool = 1 held-out positive + 7 distractors stratified across Jaccard buckets (2 trivial ≤ 0.15, 3 medium 0.15–0.40, 2 hard 0.40–0.70). The agent identifies which signals the system should refuse to apply. **Headline metric**: `irrelevant_rejection_f1` — punishes both always-accept (recall=0) and always-reject (held-out wrongly rejected → precision drops). Also reports `irrelevant_rejection_precision`, `irrelevant_rejection_recall`, and `held_out_wrongly_rejected` for diagnostics. Renamed from `irrelevant_query_restraint`; legacy task_type still works via the registry alias.
 
 ### Task D — Aggregate negative avoidance
 Rolled up from Task A — no separate run. Reports `negative_in_top1_rate`, `negative_in_top3_rate`, `irrelevant_in_top1_rate` across all Task A test moments.
@@ -120,7 +177,7 @@ Rolled up from Task A — no separate run. Reports `negative_in_top1_rate`, `neg
 
 Four new top-level tasks keyed to PersonaMem-v3's new data-gen signals. Each picks its own `T_test` from the full timeline (no split required).
 
-- **E2 `e2_at_ai_followup` — @ai proactive recommendation.** For every event whose `interaction_format.action ∈ AT_AI_ACTIONS`, cut the timeline at `t_ai + 1` and ask the agent to rank 10–15 post-T_test candidates. Candidate pool is stripped of all preferences / labels (raw content only). For `at_ai_recommend_more` / `at_ai_focus_topic`, matching candidates are positives; for `at_ai_stop_recommending` / `at_ai_not_interested` / `at_ai_feels_off`, matching candidates are carve-outs (hard-fail at top-1). Metrics: `hit@1`, `recall@{3,5}`, `mrr`, `directive_respect@1`, `carveout_violation@{1,3}`.
+- **E2 `at_ai_directive_followup` — @ai proactive recommendation.** For every event whose `interaction_format.action ∈ AT_AI_ACTIONS`, build **3 instances** at stratified follow-up lags (24 h, 72 h, 7 d). Each cuts the timeline at `t_ai + lag`; the candidate pool is `(t_ai + lag, t_ai + lag + 72 h]` plus 2 hard distractors pulled from elsewhere in the user's timeline whose hashtag-Jaccard against the directive is in `[0.05, 0.15)` (adjacent enough to be confusable). Match-Jaccard threshold for "this candidate respects the directive" is `0.15`. Pool floor 12, target 12. Each instance carries `lag_bucket ∈ {24h, 72h, 7d}` so hit@1 can be broken down by lag. Candidate items are stripped of all preferences / labels (raw content only). For `at_ai_recommend_more` / `at_ai_focus_topic`, matching candidates are positives; for `at_ai_stop_recommending` / `at_ai_not_interested` / `at_ai_feels_off`, matching candidates are carve-outs (hard-fail at top-1). Metrics: `hit@1`, `recall@{3,5}`, `mrr`, `directive_respect@1`, `carveout_violation@{1,3}`, `lag_bucket`.
 
 - **E3 `e3_daily_briefing_multi` — multi-day proactive briefing.** 3 stratified day-midpoints per user (1 high / 1 mid / 1 low event-volume tertile). Same query ("what should I catch up on today"), different `t_test`s. Build-time expansion (not run-time loop) keeps mode comparisons deterministic. Read-only — any write-action tool call is a hard fail.
 
@@ -263,7 +320,7 @@ Per-row schema:
 - **Task B**: `avoid_leak_rate → 0` is non-negotiable — any sustained leak means the agent is surfacing things the user just said they disliked. `held_out_hit` and `target_match_recall` rise together as the agent gets better at reading contemporaneous signals.
 - **Task C1**: `diversification_rate → 1` — if the agent returns more saturated hashtags, it's reinforcing the fatigue.
 - **Task C2**: `keyword_leak_rate → 0`, `carve_out_respect → 1`.
-- **Task C3**: `irrelevant_rejection_recall → 1`, `held_out_wrongly_rejected → 0`.
+- **`over_personalization_distractor_reject`**: `irrelevant_rejection_f1 → 1`, `held_out_wrongly_rejected → 0`. F1 (not precision) is the headline so always-reject and always-accept both score 0.
 - **Task D**: `negative_in_top1_rate → 0`, `irrelevant_in_top1_rate → 0`.
 - **Judge scores** (opt-in): typical frontier models land in the 2.0–2.5 range on the 0–3 rubrics; 2.5+ is strong.
 
