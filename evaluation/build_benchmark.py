@@ -882,6 +882,16 @@ def build_task_b_arms(
             c["blind_check_generic_answer"] = ""
             proactive.append(c)
 
+    # Demote unanchored proactives: candidates without a held-out preference
+    # cannot be scored against a target, so route them to the control arm
+    # where they exercise restraint against `top_k_relevant_prefs` instead.
+    # This happens whenever the source event isn't in `test_index` (only the
+    # R8 selector's per-app top-N events get held-out preferences attached).
+    demoted = [c for c in proactive if not (c.get("held_out_preference") or {}).get("persona_item")]
+    if demoted:
+        proactive = [c for c in proactive if (c.get("held_out_preference") or {}).get("persona_item")]
+        control.extend(demoted)
+
     # Fallback: if control arm is empty, grab the 3 lowest-scoring candidates.
     if not control and len(candidates) >= 3:
         control_picks = sorted(candidates, key=lambda x: x["blind_check_score"])[:3]
@@ -904,6 +914,11 @@ def build_task_b_arms(
     #     Other arms get an empty list — the privacy_leak metric trivially
     #     returns 0 / no-fail in that case.
     def _finalize(c: dict, arm: str) -> dict:
+        if arm in ("proactive", "contradiction"):
+            assert (c.get("held_out_preference") or {}).get("persona_item"), (
+                f"arm={arm!r} requires non-empty held_out_preference "
+                f"(test_id={c['source_object_id']})"
+            )
         t_test = c["source_timestamp"]
         all_prefs = _dedup_user_prefs(bq, user_id, t_test)
         # Phase L.9: strict topical-alignment filter on top-K (cap k=3).

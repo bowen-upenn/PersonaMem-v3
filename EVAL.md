@@ -60,6 +60,29 @@ them up.
   `accuracy_pct_macro` (mean of per-task means — each task contributes
   one data point regardless of row count) and `accuracy_pct_micro`
   (n-weighted across rows). Macro is the published headline.
+- **`chatbot_proactive_personalization` bucket purity** —
+  `build_task_b_arms` walks every chatbot event but only events whose
+  `source_object_id` is in `test_index` (the R8 selector's per-app top-N)
+  carry a held-out preference. Pre-fix, the blind-check stage routed any
+  candidate scoring `>= 2` into the `proactive` arm regardless, so 49 / 64
+  (76 %) of user 115's `chatbot_proactive_personalization` instances
+  shipped with `held_out_preference = None` — violating the bucket's
+  contract that every instance is a positive personalization test (the
+  card rendered with "(no held-out preference; rubric checks restraint)"
+  in the supposed-to-personalize bucket).
+  Fix: candidates without a held-out preference are now demoted into the
+  `control` arm (their `personalization_leak_rate` against
+  `top_k_relevant_prefs` is the right metric for unanchored queries), and
+  `_finalize` asserts `arm in {"proactive", "contradiction"}` implies a
+  non-empty `held_out_preference.persona_item` so the regression cannot
+  silently re-appear. Effect on user 115:
+  `chatbot_proactive_personalization` 64 → 15 (all valid) and
+  `over_personalization_chatbot_text` 9 → 58; total instance count
+  unchanged at 224. **Operator note**: `backend/{uid}/persona.html` is a
+  rendered snapshot of `testSamples` — after rebuilding `queries.csv`
+  re-render via
+  `python -c "from data_preparation.visualize import generate_persona_html; generate_persona_html('{uid}')"`
+  before proofreading.
 
 **As of R8**, data-gen no longer emits `split: "test"` or `over_personalization_irrelevant`. The harness picks its own test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — different tasks cut at different criteria (e.g., E2 at `@ai` directive timestamps, E3/E4 at stratified calendar days, E5 at short-term canonical mid-windows). `BackendQuery.get_events(since_timestamp=T)` time-masks the history at T_test; `BackendQuery.get_preferences(..., include_superseded=False)` additionally filters out preferences whose canonical was contradicted-and-superseded (Phase 3 cross-polarity gate, Case B) before T_test — so the ground truth at any time is the LATER stance only, never the superseded earlier one.
 
