@@ -1005,6 +1005,9 @@ def _load_test_samples(
                 # text only) + groundtruth_preference (persona signal only).
                 "example_response": gt.get("example_response", ""),
                 "groundtruth_preference": gt.get("groundtruth_preference", ""),
+                # Workstream G: surface the proactive / overpersonalization arm
+                # so the JS template can render a small badge on agentic cards.
+                "arm": inst.get("arm") or None,
                 "rubric_tags": gt.get("rubric_tags") or (r.get("rubric_tags", "").split(";") if r.get("rubric_tags") else []),
             }
             # Pass through optional rich fields when present — JS template
@@ -2109,13 +2112,16 @@ if (eventsData.length === 0) {{
       // Render User Query as a regular ts-section (label INSIDE the
       // section block) so it visually matches every other section.
       const queryBlock = `<div class="ts-section"><div class="ts-label">User Query</div><div class="ts-body">${{escapeHtml(t.query_text || '')}}</div></div>`;
+      const armBadge = t.arm
+        ? ` <span style="display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:600;color:${{t.arm === 'overpersonalization' ? '#C2410C' : '#15803D'}};background:${{t.arm === 'overpersonalization' ? '#FED7AA' : '#BBF7D0'}};">${{escapeHtml(t.arm)}}</span>`
+        : '';
       card.innerHTML = `
         <div class="event-header">
           <div class="event-meta">
             <span style="font-weight:600;color:#7B5C00;">Test sample</span> &middot;
             ${{escapeHtml(tsDisplay)}} &middot;
             ${{locText}}${{locText ? ' &middot; ' : ''}}
-            <code>${{escapeHtml(t.task_type || '')}}</code>
+            <code>${{escapeHtml(t.task_type || '')}}</code>${{armBadge}}
           </div>
         </div>
         ${{priorBlock}}
