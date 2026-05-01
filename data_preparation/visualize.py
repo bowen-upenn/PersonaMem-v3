@@ -277,9 +277,16 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
             "Do NOT issue a warning (foil scenario, no real contradiction).",
             "Avoid items in must_not_mention.",
         ]
+    must_mention = ef.get("must_mention") or []
+    must_not_mention = ef.get("must_not_mention") or []
+    gtp = (
+        f"polarity={polarity}\nmistake_summary: {summary}"
+        + (f"\nmust_mention: {', '.join(must_mention)}" if must_mention else "")
+        + (f"\nmust_not_mention: {', '.join(must_not_mention)}" if must_not_mention else "")
+    )
     return {
         "example_response": example_response,
-        "groundtruth_preference": f"polarity={polarity}\nmistake_summary: {summary}",
+        "groundtruth_preference": gtp,
         "warn_frame": {
             "polarity": polarity,
             "must_mention": ef.get("must_mention") or [],
@@ -1202,6 +1209,13 @@ def dump_test_samples_json(
             "distractor_preferences": _normalize_distractors(s),
             "rubric_tags": s.get("rubric_tags") or [],
             "tool_call": s.get("tool_call"),  # workstream H, agentic only
+            # Phase 4: paired foil + self-check signal lifted to top-level
+            # for downstream tooling (instance_full also keeps the originals).
+            "inferior_response": s.get("inferior_response") or inst.get("inferior_response"),
+            "example_response_self_check": (
+                s.get("example_response_self_check")
+                or inst.get("example_response_self_check")
+            ),
             "instance_full": inst,
         }
         # Compact: drop empty optional fields so the file stays readable.
