@@ -455,6 +455,100 @@ def distribution_findings(records: list[dict]) -> list[Finding]:
     return findings
 
 
+def check_dm_coverage(uid: str, backend_dir: str = "backend") -> list[Finding]:
+    """Workstream K: audit the DM-thread engagement coverage for the user.
+
+    Several agentic tasks (T8 dm_digest, T10 auto_reply, T16
+    group_dm_summary) rely on DM threads. If most threads carry no
+    user-side reaction, the agent's gold reply / digest will look
+    stilted and the test grades poorly. We surface counts + warnings
+    here, no LLM calls.
+    """
+    import json
+    from pathlib import Path
+
+    findings: list[Finding] = []
+    user_dir = Path(backend_dir) / str(uid)
+
+    # DM threads come from the `is_dm` flag on social-app events. Each
+    # thread is keyed by `thread_id` (extension B field).
+    threads: dict[str, dict] = {}
+    for app in ("instagram", "facebook", "threads"):
+        path = user_dir / f"{app}.json"
+        if not path.exists():
+            continue
+        try:
+            evs = json.loads(path.read_text())
+        except Exception:
+            continue
+        for e in evs:
+            if not e.get("is_dm"):
+                continue
+            tid = e.get("thread_id") or e.get("source_object_id", "")
+            if not tid:
+                continue
+            t = threads.setdefault(tid, {
+                "forwarded": False, "has_explicit_pos": False,
+                "has_implicit_pos": False, "app": app,
+            })
+            # Forwarded post: a DM whose content carries shared post
+            # fields and the sender is not the user.
+            if not e.get("is_self_authored") and (
+                e.get("source_hashtags") or
+                (e.get("content") or {}).get("caption")
+            ):
+                t["forwarded"] = True
+            itype = e.get("source_interaction_type", "")
+            if itype == "explicit_positive":
+                t["has_explicit_pos"] = True
+            elif itype == "implicit_positive":
+                t["has_implicit_pos"] = True
+
+    n_total     = len(threads)
+    n_forwarded = sum(1 for t in threads.values() if t["forwarded"])
+    n_explicit  = sum(1 for t in threads.values() if t["has_explicit_pos"])
+    n_implicit  = sum(1 for t in threads.values()
+                      if t["has_implicit_pos"] and not t["has_explicit_pos"])
+    n_engaged   = n_explicit + n_implicit
+    n_unengaged = n_total - n_engaged
+
+    # Stash summary as a finding so the markdown renderer can pick it
+    # up alongside the regular findings.
+    findings.append(Finding(
+        f"(dm_coverage:{uid})", "*", "low", "dm_coverage_summary",
+        f"total={n_total} forwarded={n_forwarded} "
+        f"explicit_pos={n_explicit} implicit_pos={n_implicit} "
+        f"unengaged={n_unengaged}",
+        "info",
+    ))
+
+    if n_total > 0 and (n_unengaged / n_total) > 0.20:
+        findings.append(Finding(
+            f"(dm_coverage:{uid})", "*", "medium", "dm_threads_unengaged_high",
+            f"{n_unengaged}/{n_total} ({n_unengaged/n_total:.0%}) DM threads "
+            f"carry no user-side reaction — agentic DM tasks will look stilted",
+            "review",
+        ))
+
+    if n_total > 0 and n_forwarded == 0:
+        findings.append(Finding(
+            f"(dm_coverage:{uid})", "*", "low", "forwarded_posts_missing",
+            "no friend-forwarded-post DM threads in the user's data — "
+            "unusual for a normal social graph",
+            "review",
+        ))
+
+    if n_total > 0 and n_engaged == 0:
+        findings.append(Finding(
+            f"(dm_coverage:{uid})", "*", "high", "dm_threads_no_positive_signal",
+            f"all {n_total} DM threads have zero positive engagement — "
+            f"T8/T10/T16 grading will be unreliable",
+            "regenerate",
+        ))
+
+    return findings
+
+
 def task_count_table(records: list[dict]) -> list[tuple[str, int, int, int]]:
     """Return a per-task table: (task_type, count, target_min, target_max)
     sorted by count descending. Used by the Markdown report."""

@@ -26,7 +26,8 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # Secondary tasks
     "at_ai_directive_followup":               {"min": 8,  "max": 12},
     "daily_personalized_briefing":            {"min": 8,  "max": 12},
-    "personalized_search_ranking":            {"min": 8,  "max": 12},
+    # Renamed from personalized_search_ranking — workstream D.
+    "personalized_recommendation":            {"min": 8,  "max": 12},
     "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
     "active_mistake_prevention":              {"min": 8,  "max": 12},
     "preference_removal_regen":               {"min": 8,  "max": 12},
@@ -45,7 +46,7 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_vague_refind":                   {"min": 5,  "max": 8},
     "agentic_composed_post":                  {"min": 5,  "max": 8},
     "agentic_chatbot_dispatch":               {"min": 5,  "max": 8},
-    "agentic_draft_audit":                    {"min": 5,  "max": 8},
+    # agentic_draft_audit removed — workstream F.
     "agentic_collection_curation":            {"min": 5,  "max": 8},
     "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},
