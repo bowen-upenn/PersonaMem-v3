@@ -1,0 +1,153 @@
+"""Per-user per-task quotas for benchmark generation.
+
+Today's data is heavily skewed (top 3 task types = 46 % of all queries;
+several have only 1 instance). This module is the single source of
+truth for the target distribution. ``cap_to_max`` enforces the cap at
+the orchestrator level so individual builders don't need to know about
+quotas. Floor enforcement (LLM synthesis when under-min) lives in the
+synthesis modules; this module just declares what the floors are.
+"""
+
+from __future__ import annotations
+
+import random
+from typing import Iterable
+
+
+# Per-task quotas. Spread max:min ≈ 14 : 5 ≈ 2.8 : 1 (vs. the pre-quota
+# spread of 40 : 1). Targeted total per user ≈ 220-230.
+TASK_TARGETS: dict[str, dict[str, int]] = {
+    # Core eval signals — get the most stat power
+    "chatbot_proactive_personalization":      {"min": 10, "max": 14},
+    "over_personalization_chatbot_text":      {"min": 10, "max": 14},
+    "over_personalization_distractor_reject": {"min": 10, "max": 14},
+    "personalized_feed_ranking":              {"min": 10, "max": 14},
+
+    # Secondary tasks
+    "at_ai_directive_followup":               {"min": 8,  "max": 12},
+    "daily_personalized_briefing":            {"min": 8,  "max": 12},
+    "personalized_search_ranking":            {"min": 8,  "max": 12},
+    "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
+    "active_mistake_prevention":              {"min": 8,  "max": 12},
+    "preference_removal_regen":               {"min": 8,  "max": 12},
+
+    # Restraint sub-types
+    "repetition_fatigue_pairs":               {"min": 6,  "max": 10},
+    "repetition_fatigue_sequences":           {"min": 6,  "max": 10},
+    "context_shift_scenarios":                {"min": 6,  "max": 10},
+
+    # Agentic — uniform target across 14 tasks
+    "agentic_user_voice_post":                {"min": 5,  "max": 8},
+    "agentic_moment_recommendation":          {"min": 5,  "max": 8},
+    "agentic_dm_digest":                      {"min": 5,  "max": 8},
+    "agentic_cross_app_repost":               {"min": 5,  "max": 8},
+    "agentic_auto_reply":                     {"min": 5,  "max": 8},
+    "agentic_vague_refind":                   {"min": 5,  "max": 8},
+    "agentic_composed_post":                  {"min": 5,  "max": 8},
+    "agentic_chatbot_dispatch":               {"min": 5,  "max": 8},
+    "agentic_draft_audit":                    {"min": 5,  "max": 8},
+    "agentic_collection_curation":            {"min": 5,  "max": 8},
+    "agentic_group_dm_summary":               {"min": 5,  "max": 8},
+    "agentic_wrong_recipient_check":          {"min": 5,  "max": 8},
+    "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
+    "agentic_trending_alert":                 {"min": 5,  "max": 8},
+}
+
+
+def get_max(task_type: str) -> int | None:
+    target = TASK_TARGETS.get(task_type)
+    return target["max"] if target else None
+
+
+def get_min(task_type: str) -> int | None:
+    target = TASK_TARGETS.get(task_type)
+    return target["min"] if target else None
+
+
+def _stratify_keys(inst: dict, task_type: str) -> tuple:
+    """Compute a stratification key so caps preserve coverage across
+    arm / polarity / app / stereotype dimensions."""
+    arm = inst.get("arm") or "_"
+    polarity = inst.get("polarity") or (inst.get("held_out_preference") or {}).get("polarity") or "positive"
+    app = inst.get("app") or inst.get("target_app") or inst.get("app_context") or "_"
+    return (arm, polarity, app)
+
+
+def cap_to_max(items: list[dict], task_type: str, rng_seed: int = 0) -> list[dict]:
+    """Cap an instance list at TASK_TARGETS[task_type]['max'] using
+    stratified sampling so the kept subset preserves arm / polarity /
+    app coverage where possible.
+
+    Deterministic given (rng_seed, task_type, items order)."""
+    cap = get_max(task_type)
+    if cap is None or len(items) <= cap:
+        return list(items)
+
+    # Group by stratification key
+    buckets: dict[tuple, list[dict]] = {}
+    for it in items:
+        key = _stratify_keys(it, task_type)
+        buckets.setdefault(key, []).append(it)
+
+    rng = random.Random(f"cap:{task_type}:{rng_seed}")
+    # Round-robin pull one from each bucket until we hit cap
+    keys = list(buckets.keys())
+    rng.shuffle(keys)
+    for k in keys:
+        rng.shuffle(buckets[k])
+
+    kept: list[dict] = []
+    while len(kept) < cap and any(buckets[k] for k in keys):
+        for k in keys:
+            if not buckets[k]:
+                continue
+            kept.append(buckets[k].pop())
+            if len(kept) >= cap:
+                break
+    return kept
+
+
+def floor_gap(items: list[dict], task_type: str) -> int:
+    """How many additional instances would push this list to its floor.
+    Returns 0 if already at or above floor, or if task_type is unknown."""
+    floor = get_min(task_type)
+    if floor is None:
+        return 0
+    return max(0, floor - len(items))
+
+
+def apply_caps(buckets: dict[str, list[dict]], rng_seed: int = 0) -> dict[str, list[dict]]:
+    """Cap every bucket in a benchmark dict in place. Returns the same
+    dict for chaining. Logs each bucket that was trimmed."""
+    for task_type, items in list(buckets.items()):
+        if not isinstance(items, list):
+            continue
+        original = len(items)
+        capped = cap_to_max(items, task_type, rng_seed=rng_seed)
+        if len(capped) < original:
+            print(f"[task_distribution] capped {task_type}: {original} → {len(capped)}")
+            buckets[task_type] = capped
+    return buckets
+
+
+def report_floor_gaps(buckets: dict[str, list[dict]]) -> dict[str, int]:
+    """Return {task_type: how_many_short} for any task type below floor.
+    Useful for the synthesis layer to know what to fill."""
+    gaps: dict[str, int] = {}
+    for task_type in TASK_TARGETS:
+        items = buckets.get(task_type) or []
+        gap = floor_gap(items, task_type)
+        if gap > 0:
+            gaps[task_type] = gap
+    return gaps
+
+
+__all__ = [
+    "TASK_TARGETS",
+    "get_max",
+    "get_min",
+    "cap_to_max",
+    "floor_gap",
+    "apply_caps",
+    "report_floor_gaps",
+]

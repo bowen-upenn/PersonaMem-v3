@@ -445,7 +445,11 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "preference_removal_regen":               "user_query",
     "at_ai_directive_followup":               "user_query",
     "daily_personalized_briefing":            "proactive_recommendation",
-    "personalized_search_ranking":            "user_query",
+    # personalized_search_ranking carries no literal user query in the
+    # current builder — the test asks the agent to rank candidate search
+    # results given the user's recent prefs. It's a system-side
+    # recommendation surface, not a user-typed query.
+    "personalized_search_ranking":            "proactive_recommendation",
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
     "agentic_user_voice_post":                "agentic_task",

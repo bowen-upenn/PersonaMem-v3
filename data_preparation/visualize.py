@@ -659,7 +659,21 @@ def _gt_agentic_default(inst: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 def _q_default(inst: dict) -> str:
-    return inst.get("user_query") or inst.get("user_message") or inst.get("query_text") or ""
+    # Builders use varying field names: user_query (chatbot/agentic),
+    # user_message (extracted from chatbot turns), query_text (slate_ranking),
+    # query (C1a pairs / C2 scenarios), queries (C1b sequences — list of strings).
+    for key in ("user_query", "user_message", "query_text", "query"):
+        v = inst.get(key)
+        if isinstance(v, str) and v:
+            return v
+    queries = inst.get("queries")
+    if isinstance(queries, list) and queries:
+        first = queries[0]
+        if isinstance(first, str):
+            return first
+        if isinstance(first, dict):
+            return str(first.get("user_query") or first.get("query") or first.get("text") or "")
+    return ""
 
 
 def _q_personalized_feed_ranking(inst: dict) -> str:
