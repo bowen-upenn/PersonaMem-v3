@@ -68,6 +68,24 @@ TASK_TARGETS["short_vs_long_term_lifecycle"]["data_dependent"] = True
 DATA_DEPENDENT_TASKS.add("short_vs_long_term_lifecycle")
 
 
+def spread_anchors(bq, user_id: str, t_anchor: int, n: int = 8) -> list[int]:
+    """Workstream E: spread t_test across the user's full observation
+    window. Returns ``n`` evenly-spaced timestamps between
+    [t_start, t_end), excluding the boundaries. Used by per-builder
+    callers to scatter their instances across history rather than
+    clustering at the latest event timestamp.
+    """
+    window = bq.get_observation_window(user_id) if hasattr(bq, "get_observation_window") else None
+    if window:
+        t_start, t_end = window
+    else:
+        t_start, t_end = max(0, t_anchor - 7 * 24 * 3600), t_anchor
+    if t_end <= t_start:
+        return [t_anchor]
+    span = t_end - t_start
+    return [int(t_start + (i + 1) * span / (n + 1)) for i in range(n)]
+
+
 def get_max(task_type: str) -> int | None:
     target = TASK_TARGETS.get(task_type)
     return target["max"] if target else None
