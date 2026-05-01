@@ -371,17 +371,15 @@ Output ONE fenced ```json block:
 
 
 def _texts_too_similar(a: str, b: str) -> bool:
-    """True if rewrite is byte-identical or trivially close (≤2 char delta)
-    on responses ≥ 30 chars. Used to detect when the LLM failed to introduce
-    a real change."""
-    a, b = (a or "").strip(), (b or "").strip()
+    """True only when the rewrite is byte-identical or a trivial whitespace
+    variant. The LLM frequently injects a meaningful clause mid-response
+    that preserves head and tail tokens — those ARE legitimate flaws and
+    should NOT be flagged as too-similar."""
+    a = " ".join((a or "").split())
+    b = " ".join((b or "").split())
     if not a or not b:
         return False
-    if a == b:
-        return True
-    if len(a) >= 30 and abs(len(a) - len(b)) <= 2 and a[:30] == b[:30] and a[-15:] == b[-15:]:
-        return True
-    return False
+    return a == b
 
 
 def _flaw_instruction(flaw_kind: str, evidence: dict) -> str:
