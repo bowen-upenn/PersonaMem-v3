@@ -654,18 +654,10 @@ def build_t17_wrong_recipient(bq: BackendQuery, user_id: str, t_anchor: int) -> 
 
 
 def _spread_anchors(bq: BackendQuery, user_id: str, t_anchor: int, n: int = 5) -> list[int]:
-    """Pick ``n`` evenly-spaced anchor timestamps across the user's
-    observation window so per-day proactive tasks (T18 / T19) can emit
-    multiple instances without all firing at the same moment."""
-    window = bq.get_observation_window(user_id) if hasattr(bq, "get_observation_window") else None
-    if window:
-        t_start, t_end = window
-    else:
-        t_start, t_end = max(0, t_anchor - 7 * 24 * 3600), t_anchor
-    if t_end <= t_start:
-        return [t_anchor]
-    span = t_end - t_start
-    return [int(t_start + (i + 1) * span / (n + 1)) for i in range(n)]
+    """Workstream E: thin wrapper around task_distribution.spread_anchors
+    so existing agentic callers continue to work."""
+    from evaluation.task_distribution import spread_anchors
+    return spread_anchors(bq, user_id, t_anchor, n=n)
 
 
 def build_t18_proactive_daily(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:

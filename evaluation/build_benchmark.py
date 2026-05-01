@@ -1655,15 +1655,22 @@ def build_c1_instances(bq: BackendQuery, user_id: str, t_probe: int, min_positiv
 # --- Task C2: scenario instances -------------------------------------------
 
 def build_c2_instances(bq: BackendQuery, user_id: str, t_probe: int, rng_seed: int) -> list[dict]:
+    """Workstream E: scatter scenario instances across the user's
+    observation window so context_shift probes don't all fire at the
+    end of history. Each scenario is built at its own anchor."""
     scs = scenarios_mod.build_all_scenarios(bq, user_id, t_probe, seed=rng_seed)
-    return [
-        {
+    if not scs:
+        return []
+    anchors = _task_dist.spread_anchors(bq, user_id, t_probe, n=len(scs))
+    out: list[dict] = []
+    for i, s in enumerate(scs):
+        out.append({
             "scenario_id": f"{user_id}_{s['name']}",
-            "t_probe": t_probe,
+            "t_probe": anchors[i],
+            "t_test": anchors[i],
             **s,
-        }
-        for s in scs
-    ]
+        })
+    return out
 
 
 # --- Task C3: restraint instances ------------------------------------------
@@ -1810,15 +1817,24 @@ def build_benchmark(
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
-    # Agentic tasks T6-T19 — all share t_probe. Each builder's output is
-    # passed through `_split_arms` (workstream G) which appends an
-    # overpersonalization arm alongside the proactive one.
+    # Agentic tasks T6-T19. Three workstream interventions:
+    # - G: each builder's output is split into proactive + overpersonalization
+    #   arms via _agentic_split_arms.
+    # - E: builders that fix t_test=t_probe (T6/T7/T11/T12/T13/T15/etc.)
+    #   get their instances scattered across the observation window.
+    # - T18/T19 already scatter internally via _spread_anchors.
     from evaluation.tasks.agentic_tasks import ALL_BUILDERS as _AGENTIC_BUILDERS
     from evaluation.tasks.agentic_tasks import _split_arms as _agentic_split_arms
     agentic_buckets: dict[str, list[dict]] = {}
     for task_id, builder in _AGENTIC_BUILDERS.items():
         try:
             proactive = builder(bq, user_id, t_probe)
+            # Workstream E: if the builder fixed every instance at t_probe,
+            # replace t_test with anchors spread across the user's window.
+            if proactive and all(i.get("t_test") == t_probe for i in proactive):
+                anchors = _task_dist.spread_anchors(bq, user_id, t_probe, n=len(proactive))
+                for j, inst in enumerate(proactive):
+                    inst["t_test"] = anchors[j]
             agentic_buckets[task_id] = _agentic_split_arms(proactive, task_id)
         except Exception as exc:
             agentic_buckets[task_id] = []
