@@ -286,12 +286,20 @@ def prepare_one(
     discovery_llm=None,
     blind_check_llm=None,
     blind_check_limit: int | None = None,
+    postprocess_llm=None,
+    enable_self_check: bool = True,
+    enable_inferior: bool = True,
     verbose: bool = True,
 ) -> dict:
     """Build queries.csv for one user. Returns a small report dict.
 
     No benchmark.json is written. The CSV (with an `instance_json`
     column) is the sole on-disk artifact.
+
+    Workstreams I + J: when ``postprocess_llm`` is provided, every
+    personalization instance is post-processed to attach a self-check
+    score and a paired inferior_response. ``enable_self_check`` /
+    ``enable_inferior`` flag the two passes independently.
     """
     bm = _build_benchmark_in_memory(
         user_id, backend_dir,
@@ -301,6 +309,22 @@ def prepare_one(
     )
     if bm is None:
         return {"user_id": user_id, "rows": 0, "status": "skipped"}
+
+    # Workstream I + J: post-build LLM passes.
+    if postprocess_llm is not None and (enable_self_check or enable_inferior):
+        try:
+            from evaluation.backend_query import BackendQuery
+            from evaluation.llm_postprocess import postprocess_benchmark
+            bq = BackendQuery(backend_dir=str(backend_dir))
+            postprocess_benchmark(
+                bm, bq, user_id,
+                self_check_llm=postprocess_llm if enable_self_check else None,
+                inferior_llm=postprocess_llm if enable_inferior else None,
+                verbose=verbose,
+            )
+        except Exception as exc:
+            if verbose:
+                print(f"[{user_id}] WARNING: postprocess failed: {exc}")
 
     pairs: list[tuple[str, dict, int]] = []
     unknown_task_types: set[str] = set()
@@ -409,16 +433,22 @@ def _prepare_one_worker(
     skip_e6: bool,
     blind_check_model: str | None,
     blind_check_limit: int | None,
+    skip_self_check: bool = False,
+    skip_inferior: bool = False,
 ) -> dict:
     """ProcessPool entry. Each worker rebuilds its own LLM clients from
     env (QueryLLM / claude-code subagent helpers don't pickle across processes)."""
     discovery = None if skip_e6 else _build_llm_client()
     blind = _make_blind_check_llm(blind_check_model) if blind_check_model else None
+    postprocess = blind if (not skip_self_check or not skip_inferior) else None
     return prepare_one(
         user_id, Path(backend_dir_str),
         discovery_llm=discovery,
         blind_check_llm=blind,
         blind_check_limit=blind_check_limit,
+        postprocess_llm=postprocess,
+        enable_self_check=not skip_self_check,
+        enable_inferior=not skip_inferior,
     )
 
 
@@ -466,6 +496,13 @@ def main() -> int:
     parser.add_argument("--blind_check_limit", type=int, default=None,
                         help="Cap how many candidate queries get blind-checked "
                              "per user (for fast iteration)")
+    parser.add_argument("--skip_self_check", action="store_true",
+                        help="Workstream I: skip the per-instance self-check "
+                             "of example_response against avoid_overpersonalization. "
+                             "Saves ≈200 LLM calls per user.")
+    parser.add_argument("--skip_inferior", action="store_true",
+                        help="Workstream J: skip generation of paired "
+                             "inferior_response foils. Saves ≈200 LLM calls per user.")
     args = parser.parse_args()
 
     user_ids = _resolve_user_ids(args)
@@ -489,6 +526,10 @@ def main() -> int:
     if args.parallel <= 1 or len(user_ids) == 1:
         discovery = None if args.skip_e6 else _build_llm_client()
         blind = _make_blind_check_llm(blind_check_model) if blind_check_model else None
+        # Workstream I + J: reuse the blind-check client for the self-check
+        # and inferior-generation passes — same gpt-5.4-mini deployment, no
+        # need for a second client.
+        postprocess = blind if (not args.skip_self_check or not args.skip_inferior) else None
         for uid in user_ids:
             try:
                 reports.append(prepare_one(
@@ -496,6 +537,9 @@ def main() -> int:
                     discovery_llm=discovery,
                     blind_check_llm=blind,
                     blind_check_limit=args.blind_check_limit,
+                    postprocess_llm=postprocess,
+                    enable_self_check=not args.skip_self_check,
+                    enable_inferior=not args.skip_inferior,
                 ))
             except Exception as e:
                 _append_skipped(uid, f"exception: {type(e).__name__}: {e}")
@@ -507,6 +551,7 @@ def main() -> int:
                 pool.submit(
                     _prepare_one_worker, uid, str(backend_dir),
                     args.skip_e6, blind_check_model, args.blind_check_limit,
+                    args.skip_self_check, args.skip_inferior,
                 ): uid
                 for uid in user_ids
             }
