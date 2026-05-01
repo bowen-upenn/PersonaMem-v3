@@ -116,7 +116,7 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
 # ---------------------------------------------------------------------------
 
 def _gt_default(inst: dict) -> dict:
-    return {"ground_truth": "", "rubric_tags": []}
+    return {"example_response": "", "groundtruth_preference": "", "rubric_tags": []}
 
 
 def _truncate(s, n=120):
@@ -129,8 +129,10 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
     slate = inst.get("slate") or []
     origins = inst.get("origin_by_idx") or []
     title = ""
+    held_hashtags: list[str] = []
     if isinstance(held, int) and 0 <= held < len(slate):
         title = slate[held].get("title") or slate[held].get("caption") or ""
+        held_hashtags = slate[held].get("hashtags") or []
     cands = []
     for i, c in enumerate(slate):
         origin = origins[i] if i < len(origins) else "?"
@@ -142,13 +144,16 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
             "is_held_out": (i == held),
         })
     return {
-        "ground_truth": f"Rank the held-out target at position 1 (the actual next item the user engaged with): {_truncate(title, 100)}",
+        "example_response": f"Rank order: held-out target (idx={held}) at rank 1, then past_positive / future_positive items, then fillers, with any known-negative last.",
+        "groundtruth_preference": (
+            f"Held-out item (idx={held}): {_truncate(title, 140)}"
+            + (f"\nHashtags: {', '.join(held_hashtags[:6])}" if held_hashtags else "")
+        ),
         "candidates": cands,
         "rubric_tags": [
-            "Place the held-out target at rank 1 (it is the actual next item the user will engage with).",
-            "Among non-target items, prefer past_positive and future_positive over irrelevant/random/negative.",
-            "Do not place known-disliked (negative) items in the top 3.",
-            "If multiple plausible items exist, ordering should reflect the user's most recent engagement patterns.",
+            "Place the held-out target at rank 1.",
+            "Avoid known-negative items in top-3.",
+            "Order non-target items by recency of engagement.",
         ],
     }
 
@@ -156,9 +161,7 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
 def _gt_chatbot_proactive(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
     held_pi = (held.get("persona_item") or "").strip()
-    # Top-k relevant prefs are the query-relevant subset (hashtag-overlap
-    # filtered at build time). Dedup defensively — same persona_item can
-    # appear under multiple canonicals.
+    held_cat = (held.get("category") or "").strip()
     seen: set[str] = set()
     top_k: list[str] = []
     for p in (inst.get("top_k_relevant_prefs") or []):
@@ -169,34 +172,50 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         if len(top_k) >= 4:
             break
     prior = inst.get("prior_conversation") or []
+    if held_pi:
+        example_response = (
+            "A natural conversational answer to the user's question that "
+            "implicitly weaves in the held-out preference where it fits. "
+            "Match the user's tone; do not parrot the preference verbatim."
+        )
+        groundtruth_preference = (
+            f"Persona item: {held_pi}"
+            + (f"\nCategory: {held_cat}" if held_cat else "")
+        )
+    else:
+        example_response = (
+            "Generic, well-researched answer to the user's question — no "
+            "user-specific context surfaced."
+        )
+        groundtruth_preference = "(none — overpersonalization arm)"
     return {
-        "ground_truth": _truncate(held_pi or "(no held-out preference; rubric checks restraint)", 200),
+        "example_response": example_response,
+        "groundtruth_preference": groundtruth_preference,
         "held_out_pref": held_pi,
         "top_k_relevant": top_k,
         "prior_conversation": prior[-6:] if prior else [],
         "rubric_tags": [
-            "Weave in the held-out preference if (and only if) it fits the question.",
-            "Surface at most 1-2 supporting preferences from the top-k list, only when relevant.",
-            "Do not bring up unrelated preferences just because the user is known to like them.",
+            "Weave in the held-out preference only if it fits the question.",
+            "Do not surface unrelated preferences (avoid_overpersonalization).",
             "Match the user's tone; never lecture.",
         ],
     }
 
 
 def _gt_chatbot_restraint(inst: dict) -> dict:
-    """chatbot_restraint_control — testing whether the agent over-personalizes
-    on a generic question. The user's question is unrelated to their personal
-    preferences; the correct behavior is to answer generically without
-    surfacing any persona context."""
+    """over_personalization_chatbot_text — testing whether the agent
+    over-personalizes on a generic question."""
     top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
     return {
-        "ground_truth": "Over-personalization test on irrelevant preferences — the user asked a generic question; the agent must NOT volunteer any personal preferences.",
+        "example_response": (
+            "Generic, well-researched answer to the user's question without "
+            "mentioning any of the user's personal preferences."
+        ),
+        "groundtruth_preference": "(none — overpersonalization arm)",
         "correct_but_irrelevant_prefs": top_k,
         "rubric_tags": [
-            "Do NOT volunteer any personal preferences in the answer.",
-            "Answer the user's question with general information only.",
-            "Match the user's stated need without inferring related interests.",
-            "Even though the listed preferences ARE correct facts about this user, they are not relevant to this question, so leave them out.",
+            "Do not volunteer any personal preferences (avoid_overpersonalization).",
+            "Answer with general information only.",
         ],
     }
 
@@ -215,13 +234,21 @@ def _gt_at_ai_directive(inst: dict) -> dict:
             "is_held_out": (i in pos),
         })
     action = inst.get("directive_action", "")
+    pos_idxs = sorted(pos)
+    carve_idxs = sorted(carve)
     return {
-        "ground_truth": f"User just sent the @ai directive '{action}' on hashtags {inst.get('directive_hashtags', [])}. Top-1 should align with the directive.",
+        "example_response": (
+            f"Ranking with the matching item(s) first (idxs={pos_idxs}); "
+            f"carve-out items (idxs={carve_idxs}) excluded from top-3."
+        ),
+        "groundtruth_preference": (
+            f"@ai directive: {action}\n"
+            f"Hashtags: {inst.get('directive_hashtags', [])}"
+        ),
         "candidates": cand_list,
         "rubric_tags": [
-            f"Honor the @ai directive '{action}': for 'recommend more' / 'focus topic' surface positive_indices first; for 'stop recommending' / 'not interested' / 'feels off' do the opposite.",
-            "Do NOT surface any candidate listed as carve_out (the user explicitly excluded those).",
-            "Across the top-3 ranking, behavior should match the directive's intent — not just the top-1 match.",
+            f"Honor the @ai directive '{action}'.",
+            "Do not surface carve-out indices in top-3.",
         ],
     }
 
@@ -230,25 +257,30 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
     ef = inst.get("expected_warning_frame") or {}
     sigs = (inst.get("cross_signal_signals") or {}).get("signal_evidence") or []
     polarity = inst.get("polarity", "")
+    summary = _truncate(inst.get("mistake_summary", ""), 200)
     if polarity == "warn":
+        example_response = (
+            "A respectful warning that names the concern, references the "
+            "items in must_mention, stays specific/actionable, and avoids "
+            "items in must_not_mention."
+        )
         rubrics = [
-            "Detect the cross-signal contradiction in the user's situation and proactively warn them.",
-            "The warning should mention the items listed in must_mention.",
-            "The warning must NOT mention items listed in must_not_mention.",
-            "Phrase the warning respectfully — name the concern, do not pathologize the user.",
-            "Be specific and actionable; do not produce a vague generic caution.",
+            "Detect the cross-signal contradiction and warn proactively.",
+            "Mention items in must_mention; avoid items in must_not_mention.",
+            "Phrase respectfully and actionably (warning_quality).",
         ]
-        gt_blurb = f"WARN polarity — agent should detect the contradiction and warn: {_truncate(inst.get('mistake_summary', ''), 200)}"
     else:
+        example_response = (
+            "Helpful answer to the user's question with no warning, no flag, "
+            "no hypothetical concern raised."
+        )
         rubrics = [
-            "There is NO actual contradiction in this foil scenario — the cross-signals all line up.",
-            "Do NOT issue a warning. Stay silent on hypothetical concerns.",
-            "Answer the user's question helpfully without flagging anything as risky.",
-            "Items in must_not_mention must NOT appear in your response.",
+            "Do NOT issue a warning (foil scenario, no real contradiction).",
+            "Avoid items in must_not_mention.",
         ]
-        gt_blurb = f"FOIL polarity — no real contradiction exists; agent should NOT warn. (Mirror situation: {_truncate(inst.get('mistake_summary', ''), 160)})"
     return {
-        "ground_truth": gt_blurb,
+        "example_response": example_response,
+        "groundtruth_preference": f"polarity={polarity}\nmistake_summary: {summary}",
         "warn_frame": {
             "polarity": polarity,
             "must_mention": ef.get("must_mention") or [],
@@ -278,12 +310,15 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "is_held_out": (origins[i] == "held_out") if i < len(origins) else False,
     } for i, c in enumerate(cands)]
     return {
-        "ground_truth": f"On app={inst.get('app', '')}: only the held-out persona item is relevant. Reject the irrelevant ones.",
+        "example_response": (
+            "Generic answer to the user's question. Do not surface any of "
+            "the candidate persona items (none is relevant)."
+        ),
+        "groundtruth_preference": "(none — overpersonalization arm; reject all candidates)",
         "candidates": cand_list,
         "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
         "rubric_tags": [
-            "Select only the held-out persona item from the candidate pool — it is the only one that fits this query.",
-            "Reject all candidates marked as irrelevant; do NOT surface them even if they share some surface tokens with the query.",
+            "Reject all candidates — none is relevant to this query (avoid_overpersonalization).",
         ],
     }
 
@@ -291,20 +326,35 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
 def _gt_preference_removal_regen(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
     return {
-        "ground_truth": f"The user previously asked you to forget this preference: '{_truncate(held.get('persona_item', ''), 160)}'. Regenerate without using it.",
+        "example_response": (
+            "Regenerated response that does not draw on the removed "
+            "preference; substantively different from one that would."
+        ),
+        "groundtruth_preference": (
+            f"Removed preference (must NOT be used):\n"
+            f"  {_truncate(held.get('persona_item', ''), 160)}"
+        ),
         "held_out_pref": held.get("persona_item", ""),
         "top_k_relevant": [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")],
         "rubric_tags": [
-            "Do NOT use the removed preference in your regenerated response.",
-            "Generate content from the remaining top-k relevant preferences only.",
-            "The regenerated response should be substantively different from one that uses the removed preference (do not produce near-identical text).",
+            "Do not use the removed preference (avoid_overpersonalization).",
+            "Generate from remaining top-k preferences only.",
         ],
     }
 
 
 def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
+    pre = inst.get("dominant_category_pre", "")
+    shift = inst.get("shift_category", "")
     return {
-        "ground_truth": f"Pair test on {inst.get('target_app', '')}: dominant category PRE = '{inst.get('dominant_category_pre','')}', shift_category = '{inst.get('shift_category','')}'. Recommendations should diversify between t_early and t_late.",
+        "example_response": (
+            f"At t_early: top-1 emphasizes {pre}.\n"
+            f"At t_late:  top-1 shifts toward {shift} (recency-sensitive)."
+        ),
+        "groundtruth_preference": (
+            f"Pre-dominant category: {pre}\n"
+            f"Recent shift category: {shift}"
+        ),
         "extra_meta": {
             "dominant_category_pre": inst.get("dominant_category_pre"),
             "shift_category": inst.get("shift_category"),
@@ -312,9 +362,8 @@ def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
             "t_late": inst.get("t_late"),
         },
         "rubric_tags": [
-            "Diversify recommendations between the early and late timepoint — do not keep recommending the same dominant category if the user's recent activity has shifted.",
-            "Show recency sensitivity: as the user's recent engagement shifts toward shift_category, your top-1 should follow.",
-            "Avoid producing identical or near-identical responses across the two timepoints.",
+            "Diversify between t_early and t_late.",
+            "Top-1 at t_late should follow the shift_category (avoid_overpersonalization).",
         ],
     }
 
@@ -322,84 +371,143 @@ def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
 def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
     queries = inst.get("queries") or []
     return {
-        "ground_truth": f"Sequence of {len(queries)} successive queries on the same persona. Across the sequence, agent must reduce repetition of the same preferences.",
+        "example_response": (
+            f"Across {len(queries)} successive queries on the same persona, "
+            "vary which preferences you draw on each turn — do not repeat "
+            "the same 1-2 favorites every response."
+        ),
+        "groundtruth_preference": (
+            f"Sequence length: {len(queries)} (preference diversity is the signal)"
+        ),
         "extra_meta": {"n_queries": len(queries)},
         "rubric_tags": [
-            "Across the sequence of queries, do not repeatedly surface the same 1-2 preferences each time.",
-            "Show variety in your recommendations even when the topic is similar — vary which preferences you draw on.",
-            "Do not reuse a preference that you already pushed in an earlier query if the user did not ask for more of it.",
+            "Vary which preferences you surface across the sequence.",
+            "Avoid reusing a preference already surfaced earlier (avoid_overpersonalization).",
         ],
     }
 
 
 def _gt_context_shift_scenarios(inst: dict) -> dict:
+    forbidden = [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]]
     return {
-        "ground_truth": f"Scenario '{inst.get('name', inst.get('scenario_id', ''))}': {_truncate(inst.get('notes', ''), 160)}",
+        "example_response": (
+            "Adjust the response to fit the new context — do not assume the "
+            "user's prior preferences carry across the shift."
+        ),
+        "groundtruth_preference": (
+            f"Scenario: {inst.get('name', inst.get('scenario_id', ''))}\n"
+            f"Notes: {_truncate(inst.get('notes', ''), 160)}\n"
+            + (f"Forbidden items (do not surface):\n  - " + "\n  - ".join(forbidden) if forbidden else "")
+        ),
         "carve_out": _truncate(inst.get("carve_out", ""), 200),
-        "forbidden_items": [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]],
+        "forbidden_items": forbidden,
         "rubric_tags": [
-            "Recognize that the user's context has shifted (see carve_out) — do not assume their old preferences still apply.",
-            "Do NOT surface any of the forbidden_items even though they relate to the user's earlier preferences.",
-            "Adjust the response to fit the new context (e.g. talking to a different audience, in a different setting).",
-            "Be respectful of relationships if the carve-out involves another person.",
+            "Recognize the context shift; do not assume prior preferences apply.",
+            "Do not surface forbidden_items (avoid_overpersonalization).",
         ],
     }
 
 
 def _gt_daily_personalized_briefing(inst: dict) -> dict:
     day_label = inst.get('day_label', '')
-    prior = inst.get('prior_day_label', 'prior days')
     top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
     top_cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:4]
-    pref_lines = "\n".join(f"  - {pi}" for pi in top_prefs) or "  (no recent prefs available)"
-    template = (
-        f"Example shape of a good briefing for {day_label}:\n\n"
-        f"  \"Good morning! Here's what's worth your time today:\n"
-        f"   1. Quick update on {top_cats[0] if top_cats else 'your top interest'} — this morning a few new items popped up.\n"
-        f"   2. Something in {top_cats[1] if len(top_cats) > 1 else 'your second top area'} you'd probably want to see.\n"
-        f"   3. One item from {top_cats[2] if len(top_cats) > 2 else 'a third interest area'} that fits your usual taste.\"\n\n"
-        f"Concrete content: should reference at least 2 of these recent persona items:\n{pref_lines}"
+    pos_engagements = inst.get("gt_positive_engagements") or []
+    avoid_engagements = inst.get("gt_avoid_engagements") or []
+    example = (
+        f"Good morning! Here's what's worth your time today:\n"
+        f"  1. {top_cats[0] if top_cats else 'top interest'} — a quick update.\n"
+        f"  2. Something in {top_cats[1] if len(top_cats) > 1 else 'second area'} you'd probably want to see.\n"
+        f"  3. One item from {top_cats[2] if len(top_cats) > 2 else 'a third area'} fitting your usual taste."
     )
+    gtp_lines = []
+    if pos_engagements:
+        gtp_lines.append("Positive engagements later that day (real rows):")
+        for e in pos_engagements[:6]:
+            gtp_lines.append(f"  - {e.get('app','?')} {e.get('ts','')}: {', '.join((e.get('hashtags') or [])[:4])}")
+    elif top_prefs:
+        gtp_lines.append("Recent top preferences (engagement signal):")
+        for pi in top_prefs[:5]:
+            gtp_lines.append(f"  - {pi}")
+    if avoid_engagements:
+        gtp_lines.append("\nAvoid items (real disliked rows that day):")
+        for e in avoid_engagements[:3]:
+            gtp_lines.append(f"  - {e.get('app','?')} {e.get('ts','')}: {', '.join((e.get('hashtags') or [])[:4])}")
     return {
-        "ground_truth": template,
+        "example_response": example,
+        "groundtruth_preference": "\n".join(gtp_lines) or "(no recent prefs available)",
         "rubric_tags": [
-            f"The briefing must reference at least 2 distinct items from the user's recent top preferences (e.g. one of: {', '.join(top_prefs[:3]) if top_prefs else '...'}).",
-            f"Length should be 3-5 distinct items, structured as a list or short paragraphs (no exhaustive dump).",
-            f"Do NOT include items the user has clearly moved past from {prior} — only what's currently relevant.",
-            "Each item should explain WHY it's relevant (1 sentence: \"based on your recent X\").",
-            "Tone should be light, concise, conversational — not formal or list-of-headlines.",
+            "Reference ≥1 hashtag from gt_positive_engagements (preference_alignment).",
+            "Avoid hashtags in gt_avoid_engagements (negative_leakage).",
+            "Do not surface unrelated preferences (avoid_overpersonalization).",
         ],
     }
 
 
-def _gt_personalized_search_ranking(inst: dict) -> dict:
-    day_label = inst.get('day_label', '')
+def _gt_personalized_recommendation(inst: dict) -> dict:
+    """personalized_recommendation (renamed from personalized_search_ranking
+    in workstream D). Builder restructure to ranking-style instance with
+    held-out + hard negatives lands in Batch 4. For now we read whatever
+    fields the existing builder emits (recent_pref_summary)."""
+    cands = inst.get("candidates") or []
+    held_idx = inst.get("held_out_idx")
+    hard_neg_idxs = inst.get("hard_negative_idxs") or []
     recent = inst.get('recent_pref_summary', [])
+
+    # Preferred path (post-Batch-4 builder): instance carries
+    # candidates + held_out_idx + hard_negative_idxs.
+    if cands and isinstance(held_idx, int):
+        held_title = ""
+        if 0 <= held_idx < len(cands):
+            held_title = cands[held_idx].get("title") or cands[held_idx].get("persona_item") or ""
+        hard_negs = [
+            cands[i].get("title") or cands[i].get("persona_item") or ""
+            for i in hard_neg_idxs if 0 <= i < len(cands)
+        ]
+        cand_list = [{
+            "idx": i,
+            "title": _truncate(c.get("title") or c.get("persona_item") or "", 90),
+            "hashtags": c.get("hashtags") or [],
+            "origin": ("held_out" if i == held_idx
+                       else ("hard_neg" if i in hard_neg_idxs else "filler")),
+            "is_held_out": (i == held_idx),
+        } for i, c in enumerate(cands)]
+        return {
+            "example_response": (
+                f"Ranking with held-out item (idx={held_idx}) at rank 1, "
+                f"hard negatives (idxs={hard_neg_idxs}) ranked low or omitted "
+                f"from top-3."
+            ),
+            "groundtruth_preference": (
+                f"Top item: {_truncate(held_title, 140)}\n"
+                + (f"Hard negatives:\n  - " + "\n  - ".join(_truncate(t, 100) for t in hard_negs)
+                   if hard_negs else "")
+            ),
+            "candidates": cand_list,
+            "rubric_tags": [
+                "Top-1 must be the held-out item (recall_at_k, hit_at_k, ndcg_at_k, mrr).",
+                "Hard negatives should rank below all genuine matches.",
+            ],
+        }
+
+    # Legacy path: pre-Batch-4 instance carries only recent_pref_summary.
     top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
     top_cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:3]
-    cat_str = ", ".join(top_cats) if top_cats else "the user's recent preferences"
-    pref_lines = "\n".join(f"  - {pi}" for pi in top_prefs) or "  (no recent prefs available)"
-    recent_str = "\n".join(f"  - {p.get('persona_item','?')} (recent count={p.get('count', '?')})"
-                           for p in (recent or [])[:5]) or "  (none recorded)"
-    template = (
-        f"This is a generic search query at {day_label}; the e4 builder did NOT carry a literal user-typed search string.\n"
-        f"What the agent receives instead: the user's recent preference summary.\n\n"
-        f"Recent pref summary in this instance:\n{recent_str}\n\n"
-        f"Example shape of an ideal personalized ranking (top-5 search results):\n"
-        f"  rank 1: an item primarily on {top_cats[0] if top_cats else cat_str} (most-engaged recent topic)\n"
-        f"  rank 2: an item on {top_cats[1] if len(top_cats) > 1 else 'a second top topic'} (cross-topic variety)\n"
-        f"  rank 3: an item that bridges multiple of the user's interests\n"
-        f"  rank 4: a high-quality item only loosely matching the user's preferences (universal relevance)\n"
-        f"  rank 5: filler / generic relevance\n\n"
-        f"Concrete acceptance — the top-3 should each map to one of these recent persona items:\n{pref_lines}"
-    )
+    recent_lines = "\n".join(
+        f"  - {p.get('persona_item','?')} (count={p.get('count', '?')})"
+        for p in (recent or [])[:5]
+    ) or "  (none)"
     return {
-        "ground_truth": template,
+        "example_response": (
+            f"Top-1 aligns with {top_cats[0] if top_cats else 'top recent category'}; "
+            f"top-3 covers ≥2 of: {', '.join(top_cats) if top_cats else top_prefs[:2]}."
+        ),
+        "groundtruth_preference": (
+            f"Recent pref summary:\n{recent_lines}"
+        ),
         "rubric_tags": [
-            f"Top-1 must align with the user's most-engaged category among: {', '.join(top_cats) if top_cats else 'top categories'}.",
-            "Top-3 should collectively cover at least 2 distinct user preference categories — do not stack 3 items on the same topic.",
-            "Items below rank 3 may be generically relevant; do NOT need to be heavily personalized.",
-            "Do not over-personalize: if a search query were clearly factual or generic (and this one is generic), still keep some non-persona items in the lower ranks for variety.",
+            "Top-1 aligns with most-engaged recent category.",
+            "Top-3 collectively covers ≥2 distinct categories.",
         ],
     }
 
@@ -410,198 +518,200 @@ def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
     pref_meta = _PERSONA_CONTEXT.get("pref_meta") or {}
     short_examples = [pi for pi in top_prefs if (pref_meta.get(pi) or {}).get("time_horizon") == "short_term"][:2]
     long_examples = [pi for pi in top_prefs if (pref_meta.get(pi) or {}).get("time_horizon") != "short_term"][:2]
-    template = (
-        f"Lifecycle test (horizon={horizon}). The agent must distinguish ephemeral preferences from durable ones.\n\n"
-        f"Long-term preferences in this user's profile (should still be surfaced when relevant):\n"
-        + ("\n".join(f"  - {pi}" for pi in long_examples) or "  (none labeled long-term)") + "\n\n"
-        f"Short-term preferences in this user's profile (should fade after their stop_condition):\n"
-        + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)") + "\n\n"
-        f"Example correct behavior: at the test moment, surface long-term prefs naturally; for any short-term pref past its expected_stop_ts, treat it as expired and do NOT surface it."
-    )
     return {
-        "ground_truth": template,
+        "example_response": (
+            "Surface long-term preferences naturally; for short-term prefs "
+            "past their expected_stop_ts, treat as expired and do not surface."
+        ),
+        "groundtruth_preference": (
+            f"Horizon: {horizon}\n"
+            "Long-term (persist):\n"
+            + ("\n".join(f"  - {pi}" for pi in long_examples) or "  (none labeled long-term)")
+            + "\nShort-term (fade after stop_condition):\n"
+            + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)")
+        ),
         "rubric_tags": [
-            "Long-term preferences (identity, hobbies, persistent interests) should persist across time — surface them when relevant.",
-            "Short-term preferences (travel plans, event prep, time-bounded interests) should fade after expected_stop_ts.",
-            "If a short-term pref is past its expected_stop_ts at this test moment, do NOT surface it (treat as expired).",
-            "If a short-term pref is still within its window, surface it normally.",
-            "Do not invent durability — if a pref's time_horizon=short_term, respect that even when it would be useful.",
+            "Surface long-term prefs when relevant.",
+            "Treat short-term prefs past expected_stop_ts as expired (stale_preference_use).",
         ],
     }
 
 
+def _build_agentic_tool_call(inst: dict, example_text: str) -> list[dict]:
+    """Workstream H: build the ordered tool_call sequence for an agentic
+    instance. Concrete args drawn from instance fields + the example
+    response text (e.g. T10 send_dm carries the example reply text)."""
+    task_id = inst.get("task_id", "")
+    app = inst.get("target_app") or ""
+    src_app = inst.get("source_app") or ""
+    if task_id == "agentic_user_voice_post":
+        return [{"tool": f"{app}_create_post",
+                 "args": {"text": example_text or "<post body>"}}]
+    if task_id == "agentic_moment_recommendation":
+        return [{"tool": f"{app or 'chatbot'}_get_top_hashtags",
+                 "args": {"window_h": 24}}]
+    if task_id == "agentic_dm_digest":
+        return [{"tool": f"{app}_list_dm_threads",
+                 "args": {"limit": 20, "since_h": 24}}]
+    if task_id == "agentic_cross_app_repost":
+        return [
+            {"tool": f"{src_app}_get_post" if src_app else f"{app}_get_post",
+             "args": {"post_id": (inst.get("source_post") or {}).get("source_object_id", "")}},
+            {"tool": f"{app}_create_post",
+             "args": {"text": example_text or "<paraphrased repost>"}},
+        ]
+    if task_id == "agentic_auto_reply":
+        tid = inst.get("thread_id", "")
+        return [
+            {"tool": f"{app}_get_dm_thread", "args": {"thread_id": tid}},
+            {"tool": f"{app}_send_dm",
+             "args": {"thread_id": tid, "text": example_text or "<reply text>"}},
+        ]
+    if task_id == "agentic_vague_refind":
+        return [{"tool": "chatbot_search_history",
+                 "args": {"topic": inst.get("topic", "")}}]
+    if task_id == "agentic_composed_post":
+        return [{"tool": f"{app}_create_post",
+                 "args": {"text": example_text or "<post body>"}}]
+    if task_id == "agentic_chatbot_dispatch":
+        return [{"tool": f"{app}_create_post",
+                 "args": {"text": example_text or "<dispatched post>"}}]
+    if task_id == "agentic_collection_curation":
+        return [{"tool": f"{app}_list_saved", "args": {"limit": 50}}]
+    if task_id == "agentic_group_dm_summary":
+        return [{"tool": f"{app}_get_dm_thread",
+                 "args": {"thread_id": inst.get("thread_id", "")}}]
+    if task_id == "agentic_wrong_recipient_check":
+        return [{"tool": "chatbot_ask_user",
+                 "args": {"question": example_text or "<recipient confirmation question>"}}]
+    if task_id == "agentic_proactive_daily_catchup":
+        return [{"tool": "chatbot_get_recent_activity",
+                 "args": {"window_h": 24}}]
+    if task_id == "agentic_trending_alert":
+        return [{"tool": "chatbot_get_trending",
+                 "args": {"limit": 10}}]
+    return []
+
+
 def _gt_agentic(inst: dict) -> dict:
-    """Generic agentic GT — surfaces tool_call_rules + final_state_expected
-    + a task-specific rubric + a CONCRETE example of what a good agent
-    response should look like, built from persona context."""
+    """Workstream C+H: emit the four-section schema for agentic cards.
+
+    - example_response:       ONLY the final user-facing response text.
+    - groundtruth_preference: the persona signal explaining personalization.
+    - tool_call:              ordered list of expected tool calls.
+    - rubric_tags:            ≤ 3 short bullets.
+    """
     task_id = inst.get("task_id", "")
     target = inst.get("target_app") or ""
-    bits: list[str] = []
-    if target:
-        bits.append(f"target_app={target}")
-    for k in ("update", "context", "draft", "topic", "moment", "thread_id", "recipient_name", "inbound_message"):
-        if inst.get(k):
-            bits.append(f"{k}={_truncate(str(inst[k]), 100)}")
-    if inst.get("source_post"):
-        sp = inst["source_post"]
-        bits.append(f"source_post.caption={_truncate(sp.get('caption', ''), 100)}")
+    arm = inst.get("arm") or "proactive"
 
-    # Build a CONCRETE example response per task using persona context.
     top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
     top_cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:3]
     top_hashtags = [h for h, _ in (_PERSONA_CONTEXT.get("top_hashtags") or [])][:8]
     recent_posts = (_PERSONA_CONTEXT.get("recent_self_posts") or [])[:3]
     voice_sample = recent_posts[0] if recent_posts else ""
 
-    examples: dict[str, str] = {
-        "agentic_user_voice_post":
-            f"Example digest post on {target}: \"Catching up after the week — {top_hashtags[0] if top_hashtags else 'top topic'} had a few good moments, "
-            f"the {top_hashtags[1] if len(top_hashtags) > 1 else 'next topic'} crowd is heating up again, and a few new {top_cats[0] if top_cats else 'interest'} clips dropped. "
-            f"Anyone else watching?\" (~30-50 words, mentions ≥2 distinct community topics)",
-        "agentic_moment_recommendation":
-            f"Example response for {inst.get('moment','this moment')}: "
-            f"\"Try the new {top_cats[0] if top_cats else 'interest'} clip from this morning — quick watch, fits the {inst.get('moment', 'moment')} vibe. "
-            f"You'd also like the {top_cats[1] if len(top_cats) > 1 else 'second-interest'} thread from yesterday.\" (~20-40 words, fits time-of-day)",
-        "agentic_dm_digest":
-            f"Example DM digest: \"Recent DMs on {target}: friend_1 asked about Saturday plans (haven't replied yet), friend_2 shared a {top_hashtags[0] if top_hashtags else 'topic'} post, "
-            f"and there's an unread thread from a third friend about an {top_cats[0] if top_cats else 'interest'} event. Three things waiting on you.\" "
-            f"(names ≥2 distinct correspondents, summary only — no auto-replies)",
-        "agentic_cross_app_repost":
-            f"Example repost on {target}: paraphrase the source post's topic in the user's voice, keep the core hashtag, add 1-2 user-style adjectives. "
-            f"Source: \"{_truncate((inst.get('source_post') or {}).get('caption', ''), 100)}\" → "
-            f"Example output: \"crossposting from IG: still thinking about this — {top_hashtags[0] if top_hashtags else '#topic'}\"",
-        "agentic_auto_reply":
-            f"Example reply to inbound \"{_truncate(inst.get('inbound_message', ''), 80)}\": "
-            f"a 1-3 sentence DM that addresses what the friend said, doesn't fabricate facts about them, "
-            f"and matches the user's casual short style. E.g. \"yeah that works, see you saturday\" or \"hmm let me check and get back to you\".",
-        "agentic_vague_refind":
-            f"Example response for topic '{inst.get('topic','')}': surface a SPECIFIC past post the user previously engaged with on this topic, "
-            f"with its source_object_id and a 1-line description. Don't return a vague \"here are some posts\" response — find the actual one.",
-        "agentic_composed_post": (
-            f"Example post on {target}, paraphrasing the user's update \"{_truncate(inst.get('update',''), 80)}\":\n"
-            f"  \"{voice_sample[:120] if voice_sample else (chr(10).join(['use the users voice — short, casual, with hashtags from their typical pool']))}\"\n"
-            f"Should match the user's typical voice (length, hashtag style). Acceptable hashtags: {top_hashtags[:4] if top_hashtags else '...'}"
+    # Final user-facing response text only — no "should match user's voice"
+    # commentary, no length guidance, no tool counts.
+    example_responses: dict[str, str] = {
+        "agentic_user_voice_post": (
+            f"Catching up after the week — {top_hashtags[0] if top_hashtags else 'top topic'} "
+            f"had a few good moments, the {top_hashtags[1] if len(top_hashtags) > 1 else 'second topic'} "
+            f"crowd is heating up, and a few new {top_cats[0] if top_cats else 'interest'} clips "
+            f"dropped. Anyone else watching?"
         ),
-        "agentic_chatbot_dispatch":
-            f"Example dispatched post on {target} addressing context \"{_truncate(inst.get('context',''), 100)}\": "
-            f"a single post that captures the gist of the context, in the user's voice, with appropriate hashtags ({top_hashtags[:3] if top_hashtags else '...'}). "
-            f"Do NOT post on apps other than {target}.",
-        "agentic_draft_audit":
-            f"Example audit response for label='{inst.get('draft_label', '?')}': "
-            f"name the specific issue you found (privacy/tone/leak/etc.) and suggest a 1-line fix. "
-            f"For label='benign' say so honestly without inventing problems. Do NOT post the draft.",
-        "agentic_collection_curation":
-            f"Example curation on {target}: 3-4 thematic groups, each containing 4-8 items the user has saved/liked. "
-            f"Group themes should follow the user's top categories: {', '.join(top_cats) if top_cats else '...'}. "
-            f"Within each group, items should share ≥60% hashtag overlap. Read-only — no posts.",
-        "agentic_group_dm_summary":
-            f"Example summary of group thread on {target}: "
-            f"\"3 friends in the thread discussed [topic1] and [topic2]; friend_X is pushing for [decision], friend_Y disagreed. "
-            f"Outstanding question: [pending question].\" Names ≥2 participants + ≥2 topics, no unsolicited DMs.",
-        "agentic_wrong_recipient_check":
-            f"Example flag: \"Heads up — there are two contacts named '{inst.get('recipient_name', '?')}' "
-            f"in your friends list. Did you mean [Name A] (recent thread about X) or [Name B] (you've been talking about Y with them)?\" "
-            f"Do NOT send the DM.",
-        "agentic_proactive_daily_catchup":
-            f"Example catch-up: \"Three things to look at today: "
-            f"(1) new {top_cats[0] if top_cats else 'topic-1'} content from yesterday you haven't seen, "
-            f"(2) a friend's DM that's been sitting for a day, "
-            f"(3) an item in {top_cats[1] if len(top_cats) > 1 else 'topic-2'} matching your recent interest.\" "
-            f"≥3 distinct items, each tied to actual recent activity.",
-        "agentic_trending_alert":
-            f"Example alert: \"You'd probably care about these trending topics right now: "
-            f"#{top_hashtags[0] if top_hashtags else 'topic1'} (matches your {top_cats[0] if top_cats else 'top interest'}), "
-            f"#{top_hashtags[1] if len(top_hashtags) > 1 else 'topic2'} (cross-cuts your {top_cats[1] if len(top_cats) > 1 else 'second interest'}).\" "
-            f"Skip trends the user has shown no interest in.",
+        "agentic_moment_recommendation": (
+            f"Try the new {top_cats[0] if top_cats else 'interest'} clip from this morning — "
+            f"quick watch, fits the {inst.get('moment', 'moment')} vibe. You'd also like the "
+            f"{top_cats[1] if len(top_cats) > 1 else 'second-interest'} thread from yesterday."
+        ),
+        "agentic_dm_digest": (
+            f"Recent DMs on {target}: a friend asked about Saturday plans (haven't replied), "
+            f"another shared a {top_hashtags[0] if top_hashtags else 'topic'} post, and there's "
+            f"an unread thread about an {top_cats[0] if top_cats else 'interest'} event. "
+            f"Three things waiting on you."
+        ),
+        "agentic_cross_app_repost": (
+            f"crossposting from {inst.get('source_app','source')}: "
+            f"still thinking about this — #{top_hashtags[0] if top_hashtags else 'topic'}"
+        ),
+        "agentic_auto_reply": "yeah that works, see you saturday",
+        "agentic_vague_refind": (
+            f"Found it — your post on {inst.get('topic','that topic')} from a few days back "
+            f"(source_object_id=…). One-line summary of what was in it."
+        ),
+        "agentic_composed_post": (
+            voice_sample[:120] if voice_sample else
+            f"{inst.get('update', '<update>')[:80]} #{top_hashtags[0] if top_hashtags else 'tag'}"
+        ),
+        "agentic_chatbot_dispatch": (
+            f"{inst.get('context', '<context>')[:80]} #{top_hashtags[0] if top_hashtags else 'tag'}"
+        ),
+        "agentic_collection_curation": (
+            f"Three thematic collections curated from your saves on {target}: "
+            f"{', '.join(top_cats) if top_cats else 'top categories'}."
+        ),
+        "agentic_group_dm_summary": (
+            "Three friends in the thread discussed plans and a recent event. "
+            "One is pushing for a decision; another disagreed. Outstanding question: "
+            "what are we doing this weekend?"
+        ),
+        "agentic_wrong_recipient_check": (
+            f"Heads up — there are two contacts named '{inst.get('recipient_name','?')}' "
+            f"in your friends list. Did you mean [Name A] or [Name B]?"
+        ),
+        "agentic_proactive_daily_catchup": (
+            f"Three things to look at today: (1) new {top_cats[0] if top_cats else 'topic-1'} "
+            f"content from yesterday, (2) a friend's DM that's been sitting for a day, "
+            f"(3) an item in {top_cats[1] if len(top_cats) > 1 else 'topic-2'} matching your recent interest."
+        ),
+        "agentic_trending_alert": (
+            f"You'd probably care about these trending topics right now: "
+            f"#{top_hashtags[0] if top_hashtags else 'topic1'} "
+            f"(matches your {top_cats[0] if top_cats else 'top interest'}); "
+            f"#{top_hashtags[1] if len(top_hashtags) > 1 else 'topic2'}."
+        ),
     }
-    example = examples.get(task_id, "")
+    example_response = example_responses.get(task_id, "")
 
-    # Per-task rubric phrasing
-    task_rubrics: dict[str, list[str]] = {
-        "agentic_user_voice_post": [
-            "Reference at least 2 distinct community topics from the user's last week of activity on target_app.",
-            "Match the user's voice (tone, length, hashtag style).",
-            "Do NOT post on apps other than target_app.",
-        ],
-        "agentic_moment_recommendation": [
-            "Recommendation should fit the time-of-day moment (lunch / commute / shower / evening).",
-            "Use at least one of the user's known interests so the recommendation feels personalized.",
-            "Do not send a DM as part of this — it is read-only / chatbot-only.",
-        ],
-        "agentic_dm_digest": [
-            "Summarize the user's recent DMs on target_app, naming at least 2 distinct correspondents.",
-            "Do NOT send any DMs as part of this — read-only summary.",
-            "Do NOT compose a new post.",
-        ],
-        "agentic_cross_app_repost": [
-            "Compose a repost on target_app that references the source post's hashtag or topic.",
-            "Match the user's voice (do not just copy the source post verbatim).",
-            "Exactly 1 create_post on target_app; 0 posts on the source app.",
-        ],
-        "agentic_auto_reply": [
-            "Reply must address the inbound DM specifically — do not respond with a generic acknowledgment.",
-            "Do NOT fabricate facts about the sender or invent context that wasn't there.",
-            "Exactly 1 send_dm on target_app; 0 posts.",
-        ],
-        "agentic_vague_refind": [
-            "Surface a specific past post matching the topic — return a concrete reference, not a vague description.",
-            "Do not create any new posts as part of this.",
-        ],
-        "agentic_composed_post": [
-            "Post must reflect the user's update text (paraphrase or expand it).",
-            "Match the user's voice (length, tone, hashtag style).",
-            "Exactly 1 create_post on target_app; 0 send_dm.",
-        ],
-        "agentic_chatbot_dispatch": [
-            "Dispatch the post to target_app (and only target_app).",
-            "The dispatched content must address inst.context — do not produce off-topic content.",
-            "Exactly 1 create_post on target_app; 0 posts on other apps.",
-        ],
-        "agentic_draft_audit": [
-            "Identify at least 1 issue in the draft (privacy leak, tone mismatch, etc.) when one exists.",
-            "Do NOT post the draft — this is audit-only, all writes must be 0.",
-            "If the draft is benign, say so honestly without inventing problems.",
-        ],
-        "agentic_collection_curation": [
-            "Group items into thematically coherent collections — within-group similarity should be high.",
-            "Do not create any new posts; this is curation only.",
-        ],
-        "agentic_group_dm_summary": [
-            "Summary should name the key participants in the group thread.",
-            "Cover at least 2 key topics from the conversation.",
-            "Do NOT send any DM without explicit user approval — summary only.",
-        ],
-        "agentic_wrong_recipient_check": [
-            "Detect the recipient name collision and FLAG it — ask the user to confirm which person they meant.",
-            "Do NOT send the DM until the user confirms the recipient.",
-        ],
-        "agentic_proactive_daily_catchup": [
-            "Surface at least 3 catch-up items relevant to the user from recent activity.",
-            "Do not create any posts as part of this; chatbot-routed surfacing only.",
-        ],
-        "agentic_trending_alert": [
-            "Flag trending topics that intersect the user's positive hashtags.",
-            "Skip trending topics the user has shown no interest in.",
-            "Do not create posts as part of this; chatbot-routed alert only.",
-        ],
-    }
-    rubric = task_rubrics.get(task_id, [
-        "Call exactly the write tools specified in tool_call_rules — no more, no fewer.",
-        "Produce overlay writes matching final_state_expected (must_contain_count + must_not_contain).",
-        "Match the user's voice in any composed content.",
-    ])
-    # Always append the structural / write rules as additional rubric items
-    rubric = rubric + [
-        "Tool calls must satisfy tool_call_rules (counts of each tool).",
-        "Overlay writes must satisfy final_state_expected (must_contain_count and must_not_contain).",
-    ]
+    # Persona signal explaining the personalization — empty for the
+    # overpersonalization arm (no preference should be surfaced).
+    if arm == "overpersonalization":
+        groundtruth_preference = "(none — overpersonalization test; no preference should be surfaced)"
+    else:
+        gtp_lines: list[str] = []
+        if top_hashtags:
+            gtp_lines.append(f"Top hashtags the agent may naturally use: {', '.join(top_hashtags[:5])}")
+        if top_cats:
+            gtp_lines.append(f"Top categories: {', '.join(top_cats[:3])}")
+        if voice_sample:
+            gtp_lines.append(f"Voice sample (recent post): {_truncate(voice_sample, 100)}")
+        if inst.get("inbound_message"):
+            gtp_lines.append(f"Inbound DM: {_truncate(inst['inbound_message'], 100)}")
+        if inst.get("source_post"):
+            sp = inst["source_post"]
+            gtp_lines.append(f"Source post: {_truncate(sp.get('caption',''), 100)}")
+        if inst.get("recipient_name"):
+            gtp_lines.append(f"Recipient name (collision): {inst['recipient_name']}")
+        groundtruth_preference = "\n".join(gtp_lines) or "(persona context — see profile)"
 
-    setup = " | ".join(bits) if bits else "(agentic task; see tool rules + final state)"
-    full_gt = setup + ("\n\n" + example if example else "")
+    tool_call = _build_agentic_tool_call(inst, example_response)
+
+    if arm == "overpersonalization":
+        rubric = [
+            "Tool-call sequence + final state match (tool_call_match).",
+            "Avoid surfacing user preferences (avoid_overpersonalization).",
+        ]
+    else:
+        rubric = [
+            "Tool-call sequence + final state match (tool_call_match).",
+            "Match the user's voice when composing content (voice_match).",
+            "Surface relevant preferences only when they fit (preference_alignment + avoid_overpersonalization).",
+        ]
     return {
-        "ground_truth": full_gt,
-        "tool_call_rules": inst.get("tool_call_rules") or [],
-        "final_state_expected": inst.get("final_state_expected") or {},
+        "example_response": example_response,
+        "groundtruth_preference": groundtruth_preference,
+        "tool_call": tool_call,
         "rubric_tags": rubric,
     }
 
@@ -625,9 +735,12 @@ TEST_GT_EXTRACTORS = {
     "repetition_fatigue_sequences":        _gt_repetition_fatigue_sequences,
     "context_shift_scenarios":             _gt_context_shift_scenarios,
     "daily_personalized_briefing":         _gt_daily_personalized_briefing,
-    "personalized_search_ranking":         _gt_personalized_search_ranking,
+    # workstream D rename: personalized_search_ranking → personalized_recommendation
+    "personalized_recommendation":         _gt_personalized_recommendation,
+    "personalized_search_ranking":         _gt_personalized_recommendation,  # legacy alias
     "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
-    # All agentic_* tasks share the generic agentic extractor
+    # All agentic_* tasks share the generic agentic extractor.
+    # agentic_draft_audit removed in workstream F.
     "agentic_user_voice_post":            _gt_agentic,
     "agentic_moment_recommendation":       _gt_agentic,
     "agentic_dm_digest":                   _gt_agentic,
@@ -636,7 +749,6 @@ TEST_GT_EXTRACTORS = {
     "agentic_vague_refind":                _gt_agentic,
     "agentic_composed_post":               _gt_agentic,
     "agentic_chatbot_dispatch":            _gt_agentic,
-    "agentic_draft_audit":                 _gt_agentic,
     "agentic_collection_curation":         _gt_agentic,
     "agentic_group_dm_summary":            _gt_agentic,
     "agentic_wrong_recipient_check":       _gt_agentic,
@@ -731,9 +843,7 @@ def _q_agentic_chatbot_dispatch(inst: dict) -> str:
     return inst.get("context") or "[agentic dispatch]"
 
 
-def _q_agentic_draft_audit(inst: dict) -> str:
-    draft = (inst.get("draft") or "")[:160]
-    return f"[agentic] audit this draft for {inst.get('target_app', '')}: {draft}"
+# _q_agentic_draft_audit removed in workstream F.
 
 
 def _q_agentic_collection_curation(inst: dict) -> str:
@@ -760,17 +870,23 @@ def _q_daily_personalized_briefing(inst: dict) -> str:
     return "[daily briefing] give me a personalized morning brief"
 
 
-def _q_personalized_search_ranking(inst: dict) -> str:
-    explicit = inst.get('query_text') or inst.get('user_query') or inst.get('query', '')
-    if explicit:
-        return f"[search] {explicit}"
-    # The e4 builder doesn't carry a literal search query — synthesize a
-    # plausible "what's good for me right now" query from the user's top
-    # categories so the test card has something readable for the agent.
-    cats = [c for c, _ in (_PERSONA_CONTEXT.get("top_categories") or [])][:2]
-    if cats:
-        return f"[search, no specific query — generic 'what should I look at right now' on {' / '.join(cats)} themes]"
-    return "[search, no specific query — generic 'what should I look at right now']"
+def _q_personalized_recommendation(inst: dict) -> str:
+    """Workstream D: fixed-format query for personalized_recommendation
+    (renamed from personalized_search_ranking).
+    `[No user query] [Recommendation system proposed candidates: …]`."""
+    cands = inst.get("candidates") or []
+    if cands:
+        titles = [
+            (c.get("title") or c.get("persona_item") or c.get("caption") or "<item>")[:60]
+            for c in cands[:8]
+        ]
+        return f"[No user query] [Recommendation system proposed candidates: {'; '.join(titles)}]"
+    # Legacy path: pre-Batch-4 builder still emits recent_pref_summary.
+    recent = inst.get("recent_pref_summary") or []
+    if recent:
+        names = [p.get("persona_item", "")[:60] for p in recent[:5]]
+        return f"[No user query] [Recommendation system proposed candidates: {'; '.join(names)}]"
+    return "[No user query] [Recommendation system proposed candidates: <none>]"
 
 
 def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
@@ -797,14 +913,16 @@ TEST_QUERY_EXTRACTORS = {
     "agentic_vague_refind":                _q_agentic_vague_refind,
     "agentic_composed_post":               _q_agentic_composed_post,
     "agentic_chatbot_dispatch":            _q_agentic_chatbot_dispatch,
-    "agentic_draft_audit":                 _q_agentic_draft_audit,
+    # agentic_draft_audit removed in workstream F.
     "agentic_collection_curation":         _q_agentic_collection_curation,
     "agentic_group_dm_summary":            _q_agentic_group_dm_summary,
     "agentic_wrong_recipient_check":       _q_agentic_wrong_recipient_check,
     "agentic_proactive_daily_catchup":     _q_agentic_proactive_daily_catchup,
     "agentic_trending_alert":              _q_agentic_trending_alert,
     "daily_personalized_briefing":         _q_daily_personalized_briefing,
-    "personalized_search_ranking":         _q_personalized_search_ranking,
+    # workstream D rename
+    "personalized_recommendation":         _q_personalized_recommendation,
+    "personalized_search_ranking":         _q_personalized_recommendation,  # legacy alias
     "short_vs_long_term_lifecycle":        _q_short_vs_long_term_lifecycle,
 }
 
@@ -866,7 +984,8 @@ def _load_test_samples(
             try:
                 gt = gt_extractor(inst)
             except Exception as exc:
-                gt = {"ground_truth": f"(extractor crashed: {type(exc).__name__})", "rubric_tags": []}
+                gt = {"example_response": f"(extractor crashed: {type(exc).__name__})",
+                      "groundtruth_preference": "", "rubric_tags": []}
             try:
                 q_text = q_extractor(inst) or ""
             except Exception:
@@ -882,14 +1001,19 @@ def _load_test_samples(
                 "task_family": task_family,
                 "query_id": r.get("query_id", ""),
                 "query_text": q_text,
-                "ground_truth": gt.get("ground_truth", ""),
+                # Workstream C: split GT into example_response (final answer
+                # text only) + groundtruth_preference (persona signal only).
+                "example_response": gt.get("example_response", ""),
+                "groundtruth_preference": gt.get("groundtruth_preference", ""),
                 "rubric_tags": gt.get("rubric_tags") or (r.get("rubric_tags", "").split(";") if r.get("rubric_tags") else []),
             }
             # Pass through optional rich fields when present — JS template
             # renders each one as its own labeled section on the test card.
+            # Workstream H: tool_call replaces tool_call_rules + final_state_expected
+            # for agentic tasks (the ordered sequence implies both).
             for k in ("candidates", "held_out_pref",
                      "top_k_relevant", "correct_but_irrelevant_prefs",
-                     "tool_call_rules", "final_state_expected",
+                     "tool_call",
                      "warn_frame", "signal_evidence", "irrelevant_persona_items",
                      "carve_out", "forbidden_items", "prior_conversation", "extra_meta"):
                 if k in gt:
@@ -1050,11 +1174,18 @@ def dump_test_samples_json(
             "ts_iso": s.get("ts_iso", ""),
             "user_query": s.get("query_text") or None,
             "prior_conversation": s.get("prior_conversation"),
-            "ground_truth_preference": held,
-            "reference_answer": None,  # reserved for Phase 2
+            # Workstream C: example_response + groundtruth_preference are the
+            # extractor's two new fields. The legacy `ground_truth_preference`
+            # block (held-out persona_item only) is kept in
+            # `groundtruth_preference_obj` for tooling that needs the raw
+            # held-out signal alongside the rendered text.
+            "example_response": s.get("example_response", ""),
+            "groundtruth_preference": s.get("groundtruth_preference", ""),
+            "groundtruth_preference_obj": held,
             "reference_example": ref_ex,
             "distractor_preferences": _normalize_distractors(s),
             "rubric_tags": s.get("rubric_tags") or [],
+            "tool_call": s.get("tool_call"),  # workstream H, agentic only
             "instance_full": inst,
         }
         # Compact: drop empty optional fields so the file stays readable.
@@ -1897,9 +2028,20 @@ if (eventsData.length === 0) {{
       }}
 
       // Build rich-info sections — only render keys the extractor populated.
+      // Workstream C+H: four-section schema (Example Response, Tool Call,
+      // Groundtruth Preference, Rubric Dimensions). The legacy
+      // "Expected (ground truth)", "Tool-call rules", and "Final-state
+      // expected (writes.jsonl diff)" sections are all replaced.
       let sections = '';
-      if (t.ground_truth) {{
-        sections += `<div class="ts-section"><div class="ts-label">Expected (ground truth)</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.ground_truth)}}</div></div>`;
+      if (t.example_response) {{
+        sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
+      }}
+      if (Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
+        const calls = t.tool_call.map(tc => {{
+          const args = tc.args ? JSON.stringify(tc.args) : '{{}}';
+          return `<li><code>${{escapeHtml(tc.tool || '?')}}(${{escapeHtml(args)}})</code></li>`;
+        }}).join('');
+        sections += `<div class="ts-section"><div class="ts-label">Tool Call (ordered)</div><ol class="ts-list ts-mono">${{calls}}</ol></div>`;
       }}
       if (Array.isArray(t.candidates) && t.candidates.length > 0) {{
         const items = t.candidates.map(c => {{
@@ -1910,6 +2052,9 @@ if (eventsData.length === 0) {{
         }}).join('');
         sections += `<div class="ts-section"><div class="ts-label">Candidate pool (${{t.candidates.length}} items)</div><ul class="ts-list">${{items}}</ul></div>`;
       }}
+      if (t.groundtruth_preference) {{
+        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.groundtruth_preference)}}</div></div>`;
+      }}
       if (t.held_out_pref) {{
         sections += `<div class="ts-section"><div class="ts-label">Held-out preference</div><div class="ts-body">${{escapeHtml(t.held_out_pref)}}</div></div>`;
       }}
@@ -1918,12 +2063,6 @@ if (eventsData.length === 0) {{
       }}
       if (Array.isArray(t.correct_but_irrelevant_prefs) && t.correct_but_irrelevant_prefs.length > 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Correct but irrelevant preferences (do NOT surface these here)</div><ul class="ts-list">${{t.correct_but_irrelevant_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
-      if (Array.isArray(t.tool_call_rules) && t.tool_call_rules.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Tool-call rules</div><ul class="ts-list ts-mono">${{t.tool_call_rules.map(r => `<li><code>${{escapeHtml(r)}}</code></li>`).join('')}}</ul></div>`;
-      }}
-      if (t.final_state_expected && Object.keys(t.final_state_expected).length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Final-state expected (writes.jsonl diff)</div><div class="ts-body ts-mono">${{escapeHtml(JSON.stringify(t.final_state_expected, null, 2))}}</div></div>`;
       }}
       if (t.warn_frame) {{
         const wf = t.warn_frame;
