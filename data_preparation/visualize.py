@@ -991,6 +991,21 @@ def _load_test_samples(
                 ts_int = int(r.get("ts") or 0)
             except Exception:
                 ts_int = 0
+            # Phase 4: prefer postprocess-generated example_response /
+            # groundtruth_preference (set on instance_full by
+            # llm_postprocess) over the extractor's defaults. The
+            # postprocess produces concrete LLM-generated text for
+            # personalization tasks where the extractor only emits
+            # meta-instructions; for ranking tasks it computes a
+            # deterministic ranked-index list.
+            example_response = (
+                inst.get("example_response")
+                or gt.get("example_response", "")
+            )
+            groundtruth_preference = (
+                inst.get("groundtruth_preference")
+                or gt.get("groundtruth_preference", "")
+            )
             sample = {
                 "ts": ts_int,
                 "ts_iso": r.get("ts_iso", ""),
@@ -998,10 +1013,8 @@ def _load_test_samples(
                 "task_family": task_family,
                 "query_id": r.get("query_id", ""),
                 "query_text": q_text,
-                # Workstream C: split GT into example_response (final answer
-                # text only) + groundtruth_preference (persona signal only).
-                "example_response": gt.get("example_response", ""),
-                "groundtruth_preference": gt.get("groundtruth_preference", ""),
+                "example_response": example_response,
+                "groundtruth_preference": groundtruth_preference,
                 "rubric_tags": gt.get("rubric_tags") or (r.get("rubric_tags", "").split(";") if r.get("rubric_tags") else []),
             }
             # Pass through optional rich fields when present — JS template
@@ -1015,6 +1028,12 @@ def _load_test_samples(
                      "carve_out", "forbidden_items", "prior_conversation", "extra_meta"):
                 if k in gt:
                     sample[k] = gt[k]
+            # Phase 4: surface postprocess-attached fields (inferior_response,
+            # self_check) so the JS template can render them on the test card.
+            if inst.get("inferior_response"):
+                sample["inferior_response"] = inst["inferior_response"]
+            if inst.get("example_response_self_check"):
+                sample["example_response_self_check"] = inst["example_response_self_check"]
             if include_instance_full:
                 sample["instance_full"] = inst
             out.append(sample)
@@ -2032,6 +2051,10 @@ if (eventsData.length === 0) {{
       let sections = '';
       if (t.example_response) {{
         sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
+      }}
+      if (t.inferior_response && t.inferior_response.text) {{
+        const flaw = t.inferior_response.flaw_kind || '';
+        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response (foil) <small style="color:#92400E;">[flaw: ${{escapeHtml(flaw)}}]</small></div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
       }}
       if (Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
         const calls = t.tool_call.map(tc => {{
