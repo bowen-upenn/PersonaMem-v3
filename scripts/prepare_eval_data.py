@@ -356,11 +356,24 @@ def prepare_one(
               f"not in TASK_TYPE_META — register them in "
               f"evaluation/task_registry.py: {sorted(unknown_task_types)}")
 
+    # Phase 1.A: emit backend/{uid}/test.json — every query in one place,
+    # for review + audit. Cheap, no LLM calls.
+    test_json_path: str | None = None
+    try:
+        from data_preparation.visualize import dump_test_samples_json
+        test_json_path = dump_test_samples_json(user_id)
+        if verbose:
+            print(f"[{user_id}] wrote {test_json_path}")
+    except Exception as exc:
+        if verbose:
+            print(f"[{user_id}] WARNING: dump_test_samples_json failed: {exc}")
+
     return {
         "user_id": user_id,
         "rows": len(pairs),
         "status": "ok",
         "csv_path": str(csv_path),
+        "test_json_path": test_json_path,
         "unknown_task_types": sorted(unknown_task_types),
     }
 
