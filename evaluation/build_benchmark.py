@@ -1810,12 +1810,16 @@ def build_benchmark(
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
-    # Agentic tasks T6-T19 — all share t_probe.
+    # Agentic tasks T6-T19 — all share t_probe. Each builder's output is
+    # passed through `_split_arms` (workstream G) which appends an
+    # overpersonalization arm alongside the proactive one.
     from evaluation.tasks.agentic_tasks import ALL_BUILDERS as _AGENTIC_BUILDERS
+    from evaluation.tasks.agentic_tasks import _split_arms as _agentic_split_arms
     agentic_buckets: dict[str, list[dict]] = {}
     for task_id, builder in _AGENTIC_BUILDERS.items():
         try:
-            agentic_buckets[task_id] = builder(bq, user_id, t_probe)
+            proactive = builder(bq, user_id, t_probe)
+            agentic_buckets[task_id] = _agentic_split_arms(proactive, task_id)
         except Exception as exc:
             agentic_buckets[task_id] = []
             print(f"[build_benchmark] WARN: {task_id} builder failed: {exc}")
