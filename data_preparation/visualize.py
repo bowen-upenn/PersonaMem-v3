@@ -187,7 +187,7 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
             "Generic, well-researched answer to the user's question — no "
             "user-specific context surfaced."
         )
-        groundtruth_preference = "(none — overpersonalization arm)"
+        groundtruth_preference = ""
     return {
         "example_response": example_response,
         "groundtruth_preference": groundtruth_preference,
@@ -211,7 +211,7 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
             "Generic, well-researched answer to the user's question without "
             "mentioning any of the user's personal preferences."
         ),
-        "groundtruth_preference": "(none — overpersonalization arm)",
+        "groundtruth_preference": "",
         "correct_but_irrelevant_prefs": top_k,
         "rubric_tags": [
             "Do not surface any personal preferences (avoid_overpersonalization).",
@@ -320,7 +320,7 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
             "Generic answer to the user's question. Do not surface any of "
             "the candidate persona items (none is relevant)."
         ),
-        "groundtruth_preference": "(none — overpersonalization arm; reject all candidates)",
+        "groundtruth_preference": "",
         "candidates": cand_list,
         "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
         "rubric_tags": [
@@ -681,7 +681,7 @@ def _gt_agentic(inst: dict) -> dict:
     # Persona signal explaining the personalization — empty for the
     # overpersonalization arm (no preference should be surfaced).
     if arm == "overpersonalization":
-        groundtruth_preference = "(none — overpersonalization test; no preference should be surfaced)"
+        groundtruth_preference = ""
     else:
         gtp_lines: list[str] = []
         if top_hashtags:
@@ -1482,7 +1482,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .event-card.app-Instagram {{ border-left-color: #C13584; }}
   .event-card.app-Facebook {{ border-left-color: #4A6FA5; }}
   .event-card.app-Threads {{ border-left-color: #636366; }}
-  .event-card.app-Chatbot {{ border-left-color: #C8956C; }}
+  .event-card.app-Chatbot {{ border-left-color: #8B5CF6; }}
   .event-card.implicit-negative {{ background: #F0F0F0; border-left-color: #B0B0B0; opacity: 0.65; filter: grayscale(100%); }}
   .event-card.implicit-negative .event-meta {{ color: #999; }}
   .event-card.implicit-negative .event-header {{ border-bottom-color: #E0E0E0; }}
@@ -1588,7 +1588,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .badge.platform.p-Instagram {{ background: #C13584; color: #fff; }}
   .badge.platform.p-Facebook {{ background: #4A6FA5; color: #fff; }}
   .badge.platform.p-Threads {{ background: #8E8E93; color: #fff; }}
-  .badge.platform.p-Chatbot {{ background: #C8956C; color: #fff; }}
+  .badge.platform.p-Chatbot {{ background: #8B5CF6; color: #fff; }}
   .badge.action {{ background: #E8E8ED; color: #48484A; font-weight: 500; }}
   .badge.hidden-persona {{ background: #EDE9FE; color: #6D28D9; font-weight: 500; }}
   .badge.short-term {{ background: #EFE1FF; color: #7C3AED; font-weight: 600; }}
@@ -1636,6 +1636,17 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .content-block .c-caption {{ font-size: 12px; color: var(--text); margin-bottom: 6px; line-height: 1.5; }}
   .content-block .c-desc {{ font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 8px; font-style: italic; }}
   .content-block .c-text-body {{ font-size: 13px; color: var(--text); line-height: 1.65; white-space: pre-wrap; }}
+  /* DM chat bubbles — left for inbound, right for self. Inherit page font. */
+  .dm-thread {{ display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-family: inherit; }}
+  .dm-bubble {{ max-width: 78%; padding: 7px 11px; border-radius: 12px; font-size: 13px; line-height: 1.5; font-family: inherit; }}
+  .dm-bubble.dm-self {{ align-self: flex-end; background: #DCFCE7; border: 1px solid #BBF7D0; border-bottom-right-radius: 4px; }}
+  .dm-bubble.dm-other {{ align-self: flex-start; background: #F1F5F9; border: 1px solid #E2E8F0; border-bottom-left-radius: 4px; }}
+  .dm-bubble .dm-sender {{ font-size: 11px; color: #64748B; font-weight: 600; margin-bottom: 2px; font-family: inherit; }}
+  .dm-bubble.dm-self .dm-sender {{ color: #15803D; }}
+  .dm-bubble .dm-text {{ font-family: inherit; white-space: pre-wrap; }}
+  .dm-bubble .dm-forwarded {{ margin-top: 6px; padding: 6px 8px; background: rgba(255,255,255,0.7); border-left: 3px solid #94A3B8; border-radius: 4px; font-size: 12px; }}
+  .dm-bubble .dm-forwarded .content-block {{ margin: 0; padding: 0; background: transparent; border: none; }}
+  .dm-bubble .dm-forwarded .c-type {{ font-size: 10px; opacity: 0.7; margin-bottom: 2px; }}
   .content-block details {{ margin-top: 6px; }}
   .content-block details summary {{ font-size: 11px; color: var(--text-secondary); cursor: pointer; padding: 2px 0; user-select: none; }}
   .content-block details summary:hover {{ color: var(--text); }}
@@ -1859,29 +1870,36 @@ function renderContent(ev) {{
   const adMetaHtml = renderAdMeta(content);
 
   if (ctype === 'text') {{
-    // DM events store body under content.caption + a messages[] array;
-    // plain text posts use content.text. Fall back through both, plus
-    // render the full thread when messages[] exists.
-    const body = content.text || content.caption || '';
-    const bodyBlock = body
-      ? `<div class="c-text-body">${{escapeHtml(body)}}</div>`
-      : '';
-    let threadBlock = '';
-    if (Array.isArray(content.messages) && content.messages.length > 0) {{
-      const lines = content.messages.map(m => {{
-        const sender = m.sender === 'self' ? 'you' : (m.sender || '?');
-        return `<div class="c-msg"><span class="msg-sender">${{escapeHtml(sender)}}:</span> ${{escapeHtml(m.text || '')}}</div>`;
+    // DM events: render as chat bubbles (right=self, left=others). Each
+    // bubble may carry a forwarded content block (post/video/image)
+    // — call renderContent recursively on m.forwarded_content.
+    // Plain text posts (non-DM) just render content.text.
+    const messages = (Array.isArray(ev.messages) && ev.messages.length > 0)
+      ? ev.messages
+      : (Array.isArray(content.messages) && content.messages.length > 0
+         ? content.messages : null);
+    if (messages && messages.length > 0) {{
+      const bubbles = messages.map(m => {{
+        const isSelf = m.sender === 'self';
+        const sideClass = isSelf ? 'dm-bubble dm-self' : 'dm-bubble dm-other';
+        const senderLabel = isSelf ? 'you' : (m.sender || '?');
+        const textBlock = m.text
+          ? `<div class="dm-text">${{escapeHtml(m.text)}}</div>`
+          : '';
+        const fwdBlock = m.forwarded_content
+          ? `<div class="dm-forwarded">${{renderContent({{
+              content_type: m.forwarded_content.content_type,
+              content: m.forwarded_content.content,
+              messages: null,
+            }})}}</div>`
+          : '';
+        return `<div class="${{sideClass}}"><div class="dm-sender">${{escapeHtml(senderLabel)}}</div>${{textBlock}}${{fwdBlock}}</div>`;
       }}).join('');
-      threadBlock = `<details><summary>thread (${{content.messages.length}} messages)</summary><div class="c-thread">${{lines}}</div></details>`;
-    }} else if (Array.isArray(ev.messages) && ev.messages.length > 0) {{
-      // DM events store messages at the top level (alongside content.caption).
-      const lines = ev.messages.map(m => {{
-        const sender = m.sender === 'self' ? 'you' : (m.sender || '?');
-        return `<div class="c-msg"><span class="msg-sender">${{escapeHtml(sender)}}:</span> ${{escapeHtml(m.text || '')}}</div>`;
-      }}).join('');
-      threadBlock = `<details><summary>thread (${{ev.messages.length}} messages)</summary><div class="c-thread">${{lines}}</div></details>`;
+      return `<div class="content-block dm-thread-block">${{header}}<div class="dm-thread">${{bubbles}}</div>${{adMetaHtml}}</div>`;
     }}
-    return `<div class="content-block">${{header}}${{bodyBlock}}${{threadBlock}}${{adMetaHtml}}</div>`;
+    // Plain text post (non-DM): single body block.
+    const body = content.text || content.caption || '';
+    return `<div class="content-block">${{header}}<div class="c-text-body">${{escapeHtml(body)}}</div>${{adMetaHtml}}</div>`;
   }}
 
   if (ctype === 'image') {{
@@ -2108,8 +2126,12 @@ if (eventsData.length === 0) {{
         }}).join('');
         sections += `<div class="ts-section"><div class="ts-label">Candidate pool (${{t.candidates.length}} items)</div><ul class="ts-list">${{items}}</ul></div>`;
       }}
-      if (t.groundtruth_preference) {{
-        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.groundtruth_preference)}}</div></div>`;
+      // Render Groundtruth Preference whenever an Example Response is
+      // present (every personalization task carries one). Restraint-arm
+      // instances have an empty body — that's intentional and signals
+      // "no preference should be surfaced here".
+      if (t.example_response || t.groundtruth_preference) {{
+        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.groundtruth_preference || '')}}</div></div>`;
       }}
       if (t.held_out_pref) {{
         sections += `<div class="ts-section"><div class="ts-label">Held-out preference</div><div class="ts-body">${{escapeHtml(t.held_out_pref)}}</div></div>`;
