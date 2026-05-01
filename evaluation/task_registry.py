@@ -64,12 +64,25 @@ OLD_TO_NEW: dict[str, str] = {
     "t11_vague_refind":              "agentic_vague_refind",
     "t12_agent_composed_post":       "agentic_composed_post",
     "t13_chatbot_dispatch":          "agentic_chatbot_dispatch",
+    # agentic_draft_audit dropped — old strings still resolve so historical
+    # CSVs parse, but the task type is no longer in TASK_TYPE_META.
     "t14_draft_audit":               "agentic_draft_audit",
     "t15_collection_curation":       "agentic_collection_curation",
     "t16_group_dm_summary":          "agentic_group_dm_summary",
     "t17_wrong_recipient":           "agentic_wrong_recipient_check",
     "t18_proactive_daily":           "agentic_proactive_daily_catchup",
     "t19_trending_alert":            "agentic_trending_alert",
+    # Workstream D: e4 renamed to clarify it's social-media recommendation,
+    # not Google search. Old strings still resolve.
+    "personalized_search_ranking":   "personalized_recommendation",
+    "e4_google_search":              "personalized_recommendation",
+}
+
+# Task types that have been removed entirely. Aggregators / runners
+# should drop rows whose task_type lands in this set after
+# `normalize_task_type`.
+DROPPED_TASK_TYPES: set[str] = {
+    "agentic_draft_audit",
 }
 
 
@@ -78,34 +91,71 @@ def normalize_task_type(name: str) -> str:
     return OLD_TO_NEW.get(name, name)
 
 
-# Rubric-dimension vocabulary (the canonical set used in evaluation/
-# personalization_rubric.py plus per-task-family additions from e2–e6).
-# Kept here as documentation only — not enforced at runtime.
+# Rubric-dimension vocabulary — consolidated from the original 21 dims
+# down to 12 after the workstream-A audit. See the plan in
+# /vast/home/b/bwjiang/.claude/plans/ for the full mapping. Old
+# strings (over_personalization, restraint, privacy_leak, …) are
+# normalized via RUBRIC_ALIAS so saved CSVs stay readable.
 _RUBRIC_CORE = (
-    "preference_alignment",
-    "avoid_leak",            # hard-fail on app-native / third-party-visible tasks
-    "privacy_leak",          # hard-fail on app-native; demoted to response_respectfulness on chatbot_routed
-    "response_respectfulness",
-    "over_personalization",
-    "subtle_personalization",
+    # LLM-judge dims
+    "preference_alignment",        # was: + subtle_personalization
+    "avoid_overpersonalization",   # was: over_personalization + restraint;
+                                   # UNIVERSAL — every personalization task carries it
+    "voice_match",                 # covers relationship_aware in DM tasks
+    # Hard-rule dims
+    "negative_leakage",            # was: avoid_leak — agent surfaced something
+                                   # the user explicitly disliked recently
     "stale_preference_use",
-    "relationship_aware",
-    "voice_match",
-    "restraint",
-    "tool_call_rules",
-    "final_state_diff",
     "behavioral_hit",
-    "temporal_boundedness",
+    "tool_call_match",             # was: tool_call_rules + final_state_diff;
+                                   # the agent's tool-call sequence matches the
+                                   # gold sequence — derived count + end-state checks
 )
 _RUBRIC_E6 = (
     "mistake_prevention_recall",
     "false_alarm_emission",
-    "cross_signal_attribution",
-    "actionable_specificity",
-    "local_context_awareness",
-    "intervention_minimality",
-    "warning_respectfulness",
+    "warning_quality",             # was: actionable_specificity +
+                                   # local_context_awareness +
+                                   # intervention_minimality + warning_respectfulness
 )
+_RUBRIC_RANKING = (
+    # Deterministic ranking metrics for personalized_recommendation only
+    "recall_at_k",
+    "ndcg_at_k",
+    "mrr",
+    "hit_at_k",
+)
+
+
+# Old → new dimension names. Used by aggregator + audit so saved
+# results.csv files remain readable after the consolidation.
+RUBRIC_ALIAS: dict[str, str] = {
+    "subtle_personalization":     "preference_alignment",
+    "over_personalization":       "avoid_overpersonalization",
+    "restraint":                  "avoid_overpersonalization",
+    "relationship_aware":         "voice_match",
+    "avoid_leak":                 "negative_leakage",
+    "tool_call_rules":            "tool_call_match",
+    "final_state_diff":           "tool_call_match",
+    # The following had no real implementation — they map to a noop
+    # so callers can detect-and-skip rather than crash.
+    "privacy_leak":               "_removed_no_actual_private_data",
+    "preference_respect":         "_removed_folded_into_negative_leakage",
+    "response_respectfulness":    "_removed_no_implementation",
+    "temporal_boundedness":       "stale_preference_use",
+    "cross_signal_attribution":   "_removed_no_implementation",
+    "actionable_specificity":     "warning_quality",
+    "local_context_awareness":    "warning_quality",
+    "intervention_minimality":    "warning_quality",
+    "warning_respectfulness":     "warning_quality",
+}
+
+
+def normalize_rubric_tag(tag: str) -> str:
+    """Map an old rubric-dim name to its current canonical name.
+    Tags starting with `_removed_` indicate a dim that's been deleted
+    entirely — callers should drop these from their per-row scoring."""
+    return RUBRIC_ALIAS.get(tag, tag)
 
 
 DEFAULT_META: dict = {
@@ -127,9 +177,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "behavioral_hit",
         ],
     },
 
@@ -142,9 +191,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "over_personalization",
-            "subtle_personalization", "stale_preference_use",
-            "response_respectfulness",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use",
         ],
     },
     "over_personalization_chatbot_text": {
@@ -153,27 +201,26 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
         "rubric_tags": [
-            "restraint", "avoid_leak", "over_personalization",
-            "subtle_personalization", "response_respectfulness",
+            "avoid_overpersonalization", "negative_leakage",
         ],
     },
 
     # ------------------------------------------------------------------
-    # Restraint / over-personalization probes (was: c1a/c1b/c2/c3/c4)
+    # Over-personalization probes (was: c1a/c1b/c2/c3/c4)
     # ------------------------------------------------------------------
     "repetition_fatigue_pairs": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
-        "rubric_tags": ["over_personalization"],
+        "rubric_tags": ["avoid_overpersonalization"],
     },
     "repetition_fatigue_sequences": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
-        "rubric_tags": ["over_personalization"],
+        "rubric_tags": ["avoid_overpersonalization"],
     },
     "context_shift_scenarios": {
         "task_family": "over_personalization",
@@ -181,8 +228,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
         "rubric_tags": [
-            "restraint", "avoid_leak", "privacy_leak",
-            "over_personalization", "relationship_aware",
+            "avoid_overpersonalization", "negative_leakage", "voice_match",
         ],
     },
     "over_personalization_distractor_reject": {
@@ -191,21 +237,18 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         # Phase I.3: converted from ranking to open-ended chatbot text response.
         "expected_response_kind": "text",
-        "rubric_tags": ["privacy_leak", "over_personalization", "restraint"],
+        "rubric_tags": ["avoid_overpersonalization"],
     },
     "preference_removal_regen": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
-        "rubric_tags": ["privacy_leak", "over_personalization"],
+        "rubric_tags": ["avoid_overpersonalization"],
     },
 
     # ------------------------------------------------------------------
-    # Agentic T6–T19
-    # Write-policy rule: any task whose canonical tool-call rules require
-    # a `create_post` / `send_dm` count > 0 is writes_ok. Pure audit /
-    # read-only surfaces are read_only.
+    # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
     # ------------------------------------------------------------------
     "agentic_user_voice_post": {
         "task_family": "agentic",
@@ -213,10 +256,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "writes_ok",       # exactly 1 create_post
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "voice_match", "tool_call_rules", "final_state_diff",
-            "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "voice_match",
+            "tool_call_match", "behavioral_hit",
         ],
     },
     "agentic_moment_recommendation": {
@@ -225,9 +267,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",        # no DM sends
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "temporal_boundedness", "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "behavioral_hit",
         ],
     },
     "agentic_dm_digest": {
@@ -236,9 +277,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",        # list_dms + no sends
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "relationship_aware",
-            "tool_call_rules",
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match",
         ],
     },
     "agentic_cross_app_repost": {
@@ -247,9 +287,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "writes_ok",        # exactly 1 threads_create_post
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "voice_match",
-            "tool_call_rules", "final_state_diff", "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match", "behavioral_hit",
         ],
     },
     "agentic_auto_reply": {
@@ -258,9 +297,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "writes_ok",        # exactly 1 send_dm
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
-            "preference_alignment", "privacy_leak",
-            "over_personalization", "relationship_aware", "voice_match",
-            "tool_call_rules", "final_state_diff",
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match",
         ],
     },
     "agentic_vague_refind": {
@@ -269,8 +307,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",        # zero create_post
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "privacy_leak",
-            "stale_preference_use", "tool_call_rules", "behavioral_hit",
+            "preference_alignment", "stale_preference_use",
+            "tool_call_match", "behavioral_hit",
         ],
     },
     "agentic_composed_post": {
@@ -279,9 +317,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "writes_ok",        # exactly 1 create_post per app
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "voice_match", "tool_call_rules", "final_state_diff",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "voice_match",
+            "tool_call_match",
         ],
     },
     "agentic_chatbot_dispatch": {
@@ -290,30 +328,19 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "writes_ok",         # 1 create_post on target
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "voice_match",
-            "tool_call_rules", "final_state_diff",
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match",
         ],
     },
-    "agentic_draft_audit": {
-        "task_family": "agentic",
-        "mcp_tools_allowed": "social",
-        "state_write_policy": "read_only",          # audit only — zero writes
-        "expected_response_kind": "text_with_tool_calls",
-        "rubric_tags": [
-            "privacy_leak", "over_personalization",
-            "stale_preference_use", "tool_call_rules",
-        ],
-    },
+    # agentic_draft_audit removed — too subjective for benchmark grading
     "agentic_collection_curation": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "stale_preference_use", "behavioral_hit",
         ],
     },
     "agentic_group_dm_summary": {
@@ -322,9 +349,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",          # get_dm_thread only
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "relationship_aware",
-            "tool_call_rules",
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match",
         ],
     },
     "agentic_wrong_recipient_check": {
@@ -333,8 +359,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "writes_ok",          # ≤1 send_dm, must ask first
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
-            "preference_alignment", "privacy_leak",
-            "relationship_aware", "tool_call_rules", "final_state_diff",
+            "preference_alignment", "voice_match", "tool_call_match",
         ],
     },
     "agentic_proactive_daily_catchup": {
@@ -343,9 +368,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "temporal_boundedness", "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "behavioral_hit",
         ],
     },
     "agentic_trending_alert": {
@@ -354,8 +378,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak",
-            "over_personalization", "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "behavioral_hit",
         ],
     },
 
@@ -375,17 +399,18 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "preference_alignment", "avoid_leak", "privacy_leak",
-            "over_personalization", "stale_preference_use",
-            "temporal_boundedness", "behavioral_hit",
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "behavioral_hit",
         ],
     },
-    "personalized_search_ranking": {
+    # personalized_search_ranking renamed → personalized_recommendation
+    # (workstream D). Old name still resolved via OLD_TO_NEW.
+    "personalized_recommendation": {
         "task_family": "e_followup",
-        "mcp_tools_allowed": "all",                 # includes google_search MCP
+        "mcp_tools_allowed": "none",                # no longer needs google_search MCP
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
-        "rubric_tags": ["preference_alignment", "over_personalization"],
+        "rubric_tags": list(_RUBRIC_RANKING),       # recall_at_k, ndcg_at_k, mrr, hit_at_k
     },
     "short_vs_long_term_lifecycle": {
         "task_family": "e_followup",
@@ -394,7 +419,6 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "ranking",
         "rubric_tags": [
             "preference_alignment", "stale_preference_use",
-            "temporal_boundedness",
         ],
     },
     "active_mistake_prevention": {
@@ -402,9 +426,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "all",
         "state_write_policy": "writes_ok",
         "expected_response_kind": "text_with_tool_calls",
-        "rubric_tags": list(_RUBRIC_E6) + [
-            "avoid_leak", "response_respectfulness",
-        ],
+        "rubric_tags": list(_RUBRIC_E6) + ["negative_leakage"],
     },
 }
 
@@ -445,11 +467,10 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "preference_removal_regen":               "user_query",
     "at_ai_directive_followup":               "user_query",
     "daily_personalized_briefing":            "proactive_recommendation",
-    # personalized_search_ranking carries no literal user query in the
-    # current builder — the test asks the agent to rank candidate search
-    # results given the user's recent prefs. It's a system-side
-    # recommendation surface, not a user-typed query.
-    "personalized_search_ranking":            "proactive_recommendation",
+    # personalized_recommendation (renamed from personalized_search_ranking)
+    # carries a fixed-format query "[No user query] [Recommendation system
+    # proposed candidates: …]" — system-side recommendation surface.
+    "personalized_recommendation":            "proactive_recommendation",
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
     "agentic_user_voice_post":                "agentic_task",
@@ -460,7 +481,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "agentic_vague_refind":                   "user_query",
     "agentic_composed_post":                  "agentic_task",
     "agentic_chatbot_dispatch":               "user_query",
-    "agentic_draft_audit":                    "proactive_assistance",
+    # agentic_draft_audit removed — workstream F.
     "agentic_collection_curation":            "agentic_task",
     "agentic_group_dm_summary":               "agentic_task",
     "agentic_wrong_recipient_check":          "proactive_assistance",
@@ -472,15 +493,15 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
 EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "personalized_feed_ranking":              "proactive_recommend",
     "chatbot_proactive_personalization":      "personalize",
-    "over_personalization_chatbot_text":      "restrain",
-    "repetition_fatigue_pairs":               "restrain",
-    "repetition_fatigue_sequences":           "restrain",
-    "context_shift_scenarios":                "restrain",
-    "over_personalization_distractor_reject": "restrain",
-    "preference_removal_regen":               "restrain",
+    "over_personalization_chatbot_text":      "avoid_overpersonalization",
+    "repetition_fatigue_pairs":               "avoid_overpersonalization",
+    "repetition_fatigue_sequences":           "avoid_overpersonalization",
+    "context_shift_scenarios":                "avoid_overpersonalization",
+    "over_personalization_distractor_reject": "avoid_overpersonalization",
+    "preference_removal_regen":               "avoid_overpersonalization",
     "at_ai_directive_followup":               "proactive_recommend",
     "daily_personalized_briefing":            "proactive_recommend",
-    "personalized_search_ranking":            "proactive_recommend",
+    "personalized_recommendation":            "proactive_recommend",
     "short_vs_long_term_lifecycle":           "proactive_recommend",
     "active_mistake_prevention":              "proactive_assist",
     "agentic_user_voice_post":                "agentic_action",
@@ -491,7 +512,6 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "agentic_vague_refind":                   "agentic_action",
     "agentic_composed_post":                  "agentic_action",
     "agentic_chatbot_dispatch":               "agentic_action",
-    "agentic_draft_audit":                    "proactive_assist",
     "agentic_collection_curation":            "agentic_action",
     "agentic_group_dm_summary":               "agentic_action",
     "agentic_wrong_recipient_check":          "proactive_assist",

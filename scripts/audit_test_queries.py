@@ -33,6 +33,7 @@ if _ROOT not in sys.path:
 
 from evaluation.audit_rules import (
     Finding,
+    check_dm_coverage,
     distribution_findings,
     run_per_record_rules,
     task_count_table,
@@ -98,6 +99,14 @@ def _render_markdown(records: list[dict], findings: list[Finding], phase: str) -
     lines.append(f"- query_kind: " + ", ".join(f"`{k}`={v}" for k, v in qk_counts.most_common()))
     lines.append(f"- expected_behavior: " + ", ".join(f"`{k}`={v}" for k, v in eb_counts.most_common()))
     lines.append("")
+
+    # DM coverage summary (from check_dm_coverage)
+    dm_summary = next((f for f in findings if f.rule == "dm_coverage_summary"), None)
+    if dm_summary is not None:
+        lines.append("## DM coverage")
+        lines.append("")
+        lines.append(f"`{dm_summary.message}`")
+        lines.append("")
 
     # Findings grouped by rule
     lines.append("## Findings")
@@ -187,6 +196,7 @@ def _run_audit(uid: str, phase: str, benchmark_dir: str, backend_dir: str) -> tu
     findings: list[Finding] = []
     findings.extend(run_per_record_rules(records))
     findings.extend(distribution_findings(records))
+    findings.extend(check_dm_coverage(str(uid), backend_dir=backend_dir))
 
     by_task = Counter(r["task_type"] for r in records)
     out_md_path = os.path.join(backend_dir, str(uid), f"test_audit_{phase}.md")

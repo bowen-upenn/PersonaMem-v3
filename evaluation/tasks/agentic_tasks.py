@@ -461,25 +461,10 @@ def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) ->
     ]
 
 
-def build_t14_draft_audit(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """6 draft variants spanning benign / privacy_leak / tone_mismatch
-    across the three social apps."""
-    drafts = [
-        ("benign_1",        "Had a great weekend. Back to the grind.", "threads"),
-        ("benign_2",        "morning run was just what i needed today.", "instagram"),
-        ("privacy_leak_1",  "Honestly, church has been the only thing keeping me grounded through the bankruptcy filing.", "facebook"),
-        ("privacy_leak_2",  "Therapist told me yesterday I have to stop micromanaging my team. Working on it.", "threads"),
-        ("tone_mismatch_1", "Bro this reception lighting SLAPPED. Amber god tier.", "facebook"),
-        ("tone_mismatch_2", "yo can't BELIEVE my pastor said that today!! GOATed sermon fr", "facebook"),
-    ]
-    return [
-        {"instance_id": f"t14_{label}", "task_id": "agentic_draft_audit", "entry_point": "app_native",
-         "target_app": app, "draft": draft, "draft_label": label, "t_test": t_anchor,
-         "tool_call_rules": [f"count('{app}_create_post') == 0",   # audit only, no post
-                             f"count('{app}_send_dm') == 0"],
-         "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS]}}
-        for (label, draft, app) in drafts
-    ]
+# build_t14_draft_audit removed — workstream F. The fabricated draft
+# variants (benign / privacy_leak / tone_mismatch) read awkwardly and
+# the "is this draft a privacy leak?" judgment is too subjective for
+# a benchmark.
 
 
 def build_t15_collection_curation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
@@ -592,7 +577,7 @@ ALL_BUILDERS: dict[str, Callable] = {
     "agentic_vague_refind":             build_t11_vague_refind,
     "agentic_composed_post":            build_t12_agent_composed_post,
     "agentic_chatbot_dispatch":         build_t13_chatbot_dispatch,
-    "agentic_draft_audit":              build_t14_draft_audit,
+    # agentic_draft_audit removed — workstream F.
     "agentic_collection_curation":      build_t15_collection_curation,
     "agentic_group_dm_summary":         build_t16_group_dm_summary,
     "agentic_wrong_recipient_check":    build_t17_wrong_recipient,
