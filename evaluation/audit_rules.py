@@ -50,7 +50,8 @@ _REACTIVE_PERSONALIZATION_TASKS = {
 _RANKING_TASKS = {
     "personalized_feed_ranking",
     "at_ai_directive_followup",
-    "personalized_search_ranking",
+    "personalized_recommendation",
+    "personalized_search_ranking",  # legacy alias
     "short_vs_long_term_lifecycle",
 }
 
@@ -123,9 +124,12 @@ def check_realism(record: dict) -> list[Finding]:
                 f"user_query still contains template placeholder: {text[:120]!r}",
                 "regenerate",
             ))
-        if text.startswith("[") and "]" in text:
-            # synthetic [task tag] markers indicate the extractor fell through
-            # to a default — not a real user message.
+        # Synthetic [task tag] markers indicate the extractor fell through
+        # to a default. The fixed-format `[No user query] …` marker used
+        # by personalized_recommendation (workstream D) is intentional, so
+        # we whitelist it.
+        if (text.startswith("[") and "]" in text
+                and not text.startswith("[No user query]")):
             out.append(Finding(
                 record["query_id"], record["task_type"], "medium", "realism_synthetic_marker",
                 f"user_query starts with synthetic marker: {text[:60]!r}",
@@ -136,11 +140,15 @@ def check_realism(record: dict) -> list[Finding]:
 
 def check_ground_truth_presence(record: dict) -> list[Finding]:
     """Personalization tasks must carry a real ground-truth preference;
-    ranking tasks must carry a non-trivial slate / candidate set."""
+    ranking tasks must carry a non-trivial slate / candidate set.
+
+    Workstream C renamed test.json's structured held-out block from
+    `ground_truth_preference` to `groundtruth_preference_obj` (the
+    plain `groundtruth_preference` field is now the rendered string)."""
     out: list[Finding] = []
     tt = record["task_type"]
     if tt in _REACTIVE_PERSONALIZATION_TASKS:
-        gt = record.get("ground_truth_preference")
+        gt = record.get("groundtruth_preference_obj") or record.get("ground_truth_preference")
         if not gt or not gt.get("persona_item"):
             out.append(Finding(
                 record["query_id"], tt, "high", "ground_truth_missing",
@@ -166,12 +174,15 @@ def check_ground_truth_presence(record: dict) -> list[Finding]:
                     "ranking task has empty candidates list",
                     "regenerate",
                 ))
-        elif tt == "personalized_search_ranking":
+        elif tt in ("personalized_recommendation", "personalized_search_ranking"):
+            # Post-Batch-4 builder carries `candidates` + `held_out_idx`.
+            # Pre-Batch-4 path (legacy): only `recent_pref_summary`.
+            cands = inst.get("candidates") or []
             summary = inst.get("recent_pref_summary") or []
-            if not summary:
+            if not cands and not summary:
                 out.append(Finding(
-                    record["query_id"], tt, "high", "ranking_pref_summary_missing",
-                    "search ranking has empty recent_pref_summary — no signal to rank against",
+                    record["query_id"], tt, "high", "ranking_signal_missing",
+                    "personalized_recommendation has neither candidates nor recent_pref_summary",
                     "regenerate",
                 ))
         return out
@@ -184,7 +195,7 @@ def check_reference_example_traceability(record: dict) -> list[Finding]:
     tt = record["task_type"]
     if tt not in _REACTIVE_PERSONALIZATION_TASKS:
         return out
-    gt = record.get("ground_truth_preference")
+    gt = record.get("groundtruth_preference_obj") or record.get("ground_truth_preference")
     if not gt:
         return out  # already flagged by ground_truth_presence
     ref = record.get("reference_example")
@@ -275,7 +286,7 @@ def check_label_honesty_held_out_relevance(record: dict) -> list[Finding]:
     out: list[Finding] = []
     if record["task_type"] != "chatbot_proactive_personalization":
         return out
-    gt = record.get("ground_truth_preference")
+    gt = record.get("groundtruth_preference_obj") or record.get("ground_truth_preference")
     inst = record.get("instance_full") or {}
     if not gt:
         return out
@@ -303,7 +314,7 @@ def check_label_honesty_restraint_trap(record: dict) -> list[Finding]:
     out: list[Finding] = []
     if record["task_type"] != "over_personalization_chatbot_text":
         return out
-    gt = record.get("ground_truth_preference")
+    gt = record.get("groundtruth_preference_obj") or record.get("ground_truth_preference")
     text = (record.get("user_query") or "").lower()
     if not gt or not text:
         return out
