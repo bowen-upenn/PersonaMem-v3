@@ -54,6 +54,30 @@ _RANKING_TASKS = {
     "short_vs_long_term_lifecycle",
 }
 
+# Tasks that test diversification across a sequence rather than
+# text-restraint against a do-not-surface pool. Their GT signal lives
+# elsewhere (category shift, hashtag spread); they don't need a
+# distractor_preferences pool.
+_DIVERSIFICATION_TASKS = {
+    "repetition_fatigue_pairs",
+    "repetition_fatigue_sequences",
+}
+
+# Tasks that are intentionally hollow at build time: the agent is
+# expected to fetch state at runtime via MCP tools (list_dm_threads,
+# get_top_hashtags_for_window, ...). Skipping audit checks that look
+# for instance-side ground / preconditions for these.
+_HOLLOW_BY_DESIGN = {
+    "agentic_dm_digest",
+    "agentic_group_dm_summary",
+    "agentic_collection_curation",
+    "agentic_proactive_daily_catchup",
+    "agentic_trending_alert",
+    "agentic_user_voice_post",
+    "daily_personalized_briefing",
+    "personalized_search_ranking",
+}
+
 # Task types that test restraint and therefore need a populated distractor pool
 # (queries that the agent should NOT respond to with personalization).
 _RESTRAINT_TASKS = {
@@ -65,10 +89,19 @@ _RESTRAINT_TASKS = {
 }
 
 _AGENTIC_PRECONDITION_HINTS = {
-    "agentic_dm_digest":            ("≥2 DMs in t_test - 24h"),
-    "agentic_auto_reply":           ("a real inbound DM in the source data"),
-    "agentic_wrong_recipient_check":("≥2 friends with the same first name in profile.friends"),
-    "agentic_group_dm_summary":     ("a real group thread in the source DMs"),
+    # Tasks where the precondition genuinely belongs in the BUILD-TIME
+    # instance (the agent cannot fetch it at runtime). Tasks like T8/T15/
+    # T16/T18/T19 are deliberately hollow — the agent calls
+    # list_dm_threads etc. via MCP at runtime, so missing instance-side
+    # context is by design.
+    "agentic_auto_reply":            "a real inbound DM (sender_id + inbound_message)",
+    "agentic_wrong_recipient_check": "a name collision (recipient_name + draft + collision_friend_ids)",
+    "agentic_cross_app_repost":      "a source post (source_post)",
+    "agentic_chatbot_dispatch":      "a dispatch context (context)",
+    "agentic_composed_post":         "a life-update string (update)",
+    "agentic_draft_audit":           "a draft to audit (draft + draft_label)",
+    "agentic_vague_refind":          "a topic the user vaguely remembers (topic)",
+    "agentic_moment_recommendation": "a moment to recommend for (moment)",
 }
 
 
@@ -177,13 +210,19 @@ def check_distractor_sanity(record: dict) -> list[Finding]:
                 f"distractor_reject has {len(privacy)} privacy_flagged items (need ≥2)",
                 "regenerate",
             ))
-    elif tt in _RESTRAINT_TASKS:
+    elif tt in _RESTRAINT_TASKS and tt not in _DIVERSIFICATION_TASKS:
+        # context_shift / preference_removal / over_personalization arms
+        # need a real do-not-surface pool. Diversification tasks don't.
         if not distractors:
-            out.append(Finding(
-                record["query_id"], tt, "medium", "distractor_pool_empty",
-                "restraint task has no distractor pool — restraint metric trivially passes",
-                "regenerate",
-            ))
+            inst = record.get("instance_full") or {}
+            # C2 scenarios put the do-not-surface set in forbidden_items.
+            forbidden = inst.get("forbidden_items") or []
+            if not forbidden:
+                out.append(Finding(
+                    record["query_id"], tt, "medium", "distractor_pool_empty",
+                    "restraint task has no distractor / forbidden_items pool — restraint metric trivially passes",
+                    "regenerate",
+                ))
     elif tt == "personalized_feed_ranking":
         inst = record.get("instance_full") or {}
         slate = inst.get("slate") or []
@@ -280,10 +319,13 @@ def check_label_honesty_restraint_trap(record: dict) -> list[Finding]:
 
 
 def check_proactive_ground(record: dict) -> list[Finding]:
-    """E3/E4 require ≥3 prefs in the last-24h window or there's nothing
-    to personalize from."""
+    """Proactive recommendations need ground in recent activity. We only
+    flag when the builder embeds the signal in the instance — for E3/E4
+    the agent fetches state at runtime, so absence is by design."""
     out: list[Finding] = []
     tt = record["task_type"]
+    if tt in _HOLLOW_BY_DESIGN:
+        return out  # hollow at build time on purpose
     if tt not in {"daily_personalized_briefing", "personalized_search_ranking"}:
         return out
     inst = record.get("instance_full") or {}
@@ -298,27 +340,36 @@ def check_proactive_ground(record: dict) -> list[Finding]:
     return out
 
 
+_AGENTIC_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
+    "agentic_auto_reply":            ("sender_id", "inbound_message"),
+    "agentic_wrong_recipient_check": ("recipient_name", "draft"),
+    "agentic_cross_app_repost":      ("source_post",),
+    "agentic_chatbot_dispatch":      ("context",),
+    "agentic_composed_post":         ("update",),
+    "agentic_draft_audit":           ("draft",),
+    "agentic_vague_refind":          ("topic",),
+    "agentic_moment_recommendation": ("moment",),
+}
+
+
 def check_agentic_preconditions(record: dict) -> list[Finding]:
-    """Agentic tasks need their precondition (DM thread, name collision,
-    inbound message). Without it, the task instance is hollow."""
+    """Agentic tasks that need build-time trigger context (e.g. T10
+    auto_reply needs an inbound message; T17 wrong_recipient needs a
+    draft + name collision). Tasks like T8/T15/T16/T18/T19 are
+    deliberately hollow — the agent fetches data at runtime via MCP
+    tools — so they're skipped here."""
     out: list[Finding] = []
     tt = record["task_type"]
+    required = _AGENTIC_REQUIRED_FIELDS.get(tt)
     hint = _AGENTIC_PRECONDITION_HINTS.get(tt)
-    if hint is None:
+    if required is None:
         return out
     inst = record.get("instance_full") or {}
-    # Heuristic: the builder usually attaches a ``recent_dms`` /
-    # ``inbound_message`` / ``name_collision`` field when the precondition
-    # is met. Absence is the flag.
-    has_precondition = any(
-        inst.get(k) for k in ("recent_dms", "inbound_message", "name_collisions",
-                              "recent_dm_threads", "thread_messages", "sender_id",
-                              "draft", "candidate_recipients")
-    )
-    if not has_precondition:
+    missing = [f for f in required if not inst.get(f)]
+    if missing:
         out.append(Finding(
             record["query_id"], tt, "medium", "agentic_precondition_missing",
-            f"agentic task missing its precondition ({hint})",
+            f"agentic task missing required field(s) {missing} ({hint})",
             "regenerate",
         ))
     return out
@@ -350,36 +401,9 @@ def run_per_record_rules(records: Iterable[dict]) -> list[Finding]:
 # Distribution checks (run over the full list)
 # ---------------------------------------------------------------------------
 
-# Per-task quotas — the Phase 2 target distribution recorded in the plan.
-TASK_TARGETS: dict[str, dict] = {
-    "chatbot_proactive_personalization":      {"min": 10, "max": 14},
-    "over_personalization_chatbot_text":      {"min": 10, "max": 14},
-    "over_personalization_distractor_reject": {"min": 10, "max": 14},
-    "personalized_feed_ranking":              {"min": 10, "max": 14},
-    "at_ai_directive_followup":               {"min": 8,  "max": 12},
-    "daily_personalized_briefing":            {"min": 8,  "max": 12},
-    "personalized_search_ranking":            {"min": 8,  "max": 12},
-    "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
-    "active_mistake_prevention":              {"min": 8,  "max": 12},
-    "preference_removal_regen":               {"min": 8,  "max": 12},
-    "repetition_fatigue_pairs":               {"min": 6,  "max": 10},
-    "repetition_fatigue_sequences":           {"min": 6,  "max": 10},
-    "context_shift_scenarios":                {"min": 6,  "max": 10},
-    "agentic_user_voice_post":                {"min": 5,  "max": 8},
-    "agentic_moment_recommendation":          {"min": 5,  "max": 8},
-    "agentic_dm_digest":                      {"min": 5,  "max": 8},
-    "agentic_cross_app_repost":               {"min": 5,  "max": 8},
-    "agentic_auto_reply":                     {"min": 5,  "max": 8},
-    "agentic_vague_refind":                   {"min": 5,  "max": 8},
-    "agentic_composed_post":                  {"min": 5,  "max": 8},
-    "agentic_chatbot_dispatch":               {"min": 5,  "max": 8},
-    "agentic_draft_audit":                    {"min": 5,  "max": 8},
-    "agentic_collection_curation":            {"min": 5,  "max": 8},
-    "agentic_group_dm_summary":               {"min": 5,  "max": 8},
-    "agentic_wrong_recipient_check":          {"min": 5,  "max": 8},
-    "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
-    "agentic_trending_alert":                 {"min": 5,  "max": 8},
-}
+# Per-task quotas live in evaluation.task_distribution — single source of
+# truth for both build-time enforcement and post-hoc auditing.
+from evaluation.task_distribution import TASK_TARGETS  # noqa: E402
 
 
 def distribution_findings(records: list[dict]) -> list[Finding]:

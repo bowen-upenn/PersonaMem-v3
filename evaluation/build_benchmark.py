@@ -38,6 +38,7 @@ from evaluation.inference_utils import TestItem, build_gt_slice, load_test_items
 from evaluation import scenarios as scenarios_mod
 from evaluation import metrics as metrics_mod
 from evaluation import prompts as prompts_mod
+from evaluation import task_distribution as _task_dist
 from evaluation.tasks import chatbot_response as cb_task
 
 BENCHMARK_VERSION = "v2"
@@ -1870,6 +1871,29 @@ def build_benchmark(
     except Exception as exc:
         print(f"[build_benchmark] WARN: failed to write build_audit.json: {exc}")
 
+    # Apply per-task quotas (stratified random truncation when over cap).
+    # Floor enforcement is the synthesis layer's job — this only caps.
+    pre_cap_buckets = {
+        "personalized_feed_ranking":              slate_instances,
+        "chatbot_proactive_personalization":      b_arms["chatbot_proactive_personalization"],
+        "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
+        "repetition_fatigue_pairs":               c1a_pairs,
+        "repetition_fatigue_sequences":           c1b_sequences,
+        "context_shift_scenarios":                c2_instances,
+        "over_personalization_distractor_reject": c3_instances,
+        "preference_removal_regen":               c4_instances,
+        "at_ai_directive_followup":               e2_instances,
+        "daily_personalized_briefing":            e3_instances,
+        "personalized_search_ranking":            e4_instances,
+        "short_vs_long_term_lifecycle":           e5_instances,
+        "active_mistake_prevention":              e6_instances,
+        **agentic_buckets,
+    }
+    capped_buckets = _task_dist.apply_caps(dict(pre_cap_buckets), rng_seed=rng_seed)
+    floor_gaps = _task_dist.report_floor_gaps(capped_buckets)
+    if floor_gaps:
+        print(f"[build_benchmark] floor gaps (will be filled by synthesis): {floor_gaps}")
+
     return {
         "benchmark_version": BENCHMARK_VERSION,
         "user_id": user_id,
@@ -1880,35 +1904,10 @@ def build_benchmark(
         "build_audit": auditor._stats,
         "counts": {
             "test_items": len(test_items),
-            "personalized_feed_ranking": len(slate_instances),
-            "chatbot_proactive_personalization":          len(b_arms["chatbot_proactive_personalization"]),
-            "over_personalization_chatbot_text":          len(b_arms["over_personalization_chatbot_text"]),
-            "repetition_fatigue_pairs":                   len(c1a_pairs),
-            "repetition_fatigue_sequences":               len(c1b_sequences),
-            "context_shift_scenarios":                    len(c2_instances),
-            "over_personalization_distractor_reject":     len(c3_instances),
-            "preference_removal_regen":                   len(c4_instances),
-            "at_ai_directive_followup": len(e2_instances),
-            "daily_personalized_briefing": len(e3_instances),
-            "personalized_search_ranking": len(e4_instances),
-            "short_vs_long_term_lifecycle": len(e5_instances),
-            "active_mistake_prevention": len(e6_instances),
-            **{k: len(v) for k, v in agentic_buckets.items()},
+            **{k: len(v) for k, v in capped_buckets.items()},
         },
-        "personalized_feed_ranking":                 slate_instances,
-        "chatbot_proactive_personalization":         b_arms["chatbot_proactive_personalization"],
-        "over_personalization_chatbot_text":         b_arms["over_personalization_chatbot_text"],
-        "repetition_fatigue_pairs":                  c1a_pairs,
-        "repetition_fatigue_sequences":              c1b_sequences,
-        "context_shift_scenarios":                   c2_instances,
-        "over_personalization_distractor_reject":    c3_instances,
-        "preference_removal_regen":                  c4_instances,
-        "at_ai_directive_followup": e2_instances,
-        "daily_personalized_briefing": e3_instances,
-        "personalized_search_ranking": e4_instances,
-        "short_vs_long_term_lifecycle": e5_instances,
-        "active_mistake_prevention": e6_instances,
-        **agentic_buckets,
+        "floor_gaps": floor_gaps,
+        **capped_buckets,
     }
 
 
