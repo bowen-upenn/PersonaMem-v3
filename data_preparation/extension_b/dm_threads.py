@@ -141,13 +141,37 @@ def generate_dm_threads(
         last = msgs[-1]
         last_sender = last["sender"]
         latest_ts = max(int(m.get("timestamp") or 0) for m in msgs)
-        # Interaction-type heuristic unchanged from the previous mirror path.
-        if last_sender == "self":
+        # Interaction-type rules:
+        #   implicit_negative → DM from a stranger with NO user response
+        #   implicit_positive → DM from a friend with NO user response
+        #   explicit_positive → user responded positively (positive reply,
+        #                       liked, like-equivalent emoji)
+        #   implicit_positive → user responded but not positively (still
+        #                       engagement, just neutral/lukewarm)
+        # If the thread has only self messages (outbound), it's an
+        # explicit_positive outreach — the user is initiating contact.
+        non_self_msgs = [m for m in msgs if m.get("sender") != "self"]
+        self_msgs = [m for m in msgs if m.get("sender") == "self"]
+        if not non_self_msgs:
+            # Outbound — user-initiated. Treat as explicit_positive.
             interaction_type = "explicit_positive"
-        elif any(p.get("friend_id") == last_sender for p in friends or []):
-            interaction_type = "implicit_positive"
         else:
-            interaction_type = "implicit_negative"
+            initiator = non_self_msgs[0].get("sender")
+            initiator_is_friend = any(
+                fr.get("friend_id") == initiator for fr in (friends or [])
+            )
+            if not self_msgs:
+                # User did not respond.
+                interaction_type = (
+                    "implicit_positive" if initiator_is_friend
+                    else "implicit_negative"
+                )
+            else:
+                # User responded — check polarity.
+                interaction_type = (
+                    "explicit_positive" if _self_responded_positively(self_msgs)
+                    else "implicit_positive"
+                )
         merged_events.append({
             "source_object_id": tid,
             "source_timestamp": latest_ts,
@@ -181,6 +205,33 @@ def generate_dm_threads(
             "preferences": [],
         })
     return merged_events
+
+
+# Tokens that a self message must carry to count as a "positive response".
+# Captures explicit reply text + like / heart / laugh emoji equivalents.
+_POSITIVE_TOKENS = (
+    "lol", "haha", "lmao", "lmfao", "yes", "yeah", "yep", "yup",
+    "love it", "love this", "loved it", "love that",
+    "sounds good", "sounds great", "sg", "looks good",
+    "nice", "amazing", "awesome", "great", "cool", "perfect", "fantastic",
+    "agreed", "for sure", "definitely", "absolutely", "exactly",
+    "thanks", "thank you", "ty", "tysm", "appreciate",
+    "down", "i'm in", "let's go", "bet", "fr", "facts",
+    "❤", "🧡", "💛", "💚", "💙", "💜", "🤍",
+    "👍", "👌", "🙌", "🔥", "💯",
+    "😂", "🤣", "😆", "😄", "😊", "🥰", "😍", "🤩",
+)
+
+
+def _self_responded_positively(self_msgs: list[dict]) -> bool:
+    """True if any self-message contains a positive token (text reply,
+    like, like-equivalent emoji). Heuristic-only — covers the user's
+    rule: 'positive reply, liked, other emoji similar to like'."""
+    for m in self_msgs:
+        text = (m.get("text") or "").lower()
+        if any(tok in text for tok in _POSITIVE_TOKENS):
+            return True
+    return False
 
 
 def _resolve_relationship(sender_id: str, friends: list[dict]) -> str:
