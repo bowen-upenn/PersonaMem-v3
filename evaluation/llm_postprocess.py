@@ -64,29 +64,248 @@ _PERSONALIZATION_TASKS = {
 
 
 # ---------------------------------------------------------------------------
+# NEW pass — LLM-generate concrete example_response for tasks where the
+# extractor returned meta-instruction text. The extractor in visualize.py
+# emits things like "A natural conversational answer to the user's question
+# that implicitly weaves in the held-out preference where it fits." — those
+# are rubric guidance, not gold answers. This pass replaces them with
+# concrete text grounded in the user's data.
+#
+# Ranking tasks (slate, recommendation, at_ai_directive, lifecycle) are
+# handled deterministically (compute the actual ranked index list) — no
+# LLM needed for those.
+# ---------------------------------------------------------------------------
+
+# Tasks whose example_response the extractor emits as concrete text
+# (already real). These get SKIPPED by the LLM-gen pass.
+_TASKS_ALREADY_CONCRETE = {
+    "agentic_user_voice_post",
+    "agentic_moment_recommendation",
+    "agentic_dm_digest",
+    "agentic_cross_app_repost",
+    "agentic_auto_reply",
+    "agentic_vague_refind",
+    "agentic_composed_post",
+    "agentic_chatbot_dispatch",
+    "agentic_collection_curation",
+    "agentic_group_dm_summary",
+    "agentic_wrong_recipient_check",
+    "agentic_proactive_daily_catchup",
+    "agentic_trending_alert",
+}
+
+# Ranking tasks — example_response is a deterministic ranked index list,
+# computed without LLM.
+_RANKING_TASKS = {
+    "personalized_feed_ranking",
+    "personalized_recommendation",
+    "at_ai_directive_followup",
+    "short_vs_long_term_lifecycle",
+}
+
+
+_EXAMPLE_GEN_PROMPT = """You are writing the GOLD REFERENCE response that an \
+ideal personalized AI agent would emit for a benchmark test instance.
+
+Task type: {task_type}
+{task_guidance}
+
+User query / trigger:
+\"\"\"{query}\"\"\"
+
+Persona signal the agent may draw on (REAL data):
+\"\"\"{groundtruth}\"\"\"
+{prior}
+Write the actual response — natural, concrete, the words the agent would say.
+{length_guidance}
+
+Output ONE fenced ```json block:
+```json
+{{"text": "<the actual gold response — not a description of one>"}}
+```"""
+
+
+_TASK_GUIDANCE: dict[str, str] = {
+    "chatbot_proactive_personalization": (
+        "The user's question implicitly invites the held-out preference. "
+        "Weave it in naturally — never parrot the preference verbatim."
+    ),
+    "over_personalization_chatbot_text": (
+        "The user's question is generic. Answer it helpfully WITHOUT "
+        "surfacing any of the user's personal preferences."
+    ),
+    "over_personalization_distractor_reject": (
+        "The user's question is generic. Answer it helpfully WITHOUT "
+        "surfacing any of the user's personal preferences."
+    ),
+    "preference_removal_regen": (
+        "The user previously asked you to forget the listed preference. "
+        "Answer the question WITHOUT drawing on it; produce a "
+        "substantively different response."
+    ),
+    "context_shift_scenarios": (
+        "The user's context has shifted. Answer the question respecting "
+        "the carve-out — do NOT surface forbidden_items even if they "
+        "would normally fit the user's profile."
+    ),
+    "repetition_fatigue_pairs": (
+        "Output two very short responses, one for t_early (showing the "
+        "PRE-dominant category) and one for t_late (showing the SHIFT "
+        "category). Format: 'Early: ...' / 'Late: ...'."
+    ),
+    "repetition_fatigue_sequences": (
+        "Output a short paragraph showing the agent varies which "
+        "preferences it surfaces across the sequence — name 2-3 "
+        "different categories rotated turn-to-turn."
+    ),
+    "active_mistake_prevention": (
+        "If polarity=warn: write a respectful warning that flags the "
+        "cross-signal contradiction — name the concern, mention items in "
+        "must_mention, avoid items in must_not_mention. "
+        "If polarity=foil: write a helpful answer with NO warning."
+    ),
+    "daily_personalized_briefing": (
+        "Write a 3-5 item morning briefing that references hashtags / "
+        "topics from gt_positive_engagements (post-t_test real engagement) "
+        "and AVOIDS topics from gt_avoid_engagements. Tone: light, "
+        "conversational. Each item ≤ 1 sentence."
+    ),
+}
+
+
+def _length_guidance(task_type: str) -> str:
+    if task_type == "chatbot_proactive_personalization":
+        return "Length: 2–3 sentences."
+    if task_type in ("over_personalization_chatbot_text",
+                     "over_personalization_distractor_reject"):
+        return "Length: 1–3 sentences."
+    if task_type == "daily_personalized_briefing":
+        return "Length: 3–5 short bullet items."
+    if task_type == "repetition_fatigue_pairs":
+        return "Length: 2 short labelled lines."
+    if task_type == "active_mistake_prevention":
+        return "Length: 1–3 sentences."
+    return "Length: 1–4 sentences."
+
+
+def _generate_example_response(llm: Callable[[str], str],
+                               task_type: str, query: str,
+                               groundtruth_preference: str,
+                               prior_conversation: list | None) -> str | None:
+    if not llm:
+        return None
+    guidance = _TASK_GUIDANCE.get(task_type, "")
+    prior = ""
+    if prior_conversation:
+        # Compact prior turns for context. Use the last 4 turns max.
+        turns = prior_conversation[-4:] if isinstance(prior_conversation, list) else []
+        turn_strs = []
+        for t in turns:
+            role = t.get("role", "?") if isinstance(t, dict) else "?"
+            content = (t.get("content") if isinstance(t, dict) else str(t)) or ""
+            turn_strs.append(f"  {role}: {content[:120]}")
+        if turn_strs:
+            prior = "\nPrior conversation:\n" + "\n".join(turn_strs) + "\n"
+    raw = llm(_EXAMPLE_GEN_PROMPT.format(
+        task_type=task_type,
+        task_guidance=guidance,
+        query=(query or "")[:1200],
+        groundtruth=(groundtruth_preference or "")[:800],
+        prior=prior,
+        length_guidance=_length_guidance(task_type),
+    ))
+    parsed = extract_json_from_response(raw) or {}
+    text = parsed.get("text")
+    if isinstance(text, str) and text.strip():
+        return text.strip()
+    return None
+
+
+def _compute_ranking_example(inst: dict, task_type: str) -> str:
+    """Deterministic ranked-index 'example_response' for ranking tasks.
+    Returns a compact list of ints with the held-out at rank 1, hard
+    negatives last, fillers in between."""
+    if task_type == "personalized_feed_ranking":
+        slate = inst.get("slate") or []
+        held = inst.get("held_out_idx")
+        origins = inst.get("origin_by_idx") or []
+        if not isinstance(held, int) or not slate:
+            return ""
+        # Order: held-out → past_positive → future_positive → others → negative last
+        n = len(slate)
+        priority = {"held_out": 0, "past_positive": 1, "future_positive": 2,
+                    "filler": 3, "irrelevant": 3, "hard_neg": 4, "negative": 5}
+        order = sorted(
+            range(n),
+            key=lambda i: (priority.get(origins[i] if i < len(origins) else "filler", 3),
+                          0 if i == held else 1, i),
+        )
+        return f"Ranked indexes: {order}"
+    if task_type == "personalized_recommendation":
+        cands = inst.get("candidates") or []
+        held = inst.get("held_out_idx")
+        hard_negs = set(inst.get("hard_negative_idxs") or [])
+        n = len(cands)
+        if not isinstance(held, int) or not cands:
+            return ""
+        order = [held] + [i for i in range(n)
+                          if i != held and i not in hard_negs] + sorted(hard_negs)
+        return f"Ranked indexes: {order}"
+    if task_type == "at_ai_directive_followup":
+        cands = inst.get("candidates") or []
+        pos = list(inst.get("positive_indices") or [])
+        carve = set(inst.get("carveout_indices") or [])
+        n = len(cands)
+        order = pos + [i for i in range(n) if i not in set(pos) and i not in carve]
+        order += sorted(carve)
+        return f"Ranked indexes: {order}"
+    if task_type == "short_vs_long_term_lifecycle":
+        cands = inst.get("candidates") or []
+        matching = list(inst.get("matching_indices") or [])
+        n = len(cands)
+        order = matching + [i for i in range(n) if i not in set(matching)]
+        return f"Ranked indexes: {order}"
+    return ""
+
+
+# ---------------------------------------------------------------------------
 # Workstream I — self-check prompt
 # ---------------------------------------------------------------------------
 
 _SELF_CHECK_PROMPT = """You are scoring a candidate "gold reference" agent response \
 against the rubric `avoid_overpersonalization`.
 
-The rubric asks: did the response avoid surfacing user preferences that \
-aren't relevant to this specific query? Penalize dragging in unrelated \
-hobbies, topics, demographic facts, or recurring interests when the \
-query doesn't call for them.
+IMPORTANT — read the task framing first. The rubric only fires when the agent \
+surfaces preferences that AREN'T relevant to the query. For some tasks \
+personalization IS the point and should NOT be penalized:
+  - "compose a post in the user's voice"        → using the user's hashtags is correct.
+  - "summarize the user's DMs"                  → mentioning topics from real DMs is correct.
+  - "recommend something for {{moment}}"        → drawing on user's known interests is correct.
+  - "curate a collection of saves"              → grouping by user's top categories is correct.
+  - "alert about trending topics user cares about" → listing matched user interests is correct.
+  - "auto-reply to a friend's DM"               → matching user's voice register is correct.
+
+For these tasks, score HIGH if the response uses the persona signal in a way \
+the task explicitly asked for, and only score LOW if it crams in unrelated \
+preferences (e.g. mentioning "boxing fandom" in an out-of-office reply).
+
+For tasks that don't call for personalization (generic factual queries, \
+restraint probes, refind on a non-user topic, scenarios, etc.), penalize \
+ANY personalization leak.
 
 Score 0 (worst) to 3 (best):
-  3 = perfectly restrained; preferences only when truly relevant.
-  2 = mostly restrained; one minor over-personalization that doesn't dominate.
-  1 = visible over-personalization; unrelated interests dragged in.
-  0 = response is dominated by irrelevant personal trivia.
+  3 = task-appropriate; persona used only as far as the task asks for.
+  2 = mostly appropriate; one minor stretch.
+  1 = visible over-personalization beyond what the task calls for.
+  0 = response is dominated by personal trivia the task didn't request.
 
 Respond with ONE fenced ```json block:
 ```json
-{{"score": <0..3>, "reason": "<one short sentence>"}}
+{{"score": <0..3>, "reason": "<one short sentence including whether the task itself called for personalization>"}}
 ```
 
-User query: {query}
+Task type: {task_type}
+User query / trigger: {query}
 
 Candidate gold response:
 \"\"\"
@@ -94,11 +313,14 @@ Candidate gold response:
 \"\"\""""
 
 
-def _run_self_check(llm: Callable[[str], str], query: str, response: str) -> dict:
+def _run_self_check(llm: Callable[[str], str], task_type: str, query: str, response: str) -> dict:
     if not llm or not response:
         return {"score": 3, "passed": True, "reason": "(no llm available; defaulted to pass)"}
-    raw = llm(_SELF_CHECK_PROMPT.format(query=(query or "")[:1500],
-                                        response=response[:1500]))
+    raw = llm(_SELF_CHECK_PROMPT.format(
+        task_type=task_type or "unknown",
+        query=(query or "")[:1500],
+        response=response[:1500],
+    ))
     parsed = extract_json_from_response(raw) or {}
     score = parsed.get("score")
     if not isinstance(score, (int, float)):
@@ -117,8 +339,12 @@ def _run_self_check(llm: Callable[[str], str], query: str, response: str) -> dic
 _FLAW_KINDS = ("incorrect_personalization", "disliked_recent", "over_personalization")
 
 _INFERIOR_PROMPT = """You are creating a paired *foil* response that mirrors a \
-gold reference response but introduces ONE specific flaw — preserving the \
-gold's length, tone, sentence count, and structure.
+gold reference response but MUST introduce ONE specific flaw — preserving \
+the gold's length, tone, sentence count, and structure.
+
+CRITICAL: The foil MUST be visibly different from the gold. If you can't see \
+where to make the change, expand the relevant span (one short clause max) \
+to include the flaw — but do not make the foil substantially longer.
 
 Gold reference:
 \"\"\"
@@ -128,11 +354,34 @@ Gold reference:
 Flaw kind: {flaw_kind}
 {flaw_instruction}
 
-Rewrite the gold reference, changing ONLY the detail above. Do not \
-introduce any other changes. Output ONE fenced ```json block:
+Rules:
+  - Make exactly ONE substantive modification: insert, replace, or augment \
+    the targeted detail.
+  - The foil must be a *worse* response than the gold along the
+    `avoid_overpersonalization` rubric — a reasonable reviewer should rate
+    the gold higher.
+  - Keep all other aspects (length, tone, structure, sentence count, hashtag
+    style) identical.
+  - Do NOT add disclaimers, parenthetical notes, or commentary about the change.
+
+Output ONE fenced ```json block:
 ```json
-{{"text": "<the rewritten foil response>"}}
+{{"text": "<the rewritten foil response — clearly different from the gold>"}}
 ```"""
+
+
+def _texts_too_similar(a: str, b: str) -> bool:
+    """True if rewrite is byte-identical or trivially close (≤2 char delta)
+    on responses ≥ 30 chars. Used to detect when the LLM failed to introduce
+    a real change."""
+    a, b = (a or "").strip(), (b or "").strip()
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    if len(a) >= 30 and abs(len(a) - len(b)) <= 2 and a[:30] == b[:30] and a[-15:] == b[-15:]:
+        return True
+    return False
 
 
 def _flaw_instruction(flaw_kind: str, evidence: dict) -> str:
@@ -199,9 +448,19 @@ def _generate_inferior(llm: Callable[[str], str], response: str,
         flaw_kind=flaw_kind,
         flaw_instruction=_flaw_instruction(flaw_kind, evidence),
     )
-    raw = llm(prompt)
-    parsed = extract_json_from_response(raw) or {}
-    return parsed.get("text") or None
+    # Try up to 2x — sometimes the model copies the original verbatim
+    # because the response is short / structured. Retry with a stronger
+    # nudge on the second attempt.
+    for attempt in range(2):
+        raw = llm(prompt if attempt == 0 else prompt + (
+            "\n\nReminder: your previous attempt was identical to the gold. "
+            "You MUST make a visible textual change introducing the flaw."
+        ))
+        parsed = extract_json_from_response(raw) or {}
+        text = parsed.get("text") or None
+        if text and not _texts_too_similar(response, text):
+            return text
+    return None
 
 
 def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
@@ -255,6 +514,8 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
     instances in place; returns the same dict for chaining.
     """
     rng = random.Random(rng_seed or hash(user_id) % (2**31))
+    n_example_llm_gen = 0
+    n_example_ranking = 0
     n_self_check = 0
     n_self_check_failed = 0
     n_inferior_built = 0
@@ -288,24 +549,54 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             except Exception:
                 gt_out = {}
             example = (gt_out.get("example_response") or "").strip()
+            groundtruth = gt_out.get("groundtruth_preference") or ""
             inst["example_response"] = example
-            inst["groundtruth_preference"] = gt_out.get("groundtruth_preference") or ""
+            inst["groundtruth_preference"] = groundtruth
             if "tool_call" in gt_out:
                 inst["tool_call"] = gt_out["tool_call"]
+
+            # NEW pass: replace meta-instruction example_response with a
+            # concrete one. Three dispatch paths:
+            #   - already-concrete: skip (agentic builders already write
+            #     real text via the persona-context templates).
+            #   - ranking task: deterministic compute (no LLM).
+            #   - everything else (chatbot, restraint, scenarios, E3/E6):
+            #     LLM-generate from the persona signal in groundtruth.
+            user_query = inst.get("user_query") or inst.get("query") or ""
+            prior_conv = inst.get("prior_conversation")
+            if task_id in _RANKING_TASKS:
+                ranked = _compute_ranking_example(inst, task_id)
+                if ranked:
+                    example = ranked
+                    inst["example_response"] = example
+                    n_example_ranking += 1
+            elif task_id not in _TASKS_ALREADY_CONCRETE and self_check_llm is not None:
+                # Reuse the same LLM client for example-gen.
+                generated = _generate_example_response(
+                    self_check_llm, task_id, user_query, groundtruth, prior_conv,
+                )
+                if generated:
+                    example = generated
+                    inst["example_response"] = example
+                    n_example_llm_gen += 1
+
             if not example:
                 continue
 
             # Workstream I: self-check
             if self_check_llm is not None:
                 user_query = inst.get("user_query") or inst.get("query") or ""
-                check = _run_self_check(self_check_llm, user_query, example)
+                check = _run_self_check(self_check_llm, task_id, user_query, example)
                 inst["example_response_self_check"] = check
                 n_self_check += 1
                 if not check.get("passed", True):
                     n_self_check_failed += 1
 
-            # Workstream J: inferior_response
-            if inferior_llm is not None and inst.get("arm") != "overpersonalization":
+            # Workstream J: inferior_response. Skip for chatbot restraint-arm
+            # instances (control/adversarial/stale) where the gold response
+            # is intentionally generic — no inferior pair makes sense.
+            arm = inst.get("arm") or "proactive"
+            if inferior_llm is not None and arm in ("proactive", "contradiction"):
                 t_test = int(inst.get("t_test") or 0)
                 if t_test not in _ctx_cache:
                     _ctx_cache[t_test] = _build_persona_ctx(bq, user_id, t_test)
@@ -337,11 +628,14 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     n_inferior_skipped += 1
 
     if verbose:
-        print(f"[llm_postprocess] self_check={n_self_check} "
-              f"self_check_failed={n_self_check_failed} "
+        print(f"[llm_postprocess] example_llm_gen={n_example_llm_gen} "
+              f"example_ranking={n_example_ranking} "
+              f"self_check={n_self_check} self_check_failed={n_self_check_failed} "
               f"inferior_built={n_inferior_built} "
               f"inferior_skipped={n_inferior_skipped}")
     bm["postprocess_stats"] = {
+        "example_llm_gen": n_example_llm_gen,
+        "example_ranking": n_example_ranking,
         "self_check_total": n_self_check,
         "self_check_failed": n_self_check_failed,
         "inferior_built": n_inferior_built,
