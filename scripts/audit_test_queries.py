@@ -38,6 +38,7 @@ from evaluation.audit_rules import (
     task_count_table,
     TASK_TARGETS,
 )
+from evaluation.task_distribution import DATA_DEPENDENT_TASKS
 
 
 def _load_records(test_json_path: str) -> list[dict]:
@@ -52,9 +53,11 @@ def _ascii_bar(n: int, max_n: int, width: int = 40) -> str:
     return "█" * fill + "·" * (width - fill)
 
 
-def _flag_marker(n: int, lo: int, hi: int) -> str:
+def _flag_marker(n: int, lo: int, hi: int, tt: str = "") -> str:
     if hi == 0 and n == 0:
         return ""  # task type not in TASK_TARGETS — silent
+    if tt in DATA_DEPENDENT_TASKS and n < lo:
+        return "data-dependent"
     if n < lo:
         return f"⚠ under min ({lo})"
     if n > hi:
@@ -86,7 +89,7 @@ def _render_markdown(records: list[dict], findings: list[Finding], phase: str) -
     max_n = max((n for _, n, _, _ in rows), default=1)
     for tt, n, lo, hi in rows:
         bar = _ascii_bar(n, max_n)
-        flag = _flag_marker(n, lo, hi)
+        flag = _flag_marker(n, lo, hi, tt)
         lines.append(f"| `{tt}` | {n} | [{lo}, {hi}] | {flag} `{bar}` |")
     lines.append("")
 
