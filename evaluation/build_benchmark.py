@@ -1817,14 +1817,16 @@ def build_benchmark(
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
-    # Agentic tasks T6-T19. Three workstream interventions:
-    # - G: each builder's output is split into proactive + overpersonalization
-    #   arms via _agentic_split_arms.
-    # - E: builders that fix t_test=t_probe (T6/T7/T11/T12/T13/T15/etc.)
-    #   get their instances scattered across the observation window.
+    # Agentic tasks T6-T19.
+    # - E: builders that fix t_test=t_probe get their instances scattered
+    #   across the observation window.
     # - T18/T19 already scatter internally via _spread_anchors.
+    # The agentic over-personalization arm experiment was removed: the
+    # chatbot family already has dedicated `over_personalization_*` task
+    # types for restraint testing; sub-arming agentic tasks created
+    # identical example_responses across arms (the op-arm never produced
+    # a generic counterpart) so it added noise without signal.
     from evaluation.tasks.agentic_tasks import ALL_BUILDERS as _AGENTIC_BUILDERS
-    from evaluation.tasks.agentic_tasks import _split_arms as _agentic_split_arms
     agentic_buckets: dict[str, list[dict]] = {}
     for task_id, builder in _AGENTIC_BUILDERS.items():
         try:
@@ -1835,7 +1837,7 @@ def build_benchmark(
                 anchors = _task_dist.spread_anchors(bq, user_id, t_probe, n=len(proactive))
                 for j, inst in enumerate(proactive):
                     inst["t_test"] = anchors[j]
-            agentic_buckets[task_id] = _agentic_split_arms(proactive, task_id)
+            agentic_buckets[task_id] = proactive
         except Exception as exc:
             agentic_buckets[task_id] = []
             print(f"[build_benchmark] WARN: {task_id} builder failed: {exc}")

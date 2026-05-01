@@ -34,14 +34,25 @@ _TASK_ID = "personalized_recommendation"
 
 
 def _content_summary(e: dict) -> dict:
-    """Compact projection for a candidate slate item."""
+    """Compact projection for a candidate slate item.
+
+    Falls back through title → caption → first hashtag → "post on
+    {app}" so no candidate ever renders as an empty `<item>` placeholder
+    in the user-facing query string."""
     content = e.get("content") or {}
+    hashtags = list(e.get("source_hashtags") or [])[:8]
+    app = e.get("_app", "")
+    title = (content.get("title") or content.get("caption") or "").strip()
+    if not title and hashtags:
+        title = " ".join(h.lstrip("#") for h in hashtags[:3])
+    if not title:
+        title = f"post on {app}" if app else "post"
     return {
         "source_object_id": e.get("source_object_id", ""),
-        "title": (content.get("title") or content.get("caption") or "")[:120],
+        "title": title[:120],
         "caption": (content.get("caption") or "")[:200],
-        "hashtags": list(e.get("source_hashtags") or [])[:8],
-        "source_app": e.get("_app", ""),
+        "hashtags": hashtags,
+        "source_app": app,
         "source_timestamp": int(e.get("source_timestamp") or 0),
     }
 
