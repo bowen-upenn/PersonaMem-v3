@@ -1900,7 +1900,9 @@ def build_benchmark(
         "preference_removal_regen":               c4_instances,
         "at_ai_directive_followup":               e2_instances,
         "daily_personalized_briefing":            e3_instances,
-        "personalized_search_ranking":            e4_instances,
+        # workstream D: e4 builder now emits the personalized_recommendation
+        # task_type. Old name retained as alias via OLD_TO_NEW for legacy CSVs.
+        "personalized_recommendation":            e4_instances,
         "short_vs_long_term_lifecycle":           e5_instances,
         "active_mistake_prevention":              e6_instances,
         **agentic_buckets,
