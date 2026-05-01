@@ -1,0 +1,432 @@
+"""Modular audit rules for backend/{uid}/test.json.
+
+Each rule consumes a record dict (one entry from test.json) and returns
+zero or more Finding objects. The audit driver iterates rules over
+records and aggregates findings.
+
+Distribution checks operate on the FULL list of records and live below
+the per-record rules.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, asdict
+from collections import Counter
+from typing import Iterable
+
+
+@dataclass
+class Finding:
+    query_id: str
+    task_type: str
+    severity: str          # "high" | "medium" | "low"
+    rule: str              # short identifier — used to group in the report
+    message: str
+    suggested_action: str  # "regenerate" | "drop" | "review" | "rebalance"
+
+    def as_dict(self) -> dict:
+        return asdict(self)
+
+
+# ---------------------------------------------------------------------------
+# Per-record rules
+# ---------------------------------------------------------------------------
+
+# Task types that mimic a real user-typed message.
+_USER_QUERY_KINDS = {"user_query"}
+
+# Task types whose ground truth is a single ``held_out_preference`` the
+# agent's text response is graded against. Ranking tasks live in
+# _RANKING_TASKS below — they encode GT inside the slate / candidates
+# rather than a single held-out preference, so different rules apply.
+_REACTIVE_PERSONALIZATION_TASKS = {
+    "chatbot_proactive_personalization",
+    "preference_removal_regen",
+}
+
+# Ranking-style tasks: GT lives in slate / candidates / recent_pref_summary
+# rather than ``held_out_preference``. We check for those structures
+# separately.
+_RANKING_TASKS = {
+    "personalized_feed_ranking",
+    "at_ai_directive_followup",
+    "personalized_search_ranking",
+    "short_vs_long_term_lifecycle",
+}
+
+# Task types that test restraint and therefore need a populated distractor pool
+# (queries that the agent should NOT respond to with personalization).
+_RESTRAINT_TASKS = {
+    "over_personalization_chatbot_text",
+    "over_personalization_distractor_reject",
+    "context_shift_scenarios",
+    "repetition_fatigue_pairs",
+    "repetition_fatigue_sequences",
+}
+
+_AGENTIC_PRECONDITION_HINTS = {
+    "agentic_dm_digest":            ("≥2 DMs in t_test - 24h"),
+    "agentic_auto_reply":           ("a real inbound DM in the source data"),
+    "agentic_wrong_recipient_check":("≥2 friends with the same first name in profile.friends"),
+    "agentic_group_dm_summary":     ("a real group thread in the source DMs"),
+}
+
+
+def check_realism(record: dict) -> list[Finding]:
+    """Query text reads like a real user — not a template stub."""
+    out: list[Finding] = []
+    qk = record.get("query_kind")
+    text = (record.get("user_query") or "").strip()
+    if qk in _USER_QUERY_KINDS:
+        if len(text) < 10:
+            out.append(Finding(
+                record["query_id"], record["task_type"], "high", "realism_too_short",
+                f"user_query is only {len(text)} chars: {text!r}",
+                "regenerate",
+            ))
+        if "{" in text and "}" in text:
+            out.append(Finding(
+                record["query_id"], record["task_type"], "high", "realism_unfilled_template",
+                f"user_query still contains template placeholder: {text[:120]!r}",
+                "regenerate",
+            ))
+        if text.startswith("[") and "]" in text:
+            # synthetic [task tag] markers indicate the extractor fell through
+            # to a default — not a real user message.
+            out.append(Finding(
+                record["query_id"], record["task_type"], "medium", "realism_synthetic_marker",
+                f"user_query starts with synthetic marker: {text[:60]!r}",
+                "regenerate",
+            ))
+    return out
+
+
+def check_ground_truth_presence(record: dict) -> list[Finding]:
+    """Personalization tasks must carry a real ground-truth preference;
+    ranking tasks must carry a non-trivial slate / candidate set."""
+    out: list[Finding] = []
+    tt = record["task_type"]
+    if tt in _REACTIVE_PERSONALIZATION_TASKS:
+        gt = record.get("ground_truth_preference")
+        if not gt or not gt.get("persona_item"):
+            out.append(Finding(
+                record["query_id"], tt, "high", "ground_truth_missing",
+                "task is graded against a held-out preference, but none was attached",
+                "regenerate",
+            ))
+        return out
+    if tt in _RANKING_TASKS:
+        inst = record.get("instance_full") or {}
+        if tt == "personalized_feed_ranking":
+            slate = inst.get("slate") or []
+            if not slate:
+                out.append(Finding(
+                    record["query_id"], tt, "high", "ranking_slate_missing",
+                    "slate-ranking task has empty slate",
+                    "regenerate",
+                ))
+        elif tt in ("at_ai_directive_followup", "short_vs_long_term_lifecycle"):
+            candidates = inst.get("candidates") or []
+            if not candidates:
+                out.append(Finding(
+                    record["query_id"], tt, "high", "ranking_candidates_missing",
+                    "ranking task has empty candidates list",
+                    "regenerate",
+                ))
+        elif tt == "personalized_search_ranking":
+            summary = inst.get("recent_pref_summary") or []
+            if not summary:
+                out.append(Finding(
+                    record["query_id"], tt, "high", "ranking_pref_summary_missing",
+                    "search ranking has empty recent_pref_summary — no signal to rank against",
+                    "regenerate",
+                ))
+        return out
+    return out
+
+
+def check_reference_example_traceability(record: dict) -> list[Finding]:
+    """Every grounded personalization query must trace to a real evidence row."""
+    out: list[Finding] = []
+    tt = record["task_type"]
+    if tt not in _REACTIVE_PERSONALIZATION_TASKS:
+        return out
+    gt = record.get("ground_truth_preference")
+    if not gt:
+        return out  # already flagged by ground_truth_presence
+    ref = record.get("reference_example")
+    if ref is None:
+        out.append(Finding(
+            record["query_id"], tt, "high", "reference_example_missing",
+            f"held-out preference {gt.get('persona_item','')[:60]!r} has no traceable evidence row in the app JSONs",
+            "regenerate",
+        ))
+    return out
+
+
+def check_distractor_sanity(record: dict) -> list[Finding]:
+    """Restraint tasks need a populated do-not-surface pool."""
+    out: list[Finding] = []
+    distractors = record.get("distractor_preferences") or []
+    tt = record["task_type"]
+    if tt == "over_personalization_distractor_reject":
+        privacy = [d for d in distractors if d.get("role") == "privacy_flagged"]
+        if len(privacy) < 2:
+            out.append(Finding(
+                record["query_id"], tt, "high", "distractor_pool_too_small",
+                f"distractor_reject has {len(privacy)} privacy_flagged items (need ≥2)",
+                "regenerate",
+            ))
+    elif tt in _RESTRAINT_TASKS:
+        if not distractors:
+            out.append(Finding(
+                record["query_id"], tt, "medium", "distractor_pool_empty",
+                "restraint task has no distractor pool — restraint metric trivially passes",
+                "regenerate",
+            ))
+    elif tt == "personalized_feed_ranking":
+        inst = record.get("instance_full") or {}
+        slate = inst.get("slate") or []
+        if len(slate) < 5:
+            out.append(Finding(
+                record["query_id"], tt, "high", "slate_too_small",
+                f"ranking task slate has {len(slate)} candidates (need ≥5 distractors + GT)",
+                "regenerate",
+            ))
+    return out
+
+
+def check_label_honesty_blind_check(record: dict) -> list[Finding]:
+    """Generic queries leaking into the personalization bucket.
+
+    The user's central concern: a query labeled
+    `chatbot_proactive_personalization` may not actually require
+    personalization. We use the existing blind_check_score the build
+    pipeline already computes (0 = highly user-specific … 3 = generic
+    — the actual threshold the harness uses to split arms is 2).
+    """
+    out: list[Finding] = []
+    if record["task_type"] != "chatbot_proactive_personalization":
+        return out
+    inst = record.get("instance_full") or {}
+    score = inst.get("blind_check_score")
+    if score is not None and score >= 3:
+        out.append(Finding(
+            record["query_id"], record["task_type"], "high", "label_honesty_generic_query",
+            f"blind_check_score={score} — a user-blind LLM can answer this query just as well; "
+            f"this query does not require personalization and should not be in the personalization bucket",
+            "regenerate",
+        ))
+    return out
+
+
+def _hashtag_set(items: list) -> set[str]:
+    out: set[str] = set()
+    for h in items or []:
+        if not h:
+            continue
+        out.add(str(h).lower().lstrip("#"))
+    return out
+
+
+def check_label_honesty_held_out_relevance(record: dict) -> list[Finding]:
+    """Held-out preference's hashtags should overlap the query's
+    source_hashtags. If they don't, the held-out is unrelated to the
+    query and the personalization signal is fake."""
+    out: list[Finding] = []
+    if record["task_type"] != "chatbot_proactive_personalization":
+        return out
+    gt = record.get("ground_truth_preference")
+    inst = record.get("instance_full") or {}
+    if not gt:
+        return out
+    held_tags = _hashtag_set(gt.get("source_hashtags"))
+    src_tags = _hashtag_set(inst.get("source_hashtags"))
+    if not held_tags or not src_tags:
+        return out
+    inter = held_tags & src_tags
+    union = held_tags | src_tags
+    jaccard = len(inter) / len(union) if union else 0.0
+    if jaccard < 0.1:
+        out.append(Finding(
+            record["query_id"], record["task_type"], "medium",
+            "label_honesty_held_out_unrelated",
+            f"held-out hashtags {sorted(held_tags)[:3]} have Jaccard {jaccard:.2f} with "
+            f"query hashtags {sorted(src_tags)[:3]} — held-out is topically unrelated to the query",
+            "regenerate",
+        ))
+    return out
+
+
+def check_label_honesty_restraint_trap(record: dict) -> list[Finding]:
+    """over_personalization_chatbot_text: if the query already names the
+    held-out topic explicitly, restraint is impossible."""
+    out: list[Finding] = []
+    if record["task_type"] != "over_personalization_chatbot_text":
+        return out
+    gt = record.get("ground_truth_preference")
+    text = (record.get("user_query") or "").lower()
+    if not gt or not text:
+        return out
+    cat = (gt.get("category") or "").lower()
+    if cat and len(cat) > 3 and cat in text:
+        out.append(Finding(
+            record["query_id"], record["task_type"], "medium",
+            "label_honesty_restraint_trap",
+            f"user_query already names category {cat!r}; restraint cannot be measured",
+            "regenerate",
+        ))
+    return out
+
+
+def check_proactive_ground(record: dict) -> list[Finding]:
+    """E3/E4 require ≥3 prefs in the last-24h window or there's nothing
+    to personalize from."""
+    out: list[Finding] = []
+    tt = record["task_type"]
+    if tt not in {"daily_personalized_briefing", "personalized_search_ranking"}:
+        return out
+    inst = record.get("instance_full") or {}
+    recent = inst.get("recent_pref_summary") or inst.get("top_prefs") or []
+    if len(recent) < 3:
+        out.append(Finding(
+            record["query_id"], tt, "medium", "proactive_no_ground",
+            f"only {len(recent)} prefs in the last-24h window — not enough signal "
+            f"for a meaningful proactive recommendation",
+            "regenerate",
+        ))
+    return out
+
+
+def check_agentic_preconditions(record: dict) -> list[Finding]:
+    """Agentic tasks need their precondition (DM thread, name collision,
+    inbound message). Without it, the task instance is hollow."""
+    out: list[Finding] = []
+    tt = record["task_type"]
+    hint = _AGENTIC_PRECONDITION_HINTS.get(tt)
+    if hint is None:
+        return out
+    inst = record.get("instance_full") or {}
+    # Heuristic: the builder usually attaches a ``recent_dms`` /
+    # ``inbound_message`` / ``name_collision`` field when the precondition
+    # is met. Absence is the flag.
+    has_precondition = any(
+        inst.get(k) for k in ("recent_dms", "inbound_message", "name_collisions",
+                              "recent_dm_threads", "thread_messages", "sender_id",
+                              "draft", "candidate_recipients")
+    )
+    if not has_precondition:
+        out.append(Finding(
+            record["query_id"], tt, "medium", "agentic_precondition_missing",
+            f"agentic task missing its precondition ({hint})",
+            "regenerate",
+        ))
+    return out
+
+
+# Order matters only for output stability — all rules run on every record.
+_PER_RECORD_RULES = (
+    check_realism,
+    check_ground_truth_presence,
+    check_reference_example_traceability,
+    check_distractor_sanity,
+    check_label_honesty_blind_check,
+    check_label_honesty_held_out_relevance,
+    check_label_honesty_restraint_trap,
+    check_proactive_ground,
+    check_agentic_preconditions,
+)
+
+
+def run_per_record_rules(records: Iterable[dict]) -> list[Finding]:
+    findings: list[Finding] = []
+    for r in records:
+        for rule in _PER_RECORD_RULES:
+            findings.extend(rule(r))
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# Distribution checks (run over the full list)
+# ---------------------------------------------------------------------------
+
+# Per-task quotas — the Phase 2 target distribution recorded in the plan.
+TASK_TARGETS: dict[str, dict] = {
+    "chatbot_proactive_personalization":      {"min": 10, "max": 14},
+    "over_personalization_chatbot_text":      {"min": 10, "max": 14},
+    "over_personalization_distractor_reject": {"min": 10, "max": 14},
+    "personalized_feed_ranking":              {"min": 10, "max": 14},
+    "at_ai_directive_followup":               {"min": 8,  "max": 12},
+    "daily_personalized_briefing":            {"min": 8,  "max": 12},
+    "personalized_search_ranking":            {"min": 8,  "max": 12},
+    "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
+    "active_mistake_prevention":              {"min": 8,  "max": 12},
+    "preference_removal_regen":               {"min": 8,  "max": 12},
+    "repetition_fatigue_pairs":               {"min": 6,  "max": 10},
+    "repetition_fatigue_sequences":           {"min": 6,  "max": 10},
+    "context_shift_scenarios":                {"min": 6,  "max": 10},
+    "agentic_user_voice_post":                {"min": 5,  "max": 8},
+    "agentic_moment_recommendation":          {"min": 5,  "max": 8},
+    "agentic_dm_digest":                      {"min": 5,  "max": 8},
+    "agentic_cross_app_repost":               {"min": 5,  "max": 8},
+    "agentic_auto_reply":                     {"min": 5,  "max": 8},
+    "agentic_vague_refind":                   {"min": 5,  "max": 8},
+    "agentic_composed_post":                  {"min": 5,  "max": 8},
+    "agentic_chatbot_dispatch":               {"min": 5,  "max": 8},
+    "agentic_draft_audit":                    {"min": 5,  "max": 8},
+    "agentic_collection_curation":            {"min": 5,  "max": 8},
+    "agentic_group_dm_summary":               {"min": 5,  "max": 8},
+    "agentic_wrong_recipient_check":          {"min": 5,  "max": 8},
+    "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
+    "agentic_trending_alert":                 {"min": 5,  "max": 8},
+}
+
+
+def distribution_findings(records: list[dict]) -> list[Finding]:
+    """Per-task and cross-cutting distribution checks."""
+    findings: list[Finding] = []
+    counts = Counter(r["task_type"] for r in records)
+
+    # Per-task: under-min OR over-max
+    for tt, target in TASK_TARGETS.items():
+        n = counts.get(tt, 0)
+        lo, hi = target["min"], target["max"]
+        if n < lo:
+            findings.append(Finding(
+                "(distribution)", tt, "high", "distribution_under_min",
+                f"task_type {tt} has {n} instances; target floor is {lo}",
+                "rebalance",
+            ))
+        elif n > hi:
+            findings.append(Finding(
+                "(distribution)", tt, "low", "distribution_over_max",
+                f"task_type {tt} has {n} instances; target cap is {hi}",
+                "rebalance",
+            ))
+
+    # Cross-cutting: query_kind balance
+    qk_counts = Counter(r.get("query_kind") for r in records)
+    for kind in ("user_query", "agentic_task", "proactive_recommendation", "proactive_assistance"):
+        if qk_counts.get(kind, 0) < 5:
+            findings.append(Finding(
+                "(distribution)", "*", "medium", "query_kind_floor",
+                f"query_kind {kind!r} has {qk_counts.get(kind, 0)} instances (floor: 5)",
+                "rebalance",
+            ))
+
+    return findings
+
+
+def task_count_table(records: list[dict]) -> list[tuple[str, int, int, int]]:
+    """Return a per-task table: (task_type, count, target_min, target_max)
+    sorted by count descending. Used by the Markdown report."""
+    counts = Counter(r["task_type"] for r in records)
+    rows: list[tuple[str, int, int, int]] = []
+    for tt, n in counts.most_common():
+        target = TASK_TARGETS.get(tt) or {"min": 0, "max": 0}
+        rows.append((tt, n, target["min"], target["max"]))
+    # Append targets that didn't show up at all (zero instances)
+    for tt, target in TASK_TARGETS.items():
+        if tt not in counts:
+            rows.append((tt, 0, target["min"], target["max"]))
+    return rows

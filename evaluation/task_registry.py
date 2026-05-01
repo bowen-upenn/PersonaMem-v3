@@ -415,6 +415,96 @@ def get_meta(task_type: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Audit-side classification: how each task_type appears to the user and what
+# the agent is supposed to do. Kept separate from TASK_TYPE_META so the
+# dispatch fields stay focused. Used by `data_preparation/visualize.py`'s
+# test.json dump and by `scripts/audit_test_queries.py`.
+#
+# query_kind:
+#   user_query             — there is a literal user-typed message
+#   agentic_task           — task-driven (no user message; trigger context)
+#   proactive_recommendation — system pushes content (no user query)
+#   proactive_assistance   — system intervenes (audit/warn/dispatch)
+#
+# expected_behavior:
+#   personalize            — agent should weave in held-out preference
+#   restrain               — agent should NOT surface user-specific context
+#   proactive_recommend    — agent picks/ranks content for the user
+#   proactive_assist       — agent flags/asks/audits before user acts
+#   agentic_action         — agent executes a tool-call sequence
+# ---------------------------------------------------------------------------
+
+QUERY_KIND_BY_TASK: dict[str, str] = {
+    "personalized_feed_ranking":              "proactive_recommendation",
+    "chatbot_proactive_personalization":      "user_query",
+    "over_personalization_chatbot_text":      "user_query",
+    "repetition_fatigue_pairs":               "user_query",
+    "repetition_fatigue_sequences":           "user_query",
+    "context_shift_scenarios":                "user_query",
+    "over_personalization_distractor_reject": "user_query",
+    "preference_removal_regen":               "user_query",
+    "at_ai_directive_followup":               "user_query",
+    "daily_personalized_briefing":            "proactive_recommendation",
+    "personalized_search_ranking":            "user_query",
+    "short_vs_long_term_lifecycle":           "proactive_recommendation",
+    "active_mistake_prevention":              "proactive_assistance",
+    "agentic_user_voice_post":                "agentic_task",
+    "agentic_moment_recommendation":          "agentic_task",
+    "agentic_dm_digest":                      "agentic_task",
+    "agentic_cross_app_repost":               "agentic_task",
+    "agentic_auto_reply":                     "agentic_task",
+    "agentic_vague_refind":                   "user_query",
+    "agentic_composed_post":                  "agentic_task",
+    "agentic_chatbot_dispatch":               "user_query",
+    "agentic_draft_audit":                    "proactive_assistance",
+    "agentic_collection_curation":            "agentic_task",
+    "agentic_group_dm_summary":               "agentic_task",
+    "agentic_wrong_recipient_check":          "proactive_assistance",
+    "agentic_proactive_daily_catchup":        "proactive_recommendation",
+    "agentic_trending_alert":                 "proactive_recommendation",
+}
+
+
+EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
+    "personalized_feed_ranking":              "proactive_recommend",
+    "chatbot_proactive_personalization":      "personalize",
+    "over_personalization_chatbot_text":      "restrain",
+    "repetition_fatigue_pairs":               "restrain",
+    "repetition_fatigue_sequences":           "restrain",
+    "context_shift_scenarios":                "restrain",
+    "over_personalization_distractor_reject": "restrain",
+    "preference_removal_regen":               "restrain",
+    "at_ai_directive_followup":               "proactive_recommend",
+    "daily_personalized_briefing":            "proactive_recommend",
+    "personalized_search_ranking":            "proactive_recommend",
+    "short_vs_long_term_lifecycle":           "proactive_recommend",
+    "active_mistake_prevention":              "proactive_assist",
+    "agentic_user_voice_post":                "agentic_action",
+    "agentic_moment_recommendation":          "agentic_action",
+    "agentic_dm_digest":                      "agentic_action",
+    "agentic_cross_app_repost":               "agentic_action",
+    "agentic_auto_reply":                     "agentic_action",
+    "agentic_vague_refind":                   "agentic_action",
+    "agentic_composed_post":                  "agentic_action",
+    "agentic_chatbot_dispatch":               "agentic_action",
+    "agentic_draft_audit":                    "proactive_assist",
+    "agentic_collection_curation":            "agentic_action",
+    "agentic_group_dm_summary":               "agentic_action",
+    "agentic_wrong_recipient_check":          "proactive_assist",
+    "agentic_proactive_daily_catchup":        "proactive_recommend",
+    "agentic_trending_alert":                 "proactive_recommend",
+}
+
+
+def get_query_kind(task_type: str) -> str:
+    return QUERY_KIND_BY_TASK.get(task_type, "user_query")
+
+
+def get_expected_behavior(task_type: str) -> str:
+    return EXPECTED_BEHAVIOR_BY_TASK.get(task_type, "personalize")
+
+
+# ---------------------------------------------------------------------------
 # Primary-metric registry — picks the headline accuracy per task for the
 # token-vs-accuracy table emitted by `scripts/aggregate_eval.py`.
 #

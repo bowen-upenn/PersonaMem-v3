@@ -795,7 +795,12 @@ TEST_QUERY_EXTRACTORS = {
 }
 
 
-def _load_test_samples(uid: str, benchmark_dir: str = "benchmark", backend_dir: str = "backend") -> list[dict]:
+def _load_test_samples(
+    uid: str,
+    benchmark_dir: str = "benchmark",
+    backend_dir: str = "backend",
+    include_instance_full: bool = False,
+) -> list[dict]:
     """Walk benchmark/{uid}/queries.csv → list of test-sample dicts.
 
     Each test sample is rendered as a STANDALONE timeline card at its own
@@ -812,6 +817,12 @@ def _load_test_samples(uid: str, benchmark_dir: str = "benchmark", backend_dir: 
       query_text       — what the user (or the agent's prompt) effectively says
       ground_truth     — short blurb describing the expected answer
       rubric_tags      — list[str] of which rubric dimensions apply
+
+    When ``include_instance_full=True``, each sample also carries
+    ``instance_full`` — the parsed instance_json dict from the CSV row,
+    used by ``dump_test_samples_json`` so downstream tooling can read
+    every field the builder emitted (blind_check_score, arm, polarity,
+    etc.).
     """
     qcsv = os.path.join(benchmark_dir, str(uid), "queries.csv")
     out: list[dict] = []
@@ -869,8 +880,181 @@ def _load_test_samples(uid: str, benchmark_dir: str = "benchmark", backend_dir: 
                      "carve_out", "forbidden_items", "prior_conversation", "extra_meta"):
                 if k in gt:
                     sample[k] = gt[k]
+            if include_instance_full:
+                sample["instance_full"] = inst
             out.append(sample)
     return out
+
+
+# ---------------------------------------------------------------------------
+# Phase 1.A — test.json dump
+#
+# Re-uses _load_test_samples and enriches each sample with:
+#   - query_kind, expected_behavior        (from evaluation.task_registry)
+#   - ground_truth_preference (normalized)
+#   - reference_example       (looked up in the app JSONs by persona_item)
+#   - distractor_preferences  (normalized union of top_k_relevant /
+#     correct_but_irrelevant_prefs / irrelevant_persona_items, each
+#     tagged with `role`)
+#   - instance_full           (pass-through of the original instance_json)
+# ---------------------------------------------------------------------------
+
+def _normalize_held_out(sample: dict) -> dict | None:
+    """Pull the held-out preference into a canonical {persona_item,
+    category, polarity, source_hashtags} shape — or None if there isn't
+    one for this task type."""
+    inst = sample.get("instance_full") or {}
+    held_obj = inst.get("held_out_preference") or {}
+    if not held_obj:
+        # Some extractors put it under held_out_pref (already-stringified)
+        # — fall back to that, but it loses category/polarity info.
+        held_str = sample.get("held_out_pref")
+        if not held_str:
+            return None
+        return {
+            "persona_item": held_str,
+            "category": "",
+            "polarity": "positive",
+            "source_hashtags": inst.get("source_hashtags") or [],
+        }
+    pi = held_obj.get("persona_item") or ""
+    if not pi:
+        return None
+    return {
+        "persona_item": pi,
+        "category": held_obj.get("category") or "",
+        "polarity": held_obj.get("polarity") or "positive",
+        "source_hashtags": held_obj.get("source_hashtags") or inst.get("source_hashtags") or [],
+    }
+
+
+def _find_reference_example(uid: str, persona_item: str, t_test: int,
+                            backend_dir: str = "backend") -> dict | None:
+    """Walk app JSONs and return the closest-by-timestamp event that
+    contains a preference whose persona_item matches. Returns a compact
+    evidence record (the full event would be too heavy)."""
+    if not persona_item:
+        return None
+    user_dir = Path(backend_dir) / str(uid)
+    best: tuple[int, dict, str] | None = None  # (abs_dt, event, app)
+    for app in APPS:
+        p = user_dir / (app.lower() + ".json")
+        if not p.exists():
+            continue
+        try:
+            evs = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in evs:
+            for pref in (e.get("preferences") or []):
+                if (pref.get("persona_item") or "").strip().lower() == persona_item.strip().lower():
+                    ts = int(e.get("source_timestamp") or 0)
+                    dt = abs(ts - t_test)
+                    if best is None or dt < best[0]:
+                        best = (dt, e, app)
+                    break
+    if best is None:
+        return None
+    _, ev, app = best
+    content = ev.get("content") or {}
+    snippet = content.get("caption") or content.get("title") or content.get("overall_description") or ""
+    return {
+        "source_object_id": ev.get("source_object_id", ""),
+        "source_app": app,
+        "source_timestamp": ev.get("source_timestamp", 0),
+        "source_hashtags": ev.get("source_hashtags") or [],
+        "interaction_format": ev.get("interaction_format") or {},
+        "content_snippet": _truncate(snippet, 200),
+    }
+
+
+def _normalize_distractors(sample: dict) -> list[dict]:
+    """Merge the various near-miss / irrelevant / privacy-flagged pools
+    into a single list of {persona_item, category, polarity, role}."""
+    out: list[dict] = []
+    seen: set[str] = set()
+
+    def _push(items, role):
+        for it in items or []:
+            if isinstance(it, dict):
+                pi = it.get("persona_item") or ""
+                cat = it.get("category") or ""
+                pol = it.get("polarity") or "positive"
+            else:
+                pi = str(it or "")
+                cat = ""
+                pol = "positive"
+            if not pi or pi in seen:
+                continue
+            seen.add(pi)
+            out.append({
+                "persona_item": pi,
+                "category": cat,
+                "polarity": pol,
+                "role": role,
+            })
+
+    _push(sample.get("top_k_relevant"), "near_miss")
+    _push(sample.get("correct_but_irrelevant_prefs"), "irrelevant")
+    _push(sample.get("irrelevant_persona_items"), "privacy_flagged")
+    # forbidden_items can also act as a do-not-surface pool for C2
+    _push(sample.get("forbidden_items"), "privacy_flagged")
+    return out
+
+
+def dump_test_samples_json(
+    uid: str,
+    output_path: str | None = None,
+    benchmark_dir: str = "benchmark",
+    backend_dir: str = "backend",
+) -> str:
+    """Build backend/{uid}/test.json — every test query in one place.
+
+    See the plan in /vast/home/b/bwjiang/.claude/plans/ for the schema.
+    """
+    from evaluation import task_registry as _tr
+
+    samples = _load_test_samples(uid, benchmark_dir, backend_dir, include_instance_full=True)
+    records: list[dict] = []
+    for s in samples:
+        task_type = s["task_type"]
+        inst = s.get("instance_full") or {}
+        held = _normalize_held_out(s)
+        ref_ex = _find_reference_example(
+            uid,
+            held["persona_item"] if held else "",
+            int(s.get("ts") or 0),
+            backend_dir=backend_dir,
+        ) if held else None
+        record = {
+            "query_id": s.get("query_id", ""),
+            "task_family": s.get("task_family", ""),
+            "task_type": task_type,
+            "query_kind": _tr.get_query_kind(task_type),
+            "expected_behavior": _tr.get_expected_behavior(task_type),
+            "ts": s.get("ts", 0),
+            "ts_iso": s.get("ts_iso", ""),
+            "user_query": s.get("query_text") or None,
+            "prior_conversation": s.get("prior_conversation"),
+            "ground_truth_preference": held,
+            "reference_answer": None,  # reserved for Phase 2
+            "reference_example": ref_ex,
+            "distractor_preferences": _normalize_distractors(s),
+            "rubric_tags": s.get("rubric_tags") or [],
+            "instance_full": inst,
+        }
+        # Compact: drop empty optional fields so the file stays readable.
+        for k in ("prior_conversation",):
+            if record[k] in (None, [], {}):
+                record[k] = None
+        records.append(record)
+
+    if output_path is None:
+        output_path = os.path.join(backend_dir, str(uid), "test.json")
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2, ensure_ascii=False)
+    return output_path
 
 
 def _load_app_events(user_dir: str) -> tuple[list[dict], list[dict]]:
