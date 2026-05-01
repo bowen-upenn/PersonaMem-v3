@@ -356,17 +356,40 @@ def prepare_one(
               f"not in TASK_TYPE_META — register them in "
               f"evaluation/task_registry.py: {sorted(unknown_task_types)}")
 
-    # Phase 1.A: emit backend/{uid}/test.json — every query in one place,
-    # for review + audit. Cheap, no LLM calls.
+    # One-shot post-write artifacts: test.json dump, persona.html
+    # re-render (so the timeline reflects the new buckets), and a
+    # snapshot audit. All cheap, no LLM calls — kept inline so a
+    # single ``prepare_eval_data.py`` invocation produces every artifact
+    # a reviewer might want, no follow-up commands needed.
     test_json_path: str | None = None
+    persona_html_path: str | None = None
+    audit_md_path: str | None = None
+
     try:
-        from data_preparation.visualize import dump_test_samples_json
+        from data_preparation.visualize import dump_test_samples_json, generate_persona_html
         test_json_path = dump_test_samples_json(user_id)
         if verbose:
             print(f"[{user_id}] wrote {test_json_path}")
+        persona_html_path = generate_persona_html(user_id)
+        if verbose:
+            print(f"[{user_id}] wrote {persona_html_path}")
     except Exception as exc:
         if verbose:
-            print(f"[{user_id}] WARNING: dump_test_samples_json failed: {exc}")
+            print(f"[{user_id}] WARNING: post-write dump/render failed: {exc}")
+
+    try:
+        # Inline-call the audit driver — keeps the public CLI in
+        # ``scripts/audit_test_queries.py`` for ad-hoc use without
+        # forking a subprocess for every persona.
+        from scripts.audit_test_queries import _run_audit
+        audit_md_path, _ = _run_audit(str(user_id), "snapshot",
+                                       benchmark_dir="benchmark",
+                                       backend_dir="backend")
+        if verbose:
+            print(f"[{user_id}] wrote {audit_md_path}")
+    except Exception as exc:
+        if verbose:
+            print(f"[{user_id}] WARNING: audit failed: {exc}")
 
     return {
         "user_id": user_id,
@@ -374,6 +397,8 @@ def prepare_one(
         "status": "ok",
         "csv_path": str(csv_path),
         "test_json_path": test_json_path,
+        "persona_html_path": persona_html_path,
+        "audit_md_path": audit_md_path,
         "unknown_task_types": sorted(unknown_task_types),
     }
 

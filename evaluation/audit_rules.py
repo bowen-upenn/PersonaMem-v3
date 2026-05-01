@@ -403,7 +403,7 @@ def run_per_record_rules(records: Iterable[dict]) -> list[Finding]:
 
 # Per-task quotas live in evaluation.task_distribution — single source of
 # truth for both build-time enforcement and post-hoc auditing.
-from evaluation.task_distribution import TASK_TARGETS  # noqa: E402
+from evaluation.task_distribution import TASK_TARGETS, DATA_DEPENDENT_TASKS  # noqa: E402
 
 
 def distribution_findings(records: list[dict]) -> list[Finding]:
@@ -415,6 +415,20 @@ def distribution_findings(records: list[dict]) -> list[Finding]:
     for tt, target in TASK_TARGETS.items():
         n = counts.get(tt, 0)
         lo, hi = target["min"], target["max"]
+        # Data-dependent tasks (T17 collisions, E5 short-term, T16 group
+        # threads) produce as many instances as the user's source data
+        # supports — the floor is advisory, not enforced. Log as low
+        # severity so automation pipelines don't treat per-user data
+        # variation as a build failure.
+        if tt in DATA_DEPENDENT_TASKS:
+            if n < lo:
+                findings.append(Finding(
+                    "(distribution)", tt, "low", "distribution_data_dependent_short",
+                    f"task_type {tt} has {n} instances (target {lo}-{hi}); "
+                    f"capped by user's source data — not a pipeline bug",
+                    "skip",
+                ))
+            continue
         if n < lo:
             findings.append(Finding(
                 "(distribution)", tt, "high", "distribution_under_min",

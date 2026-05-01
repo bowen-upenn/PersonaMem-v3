@@ -47,11 +47,24 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_chatbot_dispatch":               {"min": 5,  "max": 8},
     "agentic_draft_audit":                    {"min": 5,  "max": 8},
     "agentic_collection_curation":            {"min": 5,  "max": 8},
-    "agentic_group_dm_summary":               {"min": 5,  "max": 8},
-    "agentic_wrong_recipient_check":          {"min": 5,  "max": 8},
+    "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
+    "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
     "agentic_trending_alert":                 {"min": 5,  "max": 8},
 }
+
+# Tasks marked ``data_dependent: True`` produce 0 instances when the
+# user's source data lacks a required precondition (e.g. T17 needs a
+# friend name collision; E5 needs short-term canonicals). The audit
+# treats their floor as advisory, not enforced — they're the right
+# floor for users who DO have the precondition, but a 0 count for
+# users without it is not a bug, just a data-shape fact.
+DATA_DEPENDENT_TASKS: set[str] = {
+    tt for tt, target in TASK_TARGETS.items() if target.get("data_dependent")
+}
+# Mirror flags onto E5 (declared above the marker block).
+TASK_TARGETS["short_vs_long_term_lifecycle"]["data_dependent"] = True
+DATA_DEPENDENT_TASKS.add("short_vs_long_term_lifecycle")
 
 
 def get_max(task_type: str) -> int | None:
@@ -132,10 +145,13 @@ def apply_caps(buckets: dict[str, list[dict]], rng_seed: int = 0) -> dict[str, l
 
 def report_floor_gaps(buckets: dict[str, list[dict]]) -> dict[str, int]:
     """Return {task_type: how_many_short} for any task type below floor.
-    Useful for the synthesis layer to know what to fill."""
+    Data-dependent task types with 0 count are excluded — see
+    ``DATA_DEPENDENT_TASKS``."""
     gaps: dict[str, int] = {}
     for task_type in TASK_TARGETS:
         items = buckets.get(task_type) or []
+        if not items and task_type in DATA_DEPENDENT_TASKS:
+            continue  # 0 instances for a data-dependent task is not a bug
         gap = floor_gap(items, task_type)
         if gap > 0:
             gaps[task_type] = gap
