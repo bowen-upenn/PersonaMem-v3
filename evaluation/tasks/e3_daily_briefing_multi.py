@@ -13,18 +13,58 @@ from evaluation.backend_query import BackendQuery
 E3_DEFAULT_N_DAYS: int = 8
 
 
-def _collect_day_buckets(bq: BackendQuery, user_id: str) -> dict[str, list[int]]:
-    """Group event timestamps by UTC calendar day string (YYYY-MM-DD)."""
+_POSITIVE_INTERACTION_TYPES = {"explicit_positive", "implicit_positive"}
+_NEGATIVE_INTERACTION_TYPES = {"explicit_negative", "implicit_negative"}
+
+
+def _collect_day_buckets(bq: BackendQuery, user_id: str,
+                         positive_only: bool = False) -> dict[str, list[dict]]:
+    """Group events by UTC calendar day string (YYYY-MM-DD).
+
+    With ``positive_only=True`` only events whose source_interaction_type
+    is explicit_positive or implicit_positive are kept (workstream B —
+    the briefing must be grounded in real positive engagement, not
+    raw event volume which includes negatives)."""
     import datetime as _dt
-    buckets: dict[str, list[int]] = {}
+    buckets: dict[str, list[dict]] = {}
     for app in ("instagram", "facebook", "threads", "chatbot"):
-        for e in bq._load_events(user_id, app):  # raw, unstripped
+        for e in bq._load_events(user_id, app):
             ts = e.get("source_timestamp") or 0
             if not ts:
                 continue
+            if positive_only and (e.get("source_interaction_type") or "") not in _POSITIVE_INTERACTION_TYPES:
+                continue
             day = _dt.datetime.fromtimestamp(int(ts), tz=_dt.timezone.utc).strftime("%Y-%m-%d")
-            buckets.setdefault(day, []).append(int(ts))
+            row = dict(e)
+            row.setdefault("_app", app)
+            buckets.setdefault(day, []).append(row)
     return buckets
+
+
+def _events_in_window(buckets: dict[str, list[dict]], day: str,
+                      t_test: int, t_end: int) -> list[dict]:
+    """Return rows in ``buckets[day]`` with t_test ≤ ts < t_end."""
+    rows = buckets.get(day) or []
+    return [e for e in rows
+            if t_test <= int(e.get("source_timestamp") or 0) < t_end]
+
+
+def _summarize_engagement(rows: list[dict], limit: int = 6) -> list[dict]:
+    """Compact projection of an engagement event for the GT block."""
+    out: list[dict] = []
+    for e in rows[:limit]:
+        out.append({
+            "ts": int(e.get("source_timestamp") or 0),
+            "app": e.get("_app", ""),
+            "hashtags": (e.get("source_hashtags") or [])[:6],
+            "interaction_type": e.get("source_interaction_type", ""),
+            "content_snippet": (
+                (e.get("content") or {}).get("caption")
+                or (e.get("content") or {}).get("title")
+                or ""
+            )[:140],
+        })
+    return out
 
 
 def build_e3_daily_briefing_multi(
@@ -33,47 +73,66 @@ def build_e3_daily_briefing_multi(
     t_anchor: int,
     n_days: int = E3_DEFAULT_N_DAYS,
 ) -> list[dict]:
-    """Pick N days from the user's active window, stratified by event-volume
-    tertile (1 high / 1 mid / 1 low when n_days=3). Emit one T18-shaped
-    instance per day at noon UTC of that day.
+    """Workstream B: pick days that have ≥3 positive engagements;
+    insert the briefing at 8 AM UTC; attach forward-looking GT
+    (real positive engagements that day after t_test, plus any
+    negatives in the same window).
     """
     import datetime as _dt
-    buckets = _collect_day_buckets(bq, user_id)
-    if len(buckets) < n_days:
-        return []
 
-    sorted_days = sorted(buckets.keys())
-    if len(sorted_days) < 3:
+    pos_buckets = _collect_day_buckets(bq, user_id, positive_only=True)
+    all_buckets = _collect_day_buckets(bq, user_id, positive_only=False)
+    # Days with at least 3 positive events — these are eligible.
+    eligible = [d for d, rows in pos_buckets.items() if len(rows) >= 3]
+    if not eligible:
         return []
+    eligible.sort()
 
-    # Enforce a 24h guard on both ends: t_test needs a prior-day window
-    # (for drift scoring) AND a post-T 24h window (for Source B GT).
-    eligible = sorted_days[1:-1]
+    # Enforce a 24h guard on both ends so the prior-day window + post-test
+    # 24h window both fall inside the user's data range.
+    if len(eligible) >= 3:
+        eligible = eligible[1:-1]
     if not eligible:
         return []
 
-    # Pick up to ``n_days`` highest-volume eligible days, then sort chronologically.
-    # When eligible has at least n_days entries, this preserves stratification
-    # by spreading picks across the volume distribution; with fewer eligible
-    # days, we just take what we have.
-    by_volume_desc = sorted(eligible, key=lambda d: -len(buckets[d]))
-    picks = sorted(by_volume_desc[:n_days])
+    # Pick up to n_days days with the most positive events, then sort
+    # chronologically.
+    by_pos_volume_desc = sorted(eligible, key=lambda d: -len(pos_buckets[d]))
+    picks = sorted(by_pos_volume_desc[:n_days])
 
+    DAY = 24 * 3600
     instances: list[dict] = []
     for i, day in enumerate(picks):
         dt0 = _dt.datetime.strptime(day, "%Y-%m-%d").replace(
-            hour=12, minute=0, second=0, tzinfo=_dt.timezone.utc
+            hour=8, minute=0, second=0, tzinfo=_dt.timezone.utc
         )
-        noon_ts = int(dt0.timestamp())
+        morning_ts = int(dt0.timestamp())
+        end_ts = morning_ts + DAY
         prior_day = (dt0 - _dt.timedelta(days=1)).strftime("%Y-%m-%d")
+
+        # Forward-looking GT: the user's actual positive engagements
+        # AFTER the briefing fired (8 AM → end of day) — what the
+        # briefing should have surfaced. Source B-style.
+        pos_after = _events_in_window(pos_buckets, day, morning_ts, end_ts)
+        # Avoid list: real disliked rows in the same forward window.
+        all_after = _events_in_window(all_buckets, day, morning_ts, end_ts)
+        neg_after = [e for e in all_after
+                     if (e.get("source_interaction_type") or "") in _NEGATIVE_INTERACTION_TYPES]
+
         instances.append({
             "instance_id": f"e3_day_{i}",
             "task_id": "e3_daily_briefing_multi",
             "entry_point": "chatbot_routed",
-            "t_test": noon_ts,
+            "t_test": morning_ts,
             "day_index": i,
             "day_label": day,
             "prior_day_label": prior_day,
+            # Workstream B: forward-looking GT lists. Both lists carry
+            # real rows (timestamps + hashtags + content snippets) so
+            # the rubric can match the briefing against actual
+            # post-t_test engagement.
+            "gt_positive_engagements": _summarize_engagement(pos_after, limit=8),
+            "gt_avoid_engagements":    _summarize_engagement(neg_after, limit=4),
             "tool_call_rules": [
                 "count('instagram_create_post') == 0",
                 "count('facebook_create_post') == 0",
