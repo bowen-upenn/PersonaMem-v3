@@ -1859,7 +1859,29 @@ function renderContent(ev) {{
   const adMetaHtml = renderAdMeta(content);
 
   if (ctype === 'text') {{
-    return `<div class="content-block">${{header}}<div class="c-text-body">${{escapeHtml(content.text || '')}}</div>${{adMetaHtml}}</div>`;
+    // DM events store body under content.caption + a messages[] array;
+    // plain text posts use content.text. Fall back through both, plus
+    // render the full thread when messages[] exists.
+    const body = content.text || content.caption || '';
+    const bodyBlock = body
+      ? `<div class="c-text-body">${{escapeHtml(body)}}</div>`
+      : '';
+    let threadBlock = '';
+    if (Array.isArray(content.messages) && content.messages.length > 0) {{
+      const lines = content.messages.map(m => {{
+        const sender = m.sender === 'self' ? 'you' : (m.sender || '?');
+        return `<div class="c-msg"><span class="msg-sender">${{escapeHtml(sender)}}:</span> ${{escapeHtml(m.text || '')}}</div>`;
+      }}).join('');
+      threadBlock = `<details><summary>thread (${{content.messages.length}} messages)</summary><div class="c-thread">${{lines}}</div></details>`;
+    }} else if (Array.isArray(ev.messages) && ev.messages.length > 0) {{
+      // DM events store messages at the top level (alongside content.caption).
+      const lines = ev.messages.map(m => {{
+        const sender = m.sender === 'self' ? 'you' : (m.sender || '?');
+        return `<div class="c-msg"><span class="msg-sender">${{escapeHtml(sender)}}:</span> ${{escapeHtml(m.text || '')}}</div>`;
+      }}).join('');
+      threadBlock = `<details><summary>thread (${{ev.messages.length}} messages)</summary><div class="c-thread">${{lines}}</div></details>`;
+    }}
+    return `<div class="content-block">${{header}}${{bodyBlock}}${{threadBlock}}${{adMetaHtml}}</div>`;
   }}
 
   if (ctype === 'image') {{
