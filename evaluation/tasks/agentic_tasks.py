@@ -272,71 +272,115 @@ def _build_common_args(task_id: str, extra: dict) -> dict:
 
 
 def build_t6_community_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """One instance per social app — digest across the past week on that app."""
-    return [
-        {"instance_id": f"t6_{app}", "task_id": "agentic_user_voice_post", "entry_point": "app_native",
-         "target_app": app, "t_test": t_anchor,
-         "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
-         "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]}}
-        for app in SOCIAL_APPS
-    ] + [
-        {"instance_id": "t6_chatbot_threads", "task_id": "agentic_user_voice_post", "entry_point": "chatbot_routed",
-         "target_app": "threads", "t_test": t_anchor,
-         "tool_call_rules": ["count('threads_create_post') <= 1"],
-         "final_state_expected": {"must_not_contain": ["instagram_create_post", "facebook_create_post"]}}
-    ]
+    """One per social app via app_native + one per app via chatbot_routed —
+    6 instances total. Each entry-point exercises a different tool path."""
+    out: list[dict] = []
+    for app in SOCIAL_APPS:
+        out.append({
+            "instance_id": f"t6_{app}_native", "task_id": "agentic_user_voice_post",
+            "entry_point": "app_native", "target_app": app, "t_test": t_anchor,
+            "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
+            "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
+        })
+    for app in SOCIAL_APPS:
+        out.append({
+            "instance_id": f"t6_{app}_chatbot", "task_id": "agentic_user_voice_post",
+            "entry_point": "chatbot_routed", "target_app": app, "t_test": t_anchor,
+            "tool_call_rules": [f"count('{app}_create_post') <= 1"],
+            "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
+        })
+    return out
 
 
 def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Four moments (lunch, commute, evening, shower) × one instance each."""
-    moments = ["lunch (11am-2pm)", "shower (morning)", "commute", "evening wind-down"]
+    """Six moments × one instance each."""
+    moments = [
+        "lunch (11am-2pm)", "shower (morning)", "commute", "evening wind-down",
+        "Saturday morning coffee", "late-night doomscroll",
+    ]
     return [
-        {"instance_id": f"t7_{i}", "task_id": "agentic_moment_recommendation", "entry_point": "chatbot_routed",
-         "moment": m, "t_test": t_anchor,
+        {"instance_id": f"t7_{i}", "task_id": "agentic_moment_recommendation",
+         "entry_point": "chatbot_routed", "moment": m, "t_test": t_anchor,
          "tool_call_rules": ["count('instagram_send_dm') == 0", "count('facebook_send_dm') == 0"]}
         for i, m in enumerate(moments)
     ]
 
 
 def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """One per social app with DMs."""
+    """Two windows (24h, 7d) per social app — 6 instances when all
+    apps have DMs. Each window asks the agent to digest a different
+    time slice."""
     out = []
+    DAY = 24 * 3600
+    windows = [
+        ("24h", t_anchor - DAY),
+        ("7d",  t_anchor - 7 * DAY),
+    ]
     for app in SOCIAL_APPS:
         dms = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
-        if dms.get("results"):
+        if not dms.get("results"):
+            continue
+        for win_name, _win_start in windows:
             out.append({
-                "instance_id": f"t8_{app}", "task_id": "agentic_dm_digest", "entry_point": "chatbot_routed",
-                "target_app": app, "t_test": t_anchor,
-                "tool_call_rules": [f"count('{app}_list_dms') >= 1", f"count('{app}_send_dm') == 0",
+                "instance_id": f"t8_{app}_{win_name}",
+                "task_id": "agentic_dm_digest",
+                "entry_point": "chatbot_routed",
+                "target_app": app,
+                "window": win_name,
+                "t_test": t_anchor,
+                "tool_call_rules": [f"count('{app}_list_dms') >= 1",
+                                    f"count('{app}_send_dm') == 0",
                                     f"count('{app}_create_post') == 0"],
             })
     return out
 
 
 def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Pick a recent positive post on IG, repost to Threads."""
-    ig_events = bq.get_events(user_id=user_id, app="instagram", since_timestamp=t_anchor)
-    positive_posts = [e for e in ig_events if "positive" in e.get("source_interaction_type", "") and (e.get("content") or {}).get("caption")]
-    if not positive_posts:
-        return []
-    src = positive_posts[-1]
-    source_post = {
-        "caption": (src.get("content") or {}).get("caption", ""),
-        "hashtags": src.get("source_hashtags", []),
-    }
-    return [{
-        "instance_id": "t9_ig_to_threads",
-        "task_id": "agentic_cross_app_repost",
-        "entry_point": "chatbot_routed",
-        "source_post": source_post,
-        "target_app": "threads",
-        "t_test": t_anchor,
-        "tool_call_rules": ["count('threads_create_post') == 1",
-                            "count('instagram_create_post') == 0",
-                            "count('instagram_send_dm') == 0"],
-        "final_state_expected": {"must_contain_count": {"threads_create_post": 1},
-                                 "must_not_contain": ["instagram_create_post"]},
-    }]
+    """Pick recent positive posts and repost to a different app — emit
+    one instance per (source_app → target_app) pair across the three
+    social apps so the bucket meets its floor."""
+    PAIRS = [
+        ("instagram", "threads"),
+        ("instagram", "facebook"),
+        ("threads", "instagram"),
+        ("threads", "facebook"),
+        ("facebook", "instagram"),
+        ("facebook", "threads"),
+    ]
+    out: list[dict] = []
+    for src_app, tgt_app in PAIRS:
+        evs = bq.get_events(user_id=user_id, app=src_app, since_timestamp=t_anchor)
+        positive_posts = [
+            e for e in evs
+            if "positive" in e.get("source_interaction_type", "")
+            and (e.get("content") or {}).get("caption")
+        ]
+        if not positive_posts:
+            continue
+        src = positive_posts[-1]
+        source_post = {
+            "caption": (src.get("content") or {}).get("caption", ""),
+            "hashtags": src.get("source_hashtags", []),
+        }
+        out.append({
+            "instance_id": f"t9_{src_app}_to_{tgt_app}",
+            "task_id": "agentic_cross_app_repost",
+            "entry_point": "chatbot_routed",
+            "source_post": source_post,
+            "source_app": src_app,
+            "target_app": tgt_app,
+            "t_test": t_anchor,
+            "tool_call_rules": [
+                f"count('{tgt_app}_create_post') == 1",
+                f"count('{src_app}_create_post') == 0",
+                f"count('{src_app}_send_dm') == 0",
+            ],
+            "final_state_expected": {
+                "must_contain_count": {f"{tgt_app}_create_post": 1},
+                "must_not_contain": [f"{src_app}_create_post"],
+            },
+        })
+    return out
 
 
 def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
@@ -365,13 +409,13 @@ def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[
 
 
 def build_t11_vague_refind(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Pick 3-5 topics the user has historical engagement with, phrase as vague refind queries."""
+    """Pick top 6 topics the user has historical engagement with."""
     counts: dict[str, int] = {}
     for app in APPS:
         for e in bq.get_events(user_id=user_id, app=app, since_timestamp=t_anchor):
             for h in e.get("source_hashtags", []):
                 counts[h] = counts.get(h, 0) + 1
-    top_topics = [h for h, _ in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:4]]
+    top_topics = [h for h, _ in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:6]]
     return [
         {"instance_id": f"t11_{i}", "task_id": "agentic_vague_refind", "entry_point": "chatbot_routed",
          "topic": topic.lstrip("#"), "t_test": t_anchor,
@@ -398,11 +442,14 @@ def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int)
 
 
 def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Chatbot → target_app dispatch. 3 examples across apps."""
+    """Chatbot → target_app dispatch. 6 examples spread across apps."""
     contexts = [
         ("threads", "I was just saying that discipline is what carries when motivation fades."),
         ("instagram", "That gym selfie from this morning — want to post it."),
         ("facebook", "Thinking about last night's family dinner. Wanted to share with the group."),
+        ("threads", "this whole 'algorithm vs taste' debate has been on my mind. quick take to post."),
+        ("instagram", "the iced coffee + bookshelf shot from this afternoon. minimal caption."),
+        ("facebook", "wanted to flag the local food drive to my friends list this weekend."),
     ]
     return [
         {"instance_id": f"t13_{i}", "task_id": "agentic_chatbot_dispatch", "entry_point": "chatbot_routed",
@@ -415,11 +462,15 @@ def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) ->
 
 
 def build_t14_draft_audit(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Construct draft variants — one benign, one with a privacy leak, one with a contradiction."""
+    """6 draft variants spanning benign / privacy_leak / tone_mismatch
+    across the three social apps."""
     drafts = [
-        ("benign", "Had a great weekend. Back to the grind.", "threads"),
-        ("privacy_leak", "Honestly, church has been the only thing keeping me grounded through the bankruptcy filing.", "facebook"),
-        ("tone_mismatch", "Bro this reception lighting SLAPPED. Amber god tier.", "facebook"),
+        ("benign_1",        "Had a great weekend. Back to the grind.", "threads"),
+        ("benign_2",        "morning run was just what i needed today.", "instagram"),
+        ("privacy_leak_1",  "Honestly, church has been the only thing keeping me grounded through the bankruptcy filing.", "facebook"),
+        ("privacy_leak_2",  "Therapist told me yesterday I have to stop micromanaging my team. Working on it.", "threads"),
+        ("tone_mismatch_1", "Bro this reception lighting SLAPPED. Amber god tier.", "facebook"),
+        ("tone_mismatch_2", "yo can't BELIEVE my pastor said that today!! GOATed sermon fr", "facebook"),
     ]
     return [
         {"instance_id": f"t14_{label}", "task_id": "agentic_draft_audit", "entry_point": "app_native",
@@ -432,12 +483,14 @@ def build_t14_draft_audit(bq: BackendQuery, user_id: str, t_anchor: int) -> list
 
 
 def build_t15_collection_curation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """One per social app."""
+    """Two collection themes per social app — 6 instances."""
+    THEMES = ["recent_saves", "weekend_inspiration"]
     return [
-        {"instance_id": f"t15_{app}", "task_id": "agentic_collection_curation", "entry_point": "chatbot_routed",
-         "target_app": app, "t_test": t_anchor,
+        {"instance_id": f"t15_{app}_{theme}", "task_id": "agentic_collection_curation",
+         "entry_point": "chatbot_routed",
+         "target_app": app, "theme": theme, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 0"]}
-        for app in SOCIAL_APPS
+        for app in SOCIAL_APPS for theme in THEMES
     ]
 
 
@@ -483,22 +536,51 @@ def build_t17_wrong_recipient(bq: BackendQuery, user_id: str, t_anchor: int) -> 
     }]
 
 
+def _spread_anchors(bq: BackendQuery, user_id: str, t_anchor: int, n: int = 5) -> list[int]:
+    """Pick ``n`` evenly-spaced anchor timestamps across the user's
+    observation window so per-day proactive tasks (T18 / T19) can emit
+    multiple instances without all firing at the same moment."""
+    window = bq.get_observation_window(user_id) if hasattr(bq, "get_observation_window") else None
+    if window:
+        t_start, t_end = window
+    else:
+        t_start, t_end = max(0, t_anchor - 7 * 24 * 3600), t_anchor
+    if t_end <= t_start:
+        return [t_anchor]
+    span = t_end - t_start
+    return [int(t_start + (i + 1) * span / (n + 1)) for i in range(n)]
+
+
 def build_t18_proactive_daily(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """One daily-briefing probe. Entry-point: chatbot."""
-    return [{
-        "instance_id": "t18_daily", "task_id": "agentic_proactive_daily_catchup", "entry_point": "chatbot_routed",
-        "t_test": t_anchor,
-        "tool_call_rules": ["count('instagram_create_post') == 0", "count('instagram_send_dm') == 0"],
-    }]
+    """Daily-briefing probe — emit 5 instances at evenly-spaced anchors so
+    the bucket meets its floor (was 1 per user)."""
+    anchors = _spread_anchors(bq, user_id, t_anchor, n=5)
+    return [
+        {
+            "instance_id": f"t18_daily_{i}",
+            "task_id": "agentic_proactive_daily_catchup",
+            "entry_point": "chatbot_routed",
+            "t_test": ts,
+            "tool_call_rules": ["count('instagram_create_post') == 0",
+                                "count('instagram_send_dm') == 0"],
+        }
+        for i, ts in enumerate(anchors)
+    ]
 
 
 def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Check trending hashtags and flag user-aligned ones."""
-    return [{
-        "instance_id": "t19_trending", "task_id": "agentic_trending_alert", "entry_point": "chatbot_routed",
-        "t_test": t_anchor,
-        "tool_call_rules": ["count('instagram_create_post') == 0"],
-    }]
+    """Trending-alert probe — emit 5 instances at evenly-spaced anchors."""
+    anchors = _spread_anchors(bq, user_id, t_anchor, n=5)
+    return [
+        {
+            "instance_id": f"t19_trending_{i}",
+            "task_id": "agentic_trending_alert",
+            "entry_point": "chatbot_routed",
+            "t_test": ts,
+            "tool_call_rules": ["count('instagram_create_post') == 0"],
+        }
+        for i, ts in enumerate(anchors)
+    ]
 
 
 ALL_BUILDERS: dict[str, Callable] = {

@@ -22,7 +22,7 @@ import datetime as _dt
 from evaluation.backend_query import BackendQuery
 
 
-E4_DEFAULT_N_DAYS: int = 3
+E4_DEFAULT_N_DAYS: int = 8
 
 
 def build_e4_google_search(
@@ -48,19 +48,9 @@ def build_e4_google_search(
     if not eligible:
         return []
 
-    by_volume = sorted(eligible, key=lambda d: len(buckets[d]))
-    n = len(by_volume)
-    tertile = max(1, n // 3)
-    picks: list[str] = []
-    if n_days >= 1 and by_volume[2 * tertile:]:
-        picks.append(by_volume[2 * tertile:][-1])
-    if n_days >= 2 and by_volume[tertile:2 * tertile]:
-        mid = by_volume[tertile:2 * tertile]
-        picks.append(mid[len(mid) // 2])
-    if n_days >= 3 and by_volume[:tertile]:
-        picks.append(by_volume[:tertile][0])
-    picks = picks[:n_days]
-    picks.sort()
+    # Pick up to ``n_days`` highest-volume eligible days, then sort chronologically.
+    by_volume_desc = sorted(eligible, key=lambda d: -len(buckets[d]))
+    picks = sorted(by_volume_desc[:n_days])
 
     instances: list[dict] = []
     for i, day in enumerate(picks):
