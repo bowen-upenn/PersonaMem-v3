@@ -1426,7 +1426,7 @@ def build_c1a_pairs(
     bq: BackendQuery,
     user_id: str,
     test_items: list[TestItem],
-    max_pairs: int = 5,
+    max_pairs: int = 8,
     window_hours: int = 24,
     min_diff_events: int = 3,
 ) -> list[dict]:
@@ -1525,16 +1525,17 @@ def build_c1b_sequence(
     b_proactive_instances: list[dict],
     max_seq_len: int = 5,
     min_distinct_categories: int = 3,
+    max_sequences: int = 6,
 ) -> list[dict]:
     """Assemble one or more sequences from diverse-topic B-proactive queries.
 
     Each sequence requires queries spanning ≥ min_distinct_categories distinct
-    top-1-preference categories (computed from each instance's top_k_relevant_prefs).
-    Returns a list of sequence instances (usually 1–2 per user).
+    top-1-preference categories. We now emit up to ``max_sequences`` distinct
+    sequences by rotating which instance per category is picked — this fills
+    the floor for repetition_fatigue_sequences (was 1 per user, now 6).
     """
     if not b_proactive_instances:
         return []
-    # Bucket B-proactive instances by top-1 category (their strongest preference signal).
     by_cat: dict[str, list[dict]] = {}
     for inst in b_proactive_instances:
         top = inst.get("top_k_relevant_prefs") or []
@@ -1546,28 +1547,39 @@ def build_c1b_sequence(
     if len(by_cat) < min_distinct_categories:
         return []
 
-    # Take one instance per category, up to max_seq_len, in timestamp order.
-    picks: list[dict] = []
-    for cat, insts in list(by_cat.items())[:max_seq_len]:
-        picks.append(sorted(insts, key=lambda x: x.get("source_timestamp", 0))[0])
-    picks.sort(key=lambda x: x.get("source_timestamp", 0))
+    # Sort each bucket by timestamp so ``rotation`` k picks the k-th instance
+    # within each category (cycling). Each rotation produces a sequence with
+    # different concrete user_queries but the same category coverage.
+    for cat in by_cat:
+        by_cat[cat] = sorted(by_cat[cat], key=lambda x: x.get("source_timestamp", 0))
 
-    if len({p["top_k_relevant_prefs"][0]["category"] for p in picks if p.get("top_k_relevant_prefs")}) < min_distinct_categories:
-        return []
-
-    sequence = {
-        "sequence_id": f"c1b_seq_0",
-        "queries": [
-            {
-                "source_test_id": p["test_id"],
-                "source_timestamp": p["source_timestamp"],
-                "user_query": p["user_query"],
-                "top_k_relevant_prefs": p["top_k_relevant_prefs"],
-            }
-            for p in picks
-        ],
-    }
-    return [sequence]
+    out: list[dict] = []
+    for k in range(max_sequences):
+        picks: list[dict] = []
+        for cat, insts in list(by_cat.items())[:max_seq_len]:
+            picks.append(insts[k % len(insts)])
+        picks.sort(key=lambda x: x.get("source_timestamp", 0))
+        if len({p["top_k_relevant_prefs"][0]["category"]
+                for p in picks if p.get("top_k_relevant_prefs")}) < min_distinct_categories:
+            continue
+        # Skip if this rotation is identical to a previous one (small users
+        # with few instances per category will collapse into duplicates).
+        sig = tuple(p["test_id"] for p in picks)
+        if any(tuple(q["source_test_id"] for q in s["queries"]) == sig for s in out):
+            continue
+        out.append({
+            "sequence_id": f"c1b_seq_{k}",
+            "queries": [
+                {
+                    "source_test_id": p["test_id"],
+                    "source_timestamp": p["source_timestamp"],
+                    "user_query": p["user_query"],
+                    "top_k_relevant_prefs": p["top_k_relevant_prefs"],
+                }
+                for p in picks
+            ],
+        })
+    return out
 
 
 # --- Task C4: do-not-personalize button regeneration ----------------------

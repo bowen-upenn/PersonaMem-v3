@@ -10,7 +10,7 @@ from __future__ import annotations
 from data_preparation.utils import extract_json_from_response
 from evaluation.backend_query import BackendQuery
 
-E3_DEFAULT_N_DAYS: int = 3
+E3_DEFAULT_N_DAYS: int = 8
 
 
 def _collect_day_buckets(bq: BackendQuery, user_id: str) -> dict[str, list[int]]:
@@ -52,22 +52,12 @@ def build_e3_daily_briefing_multi(
     if not eligible:
         return []
 
-    by_volume = sorted(eligible, key=lambda d: len(buckets[d]))
-    n = len(by_volume)
-    tertile_size = max(1, n // 3)
-    low = by_volume[:tertile_size]
-    mid = by_volume[tertile_size:2 * tertile_size]
-    high = by_volume[2 * tertile_size:]
-
-    picks: list[str] = []
-    if n_days >= 1 and high:
-        picks.append(high[-1])
-    if n_days >= 2 and mid:
-        picks.append(mid[len(mid) // 2])
-    if n_days >= 3 and low:
-        picks.append(low[0])
-    picks = picks[:n_days]
-    picks.sort()  # chronological order
+    # Pick up to ``n_days`` highest-volume eligible days, then sort chronologically.
+    # When eligible has at least n_days entries, this preserves stratification
+    # by spreading picks across the volume distribution; with fewer eligible
+    # days, we just take what we have.
+    by_volume_desc = sorted(eligible, key=lambda d: -len(buckets[d]))
+    picks = sorted(by_volume_desc[:n_days])
 
     instances: list[dict] = []
     for i, day in enumerate(picks):
