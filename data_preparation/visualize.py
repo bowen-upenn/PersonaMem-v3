@@ -1895,7 +1895,11 @@ function renderContent(ev) {{
           : '';
         return `<div class="${{sideClass}}"><div class="dm-sender">${{escapeHtml(senderLabel)}}</div>${{textBlock}}${{fwdBlock}}</div>`;
       }}).join('');
-      return `<div class="content-block dm-thread-block">${{header}}<div class="dm-thread">${{bubbles}}</div>${{adMetaHtml}}</div>`;
+      // DM threads omit the outer "text" content_type header — every DM
+      // is text by definition; the inner forwarded-content blocks
+      // (rendered recursively via renderContent) keep their own
+      // type labels (e.g. "short video", "image") which are informative.
+      return `<div class="content-block dm-thread-block"><div class="dm-thread">${{bubbles}}</div>${{adMetaHtml}}</div>`;
     }}
     // Plain text post (non-DM): single body block.
     const body = content.text || content.caption || '';
