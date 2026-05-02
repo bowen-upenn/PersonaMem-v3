@@ -1636,20 +1636,25 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .content-block .c-caption {{ font-size: 12px; color: var(--text); margin-bottom: 6px; line-height: 1.5; }}
   .content-block .c-desc {{ font-size: 12px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 8px; font-style: italic; }}
   .content-block .c-text-body {{ font-size: 13px; color: var(--text); line-height: 1.65; white-space: pre-wrap; }}
-  /* DM chat bubbles — left for inbound, right for self. Inherit page font. */
-  .dm-thread {{ display: flex; flex-direction: column; gap: 6px; margin-top: 8px; font-family: inherit; }}
-  .dm-bubble {{ max-width: 78%; padding: 7px 11px; border-radius: 12px; font-size: 13px; line-height: 1.5; font-family: inherit; }}
-  .dm-bubble.dm-self {{ align-self: flex-end; background: #DCFCE7; border: 1px solid #BBF7D0; border-bottom-right-radius: 4px; }}
-  .dm-bubble.dm-other {{ align-self: flex-start; background: #F1F5F9; border: 1px solid #E2E8F0; border-bottom-left-radius: 4px; }}
-  .dm-bubble .dm-sender {{ font-size: 11px; color: #64748B; font-weight: 600; margin-bottom: 2px; font-family: inherit; }}
-  .dm-bubble.dm-self .dm-sender {{ color: #15803D; }}
-  .dm-bubble .dm-text {{ font-family: inherit; white-space: pre-wrap; }}
-  .dm-bubble .dm-reaction {{ font-size: 22px; line-height: 1; margin-top: 2px; }}
-  .dm-bubble.dm-reaction-only {{ background: transparent; border: none; padding: 2px 6px; }}
-  .dm-bubble.dm-reaction-only .dm-sender {{ font-size: 10px; }}
-  .dm-bubble .dm-forwarded {{ margin-top: 6px; padding: 6px 8px; background: rgba(255,255,255,0.7); border-left: 3px solid #94A3B8; border-radius: 4px; font-size: 12px; }}
-  .dm-bubble .dm-forwarded .content-block {{ margin: 0; padding: 0; background: transparent; border: none; }}
-  .dm-bubble .dm-forwarded .c-type {{ font-size: 10px; opacity: 0.7; margin-bottom: 2px; }}
+  /* DM threads reuse the chatbot bubble layout (chat-thread / chat-bubble)
+     so social-app DMs and the AI Chatbot render visually the same.
+     Self → user-bubble (right, blue). Friend or stranger → assistant-bubble
+     (left, gray) with a "friend" or "stranger" role label.
+     A few DM-only extras (white-space wrap, reaction-only bubble, forwarded
+     post block) layer on top of the shared chat-bubble base. */
+  .chat-bubble.dm-bubble {{ white-space: pre-wrap; }}
+  .chat-bubble.dm-bubble .dm-reaction {{ font-size: 22px; line-height: 1; margin-top: 2px; }}
+  .chat-bubble.dm-reaction-only {{ background: transparent; border: none; padding: 2px 6px; color: var(--text-secondary); }}
+  .chat-bubble.dm-reaction-only .chat-role {{ font-size: 10px; }}
+  .chat-bubble.dm-bubble .dm-forwarded {{ margin-top: 6px; padding: 6px 8px; background: rgba(255,255,255,0.6); border-left: 3px solid rgba(0,0,0,0.18); border-radius: 4px; font-size: 12px; }}
+  .chat-bubble.user-bubble .dm-forwarded {{ background: rgba(255,255,255,0.18); border-left-color: rgba(255,255,255,0.55); color: #fff; }}
+  .chat-bubble.dm-bubble .dm-forwarded .content-block {{ margin: 0; padding: 0; background: transparent; border: none; }}
+  .chat-bubble.dm-bubble .dm-forwarded .c-type {{ font-size: 10px; opacity: 0.7; margin-bottom: 2px; }}
+  .chat-bubble.user-bubble .dm-forwarded .c-type,
+  .chat-bubble.user-bubble .dm-forwarded .c-caption,
+  .chat-bubble.user-bubble .dm-forwarded .c-desc,
+  .chat-bubble.user-bubble .dm-forwarded .c-title,
+  .chat-bubble.user-bubble .dm-forwarded .c-text-body {{ color: #fff; }}
   .content-block details {{ margin-top: 6px; }}
   .content-block details summary {{ font-size: 11px; color: var(--text-secondary); cursor: pointer; padding: 2px 0; user-select: none; }}
   .content-block details summary:hover {{ color: var(--text); }}
@@ -1873,10 +1878,13 @@ function renderContent(ev) {{
   const adMetaHtml = renderAdMeta(content);
 
   if (ctype === 'text') {{
-    // DM events: render as chat bubbles (right=self, left=others). Each
-    // bubble may carry a forwarded content block (post/video/image)
-    // — call renderContent recursively on m.forwarded_content.
-    // Plain text posts (non-DM) just render content.text.
+    // DM events render with the shared chat-bubble layout (same one used
+    // by the AI Chatbot conversation), so DMs and chatbot turns are
+    // visually consistent. Self → user-bubble (right, blue), friend or
+    // stranger → assistant-bubble (left, gray). Each bubble may carry a
+    // forwarded content block (post / image / short video) — call
+    // renderContent recursively on m.forwarded_content. Plain non-DM text
+    // posts fall through to the body block below.
     const messages = (Array.isArray(ev.messages) && ev.messages.length > 0)
       ? ev.messages
       : (Array.isArray(content.messages) && content.messages.length > 0
@@ -1884,11 +1892,17 @@ function renderContent(ev) {{
     if (messages && messages.length > 0) {{
       const bubbles = messages.map(m => {{
         const isSelf = m.sender === 'self';
-        const senderLabel = isSelf ? 'you' : (m.sender || '?');
+        let roleLabel;
+        if (isSelf) {{
+          roleLabel = 'you';
+        }} else if (typeof m.sender === 'string' && m.sender.startsWith('stranger')) {{
+          roleLabel = 'stranger';
+        }} else {{
+          roleLabel = 'friend';
+        }}
         const reactionOnly = m.reaction_emoji && !m.text;
-        const sideClass = isSelf
-          ? (reactionOnly ? 'dm-bubble dm-self dm-reaction-only' : 'dm-bubble dm-self')
-          : (reactionOnly ? 'dm-bubble dm-other dm-reaction-only' : 'dm-bubble dm-other');
+        const sideCls = isSelf ? 'user-bubble' : 'assistant-bubble';
+        const extraCls = reactionOnly ? ' dm-reaction-only' : '';
         const textBlock = m.text
           ? `<div class="dm-text">${{escapeHtml(m.text)}}</div>`
           : '';
@@ -1902,13 +1916,13 @@ function renderContent(ev) {{
               messages: null,
             }})}}</div>`
           : '';
-        return `<div class="${{sideClass}}"><div class="dm-sender">${{escapeHtml(senderLabel)}}</div>${{textBlock}}${{reactBlock}}${{fwdBlock}}</div>`;
+        return `<div class="chat-bubble dm-bubble ${{sideCls}}${{extraCls}}"><div class="chat-role">${{escapeHtml(roleLabel)}}</div>${{textBlock}}${{reactBlock}}${{fwdBlock}}</div>`;
       }}).join('');
       // DM threads omit the outer "text" content_type header — every DM
       // is text by definition; the inner forwarded-content blocks
       // (rendered recursively via renderContent) keep their own
       // type labels (e.g. "short video", "image") which are informative.
-      return `<div class="content-block dm-thread-block"><div class="dm-thread">${{bubbles}}</div>${{adMetaHtml}}</div>`;
+      return `<div class="chat-thread dm-thread">${{bubbles}}</div>${{adMetaHtml}}`;
     }}
     // Plain text post (non-DM): single body block.
     const body = content.text || content.caption || '';
