@@ -38,14 +38,14 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "context_shift_scenarios":                {"min": 6,  "max": 10},
 
     # Agentic — uniform target across 14 tasks
-    "agentic_user_voice_post":                {"min": 5,  "max": 8},
+    "agentic_user_tone_post":                {"min": 5,  "max": 8},
     "agentic_moment_recommendation":          {"min": 5,  "max": 8},
     "agentic_dm_digest":                      {"min": 5,  "max": 8},
     "agentic_cross_app_repost":               {"min": 5,  "max": 8},
     "agentic_auto_reply":                     {"min": 5,  "max": 8},
     "agentic_vague_refind":                   {"min": 5,  "max": 8},
     "agentic_composed_post":                  {"min": 5,  "max": 8},
-    "agentic_chatbot_dispatch":               {"min": 5,  "max": 8},
+    "agentic_send_post":                      {"min": 5,  "max": 8},
     # agentic_draft_audit removed — workstream F.
     "agentic_collection_curation":            {"min": 5,  "max": 8},
     "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},

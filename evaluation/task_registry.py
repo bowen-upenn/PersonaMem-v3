@@ -55,15 +55,15 @@ OLD_TO_NEW: dict[str, str] = {
     "e6_active_mistake_prevention":  "active_mistake_prevention",
     # Phase L.B.4: renamed — task is "compose an advisory post in the user's
     # voice", not a community trends summary. Old aliases keep working.
-    "t6_community_digest":           "agentic_user_voice_post",
-    "agentic_community_digest":      "agentic_user_voice_post",
+    "t6_community_digest":           "agentic_user_tone_post",
+    "agentic_community_digest":      "agentic_user_tone_post",
     "t7_moment_recommendation":      "agentic_moment_recommendation",
     "t8_dm_digest":                  "agentic_dm_digest",
     "t9_cross_app_repost":           "agentic_cross_app_repost",
     "t10_auto_reply":                "agentic_auto_reply",
     "t11_vague_refind":              "agentic_vague_refind",
     "t12_agent_composed_post":       "agentic_composed_post",
-    "t13_chatbot_dispatch":          "agentic_chatbot_dispatch",
+    "t13_chatbot_dispatch":          "agentic_send_post",
     # agentic_draft_audit dropped — old strings still resolve so historical
     # CSVs parse, but the task type is no longer in TASK_TYPE_META.
     "t14_draft_audit":               "agentic_draft_audit",
@@ -250,7 +250,7 @@ TASK_TYPE_META: dict[str, dict] = {
     # ------------------------------------------------------------------
     # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
     # ------------------------------------------------------------------
-    "agentic_user_voice_post": {
+    "agentic_user_tone_post": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",       # exactly 1 create_post
@@ -322,7 +322,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_match",
         ],
     },
-    "agentic_chatbot_dispatch": {
+    "agentic_send_post": {
         "task_family": "agentic",
         "mcp_tools_allowed": "all",                # chatbot + target social app
         "state_write_policy": "writes_ok",         # 1 create_post on target
@@ -473,14 +473,14 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "personalized_recommendation":            "proactive_recommendation",
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
-    "agentic_user_voice_post":                "agentic_task",
+    "agentic_user_tone_post":                "agentic_task",
     "agentic_moment_recommendation":          "agentic_task",
     "agentic_dm_digest":                      "agentic_task",
     "agentic_cross_app_repost":               "agentic_task",
     "agentic_auto_reply":                     "agentic_task",
     "agentic_vague_refind":                   "user_query",
     "agentic_composed_post":                  "agentic_task",
-    "agentic_chatbot_dispatch":               "user_query",
+    "agentic_send_post":                      "user_query",
     # agentic_draft_audit removed — workstream F.
     "agentic_collection_curation":            "agentic_task",
     "agentic_group_dm_summary":               "agentic_task",
@@ -504,14 +504,14 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "personalized_recommendation":            "proactive_recommend",
     "short_vs_long_term_lifecycle":           "proactive_recommend",
     "active_mistake_prevention":              "proactive_assist",
-    "agentic_user_voice_post":                "agentic_action",
+    "agentic_user_tone_post":                "agentic_action",
     "agentic_moment_recommendation":          "agentic_action",
     "agentic_dm_digest":                      "agentic_action",
     "agentic_cross_app_repost":               "agentic_action",
     "agentic_auto_reply":                     "agentic_action",
     "agentic_vague_refind":                   "agentic_action",
     "agentic_composed_post":                  "agentic_action",
-    "agentic_chatbot_dispatch":               "agentic_action",
+    "agentic_send_post":                      "agentic_action",
     "agentic_collection_curation":            "agentic_action",
     "agentic_group_dm_summary":               "agentic_action",
     "agentic_wrong_recipient_check":          "proactive_assist",
@@ -574,14 +574,14 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # E6 — paired warn/foil; aggregator computes paired-correct
     "active_mistake_prevention":         ("paired_correct", "paired_correct"),
     # Agentic — composite pass rate over tool_call + final_state + output_quality
-    "agentic_user_voice_post":           ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_user_tone_post":           ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_moment_recommendation":     ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_dm_digest":                 ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_cross_app_repost":          ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_auto_reply":                ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_vague_refind":              ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_composed_post":             ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_chatbot_dispatch":          ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_send_post":                 ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_draft_audit":               ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_collection_curation":       ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_group_dm_summary":          ("agentic_pass_rate", "agentic_pass_rate"),

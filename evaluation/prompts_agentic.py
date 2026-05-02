@@ -11,7 +11,7 @@ actual preferences. The agent must infer preferences via its available tools
 
 Design (Phase H.1):
 - Write tasks (t9 cross_app_repost, t10 auto_reply, t12 composed_post,
-  t13 chatbot_dispatch) name the MCP write tool the agent should call,
+  t13 send_post) name the MCP write tool the agent should call,
   do NOT use the JSON-text response contract, and instruct the agent to
   call read tools first to gather context.
 - Read-only tasks instruct the agent to call read tools first
@@ -67,7 +67,7 @@ the MCP tool. The grader checks the overlay (writes.jsonl) for the call.
 """
 
 
-def t6_community_digest(app: str, history_block: str | None = None) -> str:
+def t6_user_tone_post(app: str, history_block: str | None = None) -> str:
     return f"""# Task T6: Community digest post
 
 Look at what the user has engaged with on {app} over the past week. Draft ONE
@@ -211,7 +211,7 @@ hashtag pool.
 {_response_action(app, "create_post")}"""
 
 
-def t13_chatbot_dispatch(target_app: str, context: str, history_block: str | None = None) -> str:
+def t13_send_post(target_app: str, context: str, history_block: str | None = None) -> str:
     return f"""# Task T13: Directed cross-app dispatch from chatbot
 
 The user just said in chat: "Post that thing we just talked about to {target_app}."

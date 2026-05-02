@@ -47,6 +47,96 @@ SOCIAL_APPS = ("instagram", "facebook", "threads")
 # single-arm; overpersonalization testing is covered by chatbot tasks.
 
 
+# -- Persona-relevance filters --------------------------------------------
+#
+# Selection criteria for "this instance actually requires the user's persona
+# to answer well." Without these filters we accumulate noise instances —
+# e.g. agentic_auto_reply on a logistics-only DM ("yeah saturday works"),
+# or agentic_dm_digest on a user with one boring thread — where memory-
+# using and memory-blind agents grade identically. Those instances dilute
+# the benchmark's signal.
+#
+# Build a single persona-topic index per user once per build pass, then
+# every task-specific filter reads from it.
+
+
+def _build_persona_topic_index(bq: BackendQuery, user_id: str, t_anchor: int) -> dict:
+    """Snapshot the user's top categories + top hashtags + friends index
+    at t_anchor. Returns a dict the per-task filters consume."""
+    cat_counts: Counter = Counter()
+    hashtag_counts: Counter = Counter()
+    for app in SOCIAL_APPS:
+        for e in bq.get_events(user_id=user_id, app=app, since_timestamp=t_anchor):
+            for pref in (e.get("preferences") or []):
+                cat = (pref.get("category") or "").strip().lower()
+                if cat:
+                    cat_counts[cat] += 1
+            for h in (e.get("source_hashtags") or []):
+                hashtag_counts[h.lstrip("#").lower()] += 1
+    profile = bq.get_full_profile(user_id) or {}
+    friends_by_id = {f.get("friend_id"): f for f in (profile.get("friends") or [])}
+    return {
+        "top_cats": {c for c, _ in cat_counts.most_common(8)},
+        "top_hashtags": {h for h, _ in hashtag_counts.most_common(20)},
+        "friends_by_id": friends_by_id,
+    }
+
+
+def _text_touches_persona(text: str, idx: dict) -> bool:
+    """True if `text` mentions a top hashtag or a meaningful word from a
+    top category. Conservative — short category words (≤3 chars) are
+    ignored to avoid spurious matches on common English words."""
+    if not text:
+        return False
+    t = text.lower()
+    for h in idx["top_hashtags"]:
+        if h and h in t:
+            return True
+    for c in idx["top_cats"]:
+        # Split categories ("comedy video content") into tokens so we
+        # match on any meaningful word, not just the full phrase.
+        for word in (c or "").split():
+            if len(word) > 3 and word in t:
+                return True
+    return False
+
+
+def _is_opinion_or_recommendation_request(text: str) -> bool:
+    """Heuristic: inbound message is asking for the user's take, advice,
+    or recommendation — i.e. their preferences shape the right reply."""
+    if not text:
+        return False
+    t = text.lower()
+    if "?" in t:
+        return True
+    triggers = (
+        "recommend", "thoughts on", "what do you think", "your take",
+        "should i", "any tips", "any ideas", "suggest", "advice",
+        "into it", "you'd like", "you should", "you'll like",
+    )
+    return any(tr in t for tr in triggers)
+
+
+def _friend_shares_persona(friend: dict | None, idx: dict) -> bool:
+    """True if the friend's `shared_interests` overlap the user's top
+    categories or hashtags — meaning the relationship/interest context
+    materially shapes the right reply tone."""
+    if not friend:
+        return False
+    sis = (friend.get("shared_interests") or [])
+    if not sis:
+        return False
+    for si in sis:
+        s = (si or "").lower().lstrip("#")
+        if s in idx["top_hashtags"]:
+            return True
+        for c in idx["top_cats"]:
+            for word in (c or "").split():
+                if len(word) > 3 and word in s:
+                    return True
+    return False
+
+
 # -- Shared helpers --------------------------------------------------------
 
 def _check_tool_call_rules(tool_trace: list[dict], rules: list[str]) -> dict:
@@ -279,20 +369,20 @@ def _build_common_args(task_id: str, extra: dict) -> dict:
     return {"task_id": task_id, **extra}
 
 
-def build_t6_community_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One per social app via app_native + one per app via chatbot_routed —
     6 instances total. Each entry-point exercises a different tool path."""
     out: list[dict] = []
     for app in SOCIAL_APPS:
         out.append({
-            "instance_id": f"t6_{app}_native", "task_id": "agentic_user_voice_post",
+            "instance_id": f"t6_{app}_native", "task_id": "agentic_user_tone_post",
             "entry_point": "app_native", "target_app": app, "t_test": t_anchor,
             "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
             "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
         })
     for app in SOCIAL_APPS:
         out.append({
-            "instance_id": f"t6_{app}_chatbot", "task_id": "agentic_user_voice_post",
+            "instance_id": f"t6_{app}_chatbot", "task_id": "agentic_user_tone_post",
             "entry_point": "chatbot_routed", "target_app": app, "t_test": t_anchor,
             "tool_call_rules": [f"count('{app}_create_post') <= 1"],
             "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
@@ -315,9 +405,12 @@ def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int
 
 
 def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Two windows (24h, 7d) per social app — 6 instances when all
-    apps have DMs. Each window asks the agent to digest a different
-    time slice."""
+    """Two windows (24h, 7d) per social app. Persona-relevance filter:
+    skip an (app, window) pair unless there are ≥3 threads in scope AND
+    ≥1 thread previews a persona-relevant topic. With <3 threads any
+    digest is trivially "list all"; with 0 persona-relevant threads
+    personalization can't shape the priority order."""
+    idx = _build_persona_topic_index(bq, user_id, t_anchor)
     out = []
     DAY = 24 * 3600
     windows = [
@@ -326,7 +419,14 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
     ]
     for app in SOCIAL_APPS:
         dms = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
-        if not dms.get("results"):
+        threads = dms.get("results") or []
+        if len(threads) < 3:
+            continue
+        n_relevant = sum(
+            1 for t in threads
+            if _text_touches_persona(t.get("last_message_preview", ""), idx)
+        )
+        if n_relevant < 1:
             continue
         for win_name, _win_start in windows:
             out.append({
@@ -339,14 +439,21 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
                 "tool_call_rules": [f"count('{app}_list_dms') >= 1",
                                     f"count('{app}_send_dm') == 0",
                                     f"count('{app}_create_post') == 0"],
+                "persona_relevance": {
+                    "n_threads": len(threads),
+                    "n_persona_relevant_threads": n_relevant,
+                },
             })
     return out
 
 
 def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Pick recent positive posts and repost to a different app — emit
-    one instance per (source_app → target_app) pair across the three
-    social apps so the bucket meets its floor."""
+    """Pick a positive post the user actually engaged with on the source
+    app and repost it to a target app. Persona-relevance filter: the
+    source post's hashtags must intersect the user's top-20 hashtags so
+    voice + hashtag adaptation is a meaningful signal. Generic posts the
+    user happened to like are skipped."""
+    idx = _build_persona_topic_index(bq, user_id, t_anchor)
     PAIRS = [
         ("instagram", "threads"),
         ("instagram", "facebook"),
@@ -358,18 +465,29 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
     out: list[dict] = []
     for src_app, tgt_app in PAIRS:
         evs = bq.get_events(user_id=user_id, app=src_app, since_timestamp=t_anchor)
-        positive_posts = [
+        # Prefer the most recent positive post that overlaps the user's
+        # top-20 hashtags; fall back to nothing if none qualify.
+        candidates = [
             e for e in evs
             if "positive" in e.get("source_interaction_type", "")
             and (e.get("content") or {}).get("caption")
+            and any(
+                (h or "").lstrip("#").lower() in idx["top_hashtags"]
+                for h in (e.get("source_hashtags") or [])
+            )
         ]
-        if not positive_posts:
+        if not candidates:
             continue
-        src = positive_posts[-1]
+        src = candidates[-1]
         source_post = {
             "caption": (src.get("content") or {}).get("caption", ""),
             "hashtags": src.get("source_hashtags", []),
         }
+        overlap = sorted({
+            (h or "").lstrip("#").lower()
+            for h in (src.get("source_hashtags") or [])
+            if (h or "").lstrip("#").lower() in idx["top_hashtags"]
+        })
         out.append({
             "instance_id": f"t9_{src_app}_to_{tgt_app}",
             "task_id": "agentic_cross_app_repost",
@@ -387,16 +505,29 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
                 "must_contain_count": {f"{tgt_app}_create_post": 1},
                 "must_not_contain": [f"{src_app}_create_post"],
             },
+            "persona_relevance": {"hashtag_overlap": overlap},
         })
     return out
 
 
 def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """One per inbound DM that's recent and from a friend."""
+    """One per inbound DM where the user's persona materially shapes the
+    right reply. We look across more threads than we keep, then filter to
+    instances passing at least one persona-relevance check:
+      - inbound message overlaps user's top hashtags / categories
+      - sender is a friend whose shared_interests overlap user's persona
+      - inbound asks an opinion / recommendation question
+    Generic logistics replies ("yeah saturday works") are dropped — both
+    memory-using and memory-blind agents handle those equally."""
+    idx = _build_persona_topic_index(bq, user_id, t_anchor)
     out = []
+    per_app_cap = 2
     for app in SOCIAL_APPS:
-        dms_resp = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=5)
-        for thread in dms_resp.get("results", [])[:2]:
+        dms_resp = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
+        kept_in_app = 0
+        for thread in dms_resp.get("results", []):
+            if kept_in_app >= per_app_cap:
+                break
             tid = thread.get("thread_id")
             thread_full = bq.get_dm_thread(user_id=user_id, app=app, thread_id=tid, since_timestamp=t_anchor, limit=10) or {}
             msgs = thread_full.get("results") or thread_full.get("messages") or []
@@ -404,15 +535,31 @@ def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[
             if not inbound:
                 continue
             last = inbound[-1]
+            text = last.get("text", "") or ""
+            sender_id = last.get("sender") or "unknown"
+            friend = idx["friends_by_id"].get(sender_id)
+
+            topic_hit = _text_touches_persona(text, idx)
+            relationship_hit = _friend_shares_persona(friend, idx)
+            question_hit = _is_opinion_or_recommendation_request(text)
+            if not (topic_hit or relationship_hit or question_hit):
+                continue  # generic logistics — persona doesn't shape the answer
+
             out.append({
                 "instance_id": f"t10_{app}_{tid}", "task_id": "agentic_auto_reply", "entry_point": "app_native",
                 "target_app": app, "thread_id": tid,
-                "inbound_message": last.get("text", ""),
-                "sender_id": last.get("sender", "unknown"),
+                "inbound_message": text,
+                "sender_id": sender_id,
                 "t_test": t_anchor,
                 "tool_call_rules": [f"count('{app}_send_dm') == 1", f"count('{app}_create_post') == 0"],
                 "final_state_expected": {"must_contain_count": {f"{app}_send_dm": 1}},
+                "persona_relevance": {
+                    "topic_match": topic_hit,
+                    "relationship_match": relationship_hit,
+                    "opinion_request": question_hit,
+                },
             })
+            kept_in_app += 1
     return out
 
 
@@ -449,7 +596,7 @@ def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int)
     ]
 
 
-def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """Chatbot → target_app dispatch. 6 examples spread across apps."""
     contexts = [
         ("threads", "I was just saying that discipline is what carries when motivation fades."),
@@ -460,7 +607,7 @@ def build_t13_chatbot_dispatch(bq: BackendQuery, user_id: str, t_anchor: int) ->
         ("facebook", "wanted to flag the local food drive to my friends list this weekend."),
     ]
     return [
-        {"instance_id": f"t13_{i}", "task_id": "agentic_chatbot_dispatch", "entry_point": "chatbot_routed",
+        {"instance_id": f"t13_{i}", "task_id": "agentic_send_post", "entry_point": "chatbot_routed",
          "target_app": app, "context": ctx, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 1"],
          "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1},
@@ -488,19 +635,41 @@ def build_t15_collection_curation(bq: BackendQuery, user_id: str, t_anchor: int)
 
 
 def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """One per group thread. Requires Extension B output."""
+    """One per group thread, filtered to threads where summarization is
+    non-trivial: the thread either references a topic in the user's
+    persona OR contains an open question / decision signal. Pure
+    logistics threads ("what time again?") get the same summary
+    regardless of memory and pollute the benchmark."""
+    idx = _build_persona_topic_index(bq, user_id, t_anchor)
     out = []
+    DECISION_SIGNALS = ("?", "decide", "decision", "settle", "vote",
+                         "thoughts", "should we", "what about", "let me know")
     for app in SOCIAL_APPS:
         page = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
         for t in page.get("results", []):
-            if t.get("is_group"):
-                out.append({
-                    "instance_id": f"t16_{app}_{t['thread_id']}", "task_id": "agentic_group_dm_summary",
-                    "entry_point": "chatbot_routed",
-                    "target_app": app, "thread_id": t["thread_id"], "t_test": t_anchor,
-                    "tool_call_rules": [f"count('{app}_send_dm') == 0",  # don't send without approval
-                                        f"count('{app}_get_dm_thread') >= 1"],
-                })
+            if not t.get("is_group"):
+                continue
+            tid = t["thread_id"]
+            thread_full = bq.get_dm_thread(user_id=user_id, app=app, thread_id=tid, since_timestamp=t_anchor, limit=20) or {}
+            msgs = thread_full.get("results") or thread_full.get("messages") or []
+            if not msgs:
+                continue
+            joined = " ".join((m.get("text") or "") for m in msgs).lower()
+            has_persona = _text_touches_persona(joined, idx)
+            has_decision = any(sig in joined for sig in DECISION_SIGNALS)
+            if not (has_persona or has_decision):
+                continue
+            out.append({
+                "instance_id": f"t16_{app}_{tid}", "task_id": "agentic_group_dm_summary",
+                "entry_point": "chatbot_routed",
+                "target_app": app, "thread_id": tid, "t_test": t_anchor,
+                "tool_call_rules": [f"count('{app}_send_dm') == 0",  # don't send without approval
+                                    f"count('{app}_get_dm_thread') >= 1"],
+                "persona_relevance": {
+                    "topic_match": has_persona,
+                    "has_decision_signal": has_decision,
+                },
+            })
     return out
 
 
@@ -537,20 +706,38 @@ def _spread_anchors(bq: BackendQuery, user_id: str, t_anchor: int, n: int = 5) -
 
 
 def build_t18_proactive_daily(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Daily-briefing probe — emit 5 instances at evenly-spaced anchors so
-    the bucket meets its floor (was 1 per user)."""
+    """Daily-briefing probe — emit instances at evenly-spaced anchors,
+    keeping only those where the past 24h of activity spans ≥2 of the
+    user's top categories. With <2 categories present the priority order
+    is trivial (one obvious item or none), and personalization adds
+    nothing over a generic recency-sorted list."""
+    idx = _build_persona_topic_index(bq, user_id, t_anchor)
     anchors = _spread_anchors(bq, user_id, t_anchor, n=5)
-    return [
-        {
+    DAY = 24 * 3600
+    out: list[dict] = []
+    for i, ts in enumerate(anchors):
+        cats_seen: set[str] = set()
+        for app in SOCIAL_APPS:
+            for e in bq.get_events(user_id=user_id, app=app, since_timestamp=ts):
+                ets = int(e.get("source_timestamp") or 0)
+                if ets < ts - DAY or ets >= ts:
+                    continue
+                for pref in (e.get("preferences") or []):
+                    c = (pref.get("category") or "").strip().lower()
+                    if c in idx["top_cats"]:
+                        cats_seen.add(c)
+        if len(cats_seen) < 2:
+            continue
+        out.append({
             "instance_id": f"t18_daily_{i}",
             "task_id": "agentic_proactive_daily_catchup",
             "entry_point": "chatbot_routed",
             "t_test": ts,
             "tool_call_rules": ["count('instagram_create_post') == 0",
                                 "count('instagram_send_dm') == 0"],
-        }
-        for i, ts in enumerate(anchors)
-    ]
+            "persona_relevance": {"top_cats_in_window": sorted(cats_seen)},
+        })
+    return out
 
 
 def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
@@ -569,14 +756,14 @@ def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> l
 
 
 ALL_BUILDERS: dict[str, Callable] = {
-    "agentic_user_voice_post":         build_t6_community_digest,
+    "agentic_user_tone_post":         build_t6_user_tone_post,
     "agentic_moment_recommendation":    build_t7_moment_recommendation,
     "agentic_dm_digest":                build_t8_dm_digest,
     "agentic_cross_app_repost":         build_t9_cross_app_repost,
     "agentic_auto_reply":               build_t10_auto_reply,
     "agentic_vague_refind":             build_t11_vague_refind,
     "agentic_composed_post":            build_t12_agent_composed_post,
-    "agentic_chatbot_dispatch":         build_t13_chatbot_dispatch,
+    "agentic_send_post":                build_t13_send_post,
     # agentic_draft_audit removed — workstream F.
     "agentic_collection_curation":      build_t15_collection_curation,
     "agentic_group_dm_summary":         build_t16_group_dm_summary,
@@ -629,14 +816,14 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
 def _query_text_for(task_id: str, inst: dict) -> str:
     """Extract a representative query string per task for rubric ground-truth building."""
     return {
-        "agentic_user_voice_post": f"compose a post in the user's voice on {inst.get('target_app')}",
+        "agentic_user_tone_post": f"compose a post in the user's voice on {inst.get('target_app')}",
         "agentic_moment_recommendation": f"recommend something for {inst.get('moment', '')}",
         "agentic_dm_digest": f"dm digest on {inst.get('target_app')}",
         "agentic_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
         "agentic_auto_reply": inst.get("inbound_message", ""),
         "agentic_vague_refind": f"find post about {inst.get('topic', '')}",
         "agentic_composed_post": inst.get("update", ""),
-        "agentic_chatbot_dispatch": inst.get("context", ""),
+        "agentic_send_post": inst.get("context", ""),
         "agentic_draft_audit": inst.get("draft", ""),
         "agentic_collection_curation": f"curate collections on {inst.get('target_app')}",
         "agentic_group_dm_summary": "group dm summary",
@@ -650,14 +837,14 @@ def _prompt_for(task_id: str):
     """Return a closure (inst, history_block) -> prompt for the given task."""
     pa = prompts_agentic
 
-    def t6(inst, h): return pa.t6_community_digest(inst["target_app"], h)
+    def t6(inst, h): return pa.t6_user_tone_post(inst["target_app"], h)
     def t7(inst, h): return pa.t7_moment_recommendation(inst["moment"], h)
     def t8(inst, h): return pa.t8_dm_digest(inst["target_app"], h)
     def t9(inst, h): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h)
     def t10(inst, h): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"))
     def t11(inst, h): return pa.t11_vague_refind(inst["topic"], h)
     def t12(inst, h): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h)
-    def t13(inst, h): return pa.t13_chatbot_dispatch(inst["target_app"], inst["context"], h)
+    def t13(inst, h): return pa.t13_send_post(inst["target_app"], inst["context"], h)
     def t14(inst, h): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
     def t15(inst, h): return pa.t15_collection_curation(inst["target_app"], h)
     def t16(inst, h): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"))
@@ -666,9 +853,9 @@ def _prompt_for(task_id: str):
     def t19(inst, h): return pa.t19_trending_alert(h)
 
     return {
-        "agentic_user_voice_post": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
+        "agentic_user_tone_post": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
         "agentic_cross_app_repost": t9, "agentic_auto_reply": t10, "agentic_vague_refind": t11,
-        "agentic_composed_post": t12, "agentic_chatbot_dispatch": t13, "agentic_draft_audit": t14,
+        "agentic_composed_post": t12, "agentic_send_post": t13, "agentic_draft_audit": t14,
         "agentic_collection_curation": t15, "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,
         "agentic_proactive_daily_catchup": t18, "agentic_trending_alert": t19,
     }.get(task_id)

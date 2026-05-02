@@ -110,7 +110,7 @@ _FLAG_RE = re.compile(
 )
 
 
-def _verify_community_digest(inst: dict, response: str, writes: list) -> dict:
+def _verify_user_tone_post(inst: dict, response: str, writes: list) -> dict:
     """Post must reference >=2 distinct recent community topics from target_app."""
     target_app = inst.get("target_app") or ""
     posts = _writes_for(writes, f"{target_app}_create_post")
@@ -265,7 +265,7 @@ def _verify_composed_post(inst: dict, response: str, writes: list) -> dict:
     return _mk(1, 1, [created_check, (f"reflects_update", f"fail (only {len(shared)} content words shared)")])
 
 
-def _verify_chatbot_dispatch(inst: dict, response: str, writes: list) -> dict:
+def _verify_send_post(inst: dict, response: str, writes: list) -> dict:
     """Dispatched post must be on the right app + content addresses context."""
     target_app = inst.get("target_app") or ""
     posts = _writes_for(writes, f"{target_app}_create_post")
@@ -396,14 +396,14 @@ def _verify_trending_alert(inst: dict, response: str, writes: list) -> dict:
 # ---------------------------------------------------------------------------
 
 OUTPUT_VERIFIERS: dict[str, Callable[[dict, str, list], dict]] = {
-    "agentic_user_voice_post":          _verify_community_digest,
+    "agentic_user_tone_post":          _verify_user_tone_post,
     "agentic_moment_recommendation":    _verify_moment_recommendation,
     "agentic_dm_digest":                _verify_dm_digest,
     "agentic_cross_app_repost":         _verify_cross_app_repost,
     "agentic_auto_reply":               _verify_auto_reply,
     "agentic_vague_refind":             _verify_vague_refind,
     "agentic_composed_post":            _verify_composed_post,
-    "agentic_chatbot_dispatch":         _verify_chatbot_dispatch,
+    "agentic_send_post":                _verify_send_post,
     "agentic_draft_audit":              _verify_draft_audit,
     "agentic_collection_curation":      _verify_collection_curation,
     "agentic_group_dm_summary":         _verify_group_dm_summary,
