@@ -46,15 +46,19 @@ commentary around it.
   "messages": [
     {{"sender": "{initiator_id}", "text": "<short commentary about the post>",
       "carries_forwarded_post": true}},
-    {{"sender": "self", "text": "<short reaction or no-reply marker>"}},
+    {{"sender": "self", "text": "<short reaction>",
+      "reaction_emoji": "<single emoji like ❤ or 🔥, OR null if not applicable>"}},
     ...
   ]
 }}
 ```
 
 Rules:
-- The first message should set up the share: "<short comment about the post>".
+- The first message should set up the share: a short comment about the post.
 - Only ONE message has `carries_forwarded_post: true` (the share itself).
+- A message can be EMOJI-ONLY: leave `text` empty and set `reaction_emoji` to a single emoji.
+- A message can MIX: short text + reaction_emoji at the end.
+- `reaction_emoji` is ONLY a single small emoji (like ❤ / 🔥 / 👍 / 😂 / 🙌 / 💯 / 🤣). Never put it inside the text field.
 - For "{thread_kind}", follow the guidance above for whether and how the user replies.
 """
 
@@ -64,18 +68,32 @@ _THREAD_GUIDANCE = {
         "A friend forwards the post. The user does NOT reply at all — "
         "produce ONLY the friend's message. (1 message total.)"
     ),
-    "inbound_friend_positive": (
-        "A friend forwards the post and the user replies POSITIVELY (a "
-        "short positive reply, like 'lol love this' or '🔥' or 'yep agreed'). "
+    "inbound_friend_positive_text": (
+        "A friend forwards the post and the user replies POSITIVELY in "
+        "TEXT — a short positive reply like 'lol love this' or 'yep "
+        "agreed' or 'this is exactly my vibe'. NO emoji-only message. "
         "(2 messages total.)"
+    ),
+    "inbound_friend_emoji_react": (
+        "A friend forwards the post and the user reacts with ONLY an "
+        "emoji — no words, just one of: 🔥 / ❤ / 👍 / 😂 / 🙌 / 💯 / 🤣. "
+        "Set `reaction_emoji` on the user's message and leave `text` "
+        "empty. (2 messages total.)"
+    ),
+    "inbound_friend_positive_mixed": (
+        "A friend forwards the post and the user replies with a SHORT "
+        "positive text PLUS a like/heart emoji at the end. (2 messages "
+        "total — the user's message has both `text` and `reaction_emoji`.)"
     ),
     "inbound_friend_neutral": (
         "A friend forwards the post and the user replies but NOT positively "
-        "(a brief neutral observation, no enthusiasm). (2–3 messages total.)"
+        "(a brief neutral observation, no enthusiasm). (2 messages total.)"
     ),
     "outbound_friend_share": (
         "The USER forwards the post to a friend with a short comment. The "
-        "friend may respond briefly. (2 messages total.)"
+        "friend reacts back — sometimes with text, sometimes with just an "
+        "emoji (use `reaction_emoji` on the friend's message). "
+        "(2 messages total.)"
     ),
     "stranger_no_reply": (
         "A stranger DMs the user with cold outreach UNRELATED to the user's "
@@ -85,8 +103,9 @@ _THREAD_GUIDANCE = {
     ),
     "group_chat": (
         "A small group thread (3 participants incl. the user) discussing the "
-        "forwarded post. Participants exchange short reactions. The user "
-        "replies positively. (3 messages total.)"
+        "forwarded post. Participants exchange short reactions; one of them "
+        "may use just an emoji (`reaction_emoji`). The user replies "
+        "positively. (3 messages total.)"
     ),
 }
 
@@ -179,20 +198,38 @@ def generate_dm_threads(
 
     def _friend(): return rng.choice(friends_for_app) if friends_for_app else None
 
+    # Mix of response styles per friend-inbound thread — text replies,
+    # emoji-only reactions, and mixed text+emoji are all common in real DMs.
+    # Roughly: 30% text-positive, 30% emoji-react, 20% mixed, 10% neutral,
+    # 10% no-reply. Plus ~20% outbound (user-initiated → explicit_positive)
+    # and ~10% stranger cold outreach.
     for _ in range(2):
         f = _friend()
-        if f: plans.append({"kind": "inbound_friend_positive", "initiator_id": f["friend_id"], "needs_seed": True})
+        if f: plans.append({"kind": "inbound_friend_positive_text",
+                            "initiator_id": f["friend_id"], "needs_seed": True})
     for _ in range(2):
         f = _friend()
-        if f: plans.append({"kind": "inbound_friend_no_reply", "initiator_id": f["friend_id"], "needs_seed": True})
-    for _ in range(2):
-        f = _friend()
-        if f: plans.append({"kind": "outbound_friend_share", "initiator_id": "self", "needs_seed": True})
+        if f: plans.append({"kind": "inbound_friend_emoji_react",
+                            "initiator_id": f["friend_id"], "needs_seed": True})
     for _ in range(1):
         f = _friend()
-        if f: plans.append({"kind": "inbound_friend_neutral", "initiator_id": f["friend_id"], "needs_seed": True})
+        if f: plans.append({"kind": "inbound_friend_positive_mixed",
+                            "initiator_id": f["friend_id"], "needs_seed": True})
+    for _ in range(1):
+        f = _friend()
+        if f: plans.append({"kind": "inbound_friend_no_reply",
+                            "initiator_id": f["friend_id"], "needs_seed": True})
     for _ in range(2):
-        plans.append({"kind": "stranger_no_reply", "initiator_id": f"stranger_{rng.randint(1, 99)}", "needs_seed": False})
+        f = _friend()
+        if f: plans.append({"kind": "outbound_friend_share",
+                            "initiator_id": "self", "needs_seed": True})
+    for _ in range(1):
+        f = _friend()
+        if f: plans.append({"kind": "inbound_friend_neutral",
+                            "initiator_id": f["friend_id"], "needs_seed": True})
+    for _ in range(1):
+        plans.append({"kind": "stranger_no_reply",
+                      "initiator_id": f"stranger_{rng.randint(1, 99)}", "needs_seed": False})
     n_group = 2 if app == "instagram" else 1
     for _ in range(n_group):
         if len(friends_for_app) >= 2:
@@ -261,10 +298,20 @@ def generate_dm_threads(
                 "msg_id": f"{tid}_m_{j:02d}",
                 "sender": m.get("sender", plan["initiator_id"]),
                 "timestamp": msg_ts,
-                "text": m.get("text", ""),
+                "text": m.get("text", "") or "",
             }
+            # Reaction-only messages carry an emoji instead of (or in
+            # addition to) text. Stored as a separate field so the
+            # renderer can show them as a small reaction bubble.
+            reaction = m.get("reaction_emoji")
+            if isinstance(reaction, str) and reaction.strip() and reaction.lower() not in ("null", "none"):
+                built["reaction_emoji"] = reaction.strip()
             if m.get("carries_forwarded_post") and seed:
                 built["forwarded_content"] = _content_for_forward(seed)
+            # Drop the message if it has neither text nor reaction nor
+            # forwarded content (LLM occasionally emits empty stubs).
+            if not built["text"] and not built.get("reaction_emoji") and not built.get("forwarded_content"):
+                continue
             msgs.append(built)
 
         is_group = (kind == "group_chat")
@@ -277,17 +324,21 @@ def generate_dm_threads(
         last_sender = last["sender"]
         latest_ts = max(int(m.get("timestamp") or 0) for m in msgs)
 
-        # Interaction-type rules (same as before):
-        #   implicit_negative → DM from a stranger with NO user response
-        #   implicit_positive → DM from a friend with NO user response
-        #   explicit_positive → user responded positively (positive reply,
-        #                       liked, like-equivalent emoji), OR user
-        #                       initiated the share (outbound forward)
-        #   implicit_positive → user responded but not positively
+        # Interaction-type rules:
+        #   explicit_positive → first message is from self (the user
+        #                       initiated the share — user-initiated DMs
+        #                       are positive engagement signals); OR
+        #                       a friend/stranger sent first AND the user
+        #                       responded positively (text or emoji react).
+        #   implicit_positive → friend sent first, user responded but
+        #                       not positively; OR friend sent first,
+        #                       user did not respond.
+        #   implicit_negative → stranger sent first, user did not respond.
         non_self_msgs = [m for m in msgs if m.get("sender") != "self"]
         self_msgs = [m for m in msgs if m.get("sender") == "self"]
-        if not non_self_msgs:
-            interaction_type = "explicit_positive"  # outbound — user initiated
+        first_sender = msgs[0].get("sender")
+        if first_sender == "self" or not non_self_msgs:
+            interaction_type = "explicit_positive"  # user initiated the share
         else:
             initiator = non_self_msgs[0].get("sender")
             initiator_is_friend = any(
@@ -347,27 +398,38 @@ def generate_dm_threads(
     return merged_events
 
 
-# Tokens that a self message must carry to count as a "positive response".
-# Captures explicit reply text + like / heart / laugh emoji equivalents.
+# Tokens that mark an ENTHUSIASTIC response (not just a neutral
+# acknowledgment). Single-word fillers like "yeah" / "ok" / "sure" are
+# excluded — they often appear in lukewarm replies. Real positive
+# signals are: laughs, love/heart language, strong-agreement phrases,
+# and like-family emoji. Plain emoji reactions are handled separately
+# via reaction_emoji.
 _POSITIVE_TOKENS = (
-    "lol", "haha", "lmao", "lmfao", "yes", "yeah", "yep", "yup",
-    "love it", "love this", "loved it", "love that",
-    "sounds good", "sounds great", "sg", "looks good",
-    "nice", "amazing", "awesome", "great", "cool", "perfect", "fantastic",
-    "agreed", "for sure", "definitely", "absolutely", "exactly",
-    "thanks", "thank you", "ty", "tysm", "appreciate",
-    "down", "i'm in", "let's go", "bet", "fr", "facts",
+    # Laughs (always positive)
+    "lol", "haha", "lmao", "lmfao", "rofl",
+    # Love language
+    "love it", "love this", "love that", "loved it", "loved this",
+    "love how", "obsessed",
+    # Strong agreement
+    "exactly", "100%", "agreed", "for sure", "absolutely", "definitely",
+    "facts", "true that", "real", "spot on",
+    # Excitement
+    "let's go", "i'm in", "i'm down", "down for it", "so good", "so dope",
+    "amazing", "incredible", "perfect", "fantastic", "stunning",
+    # Positive emoji
     "❤", "🧡", "💛", "💚", "💙", "💜", "🤍",
     "👍", "👌", "🙌", "🔥", "💯",
-    "😂", "🤣", "😆", "😄", "😊", "🥰", "😍", "🤩",
+    "😂", "🤣", "😆", "🥰", "😍", "🤩",
 )
 
 
 def _self_responded_positively(self_msgs: list[dict]) -> bool:
-    """True if any self-message contains a positive token (text reply,
-    like, like-equivalent emoji). Heuristic-only — covers the user's
-    rule: 'positive reply, liked, other emoji similar to like'."""
+    """True if any self-message carries an explicit `reaction_emoji`,
+    OR contains an enthusiastic positive token. Bare acknowledgments
+    like 'yeah ok' / 'sure' do NOT count — those are implicit_positive."""
     for m in self_msgs:
+        if m.get("reaction_emoji"):
+            return True  # emoji reaction = positive response by itself
         text = (m.get("text") or "").lower()
         if any(tok in text for tok in _POSITIVE_TOKENS):
             return True

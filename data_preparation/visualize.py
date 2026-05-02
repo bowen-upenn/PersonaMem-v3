@@ -1644,6 +1644,9 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .dm-bubble .dm-sender {{ font-size: 11px; color: #64748B; font-weight: 600; margin-bottom: 2px; font-family: inherit; }}
   .dm-bubble.dm-self .dm-sender {{ color: #15803D; }}
   .dm-bubble .dm-text {{ font-family: inherit; white-space: pre-wrap; }}
+  .dm-bubble .dm-reaction {{ font-size: 22px; line-height: 1; margin-top: 2px; }}
+  .dm-bubble.dm-reaction-only {{ background: transparent; border: none; padding: 2px 6px; }}
+  .dm-bubble.dm-reaction-only .dm-sender {{ font-size: 10px; }}
   .dm-bubble .dm-forwarded {{ margin-top: 6px; padding: 6px 8px; background: rgba(255,255,255,0.7); border-left: 3px solid #94A3B8; border-radius: 4px; font-size: 12px; }}
   .dm-bubble .dm-forwarded .content-block {{ margin: 0; padding: 0; background: transparent; border: none; }}
   .dm-bubble .dm-forwarded .c-type {{ font-size: 10px; opacity: 0.7; margin-bottom: 2px; }}
@@ -1881,10 +1884,16 @@ function renderContent(ev) {{
     if (messages && messages.length > 0) {{
       const bubbles = messages.map(m => {{
         const isSelf = m.sender === 'self';
-        const sideClass = isSelf ? 'dm-bubble dm-self' : 'dm-bubble dm-other';
         const senderLabel = isSelf ? 'you' : (m.sender || '?');
+        const reactionOnly = m.reaction_emoji && !m.text;
+        const sideClass = isSelf
+          ? (reactionOnly ? 'dm-bubble dm-self dm-reaction-only' : 'dm-bubble dm-self')
+          : (reactionOnly ? 'dm-bubble dm-other dm-reaction-only' : 'dm-bubble dm-other');
         const textBlock = m.text
           ? `<div class="dm-text">${{escapeHtml(m.text)}}</div>`
+          : '';
+        const reactBlock = m.reaction_emoji
+          ? `<div class="dm-reaction">${{escapeHtml(m.reaction_emoji)}}</div>`
           : '';
         const fwdBlock = m.forwarded_content
           ? `<div class="dm-forwarded">${{renderContent({{
@@ -1893,7 +1902,7 @@ function renderContent(ev) {{
               messages: null,
             }})}}</div>`
           : '';
-        return `<div class="${{sideClass}}"><div class="dm-sender">${{escapeHtml(senderLabel)}}</div>${{textBlock}}${{fwdBlock}}</div>`;
+        return `<div class="${{sideClass}}"><div class="dm-sender">${{escapeHtml(senderLabel)}}</div>${{textBlock}}${{reactBlock}}${{fwdBlock}}</div>`;
       }}).join('');
       // DM threads omit the outer "text" content_type header — every DM
       // is text by definition; the inner forwarded-content blocks
