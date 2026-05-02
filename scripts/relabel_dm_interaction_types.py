@@ -30,10 +30,15 @@ from data_preparation.extension_b.dm_threads import _self_responded_positively
 
 
 def _classify(messages: list[dict], friend_ids: set[str]) -> str:
+    if not messages:
+        return "implicit_positive"
     non_self = [m for m in messages if m.get("sender") != "self"]
     self_msgs = [m for m in messages if m.get("sender") == "self"]
-    if not non_self:
-        return "explicit_positive"  # outbound — user-initiated
+    first_sender = messages[0].get("sender")
+    # User-initiated share (first message from self) is explicit_positive
+    # regardless of whether the friend reacts back.
+    if first_sender == "self" or not non_self:
+        return "explicit_positive"
     initiator = non_self[0].get("sender")
     initiator_is_friend = initiator in friend_ids
     if not self_msgs:
