@@ -233,6 +233,59 @@ def _gt_at_ai_directive(inst: dict) -> dict:
             "is_held_out": (i in pos),
         })
     action = inst.get("directive_action", "")
+    app = (inst.get("directive_app") or "").capitalize() or "the social app"
+    lag_label = inst.get("lag_bucket") or ""
+    lag_pretty = {"24h": "24 hours", "72h": "72 hours", "7d": "7 days"}.get(lag_label, lag_label or "some time")
+    user_msg = (inst.get("directive_user_message") or "").strip()
+
+    # Plain-English gloss of what the past directive meant. Two families:
+    # "wants more like this" vs "wants less like this." First-time readers
+    # should be able to tell which without knowing the action vocabulary.
+    _wants_more = action in {"at_ai_recommend_more", "at_ai_focus_topic"}
+    if _wants_more:
+        intent_line = f"Past comment meant: “show me MORE of this kind of content.”"
+    else:
+        intent_line = f"Past comment meant: “show me LESS of this kind of content.”"
+
+    directive_tags = [h for h in (inst.get("directive_hashtags") or []) if h]
+    directive_tag_set = {h.lstrip("#").lower() for h in directive_tags}
+    tag_line_label = "Hashtags the user wants more of" if _wants_more else "Hashtags the user wants to avoid"
+    tag_line = f"{tag_line_label}: {', '.join(directive_tags) if directive_tags else '(none)'}"
+
+    # Past comment as the user actually typed it. directive_user_message
+    # is empty in current data — the literal comment is just the action
+    # token. Surface it verbatim; do not invent free text.
+    if user_msg:
+        comment_line = f"Past @ai comment: “@ai {action} — {user_msg}”"
+    else:
+        comment_line = f"Past @ai comment: “@ai {action}”"
+
+    # Per-candidate rationale. Decide "surface" vs "skip/carve-out" from the
+    # actual hashtag overlap so the explanation tracks the data, not the
+    # internally-buggy origin label (which calls non-match positives "match"
+    # in the wants-less branch).
+    rationale_lines: list[str] = ["Per-candidate (why each ranking choice):"]
+    for i, c in enumerate(cands):
+        cand_tags = [h for h in (c.get("hashtags") or []) if h]
+        cand_set = {h.lstrip("#").lower() for h in cand_tags}
+        overlap = sorted(directive_tag_set & cand_set)
+        # Prefer a stable display tag for the overlap (preserve the candidate's
+        # original casing where possible).
+        overlap_display: list[str] = []
+        for h in cand_tags:
+            if h.lstrip("#").lower() in overlap:
+                overlap_display.append(h)
+        if i in carve:
+            reason = f"✗ carve-out — shares avoid hashtags: {', '.join(overlap_display) or '(overlap)'}"
+        elif i in pos:
+            if _wants_more:
+                reason = f"✓ surface — shares wanted hashtags: {', '.join(overlap_display) or '(overlap)'}"
+            else:
+                reason = "✓ surface — no overlap with avoid hashtags"
+        else:
+            reason = "· filler — no overlap with directive hashtags"
+        rationale_lines.append(f"  idx={i:<2} {reason}")
+
     pos_idxs = sorted(pos)
     carve_idxs = sorted(carve)
     return {
@@ -240,10 +293,14 @@ def _gt_at_ai_directive(inst: dict) -> dict:
             f"Ranking with the matching item(s) first (idxs={pos_idxs}); "
             f"carve-out items (idxs={carve_idxs}) excluded from top-3."
         ),
-        "groundtruth_preference": (
-            f"@ai directive: {action}\n"
-            f"Hashtags: {inst.get('directive_hashtags', [])}"
-        ),
+        "groundtruth_preference": "\n".join([
+            f"Past @ai comment on {app}, posted {lag_pretty} before this feed.",
+            comment_line,
+            intent_line,
+            tag_line,
+            "",
+            *rationale_lines,
+        ]),
         "candidates": cand_list,
         "rubric_tags": [
             f"Honor the @ai directive '{action}'.",
@@ -548,7 +605,7 @@ def _build_agentic_tool_call(inst: dict, example_text: str) -> list[dict]:
     task_id = inst.get("task_id", "")
     app = inst.get("target_app") or ""
     src_app = inst.get("source_app") or ""
-    if task_id == "agentic_user_voice_post":
+    if task_id == "agentic_user_tone_post":
         return [{"tool": f"{app}_create_post",
                  "args": {"text": example_text or "<post body>"}}]
     if task_id == "agentic_moment_recommendation":
@@ -577,9 +634,9 @@ def _build_agentic_tool_call(inst: dict, example_text: str) -> list[dict]:
     if task_id == "agentic_composed_post":
         return [{"tool": f"{app}_create_post",
                  "args": {"text": example_text or "<post body>"}}]
-    if task_id == "agentic_chatbot_dispatch":
+    if task_id == "agentic_send_post":
         return [{"tool": f"{app}_create_post",
-                 "args": {"text": example_text or "<dispatched post>"}}]
+                 "args": {"text": example_text or "<post body>"}}]
     if task_id == "agentic_collection_curation":
         return [{"tool": f"{app}_list_saved", "args": {"limit": 50}}]
     if task_id == "agentic_group_dm_summary":
@@ -618,7 +675,7 @@ def _gt_agentic(inst: dict) -> dict:
     # Final user-facing response text only — no "should match user's voice"
     # commentary, no length guidance, no tool counts.
     example_responses: dict[str, str] = {
-        "agentic_user_voice_post": (
+        "agentic_user_tone_post": (
             f"Catching up after the week — {top_hashtags[0] if top_hashtags else 'top topic'} "
             f"had a few good moments, the {top_hashtags[1] if len(top_hashtags) > 1 else 'second topic'} "
             f"crowd is heating up, and a few new {top_cats[0] if top_cats else 'interest'} clips "
@@ -648,8 +705,12 @@ def _gt_agentic(inst: dict) -> dict:
             voice_sample[:120] if voice_sample else
             f"{inst.get('update', '<update>')[:80]} #{top_hashtags[0] if top_hashtags else 'tag'}"
         ),
-        "agentic_chatbot_dispatch": (
-            f"{inst.get('context', '<context>')[:80]} #{top_hashtags[0] if top_hashtags else 'tag'}"
+        # Fallback only — the LLM-gen path produces the real, in-context
+        # post. Kept short and obviously placeholder so it's clear when
+        # the LLM-gen step was skipped.
+        "agentic_send_post": (
+            f"[draft for {target}] {inst.get('context', '<context>')[:80]} "
+            f"#{top_hashtags[0] if top_hashtags else 'tag'}"
         ),
         "agentic_collection_curation": (
             f"Three thematic collections curated from your saves on {target}: "
@@ -745,14 +806,14 @@ TEST_GT_EXTRACTORS = {
     "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
     # All agentic_* tasks share the generic agentic extractor.
     # agentic_draft_audit removed in workstream F.
-    "agentic_user_voice_post":            _gt_agentic,
+    "agentic_user_tone_post":            _gt_agentic,
     "agentic_moment_recommendation":       _gt_agentic,
     "agentic_dm_digest":                   _gt_agentic,
     "agentic_cross_app_repost":            _gt_agentic,
     "agentic_auto_reply":                  _gt_agentic,
     "agentic_vague_refind":                _gt_agentic,
     "agentic_composed_post":               _gt_agentic,
-    "agentic_chatbot_dispatch":            _gt_agentic,
+    "agentic_send_post":                   _gt_agentic,
     "agentic_collection_curation":         _gt_agentic,
     "agentic_group_dm_summary":            _gt_agentic,
     "agentic_wrong_recipient_check":       _gt_agentic,
@@ -802,16 +863,19 @@ def _q_chatbot(inst: dict) -> str:
 
 
 def _q_at_ai_directive(inst: dict) -> str:
-    msg = inst.get("directive_user_message") or ""
-    action = inst.get("directive_action") or ""
-    return f"@ai {action}: {msg}" if msg else f"@ai {action}"
+    # E2 simulates a proactive recsys feed served at T_test (24h/72h/7d after
+    # the user's past @ai comment). The user is NOT typing anything at T_test
+    # — the directive lives in the past as context. Render the live query as
+    # `[recsys]` to make that explicit; the past @ai comment is rendered in
+    # its own "Prior @ai comment" section by `_gt_at_ai_directive`.
+    return "[recsys]"
 
 
 def _q_active_mistake_prevention(inst: dict) -> str:
     return inst.get("user_query") or inst.get("triggering_user_query") or "[mistake-prevention probe]"
 
 
-def _q_agentic_user_voice_post(inst: dict) -> str:
+def _q_agentic_user_tone_post(inst: dict) -> str:
     return f"[agentic] compose a post in the user's voice on {inst.get('target_app', '')}"
 
 
@@ -843,8 +907,10 @@ def _q_agentic_composed_post(inst: dict) -> str:
     return f"[agentic] post on {inst.get('target_app', '')}: {inst.get('update', '')}"
 
 
-def _q_agentic_chatbot_dispatch(inst: dict) -> str:
-    return inst.get("context") or "[agentic dispatch]"
+def _q_agentic_send_post(inst: dict) -> str:
+    ctx = inst.get("context") or ""
+    target = inst.get("target_app") or ""
+    return f"[chat → post on {target}] {ctx}" if ctx else f"[chat → post on {target}]"
 
 
 # _q_agentic_draft_audit removed in workstream F.
@@ -909,14 +975,14 @@ TEST_QUERY_EXTRACTORS = {
     "e2_at_ai_followup":                   _q_at_ai_directive,
     "active_mistake_prevention":           _q_active_mistake_prevention,
     "e6_active_mistake_prevention":        _q_active_mistake_prevention,
-    "agentic_user_voice_post":            _q_agentic_user_voice_post,
+    "agentic_user_tone_post":            _q_agentic_user_tone_post,
     "agentic_moment_recommendation":       _q_agentic_moment_recommendation,
     "agentic_dm_digest":                   _q_agentic_dm_digest,
     "agentic_cross_app_repost":            _q_agentic_cross_app_repost,
     "agentic_auto_reply":                  _q_agentic_auto_reply,
     "agentic_vague_refind":                _q_agentic_vague_refind,
     "agentic_composed_post":               _q_agentic_composed_post,
-    "agentic_chatbot_dispatch":            _q_agentic_chatbot_dispatch,
+    "agentic_send_post":                   _q_agentic_send_post,
     # agentic_draft_audit removed in workstream F.
     "agentic_collection_curation":         _q_agentic_collection_curation,
     "agentic_group_dm_summary":            _q_agentic_group_dm_summary,
@@ -1013,6 +1079,13 @@ def _load_test_samples(
                 inst.get("groundtruth_preference")
                 or gt.get("groundtruth_preference", "")
             )
+            # at_ai_directive_followup's gt is deterministic (no LLM step),
+            # so the extractor's current output is always more up-to-date
+            # than any baked value frozen at build time. Forcing the
+            # extractor avoids stale text when the rationale format
+            # changes without re-running the build pipeline.
+            if task_type in {"at_ai_directive_followup", "e2_at_ai_followup"}:
+                groundtruth_preference = gt.get("groundtruth_preference", "") or groundtruth_preference
             sample = {
                 "ts": ts_int,
                 "ts_iso": r.get("ts_iso", ""),
@@ -2135,7 +2208,7 @@ if (eventsData.length === 0) {{
       }}
       if (t.inferior_response && t.inferior_response.text) {{
         const flaw = t.inferior_response.flaw_kind || '';
-        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response (foil) <small style="color:#92400E;">[flaw: ${{escapeHtml(flaw)}}]</small></div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
+        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small></div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
       }}
       if (Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
         const calls = t.tool_call.map(tc => {{

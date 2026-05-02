@@ -34,7 +34,7 @@ from evaluation import metrics as metrics_mod
 AGENTIC_TASK_IDS = [
     "t6_community_digest", "t7_moment_recommendation", "t8_dm_digest",
     "t9_cross_app_repost", "t10_auto_reply", "t11_vague_refind",
-    "t12_agent_composed_post", "t13_chatbot_dispatch", "t14_draft_audit",
+    "t12_agent_composed_post", "t13_send_post", "t14_draft_audit",
     "t15_collection_curation", "t16_group_dm_summary", "t17_wrong_recipient",
     "t18_proactive_daily", "t19_trending_alert",
 ]

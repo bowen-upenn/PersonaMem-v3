@@ -50,14 +50,14 @@ _PERSONALIZATION_TASKS = {
     "active_mistake_prevention",
     "repetition_fatigue_pairs",
     "repetition_fatigue_sequences",
-    "agentic_user_voice_post",
+    "agentic_user_tone_post",
     "agentic_moment_recommendation",
     "agentic_dm_digest",
     "agentic_cross_app_repost",
     "agentic_auto_reply",
     "agentic_vague_refind",
     "agentic_composed_post",
-    "agentic_chatbot_dispatch",
+    "agentic_send_post",
     "agentic_collection_curation",
     "agentic_group_dm_summary",
     "agentic_wrong_recipient_check",
@@ -81,20 +81,29 @@ _PERSONALIZATION_TASKS = {
 
 # Tasks whose example_response the extractor emits as concrete text
 # (already real). These get SKIPPED by the LLM-gen pass.
+#
+# Write-and-summarize agentic tasks (compose a post, write a reply, write a
+# digest, summarize a thread) used to live here, but the deterministic
+# templates produced absurd outputs — e.g. agentic_auto_reply emitted a
+# canned "yeah that works, see you saturday" regardless of the inbound DM,
+# and agentic_send_post echoed the user's brief verbatim with one hashtag
+# tacked on. They now route through the LLM-gen path so the gold actually
+# responds in context, grounded in the user's real friends / threads /
+# voice via _enrich_groundtruth_for_task.
 _TASKS_ALREADY_CONCRETE = {
-    "agentic_user_voice_post",
-    "agentic_moment_recommendation",
-    "agentic_dm_digest",
-    "agentic_cross_app_repost",
-    "agentic_auto_reply",
-    "agentic_vague_refind",
-    "agentic_composed_post",
-    "agentic_chatbot_dispatch",
-    "agentic_collection_curation",
-    "agentic_group_dm_summary",
+    # Pure structural responses where the words are tightly constrained by
+    # the task — LLM-gen adds little and risks drift.
+    "agentic_vague_refind",              # lookup template
+    "agentic_wrong_recipient_check",     # confirmation prompt
+}
+
+# Tasks where the gold is too short / structural for the inferior-foil
+# pipeline to produce a natural rewrite. Skipping foil generation here
+# avoids splice-fragment failures like
+#   "...two Alexes in your friends list, #NFL, #ZachWilson, ..."
+_TASKS_NO_FOIL = {
     "agentic_wrong_recipient_check",
-    "agentic_proactive_daily_catchup",
-    "agentic_trending_alert",
+    "agentic_vague_refind",
 }
 
 # Ranking tasks — example_response is a deterministic ranked index list,
@@ -116,11 +125,27 @@ Task type: {task_type}
 User query / trigger:
 \"\"\"{query}\"\"\"
 
-Persona signal the agent may draw on (REAL data):
+Persona signal the agent may draw on (REAL data — context for YOU, not \
+content to quote back to the user):
 \"\"\"{groundtruth}\"\"\"
 {prior}
 Write the actual response — natural, concrete, the words the agent would say.
 {length_guidance}
+
+CRITICAL — subtle personalization only:
+  - The persona signal above is YOUR context. Do NOT announce it back to the \
+    user. NEVER write phrases like "you're interested in X", "you like Y", \
+    "you'd like Z", "you'd probably enjoy", "as someone who", "I know you", \
+    "I remember", "given your love of", "based on your", "since you're into".
+  - Do NOT use benchmark-internal category labels as user-facing language. \
+    "comedy video content" → "a comedy clip" / "a short funny video". \
+    "boxing fandom" → "a boxing breakdown" / "a fight thread". Translate \
+    every category phrase into how a person would actually say it.
+  - Personalization should feel invisible: just recommend something whose \
+    topic and tone happens to fit the user. The user shouldn't be able to \
+    tell from the response that the agent has a persona file on them.
+  - Do NOT quote the persona's voice sample back at the user. Use it only \
+    to calibrate your own register and word choice.
 
 Output ONE fenced ```json block:
 ```json
@@ -172,6 +197,71 @@ _TASK_GUIDANCE: dict[str, str] = {
         "topics from gt_positive_engagements (post-t_test real engagement) "
         "and AVOIDS topics from gt_avoid_engagements. Tone: light, "
         "conversational. Each item ≤ 1 sentence."
+    ),
+    # ---- Agentic write/summary tasks (gold must respond IN CONTEXT to the
+    # query — not a canned phrase). The LLM sees the inbound brief / DM /
+    # update via the {query} field; persona signal goes via {groundtruth}.
+    "agentic_user_tone_post": (
+        "Compose a short post in the user's voice for the target_app. Use "
+        "their typical hashtag pool from groundtruth. Match their tone "
+        "(check the voice sample). 1-2 sentences + 1-2 hashtags. Do NOT "
+        "describe what to write — actually write the post."
+    ),
+    "agentic_dm_digest": (
+        "Summarize the user's recent DM threads on the target app. Mention "
+        "2-4 plausible specific senders/topics drawn from the DM context. "
+        "2-3 sentences, conversational tone. Don't list — narrate."
+    ),
+    "agentic_cross_app_repost": (
+        "Paraphrase the source post for the target app, in the user's "
+        "voice on that platform. Don't quote verbatim. 1-2 sentences + "
+        "1 hashtag from their pool."
+    ),
+    "agentic_auto_reply": (
+        "Write a short reply to the inbound DM in the user's casual tone. "
+        "STAY ON TOPIC to the inbound message — if it's a friend confirming "
+        "plans, confirm; if it's a stranger pitching something, decline "
+        "politely or ignore. Match the relationship signal. 1-2 sentences. "
+        "Do NOT compose an unrelated message."
+    ),
+    "agentic_composed_post": (
+        "Take the user's update and rewrite it in their voice on the "
+        "target_app. 1-2 sentences + 1 hashtag from their typical pool."
+    ),
+    "agentic_send_post": (
+        "The user just told the chatbot to post the brief in {query} on the "
+        "target_app. Compose the post in their voice on that platform — "
+        "don't echo the brief verbatim, rewrite it as something they'd "
+        "actually publish. 1-2 sentences + 1 hashtag from their pool."
+    ),
+    "agentic_group_dm_summary": (
+        "Summarize the group thread: who said what, the open question, "
+        "any disagreement. 2-3 sentences, conversational."
+    ),
+    "agentic_proactive_daily_catchup": (
+        "Brief the user on 2-3 specific catch-up items from the past 24h "
+        "(unread DMs, friends' posts, content matching their interests). "
+        "Each item ≤ 1 sentence."
+    ),
+    "agentic_trending_alert": (
+        "Alert the user to 2-3 trending hashtags/topics that they'd "
+        "naturally care about. Brief, ≤ 1 sentence each. Don't announce "
+        "WHY each fits — the relevance should be obvious from the topic."
+    ),
+    "agentic_moment_recommendation": (
+        "Recommend ONE concrete piece of content (a clip, post, or thread) "
+        "the user could see right now that fits the moment. Use everyday "
+        "user-facing words to describe topics — never use category labels "
+        "verbatim (e.g. say 'a short comedy clip', NOT 'comedy video "
+        "content'; say 'a boxing breakdown', NOT 'boxing fandom'). 1-2 "
+        "sentences."
+    ),
+    "agentic_collection_curation": (
+        "Suggest 3 thematic collection names the user could organize their "
+        "saved content into. Names should be evocative and short (3-6 "
+        "words), drawn from the user's actual interests in user-facing "
+        "language — NEVER benchmark category labels. Format: 'Three "
+        "collections from your saves: A, B, C.'"
     ),
 }
 
@@ -339,7 +429,27 @@ def _run_self_check(llm: Callable[[str], str], task_type: str, query: str, respo
 # Workstream J — inferior_response generation
 # ---------------------------------------------------------------------------
 
-_FLAW_KINDS = ("incorrect_personalization", "disliked_recent", "over_personalization")
+_FLAW_KINDS = ("incorrect_personalization", "disliked_recent", "over_personalization", "factual_error")
+
+# Personalization-flavored flaws (for chatbot / write-a-post tasks where
+# the gold leans on persona signal).
+_FLAW_KINDS_PERSONALIZATION = ("incorrect_personalization", "disliked_recent", "over_personalization")
+# Factual flaws (for summary / lookup tasks where the gold is reporting
+# real content — the natural failure mode is a wrong detail, not an
+# off-topic persona aside).
+_FLAW_KINDS_FACTUAL = ("factual_error",)
+
+# Per-task allowlist. Tasks NOT listed fall back to the personalization set.
+# Summarization / digest / lookup tasks need factual flaws; mechanically
+# inserting "Follows mixed martial arts as a fan." into a DM digest reads
+# absurdly because the gold doesn't have a preference reference to replace.
+_TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
+    "agentic_dm_digest":               _FLAW_KINDS_FACTUAL,
+    "agentic_group_dm_summary":        _FLAW_KINDS_FACTUAL,
+    "agentic_proactive_daily_catchup": _FLAW_KINDS_FACTUAL,
+    "agentic_trending_alert":          _FLAW_KINDS_FACTUAL,
+    "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
+}
 
 _INFERIOR_PROMPT = """You are creating a paired *foil* response that mirrors a \
 gold reference response but MUST introduce ONE specific flaw — preserving \
@@ -360,11 +470,21 @@ Flaw kind: {flaw_kind}
 Rules:
   - Make exactly ONE substantive modification: insert, replace, or augment \
     the targeted detail.
-  - The foil must be a *worse* response than the gold along the
-    `avoid_overpersonalization` rubric — a reasonable reviewer should rate
-    the gold higher.
-  - Keep all other aspects (length, tone, structure, sentence count, hashtag
+  - The foil must be visibly worse than the gold along the rubric implied by \
+    the flaw kind — a reasonable reviewer should rate the gold higher.
+  - Keep all other aspects (length, tone, structure, sentence count, hashtag \
     style) identical.
+  - The foil MUST be a fluent, grammatical message a real human would send. \
+    NEVER produce splice fragments like ", #NFL, #ZachWilson, #MattRyan" or \
+    bare third-person fact-statements ("Enjoys X.", "Follows Y."). If the \
+    gold is too short to weave the change naturally, REWRITE the gold so \
+    the change is a natural clause within a coherent sentence.
+  - Subtlety: the foil is supposed to be a wrong-but-plausible response, \
+    not an obvious vandalism. A grader who didn't see the gold should still \
+    parse the foil as a normal message. Avoid phrasings like "you're \
+    interested in X", "you like Y" — the personalization slip should look \
+    like the agent reaching for a real preference at the wrong moment, not \
+    reciting a profile.
   - Do NOT add disclaimers, parenthetical notes, or commentary about the change.
 
 Output ONE fenced ```json block:
@@ -388,20 +508,51 @@ def _texts_too_similar(a: str, b: str) -> bool:
 def _flaw_instruction(flaw_kind: str, evidence: dict) -> str:
     if flaw_kind == "incorrect_personalization":
         pi = evidence.get("persona_item", "")
-        return (f"Replace any preference reference in the gold with a single "
-                f"reference to: \"{pi}\". This persona item IS true for the "
-                f"user but is unrelated to the current query.")
+        return (
+            f"Rewrite ONE clause or sentence in the gold so it naturally "
+            f"references this persona item: \"{pi}\". The persona item IS "
+            f"true for the user but is irrelevant to the current query — "
+            f"the agent has drifted off-topic. The reference must read as "
+            f"fluent prose: integrated as part of a clause (e.g. \"btw, did "
+            f"you catch the comedy clips this weekend?\"), NOT as a separate "
+            f"fact-statement, NOT parenthetical, NOT a third-person "
+            f"description like \"Enjoys X.\" or \"Follows Y.\". If the gold "
+            f"is too short to weave naturally, you may extend it by one "
+            f"short clause — but the result must still sound like one "
+            f"coherent message a human would write."
+        )
     if flaw_kind == "disliked_recent":
         pi = evidence.get("persona_item", "")
-        return (f"Inject one mention of: \"{pi}\". The user explicitly "
-                f"DISLIKED this in the last 48 hours. The mention should "
-                f"feel natural, not forced — but it must be present.")
+        return (
+            f"Rewrite the gold to mention this topic naturally in passing: "
+            f"\"{pi}\". The user explicitly DISLIKED this in the last 48 "
+            f"hours — the foil agent shouldn't have brought it up. The "
+            f"mention must read fluently (a clause woven into an existing "
+            f"sentence, or one extra grammatical sentence), NOT a "
+            f"third-person fact-statement spliced in."
+        )
     if flaw_kind == "over_personalization":
         pi = evidence.get("persona_item", "")
-        return (f"Add one unprompted aside referencing: \"{pi}\". This is "
-                f"a top user category but has zero overlap with the current "
-                f"query — it's a digression the gold reference correctly "
-                f"omitted.")
+        return (
+            f"Rewrite ONE clause or sentence in the gold to add an "
+            f"unprompted aside about: \"{pi}\". This is a top user category "
+            f"but has zero overlap with the current query — a digression "
+            f"the gold correctly omitted. The aside must be a grammatical "
+            f"clause integrated into the prose (e.g. \"...and the {pi.split(',')[0] if pi else 'topic'} "
+            f"crowd is heating up\"), NOT a separate fact-statement, NOT a "
+            f"prepended/appended fragment."
+        )
+    if flaw_kind == "factual_error":
+        return (
+            "Introduce ONE subtle factual error inside the gold's own "
+            "content — for example: change a sender name to a different "
+            "plausible name, swap one topic for another, change a count "
+            "(e.g. 'three' → 'two'), drop one of the items the gold lists, "
+            "or attribute a message to the wrong person. The error should "
+            "look like a careless mistake a hurried summarizer would make, "
+            "not an off-topic personalization leak. Do NOT introduce any "
+            "persona reference."
+        )
     return ""
 
 
@@ -437,6 +588,10 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
         if cats:
             return {"persona_item": cats[0][0]}
         return None
+    if flaw_kind == "factual_error":
+        # No external evidence needed — the LLM mutates the gold's own
+        # content. Return a sentinel non-None dict so the caller proceeds.
+        return {"persona_item": ""}
     return None
 
 
@@ -462,6 +617,220 @@ def _generate_inferior(llm: Callable[[str], str], response: str,
         if text and not _texts_too_similar(response, text):
             return text
     return None
+
+
+def _synthesize_user_query(inst: dict, task_id: str) -> str:
+    """Agentic builders don't store `user_query` on the instance — the
+    visualizer synthesizes it at render time via TEST_QUERY_EXTRACTORS.
+    Postprocess needs the same string so the LLM-gen prompt has a real
+    {query}. Reuse the visualizer's dispatcher rather than re-implementing.
+    """
+    direct = inst.get("user_query") or inst.get("query")
+    if isinstance(direct, str) and direct.strip():
+        return direct
+    try:
+        from data_preparation.visualize import TEST_QUERY_EXTRACTORS
+        fn = TEST_QUERY_EXTRACTORS.get(task_id)
+        if fn:
+            return fn(inst) or ""
+    except Exception:
+        pass
+    return ""
+
+
+def _enrich_groundtruth_for_task(inst: dict, task_id: str, bq, user_id: str,
+                                  base_groundtruth: str) -> str:
+    """Some tasks need richer real-data grounding than the default
+    persona-context lines provide. Auto-reply needs sender relationship +
+    thread history; DM digest needs the actual thread headers; write-post
+    tasks need the per-app tone definition. Returns the augmented
+    groundtruth string (base + enrichment lines)."""
+    try:
+        # Per-app tone is the canonical voice source for any task that
+        # composes a post or message in the user's voice. Layer it in
+        # FIRST so all task-specific enrichments build on top.
+        out = _prepend_app_tone(inst, task_id, bq, user_id, base_groundtruth)
+        if task_id == "agentic_auto_reply":
+            return _enrich_auto_reply(inst, bq, user_id, out)
+        if task_id == "agentic_dm_digest":
+            return _enrich_dm_digest(inst, bq, user_id, out)
+        if task_id == "agentic_group_dm_summary":
+            return _enrich_group_dm_summary(inst, bq, user_id, out)
+        return out
+    except Exception:
+        pass
+    return base_groundtruth
+
+
+# Tasks where the agent composes content in the user's voice for a target
+# app. The per-app tone is the rubric's authority for voice_match — if it
+# isn't piped into the gold-gen prompt the LLM has no consistent reference
+# to write against, and grades drift turn-to-turn.
+_VOICE_DEPENDENT_TASKS: set[str] = {
+    "agentic_user_tone_post",
+    "agentic_composed_post",
+    "agentic_send_post",
+    "agentic_cross_app_repost",
+    "agentic_auto_reply",
+    "agentic_dm_digest",
+    "agentic_group_dm_summary",
+    "agentic_proactive_daily_catchup",
+    "agentic_trending_alert",
+}
+
+
+def _prepend_app_tone(inst: dict, task_id: str, bq, user_id: str, base: str) -> str:
+    """If this task composes content in the user's voice, prepend the
+    per-app tone block from profile.app_personas. The pipeline already
+    synthesizes a per-app `style_description` (and `topical_focus`,
+    `posting_frequency`) — surfacing it here makes voice_match measurable
+    against a fixed reference instead of an inferred-from-samples one."""
+    if task_id not in _VOICE_DEPENDENT_TASKS:
+        return base
+    target_app = (inst.get("target_app") or "").strip()
+    # Auto-reply / DM digest / group summary use the social app of the
+    # message; if not set, fall back to chatbot tone for chat-routed tasks.
+    if not target_app:
+        target_app = "chatbot" if (inst.get("entry_point") == "chatbot_routed") else ""
+    if not target_app:
+        return base
+    profile = bq.get_full_profile(user_id) or {}
+    apps = profile.get("app_personas") or {}
+    # app_personas keys are capitalized in the profile; normalize lookup.
+    app_persona = None
+    for k, v in apps.items():
+        if (k or "").lower() == target_app.lower():
+            app_persona = v
+            break
+    if not isinstance(app_persona, dict):
+        return base
+    style = (app_persona.get("style_description") or "").strip()
+    if not style:
+        return base
+    lines = [
+        f"USER'S VOICE ON {target_app.upper()} (canonical reference for tone "
+        f"— write to match this, not the voice_sample):",
+        f"  Style: {style}",
+    ]
+    topical = app_persona.get("topical_focus") or []
+    if topical:
+        lines.append(f"  Typical topics: {', '.join(topical[:5])}")
+    freq = app_persona.get("posting_frequency")
+    if freq:
+        lines.append(f"  Posting cadence: {freq}")
+    return "\n".join(lines) + "\n\n" + base
+
+
+def _enrich_auto_reply(inst: dict, bq, user_id: str, base: str) -> str:
+    sender_id = (inst.get("sender_id") or "").strip()
+    thread_id = (inst.get("thread_id") or "").strip()
+    target_app = (inst.get("target_app") or "").strip()
+
+    profile = bq.get_full_profile(user_id) or {}
+    friends = profile.get("friends", []) or []
+    friend = None
+    for f in friends:
+        if (f.get("friend_id") == sender_id or
+            (f.get("display_name") or "").lower() == sender_id.lower()):
+            friend = f
+            break
+
+    if friend:
+        rel_line = (
+            f"Sender RELATIONSHIP: {friend.get('relationship_depth', 'friend')} "
+            f"friend named {friend.get('display_name', sender_id)}; shared interests: "
+            f"{', '.join((friend.get('shared_interests') or [])[:3]) or 'none listed'}. "
+            f"Reply in the casual tone the user uses with this friend."
+        )
+    elif "stranger" in sender_id.lower() or sender_id.startswith("unknown"):
+        rel_line = (
+            f"Sender RELATIONSHIP: STRANGER ({sender_id}) — NOT in the user's "
+            f"friends list. If the inbound is unsolicited (spam, scam, sales "
+            f"pitch, recruiter cold-DM), the user would either ignore or "
+            f"decline briefly — they would NOT respond as if to a friend."
+        )
+    else:
+        rel_line = (
+            f"Sender RELATIONSHIP: '{sender_id}' is not in the user's "
+            f"friends list. Treat as an acquaintance — reply briefly and "
+            f"appropriately to the message content; do NOT volunteer "
+            f"personal context."
+        )
+
+    thread_lines: list[str] = []
+    if thread_id and target_app:
+        thread = bq.get_dm_thread(
+            user_id=user_id, app=target_app, thread_id=thread_id, limit=10,
+        ) or {}
+        msgs = thread.get("results") or thread.get("messages") or []
+        if msgs:
+            thread_lines.append(
+                f"Recent thread context (last {min(len(msgs), 4)} messages, "
+                f"oldest first):"
+            )
+            for m in msgs[-4:]:
+                role = "User" if m.get("sender") == "self" else (
+                    friend.get("display_name") if friend else m.get("sender", "other")
+                )
+                text = (m.get("text") or "")[:140]
+                thread_lines.append(f"  {role}: {text}")
+
+    extras = [rel_line] + thread_lines
+    return base + ("\n" + "\n".join(extras) if extras else "")
+
+
+def _enrich_dm_digest(inst: dict, bq, user_id: str, base: str) -> str:
+    target_app = (inst.get("target_app") or "").strip()
+    t_test = int(inst.get("t_test") or 0) or None
+    if not target_app:
+        return base
+    page = bq.list_dm_threads(
+        user_id=user_id, app=target_app, since_timestamp=t_test, limit=8,
+    ) or {}
+    threads = page.get("results") or []
+    if not threads:
+        return base
+    profile = bq.get_full_profile(user_id) or {}
+    friends_by_id = {
+        f.get("friend_id"): f for f in (profile.get("friends") or [])
+    }
+    lines = [f"Recent DM threads on {target_app} (real headers — pick 2-4 "
+             f"to mention in the digest):"]
+    for t in threads[:6]:
+        parts = t.get("participants") or []
+        names = []
+        for pid in parts:
+            f = friends_by_id.get(pid)
+            names.append(f.get("display_name") if f else pid)
+        names_str = ", ".join([n for n in names if n][:3]) or "unknown"
+        is_group = t.get("is_group")
+        prev = (t.get("last_message_preview") or "")[:80]
+        kind = "group" if is_group else "1-1"
+        lines.append(f"  - {kind} with {names_str}: {prev}")
+    return base + "\n" + "\n".join(lines)
+
+
+def _enrich_group_dm_summary(inst: dict, bq, user_id: str, base: str) -> str:
+    target_app = (inst.get("target_app") or "").strip()
+    thread_id = (inst.get("thread_id") or "").strip()
+    if not (target_app and thread_id):
+        return base
+    thread = bq.get_dm_thread(
+        user_id=user_id, app=target_app, thread_id=thread_id, limit=20,
+    ) or {}
+    msgs = thread.get("results") or thread.get("messages") or []
+    if not msgs:
+        return base
+    profile = bq.get_full_profile(user_id) or {}
+    friends_by_id = {f.get("friend_id"): f for f in (profile.get("friends") or [])}
+    lines = ["Recent thread messages (oldest → newest):"]
+    for m in msgs[-8:]:
+        sid = m.get("sender")
+        f = friends_by_id.get(sid)
+        name = "User" if sid == "self" else (f.get("display_name") if f else sid)
+        text = (m.get("text") or "")[:120]
+        lines.append(f"  {name}: {text}")
+    return base + "\n" + "\n".join(lines)
 
 
 def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
@@ -563,7 +932,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             #   - ranking task: deterministic compute (no LLM).
             #   - everything else (chatbot, restraint, scenarios, E3/E6):
             #     LLM-generate from the persona signal in groundtruth.
-            user_query = inst.get("user_query") or inst.get("query") or ""
+            user_query = _synthesize_user_query(inst, task_id)
             prior_conv = inst.get("prior_conversation")
             if task_id in _RANKING_TASKS:
                 ranked = _compute_ranking_example(inst, task_id)
@@ -572,9 +941,15 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     inst["example_response"] = example
                     n_example_ranking += 1
             elif task_id not in _TASKS_ALREADY_CONCRETE and self_check_llm is not None:
-                # Reuse the same LLM client for example-gen.
+                # Per-task groundtruth enrichment — pull real friend / thread
+                # data from the backend so the LLM grounds the reply in the
+                # user's actual relationships, not just their public-post
+                # voice. Cheap (no LLM); skipped for tasks without a hook.
+                enriched_gt = _enrich_groundtruth_for_task(
+                    inst, task_id, bq, user_id, groundtruth,
+                )
                 generated = _generate_example_response(
-                    self_check_llm, task_id, user_query, groundtruth, prior_conv,
+                    self_check_llm, task_id, user_query, enriched_gt, prior_conv,
                 )
                 if generated:
                     example = generated
@@ -597,17 +972,22 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             # instances (control/adversarial/stale) where the gold response
             # is intentionally generic — no inferior pair makes sense.
             arm = inst.get("arm") or "proactive"
-            if inferior_llm is not None and arm in ("proactive", "contradiction"):
+            if (inferior_llm is not None
+                    and arm in ("proactive", "contradiction")
+                    and task_id not in _TASKS_NO_FOIL):
                 t_test = int(inst.get("t_test") or 0)
                 if t_test not in _ctx_cache:
                     _ctx_cache[t_test] = _build_persona_ctx(bq, user_id, t_test)
                 ctx = _ctx_cache[t_test]
-                # Round-robin flaw kind across instances for uniform coverage.
-                flaw_kind = _FLAW_KINDS[(idx + len(items)) % len(_FLAW_KINDS)]
+                # Task-aware flaw selection: summary / lookup tasks get
+                # factual flaws; everything else uses the personalization
+                # set. Round-robin within the allowed pool for coverage.
+                allowed_flaws = _TASK_FLAW_KINDS.get(task_id, _FLAW_KINDS_PERSONALIZATION)
+                flaw_kind = allowed_flaws[(idx + len(items)) % len(allowed_flaws)]
                 evidence = _pick_flaw_evidence(flaw_kind, inst, ctx, rng)
                 if evidence is None:
-                    # Fallback: try the other kinds.
-                    for fk in _FLAW_KINDS:
+                    # Fallback: try the other kinds in the allowed pool.
+                    for fk in allowed_flaws:
                         if fk == flaw_kind:
                             continue
                         evidence = _pick_flaw_evidence(fk, inst, ctx, rng)
