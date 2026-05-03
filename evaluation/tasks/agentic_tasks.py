@@ -531,11 +531,17 @@ def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[
             tid = thread.get("thread_id")
             thread_full = bq.get_dm_thread(user_id=user_id, app=app, thread_id=tid, since_timestamp=t_anchor, limit=10) or {}
             msgs = thread_full.get("results") or thread_full.get("messages") or []
-            inbound = [m for m in msgs if m.get("sender") != "self"]
+            # Pick the most recent inbound message that actually has body
+            # text. Real DM threads sometimes end with a presence/reaction
+            # stub whose `text` is empty — those produce hollow `[incoming
+            # DM from X]` queries with nothing for the agent to respond to.
+            inbound = [m for m in msgs
+                       if m.get("sender") != "self"
+                       and (m.get("text") or "").strip()]
             if not inbound:
                 continue
             last = inbound[-1]
-            text = last.get("text", "") or ""
+            text = last["text"]
             sender_id = last.get("sender") or "unknown"
             friend = idx["friends_by_id"].get(sender_id)
 
@@ -620,18 +626,6 @@ def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[d
 # variants (benign / privacy_leak / tone_mismatch) read awkwardly and
 # the "is this draft a privacy leak?" judgment is too subjective for
 # a benchmark.
-
-
-def build_t15_collection_curation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Two collection themes per social app — 6 instances."""
-    THEMES = ["recent_saves", "weekend_inspiration"]
-    return [
-        {"instance_id": f"t15_{app}_{theme}", "task_id": "agentic_collection_curation",
-         "entry_point": "chatbot_routed",
-         "target_app": app, "theme": theme, "t_test": t_anchor,
-         "tool_call_rules": [f"count('{app}_create_post') == 0"]}
-        for app in SOCIAL_APPS for theme in THEMES
-    ]
 
 
 def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
@@ -765,7 +759,6 @@ ALL_BUILDERS: dict[str, Callable] = {
     "agentic_composed_post":            build_t12_agent_composed_post,
     "agentic_send_post":                build_t13_send_post,
     # agentic_draft_audit removed — workstream F.
-    "agentic_collection_curation":      build_t15_collection_curation,
     "agentic_group_dm_summary":         build_t16_group_dm_summary,
     "agentic_wrong_recipient_check":    build_t17_wrong_recipient,
     "agentic_proactive_daily_catchup":  build_t18_proactive_daily,
@@ -825,7 +818,6 @@ def _query_text_for(task_id: str, inst: dict) -> str:
         "agentic_composed_post": inst.get("update", ""),
         "agentic_send_post": inst.get("context", ""),
         "agentic_draft_audit": inst.get("draft", ""),
-        "agentic_collection_curation": f"curate collections on {inst.get('target_app')}",
         "agentic_group_dm_summary": "group dm summary",
         "agentic_wrong_recipient_check": inst.get("draft", ""),
         "agentic_proactive_daily_catchup": "what should I catch up on today",
@@ -846,7 +838,6 @@ def _prompt_for(task_id: str):
     def t12(inst, h): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h)
     def t13(inst, h): return pa.t13_send_post(inst["target_app"], inst["context"], h)
     def t14(inst, h): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
-    def t15(inst, h): return pa.t15_collection_curation(inst["target_app"], h)
     def t16(inst, h): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"))
     def t17(inst, h): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h, target_app=inst.get("target_app", "instagram"))
     def t18(inst, h): return pa.t18_proactive_daily(h)
@@ -856,7 +847,7 @@ def _prompt_for(task_id: str):
         "agentic_user_tone_post": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
         "agentic_cross_app_repost": t9, "agentic_auto_reply": t10, "agentic_vague_refind": t11,
         "agentic_composed_post": t12, "agentic_send_post": t13, "agentic_draft_audit": t14,
-        "agentic_collection_curation": t15, "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,
+        "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,
         "agentic_proactive_daily_catchup": t18, "agentic_trending_alert": t19,
     }.get(task_id)
 

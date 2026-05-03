@@ -21,6 +21,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "chatbot_proactive_personalization":      {"min": 10, "max": 14},
     "over_personalization_chatbot_text":      {"min": 10, "max": 14},
     "over_personalization_distractor_reject": {"min": 10, "max": 14},
+    # Sensitive-event task is gated by the synthetic sensitive_life_event
+    # persona — 1–3 episodes per user → at most 3 instances. data_dependent
+    # so the audit treats the floor as advisory, not enforced.
+    "over_personalization_sensitive_event":   {"min": 1,  "max": 3, "data_dependent": True},
     "personalized_feed_ranking":              {"min": 10, "max": 14},
 
     # Secondary tasks
@@ -35,7 +39,7 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # Restraint sub-types
     "repetition_fatigue_pairs":               {"min": 6,  "max": 10},
     "repetition_fatigue_sequences":           {"min": 6,  "max": 10},
-    "context_shift_scenarios":                {"min": 6,  "max": 10},
+    "over_personalization_context_shift":     {"min": 6,  "max": 10},
 
     # Agentic — uniform target across 14 tasks
     "agentic_user_tone_post":                {"min": 5,  "max": 8},
@@ -47,7 +51,6 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_composed_post":                  {"min": 5,  "max": 8},
     "agentic_send_post":                      {"min": 5,  "max": 8},
     # agentic_draft_audit removed — workstream F.
-    "agentic_collection_curation":            {"min": 5,  "max": 8},
     "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},

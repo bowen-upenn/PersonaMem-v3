@@ -190,15 +190,11 @@ def build_e4_google_search(
         held_out_idx = order.index(0)
         hard_negative_idxs = [order.index(j + 1) for j in range(len(hard_negatives))]
 
-        # User-facing query in the fixed format from workstream D.
-        candidate_titles = [
-            (c["title"] or c["caption"] or "<item>")[:50]
-            for c in slate[:8]
-        ]
-        query_text = (
-            "[No user query] [Recommendation system proposed candidates: "
-            + "; ".join(candidate_titles) + "]"
-        )
+        # User-facing query: fixed `[recsys]` template (matches _q_at_ai_directive's
+        # convention for proactive recsys-served slates with no live user message).
+        # Candidate titles already render in the slate block, so repeating them
+        # here just duplicates the candidate pool.
+        query_text = "[recsys]"
 
         instances.append({
             "instance_id": f"e4_day_{i}",

@@ -114,7 +114,21 @@ def build_e2_at_ai_followup(
     rng_seed: int = 0,
 ) -> list[dict]:
     """Walk social-app events, collect @ai directive events, build one
-    instance per directive with a post-T_test candidate pool.
+    instance per directive whose candidate pool draws from the user's
+    ENTIRE @ai-mention history (Option B):
+
+      - 1 target  : event matching ANY past positive @ai mention
+                    (recommend_more / focus_topic), but NOT any negative
+                    @ai mention. The agent should rank this top-1.
+      - N carve-outs : events matching ANY past negative @ai mention
+                    (feels_off / stop_recommending / not_interested),
+                    but NOT any positive @ai mention. Must rank LAST.
+      - fillers   : events with no overlap to either polarity.
+
+    The instance still names ONE specific directive (the one the prompt
+    surfaces as "the latest @ai comment"). The pool tests cross-directive
+    memory: does the agent honor every @ai signal in history, not just
+    the most recent one?
     """
     import random as _random
 
@@ -126,19 +140,70 @@ def build_e2_at_ai_followup(
                 all_social.append((app, ev))
     all_social.sort(key=lambda ae: ae[1].get("source_timestamp", 0))
 
-    # Step 2: find events with @ai actions
-    directive_events: list[tuple[str, dict]] = []
+    # Step 2: partition @ai mentions by polarity and build hashtag sets
+    pos_directives: list[tuple[str, dict]] = []
+    neg_directives: list[tuple[str, dict]] = []
     for app, ev in all_social:
-        fmt = ev.get("interaction_format") or {}
-        action = fmt.get("action", "")
-        if action in _ACTION_POSITIVE_WANTS_MATCH or action in _ACTION_POSITIVE_WANTS_NON_MATCH:
-            directive_events.append((app, ev))
+        action = (ev.get("interaction_format") or {}).get("action", "")
+        if action in _ACTION_POSITIVE_WANTS_MATCH:
+            pos_directives.append((app, ev))
+        elif action in _ACTION_POSITIVE_WANTS_NON_MATCH:
+            neg_directives.append((app, ev))
+    if not pos_directives and not neg_directives:
+        return []
 
-    if not directive_events:
+    pos_ai_hashtags: set[str] = set()
+    for _, ev in pos_directives:
+        for h in (ev.get("source_hashtags") or []):
+            if h:
+                pos_ai_hashtags.add(h.lstrip("#").lower())
+    neg_ai_hashtags: set[str] = set()
+    for _, ev in neg_directives:
+        for h in (ev.get("source_hashtags") or []):
+            if h:
+                neg_ai_hashtags.add(h.lstrip("#").lower())
+
+    # Step 3: pre-classify every non-@ai event into target / carveout / filler.
+    # Use the existing _E2_MATCH_THRESHOLD Jaccard floor so a candidate only
+    # qualifies on meaningful overlap. Events that match BOTH polarities
+    # (ambiguous) are dropped — they'd test ranking under contradiction.
+    target_pool: list[tuple[str, dict]] = []
+    carveout_pool: list[tuple[str, dict]] = []
+    filler_pool: list[tuple[str, dict]] = []
+    _ai_actions = _ACTION_POSITIVE_WANTS_MATCH | _ACTION_POSITIVE_WANTS_NON_MATCH
+    for app, ev in all_social:
+        if (ev.get("interaction_format") or {}).get("action", "") in _ai_actions:
+            continue  # don't show @ai events themselves as candidates
+        ev_tags = [h for h in (ev.get("source_hashtags") or []) if h]
+        if not ev_tags:
+            filler_pool.append((app, ev))
+            continue
+        ev_set = {h.lstrip("#").lower() for h in ev_tags}
+        match_pos = bool(pos_ai_hashtags) and (
+            len(ev_set & pos_ai_hashtags) / len(ev_set | pos_ai_hashtags)
+            >= _E2_MATCH_THRESHOLD
+        )
+        match_neg = bool(neg_ai_hashtags) and (
+            len(ev_set & neg_ai_hashtags) / len(ev_set | neg_ai_hashtags)
+            >= _E2_MATCH_THRESHOLD
+        )
+        if match_pos and not match_neg:
+            target_pool.append((app, ev))
+        elif match_neg and not match_pos:
+            carveout_pool.append((app, ev))
+        elif not match_pos and not match_neg:
+            filler_pool.append((app, ev))
+        # both → skip
+
+    # Without a target, the test has nothing for the agent to rank top-1.
+    if not target_pool:
         return []
 
     instances: list[dict] = []
-    lookahead_sec = _E2_LOOKAHEAD_HOURS * 3600
+    directive_events = pos_directives + neg_directives
+    # Carve-out budget: aim for ~3 per pool when available; allow 0 if user
+    # has no negative @ai history.
+    n_carveouts_target = 3
 
     for app, dev in directive_events:
         t_ai = int(dev.get("source_timestamp") or 0)
@@ -150,89 +215,43 @@ def build_e2_at_ai_followup(
             continue
         directive_oid = dev.get("source_object_id")
 
-        # Pre-build a hard-distractor pool: events anywhere in the timeline
-        # whose hashtags overlap the directive's hashtags by a non-trivial
-        # but sub-threshold amount. These are "adjacent" content the user
-        # engages with — Jaccard alone can't tell them apart from the
-        # target, so the agent has to actually reason about the directive.
-        hard_pool: list[tuple[str, dict, float]] = []
-        for a, ev in all_social:
-            if ev.get("source_object_id") == directive_oid:
-                continue
-            j = _hashtag_jaccard(ev.get("source_hashtags") or [], directive_hashtags)
-            if _E2_HARD_DISTRACTOR_MIN_JACCARD <= j < _E2_MATCH_THRESHOLD:
-                hard_pool.append((a, ev, j))
-
-        # Stratified-lag emission: one instance per (24h / 72h / 7d) lag.
         for lag_label, lag_seconds in _E2_FOLLOWUP_LAGS_SECONDS:
             t_test = t_ai + lag_seconds
-            window_lo = t_test
-            window_hi = t_test + lookahead_sec
+            rng = _random.Random(f"{rng_seed}:e2:{directive_oid}:{lag_label}")
 
-            # Step 3: gather candidate events in (t_test, t_test + 72h]
-            cand_events: list[tuple[str, dict]] = []
-            for a, ev in all_social:
-                ts = int(ev.get("source_timestamp") or 0)
-                if ts <= window_lo or ts > window_hi:
-                    continue
-                if ev.get("source_object_id") == directive_oid:
-                    continue
-                cand_events.append((a, ev))
+            tgt = list(target_pool)
+            cvs = list(carveout_pool)
+            fls = list(filler_pool)
+            rng.shuffle(tgt)
+            rng.shuffle(cvs)
+            rng.shuffle(fls)
 
-            # Deterministic per-(directive, lag) shuffle
-            rng = _random.Random(
-                f"{rng_seed}:e2:{directive_oid}:{lag_label}"
-            )
-            rng.shuffle(cand_events)
-            # Reserve room for hard distractors so the final pool size
-            # doesn't blow past the cap.
-            soft_slots = max(0, _E2_TARGET_POOL - _E2_HARD_DISTRACTORS)
-            cand_events = cand_events[:soft_slots]
+            target_pick = tgt[0]
+            n_cv = min(n_carveouts_target, len(cvs))
+            cv_pick = cvs[:n_cv]
+            n_fl = _E2_TARGET_POOL - 1 - n_cv
+            fl_pick = fls[:max(0, n_fl)]
 
-            # Append hard distractors (adjacent-Jaccard items pulled from
-            # the user's broader timeline). Skip ones already in the
-            # candidate set by source_object_id.
-            existing_oids = {ev.get("source_object_id") for _, ev in cand_events}
-            hard_shuffled = list(hard_pool)
-            rng.shuffle(hard_shuffled)
-            hard_added = 0
-            for a, ev, _j in hard_shuffled:
-                if hard_added >= _E2_HARD_DISTRACTORS:
-                    break
-                if ev.get("source_object_id") in existing_oids:
-                    continue
-                cand_events.append((a, ev))
-                existing_oids.add(ev.get("source_object_id"))
-                hard_added += 1
-
+            cand_events = [target_pick] + list(cv_pick) + list(fl_pick)
             if len(cand_events) < _E2_MIN_POOL:
                 continue
 
-            # Re-shuffle so hard distractors aren't always at the tail.
-            rng.shuffle(cand_events)
-            cand_events = cand_events[:_E2_TARGET_POOL]
+            # Shuffle so target/carve-outs aren't always at fixed positions.
+            order = list(range(len(cand_events)))
+            rng.shuffle(order)
 
-            # Step 4: label each candidate by hashtag Jaccard vs directive
             candidates: list[dict] = []
-            match_flags: list[bool] = []
-            for a, ev in cand_events:
-                item = _strip_candidate(ev)
-                candidates.append(item)
-                match_flags.append(
-                    _hashtag_jaccard(ev.get("source_hashtags") or [], directive_hashtags)
-                    >= _E2_MATCH_THRESHOLD
-                )
+            target_idx = -1
+            carveout_idxs: list[int] = []
+            for new_pos, old_idx in enumerate(order):
+                _a, ev = cand_events[old_idx]
+                candidates.append(_strip_candidate(ev))
+                if old_idx == 0:
+                    target_idx = new_pos
+                elif 1 <= old_idx <= n_cv:
+                    carveout_idxs.append(new_pos)
 
-            if directive_action in _ACTION_POSITIVE_WANTS_MATCH:
-                positive_indices = [i for i, m in enumerate(match_flags) if m]
-                carveout_indices: list[int] = []
-            else:
-                # recommend-AWAY: positives are non-matching; matching candidates
-                # are carve-outs (hard fail if any appears in top-1)
-                positive_indices = [i for i, m in enumerate(match_flags) if not m]
-                carveout_indices = [i for i, m in enumerate(match_flags) if m]
-
-            if not positive_indices:
+            if target_idx < 0:
                 continue
 
             instances.append({
@@ -248,8 +267,15 @@ def build_e2_at_ai_followup(
                 "directive_hashtags": directive_hashtags,
                 "directive_user_message": (dev.get("interaction_format") or {}).get("user_message") or "",
                 "candidates": candidates,
-                "positive_indices": positive_indices,
-                "carveout_indices": carveout_indices,
+                "positive_indices": [target_idx],
+                "carveout_indices": sorted(carveout_idxs),
+                # Cross-directive context for the visualizer + judge: the
+                # union of hashtags across all positive/negative @ai
+                # mentions in the user's history. Drives the per-candidate
+                # rationale and lets the judge reason about the FULL @ai
+                # signal, not just this directive's slice.
+                "positive_directive_hashtags": sorted(pos_ai_hashtags),
+                "negative_directive_hashtags": sorted(neg_ai_hashtags),
             })
 
     return instances
