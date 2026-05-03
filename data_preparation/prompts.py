@@ -560,7 +560,7 @@ def _render_user_voice_block(user_voice: dict) -> str:
     phrases = user_voice.get("personal_phrases") or []
     phrases_str = ", ".join(f'"{p}"' for p in phrases) if phrases else "(none)"
 
-    return (
+    block = (
         "## Shared writing voice (consistent across ALL apps for this user)\n\n"
         "This is how the user types, period. The same person sounds the same on Instagram, Facebook, Threads, "
         "and AI Chatbot — what changes per app is audience/length/effort/topic, NOT the voice itself. "
@@ -574,6 +574,14 @@ def _render_user_voice_block(user_voice: dict) -> str:
         f"- **Personal phrases / catchphrases (bleed across apps):** {phrases_str}\n"
         f"- **Formality baseline:** {user_voice.get('formality_baseline', 0.3)} (0.0 super casual — 1.0 very formal)\n"
     )
+    voice_avoid = (user_voice.get("voice_avoid") or "").strip()
+    if voice_avoid:
+        block += f"- **Voice avoid (never produce this tone / style):** {voice_avoid}\n"
+    avoid_phrases = user_voice.get("phrases_to_avoid") or []
+    if avoid_phrases:
+        avoid_str = ", ".join(f'"{p}"' for p in avoid_phrases)
+        block += f"- **Phrases to avoid (never reach for these literal strings):** {avoid_str}\n"
+    return block
 
 
 def generate_app_personas_prompt(
@@ -673,8 +681,8 @@ Output ONE `user_voice` block plus four `AppPersona` entries. The user_voice is 
     - `effort_level`: `"high"` (curated, edit-before-posting) | `"medium"` | `"low"` (in-the-moment)
     - `length_band`: numeric range like `"45-120"` (Threads) / `"120-220"` (Facebook) / `"70-150"` (Instagram captions) / `"90-190"` (Chatbot prompts)
     - `emoji_intensity_shift`: integer in {{-1, 0, +1}} — delta from `user_voice.emoji_intensity_default`. **Default is 0.** Only -1 if the audience suppresses emoji (Chatbot is typically -1 for emoji-using users), only +1 if the audience pumps it up (DM-style intimate apps, but rare for these four).
-    - `emoji_topic_filter`: 1 sentence naming which palette emoji surface here given the topical_focus (e.g. "boxing/wrestling emoji during fight cards; food emoji on casserole posts").
     - `audience_self_censoring`: 1 sentence on what the user OMITS given the audience (e.g. "no boxing trash talk on Facebook because boyfriend's elderly relatives are reading").
+    - `emoji_topic_filter` is OPTIONAL — only include it when the audience genuinely filters which palette emoji show up here (e.g. "no boxing emoji on Facebook because elderly relatives don't read it as humor"). Most apps for most users should omit this field entirely. Real users don't curate per-app emoji subsets, they just naturally don't reach for certain ones in certain audiences.
 
 13. **`overrides` is OPTIONAL — empty {{}} unless cited evidence justifies it.** Possible keys (each independently optional):
     - `capitalization`: only if user truly shifts here (rare).
@@ -684,6 +692,11 @@ Output ONE `user_voice` block plus four `AppPersona` entries. The user_voice is 
     For most users, expect `"overrides": {{}}` on all 4 apps.
 
 14. **Do NOT include sample / exemplar posts.** Voice mechanics + expression + overrides should be precise enough that downstream LLMs can write fresh user-voiced text without exemplars.
+
+15. **Negatives matter.** Capture what the user *avoids* on the voice axis — not just what they do. Almost every real person has at least 1 sentence of "they don't do X."
+    - `user_voice.voice_avoid`: 1–2 sentences of prose on tones / styles / habits this user steers clear of (e.g. "Avoids corporate or therapy-speak; doesn't curse much; never trauma-dumps in public; no snark-heavy humor.").
+    - `user_voice.phrases_to_avoid`: 0–5 short literal phrases that would feel off-brand if they appeared (e.g. ["slay", "living for this", "the girls"]). Skip the list entirely if nothing comes up — `[]` is a valid answer.
+    - Each app's `app_avoid`: 1 sentence on what THIS audience makes the user skip on THIS app specifically (e.g. "No boxing trash talk on Facebook because boyfriend's elderly relatives follow him here.", "No shop talk on Threads — that audience doesn't care."). Empty string `""` is fine when the audience doesn't drive any specific omission.
 
 ## Output Format
 
@@ -699,7 +712,9 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
     "emoji_palette": ["...", "...", "..."],
     "emoji_intensity_default": "low" | "medium" | "high",
     "personal_phrases": ["...", "...", "..."],
-    "formality_baseline": 0.0
+    "formality_baseline": 0.0,
+    "voice_avoid": "1-2 sentences on tones/styles/habits this user steers clear of",
+    "phrases_to_avoid": ["...", "..."]
   }},
   "app_personas": {{
     "Instagram": {{
@@ -716,10 +731,10 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
         "effort_level": "medium",
         "length_band": "70-150",
         "emoji_intensity_shift": 0,
-        "emoji_topic_filter": "...",
         "audience_self_censoring": "..."
       }},
-      "overrides": {{}}
+      "overrides": {{}},
+      "app_avoid": "1 sentence on what this audience makes the user skip — or \\"\\" if none"
     }},
     "Facebook": {{ ...same shape... }},
     "Threads": {{ ...same shape... }},
@@ -737,19 +752,22 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
         "effort_level": "...",
         "length_band": "90-190",
         "emoji_intensity_shift": -1,
-        "emoji_topic_filter": "(emoji typically suppressed in task-mode AI chats)",
         "audience_self_censoring": "..."
       }},
-      "overrides": {{ "extra_forbidden": ["emoji"] }}
+      "overrides": {{ "extra_forbidden": ["emoji"] }},
+      "app_avoid": "..."
     }}
   }}
 }}
 ```
 
+(Note: `expression.emoji_topic_filter` is OPTIONAL — only include it on an app when the audience genuinely filters which palette emoji surface there. Most apps for most users should omit it.)
+
 Final self-check before submitting:
 1. Are all four apps' `overrides` empty `{{}}`? If yes, good — that's the expected default for most users. If you populated more than one or two, re-read the source samples; you probably re-templated voice instead of grounding it.
 2. Do the four `style_description`s explain WHY the voice shifts (audience/effort) rather than re-listing voice mechanics? They should read like a delta narrative, not a parallel voice spec.
-3. Does the `emoji_palette` come from the user's actual interests (boxing → 🥊, Bills fan → 🦬, etc.) rather than archetypal defaults (🥰😂🔥)?"""
+3. Does the `emoji_palette` come from the user's actual interests (boxing → 🥊, Bills fan → 🦬, etc.) rather than archetypal defaults (🥰😂🔥)?
+4. Are `voice_avoid` / `phrases_to_avoid` / `app_avoid` all empty? If so, you skipped the negatives rule — re-read the source samples and try again. Almost every real person has at least 1 sentence of `they don't do X`."""
 
 
 def assign_personas_to_apps_prompt(
@@ -859,6 +877,7 @@ def generate_interaction_format_prompt(
         "   - Use the user's `default_capitalization` unless the AppPersona's `overrides.capitalization` overrides it.\n"
         "   - Pull at most 0–1 emoji from the user's `emoji_palette` (never invent new ones); apply `emoji_intensity_default + expression.emoji_intensity_shift` to decide whether to include any. Chatbot turns typically have NONE.\n"
         "   - Personal phrases from `user_voice.personal_phrases` may surface naturally — they're tics, not mandatory.\n"
+        "   - Respect the **Voice avoid** + **Phrases to avoid** lines in the shared voice block (if present) — never produce anything in those tones / never reach for those literal phrases. Respect the AppPersona's `app_avoid` (if present) — content / tone the audience filters out should not appear.\n"
         "   - Use contractions: don't, I'm, it's, can't, won't, that's. Never expanded forms.\n"
         "   - At least one contraction per message.\n"
         "   - Allow fragments and lowercase opens (real phone typing).\n"
@@ -1831,6 +1850,7 @@ The conversation must naturally reveal ALL of the following preferences. Each pr
    - Vary sentence length. Mix one fragment ("brain mushy today") with one short sentence.
    - Skip pleasantries. Real people don't say "Can you help me troubleshoot a setup?"; they say "this keeps coming out blurry, what am I doing wrong?".
    - Anchor in the **Shared writing voice** block above — this is the same person who posts on Instagram/Facebook/Threads. Apply the user's `default_capitalization`, occasional `personal_phrases`, and `punctuation_habits`. The Chatbot AppPersona's `expression` shifts register slightly (typically more task-direct, formality up); `overrides.extra_forbidden` typically includes `"emoji"`. Length and naturalness rules below still hold.
+   - **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). Treat all of these as hard constraints when present.
 
    FORBIDDEN patterns (never produce these):
    - Parallel-triplet lists ("blow out white, show every dust speck, or reflect my whole phone")
@@ -1939,6 +1959,7 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 ## Rules
 
 - Anchor the user's voice in the **Shared writing voice** block above (this is the same person who posts on Instagram, Facebook, and Threads). The Chatbot AppPersona's `expression` and `overrides` say what shifts here — typically `extra_forbidden: ["emoji"]`, formality up, no decorative punctuation. Apply the user's `default_capitalization`, `personal_phrases` (occasionally), and `punctuation_habits` unless overrides say otherwise.
+- **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). If any of these are present, treat them as hard constraints — never produce text that falls into those tones, never use those literal phrases, never touch those topics in this audience.
 - The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 should feel like a natural, human reaction — not a formal privacy request.
 - Any additional preferences should surface naturally throughout the conversation as side details.
@@ -2051,6 +2072,7 @@ The assistant wrongly believes this preference applies to the user. The user wil
 ## Rules
 
 - Anchor the user's voice in the **Shared writing voice** block above (this is the same person who posts on Instagram, Facebook, and Threads). The Chatbot AppPersona's `expression` and `overrides` say what shifts here — typically `extra_forbidden: ["emoji"]`, formality up, no decorative punctuation. Apply the user's `default_capitalization`, `personal_phrases` (occasionally), and `punctuation_habits` unless overrides say otherwise.
+- **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). If any of these are present, treat them as hard constraints — never produce text that falls into those tones, never use those literal phrases, never touch those topics in this audience.
 - Turn 2 must clearly show the assistant making an assumption based on the listed preference.
 - Turn 3 must clearly reject or correct the assumption.
 - The user should NOT directly quote the persona_item — they correct it in their own natural words.
@@ -2161,6 +2183,7 @@ You are generating a 4-turn conversation where a user reveals a personal prefere
 ## Rules
 
 - Anchor the user's voice in the **Shared writing voice** block above (this is the same person who posts on Instagram, Facebook, and Threads). The Chatbot AppPersona's `expression` and `overrides` say what shifts here — typically `extra_forbidden: ["emoji"]`, formality up, no decorative punctuation. Apply the user's `default_capitalization`, `personal_phrases` (occasionally), and `punctuation_habits` unless overrides say otherwise.
+- **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). If any of these are present, treat them as hard constraints — never produce text that falls into those tones, never use those literal phrases, never touch those topics in this audience.
 - The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 is about opting out of personalization, NOT about forgetting or retracting the fact. The distinction matters.
 - Any additional preferences should surface naturally throughout the conversation as side details.

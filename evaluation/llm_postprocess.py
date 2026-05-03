@@ -98,6 +98,16 @@ _RANKING_TASKS = {
     "short_vs_long_term_lifecycle",
 }
 
+# Deterministic-gold tasks whose output is a structured JSON list of real
+# backend posts (NOT a `Ranked indexes: [...]` wrapper). Same dispatch
+# pattern as `_RANKING_TASKS` — no LLM gold-gen, no LLM foil-gen, no
+# self-check pass — but the gold/foil are computed by task-specific
+# builders (`_compute_moment_recommendation_example/inferior`) rather than
+# the index-list helpers.
+_DETERMINISTIC_GOLD_TASKS = {
+    "agentic_moment_recommendation",
+}
+
 # Tasks where the gold is too short / structural for any kind of paired
 # foil to make sense. Note: ranking tasks are NOT in this set anymore —
 # they get a deterministic inferior via `_compute_ranking_inferior` (a
@@ -150,7 +160,199 @@ _TELEGRAPH_PHRASE_RE = re.compile(
 )
 
 
-def _length_guidance(task_type: str) -> str:
+_COMPOSE_TASKS = {
+    "agentic_composed_post",
+    "agentic_send_post",
+    "agentic_cross_app_repost",
+    "agentic_auto_reply",
+}
+
+# Tasks where the voice-evidence smoke test runs (overlap with _COMPOSE_TASKS
+# today; kept separate so the set can grow without changing length-band logic).
+_VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS)
+
+
+def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
+    """Heuristically extract the substrings of `text` that carry the user's
+    voice signal — personal_phrases (case-insensitive substring match) and
+    palette emoji (exact char match). Used to bold the spans in the rendered
+    Example Response so a reviewer can see WHY a voice_mismatch foil fails.
+
+    Returns the matched substrings preserving the original casing as they
+    appear in `text`. Longest matches first so renderer can substitute
+    without nested-match collisions. Empty list when nothing matches.
+    """
+    if not isinstance(text, str) or not text:
+        return []
+    if not isinstance(user_voice, dict):
+        return []
+    spans: list[str] = []
+    seen: set[str] = set()
+    text_lower = text.lower()
+
+    # 1. Personal phrases — case-insensitive substring lookup, preserve
+    #    original casing in the matched span (use the slice of `text`,
+    #    not the catalog entry).
+    for phrase in (user_voice.get("personal_phrases") or []):
+        if not isinstance(phrase, str) or not phrase.strip():
+            continue
+        needle = phrase.lower()
+        idx = text_lower.find(needle)
+        while idx != -1:
+            span = text[idx:idx + len(needle)]
+            if span and span.lower() not in seen:
+                spans.append(span)
+                seen.add(span.lower())
+            idx = text_lower.find(needle, idx + len(needle))
+
+    # 2. Palette emoji — exact char match. Each match becomes its own span
+    #    so the renderer can bold every occurrence.
+    for emoji in (user_voice.get("emoji_palette") or []):
+        if not isinstance(emoji, str) or not emoji:
+            continue
+        if emoji in text and emoji not in seen:
+            spans.append(emoji)
+            seen.add(emoji)
+
+    spans.sort(key=lambda s: -len(s))
+    return spans
+
+
+_VOICE_EVIDENCE_VERIFY_PROMPT = """You are a quality-control reviewer for a benchmark of personalized AI responses. Two responses were written for the same user query. ONE was crafted to honor the user's writing voice (the "good" example); the OTHER intentionally drops voice anchors to model a `voice_mismatch` failure (the "bad" inferior).
+
+Below is the user's writing voice signal. The bolded items in the gold response are the specific voice anchors that matter (personal phrases, palette emoji).
+
+## User's writing voice signal
+{voice_signal}
+
+## Bolded voice anchors in the gold response
+{bolded_anchors}
+
+## Response A
+{response_a}
+
+## Response B
+{response_b}
+
+## Your task
+Decide which response (A or B) better honors the user's writing voice. The "better" response is the one that uses the bolded anchors / voice signal naturally; the "worse" one drops them.
+
+Respond with EXACTLY this JSON, no commentary:
+```json
+{{"better": "A" | "B", "confidence": 0.0-1.0, "reason": "1 short sentence"}}
+```"""
+
+
+def _verify_voice_evidence_distinguishability(
+    voice_check_llm: Callable[[str], str],
+    example: str,
+    inferior: str,
+    user_voice: dict,
+    evidence_spans: list[str],
+    rng: random.Random,
+) -> dict:
+    """Smoke-test that a mini-tier LLM, given the bolded voice signal,
+    can correctly pick the gold over the foil. If it can't (or picks the
+    foil), the example/inferior pair is too similar on the voice axis and
+    should be regenerated.
+
+    Returns {"passed": bool, "picked": "A"|"B"|None, "expected": "A"|"B",
+             "reason": str, "raw": str}.
+    "passed" is True iff the mini correctly picks the gold AND confidence
+    is above a low-bar threshold (>= 0.55).
+    """
+    if not voice_check_llm or not example or not inferior:
+        return {"passed": True, "picked": None, "expected": None,
+                "reason": "skipped (missing inputs)", "raw": ""}
+    if not evidence_spans:
+        # No bolded anchors to verify against — skip rather than fail
+        # (some compose-task golds legitimately don't surface voice
+        # phrases / palette emoji).
+        return {"passed": True, "picked": None, "expected": None,
+                "reason": "skipped (no evidence spans)", "raw": ""}
+
+    voice_lines: list[str] = []
+    if isinstance(user_voice, dict):
+        if user_voice.get("natural_register"):
+            voice_lines.append(f"- register: {user_voice['natural_register']}")
+        if user_voice.get("default_capitalization"):
+            voice_lines.append(f"- capitalization: {user_voice['default_capitalization']}")
+        phrases = user_voice.get("personal_phrases") or []
+        if phrases:
+            voice_lines.append(f"- personal phrases: {', '.join(phrases[:6])}")
+        palette = user_voice.get("emoji_palette") or []
+        if palette:
+            voice_lines.append(f"- emoji palette: {' '.join(palette)}")
+        if user_voice.get("voice_avoid"):
+            voice_lines.append(f"- voice avoid: {user_voice['voice_avoid']}")
+    voice_signal = "\n".join(voice_lines) or "(no voice signal available)"
+    bolded_anchors = "\n".join(f"- **{s}**" for s in evidence_spans[:8])
+
+    # Randomize A/B assignment so the LLM can't lock onto a positional bias.
+    expected = rng.choice(["A", "B"])
+    if expected == "A":
+        response_a, response_b = example, inferior
+    else:
+        response_a, response_b = inferior, example
+
+    prompt = _VOICE_EVIDENCE_VERIFY_PROMPT.format(
+        voice_signal=voice_signal,
+        bolded_anchors=bolded_anchors,
+        response_a=response_a,
+        response_b=response_b,
+    )
+    raw = ""
+    try:
+        raw = voice_check_llm(prompt) or ""
+    except Exception as exc:
+        return {"passed": True, "picked": None, "expected": expected,
+                "reason": f"skipped (verifier raised: {exc})", "raw": ""}
+    parsed = extract_json_from_response(raw) or {}
+    picked = (parsed.get("better") or "").strip().upper()
+    confidence = parsed.get("confidence") or 0.0
+    try:
+        confidence = float(confidence)
+    except (TypeError, ValueError):
+        confidence = 0.0
+    reason = (parsed.get("reason") or "").strip()
+    if picked not in ("A", "B"):
+        return {"passed": False, "picked": None, "expected": expected,
+                "reason": "verifier returned no clear pick", "raw": raw[:300]}
+    passed = (picked == expected) and (confidence >= 0.55)
+    return {"passed": passed, "picked": picked, "expected": expected,
+            "confidence": confidence, "reason": reason, "raw": raw[:300]}
+
+# Per-app fallback bands matching the AppPersona.expression.length_band defaults
+# in prompts.generate_app_personas_prompt. Used when the user-specific band is
+# unavailable so compose-task golds still land on a real-post-length target.
+_COMPOSE_DEFAULT_BANDS = {
+    "instagram": (70, 150),
+    "facebook":  (120, 220),
+    "threads":   (45, 120),
+    "chatbot":   (90, 190),
+}
+
+
+def _parse_length_band(raw: str | None) -> tuple[int, int] | None:
+    """Parse 'lo-hi' / 'lo–hi' into (lo, hi) ints. Returns None if unparseable."""
+    if not isinstance(raw, str):
+        return None
+    s = raw.strip().replace("–", "-").replace("—", "-")
+    if "-" not in s:
+        return None
+    try:
+        lo_str, hi_str = s.split("-", 1)
+        lo = int(lo_str.strip())
+        hi = int(hi_str.strip())
+        if lo > 0 and hi >= lo:
+            return (lo, hi)
+    except (ValueError, AttributeError):
+        return None
+    return None
+
+
+def _length_guidance(task_type: str, inst: dict | None = None,
+                     app_persona: dict | None = None) -> str:
     if task_type == "chatbot_proactive_personalization":
         return "Length: 2–3 sentences."
     if task_type in ("over_personalization_chatbot_text",
@@ -163,12 +365,33 @@ def _length_guidance(task_type: str) -> str:
         return "Length: 2 short labelled lines."
     if task_type == "active_mistake_prevention":
         return "Length: 1–3 sentences."
+    if task_type in _COMPOSE_TASKS:
+        # Compose tasks emit real social-media posts (or DM auto-replies) —
+        # caption-length, not chatbot one-liners. Use the user's per-app
+        # length_band when available, falling back to per-app defaults.
+        band: tuple[int, int] | None = None
+        if isinstance(app_persona, dict):
+            expr = app_persona.get("expression") or {}
+            band = _parse_length_band(expr.get("length_band"))
+        if band is None and isinstance(inst, dict):
+            target_app = (inst.get("target_app") or "").lower()
+            band = _COMPOSE_DEFAULT_BANDS.get(target_app)
+        if band is None:
+            band = (90, 200)  # generic fallback
+        lo, hi = band
+        return (
+            f"Length: ~{lo}–{hi} characters (a real social-media post / "
+            f"reply — full caption, not a one-liner). Use multiple short "
+            f"sentences or a sentence + 1–3 hashtags as natural for this app."
+        )
     return "Length: 1–4 sentences."
 
 
 def _generate_example_response(llm: Callable[[str], str],
                                task_type: str, query: str,
-                               grounding: str = "") -> str | None:
+                               grounding: str = "",
+                               inst: dict | None = None,
+                               app_persona: dict | None = None) -> str | None:
     if not llm or not query:
         return None
     grounding_block = (
@@ -180,7 +403,7 @@ def _generate_example_response(llm: Callable[[str], str],
     )
     base_prompt = _EXAMPLE_GEN_PROMPT.format(
         query=query[:1500],
-        length_guidance=_length_guidance(task_type),
+        length_guidance=_length_guidance(task_type, inst=inst, app_persona=app_persona),
         grounding_block=grounding_block,
     )
     text: str | None = None
@@ -759,6 +982,139 @@ def _compute_ranking_inferior(inst: dict, task_type: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Deterministic gold/foil for `agentic_moment_recommendation`
+# ---------------------------------------------------------------------------
+
+# Mirror the builder's floor — kept in sync with `agentic_tasks.N_RECOMMENDED_POSTS`.
+_MOMENT_REC_FLOOR: int = 12
+
+
+def _project_moment_post(p: dict, why: str) -> dict:
+    """Render one slate candidate (the projection produced by the builder
+    in `_summarize_post_for_slate`) into the agent-output JSON shape."""
+    title = (p.get("title") or p.get("caption") or "")[:140]
+    return {
+        "source_object_id": str(p.get("source_object_id") or ""),
+        "title": title,
+        "source_app": p.get("source_app", ""),
+        "why": why,
+    }
+
+
+def _select_moment_example_items(inst: dict) -> tuple[list[dict], list[dict]]:
+    """Pick the example slate: (chosen_aligned, chosen_filler).
+
+    Caps aligned at ~half the target so the gold isn't all-aligned (that
+    would model overpersonalization). Falls back to padding from leftover
+    aligned posts if the filler pool is short.
+    """
+    aligned = list(inst.get("gt_aligned_posts") or [])
+    neutral = list(inst.get("gt_neutral_filler") or [])
+    n = int(inst.get("n_target_posts") or _MOMENT_REC_FLOOR)
+    n_aligned_target = max(3, n // 2)
+    chosen_aligned = aligned[:n_aligned_target]
+    seen = {p["source_object_id"] for p in chosen_aligned}
+    chosen_filler = [p for p in neutral
+                     if p["source_object_id"] not in seen][: n - len(chosen_aligned)]
+    if len(chosen_aligned) + len(chosen_filler) < n:
+        seen |= {p["source_object_id"] for p in chosen_filler}
+        extra = [p for p in aligned[n_aligned_target:]
+                 if p["source_object_id"] not in seen]
+        chosen_filler += extra[: n - len(chosen_aligned) - len(chosen_filler)]
+    return chosen_aligned, chosen_filler
+
+
+def _compute_moment_recommendation_example(inst: dict) -> str:
+    """Deterministic JSON gold for `agentic_moment_recommendation`.
+
+    Output is a fenced ```json``` block matching the agent's expected
+    response shape (`recommendations: [{source_object_id, title,
+    source_app, why}], reasoning: ...`). Returns "" if the instance's
+    pre-computed pools cannot fill the count floor.
+    """
+    chosen_aligned, chosen_filler = _select_moment_example_items(inst)
+    items = chosen_aligned + chosen_filler
+    if len(items) < _MOMENT_REC_FLOOR:
+        return ""
+    aligned_ids = {p["source_object_id"] for p in chosen_aligned}
+    negative_ids = {p["source_object_id"]
+                    for p in (inst.get("gt_negative_posts") or [])}
+    rec = []
+    for p in items:
+        why = ("fits your usual feed for this time of day"
+               if p["source_object_id"] in aligned_ids
+               else "from your usual feed, generally enjoyable")
+        rec.append(_project_moment_post(p, why))
+    leaked = {r["source_object_id"] for r in rec} & negative_ids
+    if leaked:
+        # Defensive: should never happen — `gt_neutral_filler` excludes
+        # negatives by construction. Drop the gold so a leaky moment never
+        # ships.
+        return ""
+    payload = {
+        "recommendations": rec,
+        "reasoning": (
+            f"Half ({len(chosen_aligned)}) are moment-aligned to "
+            f"{inst.get('moment','')}; the rest are safe filler from posts "
+            f"the user typically engages with."
+        ),
+    }
+    return "```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```"
+
+
+def _compute_moment_recommendation_inferior(inst: dict, rng: random.Random) -> str:
+    """Deterministic JSON foil for `agentic_moment_recommendation`.
+
+    Same shape and length as the example, but injects 1-2 posts from the
+    user's negative pool at non-edge positions. Returns "" if no negatives
+    are available — the caller drops the foil for that instance.
+    """
+    chosen_aligned, chosen_filler = _select_moment_example_items(inst)
+    base_items = chosen_aligned + chosen_filler
+    n = int(inst.get("n_target_posts") or _MOMENT_REC_FLOOR)
+    if len(base_items) < _MOMENT_REC_FLOOR:
+        return ""
+    base_items = base_items[:n]
+    seen_ids = {p["source_object_id"] for p in base_items}
+    negs = [p for p in (inst.get("gt_negative_posts") or [])
+            if p["source_object_id"] not in seen_ids]
+    if not negs:
+        return ""
+    inject = negs[:2] if len(negs) >= 2 else negs[:1]
+    items = list(base_items)
+    used_slots: set[int] = set()
+    for neg in inject:
+        if len(items) > 4:
+            available = [s for s in range(2, len(items) - 2) if s not in used_slots]
+            if not available:
+                items.append(neg)
+                continue
+            slot = rng.choice(available)
+        elif len(items) >= 2:
+            slot = 1
+        else:
+            items.append(neg)
+            continue
+        items[slot] = neg
+        used_slots.add(slot)
+    aligned_ids = {p["source_object_id"] for p in chosen_aligned}
+    rec = []
+    for p in items[:n]:
+        if p["source_object_id"] in {q["source_object_id"] for q in inject}:
+            why = "your feed has been showing this lately"
+        elif p["source_object_id"] in aligned_ids:
+            why = "fits your usual feed for this time of day"
+        else:
+            why = "from your usual feed, generally enjoyable"
+        rec.append(_project_moment_post(p, why))
+    payload = {
+        "recommendations": rec,
+        "reasoning": "Mix of moment-relevant items and recent feed activity.",
+    }
+    return "```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```"
+
+
+# ---------------------------------------------------------------------------
 # Workstream I — self-check prompt
 # ---------------------------------------------------------------------------
 
@@ -1056,35 +1412,67 @@ def _flaw_instruction(flaw_kind: str, evidence: dict, task_id: str = "") -> str:
         )
     if flaw_kind == "disliked_recent":
         pi = evidence.get("persona_item", "")
+        topic_hint = (evidence.get("topic_hint") or pi or "").strip()
+        content_snippet = (evidence.get("content_snippet") or "").strip()
         if task_id == "daily_personalized_briefing":
+            grounding_lines = [
+                f"  - Topic the user disliked later that same day: {topic_hint}",
+            ]
+            if content_snippet:
+                grounding_lines.append(
+                    f"  - Real content snippet from the disliked engagement "
+                    f"(use as inspiration for the bullet's subject — do NOT "
+                    f"quote verbatim): \"{content_snippet}\""
+                )
+            grounding = "\n".join(grounding_lines)
             return (
                 f"The gold is a bulleted briefing. Produce a foil briefing "
                 f"with EXACTLY THE SAME number of bullets as the gold. "
                 f"REPLACE one of the gold's bullets (chosen at a plausible, "
                 f"non-trivial position — NOT always the last one) with a "
-                f"new bullet about this topic the user explicitly DISLIKED "
-                f"the same day: \"{pi}\".\n"
-                f"  - The replacement bullet must match the OTHER bullets' "
-                f"length, tone, and formatting (start character, "
-                f"punctuation, emoji density, etc.).\n"
-                f"  - It should read like a normal briefing item a careless "
-                f"agent would include — NOT a meta note that the user "
-                f"disliked it, NOT a third-person fact-statement.\n"
-                f"  - Do NOT keep the replaced bullet in the foil. Do NOT "
-                f"add a new bullet on top of the gold's bullets. Total "
-                f"bullet count must equal the gold's bullet count.\n"
-                f"  - Do NOT modify the other bullets verbatim — but you "
-                f"MAY paraphrase them slightly (preserving meaning) so the "
-                f"foil doesn't share long word-for-word stretches with the "
-                f"gold."
+                f"new bullet whose SUBJECT is the topic below — a topic the "
+                f"user actually disliked elsewhere that same day, so a "
+                f"competent agent would have left it off the briefing.\n"
+                f"{grounding}\n"
+                f"Bullet style — STRICT (the leak should be the topic "
+                f"choice, not the wording):\n"
+                f"  - Write the replacement bullet in the EXACT SAME prose "
+                f"style as the other bullets. If the other bullets are full "
+                f"sentences with no hashtags, the replacement is also a "
+                f"full sentence with no hashtags.\n"
+                f"  - DO NOT include any `#` characters, hashtag tokens, or "
+                f"comma-separated tag lists (e.g., `#hiphop, #rapmusic, "
+                f"#newyorkrap`). Describe the topic in plain natural "
+                f"language the way a normal news/lifestyle bullet would.\n"
+                f"  - DO NOT use meta-framing prefixes that mark the bullet "
+                f"as different — phrases like `One quick cultural note:`, "
+                f"`Cultural update:`, `Trending now:`, `Also worth flagging:`, "
+                f"`On a separate note:`, `By the way:` are banned. Open the "
+                f"replacement bullet with the same kind of opening the "
+                f"other bullets use (e.g. a topic noun-phrase, a `Markets / "
+                f"Tech / World / Sports:` style label, or whatever pattern "
+                f"the gold establishes).\n"
+                f"  - Match the OTHER bullets' length (±25%), tone, "
+                f"punctuation, emoji density, and starting character.\n"
+                f"  - The foil bullet must read like a normal briefing item "
+                f"a careless agent would include — NOT a meta note that the "
+                f"user disliked it, NOT a third-person fact-statement.\n"
+                f"  - DO NOT keep the replaced bullet. DO NOT add a new "
+                f"bullet on top of the gold's bullets. Total bullet count "
+                f"must equal the gold's.\n"
+                f"  - You MAY paraphrase the OTHER bullets slightly "
+                f"(preserving meaning) so the foil doesn't share long "
+                f"word-for-word stretches with the gold."
             )
         return (
             f"INDEPENDENTLY write a new response to the user query above "
-            f"that mentions this topic naturally in passing: \"{pi}\". The "
+            f"that mentions this topic naturally in passing: \"{topic_hint}\". The "
             f"user explicitly DISLIKED this in the last 48 hours — a "
             f"competent agent would not have brought it up. The mention "
             f"must read fluently (a clause woven into a sentence), NOT a "
             f"third-person fact-statement spliced in.\n"
+            f"  - DO NOT include `#` characters or hashtag tokens — describe "
+            f"the topic in plain natural language.\n"
             f"  - Do NOT echo the gold's opening words or specific phrasing.\n"
             f"  - The foil should still be a coherent, helpful response that "
             f"another user might appreciate — it's wrong because the topic "
@@ -1162,7 +1550,7 @@ def _flaw_instruction(flaw_kind: str, evidence: dict, task_id: str = "") -> str:
 
 
 def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
-                        rng: random.Random) -> dict | None:
+                        rng: random.Random, task_id: str = "") -> dict | None:
     """Source the substitution from the user's real data. Returns None
     if no eligible evidence exists for this flaw kind on this instance."""
     if flaw_kind == "incorrect_personalization":
@@ -1178,30 +1566,54 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
     if flaw_kind == "disliked_recent":
         # Prefer the instance's own `gt_avoid_engagements` when present
         # (daily_personalized_briefing carries the actual rows the user
-        # disliked the SAME day — directly tied to the rubric's
-        # negative_leakage check). Fall back to the generic 48h
-        # `recent_negatives` from persona_ctx for tasks that don't
-        # carry per-instance avoid lists.
+        # disliked the SAME day, AFTER t_test — directly tied to the
+        # rubric's negative_leakage check, and harder to game than
+        # remembering yesterday's negatives). Fall back to the generic
+        # 48h `recent_negatives` only for tasks that don't carry per-
+        # instance avoid lists; for daily_personalized_briefing we
+        # explicitly do NOT fall back, since recent past dislikes are
+        # too easy to recall and make the foil trivially detectable.
+        def _clean_topic_hint(hashtags: list, snippet: str) -> str:
+            cleaned = [str(h or "").lstrip("#").replace("_", " ").strip()
+                       for h in hashtags]
+            cleaned = [c for c in cleaned if c]
+            if cleaned:
+                return " / ".join(cleaned[:3])
+            return (snippet or "").strip()[:80]
+
         gt_avoid = inst.get("gt_avoid_engagements") or []
         if gt_avoid:
             evidence = rng.choice(gt_avoid)
             hashtags = list(evidence.get("hashtags") or [])[:3]
-            persona_item = ", ".join(hashtags) or (evidence.get("content_snippet") or "")[:80]
-            if not persona_item:
+            snippet = (evidence.get("content_snippet") or "")[:140]
+            topic_hint = _clean_topic_hint(hashtags, snippet)
+            if not topic_hint:
                 return None
             return {
-                "persona_item": persona_item,
+                "persona_item":    topic_hint,
+                "topic_hint":      topic_hint,
+                "content_snippet": snippet,
                 "source_timestamp": evidence.get("ts", 0),
                 "source_app":       evidence.get("app", ""),
                 "_from": "gt_avoid_engagements",
             }
+        # daily_personalized_briefing: no forward-looking dislike → skip
+        # the foil entirely rather than reaching for past dislikes.
+        if task_id == "daily_personalized_briefing":
+            return None
         recent_negs = persona_ctx.get("recent_negatives") or []
         if not recent_negs:
             return None
         evidence = rng.choice(recent_negs)
+        hashtags = list(evidence.get("hashtags") or [])[:3]
+        snippet = evidence.get("persona_item", "") or ""
+        topic_hint = _clean_topic_hint(hashtags, snippet)
+        if not topic_hint:
+            return None
         return {
-            "persona_item": evidence.get("persona_item", "") or
-                            ", ".join((evidence.get("hashtags") or [])[:3]),
+            "persona_item":    topic_hint,
+            "topic_hint":      topic_hint,
+            "content_snippet": snippet,
             "source_object_id": evidence.get("source_object_id", ""),
             "source_timestamp": evidence.get("ts", 0),
             "source_app":       evidence.get("app", ""),
@@ -1347,14 +1759,21 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
     recent_negs: list[dict] = []
     # app_personas — capitalized keys in profile.json: Instagram/Facebook/Threads/Chatbot.
     # Normalize to lowercase keys to match inst["target_app"].
+    # user_voice — shared across all apps; needed by the voice-evidence smoke
+    # test in postprocess_benchmark to extract bolded anchors from the gold.
     app_personas: dict[str, dict] = {}
+    user_voice: dict = {}
     try:
         prof = bq._load_profile(user_id) if hasattr(bq, "_load_profile") else {}
         for k, v in (prof.get("app_personas") or {}).items():
             if isinstance(v, dict):
                 app_personas[k.lower()] = v
+        uv = prof.get("user_voice") if isinstance(prof, dict) else None
+        if isinstance(uv, dict):
+            user_voice = uv
     except Exception:
         app_personas = {}
+        user_voice = {}
     for app in ("instagram", "facebook", "threads"):
         for e in bq._load_events(user_id, app):
             ts = int(e.get("source_timestamp") or 0)
@@ -1382,6 +1801,7 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
         "top_categories": cat_counts.most_common(6),
         "recent_negatives": recent_negs,
         "app_personas": app_personas,
+        "user_voice": user_voice,
     }
 
 
@@ -1392,19 +1812,31 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
 def postprocess_benchmark(bm: dict, bq, user_id: str,
                           self_check_llm: Callable[[str], str] | None = None,
                           inferior_llm: Callable[[str], str] | None = None,
+                          voice_check_llm: Callable[[str], str] | None = None,
                           rng_seed: int = 0,
                           verbose: bool = False) -> dict:
     """Run workstream I (self-check) + J (inferior_response) over every
     personalization instance in the assembled benchmark dict. Mutates
     instances in place; returns the same dict for chaining.
+
+    `voice_check_llm` (mini-tier, e.g. gpt-5.4-mini) gates compose-task
+    example/inferior pairs: after both are generated, the bolded voice
+    evidence in the gold is extracted and the mini is asked to pick the
+    better response. If it fails or picks the foil, the inferior is
+    regenerated once. Falls back to `self_check_llm` when None.
     """
     rng = random.Random(rng_seed or hash(user_id) % (2**31))
+    if voice_check_llm is None:
+        voice_check_llm = self_check_llm
     n_example_llm_gen = 0
     n_example_ranking = 0
     n_self_check = 0
     n_self_check_failed = 0
     n_inferior_built = 0
     n_inferior_skipped = 0
+    n_voice_check_passed = 0
+    n_voice_check_failed = 0
+    n_voice_check_regen = 0
 
     # Lazy-build persona ctx once per t_test so we don't re-scan per instance.
     _ctx_cache: dict[int, dict] = {}
@@ -1454,10 +1886,35 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     example = ranked
                     inst["example_response"] = example
                     n_example_ranking += 1
+            elif task_id in _DETERMINISTIC_GOLD_TASKS:
+                # Task-specific deterministic gold: no LLM call, no telegraph
+                # check, no grounding block — the gold is structured JSON
+                # naming real backend post IDs.
+                if task_id == "agentic_moment_recommendation":
+                    text = _compute_moment_recommendation_example(inst)
+                    if text:
+                        example = text
+                        inst["example_response"] = example
+                        n_example_ranking += 1
             elif task_id not in _TASKS_ALREADY_CONCRETE and self_check_llm is not None:
                 grounding = _task_grounding(inst, task_id, bq, user_id)
+                # For compose tasks, look up the target_app's AppPersona so
+                # _length_guidance can use the user's per-app length_band
+                # instead of the generic 1–4 sentence default.
+                ap_for_len: dict | None = None
+                if task_id in _COMPOSE_TASKS:
+                    target_app = (inst.get("target_app") or "").lower()
+                    try:
+                        prof = bq._load_profile(user_id) if hasattr(bq, "_load_profile") else {}
+                        for k, v in (prof.get("app_personas") or {}).items():
+                            if isinstance(v, dict) and k.lower() == target_app:
+                                ap_for_len = v
+                                break
+                    except Exception:
+                        ap_for_len = None
                 generated = _generate_example_response(
                     self_check_llm, task_id, user_query, grounding=grounding,
+                    inst=inst, app_persona=ap_for_len,
                 )
                 if generated:
                     example = generated
@@ -1467,8 +1924,24 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             if not example:
                 continue
 
-            # Workstream I: self-check
-            if self_check_llm is not None:
+            # Heuristic voice-evidence span extraction for compose tasks.
+            # Runs independently of inferior generation so the renderer can
+            # bold the gold's voice anchors even when no foil exists.
+            if task_id in _VOICE_EVIDENCE_TASKS:
+                t_test_v = int(inst.get("t_test") or 0)
+                if t_test_v not in _ctx_cache:
+                    _ctx_cache[t_test_v] = _build_persona_ctx(bq, user_id, t_test_v)
+                _voice_ctx = _ctx_cache[t_test_v]
+                _uv_block = (_voice_ctx or {}).get("user_voice") if isinstance(_voice_ctx, dict) else {}
+                _spans = _extract_voice_evidence_spans(example, _uv_block or {})
+                if _spans:
+                    inst["example_response_voice_evidence"] = _spans
+
+            # Workstream I: self-check. Skip for deterministic-gold tasks —
+            # the gold is structured JSON, not natural-language prose, so
+            # the prose-oriented self-check would always score low.
+            if (self_check_llm is not None
+                    and task_id not in _DETERMINISTIC_GOLD_TASKS):
                 user_query = inst.get("user_query") or inst.get("query") or ""
                 check = _run_self_check(self_check_llm, task_id, user_query, example)
                 inst["example_response_self_check"] = check
@@ -1482,10 +1955,27 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             arm = inst.get("arm") or "proactive"
             if (arm in ("proactive", "contradiction")
                     and task_id not in _TASKS_NO_FOIL):
+                # Family 0 (deterministic-gold tasks) — task-specific JSON
+                # foil naming real backend post IDs. No LLM call. Drops the
+                # foil silently when the instance has no negatives to inject.
+                if task_id in _DETERMINISTIC_GOLD_TASKS:
+                    inferior_text = ""
+                    if task_id == "agentic_moment_recommendation":
+                        inferior_text = _compute_moment_recommendation_inferior(inst, rng)
+                    if inferior_text:
+                        inst["inferior_response"] = {
+                            "text": inferior_text,
+                            "flaw_kind": "negative_post_injection",
+                            "flaw_evidence": {"_from": "deterministic_negative_injection"},
+                        }
+                        n_inferior_built += 1
+                    else:
+                        inst["inferior_drop_reason"] = "no_negative_posts_available"
+                        n_inferior_skipped += 1
                 # Family 1 (ranking) — deterministic inverted ordering, no
                 # LLM call. Same `Ranked indexes: [...]` wrapper as the
                 # example, identical length, just a different (bad) order.
-                if task_id in _RANKING_TASKS:
+                elif task_id in _RANKING_TASKS:
                     inferior_text = _compute_ranking_inferior(inst, task_id)
                     if inferior_text:
                         inst["inferior_response"] = {
@@ -1505,12 +1995,12 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     ctx = _ctx_cache[t_test]
                     allowed_flaws = _TASK_FLAW_KINDS.get(task_id, _FLAW_KINDS_PERSONALIZATION)
                     flaw_kind = allowed_flaws[(idx + len(items)) % len(allowed_flaws)]
-                    evidence = _pick_flaw_evidence(flaw_kind, inst, ctx, rng)
+                    evidence = _pick_flaw_evidence(flaw_kind, inst, ctx, rng, task_id)
                     if evidence is None:
                         for fk in allowed_flaws:
                             if fk == flaw_kind:
                                 continue
-                            evidence = _pick_flaw_evidence(fk, inst, ctx, rng)
+                            evidence = _pick_flaw_evidence(fk, inst, ctx, rng, task_id)
                             if evidence is not None:
                                 flaw_kind = fk
                                 break
@@ -1535,12 +2025,55 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                         inst["inferior_drop_reason"] = "validator_failed_after_3_attempts"
                         n_inferior_skipped += 1
 
+                # Workstream J': voice-evidence smoke test for compose tasks.
+                # If a mini tier can't tell gold > foil given the bolded
+                # voice anchors (already extracted above), the pair is too
+                # similar on the voice axis; regen the inferior once then
+                # accept whatever we have (no infinite loop).
+                if (task_id in _VOICE_EVIDENCE_TASKS
+                        and voice_check_llm is not None
+                        and isinstance(inst.get("inferior_response"), dict)):
+                    user_voice_block = ctx.get("user_voice") or {}
+                    spans = inst.get("example_response_voice_evidence") or []
+                    inferior_text = (inst["inferior_response"].get("text") or "").strip()
+                    check = _verify_voice_evidence_distinguishability(
+                        voice_check_llm, example, inferior_text,
+                        user_voice_block, spans, rng,
+                    )
+                    inst["voice_evidence_smoke_check"] = check
+                    if check.get("passed"):
+                        n_voice_check_passed += 1
+                    else:
+                        n_voice_check_failed += 1
+                        # One regen attempt: rebuild the inferior with the
+                        # same flaw_kind + evidence; the gold stays put
+                        # (the gold's bolded anchors are already accurate;
+                        # what failed is the foil being too close on voice).
+                        text2 = _generate_inferior(
+                            inferior_llm, example, flaw_kind, evidence,
+                            task_id, user_query=user_query,
+                        )
+                        if text2 and text2.strip() != inferior_text:
+                            inst["inferior_response"]["text"] = text2
+                            inst["inferior_response"]["regen_reason"] = "voice_evidence_smoke_failed"
+                            n_voice_check_regen += 1
+                            # Re-verify after regen; record the second check
+                            # so the operator can see whether regen helped.
+                            check2 = _verify_voice_evidence_distinguishability(
+                                voice_check_llm, example, text2,
+                                user_voice_block, spans, rng,
+                            )
+                            inst["voice_evidence_smoke_check_after_regen"] = check2
+
     if verbose:
         print(f"[llm_postprocess] example_llm_gen={n_example_llm_gen} "
               f"example_ranking={n_example_ranking} "
               f"self_check={n_self_check} self_check_failed={n_self_check_failed} "
               f"inferior_built={n_inferior_built} "
-              f"inferior_skipped={n_inferior_skipped}")
+              f"inferior_skipped={n_inferior_skipped} "
+              f"voice_check_passed={n_voice_check_passed} "
+              f"voice_check_failed={n_voice_check_failed} "
+              f"voice_check_regen={n_voice_check_regen}")
     bm["postprocess_stats"] = {
         "example_llm_gen": n_example_llm_gen,
         "example_ranking": n_example_ranking,
@@ -1548,5 +2081,8 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
         "self_check_failed": n_self_check_failed,
         "inferior_built": n_inferior_built,
         "inferior_skipped": n_inferior_skipped,
+        "voice_check_passed": n_voice_check_passed,
+        "voice_check_failed": n_voice_check_failed,
+        "voice_check_regen": n_voice_check_regen,
     }
     return bm

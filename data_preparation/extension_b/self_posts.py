@@ -57,6 +57,7 @@ User profile:
 {expression_lines}
 - Overrides for {app_pretty} (apply only the keys listed; everything else inherits from Shared writing voice):
 {overrides_lines}
+- App avoid for {app_pretty} (audience-driven content / tone the user skips here): {app_avoid}
 
 Produce {n} distinct posts. Each must:
 1. Sound like the SAME PERSON typing — apply `default_capitalization`, occasional `personal_phrases`, `punctuation_habits` from the Shared writing voice unless overrides say otherwise.
@@ -66,6 +67,7 @@ Produce {n} distinct posts. Each must:
 5. Match platform format: Instagram posts have a caption + content_type image/video;
    Facebook posts are typically status text; Threads posts are short (under 300 chars).
 6. Be grounded in the user's real persona — not generic marketing copy.
+7. **Respect the negatives.** The shared voice block may include **Voice avoid** + **Phrases to avoid** lines — never produce text in those tones, never reach for those literal phrases. Respect this app's `App avoid` line — never produce content / tone the audience filters out here.
 
 Return JSON only:
 ```json
@@ -112,7 +114,7 @@ def _render_user_voice_for_self_posts(user_voice: dict) -> str:
     palette_str = " ".join(palette) if palette else "(none)"
     phrases = user_voice.get("personal_phrases") or []
     phrases_str = ", ".join(f'"{p}"' for p in phrases) if phrases else "(none)"
-    return (
+    block = (
         "## Shared writing voice (the SAME person types this on every app)\n\n"
         f"- **Natural register:** {user_voice.get('natural_register', '(unspecified)')}\n"
         f"- **Default capitalization:** {user_voice.get('default_capitalization', '(unspecified)')}\n"
@@ -123,14 +125,25 @@ def _render_user_voice_for_self_posts(user_voice: dict) -> str:
         f"- **Personal phrases (bleed across apps):** {phrases_str}\n"
         f"- **Formality baseline:** {user_voice.get('formality_baseline', 0.3)}\n"
     )
+    voice_avoid = (user_voice.get("voice_avoid") or "").strip()
+    if voice_avoid:
+        block += f"- **Voice avoid (never produce this tone / style):** {voice_avoid}\n"
+    avoid_phrases = user_voice.get("phrases_to_avoid") or []
+    if avoid_phrases:
+        avoid_str = ", ".join(f'"{p}"' for p in avoid_phrases)
+        block += f"- **Phrases to avoid (never reach for these):** {avoid_str}\n"
+    return block
 
 
 def _format_expression_block(expression: dict) -> str:
     if not isinstance(expression, dict) or not expression:
         return "  (default: medium effort, no shifts)"
-    keys = ["effort_level", "length_band", "emoji_intensity_shift",
-            "emoji_topic_filter", "audience_self_censoring"]
-    return "\n".join(f"  - {k}: {expression.get(k, '(default)')}" for k in keys)
+    required_keys = ["effort_level", "length_band", "emoji_intensity_shift",
+                     "audience_self_censoring"]
+    lines = [f"  - {k}: {expression.get(k, '(default)')}" for k in required_keys]
+    if expression.get("emoji_topic_filter"):
+        lines.append(f"  - emoji_topic_filter: {expression['emoji_topic_filter']}")
+    return "\n".join(lines)
 
 
 def _format_overrides_block(overrides: dict) -> str:
@@ -176,6 +189,7 @@ def generate_self_posts(
         topical_focus=", ".join(app_persona.get("topical_focus", [])) or "n/a",
         expression_lines=_format_expression_block(app_persona.get("expression", {})),
         overrides_lines=_format_overrides_block(app_persona.get("overrides", {})),
+        app_avoid=(app_persona.get("app_avoid", "") or "(none)"),
     )
     resp = llm_client.query_llm(prompt)
     posts = extract_json_from_response(resp) or []

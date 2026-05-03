@@ -182,6 +182,8 @@ def main():
         emoji_intensity_default=str(uv_raw.get("emoji_intensity_default", "medium")),
         personal_phrases=list(uv_raw.get("personal_phrases", []) or []),
         formality_baseline=float(uv_raw.get("formality_baseline", 0.3) or 0.3),
+        voice_avoid=str(uv_raw.get("voice_avoid", "")),
+        phrases_to_avoid=list(uv_raw.get("phrases_to_avoid", []) or []),
     )
 
     app_personas_block = parsed.get("app_personas") or {}
@@ -213,6 +215,7 @@ def main():
             chatbot_contexts=list(entry.get("chatbot_contexts", [])) if app_name == "Chatbot" else [],
             expression=expression,
             overrides=overrides,
+            app_avoid=str(entry.get("app_avoid", "")),
         )
         new_app_personas[app_name] = asdict(ap)
 
@@ -232,15 +235,21 @@ def main():
     print(f"  shared voice: caps={user_voice.default_capitalization} | "
           f"palette={' '.join(user_voice.emoji_palette)} | "
           f"phrases={user_voice.personal_phrases}")
+    if user_voice.voice_avoid:
+        print(f"  voice avoid: {user_voice.voice_avoid}")
+    if user_voice.phrases_to_avoid:
+        print(f"  phrases to avoid: {user_voice.phrases_to_avoid}")
     print(f"  overrides populated: {n_overrides}/{len(new_app_personas)} apps "
           f"(target: most users ≤ 1)")
     for app, ap in new_app_personas.items():
         ov = ap.get("overrides") or {}
         ov_str = f" overrides={list(ov.keys())}" if ov else ""
         expr = ap.get("expression") or {}
+        avoid = ap.get("app_avoid") or ""
+        avoid_str = f" | app_avoid=\"{avoid[:60]}{'…' if len(avoid) > 60 else ''}\"" if avoid else ""
         print(f"  {app}: audience={ap.get('audience_type','?')} | "
               f"length={expr.get('length_band','?')} | "
-              f"effort={expr.get('effort_level','?')}{ov_str}")
+              f"effort={expr.get('effort_level','?')}{ov_str}{avoid_str}")
 
 
 if __name__ == "__main__":
