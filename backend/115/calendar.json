@@ -2,20 +2,20 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775181000,
-      "formatted_timestamp": "09:10, 03/31/2026",
+      "ts": 1775176200,
+      "formatted_timestamp": "06:30, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Field signal cabinet troubleshooting",
-        "start_ts": 1775181000,
-        "end_ts": 1775188200,
+        "title": "Early shift handoff and rail/bus status check",
+        "start_ts": 1775176200,
+        "end_ts": 1775183400,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "work",
@@ -26,127 +26,168 @@
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775196000,
-      "formatted_timestamp": "13:20, 03/31/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_002",
-        "title": "Quick lunch at home and reset",
-        "start_ts": 1775196000,
-        "end_ts": 1775199600,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
+      "ts": 1775180400,
+      "formatted_timestamp": "07:40, 04/01/2026",
+      "action": "updated",
+      "entry_id": "cal_001",
+      "diff": {
+        "end_ts": {
+          "from": 1775183400,
+          "to": 1775185000
         },
-        "type": "personal",
-        "linked_preferences": [
-          "food and home cooking"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "notes": {
+          "from": "",
+          "to": "Cover a delayed inbound train and update supervisor."
+        }
       }
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775210400,
-      "formatted_timestamp": "17:20, 03/31/2026",
+      "ts": 1775203200,
+      "formatted_timestamp": "14:00, 04/01/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_003",
-        "title": "Thread and clip catch-up: boxing, WWE, and comedy",
-        "start_ts": 1775210400,
-        "end_ts": 1775214900,
+        "entry_id": "cal_002",
+        "title": "Laundry, casserole prep, and 90s hip-hop playlist",
+        "start_ts": 1775203200,
+        "end_ts": 1775210400,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "boxing and combat sports",
-          "WWE and pro wrestling storylines, talent, or events",
-          "comedy and humor-focused social media content"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_004",
-      "ts": 1775223300,
-      "formatted_timestamp": "20:55, 03/31/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_004",
-        "title": "Easy vegetarian dinner prep",
-        "start_ts": 1775223300,
-        "end_ts": 1775228700,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "easy, comforting vegetarian dinners at home"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_005",
-      "ts": 1775257200,
-      "formatted_timestamp": "06:20, 04/01/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_005",
-        "title": "Morning boxing workout",
-        "start_ts": 1775257200,
-        "end_ts": 1775262600,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "boxing and combat sports",
-          "combat sports fandom"
+          "food and home cooking",
+          "hip-hop music"
         ],
         "is_preference_driven": true,
         "relation_to_social": "adjacent"
       }
     },
     {
+      "mod_id": "mod_004",
+      "ts": 1775232000,
+      "formatted_timestamp": "22:00, 04/01/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_003",
+        "title": "Watch boxing clips and WWE recap",
+        "start_ts": 1775232000,
+        "end_ts": 1775239200,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "combat sports fandom",
+          "professional wrestling fandom"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_005",
+      "ts": 1775271600,
+      "formatted_timestamp": "09:00, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_004",
+        "title": "Dermatology appointment",
+        "start_ts": 1775271600,
+        "end_ts": 1775277000,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
       "mod_id": "mod_006",
-      "ts": 1775276400,
-      "formatted_timestamp": "11:40, 04/01/2026",
+      "ts": 1775293200,
+      "formatted_timestamp": "15:00, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_005",
+        "title": "Trip to reserve supplies for wildlife rescue",
+        "start_ts": 1775293200,
+        "end_ts": 1775300400,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "wildlife conservation"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775314800,
+      "formatted_timestamp": "21:00, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_006",
-        "title": "Shift planning check-in",
-        "start_ts": 1775276400,
-        "end_ts": 1775278200,
+        "title": "Funny reels and Hot Ones-style interview catch-up",
+        "start_ts": 1775314800,
+        "end_ts": 1775320200,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "comedy entertainment",
+          "celebrity interview shows"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775354400,
+      "formatted_timestamp": "08:00, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Weekly planning and supervisor 1:1",
+        "start_ts": 1775354400,
+        "end_ts": 1775359800,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "work",
@@ -156,38 +197,95 @@
       }
     },
     {
-      "mod_id": "mod_007",
-      "ts": 1775287800,
-      "formatted_timestamp": "14:50, 04/01/2026",
-      "action": "updated",
-      "entry_id": "cal_006",
-      "diff": {
-        "end_ts": {
-          "from": 1775278200,
-          "to": 1775279100
+      "mod_id": "mod_009",
+      "ts": 1775383200,
+      "formatted_timestamp": "16:00, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Buffalo Bills injury report check",
+        "start_ts": 1775383200,
+        "end_ts": 1775386800,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
         },
-        "notes": {
-          "from": "",
-          "to": "move to 2:30 if the relay test runs long"
-        }
+        "type": "personal",
+        "linked_preferences": [
+          "NFL fandom"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
       }
     },
     {
-      "mod_id": "mod_008",
-      "ts": 1775301300,
-      "formatted_timestamp": "18:35, 04/01/2026",
+      "mod_id": "mod_010",
+      "ts": 1775408400,
+      "formatted_timestamp": "23:00, 04/03/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_007",
-        "title": "Call with Ana about weekend party setup",
-        "start_ts": 1775301300,
-        "end_ts": 1775303100,
+        "entry_id": "cal_009",
+        "title": "Midnight snack and phone-free wind-down",
+        "start_ts": 1775408400,
+        "end_ts": 1775412000,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775440800,
+      "formatted_timestamp": "08:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Ride train to Niagara Falls for family brunch",
+        "start_ts": 1775440800,
+        "end_ts": 1775446200,
+        "location": {
+          "city": "Niagara Falls",
+          "region": "NY",
+          "country": "USA",
+          "lat": 43.0962,
+          "lon": -79.0377,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775451600,
+      "formatted_timestamp": "11:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Family brunch with Ana",
+        "start_ts": 1775451600,
+        "end_ts": 1775460600,
+        "location": {
+          "city": "Niagara Falls",
+          "region": "NY",
+          "country": "USA",
+          "lat": 43.0962,
+          "lon": -79.0377,
           "precision": "city"
         },
         "type": "social",
@@ -196,198 +294,123 @@
           "Ana"
         ],
         "linked_preferences": [
-          "dance and nightlife"
+          "romantic relationship content"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_009",
-      "ts": 1775312700,
-      "formatted_timestamp": "21:45, 04/01/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Rewatch sitcom episode and wind down",
-        "start_ts": 1775312700,
-        "end_ts": 1775316300,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
+      "mod_id": "mod_013",
+      "ts": 1775473200,
+      "formatted_timestamp": "17:00, 04/04/2026",
+      "action": "updated",
+      "entry_id": "cal_011",
+      "diff": {
+        "end_ts": {
+          "from": 1775460600,
+          "to": 1775464200
         },
-        "type": "personal",
-        "linked_preferences": [
-          "nostalgic 1990s pop culture content"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "notes": {
+          "from": "",
+          "to": "Stayed a little longer for dessert and photos."
+        }
       }
     },
     {
-      "mod_id": "mod_010",
-      "ts": 1775349000,
-      "formatted_timestamp": "07:50, 04/02/2026",
+      "mod_id": "mod_014",
+      "ts": 1775516400,
+      "formatted_timestamp": "05:00, 04/05/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_009",
-        "title": "Dental cleaning appointment",
-        "start_ts": 1775349000,
-        "end_ts": 1775352600,
+        "entry_id": "cal_012",
+        "title": "Return home from Niagara Falls",
+        "start_ts": 1775516400,
+        "end_ts": 1775519100,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_011",
-      "ts": 1775362200,
-      "formatted_timestamp": "11:30, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_010",
-        "title": "Train ride to Queens for parts pickup",
-        "start_ts": 1775362200,
-        "end_ts": 1775366400,
-        "location": {
-          "city": "New York",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.7282,
-          "lon": -73.7949,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "travel",
         "linked_preferences": [],
         "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_012",
-      "ts": 1775379000,
-      "formatted_timestamp": "16:10, 04/02/2026",
-      "action": "updated",
-      "entry_id": "cal_010",
-      "diff": {
-        "end_ts": {
-          "from": 1775366400,
-          "to": 1775367600
-        },
-        "notes": {
-          "from": "",
-          "to": "allow time for delayed train back"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_013",
-      "ts": 1775386800,
-      "formatted_timestamp": "18:20, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_011",
-        "title": "Grocery run for vegetarian dinner supplies",
-        "start_ts": 1775386800,
-        "end_ts": 1775390400,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "easy, comforting vegetarian dinners at home"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_014",
-      "ts": 1775421900,
-      "formatted_timestamp": "04:05, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_012",
-        "title": "Late-night comedy clips and group chat scroll",
-        "start_ts": 1775421900,
-        "end_ts": 1775425500,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "comedy and humor-focused social media content",
-          "short-form comedy and funny video content"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_015",
-      "ts": 1775435400,
-      "formatted_timestamp": "07:50, 04/03/2026",
+      "ts": 1775538000,
+      "formatted_timestamp": "11:00, 04/05/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_013",
-        "title": "Safety meeting with neighborhood crew",
-        "start_ts": 1775435400,
-        "end_ts": 1775439000,
+        "title": "Grocery run and thrift store loop",
+        "start_ts": 1775538000,
+        "end_ts": 1775545200,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
-        "type": "work",
+        "type": "personal",
         "linked_preferences": [
-          "community-focused conversations about neighborhood safety"
+          "budget-friendly fashion",
+          "food and home cooking"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775565600,
+      "formatted_timestamp": "19:00, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Dinner with boyfriend and leftovers prep",
+        "start_ts": 1775565600,
+        "end_ts": 1775573400,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "romantic relationship content",
+          "food and home cooking"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_016",
-      "ts": 1775450100,
-      "formatted_timestamp": "11:55, 04/03/2026",
+      "mod_id": "mod_017",
+      "ts": 1775602800,
+      "formatted_timestamp": "05:00, 04/06/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_014",
-        "title": "One-on-one with supervisor",
-        "start_ts": 1775450100,
-        "end_ts": 1775453700,
+        "entry_id": "cal_015",
+        "title": "Pre-shift bus dispatch coverage",
+        "start_ts": 1775602800,
+        "end_ts": 1775608200,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "work",
@@ -397,47 +420,21 @@
       }
     },
     {
-      "mod_id": "mod_017",
-      "ts": 1775476800,
-      "formatted_timestamp": "19:20, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_015",
-        "title": "Community party DJ prep",
-        "start_ts": 1775476800,
-        "end_ts": 1775482200,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "dance and nightlife"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
       "mod_id": "mod_018",
-      "ts": 1775515200,
-      "formatted_timestamp": "06:00, 04/04/2026",
+      "ts": 1775620800,
+      "formatted_timestamp": "10:00, 04/06/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_016",
-        "title": "Car inspection and tire check",
-        "start_ts": 1775515200,
-        "end_ts": 1775518800,
+        "title": "Haircut and eyebrow clean-up",
+        "start_ts": 1775620800,
+        "end_ts": 1775624400,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "personal",
@@ -448,26 +445,29 @@
     },
     {
       "mod_id": "mod_019",
-      "ts": 1775530500,
-      "formatted_timestamp": "10:15, 04/04/2026",
+      "ts": 1775653200,
+      "formatted_timestamp": "19:00, 04/06/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_017",
-        "title": "Watch Crawford highlight reel and boxing breakdowns",
-        "start_ts": 1775530500,
-        "end_ts": 1775535000,
+        "title": "Zoom chat with wildlife rescue coordinator",
+        "start_ts": 1775653200,
+        "end_ts": 1775656800,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
-        "type": "personal",
+        "type": "social",
+        "attendees": [
+          "self",
+          "Jordan"
+        ],
         "linked_preferences": [
-          "boxing and combat sports",
-          "Terence Crawford"
+          "wildlife conservation"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
@@ -475,42 +475,50 @@
     },
     {
       "mod_id": "mod_020",
-      "ts": 1775547600,
-      "formatted_timestamp": "15:00, 04/04/2026",
-      "action": "updated",
-      "entry_id": "cal_015",
-      "diff": {
-        "start_ts": {
-          "from": 1775476800,
-          "to": 1775478600
+      "ts": 1775696400,
+      "formatted_timestamp": "07:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Call re: schedule swap and coverage gaps",
+        "start_ts": 1775696400,
+        "end_ts": 1775700000,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
         },
-        "notes": {
-          "from": "",
-          "to": "push setup back 30 minutes"
-        }
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_021",
-      "ts": 1775561400,
-      "formatted_timestamp": "18:50, 04/04/2026",
+      "ts": 1775714400,
+      "formatted_timestamp": "12:00, 04/07/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_018",
-        "title": "Line dancing after community party",
-        "start_ts": 1775561400,
-        "end_ts": 1775566800,
+        "entry_id": "cal_019",
+        "title": "Lunch and Threads posts about WWE",
+        "start_ts": 1775714400,
+        "end_ts": 1775718000,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
-        "type": "social",
+        "type": "personal",
         "linked_preferences": [
-          "country line dancing content and related social dance activities"
+          "professional wrestling fandom",
+          "comedy"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
@@ -518,50 +526,40 @@
     },
     {
       "mod_id": "mod_022",
-      "ts": 1775602200,
-      "formatted_timestamp": "06:10, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "Sunday meal prep and candy restock",
-        "start_ts": 1775602200,
-        "end_ts": 1775607600,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
+      "ts": 1775746800,
+      "formatted_timestamp": "21:00, 04/07/2026",
+      "action": "updated",
+      "entry_id": "cal_019",
+      "diff": {
+        "end_ts": {
+          "from": 1775718000,
+          "to": 1775720400
         },
-        "type": "personal",
-        "linked_preferences": [
-          "easy, comforting vegetarian dinners at home",
-          "sour and gummy candy brands and treats"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "notes": {
+          "from": "",
+          "to": "Kept scrolling a little longer after dinner."
+        }
       }
     },
     {
       "mod_id": "mod_023",
-      "ts": 1775619000,
-      "formatted_timestamp": "10:50, 04/05/2026",
+      "ts": 1775782800,
+      "formatted_timestamp": "07:00, 04/08/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_020",
-        "title": "Video call with family",
-        "start_ts": 1775619000,
-        "end_ts": 1775622600,
+        "title": "Bus route briefing and staffing meeting",
+        "start_ts": 1775782800,
+        "end_ts": 1775788200,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
-        "type": "social",
+        "type": "work",
         "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
@@ -569,88 +567,117 @@
     },
     {
       "mod_id": "mod_024",
-      "ts": 1775643300,
-      "formatted_timestamp": "17:35, 04/05/2026",
+      "ts": 1775808000,
+      "formatted_timestamp": "14:00, 04/08/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_021",
-        "title": "Draft text for friend about next month’s party",
-        "start_ts": 1775643300,
-        "end_ts": 1775644200,
+        "title": "Cook cheesy casseroles for the week",
+        "start_ts": 1775808000,
+        "end_ts": 1775816400,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "dance and nightlife"
+          "food and home cooking"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_025",
+      "ts": 1775836800,
+      "formatted_timestamp": "22:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_022",
+        "title": "Bills highlights and funny creator clips",
+        "start_ts": 1775836800,
+        "end_ts": 1775842200,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "NFL fandom",
+          "comedy video consumption"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_025",
-      "ts": 1775678400,
-      "formatted_timestamp": "03:20, 04/06/2026",
+      "mod_id": "mod_026",
+      "ts": 1775871000,
+      "formatted_timestamp": "07:30, 04/09/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_022",
-        "title": "Watch old 90s sitcom episode",
-        "start_ts": 1775678400,
-        "end_ts": 1775682000,
+        "entry_id": "cal_023",
+        "title": "Monthly wildlife rescue volunteer shift",
+        "start_ts": 1775871000,
+        "end_ts": 1775885400,
         "location": {
-          "city": "Brooklyn",
+          "city": "Buffalo",
           "region": "NY",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 42.8864,
+          "lon": -78.8784,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "nostalgic 1990s pop culture content"
+          "wildlife conservation"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "relation_to_social": "adjacent"
       }
     },
     {
-      "mod_id": "mod_026",
-      "ts": 1775694600,
-      "formatted_timestamp": "07:50, 04/06/2026",
-      "action": "removed",
-      "entry_id": "cal_015",
-      "removal_reason": "canceled: DJ set got moved to next weekend"
-    },
-    {
       "mod_id": "mod_027",
-      "ts": 1775721000,
-      "formatted_timestamp": "15:10, 04/06/2026",
-      "action": "updated",
-      "entry_id": "cal_020",
-      "diff": {
-        "end_ts": {
-          "from": 1775622600,
-          "to": 1775624400
+      "ts": 1775902800,
+      "formatted_timestamp": "16:20, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_024",
+        "title": "Date night outfit try-on and mirror pics",
+        "start_ts": 1775902800,
+        "end_ts": 1775906400,
+        "location": {
+          "city": "Buffalo",
+          "region": "NY",
+          "country": "USA",
+          "lat": 42.8864,
+          "lon": -78.8784,
+          "precision": "city"
         },
-        "notes": {
-          "from": "",
-          "to": "family call ran long"
-        }
+        "type": "social",
+        "linked_preferences": [
+          "budget-friendly fashion",
+          "romantic relationship content"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
       }
     },
     {
       "mod_id": "mod_028",
-      "ts": 1775930100,
-      "formatted_timestamp": "23:55, 04/08/2026",
+      "ts": 1775921700,
+      "formatted_timestamp": "21:35, 04/09/2026",
       "action": "removed",
-      "entry_id": "cal_021",
-      "removal_reason": "canceled: friend already covered the invite message"
+      "entry_id": "cal_024",
+      "removal_reason": "canceled: we stayed in after a long day"
     }
   ]
 }
