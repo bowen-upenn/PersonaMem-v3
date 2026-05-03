@@ -235,27 +235,75 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
             t_test = int(inst.get("t_test") or 0)
             if not topic or not t_test:
                 return ""
-            events = bq.get_events(
-                user_id=user_id,
-                app=("instagram", "facebook", "threads", "chatbot"),
-                since_timestamp=t_test,
-                hashtag=topic,
-                limit=3,
-            ) or []
-            if not events:
+            # Window: 3 days before t_test. The user vaguely remembers
+            # "that post about X" — they mean something they actually saw
+            # very recently, not from weeks ago.
+            window_lo = t_test - 3 * 86400
+            APP_DISPLAY = {
+                "instagram": "Instagram",
+                "facebook": "Facebook",
+                "threads": "Threads",
+                "chatbot": "the chatbot",
+            }
+            # Per-app loop so we know which app each event came from
+            # (bq.get_events strips the app tag from the returned events).
+            collected: list[tuple[int, str, dict]] = []
+            for app in ("instagram", "facebook", "threads", "chatbot"):
+                evs = bq.get_events(
+                    user_id=user_id, app=app,
+                    since_timestamp=t_test, hashtag=topic,
+                ) or []
+                for e in evs:
+                    ts = int(e.get("source_timestamp") or 0)
+                    if ts < window_lo:
+                        continue
+                    collected.append((ts, app, e))
+            if not collected:
                 return ""
-            lines = [f"Real posts the user engaged with on '#{topic}' (most recent first):"]
-            for e in events[-3:][::-1]:
+            # 1-2 most recent on the topic, deduped by source_object_id.
+            collected.sort(key=lambda x: x[0], reverse=True)
+            seen_oids: set[str] = set()
+            picks: list[tuple[int, str, dict]] = []
+            for tup in collected:
+                oid = str(tup[2].get("source_object_id") or "")
+                if oid in seen_oids:
+                    continue
+                seen_oids.add(oid)
+                picks.append(tup)
+                if len(picks) >= 2:
+                    break
+
+            lines: list[str] = [
+                f"User vaguely asked: \"find that post I saw about {topic}\".",
+                "Real recent posts on this topic (within 3 days before now). "
+                "Reference 1-2 of these in the gold response by NAMING the "
+                "actual app and a short subject — never output a bracket "
+                "ID like '[social 12345]', never output empty quotes \"\".",
+                "",
+            ]
+            for ts, app, e in picks:
                 content = e.get("content") or {}
                 title = (content.get("title") or content.get("caption") or "").strip()
-                hashtags = (e.get("source_hashtags") or [])[:5]
-                app = (e.get("_app") or e.get("source_app") or "").strip()
-                oid = e.get("source_object_id") or ""
-                date = _format_iso_date(e.get("source_timestamp") or 0)
+                hashtags = [h for h in (e.get("source_hashtags") or []) if h][:5]
+                date = _format_iso_date(ts)
+                # Build a short human-readable subject. Prefer real text;
+                # fall back to a hashtag-derived noun phrase so the gold
+                # never has to write `""`.
+                subject = title[:120]
+                if not subject and hashtags:
+                    subject = "a post tagged " + ", ".join(
+                        "#" + h.lstrip("#") for h in hashtags[:3]
+                    )
+                if not subject:
+                    subject = f"a post about #{topic}"
                 lines.append(
-                    f"- [{app or 'social'} {oid}] \"{title[:90]}\""
-                    f"{' #' + ' #'.join(h.lstrip('#') for h in hashtags) if hashtags else ''}"
-                    f"{f' ({date})' if date else ''}"
+                    f"- On {APP_DISPLAY.get(app, app)} ({date}): {subject}"
+                    + (
+                        " — hashtags: " + " ".join(
+                            "#" + h.lstrip("#") for h in hashtags
+                        )
+                        if hashtags else ""
+                    )
                 )
             return "\n".join(lines)
 
@@ -363,35 +411,227 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
                 lines.append(f"- #{tag} ({n} engagements)")
             return "\n".join(lines)
 
-        if task_id == "agentic_user_tone_post":
-            target_app = (inst.get("target_app") or "instagram").lower()
-            t_test = int(inst.get("t_test") or 0)
-            from collections import Counter
-            tag_counts: Counter = Counter()
-            self_posts: list[str] = []
-            for e in bq.get_events(
-                user_id=user_id, app=target_app,
-                since_timestamp=t_test or 9999999999,
-            ) or []:
-                for h in (e.get("source_hashtags") or []):
-                    if h:
-                        tag_counts[h.lstrip("#").lower()] += 1
-                if (e.get("source_interaction_type") or "") == "self_post":
-                    content = e.get("content") or {}
-                    text = (content.get("caption") or content.get("title") or "").strip()
-                    if text:
-                        self_posts.append(text[:160])
-            lines = []
-            top_tags = [t for t, _ in tag_counts.most_common(8)]
-            if top_tags:
-                lines.append("Top hashtags on " + target_app + ": "
-                             + ", ".join("#" + t for t in top_tags))
-            for sp in self_posts[-3:][::-1]:
-                lines.append(f"- recent self-post: \"{sp}\"")
-            return "\n".join(lines)
+        if task_id in _VOICE_DEPENDENT_WRITE_TASKS:
+            return _voice_grounding(inst, task_id, bq, user_id)
     except Exception:
         return ""
     return ""
+
+
+# Voice-dependent agentic write tasks. Their gold is graded on `voice_match`,
+# so the gold-gen LLM must see the user's actual voice for the target_app.
+_VOICE_DEPENDENT_WRITE_TASKS = {
+    "agentic_user_tone_post",
+    "agentic_composed_post",
+    "agentic_send_post",
+    "agentic_cross_app_repost",
+    "agentic_auto_reply",
+}
+
+
+def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
+    """Build a voice-anchored grounding block for write tasks.
+
+    Pulls the target_app's `style_description` / `topical_focus` /
+    `posting_frequency` from `profile.app_personas`, the user's top
+    hashtags on that app, and the 2-3 most recent self-posts. Each
+    task adds its own specific input (the update / context / source
+    post / inbound DM) so the gold has both voice anchor and the
+    concrete content to respond to.
+    """
+    from collections import Counter
+
+    target_app = (inst.get("target_app") or "instagram").lower()
+    t_test = int(inst.get("t_test") or 0)
+    horizon = t_test or 9999999999
+
+    # 1. style_description / topical_focus / posting_frequency from app_personas
+    # plus the user's shared writing voice (caps, palette, phrases, ...) — the
+    # same person types this on every app, so the gold-gen LLM needs both
+    # blocks to mimic the voice correctly.
+    app_persona: dict = {}
+    user_voice: dict = {}
+    try:
+        prof = bq._load_profile(user_id) if hasattr(bq, "_load_profile") else {}
+        for k, v in (prof.get("app_personas") or {}).items():
+            if isinstance(v, dict) and k.lower() == target_app:
+                app_persona = v
+                break
+        uv = prof.get("user_voice") if isinstance(prof, dict) else None
+        if isinstance(uv, dict):
+            user_voice = uv
+    except Exception:
+        app_persona = {}
+        user_voice = {}
+
+    # 2. Top hashtags + recent self-posts on the target app.
+    tag_counts: Counter = Counter()
+    self_posts: list[str] = []
+    try:
+        for e in bq.get_events(
+            user_id=user_id, app=target_app, since_timestamp=horizon,
+        ) or []:
+            for h in (e.get("source_hashtags") or []):
+                if h:
+                    tag_counts[h.lstrip("#").lower()] += 1
+            if (e.get("source_interaction_type") or "") == "self_post":
+                content = e.get("content") or {}
+                text = (content.get("caption") or content.get("title") or "").strip()
+                if text:
+                    self_posts.append(text[:200])
+    except Exception:
+        pass
+
+    lines: list[str] = []
+    # 1a. Shared writing voice — the same person types this on every app.
+    if isinstance(user_voice, dict) and user_voice:
+        lines.append("User's shared writing voice (consistent across all apps):")
+        if user_voice.get("natural_register"):
+            lines.append(f"  register: {user_voice['natural_register']}")
+        if user_voice.get("default_capitalization"):
+            lines.append(f"  capitalization: {user_voice['default_capitalization']}")
+        if user_voice.get("punctuation_habits"):
+            lines.append(f"  punctuation: {user_voice['punctuation_habits']}")
+        if user_voice.get("humor_tone"):
+            lines.append(f"  humor / tone: {user_voice['humor_tone']}")
+        palette = user_voice.get("emoji_palette") or []
+        if palette:
+            lines.append(
+                f"  personal emoji palette (subset only — never invent new): "
+                f"{' '.join(palette)} (intensity: {user_voice.get('emoji_intensity_default', 'medium')})"
+            )
+        phrases = user_voice.get("personal_phrases") or []
+        if phrases:
+            lines.append(
+                "  personal phrases (cross-app — use occasionally as natural tics): "
+                + ", ".join(f"\"{p}\"" for p in phrases[:6])
+            )
+        if user_voice.get("formality_baseline") is not None:
+            lines.append(f"  formality baseline: {user_voice['formality_baseline']}")
+
+    # 1b. Per-app expression — what shifts on the target app.
+    style = (app_persona.get("style_description") or "").strip()
+    expression = app_persona.get("expression") or {}
+    overrides = app_persona.get("overrides") or {}
+    audience_lens = (app_persona.get("audience_lens") or "").strip()
+    if style or expression or audience_lens:
+        lines.append(f"On {target_app} this voice modulates:")
+        if audience_lens:
+            lines.append(f"  audience lens: {audience_lens}")
+        if style:
+            lines.append(f"  style delta: {style[:400]}")
+        if isinstance(expression, dict) and expression:
+            if expression.get("effort_level"):
+                lines.append(f"  effort: {expression['effort_level']}")
+            if expression.get("length_band"):
+                lines.append(f"  length: ~{expression['length_band']} chars")
+            eis = expression.get("emoji_intensity_shift")
+            if eis is not None:
+                shift_label = "0 (default)" if eis == 0 else (f"+{eis}" if eis > 0 else str(eis))
+                lines.append(f"  emoji intensity shift: {shift_label}")
+            if expression.get("emoji_topic_filter"):
+                lines.append(f"  which palette emoji surface here: {expression['emoji_topic_filter']}")
+            if expression.get("audience_self_censoring"):
+                lines.append(f"  audience self-censoring: {expression['audience_self_censoring']}")
+        if isinstance(overrides, dict) and overrides:
+            lines.append("  overrides (apply only these; other voice mechanics inherit from shared voice):")
+            for ok, ov in overrides.items():
+                ov_repr = "; ".join(ov) if isinstance(ov, list) else str(ov)
+                lines.append(f"    {ok}: {ov_repr}")
+
+    # 1c. Legacy backward-compat — if the backend predates the shared-voice
+    # refactor, fall back to the old voice_signature block so old eval runs
+    # still get a voice anchor.
+    if not user_voice and not expression:
+        sig = app_persona.get("voice_signature") or {}
+        if isinstance(sig, dict) and sig:
+            lines.append(f"Voice signature for {target_app} (legacy):")
+            if sig.get("capitalization"):
+                lines.append(f"  capitalization: {sig['capitalization']}")
+            if sig.get("punctuation_habits"):
+                lines.append(f"  punctuation: {sig['punctuation_habits']}")
+            if sig.get("sentence_shape"):
+                lines.append(f"  sentence shape: {sig['sentence_shape']}")
+            if sig.get("length_chars"):
+                lines.append(f"  length: ~{sig['length_chars']} chars")
+            rec = sig.get("recurring_phrases") or []
+            if rec:
+                lines.append("  recurring phrases the user actually uses: "
+                             + ", ".join(f"\"{p}\"" for p in rec[:5]))
+            emoji = sig.get("emoji_policy")
+            if isinstance(emoji, dict):
+                elist = emoji.get("emojis") or []
+                place = emoji.get("placement") or ""
+                if elist:
+                    lines.append(f"  emoji policy: uses {' '.join(elist)}"
+                                 + (f", placed {place}" if place else ""))
+            elif isinstance(emoji, str) and emoji.strip():
+                lines.append(f"  emoji policy: {emoji}")
+            if sig.get("hashtag_policy"):
+                lines.append(f"  hashtag policy: {sig['hashtag_policy']}")
+            forbid = sig.get("forbidden_patterns") or []
+            if forbid:
+                lines.append("  user NEVER does: " + "; ".join(forbid[:5]))
+
+    topical = app_persona.get("topical_focus") or []
+    if topical:
+        lines.append(f"Topical focus on {target_app}: " + ", ".join(topical[:6]))
+    freq = (app_persona.get("posting_frequency") or "").strip()
+    if freq:
+        lines.append(f"Posting frequency: {freq}")
+    top_tags = [t for t, _ in tag_counts.most_common(8)]
+    if top_tags:
+        lines.append("Top hashtags: " + ", ".join("#" + t for t in top_tags))
+    for sp in self_posts[-3:][::-1]:
+        lines.append(f"- recent self-post: \"{sp}\"")
+    # Anti-cliché floor — applies even if voice_signature is missing
+    # (legacy backends without the structured fields). The LLM defaults
+    # to a generic Instagram-caption register otherwise; this list bans
+    # the worst offenders so the gold has to actually look at the
+    # signature / recent self-posts to find a register.
+    lines.append(
+        "FORBIDDEN clichés (do NOT include any of these in the gold response): "
+        "\"feeling proud, exhausted, and grateful\"; \"big things coming soon\"; "
+        "trailing \"✨\" / \"💫\"; \"so blessed\"; \"forever grateful\"; "
+        "\"this season of life\"; \"such a vibe\"; \"living for this\"; "
+        "\"I'll never forget\"; emotion-summary tricolons (\"X, Y, and Z\" of feelings); "
+        "any sentence that telegraphs personalization (\"as a fan of\", \"since you love\")."
+    )
+    lines.append(
+        "Mimic the shared writing voice mechanically — apply the user's "
+        "default_capitalization, occasional personal_phrases, punctuation_habits, "
+        "and a topic-fit subset of the emoji palette (NEVER invent new emoji). "
+        "The per-app expression block tells you how length / effort / emoji "
+        "intensity shift on this specific app. The gold should sound like THIS "
+        "user wrote it on this app, not a generic LLM."
+    )
+
+    # 3. Per-task specific input.
+    if task_id == "agentic_composed_post":
+        update = (inst.get("update") or "").strip()
+        if update:
+            lines.append(f"User's life-update brief to post: \"{update}\"")
+    elif task_id == "agentic_send_post":
+        ctx = (inst.get("context") or "").strip()
+        if ctx:
+            lines.append(f"Chat context to dispatch as a post: \"{ctx}\"")
+    elif task_id == "agentic_cross_app_repost":
+        sp = inst.get("source_post") or {}
+        cap = (sp.get("caption") or sp.get("title") or "").strip()
+        src_app = (inst.get("source_app") or sp.get("source_app") or "").strip()
+        if cap:
+            lines.append(
+                f"Source post" + (f" from {src_app}" if src_app else "") + f": \"{cap[:240]}\""
+            )
+    elif task_id == "agentic_auto_reply":
+        sender = (inst.get("sender_id") or "").strip()
+        msg = (inst.get("inbound_message") or "").strip()
+        if msg:
+            lines.append(
+                f"Inbound DM from {sender or 'a friend'}: \"{msg[:240]}\""
+            )
+
+    return "\n".join(lines)
 
 
 def _compute_ranking_example(inst: dict, task_type: str) -> str:

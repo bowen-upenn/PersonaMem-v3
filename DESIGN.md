@@ -355,21 +355,45 @@ Each cluster: label, type, description, evidence_hashtags, evidence_rows, `evide
 
 ---
 
-## 10. Step 8 — Per-App Sub-Personas
+## 10. Step 8 — Shared Writing Voice + Per-App Sub-Personas
 
-Four `AppPersona` objects per user:
+ONE LLM call returns BOTH the shared writing voice AND four AppPersona objects. Real people have ONE voice; per-app sections only describe what genuinely shifts.
+
+**`UserVoice`** (one per user, lives on `profile.json`):
+
+| Field | Description |
+|-------|-------------|
+| `natural_register` | e.g. "casual conversational with deadpan humor" |
+| `default_capitalization` | `all_lowercase` / `sentence_case` / `mixed_with_caps_for_emphasis` |
+| `punctuation_habits` | concrete habits, free text |
+| `humor_tone` | dominant flavor — deadpan / dry / earnest / sarcastic |
+| `emoji_palette` | 5–12 specific emoji the user actually uses (PERSONAL palette, applied across apps) |
+| `emoji_intensity_default` | `low` / `medium` / `high` |
+| `personal_phrases` | 3–6 catchphrases that bleed cross-app |
+| `formality_baseline` | 0.0 (super casual) — 1.0 (very formal) |
+
+**`AppPersona`** (four per user — one per app):
 
 | Field | Description |
 |-------|-------------|
 | `use_purposes` | 2-4 items: why user uses this app |
 | `friend_zones` | 2-4 items: who they interact with |
 | `audience_type` | private / public / mixed |
-| `style_description` | 2-3 sentence tone/aesthetic |
+| `audience_lens` | 1 sentence: WHO is realistically reading on this app |
+| `style_description` | 2-3 sentences as a DELTA from base voice — why it shifts here |
 | `posting_frequency` | daily / weekly / rarely / passive viewer only |
-| `topical_focus` | 3-5 domains |
+| `topical_focus` | 3-5 domains — subset filter for THIS audience |
 | `chatbot_contexts` | 2-3 items (Chatbot only) |
+| `expression` | required dict: `effort_level`, `length_band`, `emoji_intensity_shift` (delta from base), `emoji_topic_filter`, `audience_self_censoring` |
+| `overrides` | OPTIONAL `{}`-by-default escape hatch for genuine code-switching: `capitalization`, `extra_phrases`, `extra_forbidden`, `punctuation_shift` |
 
-**Platform archetypes:** Facebook (family/extended network, groups/events), Instagram (mixed audience, aesthetic/reels/stories), Threads (public, opinions/current events), Chatbot (private, task assistance/reflection).
+**Grounding:** the prompt receives ~10 stratified raw source rows (`{interaction_time, interaction_type, object_text}`) so emoji palette and personal phrases are anchored in real engagement, not archetypes.
+
+**Platform archetypes:** Facebook (family/extended network, longer + more contextual), Instagram (close friends + creators, shorter/aesthetic), Threads (public, faster/sharper hot-takes), Chatbot (private, task-direct; emoji typically suppressed via `overrides.extra_forbidden: ["emoji"]`).
+
+**Override discipline:** ≥75% of `overrides` blocks should be `{}`. The prompt explicitly forbids populating overrides without source-sample evidence — this prevents the "Instagram has 🫶, Threads has 💀, Facebook has ❤️" templating that plagued the old per-app `voice_signature` schema.
+
+**Downstream consumers** (all read `user_voice` + per-app `expression`/`overrides`, NOT a per-app voice block): self-posts, DMs, chatbot conversations (4 prompt variants), `@ai` comments (`generate_interaction_format_prompt`), and the eval gold-gen voice anchor in `evaluation/llm_postprocess.py::_voice_grounding`.
 
 **Chatbot contexts** (8 options): professional emails, personal emails, chat messages, social media posts, translation, knowledge exploration, therapy/reflection, medical consultations.
 
