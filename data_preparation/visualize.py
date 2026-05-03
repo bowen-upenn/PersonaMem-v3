@@ -1371,6 +1371,14 @@ def _load_test_samples(
                 sample["inferior_response"] = inst["inferior_response"]
             if inst.get("example_response_self_check"):
                 sample["example_response_self_check"] = inst["example_response_self_check"]
+            # Voice-evidence spans for compose tasks — drives bold rendering
+            # of the gold so a reviewer can see WHY a voice_mismatch foil fails.
+            if inst.get("example_response_voice_evidence"):
+                sample["example_response_voice_evidence"] = inst["example_response_voice_evidence"]
+            if inst.get("voice_evidence_smoke_check"):
+                sample["voice_evidence_smoke_check"] = inst["voice_evidence_smoke_check"]
+            if inst.get("voice_evidence_smoke_check_after_regen"):
+                sample["voice_evidence_smoke_check_after_regen"] = inst["voice_evidence_smoke_check_after_regen"]
             if include_instance_full:
                 sample["instance_full"] = inst
             out.append(sample)
@@ -1545,6 +1553,18 @@ def dump_test_samples_json(
             "example_response_self_check": (
                 s.get("example_response_self_check")
                 or inst.get("example_response_self_check")
+            ),
+            "example_response_voice_evidence": (
+                s.get("example_response_voice_evidence")
+                or inst.get("example_response_voice_evidence")
+            ),
+            "voice_evidence_smoke_check": (
+                s.get("voice_evidence_smoke_check")
+                or inst.get("voice_evidence_smoke_check")
+            ),
+            "voice_evidence_smoke_check_after_regen": (
+                s.get("voice_evidence_smoke_check_after_regen")
+                or inst.get("voice_evidence_smoke_check_after_regen")
             ),
             "instance_full": inst,
         }
@@ -1802,6 +1822,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .profile-card .big-five {{ display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }}
   .profile-card .b5-item {{ font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #F2F2F7; color: var(--text-secondary); }}
   .profile-card .mbti {{ margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }}
+  .profile-card .profile-voice {{ margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }}
+  .profile-card .profile-voice-header {{ font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }}
+  .profile-card .profile-voice-pill {{ font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #F2F2F7; color: var(--text-secondary); margin-left: 6px; }}
+  .profile-card .profile-voice-subtitle {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-style: italic; }}
+  .profile-card .profile-voice ul {{ list-style: none; padding: 0; margin: 0; font-size: 12px; line-height: 1.7; color: var(--text); }}
+  .profile-card .profile-voice .voice-key {{ font-weight: 600; color: var(--text-secondary); margin-right: 4px; }}
+  .profile-card .profile-voice .voice-avoid {{ font-style: italic; color: #8B5A2B; }}
 
   .section {{ margin-bottom: 40px; }}
   .section-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
@@ -1952,6 +1979,8 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .app-persona-sig {{ list-style: none; padding: 8px 12px; margin: 6px 0 8px 0; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 11px; line-height: 1.7; }}
   .app-persona-sig li {{ color: var(--text); margin: 0; }}
   .app-persona-sig .app-persona-key {{ font-weight: 600; color: #4338CA; margin-right: 4px; }}
+  .app-persona-sig li.app-persona-avoid {{ font-style: italic; color: #8B5A2B; }}
+  .app-persona-sig li.app-persona-avoid .app-persona-key {{ color: #8B5A2B; }}
   .app-persona-examples {{ list-style: none; padding: 0; margin: 4px 0 8px 12px; }}
   /* Filter bar between Hidden Personas and the Timeline. Buttons toggle
      visibility of timeline cards via data-filter-key. */
@@ -2148,6 +2177,40 @@ if (profileData) {{
     }}
   }}
 
+  // Shared user_voice block — rendered INSIDE the profile-card just below
+  // the MBTI chips. The same person types on every app; per-app sections
+  // only show what genuinely shifts.
+  const uv = profileData.user_voice || {{}};
+  let userVoiceHtml = '';
+  if (uv && (uv.natural_register || uv.default_capitalization || (uv.emoji_palette||[]).length || (uv.personal_phrases||[]).length)) {{
+    const palette = (uv.emoji_palette || []).join(' ');
+    const phrases = (uv.personal_phrases || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+    const avoidPhrases = (uv.phrases_to_avoid || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+    const uvRows = [];
+    if (uv.natural_register)        uvRows.push(`<li><span class="voice-key">register:</span> ${{escapeHtml(uv.natural_register)}}</li>`);
+    if (uv.default_capitalization)  uvRows.push(`<li><span class="voice-key">caps:</span> ${{escapeHtml(uv.default_capitalization)}}</li>`);
+    if (uv.punctuation_habits)      uvRows.push(`<li><span class="voice-key">punctuation:</span> ${{escapeHtml(uv.punctuation_habits)}}</li>`);
+    if (uv.humor_tone)              uvRows.push(`<li><span class="voice-key">humor / tone:</span> ${{escapeHtml(uv.humor_tone)}}</li>`);
+    if (palette)                    uvRows.push(`<li><span class="voice-key">personal emoji palette:</span> ${{escapeHtml(palette)}}</li>`);
+    if (uv.emoji_intensity_default) uvRows.push(`<li><span class="voice-key">emoji intensity:</span> ${{escapeHtml(uv.emoji_intensity_default)}}</li>`);
+    if (phrases)                    uvRows.push(`<li><span class="voice-key">personal phrases (cross-app):</span> ${{phrases}}</li>`);
+    if (uv.formality_baseline !== undefined && uv.formality_baseline !== null) {{
+      uvRows.push(`<li><span class="voice-key">formality baseline:</span> ${{escapeHtml(String(uv.formality_baseline))}}</li>`);
+    }}
+    if (uv.voice_avoid) {{
+      uvRows.push(`<li class="voice-avoid"><span class="voice-key">voice avoid:</span> ${{escapeHtml(uv.voice_avoid)}}</li>`);
+    }}
+    if (avoidPhrases) {{
+      uvRows.push(`<li class="voice-avoid"><span class="voice-key">phrases to avoid:</span> ${{avoidPhrases}}</li>`);
+    }}
+    userVoiceHtml = `
+      <div class="profile-voice">
+        <div class="profile-voice-header">Writing voice <span class="profile-voice-pill">shared across all apps</span></div>
+        <div class="profile-voice-subtitle">The same person typing on every app. Per-app sections only show what genuinely shifts.</div>
+        <ul>${{uvRows.join('')}}</ul>
+      </div>`;
+  }}
+
   ps.innerHTML = `
     <div class="profile-card">
       <h2>${{profileData.name || ''}}</h2>
@@ -2160,6 +2223,7 @@ if (profileData) {{
       </div>
       <div class="big-five">${{b5Html}}</div>
       ${{mbtiHtml}}
+      ${{userVoiceHtml}}
     </div>
   `;
 }}
@@ -2173,35 +2237,11 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
     Object.keys(apps).filter(k => !order.includes(k))
   );
 
-  // Shared user_voice block (caps, palette, phrases, register, humor, punctuation,
-  // formality, emoji intensity). The same person types this on every app — per-app
-  // sections only describe what genuinely shifts.
-  const uv = profileData.user_voice || {{}};
-  let uvHtml = '';
-  if (uv && (uv.natural_register || uv.default_capitalization || (uv.emoji_palette||[]).length || (uv.personal_phrases||[]).length)) {{
-    const palette = (uv.emoji_palette || []).join(' ');
-    const phrases = (uv.personal_phrases || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
-    const uvRows = [];
-    if (uv.natural_register)        uvRows.push(`<li><span class="app-persona-key">register:</span> ${{escapeHtml(uv.natural_register)}}</li>`);
-    if (uv.default_capitalization)  uvRows.push(`<li><span class="app-persona-key">caps:</span> ${{escapeHtml(uv.default_capitalization)}}</li>`);
-    if (uv.punctuation_habits)      uvRows.push(`<li><span class="app-persona-key">punctuation:</span> ${{escapeHtml(uv.punctuation_habits)}}</li>`);
-    if (uv.humor_tone)              uvRows.push(`<li><span class="app-persona-key">humor / tone:</span> ${{escapeHtml(uv.humor_tone)}}</li>`);
-    if (palette)                    uvRows.push(`<li><span class="app-persona-key">personal emoji palette:</span> ${{escapeHtml(palette)}}</li>`);
-    if (uv.emoji_intensity_default) uvRows.push(`<li><span class="app-persona-key">emoji intensity:</span> ${{escapeHtml(uv.emoji_intensity_default)}}</li>`);
-    if (phrases)                    uvRows.push(`<li><span class="app-persona-key">personal phrases (cross-app):</span> ${{phrases}}</li>`);
-    if (uv.formality_baseline !== undefined && uv.formality_baseline !== null) {{
-      uvRows.push(`<li><span class="app-persona-key">formality baseline:</span> ${{escapeHtml(String(uv.formality_baseline))}}</li>`);
-    }}
-    uvHtml = `
-      <div class="app-persona-card">
-        <div class="app-persona-header">Writing voice <span class="app-persona-pill">shared across all apps</span></div>
-        <div class="app-persona-style">The same person typing on every app. Per-app sections below only show what genuinely shifts.</div>
-        <ul class="app-persona-sig">${{uvRows.join('')}}</ul>
-      </div>`;
-  }}
+  // Note: the shared user_voice block now lives INSIDE the profile-card
+  // (rendered above by the profile-card builder). Per-app cards below
+  // only describe what genuinely shifts on each app.
 
   let html = '<div class="app-personas-section"><h2>Per-app Personas (one shared voice + per-app deltas)</h2>';
-  html += uvHtml;
   keys.forEach(k => {{
     const ap = apps[k] || {{}};
     const style = ap.style_description || '';
@@ -2228,9 +2268,15 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
         const shiftLabel = shift === 0 ? '0 (default)' : (shift > 0 ? `+${{shift}}` : String(shift));
         exprRows.push(`<li><span class="app-persona-key">emoji shift:</span> ${{escapeHtml(shiftLabel)}}</li>`);
       }}
-      if (expr.emoji_topic_filter)     exprRows.push(`<li><span class="app-persona-key">which palette emoji surface:</span> ${{escapeHtml(expr.emoji_topic_filter)}}</li>`);
       if (expr.audience_self_censoring) exprRows.push(`<li><span class="app-persona-key">audience self-censoring:</span> ${{escapeHtml(expr.audience_self_censoring)}}</li>`);
+      // emoji_topic_filter intentionally NOT rendered — it's structural noise
+      // (real users don't curate per-app emoji subsets). Field is optional in
+      // schema; we keep it in JSON for the rare case but never surface in UI.
+      if (ap.app_avoid)                 exprRows.push(`<li class="app-persona-avoid"><span class="app-persona-key">app avoid:</span> ${{escapeHtml(ap.app_avoid)}}</li>`);
       if (exprRows.length) exprHtml = `<ul class="app-persona-sig">${{exprRows.join('')}}</ul>`;
+    }} else if (ap.app_avoid) {{
+      // No expression block but still surface app_avoid if present.
+      exprHtml = `<ul class="app-persona-sig"><li class="app-persona-avoid"><span class="app-persona-key">app avoid:</span> ${{escapeHtml(ap.app_avoid)}}</li></ul>`;
     }}
 
     // Overrides — populated only when the user genuinely code-switches on this app.
@@ -2346,6 +2392,38 @@ function escapeHtml(s) {{
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}}
+
+// Wrap each voice-evidence span (case-insensitive substring match) inside the
+// already-escaped text in <strong> tags. Used for compose-task Example
+// Responses so a reviewer can immediately see WHY a voice_mismatch foil fails.
+// Spans are sorted longest-first by the extractor; this loop preserves that
+// order so longer phrases substitute before sub-phrases get matched.
+// Regex-free implementation: scan the lowercased haystack for each span
+// (also lowercased) and rebuild the output preserving the original casing.
+function boldVoiceEvidence(escapedText, spans) {{
+  if (!escapedText || !Array.isArray(spans) || spans.length === 0) return escapedText;
+  let out = escapedText;
+  for (const span of spans) {{
+    if (!span) continue;
+    const escSpan = escapeHtml(span);
+    if (!escSpan) continue;
+    const lowerOut = out.toLowerCase();
+    const lowerSpan = escSpan.toLowerCase();
+    let i = 0;
+    const parts = [];
+    while (true) {{
+      const j = lowerOut.indexOf(lowerSpan, i);
+      if (j === -1) {{ parts.push(out.slice(i)); break; }}
+      parts.push(out.slice(i, j));
+      parts.push('<strong>');
+      parts.push(out.slice(j, j + escSpan.length));
+      parts.push('</strong>');
+      i = j + escSpan.length;
+    }}
+    out = parts.join('');
+  }}
+  return out;
 }}
 
 function renderContentMeta(meta) {{
@@ -2639,11 +2717,25 @@ if (eventsData.length === 0) {{
       // expected (writes.jsonl diff)" sections are all replaced.
       let sections = '';
       if (t.example_response) {{
-        sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
+        const exEsc = escapeHtml(t.example_response);
+        const exHtml = boldVoiceEvidence(exEsc, t.example_response_voice_evidence || []);
+        const evidenceHint = (Array.isArray(t.example_response_voice_evidence) && t.example_response_voice_evidence.length > 0)
+          ? ` <small style="color:var(--text-secondary);font-weight:normal;">(bold = voice anchors)</small>` : '';
+        sections += `<div class="ts-section"><div class="ts-label">Example Response${{evidenceHint}}</div><div class="ts-body" style="white-space:pre-wrap;">${{exHtml}}</div></div>`;
       }}
       if (t.inferior_response && t.inferior_response.text) {{
         const flaw = t.inferior_response.flaw_kind || '';
-        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small></div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
+        // Voice-evidence smoke check: prefer the post-regen result if present.
+        const sc = t.voice_evidence_smoke_check_after_regen || t.voice_evidence_smoke_check;
+        let smoke = '';
+        if (sc) {{
+          const ok = sc.passed ? '✓ verifier picked gold' : '✗ verifier failed to distinguish';
+          const colorOk = sc.passed ? '#15803D' : '#B91C1C';
+          smoke = ` <small style="color:${{colorOk}};font-weight:normal;">[smoke: ${{ok}}]</small>`;
+        }}
+        const regen = (t.inferior_response.regen_reason)
+          ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(t.inferior_response.regen_reason)}})</small>` : '';
+        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small>${{smoke}}${{regen}}</div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
       }}
       if (Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
         const calls = t.tool_call.map(tc => {{

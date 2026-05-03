@@ -36,8 +36,9 @@ User:
 {expression_lines}
 - Overrides for this app (apply only listed keys; others inherit):
 {overrides_lines}
+- App avoid for {app_pretty} (audience-driven content / tone the user skips here): {app_avoid}
 
-Apply the user's `default_capitalization`, occasional `personal_phrases`, `punctuation_habits` from the Shared writing voice. DM threads are intimate; emoji intensity may run a bit hotter than feed posts (palette only — never invent new emoji).
+Apply the user's `default_capitalization`, occasional `personal_phrases`, `punctuation_habits` from the Shared writing voice. DM threads are intimate; emoji intensity may run a bit hotter than feed posts (palette only — never invent new emoji). **Respect the negatives** — the shared voice block may include `Voice avoid` + `Phrases to avoid`, and the line above carries `App avoid`. Treat all as hard constraints when present: never produce text in those tones, never reach for those literal phrases, never touch those topics in this audience.
 
 The forwarded content (real, from the user's feed):
 - Topic / hashtags: {hashtags}
@@ -128,7 +129,7 @@ def _render_user_voice_for_dm(user_voice: dict) -> str:
     palette_str = " ".join(palette) if palette else "(none)"
     phrases = user_voice.get("personal_phrases") or []
     phrases_str = ", ".join(f'"{p}"' for p in phrases) if phrases else "(none)"
-    return (
+    block = (
         "## Shared writing voice (the SAME person texts this on every app)\n\n"
         f"- **Natural register:** {user_voice.get('natural_register', '(unspecified)')}\n"
         f"- **Default capitalization:** {user_voice.get('default_capitalization', '(unspecified)')}\n"
@@ -139,14 +140,25 @@ def _render_user_voice_for_dm(user_voice: dict) -> str:
         f"- **Personal phrases (bleed across apps):** {phrases_str}\n"
         f"- **Formality baseline:** {user_voice.get('formality_baseline', 0.3)}\n"
     )
+    voice_avoid = (user_voice.get("voice_avoid") or "").strip()
+    if voice_avoid:
+        block += f"- **Voice avoid (never produce this tone / style):** {voice_avoid}\n"
+    avoid_phrases = user_voice.get("phrases_to_avoid") or []
+    if avoid_phrases:
+        avoid_str = ", ".join(f'"{p}"' for p in avoid_phrases)
+        block += f"- **Phrases to avoid (never reach for these):** {avoid_str}\n"
+    return block
 
 
 def _format_expression_block_dm(expression: dict) -> str:
     if not isinstance(expression, dict) or not expression:
         return "  (default — medium effort, no shifts)"
-    keys = ["effort_level", "length_band", "emoji_intensity_shift",
-            "emoji_topic_filter", "audience_self_censoring"]
-    return "\n".join(f"  - {k}: {expression.get(k, '(default)')}" for k in keys)
+    required_keys = ["effort_level", "length_band", "emoji_intensity_shift",
+                     "audience_self_censoring"]
+    lines = [f"  - {k}: {expression.get(k, '(default)')}" for k in required_keys]
+    if expression.get("emoji_topic_filter"):
+        lines.append(f"  - emoji_topic_filter: {expression['emoji_topic_filter']}")
+    return "\n".join(lines)
 
 
 def _format_overrides_block_dm(overrides: dict) -> str:
@@ -323,6 +335,7 @@ def generate_dm_threads(
             style_description=style,
             expression_lines=_format_expression_block_dm(expression),
             overrides_lines=_format_overrides_block_dm(overrides),
+            app_avoid=(app_persona.get("app_avoid", "") or "(none)"),
             initiator_id=plan["initiator_id"],
             initiator_label=("you" if plan["initiator_id"] == "self"
                               else f"a friend ({plan['initiator_id']})"

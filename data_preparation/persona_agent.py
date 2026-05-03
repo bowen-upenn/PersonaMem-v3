@@ -130,6 +130,12 @@ class UserVoice:
     effort, and topical filter — not from arbitrary stylistic re-tooling.
     Per-app deviations live in AppPersona.overrides and are expected to be
     empty for most apps for most users.
+
+    Voice has BOTH a positive axis (this is how he writes) AND a negative
+    axis (these tones / styles / phrases would feel off-brand) — `voice_avoid`
+    + `phrases_to_avoid` capture the negatives so downstream LLMs writing
+    self-posts / DMs / chatbot turns / @ai comments don't reach for plausible
+    but tonally wrong language.
     """
     natural_register: str = ""              # e.g. "casual conversational with deadpan humor"
     default_capitalization: str = ""        # "all_lowercase" | "sentence_case" | "mixed_with_caps_for_emphasis"
@@ -139,6 +145,8 @@ class UserVoice:
     emoji_intensity_default: str = "medium"  # "low" | "medium" | "high"
     personal_phrases: list[str] = field(default_factory=list)  # 3–6 catchphrases that bleed CROSS-APP
     formality_baseline: float = 0.3         # 0.0 (super casual) — 1.0 (very formal)
+    voice_avoid: str = ""                   # 1–2 sentence prose: tones / styles / habits this user avoids
+    phrases_to_avoid: list[str] = field(default_factory=list)  # 0–5 short literal phrases that would feel off-brand
 
 
 @dataclass
@@ -155,6 +163,11 @@ class AppPersona:
     AppPersona only carries the per-app dimensions that genuinely vary:
     audience, length, effort, topical filter. `overrides` is the optional
     escape hatch for users who genuinely code-switch — empty {} by default.
+
+    `app_avoid` carries the audience-driven negative axis for THIS app
+    specifically (politics on Facebook because elderly relatives, no shop
+    talk on Threads, etc.). Empty string is fine when the audience doesn't
+    drive any specific omission.
     """
     app_name: str                                          # "Instagram" | "Facebook" | "Threads" | "Chatbot"
     use_purposes: list[str] = field(default_factory=list)  # e.g. ["close friends sharing", "aesthetic personal brand"]
@@ -167,13 +180,17 @@ class AppPersona:
     chatbot_contexts: list[str] = field(default_factory=list)  # Chatbot only; picked from CHATBOT_CONTEXTS
     # How the shared user_voice gets MODULATED for this app's audience/affordance.
     # Required keys: effort_level, length_band, emoji_intensity_shift,
-    # emoji_topic_filter, audience_self_censoring.
+    # audience_self_censoring. Optional: emoji_topic_filter (only when the
+    # audience genuinely filters which palette emoji surface here).
     expression: dict = field(default_factory=dict)
     # OPTIONAL per-app voice deviations from the base user_voice. Empty {} for
     # most users on most apps; only populated when the source data shows a
     # genuine code-switch. Keys: capitalization, extra_phrases (0-3),
     # extra_forbidden (0-3), punctuation_shift.
     overrides: dict = field(default_factory=dict)
+    # 1 sentence prose: audience-driven content/tone this user skips on THIS
+    # app. Empty string when the audience doesn't drive any specific omission.
+    app_avoid: str = ""
 
 
 @dataclass
@@ -4450,6 +4467,8 @@ class PersonaAgent:
                 emoji_intensity_default=str(uv_raw.get("emoji_intensity_default", "medium")),
                 personal_phrases=list(uv_raw.get("personal_phrases", []) or []),
                 formality_baseline=float(uv_raw.get("formality_baseline", 0.3) or 0.3),
+                voice_avoid=str(uv_raw.get("voice_avoid", "")),
+                phrases_to_avoid=list(uv_raw.get("phrases_to_avoid", []) or []),
             )
             self.user_profile.user_voice = asdict(user_voice)
         else:
@@ -4483,6 +4502,7 @@ class PersonaAgent:
                 chatbot_contexts=list(entry.get("chatbot_contexts", [])) if app_name == "Chatbot" else [],
                 expression=expression,
                 overrides=overrides,
+                app_avoid=str(entry.get("app_avoid", "")),
             )
 
         self.user_profile.app_personas = {k: asdict(v) for k, v in app_personas.items()}
