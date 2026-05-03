@@ -658,11 +658,22 @@ def _compute_ranking_example(inst: dict, task_type: str) -> str:
         cands = inst.get("candidates") or []
         held = inst.get("held_out_idx")
         hard_negs = set(inst.get("hard_negative_idxs") or [])
+        t_test = int(inst.get("t_test") or 0)
         n = len(cands)
         if not isinstance(held, int) or not cands:
             return ""
-        order = [held] + [i for i in range(n)
-                          if i != held and i not in hard_negs] + sorted(hard_negs)
+        # Held-out anchored at rank 1 (it's the metric's target). Remaining
+        # fillers and hard_negs each sorted by |ts − t_test| asc, future-first
+        # tie-break.
+        def _key(i: int) -> tuple:
+            ts = int((cands[i] or {}).get("source_timestamp") or 0)
+            return (abs(ts - t_test), 0 if ts >= t_test else 1, i)
+        fillers = sorted(
+            (i for i in range(n) if i != held and i not in hard_negs),
+            key=_key,
+        )
+        ranked_negs = sorted(hard_negs, key=_key)
+        order = [held] + fillers + ranked_negs
         return f"Ranked indexes: {order}"
     if task_type == "at_ai_directive_followup":
         cands = inst.get("candidates") or []
@@ -710,12 +721,22 @@ def _compute_ranking_inferior(inst: dict, task_type: str) -> str:
         cands = inst.get("candidates") or []
         held = inst.get("held_out_idx")
         hard_negs = set(inst.get("hard_negative_idxs") or [])
+        t_test = int(inst.get("t_test") or 0)
         n = len(cands)
         if not isinstance(held, int) or not cands:
             return ""
-        # Inverted: hard negatives surfaced first, held-out buried last.
-        order = sorted(hard_negs) + [i for i in range(n)
-                                     if i != held and i not in hard_negs] + [held]
+        # Inverted: hard negatives surfaced first (closest in time = most
+        # confusable bad item), then fillers (same time-key), held-out buried
+        # last.
+        def _key(i: int) -> tuple:
+            ts = int((cands[i] or {}).get("source_timestamp") or 0)
+            return (abs(ts - t_test), 0 if ts >= t_test else 1, i)
+        ranked_negs = sorted(hard_negs, key=_key)
+        fillers = sorted(
+            (i for i in range(n) if i != held and i not in hard_negs),
+            key=_key,
+        )
+        order = ranked_negs + fillers + [held]
         return f"Ranked indexes: {order}"
     if task_type == "at_ai_directive_followup":
         cands = inst.get("candidates") or []
