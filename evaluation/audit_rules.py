@@ -102,7 +102,7 @@ _AGENTIC_PRECONDITION_HINTS = {
     "agentic_composed_post":         "a life-update string (update)",
     "agentic_draft_audit":           "a draft to audit (draft + draft_label)",
     "agentic_vague_refind":          "a topic the user vaguely remembers (topic)",
-    "agentic_moment_recommendation": "a moment to recommend for (moment)",
+    # agentic_moment_recommendation merged into personalized_recommendation
 }
 
 
@@ -356,7 +356,7 @@ _AGENTIC_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "agentic_composed_post":         ("update",),
     "agentic_draft_audit":           ("draft",),
     "agentic_vague_refind":          ("topic",),
-    "agentic_moment_recommendation": ("moment",),
+    # agentic_moment_recommendation merged into personalized_recommendation
 }
 
 

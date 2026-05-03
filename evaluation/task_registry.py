@@ -65,7 +65,11 @@ OLD_TO_NEW: dict[str, str] = {
     # voice", not a community trends summary. Old aliases keep working.
     "t6_community_digest":           "agentic_user_tone_post",
     "agentic_community_digest":      "agentic_user_tone_post",
-    "t7_moment_recommendation":      "agentic_moment_recommendation",
+    # t7_moment_recommendation merged into personalized_recommendation
+    # (slate-based ranking). Old CSV rows resolve to the new type so
+    # aggregators still parse historical benchmarks.
+    "t7_moment_recommendation":      "personalized_recommendation",
+    "agentic_moment_recommendation": "personalized_recommendation",
     "t8_dm_digest":                  "agentic_dm_digest",
     "t9_cross_app_repost":           "agentic_cross_app_repost",
     "t10_auto_reply":                "agentic_auto_reply",
@@ -280,16 +284,8 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_match", "behavioral_hit",
         ],
     },
-    "agentic_moment_recommendation": {
-        "task_family": "agentic",
-        "mcp_tools_allowed": "chatbot",
-        "state_write_policy": "read_only",        # no DM sends
-        "expected_response_kind": "text_with_tool_calls",
-        "rubric_tags": [
-            "preference_alignment", "avoid_overpersonalization",
-            "negative_leakage", "stale_preference_use", "behavioral_hit",
-        ],
-    },
+    # agentic_moment_recommendation removed — merged into
+    # personalized_recommendation (slate-based ranking).
     "agentic_dm_digest": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
@@ -416,7 +412,7 @@ TASK_TYPE_META: dict[str, dict] = {
     # (workstream D). Old name still resolved via OLD_TO_NEW.
     "personalized_recommendation": {
         "task_family": "e_followup",
-        "mcp_tools_allowed": "none",                # no longer needs google_search MCP
+        "mcp_tools_allowed": "none",                # ranks the slate from time-masked history alone
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
         "rubric_tags": list(_RUBRIC_RANKING),       # recall_at_k, ndcg_at_k, mrr, hit_at_k
@@ -484,7 +480,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
     "agentic_user_tone_post":                "agentic_task",
-    "agentic_moment_recommendation":          "agentic_task",
+    # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                      "agentic_task",
     "agentic_cross_app_repost":               "agentic_task",
     "agentic_auto_reply":                     "agentic_task",
@@ -515,7 +511,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "short_vs_long_term_lifecycle":           "proactive_recommend",
     "active_mistake_prevention":              "proactive_assist",
     "agentic_user_tone_post":                "agentic_action",
-    "agentic_moment_recommendation":          "agentic_action",
+    # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                      "agentic_action",
     "agentic_cross_app_repost":               "agentic_action",
     "agentic_auto_reply":                     "agentic_action",
@@ -587,7 +583,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "active_mistake_prevention":         ("paired_correct", "paired_correct"),
     # Agentic — composite pass rate over tool_call + final_state + output_quality
     "agentic_user_tone_post":           ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_moment_recommendation":     ("agentic_pass_rate", "agentic_pass_rate"),
+    # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                 ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_cross_app_repost":          ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_auto_reply":                ("agentic_pass_rate", "agentic_pass_rate"),

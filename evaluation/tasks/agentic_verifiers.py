@@ -379,7 +379,8 @@ def _verify_trending_alert(inst: dict, response: str, writes: list) -> dict:
 
 OUTPUT_VERIFIERS: dict[str, Callable[[dict, str, list], dict]] = {
     "agentic_user_tone_post":          _verify_user_tone_post,
-    "agentic_moment_recommendation":    _verify_moment_recommendation,
+    # agentic_moment_recommendation merged into personalized_recommendation
+    # (deterministic ranking metrics; no agentic verifier needed).
     "agentic_dm_digest":                _verify_dm_digest,
     "agentic_cross_app_repost":         _verify_cross_app_repost,
     "agentic_auto_reply":               _verify_auto_reply,

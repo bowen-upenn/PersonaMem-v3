@@ -184,6 +184,12 @@ def _check_tool_call_rules(tool_trace: list[dict], rules: list[str]) -> dict:
     return out
 
 
+# _score_moment_recommendation removed — moment instances now ride the
+# slate-based personalized_recommendation path with deterministic
+# recall@k / ndcg@k / mrr metrics. The old agentic scoring was specific to
+# the MCP-feed-call flavor, which doesn't have a live backend in this repo.
+
+
 def _read_overlay(path: str | None) -> list[dict]:
     """Read writes.jsonl from an MCP run's overlay path (if present)."""
     if not path or not Path(path).exists():
@@ -332,6 +338,12 @@ def _dispatch_and_score(
         elif output_quality_report.get("output_quality_failed", 0) > 0:
             status = "failed_quality"
 
+    # Per-task deterministic backstops live here when needed. The moment
+    # backstop was removed when agentic_moment_recommendation was merged
+    # into personalized_recommendation (slate-based ranking metrics are
+    # the authority now — recall@k / ndcg@k / mrr).
+    moment_report: dict = {}
+
     from evaluation.inference_utils import merge_token_metrics
     metrics = {
         **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
@@ -343,6 +355,7 @@ def _dispatch_and_score(
         "must_not_contain_failed": final_state_report.get("must_not_contain_failed", 0),
         "output_quality_passed": output_quality_report.get("output_quality_passed", 0),
         "output_quality_failed": output_quality_report.get("output_quality_failed", 0),
+        **moment_report,
     }
     merge_token_metrics(metrics, prompt=prompt, response=raw or "", stats=stats)
 
@@ -390,18 +403,316 @@ def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int) -> li
     return out
 
 
+# --- T7 moment-recommendation: hour-window + slate constants ---------------
+MOMENT_HOUR_WINDOWS_UTC: dict[str, tuple[int, int]] = {
+    "lunch (11am-2pm)":        (11, 14),
+    "shower (morning)":        (6,  9),
+    "commute":                 (7, 10),
+    "evening wind-down":       (20, 23),
+    "Saturday morning coffee": (8, 11),
+    "late-night doomscroll":   (23, 26),   # 23:00..02:00 wrap
+}
+MOMENT_DAY_FILTER: dict[str, set[int]] = {
+    "Saturday morning coffee": {5},        # 0=Mon..6=Sun
+}
+N_RECOMMENDED_POSTS: int = 12              # hard floor
+N_TARGET_RECOMMENDED_POSTS: int = 15
+N_ALIGNED_FLOOR: int = 3
+
+
+def _summarize_post_for_slate(e: dict, app: str) -> dict | None:
+    """Compact projection of an engagement event into a slate candidate.
+    Drops entries with empty title AND empty caption (would render blank).
+    """
+    content = e.get("content") or {}
+    title = (content.get("title") or "").strip()
+    caption = (content.get("caption") or "").strip()
+    if not title and not caption:
+        return None
+    return {
+        "source_object_id": str(e.get("source_object_id") or ""),
+        "title": title,
+        "caption": caption,
+        "hashtags": list(e.get("source_hashtags") or [])[:6],
+        "source_app": app,
+        "source_timestamp": int(e.get("source_timestamp") or 0),
+        "source_interaction_type": e.get("source_interaction_type") or "",
+    }
+
+
+def _hour_in_window(hour: int, window: tuple[int, int]) -> bool:
+    """Hour window predicate with wraparound support (e.g. (23, 26) means
+    23:00..02:00 — `hour >= 23 or hour < 2`)."""
+    lo, hi = window
+    if hi <= 24:
+        return lo <= hour < hi
+    return hour >= lo or hour < (hi - 24)
+
+
+def _collect_moment_engagements(bq: BackendQuery, user_id: str, t_anchor: int,
+                                 moment: str) -> dict:
+    """Bucket the user's pre-t_anchor social engagements for one moment.
+
+    Returns four lists, each sorted by ``abs(source_timestamp - t_anchor)``
+    ascending (closest-to-test-moment first):
+      - ``aligned_positive``       — in-moment-window positives
+      - ``aligned_negative``       — in-moment-window negatives
+      - ``neutral_positive_pool``  — out-of-window positives (safe filler)
+      - ``all_negative_pool``      — any-time negatives (foil fallback)
+
+    Widens the moment window by ±1h once if in-window positives are below
+    the floor (`N_ALIGNED_FLOOR`).
+    """
+    import datetime as _dt
+    window = MOMENT_HOUR_WINDOWS_UTC[moment]
+    day_filter = MOMENT_DAY_FILTER.get(moment)
+
+    def _bucketize(win: tuple[int, int]) -> dict:
+        aligned_positive: list[dict] = []
+        aligned_negative: list[dict] = []
+        neutral_positive_pool: list[dict] = []
+        all_negative_pool: list[dict] = []
+        for app in SOCIAL_APPS:
+            for e in bq.get_events(user_id=user_id, app=app, since_timestamp=t_anchor):
+                ts = int(e.get("source_timestamp") or 0)
+                if not ts:
+                    continue
+                proj = _summarize_post_for_slate(e, app)
+                if proj is None:
+                    continue
+                dt = _dt.datetime.fromtimestamp(ts, tz=_dt.timezone.utc)
+                in_win = _hour_in_window(dt.hour, win)
+                if day_filter is not None and dt.weekday() not in day_filter:
+                    in_win = False
+                itype = (proj["source_interaction_type"] or "").lower()
+                is_pos = "positive" in itype
+                is_neg = "negative" in itype
+                if in_win and is_pos:
+                    aligned_positive.append(proj)
+                elif in_win and is_neg:
+                    aligned_negative.append(proj)
+                elif is_pos:
+                    neutral_positive_pool.append(proj)
+                if is_neg:
+                    all_negative_pool.append(proj)
+        for lst in (aligned_positive, aligned_negative,
+                    neutral_positive_pool, all_negative_pool):
+            lst.sort(key=lambda p: abs(p["source_timestamp"] - t_anchor))
+        return {
+            "aligned_positive": aligned_positive,
+            "aligned_negative": aligned_negative,
+            "neutral_positive_pool": neutral_positive_pool,
+            "all_negative_pool": all_negative_pool,
+        }
+
+    buckets = _bucketize(window)
+    if len(buckets["aligned_positive"]) < N_ALIGNED_FLOOR:
+        widened = (max(0, window[0] - 1), window[1] + 1)
+        buckets = _bucketize(widened)
+    return buckets
+
+
+_MOMENT_QUERY_TEMPLATES_LOW_FORMALITY = (
+    "open the feeds, it's {moment_short}",
+    "{moment_short} — what's worth opening?",
+    "curate my socials for {moment_short}",
+    "show me something for {moment_short}",
+    "feed me, it's {moment_short}",
+)
+_MOMENT_QUERY_TEMPLATES_MID_FORMALITY = (
+    "Open my social feeds for {moment_short}.",
+    "What's worth seeing right now? It's {moment_short}.",
+    "Curate my feeds for {moment_short}.",
+    "Pull together a feed for {moment_short}.",
+)
+_MOMENT_QUERY_TEMPLATES_HIGH_FORMALITY = (
+    "Could you open my social feeds for {moment_short}?",
+    "Please curate my feeds for {moment_short}.",
+    "What's worth seeing on my feeds right now? It's {moment_short}.",
+)
+
+
+def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Random) -> str:
+    """Build a moment-aware user query that reads like the user typing on
+    their phone. Pulls phrasing register from `user_voice.formality_baseline`
+    + `default_capitalization`, and may inline one of the user's
+    `personal_phrases` deterministically per (moment, user) pair.
+
+    Falls back to a neutral mid-formality template when user_voice is
+    missing or malformed.
+    """
+    # Strip the parenthetical hour annotation so the query reads naturally
+    # ("evening wind-down" not "evening wind-down (20-23)").
+    moment_short = moment.split("(", 1)[0].strip() or moment
+    formality = 0.3
+    caps = ""
+    phrases: list[str] = []
+    if isinstance(user_voice, dict):
+        try:
+            formality = float(user_voice.get("formality_baseline", 0.3) or 0.3)
+        except (TypeError, ValueError):
+            formality = 0.3
+        caps = str(user_voice.get("default_capitalization") or "")
+        phrases = [p for p in (user_voice.get("personal_phrases") or []) if isinstance(p, str) and p.strip()]
+
+    if formality < 0.35:
+        templates = _MOMENT_QUERY_TEMPLATES_LOW_FORMALITY
+    elif formality < 0.65:
+        templates = _MOMENT_QUERY_TEMPLATES_MID_FORMALITY
+    else:
+        templates = _MOMENT_QUERY_TEMPLATES_HIGH_FORMALITY
+    base = rng.choice(templates).format(moment_short=moment_short)
+
+    # Optionally weave in a personal phrase — only for low/mid formality, and
+    # only ~50% of the time so it doesn't get repetitive across moments. The
+    # phrase reads as a soft opener, not a forced injection. Lowercase the
+    # first letter of the base when a phrase is prepended so the comma
+    # doesn't introduce a sentence break ("Love this, curate ..." reads
+    # naturally; "Love this, Curate ..." doesn't).
+    if phrases and formality < 0.65 and rng.random() < 0.5:
+        phrase = rng.choice(phrases).rstrip(".!? ")
+        if base and base[0].isupper():
+            base = base[0].lower() + base[1:]
+        base = f"{phrase}, {base}"
+
+    if caps == "all_lowercase":
+        base = base.lower()
+    elif caps == "sentence_case":
+        # Capitalize first letter only if the template / phrase didn't
+        # already start with a capital (preserve lowercase-only voices).
+        if base and base[0].islower() and formality >= 0.35:
+            base = base[0].upper() + base[1:]
+    return base
+
+
 def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Six moments × one instance each."""
-    moments = [
-        "lunch (11am-2pm)", "shower (morning)", "commute", "evening wind-down",
-        "Saturday morning coffee", "late-night doomscroll",
-    ]
-    return [
-        {"instance_id": f"t7_{i}", "task_id": "agentic_moment_recommendation",
-         "entry_point": "chatbot_routed", "moment": m, "t_test": t_anchor,
-         "tool_call_rules": ["count('instagram_send_dm') == 0", "count('facebook_send_dm') == 0"]}
-        for i, m in enumerate(moments)
-    ]
+    """Build moment-aware ``personalized_recommendation``-shaped instances.
+
+    Previously emitted ``agentic_moment_recommendation`` instances that
+    required ``mcp__{app}_get_feed`` MCP tools to actually run. Those tools
+    don't have a live database backend in this repo, making the agentic
+    path impractical to test. This builder now emits slate-based ranking
+    instances with the SAME shape as
+    ``personalized_recommendation`` (16-item slate, ``held_out_idx``,
+    ``hard_negative_idxs``) but with a moment-flavored ``query_text`` —
+    voiced in the user's own register — instead of the literal
+    ``"[recsys]"`` token used by the proactive recsys flavor.
+
+    Slate construction per moment that survives the `N_RECOMMENDED_POSTS`
+    pool floor:
+      - held-out (target rank 1): the in-window positive closest to the
+        anchor in time.
+      - hard negatives: up to `_T7_HARD_NEGATIVES` from the moment's negative
+        pool (in-window first, then any-time negatives).
+      - fillers: drawn from the neutral positive pool until the slate
+        reaches `_T7_SLATE_SIZE` items.
+
+    Scoring uses the deterministic ranking metrics from
+    ``personalized_recommendation`` (recall@k / ndcg@k / mrr / hit@k) — no
+    LLM judge, no tool calls.
+    """
+    from evaluation.tasks.personalized_recommendation import SLATE_SIZE, N_HARD_NEGATIVES
+
+    rng = random.Random(hash(user_id) % (2**31))
+    profile = {}
+    try:
+        profile = bq._load_profile(user_id) if hasattr(bq, "_load_profile") else {}
+    except Exception:
+        profile = {}
+    user_voice = (profile or {}).get("user_voice") or {}
+
+    out: list[dict] = []
+    for i, moment in enumerate(MOMENT_HOUR_WINDOWS_UTC):
+        buckets = _collect_moment_engagements(bq, user_id, t_anchor, moment)
+        aligned_pos = list(buckets["aligned_positive"])
+        neutral_pool = list(buckets["neutral_positive_pool"])
+        if len(aligned_pos) + len(neutral_pool) < N_RECOMMENDED_POSTS:
+            continue
+        if not aligned_pos:
+            # Need at least one in-window positive to serve as the held-out
+            # ranking target — otherwise the moment signal can't be tested.
+            continue
+
+        # Hard negatives: in-window negatives first (most moment-relevant
+        # for ranking), then any-time negatives until we hit N_HARD_NEGATIVES.
+        seen_neg_ids: set[str] = set()
+        hard_negs: list[dict] = []
+        for src in (buckets["aligned_negative"], buckets["all_negative_pool"]):
+            for p in src:
+                oid = p.get("source_object_id") or ""
+                if not oid or oid in seen_neg_ids:
+                    continue
+                seen_neg_ids.add(oid)
+                hard_negs.append(p)
+                if len(hard_negs) >= N_HARD_NEGATIVES:
+                    break
+            if len(hard_negs) >= N_HARD_NEGATIVES:
+                break
+
+        # Held-out: aligned_pos[0] is already sorted by closeness to anchor.
+        held_out = aligned_pos[0]
+        held_id = held_out.get("source_object_id") or ""
+
+        # Fillers: neutral pool first (truly safe filler that's NOT moment-
+        # personalized), then leftover aligned_pos beyond the held-out so
+        # we can fill out the slate even when neutral_pool is sparse.
+        slate_target = SLATE_SIZE - 1 - len(hard_negs)
+        fillers: list[dict] = []
+        seen_filler_ids: set[str] = {held_id} | seen_neg_ids
+        for p in neutral_pool + aligned_pos[1:]:
+            oid = p.get("source_object_id") or ""
+            if not oid or oid in seen_filler_ids:
+                continue
+            seen_filler_ids.add(oid)
+            fillers.append(p)
+            if len(fillers) >= slate_target:
+                break
+        if len(fillers) + 1 + len(hard_negs) < N_RECOMMENDED_POSTS:
+            # Slate would be smaller than the floor — drop this moment
+            # rather than emit a degenerate ranking instance.
+            continue
+
+        # Assemble + shuffle so the held-out doesn't always sit at idx=0.
+        slate_rows = [held_out] + hard_negs + fillers
+        order = list(range(len(slate_rows)))
+        rng.shuffle(order)
+        slate = [slate_rows[j] for j in order]
+        held_out_idx = order.index(0)
+        hard_negative_idxs = [order.index(j + 1) for j in range(len(hard_negs))]
+
+        query_text = _voice_flavored_moment_query(moment, user_voice, rng)
+
+        out.append({
+            "instance_id": f"recsys_moment_{i}",
+            "task_id": "personalized_recommendation",
+            "entry_point": "chatbot_routed",
+            "t_test": t_anchor,
+            "candidates": slate,
+            "held_out_idx": held_out_idx,
+            "hard_negative_idxs": hard_negative_idxs,
+            "query_text": query_text,
+            # Moment metadata kept for traceability / per-moment slicing of
+            # results downstream. Not used by the prompt or metrics.
+            "moment": moment,
+            "moment_window_utc": list(MOMENT_HOUR_WINDOWS_UTC[moment]),
+            "moment_day_filter": sorted(MOMENT_DAY_FILTER.get(moment, set())),
+            # day_label / anchor_hour_utc are required by
+            # personalized_recommendation_prompt's history-block header;
+            # synthesize from t_anchor so the prompt renders cleanly.
+            "day_label": _moment_day_label(t_anchor),
+            "anchor_hour_utc": _moment_anchor_hour_utc(t_anchor),
+        })
+    return out
+
+
+def _moment_day_label(t_anchor: int) -> str:
+    import datetime as _dt
+    return _dt.datetime.fromtimestamp(int(t_anchor or 0), tz=_dt.timezone.utc).strftime("%Y-%m-%d")
+
+
+def _moment_anchor_hour_utc(t_anchor: int) -> int:
+    import datetime as _dt
+    return _dt.datetime.fromtimestamp(int(t_anchor or 0), tz=_dt.timezone.utc).hour
 
 
 def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
@@ -751,7 +1062,9 @@ def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> l
 
 ALL_BUILDERS: dict[str, Callable] = {
     "agentic_user_tone_post":         build_t6_user_tone_post,
-    "agentic_moment_recommendation":    build_t7_moment_recommendation,
+    # agentic_moment_recommendation was merged into personalized_recommendation
+    # (slate-based ranking) — build_t7_moment_recommendation is now called
+    # directly from build_benchmark.py and its output appended to e4_instances.
     "agentic_dm_digest":                build_t8_dm_digest,
     "agentic_cross_app_repost":         build_t9_cross_app_repost,
     "agentic_auto_reply":               build_t10_auto_reply,
@@ -810,7 +1123,6 @@ def _query_text_for(task_id: str, inst: dict) -> str:
     """Extract a representative query string per task for rubric ground-truth building."""
     return {
         "agentic_user_tone_post": f"compose a post in the user's voice on {inst.get('target_app')}",
-        "agentic_moment_recommendation": f"recommend something for {inst.get('moment', '')}",
         "agentic_dm_digest": f"dm digest on {inst.get('target_app')}",
         "agentic_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
         "agentic_auto_reply": inst.get("inbound_message", ""),
@@ -830,7 +1142,8 @@ def _prompt_for(task_id: str):
     pa = prompts_agentic
 
     def t6(inst, h): return pa.t6_user_tone_post(inst["target_app"], h)
-    def t7(inst, h): return pa.t7_moment_recommendation(inst["moment"], h)
+    # t7_moment_recommendation removed — moment instances now ride
+    # personalized_recommendation_prompt with a voiced query_text.
     def t8(inst, h): return pa.t8_dm_digest(inst["target_app"], h)
     def t9(inst, h): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h)
     def t10(inst, h): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"))
@@ -844,7 +1157,7 @@ def _prompt_for(task_id: str):
     def t19(inst, h): return pa.t19_trending_alert(h)
 
     return {
-        "agentic_user_tone_post": t6, "agentic_moment_recommendation": t7, "agentic_dm_digest": t8,
+        "agentic_user_tone_post": t6, "agentic_dm_digest": t8,
         "agentic_cross_app_repost": t9, "agentic_auto_reply": t10, "agentic_vague_refind": t11,
         "agentic_composed_post": t12, "agentic_send_post": t13, "agentic_draft_audit": t14,
         "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,
