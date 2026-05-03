@@ -242,6 +242,7 @@ def generate_chatbot_conversations(
     llm_query_fn: Callable[[str], str | None],
     user_seed: int,
     max_workers: int = 20,
+    user_voice: dict | None = None,
 ) -> list[dict]:
     """Generate multi-turn conversations for chatbot event records.
 
@@ -312,6 +313,7 @@ def generate_chatbot_conversations(
                     category=primary.get("category", ""),
                     user_profile=user_profile, chatbot_persona=chatbot_persona,
                     additional_preferences=additional if additional else None,
+                    user_voice=user_voice,
                 )
             else:
                 prompt = prompts.generate_do_not_personalize_conversation_prompt(
@@ -319,6 +321,7 @@ def generate_chatbot_conversations(
                     category=primary.get("category", ""),
                     user_profile=user_profile, chatbot_persona=chatbot_persona,
                     additional_preferences=additional if additional else None,
+                    user_voice=user_voice,
                 )
         elif variant == "correction":
             additional = [p for p in preferences if p.get("persona_item") != primary.get("persona_item")]
@@ -327,6 +330,7 @@ def generate_chatbot_conversations(
                 category=primary.get("category", ""),
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
                 additional_preferences=additional if additional else None,
+                user_voice=user_voice,
             )
         else:
             # Standard conversation — scale turn count based on number of preferences,
@@ -352,6 +356,7 @@ def generate_chatbot_conversations(
                 conversation_type_description=CHATBOT_CONVERSATION_TYPES[conv_type]["description"],
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
                 interaction_type=interaction_type, num_turns=num_turns,
+                user_voice=user_voice,
             )
 
         work_items.append((i, prompt, conv_type, variant))
