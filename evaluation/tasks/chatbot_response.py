@@ -127,8 +127,8 @@ def run_task_b(
         # `stale` (J.5) puts the now-expired pref into a synthesized pool of one
         # ([_stale_pref]) so the leak rate fires only when the agent surfaces
         # that specific stale item.
-        if arm in ("control", "adversarial", "distractor_reject", "stale"):
-            if arm == "distractor_reject":
+        if arm in ("control", "adversarial", "distractor_reject", "stale", "sensitive_event"):
+            if arm in ("distractor_reject", "sensitive_event"):
                 leak_pool = privacy_flagged
             elif arm == "stale":
                 stale_pi = inst.get("_stale_pref") or ""
@@ -198,7 +198,7 @@ def run_task_b(
             # (agent under test should NOT personalize). `stale` (J.5) is also
             # restraint — agent must NOT use the expired pref.
             if action == "asked_not_to_personalize" or arm in (
-                "control", "adversarial", "distractor_reject", "stale"
+                "control", "adversarial", "distractor_reject", "stale", "sensitive_event"
             ):
                 polarity = "negative"
             judge_scores = judges.judge_chatbot_rubric(judge_client, response_text, evidence, polarity)

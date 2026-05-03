@@ -252,29 +252,6 @@ Draft:
 {_response_text()}"""
 
 
-def t15_collection_curation(app: str, history_block: str | None = None) -> str:
-    return f"""# Task T15: Saved-collection curation
-
-The user wants their liked/saved items on {app} from the past month organized
-into themed collections. Propose 3–6 collections with names + which content
-they'd hold (brief). Don't actually create collections — just propose.
-
-Before responding, call `mcp__{app}__get_feed` to see the user's recent likes
-and engagement so the proposed collections reflect their actual content, not
-generic categories.
-
-{_history_block(history_block)}
-
-## Output
-```json
-{{"collections": [
-  {{"name": "...", "rationale": "<=1 sentence", "example_items_or_hashtags": ["...", "..."]}},
-  ...
-], "reasoning": "<=2 sentences"}}
-```
-"""
-
-
 def t16_group_dm_summary(thread_id: str, history_block: str | None = None,
                          target_app: str = "instagram") -> str:
     return f"""# Task T16: Group-DM summary + suggested reply

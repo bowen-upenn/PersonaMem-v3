@@ -71,7 +71,6 @@ _DIVERSIFICATION_TASKS = {
 _HOLLOW_BY_DESIGN = {
     "agentic_dm_digest",
     "agentic_group_dm_summary",
-    "agentic_collection_curation",
     "agentic_proactive_daily_catchup",
     "agentic_trending_alert",
     "agentic_user_tone_post",
@@ -84,7 +83,8 @@ _HOLLOW_BY_DESIGN = {
 _RESTRAINT_TASKS = {
     "over_personalization_chatbot_text",
     "over_personalization_distractor_reject",
-    "context_shift_scenarios",
+    "over_personalization_sensitive_event",
+    "over_personalization_context_shift",
     "repetition_fatigue_pairs",
     "repetition_fatigue_sequences",
 }
@@ -125,11 +125,8 @@ def check_realism(record: dict) -> list[Finding]:
                 "regenerate",
             ))
         # Synthetic [task tag] markers indicate the extractor fell through
-        # to a default. The fixed-format `[No user query] …` marker used
-        # by personalized_recommendation (workstream D) is intentional, so
-        # we whitelist it.
-        if (text.startswith("[") and "]" in text
-                and not text.startswith("[No user query]")):
+        # to a default.
+        if text.startswith("[") and "]" in text:
             out.append(Finding(
                 record["query_id"], record["task_type"], "medium", "realism_synthetic_marker",
                 f"user_query starts with synthetic marker: {text[:60]!r}",
@@ -386,6 +383,60 @@ def check_agentic_preconditions(record: dict) -> list[Finding]:
     return out
 
 
+# Tasks that require concrete content in user_query — bracket-tag-only
+# placeholders break LLM-eval (the LLM has nothing to respond to).
+_AGENTIC_NEEDS_USER_QUERY_CONTENT = {
+    "agentic_auto_reply",            # needs the inbound DM body
+    "agentic_vague_refind",          # needs the topic
+    "agentic_composed_post",         # needs the user's update
+    "agentic_send_post",             # needs the chat context to dispatch
+    "agentic_cross_app_repost",      # needs the source-post caption
+    "agentic_wrong_recipient_check", # needs the draft
+}
+
+
+def check_inferior_length_match(record: dict) -> list[Finding]:
+    """Foil within ±15% of gold's char count — otherwise a grader can win
+    by simply picking the shorter response."""
+    inf = record.get("inferior_response") or {}
+    foil = (inf.get("text") or "").strip()
+    gold = (record.get("example_response") or "").strip()
+    if not foil or not gold:
+        return []
+    pct = abs(len(foil) - len(gold)) / max(len(gold), 1)
+    if pct > 0.15:
+        return [Finding(
+            record["query_id"], record["task_type"], "medium",
+            "inferior_length_mismatch",
+            f"foil={len(foil)} vs gold={len(gold)} chars ({pct:.0%} diff)",
+            "regenerate",
+        )]
+    return []
+
+
+def check_user_query_has_content(record: dict) -> list[Finding]:
+    """For agentic tasks where the agent must respond to specific user
+    input, the user_query must carry actual content past the leading
+    [bracket-tag]. A query like '[incoming DM from friend_2] ' (trailing
+    space, no body) leaves the LLM nothing to reply to."""
+    if record.get("task_type") not in _AGENTIC_NEEDS_USER_QUERY_CONTENT:
+        return []
+    text = (record.get("user_query") or "").strip()
+    body = text
+    if body.startswith("["):
+        rb = body.find("]")
+        if rb >= 0:
+            body = body[rb + 1:].strip()
+    if len(body) < 8:
+        return [Finding(
+            record["query_id"], record["task_type"], "high",
+            "user_query_no_content",
+            f"agentic user_query has no real content after bracket tag: {text[:80]!r}",
+            "regenerate",
+        )]
+    return []
+
+
 # Order matters only for output stability — all rules run on every record.
 _PER_RECORD_RULES = (
     check_realism,
@@ -397,6 +448,8 @@ _PER_RECORD_RULES = (
     check_label_honesty_restraint_trap,
     check_proactive_ground,
     check_agentic_preconditions,
+    check_inferior_length_match,
+    check_user_query_has_content,
 )
 
 

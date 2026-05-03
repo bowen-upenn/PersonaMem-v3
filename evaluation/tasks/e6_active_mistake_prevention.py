@@ -256,7 +256,7 @@ def _hidden_personas_text(profile: dict) -> str:
         ratio = hp.get("privacy_ratio", 0)
         label = hp.get("label", "(unnamed)")
         privacy_marker = " [PRIVACY-FLAGGED]" if (
-            ptype in {"covert_concern", "compensatory_need", "intimate_interest"}
+            ptype in {"covert_concern", "compensatory_need", "intimate_interest", "medical_aesthetic_concern"}
             or ratio > 0.7
         ) else ""
         tags = (hp.get("evidence_hashtags") or [])[:6]

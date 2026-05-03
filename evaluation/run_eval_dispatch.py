@@ -75,17 +75,20 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     if task_type == "personalized_feed_ranking":
         rows = slate_ranking.run_task_a(**common)
     elif task_type in ("chatbot_proactive_personalization", "over_personalization_chatbot_text",
-                       "over_personalization_distractor_reject"):
+                       "over_personalization_distractor_reject",
+                       "over_personalization_sensitive_event"):
         # Phase I.3: distractor-reject converted from a 4-way ranking task to
         # an open-ended chatbot text task — same runner as the other chatbot
         # arms, judged by personalization_leak_rate against the irrelevant
         # persona-items (passed in via privacy_flagged_prefs).
+        # R10: sensitive_event runs through the same path with arm="sensitive_event"
+        # and a leak pool sourced from the synthetic sensitive_life_event persona.
         rows = chatbot_response.run_task_b(**common)
     elif task_type == "repetition_fatigue_pairs":
         rows = over_personalization.run_task_c1a(**common)
     elif task_type == "repetition_fatigue_sequences":
         rows = over_personalization.run_task_c1b(**common)
-    elif task_type == "context_shift_scenarios":
+    elif task_type == "over_personalization_context_shift":
         rows = over_personalization.run_task_c2(**common)
     elif task_type == "over_personalization_distractor_reject":
         rows = over_personalization.run_task_c3(**common)

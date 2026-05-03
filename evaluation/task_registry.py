@@ -42,9 +42,17 @@ OLD_TO_NEW: dict[str, str] = {
     "chatbot_response_proactive":    "chatbot_proactive_personalization",
     "chatbot_response_control":      "over_personalization_chatbot_text",
     "chatbot_restraint_control":     "over_personalization_chatbot_text",
+    # Sensitive-event arm of run_task_b is graded under its own task_type so
+    # the rubric APPLICABILITY entry / aggregator headline are isolated from
+    # the generic chatbot restraint metric.
+    "chatbot_response_sensitive_event": "over_personalization_sensitive_event",
     "c1a_pairs":                     "repetition_fatigue_pairs",
     "c1b_sequences":                 "repetition_fatigue_sequences",
-    "c2_scenarios":                  "context_shift_scenarios",
+    "c2_scenarios":                  "over_personalization_context_shift",
+    # Workstream cleanup: context_shift_scenarios was always part of the
+    # over_personalization family; renamed so the membership is obvious
+    # from the task_type alone.
+    "context_shift_scenarios":       "over_personalization_context_shift",
     "c3_restraint":                  "over_personalization_distractor_reject",
     "irrelevant_query_restraint":    "over_personalization_distractor_reject",
     "c4_button_regen":               "preference_removal_regen",
@@ -67,7 +75,6 @@ OLD_TO_NEW: dict[str, str] = {
     # agentic_draft_audit dropped — old strings still resolve so historical
     # CSVs parse, but the task type is no longer in TASK_TYPE_META.
     "t14_draft_audit":               "agentic_draft_audit",
-    "t15_collection_curation":       "agentic_collection_curation",
     "t16_group_dm_summary":          "agentic_group_dm_summary",
     "t17_wrong_recipient":           "agentic_wrong_recipient_check",
     "t18_proactive_daily":           "agentic_proactive_daily_catchup",
@@ -222,7 +229,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "ranking",
         "rubric_tags": ["avoid_overpersonalization"],
     },
-    "context_shift_scenarios": {
+    "over_personalization_context_shift": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -236,6 +243,18 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         # Phase I.3: converted from ranking to open-ended chatbot text response.
+        "expected_response_kind": "text",
+        "rubric_tags": ["avoid_overpersonalization"],
+    },
+    # R10: sensitive-life-event over-personalization. Driven by the synthetic
+    # sensitive_life_event hidden persona (1–3 LLM-personalized episodes per
+    # user, each with an active window). The agent gets a benign chatbot
+    # query inside one event's active window; surfacing the sensitive topic
+    # is a hard privacy_leak failure.
+    "over_personalization_sensitive_event": {
+        "task_family": "over_personalization",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
         "expected_response_kind": "text",
         "rubric_tags": ["avoid_overpersonalization"],
     },
@@ -333,16 +352,6 @@ TASK_TYPE_META: dict[str, dict] = {
         ],
     },
     # agentic_draft_audit removed — too subjective for benchmark grading
-    "agentic_collection_curation": {
-        "task_family": "agentic",
-        "mcp_tools_allowed": "chatbot",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "text_with_tool_calls",
-        "rubric_tags": [
-            "preference_alignment", "avoid_overpersonalization",
-            "stale_preference_use", "behavioral_hit",
-        ],
-    },
     "agentic_group_dm_summary": {
         "task_family": "agentic",
         "mcp_tools_allowed": "chatbot",
@@ -462,14 +471,15 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_chatbot_text":      "user_query",
     "repetition_fatigue_pairs":               "user_query",
     "repetition_fatigue_sequences":           "user_query",
-    "context_shift_scenarios":                "user_query",
+    "over_personalization_context_shift":                "user_query",
     "over_personalization_distractor_reject": "user_query",
+    "over_personalization_sensitive_event":   "user_query",
     "preference_removal_regen":               "user_query",
     "at_ai_directive_followup":               "user_query",
     "daily_personalized_briefing":            "proactive_recommendation",
     # personalized_recommendation (renamed from personalized_search_ranking)
-    # carries a fixed-format query "[No user query] [Recommendation system
-    # proposed candidates: …]" — system-side recommendation surface.
+    # carries the fixed `[recsys]` template — system-side recommendation
+    # surface, no live user message.
     "personalized_recommendation":            "proactive_recommendation",
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
@@ -482,7 +492,6 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "agentic_composed_post":                  "agentic_task",
     "agentic_send_post":                      "user_query",
     # agentic_draft_audit removed — workstream F.
-    "agentic_collection_curation":            "agentic_task",
     "agentic_group_dm_summary":               "agentic_task",
     "agentic_wrong_recipient_check":          "proactive_assistance",
     "agentic_proactive_daily_catchup":        "proactive_recommendation",
@@ -496,8 +505,9 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_chatbot_text":      "avoid_overpersonalization",
     "repetition_fatigue_pairs":               "avoid_overpersonalization",
     "repetition_fatigue_sequences":           "avoid_overpersonalization",
-    "context_shift_scenarios":                "avoid_overpersonalization",
+    "over_personalization_context_shift":                "avoid_overpersonalization",
     "over_personalization_distractor_reject": "avoid_overpersonalization",
+    "over_personalization_sensitive_event":   "avoid_overpersonalization",
     "preference_removal_regen":               "avoid_overpersonalization",
     "at_ai_directive_followup":               "proactive_recommend",
     "daily_personalized_briefing":            "proactive_recommend",
@@ -512,7 +522,6 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "agentic_vague_refind":                   "agentic_action",
     "agentic_composed_post":                  "agentic_action",
     "agentic_send_post":                      "agentic_action",
-    "agentic_collection_curation":            "agentic_action",
     "agentic_group_dm_summary":               "agentic_action",
     "agentic_wrong_recipient_check":          "proactive_assist",
     "agentic_proactive_daily_catchup":        "proactive_recommend",
@@ -560,12 +569,15 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
     "chatbot_proactive_personalization":           ("held_out_score", "fraction"),
     "over_personalization_chatbot_text":           ("personalization_leak_rate", "inverted_fraction"),
-    "context_shift_scenarios":                     ("pr_personalization_hard_fail_count", "inverted_fraction"),
+    "over_personalization_context_shift":                     ("pr_personalization_hard_fail_count", "inverted_fraction"),
     # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was
     # the headline before; F1 punishes both always-accept and always-reject.
     # Phase I.3: now an open-ended chatbot task — graded by leak rate
     # (lower personalization_leak_rate = better restraint).
     "over_personalization_distractor_reject":      ("personalization_leak_rate", "inverted_fraction"),
+    # Same headline metric as the distractor-reject task: lower leak rate
+    # = better restraint around the user's private/sensitive episode.
+    "over_personalization_sensitive_event":        ("personalization_leak_rate", "inverted_fraction"),
     "preference_removal_regen":          ("removal_success", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
@@ -583,7 +595,6 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "agentic_composed_post":             ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_send_post":                 ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_draft_audit":               ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_collection_curation":       ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_group_dm_summary":          ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_wrong_recipient_check":     ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_proactive_daily_catchup":   ("agentic_pass_rate", "agentic_pass_rate"),

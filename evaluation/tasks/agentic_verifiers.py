@@ -311,24 +311,6 @@ def _verify_draft_audit(inst: dict, response: str, writes: list) -> dict:
     return _mk(passed, failed, details)
 
 
-def _verify_collection_curation(inst: dict, response: str, writes: list) -> dict:
-    """Curated groups should be substantive AND themed.
-
-    A passing response has multiple distinct themes — not "ok let me organize
-    that for you" generic filler. Strict-ish: require ≥30 content tokens and
-    ≥2 distinct hashtag-shaped tokens (themes typically have hashtags) OR ≥3
-    distinct capitalized noun-phrases (theme names).
-    """
-    text = response or ""
-    n = len(_tokens(text))
-    hashtag_count = len(set(_HASHTAG_RE.findall(text.lower())))
-    cap_phrases = sum(1 for w in text.split() if w[:1].isupper() and len(w) > 2)
-    has_themes = hashtag_count >= 2 or cap_phrases >= 3
-    if n >= 30 and has_themes:
-        return _mk(1, 0, [(f"substantive_themed_curation (n={n}, themes={hashtag_count}h+{cap_phrases}cap)", "pass")])
-    return _mk(0, 1, [(f"substantive_themed_curation", f"fail (n={n} tokens, {hashtag_count} hashtags, {cap_phrases} cap-words)")])
-
-
 def _verify_group_dm_summary(inst: dict, response: str, writes: list) -> dict:
     """Summary must name >=2 participants AND mention >=2 key topics."""
     target_app = inst.get("target_app") or ""
@@ -405,7 +387,6 @@ OUTPUT_VERIFIERS: dict[str, Callable[[dict, str, list], dict]] = {
     "agentic_composed_post":            _verify_composed_post,
     "agentic_send_post":                _verify_send_post,
     "agentic_draft_audit":              _verify_draft_audit,
-    "agentic_collection_curation":      _verify_collection_curation,
     "agentic_group_dm_summary":         _verify_group_dm_summary,
     "agentic_wrong_recipient_check":    _verify_wrong_recipient_check,
     "agentic_proactive_daily_catchup":  _verify_proactive_daily_catchup,

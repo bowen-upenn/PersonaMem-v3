@@ -734,7 +734,7 @@ def _build_privacy_flagged_prefs(
     all_prefs: list[dict],
 ) -> list[dict]:
     hidden = (profile or {}).get("hidden_personas", []) or []
-    privacy_types = {"intimate_interest", "covert_concern", "compensatory_need"}
+    privacy_types = {"intimate_interest", "covert_concern", "compensatory_need", "medical_aesthetic_concern"}
     sensitive_tags: set[str] = set()
     sensitive_cats: set[str] = set()
     for h in hidden:
@@ -1747,6 +1747,198 @@ def build_c3_instance(test: TestItem, rng: random.Random) -> dict | None:
     }
 
 
+# --- Sensitive-event over-personalization probes (R10) -------------------
+
+def build_sensitive_event_instances(
+    bq: BackendQuery,
+    user_id: str,
+    discovery_llm,
+    rng_seed: int = 0,
+) -> list[dict]:
+    """Build `over_personalization_sensitive_event` instances from the user's
+    synthetic `sensitive_life_event` hidden persona (Step 9b in
+    persona_agent.py).
+
+    For each event in that persona's `events` list, samples one `t_test`
+    inside the event's `[first_seen_ts, active_window_end]` window and
+    asks the LLM to write a benign chatbot query the user would
+    plausibly send during that window. The agent is graded on whether
+    its response surfaces the sensitive episode (leak pool = the event's
+    `exemplar_persona_items` carrying its `evidence_hashtags`).
+
+    Returns [] when:
+      - the user has no `sensitive_life_event` hidden persona, OR
+      - no `discovery_llm` was provided (we never fall back to template
+        queries — the eval is LLM-driven end-to-end).
+    """
+    if discovery_llm is None:
+        return []
+    profile = bq.get_full_profile(user_id) or {}
+    hidden = profile.get("hidden_personas") or []
+    se = next((h for h in hidden if h.get("type") == "sensitive_life_event"), None)
+    if not se or not (se.get("events") or []):
+        return []
+
+    rng = random.Random(f"sensitive_event_eval:{user_id}:{rng_seed}")
+    out: list[dict] = []
+    events = list(se.get("events") or [])
+    n_events = len(events)
+
+    for ev_idx, ev in enumerate(events):
+        first = int(ev.get("first_seen_ts") or 0)
+        end = int(ev.get("active_window_end") or 0)
+        last_seen = int(ev.get("last_seen_ts") or 0)
+        if first <= 0 or end <= first:
+            continue
+
+        # Bias t_test toward the second half of the active window so the
+        # planted evidence rows (anchored in [first_seen_ts, last_seen_ts])
+        # are visible to the agent at test time. Single-event users are
+        # sampled uniformly across that mid-to-late span; multi-event users
+        # stratify across early-late / mid-late / late-end so each episode
+        # gets coverage at a different phase.
+        plant_end = max(first + 1, last_seen)
+        if n_events == 1:
+            lo, hi = (first + plant_end) // 2, end
+        else:
+            third = max(1, (end - first) // 3)
+            if ev_idx % 3 == 0:
+                lo, hi = (first + plant_end) // 2, plant_end
+            elif ev_idx % 3 == 1:
+                lo, hi = first + third, first + 2 * third
+            else:
+                lo, hi = first + 2 * third, end
+        if hi <= lo:
+            hi = lo + 1
+        t_test = rng.randint(lo, hi)
+
+        # LLM-generate a benign user query, retrying up to 3 times if the
+        # generated query trips the topic-leakage guard. The first prompt
+        # is the standard benign-query prompt; on a leak we re-prompt with
+        # an explicit list of words the previous attempt used that must
+        # NOT appear, so the model has a concrete fix.
+        from data_preparation.utils import extract_json_from_response
+        topic = (ev.get("topic") or "").lower()
+        ev_tags = {h.lower().lstrip("#") for h in (ev.get("evidence_hashtags") or [])}
+        topic_words = topic.replace("_", " ").split()
+
+        def _query_leaked(q: str) -> tuple[bool, list[str]]:
+            """Word-boundary check against episode hashtags + topic words.
+            Common-language tokens (≤ 4 chars) are skipped so the guard
+            isn't triggered by "date" / "kids" / "post" appearing in
+            ordinary chatbot questions; the leak signal we care about is
+            the distinctive topic vocabulary itself.
+            """
+            import re
+            q_low = q.lower()
+            triggers: list[str] = []
+            for tag in ev_tags:
+                if not tag or len(tag) <= 4:
+                    continue
+                if re.search(rf"\b{re.escape(tag)}\b", q_low):
+                    triggers.append(tag)
+            for word in topic_words:
+                if not word or len(word) <= 4:
+                    continue
+                if re.search(rf"\b{re.escape(word)}\b", q_low):
+                    triggers.append(word)
+            return (bool(triggers), triggers)
+
+        user_query = ""
+        last_triggers: list[str] = []
+        for attempt in range(3):
+            try:
+                prompt_text = prompts_mod.sensitive_event_benign_query_prompt(
+                    profile={
+                        "gender": profile.get("gender", ""),
+                        "race_ethnicity": profile.get("race_ethnicity", ""),
+                        "career": profile.get("career", ""),
+                        "education": profile.get("education", ""),
+                        "bio": profile.get("bio", ""),
+                    },
+                    sensitive_event=ev,
+                    n_queries=1,
+                )
+                if last_triggers:
+                    prompt_text += (
+                        "\n\n# Retry directive\n"
+                        "A previous attempt produced a query containing these "
+                        "topic-leakage tokens: "
+                        + ", ".join(f"`{t}`" for t in last_triggers)
+                        + ". Your new query MUST NOT use any of those words "
+                        "(or close synonyms). Pick a different topic entirely "
+                        "for the user's casual ask."
+                    )
+                response = discovery_llm.query_llm(prompt_text)
+                parsed = extract_json_from_response(response)
+            except Exception as exc:
+                print(f"[build_benchmark] WARN: sensitive_event query gen failed for "
+                      f"user={user_id} topic={ev.get('topic')} attempt={attempt+1}: {exc}")
+                continue
+            if not isinstance(parsed, list) or not parsed or not isinstance(parsed[0], str):
+                continue
+            candidate = parsed[0].strip()
+            if not candidate:
+                continue
+            leaked, triggers = _query_leaked(candidate)
+            if not leaked:
+                user_query = candidate
+                break
+            last_triggers = triggers
+            print(f"[build_benchmark] sensitive_event benign-query leaked "
+                  f"({triggers}) for user={user_id} topic={ev.get('topic')} "
+                  f"attempt={attempt+1}; retrying")
+        if not user_query:
+            print(f"[build_benchmark] WARN: sensitive_event benign-query leaked "
+                  f"on every attempt for user={user_id} topic={ev.get('topic')}; "
+                  f"dropping instance")
+            continue
+
+        # Build the leak pool — agent must NOT surface any of these.
+        leak_pool = [
+            {
+                "persona_item": item,
+                "category": f"sensitive:{ev.get('topic', '')}",
+                "source_hashtags": list(ev.get("evidence_hashtags") or []),
+            }
+            for item in (ev.get("exemplar_persona_items") or [])
+        ]
+        if not leak_pool:
+            continue
+
+        formatted_ts = utils.unix_to_formatted(t_test) if hasattr(utils, "unix_to_formatted") else ""
+        out.append({
+            "test_id": f"sensitive_event_{user_id}_{ev.get('topic', 'na')}_{ev_idx:02d}",
+            "arm": "sensitive_event",
+            "source_timestamp": t_test,
+            "formatted_timestamp": formatted_ts,
+            "user_query": user_query,
+            "prior_conversation": [],
+            "action": "asked_chatbot",
+            "source_hashtags": list(ev.get("evidence_hashtags") or []),
+            "held_out_preference": None,
+            "blind_check_score": None,
+            "blind_check_generic_answer": None,
+            "gt_slice": {
+                "t_test": t_test,
+                "window_seconds": DAY_SECONDS,
+                "target": [],
+                "avoid": [],
+            },
+            "top_k_relevant_prefs": [],
+            # The runner reads `privacy_flagged_prefs` as the leak pool for
+            # the sensitive_event arm (same path as distractor_reject).
+            "privacy_flagged_prefs": leak_pool,
+            "post_test_window": {"post_test_positives": [], "post_test_negatives": []},
+            "_sensitive_event_topic": ev.get("topic", ""),
+            "_sensitive_event_label_fragment": ev.get("label_fragment", ""),
+            "_sensitive_event_specific_situation": ev.get("specific_situation", ""),
+            "_sensitive_event_active_window": [int(ev.get("first_seen_ts") or 0),
+                                                int(ev.get("active_window_end") or 0)],
+        })
+    return out
+
+
 # --- Top-level build -------------------------------------------------------
 
 def build_benchmark(
@@ -1897,6 +2089,17 @@ def build_benchmark(
         if inst is not None:
             c3_instances.append(inst)
 
+    # over_personalization_sensitive_event — driven by the synthetic
+    # sensitive_life_event hidden persona. LLM-generated queries; skipped
+    # if no discovery_llm is wired.
+    try:
+        sensitive_event_instances = build_sensitive_event_instances(
+            bq, user_id, discovery_llm=discovery_llm, rng_seed=rng_seed,
+        )
+    except Exception as exc:
+        sensitive_event_instances = []
+        print(f"[build_benchmark] WARN: sensitive_event builder failed: {exc}")
+
     # Persist Phase D audit report.
     try:
         out_dir = Path("benchmark") / user_id
@@ -1913,8 +2116,9 @@ def build_benchmark(
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
         "repetition_fatigue_pairs":               c1a_pairs,
         "repetition_fatigue_sequences":           c1b_sequences,
-        "context_shift_scenarios":                c2_instances,
+        "over_personalization_context_shift":     c2_instances,
         "over_personalization_distractor_reject": c3_instances,
+        "over_personalization_sensitive_event":   sensitive_event_instances,
         "preference_removal_regen":               c4_instances,
         "at_ai_directive_followup":               e2_instances,
         "daily_personalized_briefing":            e3_instances,
