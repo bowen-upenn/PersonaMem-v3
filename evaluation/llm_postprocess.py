@@ -52,7 +52,7 @@ _PERSONALIZATION_TASKS = {
     "repetition_fatigue_pairs",
     "repetition_fatigue_sequences",
     "agentic_user_tone_post",
-    "agentic_moment_recommendation",
+    # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest",
     "agentic_cross_app_repost",
     "agentic_auto_reply",
@@ -102,11 +102,11 @@ _RANKING_TASKS = {
 # backend posts (NOT a `Ranked indexes: [...]` wrapper). Same dispatch
 # pattern as `_RANKING_TASKS` — no LLM gold-gen, no LLM foil-gen, no
 # self-check pass — but the gold/foil are computed by task-specific
-# builders (`_compute_moment_recommendation_example/inferior`) rather than
-# the index-list helpers.
-_DETERMINISTIC_GOLD_TASKS = {
-    "agentic_moment_recommendation",
-}
+# builders rather than the index-list helpers. Currently empty —
+# agentic_moment_recommendation was the only entry and it merged into
+# personalized_recommendation (which uses the index-list ranking helpers).
+# Kept as an extension point for future deterministic JSON tasks.
+_DETERMINISTIC_GOLD_TASKS: set[str] = set()
 
 # Tasks where the gold is too short / structural for any kind of paired
 # foil to make sense. Note: ranking tasks are NOT in this set anymore —
@@ -634,6 +634,63 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
                 lines.append(f"- #{tag} ({n} engagements)")
             return "\n".join(lines)
 
+        if task_id == "daily_personalized_briefing":
+            # The gold is a 3–5 bullet "what should I catch up on today" briefing.
+            # Without grounding the example LLM produces generic productivity
+            # advice ("scan calendar, prioritize tasks") that doesn't lean on
+            # any user prefs — and the disliked_recent foil then has nothing
+            # persona-shaped to contrast against. Surface the user's actual
+            # positive engagements for this t_test so the gold names real
+            # topics (boxing, hip-hop, comedy, …) and the foil's swapped-in
+            # disliked topic produces a visible-but-natural diff.
+            pos = inst.get("gt_positive_engagements") or []
+            avoid = inst.get("gt_avoid_engagements") or []
+            if not pos:
+                return ""
+            # Pull a handful of distinct hashtags from the positive set,
+            # preserving order so the briefing surfaces the user's freshest
+            # interests first. Cap to 8 tags so the prompt stays compact.
+            seen_tags: set[str] = set()
+            tag_lines: list[str] = []
+            for e in pos:
+                for h in (e.get("hashtags") or []):
+                    norm = (h or "").lstrip("#").lower()
+                    if not norm or norm in seen_tags:
+                        continue
+                    seen_tags.add(norm)
+                    tag_lines.append(f"#{h.lstrip('#')}")
+                    if len(tag_lines) >= 8:
+                        break
+                if len(tag_lines) >= 8:
+                    break
+            avoid_tags: list[str] = []
+            avoid_seen: set[str] = set()
+            for e in avoid:
+                for h in (e.get("hashtags") or []):
+                    norm = (h or "").lstrip("#").lower()
+                    if not norm or norm in avoid_seen or norm in seen_tags:
+                        continue
+                    avoid_seen.add(norm)
+                    avoid_tags.append(f"#{h.lstrip('#')}")
+                    if len(avoid_tags) >= 5:
+                        break
+                if len(avoid_tags) >= 5:
+                    break
+            lines = [
+                "User's actual positive engagements for this briefing window "
+                "(weave 2–3 of these into the bullets so the briefing is "
+                "anchored to what the user is genuinely into right now — "
+                "describe each in plain language, do NOT list raw hashtags):",
+                "  " + ", ".join(tag_lines),
+            ]
+            if avoid_tags:
+                lines.append(
+                    "Topics the user explicitly disliked in the same window "
+                    "(do NOT mention any of these — the foil will leak one):"
+                )
+                lines.append("  " + ", ".join(avoid_tags))
+            return "\n".join(lines)
+
         if task_id in _VOICE_DEPENDENT_WRITE_TASKS:
             return _voice_grounding(inst, task_id, bq, user_id)
     except Exception:
@@ -981,137 +1038,11 @@ def _compute_ranking_inferior(inst: dict, task_type: str) -> str:
     return ""
 
 
-# ---------------------------------------------------------------------------
-# Deterministic gold/foil for `agentic_moment_recommendation`
-# ---------------------------------------------------------------------------
-
-# Mirror the builder's floor — kept in sync with `agentic_tasks.N_RECOMMENDED_POSTS`.
-_MOMENT_REC_FLOOR: int = 12
-
-
-def _project_moment_post(p: dict, why: str) -> dict:
-    """Render one slate candidate (the projection produced by the builder
-    in `_summarize_post_for_slate`) into the agent-output JSON shape."""
-    title = (p.get("title") or p.get("caption") or "")[:140]
-    return {
-        "source_object_id": str(p.get("source_object_id") or ""),
-        "title": title,
-        "source_app": p.get("source_app", ""),
-        "why": why,
-    }
-
-
-def _select_moment_example_items(inst: dict) -> tuple[list[dict], list[dict]]:
-    """Pick the example slate: (chosen_aligned, chosen_filler).
-
-    Caps aligned at ~half the target so the gold isn't all-aligned (that
-    would model overpersonalization). Falls back to padding from leftover
-    aligned posts if the filler pool is short.
-    """
-    aligned = list(inst.get("gt_aligned_posts") or [])
-    neutral = list(inst.get("gt_neutral_filler") or [])
-    n = int(inst.get("n_target_posts") or _MOMENT_REC_FLOOR)
-    n_aligned_target = max(3, n // 2)
-    chosen_aligned = aligned[:n_aligned_target]
-    seen = {p["source_object_id"] for p in chosen_aligned}
-    chosen_filler = [p for p in neutral
-                     if p["source_object_id"] not in seen][: n - len(chosen_aligned)]
-    if len(chosen_aligned) + len(chosen_filler) < n:
-        seen |= {p["source_object_id"] for p in chosen_filler}
-        extra = [p for p in aligned[n_aligned_target:]
-                 if p["source_object_id"] not in seen]
-        chosen_filler += extra[: n - len(chosen_aligned) - len(chosen_filler)]
-    return chosen_aligned, chosen_filler
-
-
-def _compute_moment_recommendation_example(inst: dict) -> str:
-    """Deterministic JSON gold for `agentic_moment_recommendation`.
-
-    Output is a fenced ```json``` block matching the agent's expected
-    response shape (`recommendations: [{source_object_id, title,
-    source_app, why}], reasoning: ...`). Returns "" if the instance's
-    pre-computed pools cannot fill the count floor.
-    """
-    chosen_aligned, chosen_filler = _select_moment_example_items(inst)
-    items = chosen_aligned + chosen_filler
-    if len(items) < _MOMENT_REC_FLOOR:
-        return ""
-    aligned_ids = {p["source_object_id"] for p in chosen_aligned}
-    negative_ids = {p["source_object_id"]
-                    for p in (inst.get("gt_negative_posts") or [])}
-    rec = []
-    for p in items:
-        why = ("fits your usual feed for this time of day"
-               if p["source_object_id"] in aligned_ids
-               else "from your usual feed, generally enjoyable")
-        rec.append(_project_moment_post(p, why))
-    leaked = {r["source_object_id"] for r in rec} & negative_ids
-    if leaked:
-        # Defensive: should never happen — `gt_neutral_filler` excludes
-        # negatives by construction. Drop the gold so a leaky moment never
-        # ships.
-        return ""
-    payload = {
-        "recommendations": rec,
-        "reasoning": (
-            f"Half ({len(chosen_aligned)}) are moment-aligned to "
-            f"{inst.get('moment','')}; the rest are safe filler from posts "
-            f"the user typically engages with."
-        ),
-    }
-    return "```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```"
-
-
-def _compute_moment_recommendation_inferior(inst: dict, rng: random.Random) -> str:
-    """Deterministic JSON foil for `agentic_moment_recommendation`.
-
-    Same shape and length as the example, but injects 1-2 posts from the
-    user's negative pool at non-edge positions. Returns "" if no negatives
-    are available — the caller drops the foil for that instance.
-    """
-    chosen_aligned, chosen_filler = _select_moment_example_items(inst)
-    base_items = chosen_aligned + chosen_filler
-    n = int(inst.get("n_target_posts") or _MOMENT_REC_FLOOR)
-    if len(base_items) < _MOMENT_REC_FLOOR:
-        return ""
-    base_items = base_items[:n]
-    seen_ids = {p["source_object_id"] for p in base_items}
-    negs = [p for p in (inst.get("gt_negative_posts") or [])
-            if p["source_object_id"] not in seen_ids]
-    if not negs:
-        return ""
-    inject = negs[:2] if len(negs) >= 2 else negs[:1]
-    items = list(base_items)
-    used_slots: set[int] = set()
-    for neg in inject:
-        if len(items) > 4:
-            available = [s for s in range(2, len(items) - 2) if s not in used_slots]
-            if not available:
-                items.append(neg)
-                continue
-            slot = rng.choice(available)
-        elif len(items) >= 2:
-            slot = 1
-        else:
-            items.append(neg)
-            continue
-        items[slot] = neg
-        used_slots.add(slot)
-    aligned_ids = {p["source_object_id"] for p in chosen_aligned}
-    rec = []
-    for p in items[:n]:
-        if p["source_object_id"] in {q["source_object_id"] for q in inject}:
-            why = "your feed has been showing this lately"
-        elif p["source_object_id"] in aligned_ids:
-            why = "fits your usual feed for this time of day"
-        else:
-            why = "from your usual feed, generally enjoyable"
-        rec.append(_project_moment_post(p, why))
-    payload = {
-        "recommendations": rec,
-        "reasoning": "Mix of moment-relevant items and recent feed activity.",
-    }
-    return "```json\n" + json.dumps(payload, ensure_ascii=False, indent=2) + "\n```"
+# Deterministic gold/foil for agentic_moment_recommendation removed when
+# that task merged into personalized_recommendation. The new moment-flavored
+# instances ride the same `_compute_ranking_example` / `_compute_ranking_inferior`
+# path as the proactive recsys flavor — `Ranked indexes: [...]` wrapper, not
+# the JSON-list shape this code used to emit.
 
 
 # ---------------------------------------------------------------------------
@@ -1199,8 +1130,18 @@ _FLAW_KINDS_VOICE = ("voice_mismatch",)
 _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     "agentic_dm_digest":               _FLAW_KINDS_FACTUAL,
     "agentic_group_dm_summary":        _FLAW_KINDS_FACTUAL,
-    "agentic_proactive_daily_catchup": _FLAW_KINDS_FACTUAL,
-    "agentic_trending_alert":          _FLAW_KINDS_FACTUAL,
+    # Personalization-driven proactive tasks — gold picks content FOR
+    # this user, natural failure is picking content for a different user
+    # (a topic this user explicitly disliked recently). Was _FLAW_KINDS_FACTUAL
+    # which produced friend_9↔friend_10 single-name swaps — too subtle and
+    # structural rather than persona-divergent (the model would learn "use
+    # the right ID" instead of "pick the right content"). Now pinned to
+    # disliked_recent so the foil swaps in a freshly-disliked topic — the
+    # diff is (1) visible to a human reader, (2) subtle + natural (the foil
+    # is a plausible recommendation for some user just not for this one
+    # at this moment), (3) not a structural / format difference.
+    "agentic_proactive_daily_catchup": ("disliked_recent",),
+    "agentic_trending_alert":          ("disliked_recent",),
     "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
     "agentic_user_tone_post":          _FLAW_KINDS_VOICE,
     "agentic_composed_post":           _FLAW_KINDS_VOICE,
@@ -1887,15 +1828,11 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     inst["example_response"] = example
                     n_example_ranking += 1
             elif task_id in _DETERMINISTIC_GOLD_TASKS:
-                # Task-specific deterministic gold: no LLM call, no telegraph
-                # check, no grounding block — the gold is structured JSON
-                # naming real backend post IDs.
-                if task_id == "agentic_moment_recommendation":
-                    text = _compute_moment_recommendation_example(inst)
-                    if text:
-                        example = text
-                        inst["example_response"] = example
-                        n_example_ranking += 1
+                # Extension point for future deterministic-JSON gold tasks
+                # (set is empty today — agentic_moment_recommendation merged
+                # into personalized_recommendation, which uses the index-list
+                # ranking path instead).
+                pass
             elif task_id not in _TASKS_ALREADY_CONCRETE and self_check_llm is not None:
                 grounding = _task_grounding(inst, task_id, bq, user_id)
                 # For compose tasks, look up the target_app's AppPersona so
@@ -1955,23 +1892,13 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             arm = inst.get("arm") or "proactive"
             if (arm in ("proactive", "contradiction")
                     and task_id not in _TASKS_NO_FOIL):
-                # Family 0 (deterministic-gold tasks) — task-specific JSON
-                # foil naming real backend post IDs. No LLM call. Drops the
-                # foil silently when the instance has no negatives to inject.
+                # Family 0 (deterministic-gold tasks) — extension point.
+                # Set is empty today (agentic_moment_recommendation merged
+                # into personalized_recommendation which uses the ranking
+                # foil path below). Future deterministic-JSON tasks plug in
+                # here by adding to _DETERMINISTIC_GOLD_TASKS and dispatching.
                 if task_id in _DETERMINISTIC_GOLD_TASKS:
-                    inferior_text = ""
-                    if task_id == "agentic_moment_recommendation":
-                        inferior_text = _compute_moment_recommendation_inferior(inst, rng)
-                    if inferior_text:
-                        inst["inferior_response"] = {
-                            "text": inferior_text,
-                            "flaw_kind": "negative_post_injection",
-                            "flaw_evidence": {"_from": "deterministic_negative_injection"},
-                        }
-                        n_inferior_built += 1
-                    else:
-                        inst["inferior_drop_reason"] = "no_negative_posts_available"
-                        n_inferior_skipped += 1
+                    pass
                 # Family 1 (ranking) — deterministic inverted ordering, no
                 # LLM call. Same `Ranked indexes: [...]` wrapper as the
                 # example, identical length, just a different (bad) order.
