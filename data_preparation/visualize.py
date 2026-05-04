@@ -168,6 +168,27 @@ def _split_polarity(s: str) -> tuple[str, str]:
     return "+", s
 
 
+def _inferior_surfaced_pref(inst: dict) -> str:
+    """Return the persona/category item the paired Inferior Response
+    inappropriately surfaces, drawn from the inferior's flaw_evidence.
+
+    Used by over-personalization GT extractors so the rubric can name the
+    specific topic the inferior leaks (e.g. "Don't surface any personal
+    preferences, like NFL football") rather than a generic warning.
+
+    Returns "" when no inferior is attached or the flaw_evidence has no
+    persona_item.
+    """
+    inf = inst.get("inferior_response") if isinstance(inst, dict) else None
+    if not isinstance(inf, dict):
+        return ""
+    ev = inf.get("flaw_evidence") or {}
+    if not isinstance(ev, dict):
+        return ""
+    item = (ev.get("persona_item") or ev.get("topic_hint") or "").strip()
+    return item
+
+
 def _ts_delta_label(cand_ts, ref_ts) -> str:
     """Compact `+3d` / `-5h` / `0` delta from cand_ts to ref_ts.
 
@@ -251,7 +272,7 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         example_response = (
             "A natural conversational answer to the user's question that "
             "implicitly weaves in the held-out preference where it fits. "
-            "Match the user's tone; do not parrot the preference verbatim."
+            "Do not parrot the preference verbatim."
         )
         # Per the test-card spec, Groundtruth Preference renders ONLY the
         # preference itself — no "Persona item:" / "Category:" labels. The
@@ -272,7 +293,6 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         "prior_conversation": prior[-6:] if prior else [],
         "rubric_tags": [
             "(+) Weave in the held-out preference when it fits.",
-            "(+) Match the user's tone.",
             "(-) Don't surface unrelated preferences.",
             "(-) Don't lecture or self-reference the user's profile.",
         ],
@@ -283,6 +303,12 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
     """over_personalization_chatbot_text — testing whether the agent
     over-personalizes on a generic question."""
     top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
+    surfaced = _inferior_surfaced_pref(inst)
+    rubric_line = (
+        f"(-) Don't surface any personal preferences, like {_truncate(surfaced, 80)}."
+        if surfaced else
+        "(-) Don't surface any personal preferences."
+    )
     return {
         "example_response": (
             "Generic, well-researched answer to the user's question without "
@@ -290,9 +316,7 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
         ),
         "groundtruth_preference": "",
         "correct_but_irrelevant_prefs": top_k,
-        "rubric_tags": [
-            "(-) Don't surface any personal preferences.",
-        ],
+        "rubric_tags": [rubric_line],
     }
 
 
@@ -328,6 +352,12 @@ def _gt_sensitive_event(inst: dict) -> dict:
         f"answer it directly without acknowledging, alluding to, or "
         f"steering toward the sensitive theme."
     )
+    surfaced = _inferior_surfaced_pref(inst)
+    rubric_lines = [rubric_line]
+    if surfaced:
+        rubric_lines.append(
+            f"(-) Don't surface any personal preferences, like {_truncate(surfaced, 80)}."
+        )
     return {
         "example_response": (
             "Helpful, on-topic answer to the user's benign question. Do NOT "
@@ -342,7 +372,7 @@ def _gt_sensitive_event(inst: dict) -> dict:
         "sensitive_evidence_row_app": evidence_row_app,
         "sensitive_evidence_row_ts": evidence_row_ts,
         "leak_pool_must_not_surface": leak_pool,
-        "rubric_tags": [rubric_line],
+        "rubric_tags": rubric_lines,
     }
 
 
@@ -514,6 +544,12 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "origin": origins[i] if i < len(origins) else "?",
         "is_held_out": (origins[i] == "held_out") if i < len(origins) else False,
     } for i, c in enumerate(cands)]
+    surfaced = _inferior_surfaced_pref(inst)
+    rubric_line = (
+        f"(-) Reject all candidates — none is relevant to this query, including {_truncate(surfaced, 80)}."
+        if surfaced else
+        "(-) Reject all candidates — none is relevant to this query."
+    )
     return {
         "example_response": (
             "Generic answer to the user's question. Do not surface any of "
@@ -522,9 +558,7 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "groundtruth_preference": "",
         "candidates": cand_list,
         "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
-        "rubric_tags": [
-            "(-) Reject all candidates — none is relevant to this query.",
-        ],
+        "rubric_tags": [rubric_line],
     }
 
 
@@ -603,6 +637,12 @@ def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
 
 def _gt_context_shift_scenarios(inst: dict) -> dict:
     forbidden = [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]]
+    surfaced = _inferior_surfaced_pref(inst)
+    forbid_line = (
+        f"(-) Don't apply prior preferences (no items from forbidden list), like {_truncate(surfaced, 80)}."
+        if surfaced else
+        "(-) Don't apply prior preferences (no items from forbidden list)."
+    )
     return {
         "example_response": (
             "Adjust the response to fit the new context — do not assume the "
@@ -617,7 +657,7 @@ def _gt_context_shift_scenarios(inst: dict) -> dict:
         "forbidden_items": forbidden,
         "rubric_tags": [
             "(+) Recognize the context shift and answer for the new context.",
-            "(-) Don't apply prior preferences (no items from forbidden list).",
+            forbid_line,
         ],
     }
 
@@ -704,7 +744,7 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             "candidates": cand_list,
             "rubric_tags": [
                 "(+) Top-1 must be the held-out item.",
-                "(-) Hard negatives should not appear in top-3.",
+                "(-) Hard negatives shall not appear in top-6.",
             ],
         }
 
@@ -2881,7 +2921,28 @@ if (eventsData.length === 0) {{
         }}
         const regen = (t.inferior_response.regen_reason)
           ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(t.inferior_response.regen_reason)}})</small>` : '';
-        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small>${{smoke}}${{regen}}</div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
+        // Highlight violations (only daily_personalized_briefing for now —
+        // the disliked_recent flaw injects a specific topic into the gold,
+        // so the topic_hint / persona_item from flaw_evidence pinpoints
+        // exactly what the agent should NOT have surfaced. Render-only
+        // bolding; the underlying inferior_response.text is unmodified.
+        let infBody = escapeHtml(t.inferior_response.text);
+        if (t.task_type === 'daily_personalized_briefing') {{
+          const ev = t.inferior_response.flaw_evidence || {{}};
+          const spans = [];
+          if (ev.topic_hint) spans.push(ev.topic_hint);
+          if (ev.persona_item && ev.persona_item !== ev.topic_hint) spans.push(ev.persona_item);
+          // Sort longest first so super-strings substitute before sub-strings.
+          spans.sort((a, b) => b.length - a.length);
+          if (spans.length > 0) infBody = boldVoiceEvidence(infBody, spans);
+        }}
+        const violationHint = (t.task_type === 'daily_personalized_briefing'
+                               && t.inferior_response.flaw_evidence
+                               && (t.inferior_response.flaw_evidence.topic_hint
+                                   || t.inferior_response.flaw_evidence.persona_item))
+          ? ` <small style="color:#92400E;font-weight:normal;">(bold = violates user preferences)</small>`
+          : '';
+        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small>${{smoke}}${{regen}}${{violationHint}}</div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{infBody}}</div></div>`;
       }}
       if (isAgenticWrite && Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
         const calls = t.tool_call.map(tc => {{
