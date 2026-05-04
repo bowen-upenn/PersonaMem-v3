@@ -571,7 +571,7 @@ def _render_user_voice_block(user_voice: dict) -> str:
         f"- **Humor / tone:** {user_voice.get('humor_tone', '(unspecified)')}\n"
         f"- **Personal emoji palette (the user picks subsets of THIS list — never invents new emoji):** {palette_str}\n"
         f"- **Default emoji intensity:** {user_voice.get('emoji_intensity_default', 'medium')}\n"
-        f"- **Personal phrases / catchphrases (bleed across apps):** {phrases_str}\n"
+        f"- **Personal phrases / catchphrases (bleed across apps; use SPARINGLY — these are tics, NOT signatures: ZERO in most posts/messages, AT MOST ONE across any single response, never one per sentence):** {phrases_str}\n"
         f"- **Formality baseline:** {user_voice.get('formality_baseline', 0.3)} (0.0 super casual — 1.0 very formal)\n"
     )
     voice_avoid = (user_voice.get("voice_avoid") or "").strip()

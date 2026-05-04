@@ -174,7 +174,10 @@ _COMPOSE_TASKS = {
 
 # Tasks where the voice-evidence smoke test runs (overlap with _COMPOSE_TASKS
 # today; kept separate so the set can grow without changing length-band logic).
-_VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS)
+# `agentic_user_tone_post` (T6) tests voice fidelity against a seed_topic but
+# is NOT in _COMPOSE_TASKS to keep its length band on the generic 1–4-sentence
+# default rather than the compose-task per-app caption length.
+_VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_user_tone_post"}
 
 
 def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
@@ -874,7 +877,10 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
         phrases = user_voice.get("personal_phrases") or []
         if phrases:
             lines.append(
-                "  personal phrases (cross-app — use occasionally as natural tics): "
+                "  personal phrases (cross-app, use SPARINGLY — ZERO is the "
+                "default; AT MOST one across the whole response, and only when "
+                "it lands naturally; the agent must NOT signature-stamp every "
+                "post with one of these): "
                 + ", ".join(f"\"{p}\"" for p in phrases[:6])
             )
         if user_voice.get("formality_baseline") is not None:
@@ -2122,6 +2128,16 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                             "flaw_evidence": evidence,
                         }
                         n_inferior_built += 1
+                        # Extract voice evidence from the inferior text too —
+                        # used by the renderer to bold tone anchors that the
+                        # foil DOES leverage (so reviewers see which tone
+                        # aspects the foil keeps vs swaps). Only meaningful
+                        # for voice-graded tasks.
+                        if task_id in _VOICE_EVIDENCE_TASKS:
+                            _uv_block_inf = ctx.get("user_voice") or {}
+                            _inf_spans = _extract_voice_evidence_spans(text, _uv_block_inf)
+                            if _inf_spans:
+                                inst["inferior_response_voice_evidence"] = _inf_spans
                     else:
                         # Validator rejected all 3 attempts — drop the foil
                         # for this sample and tag for traceability. Eval

@@ -585,7 +585,12 @@ def chatbot_proactive_triplet_prompt(
             voice_lines.append(f"- register: {user_voice['natural_register']}")
         phrases = user_voice.get("personal_phrases") or []
         if phrases:
-            voice_lines.append(f"- personal phrases (use sparingly): {', '.join(phrases[:6])}")
+            voice_lines.append(
+                "- personal phrases (use SPARINGLY — ZERO is the default; "
+                "AT MOST one across the whole turn, only when it lands "
+                "naturally; never signature-stamp every message): "
+                + ", ".join(phrases[:6])
+            )
         habits = user_voice.get("punctuation_habits")
         if habits:
             voice_lines.append(f"- punctuation habits: {habits}")
