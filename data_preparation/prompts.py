@@ -1761,6 +1761,7 @@ def generate_chatbot_conversation_prompt(
     interaction_type: str,
     num_turns: int,
     user_voice: dict | None = None,
+    proactive_friendly: bool = False,
 ) -> str:
     """Build a prompt that generates a multi-turn chatbot conversation implicitly
     embedding multiple user preferences.
@@ -1770,12 +1771,28 @@ def generate_chatbot_conversation_prompt(
     Preferences are NEVER stated directly; they must be inferred from the
     conversation context.
 
+    Two prompt families based on `proactive_friendly`:
+      - **Embedded** (False): preference hides INSIDE user-provided material
+        (a draft to copyedit, source text to translate, a message being
+        composed). The user's explicit ASK is editorial / clerical. Used for
+        writing_help, translation, casual_chat. These conversations feed the
+        Task B *control* arm.
+      - **Anchored** (True): preference is the BACKDROP of the user's open
+        request. The user is making a real ask whose ideal answer would
+        naturally bring in the preference — recommendation_seeking,
+        therapy_reflection, knowledge_query, troubleshooting,
+        health_consultation, decision_support, discovery_open. These feed
+        the Task B *proactive* arm.
+
     Args:
         preferences: list of dicts, each with 'persona_item', 'category',
             and 'interaction_type' keys.
         user_voice: shared writing voice block — same person typing across all
             apps. Anchors register/punctuation so the chatbot turns sound like
             the same human who posts on Instagram and Threads.
+        proactive_friendly: True for anchored conv types (use the
+            preference-as-backdrop framing), False for embedded conv types
+            (preference-hides-in-material).
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -1808,6 +1825,42 @@ def generate_chatbot_conversation_prompt(
         )
     prefs_block = "\n".join(pref_lines)
 
+    # Rule 2 branches by conversation family. Embedded types (writing_help,
+    # translation, casual_chat) hide the preference inside user-provided
+    # material. Anchored types (recommendation_seeking, therapy_reflection,
+    # decision_support, discovery_open, etc.) make the user's request open-
+    # ended such that surfacing the preference would naturally improve the
+    # answer — the preference is the BACKDROP, not embedded in submitted text.
+    if proactive_friendly:
+        rule_2 = (
+            "**Anchor the user's request such that the preference is what makes the answer good.** "
+            "The preference is the BACKDROP of the request — the user is making a real, open-ended ask "
+            "whose ideal answer would naturally bring in the preference. The user is NOT pasting a draft "
+            "to copyedit, source text to translate, or a message to compose; they are asking the assistant "
+            "for help — a recommendation, a comparison, a reflection, a decision, an open 'what should I do' — "
+            "and a thoughtful reply will lean on what the assistant has learned about this user. The opener "
+            "should be a real question whose generic answer would feel flat compared to a personalized one."
+        )
+        rule_2b_extra = (
+            "\n\n2b. **The user's question must NOT contain the preference verbatim, AND must NOT include "
+            "any pasted draft to clean up, edit, translate, polish, tighten, or proofread.** Verbs like "
+            "`clean up`, `tighten`, `edit`, `fix`, `polish`, `rewrite`, `proofread`, `translate`, "
+            "`make it sound`, `cleanup`, `cleanup this`, `need a text cleaned up`, `for a text to my friend`, "
+            "`for a girl I'm talking to`, `make it more like me` are FORBIDDEN in user turns. The preference "
+            "is what the assistant's answer should reflect, not what the user's question states. A good "
+            "self-test: if you stripped the preference from your awareness, the user's question should "
+            "still parse as a real, sensible ask."
+        )
+    else:
+        rule_2 = (
+            "**Embed preferences in the user's task content, not in their words about themselves.** "
+            "Preferences should be revealed through the MATERIAL the user provides to the chatbot — "
+            "an email draft they paste, a text they want translated, a question they ask, a problem they "
+            "describe. The user's explicit request is about the task. Preferences are inferable from the "
+            "subject matter, details, and context."
+        )
+        rule_2b_extra = ""
+
     return f"""\
 You are generating a realistic multi-turn conversation between a user and an AI chatbot assistant.
 
@@ -1838,7 +1891,7 @@ The conversation must naturally reveal ALL of the following preferences. Each pr
 
 1. **Task-oriented conversation.** The user is asking the chatbot for help with a real task — not chatting about their preferences. Frame the conversation as a realistic request: editing text, asking a question, seeking advice, solving a problem, etc.
 
-2. **Embed preferences in the user's task content, not in their words about themselves.** Preferences should be revealed through the MATERIAL the user provides to the chatbot — an email draft they paste, a text they want translated, a question they ask, a problem they describe. The user's explicit request is about the task. Preferences are inferable from the subject matter, details, and context.
+2. {rule_2}{rule_2b_extra}
 
 3. **Visibility varies by preference.** Explicit preferences should be fairly apparent through the task topic. Implicit preferences should be deeply embedded — a side detail, cultural reference, or specificity of what the user asks about. See the per-preference visibility notes above.
 

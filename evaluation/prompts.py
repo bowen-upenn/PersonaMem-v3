@@ -514,14 +514,177 @@ def query_blind_check_prompt(query: str) -> str:
 ## Task
 1. Briefly answer the query using ONLY general knowledge, no user context.
 2. Rate how much knowing the user's personal preferences, history, and context would improve your answer.
-   - 0 = the answer is already complete; personalization adds nothing (pure factual / procedural query).
-   - 1 = personalization could add color but isn't necessary.
-   - 2 = personalization would meaningfully improve the answer.
-   - 3 = the answer is genuinely poor without user context; personalization is essential.
+
+## Score the user's REQUEST, not the topics inside their pasted material
+If the user is asking the chatbot to clean up, translate, proofread, polish, tighten, edit, rewrite, or compose text the user has already drafted, score 0 — the user wants editorial / clerical help, NOT personalized recommendations. The fact that the drafted text mentions a topic the user cares about does NOT make this a personalization opportunity. The correct response to "clean up this DM" is a clean DM, not a recommendation pivot.
+
+Examples:
+- `clean this up: "yo Marcus, still good for sunday? thinking wings at my spot after the 1 o'clock games..."` → 0. The user asked for copyediting; the NFL backdrop is part of their draft, not an invitation to surface NFL recommendations.
+- `whats a good podcast for my drive home tonight, brain mushy` → 3. The user is explicitly asking for a recommendation that should reflect their tastes and current mood.
+
+## Rating scale
+- 0 = the answer is already complete OR the request is editorial / translation / proofreading / draft-composing; personalization adds nothing or is the wrong response.
+- 1 = personalization could add color but isn't necessary.
+- 2 = personalization would meaningfully improve the answer.
+- 3 = the answer is genuinely poor without user context; personalization is essential.
 
 Return JSON:
 ```json
 {{"generic_answer": "<your answer>", "personalization_value": <0|1|2|3>, "reasoning": "<one line>"}}
+```
+"""
+
+
+def chatbot_proactive_triplet_prompt(
+    held_out_preference: str,
+    profile: dict,
+    user_voice: dict | None = None,
+    chatbot_persona: dict | None = None,
+    recent_topical_signals: list[str] | None = None,
+) -> str:
+    """Generate the (user_query, example_response, inferior_response) triplet
+    for ONE `chatbot_proactive_personalization` test card.
+
+    Strict rules:
+      - The user_query must NOT mention the held-out preference verbatim or
+        even allude to it. The user types like a real person on their phone:
+        casual, lowercase if that's their voice, ≤ 30 words.
+      - The user_query must be an open-ended ask whose IDEAL answer would
+        naturally lean on the held-out preference (recommendation, decision
+        between options, what-should-I-do, advice, reflection). It must NOT
+        be a copyedit / translate / compose / rewrite / proofread request.
+      - The example_response weaves the preference IMPLICITLY through
+        topic / content choice. NO self-referencing phrases like "as a fan
+        of", "since you love", "I know you're into" — those advertise the
+        profile and tank the rubric. The personalization is *which thing*
+        the assistant suggests, not a meta-comment on knowing the user.
+      - The inferior_response is a plausible, on-topic generic answer to
+        the same query — same length, same tone, same structure as the
+        example — but blind to this user's preference (any user could get
+        it). It must NOT be obviously wrong or a refusal; it's a graceful
+        degrade that misses the personalization opportunity.
+
+    Approach is similar to PersonaMem-v2's `generate_user_question` +
+    `generate_answer_options`, but consolidated into ONE LLM call with
+    sharper anti-telegraphing rules and explicit voice anchoring so the
+    example response is more natural and more implicitly personalized than
+    v2's "appropriately personalized" framing.
+    """
+    profile_keys = ("name", "gender", "race_ethnicity", "career", "education", "bio")
+    profile_json = json.dumps(
+        {k: profile.get(k) for k in profile_keys if profile.get(k)},
+        indent=2,
+    )
+
+    voice_block = ""
+    if isinstance(user_voice, dict) and user_voice:
+        voice_lines: list[str] = []
+        if user_voice.get("default_capitalization"):
+            voice_lines.append(f"- capitalization: {user_voice['default_capitalization']}")
+        if user_voice.get("natural_register"):
+            voice_lines.append(f"- register: {user_voice['natural_register']}")
+        phrases = user_voice.get("personal_phrases") or []
+        if phrases:
+            voice_lines.append(f"- personal phrases (use sparingly): {', '.join(phrases[:6])}")
+        habits = user_voice.get("punctuation_habits")
+        if habits:
+            voice_lines.append(f"- punctuation habits: {habits}")
+        avoid = user_voice.get("voice_avoid")
+        if avoid:
+            voice_lines.append(f"- voice AVOID: {avoid}")
+        if voice_lines:
+            voice_block = (
+                "\n## User's voice (the voice the user_query should sound in)\n"
+                + "\n".join(voice_lines)
+                + "\n"
+            )
+
+    persona_block = ""
+    if isinstance(chatbot_persona, dict) and chatbot_persona:
+        persona_block = (
+            "\n## Chatbot AppPersona (how this user uses the chatbot)\n"
+            f"```json\n{json.dumps(chatbot_persona, indent=2)}\n```\n"
+        )
+
+    signals_block = ""
+    if recent_topical_signals:
+        signals_block = (
+            "\n## Recent topical signals (just to show what the user has been "
+            "engaging with lately — do NOT mention these verbatim in the user_query)\n"
+            + "\n".join(f"- {s}" for s in recent_topical_signals[:8])
+            + "\n"
+        )
+
+    return f"""\
+You are crafting ONE test card for a personalization benchmark. Output JSON only.
+
+## Held-out user preference (the GROUND TRUTH the assistant should weave in)
+"{held_out_preference}"
+
+## User profile
+```json
+{profile_json}
+```
+{voice_block}{persona_block}{signals_block}
+## What you must produce
+
+A JSON object with three fields:
+1. `user_query` — what the user types to the chatbot at the test moment.
+2. `example_response` — the GOOD response that subtly weaves in the held-out preference through CONTENT CHOICE.
+3. `inferior_response` — a plausible GENERIC response that ignores the preference (same length, same tone, but any user could get it).
+
+## Rules for `user_query`
+
+- 1–2 short sentences, ≤ 30 words. Casual, conversational, on-the-phone register.
+- Honor the user's voice: capitalization, contractions ("don't", "i'm"), punctuation habits.
+- It must be an OPEN-ENDED ask whose ideal answer would naturally lean on the held-out preference: a recommendation, an "what should I do tonight", a decision between vague options, a "vibe-check" reflection, an advice / how-do-I question, an open creative prompt.
+- NEVER an editorial / clerical request. Forbidden: "clean up", "tighten", "edit", "fix", "polish", "rewrite", "translate", "proofread", "make it sound", "need a text", "for a girl I'm talking to", "for my friend", "make it more like me". Do NOT have the user paste a draft to be cleaned up.
+- It must NOT mention the preference verbatim, NOT allude to it ("as a fan of...", "since I'm into..."), NOT name the topic directly. A hash-blind reader of the question alone should not be able to guess the preference.
+- It must NOT include self-referential phrases like "based on what I like", "you know I love", "recall my preferences", "what I usually want" — those make the test trivial.
+- It must STILL parse as a complete, sensible question if you stripped the preference from your awareness.
+
+## Rules for `example_response`
+
+- 2–4 sentences, ≤ 80 words.
+- The response should weave in the held-out preference IMPLICITLY through CONTENT — what the assistant suggests, which option it leans toward, which detail it foregrounds. The personalization shows up in the THING the assistant says, not in the META-FRAME about knowing the user.
+- FORBIDDEN telegraph phrases — these advertise that you have a profile and tank the rubric:
+  • "as a fan of X"
+  • "since you love X" / "since you like X" / "since you're into X"
+  • "I know you're into X" / "I know you love X"
+  • "given your interest in X"
+  • "knowing how much you X"
+  • "as someone who X"
+  • "you'll appreciate this because X"
+  • "based on your preferences"
+- Match the user's voice register but stay in the assistant's frame (the assistant talks WITH the user, not AS them).
+- Concrete suggestions, not vague advice. Name the thing.
+- It must NOT mention the held-out preference label verbatim ("hip-hop culture", "NFL football"). It SHOULD reference what the preference IMPLIES (a specific artist, a specific game, a specific aesthetic).
+
+## Rules for `inferior_response`
+
+- Same length and structure as the example_response — within ±20 words.
+- A plausible, generic, on-topic answer to the same query that any user could get. NOT wrong; just generic.
+- It must NOT be a refusal, a clarifying question, or an obvious mistake.
+- It must NOT touch on the held-out preference (no overlap of suggested content with the example_response's preference-anchored content).
+- The inferior is graded as "missed the personalization opportunity" — make it look as competent as the example minus the personalization.
+
+## Self-check before returning
+
+- If the user_query starts with any of {{"clean up", "tighten", "edit", "fix", "polish", "rewrite", "translate", "proofread", "make it sound", "need a text", "for my friend"}}, REWRITE it.
+- If the user_query mentions the preference's keywords (the actual nouns from "{held_out_preference}"), REWRITE it.
+- If the example_response contains any forbidden telegraph phrase, REWRITE it.
+- If the inferior_response touches on the same preference content as the example_response, REWRITE it.
+
+## Output format
+
+Respond with ONE fenced JSON block, nothing else:
+
+```json
+{{
+  "user_query": "<the user's casual question>",
+  "example_response": "<the subtly personalized answer>",
+  "inferior_response": "<the plausible generic answer>"
+}}
 ```
 """
 
