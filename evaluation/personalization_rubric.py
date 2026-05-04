@@ -358,6 +358,97 @@ def build_source_b(bq: BackendQuery, user_id: str, t_test: int, window_hours: in
 
 # --- Scoring ---------------------------------------------------------------
 
+# Polarity-aware combiner constants. Tuned so one hard-fail erases ~half of
+# a single positive dim's max contribution (3.0). Adjust together if you
+# rebalance — the goal is for `combined_personalization_score` to fall in
+# roughly the same range as `positive_score` when no hard-fails fire.
+PENALTY_PER_HARD_FAIL = 1.5
+PENALTY_PER_SOFT_NEG = 1.5
+
+# Bridge for the dim-name mismatch between this module's APPLICABILITY map
+# (which uses the historical key `relationship_aware`) and the canonical
+# definitions in `evaluation/prompts._PERSONALIZATION_DIM_DEFS` (which uses
+# `relationship_awareness`). Keep both names valid — the combiner falls
+# back through this alias when looking up polarity.
+_DIM_ALIAS = {
+    "relationship_aware": "relationship_awareness",
+}
+
+
+def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
+    """Aggregate per-dim scores into a polarity-aware combined score.
+
+    Mutates `out` in place to add three keys:
+      - `positive_score`: sum of `out[f"{dim}_score"]` over each applicable
+        `+` dim that has a numeric score (0-3 each).
+      - `negative_penalty`: sum over each applicable `-` dim of either
+        `hard_fail * PENALTY_PER_HARD_FAIL` (binary dims) or
+        `(3 - dim_score) / 3 * PENALTY_PER_SOFT_NEG` (gap-from-ideal for
+        soft 0-3 negative dims).
+      - `combined_personalization_score`: clamp(positive_score - negative_penalty, 0, max_possible).
+
+    Polarity comes from `evaluation.prompts._PERSONALIZATION_DIM_DEFS` via
+    `prompts.get_dim_polarity`. Unknown dims default to `+`.
+
+    Caller note: when `judge_client=None`, no `+` dim ever has a score, so
+    `combined_personalization_score` reflects only hard-fail penalties
+    (clamped at 0). Document this in the run report.
+    """
+    from evaluation import prompts as _prompts_mod
+
+    def _polarity(dim: str) -> str:
+        # Try canonical name; fall back through alias bridge.
+        pol = _prompts_mod.get_dim_polarity(dim)
+        if pol == "+" and dim in _DIM_ALIAS:
+            # Default-fallback in get_dim_polarity returns "+" for unknown
+            # dims. Re-check with the canonical name from the alias map so
+            # `relationship_aware` correctly resolves to `+`.
+            pol = _prompts_mod.get_dim_polarity(_DIM_ALIAS[dim])
+        return pol
+
+    pos_dims_applicable: list[str] = []
+    neg_dims_applicable: list[str] = []
+    for dim, is_on in (applicable or {}).items():
+        if not is_on:
+            continue
+        if _polarity(dim) == "+":
+            pos_dims_applicable.append(dim)
+        else:
+            neg_dims_applicable.append(dim)
+
+    # Positive contribution: judge-dim scores on the 0-3 scale.
+    positive_score = 0.0
+    n_positive_scored = 0
+    for dim in pos_dims_applicable:
+        v = out.get(f"{dim}_score")
+        if isinstance(v, (int, float)):
+            positive_score += float(v)
+            n_positive_scored += 1
+
+    # Negative penalty: hard-fail flag × constant for binary dims; soft-gap
+    # × constant for 0-3 negative dims.
+    negative_penalty = 0.0
+    for dim in neg_dims_applicable:
+        if dim in HARD_RULE_DIMS:
+            hf = out.get(f"{dim}_hard_fail")
+            if isinstance(hf, (int, float)) and hf:
+                negative_penalty += PENALTY_PER_HARD_FAIL
+        else:
+            # Soft 0-3 negative dim — gap from ideal counts as penalty.
+            v = out.get(f"{dim}_score")
+            if isinstance(v, (int, float)):
+                gap = max(0.0, 3.0 - float(v)) / 3.0
+                negative_penalty += gap * PENALTY_PER_SOFT_NEG
+
+    max_possible = 3.0 * len(pos_dims_applicable)
+    combined = max(0.0, min(max_possible, positive_score - negative_penalty))
+
+    out["positive_score"] = positive_score
+    out["negative_penalty"] = negative_penalty
+    out["combined_personalization_score"] = combined
+    out["combined_max_possible"] = max_possible
+
+
 def score(
     task_id: str,
     agent_output: str,
@@ -427,4 +518,10 @@ def score(
     # Compose a summary "personalization_pass" flag: no hard-rule fails.
     hard_fails = [k for k in out if k.endswith("_hard_fail") and out[k]]
     out["personalization_hard_fail_count"] = len(hard_fails)
+
+    # Polarity-aware aggregation: emit positive_score / negative_penalty /
+    # combined_personalization_score. Pre-existing per-dim keys are kept
+    # untouched for backward compatibility.
+    combine_dim_scores_with_polarity(out, applicable)
+
     return out

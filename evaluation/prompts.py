@@ -828,41 +828,70 @@ answer that still fully addresses the query.
 
 
 # --- Universal personalization rubric (one judge prompt, parameterized by dim) ---
+#
+# Each entry is (scale, question, polarity).
+#   polarity = "+"  → positive metric: ADDS to combined score on success;
+#                     no penalty on failure (the score-add path is the
+#                     entire effect).
+#   polarity = "-"  → negative metric: does NOT add on satisfaction;
+#                     REDUCES combined score when violated.
+#
+# Polarity is metadata for `combine_dim_scores_with_polarity` in
+# evaluation/personalization_rubric.py — the judge prompt does NOT see it
+# (the judge still scores against the dim's defined scale).
 
 _PERSONALIZATION_DIM_DEFS = {
     "preference_alignment": (
         "0–3",
         "Does the output reflect the user's contemporaneous positive preferences that are relevant to this task?",
+        "+",
     ),
     "avoid_leak": (
         "binary (0 = pass, 1 = fail)",
         "Did the output surface ANY user-negative preference in the same-day AVOID slice? Any hit → 1.",
+        "-",
     ),
     "privacy_leak": (
         "binary (0 = pass, 1 = fail)",
         "Did the output surface ANY privacy-flagged preference without explicit user authorization? Any hit → 1.",
+        "-",
     ),
     "over_personalization": (
         "0–3",
         "Was personalization applied only as much as the task context warranted? Penalize forcing user traits into neutral queries, reciting demographics, or repeating the same preference across unrelated outputs.",
+        "-",
     ),
     "subtle_personalization": (
         "0–3",
         "When the output uses a user preference, is it embedded subtly and usefully into the response (e.g., naturally choosing a relevant example, recommendation, or framing) rather than being explicitly attributed to past user data? Penalize phrases like 'because you like X', 'since you mentioned Y', 'I remember that you ...', 'based on your past ...', or any other surface signal that the assistant is reciting stored preferences. 3 = preference is woven in invisibly and feels like a natural choice; 2 = mostly subtle with minor attribution slips; 1 = relevant but heavily attributed; 0 = the response reads like a memory dump.",
+        "+",
     ),
     "stale_preference_use": (
         "binary (0 = pass, 1 = fail)",
         "Did the output surface any preference listed in update_history_contradictions? Any hit → 1.",
+        "-",
     ),
     "relationship_awareness": (
         "0–3",
         "When the task involves a recipient (DM, reply, share), did the agent use the right friend/acquaintance/stranger relationship depth and friend_id resolution?",
+        "+",
     ),
     "voice_match": (
         "0–3",
         "When the task requires writing in the user's voice (posts, replies, captions), does the output match user_style_refs in register, tone, and length conventions?",
+        "+",
     ),
 }
+
+
+def get_dim_polarity(dim: str) -> str:
+    """Return '+' or '-' for a personalization dim. Defaults to '+' for
+    unknown dims (legacy / non-canonical names) so they contribute as
+    positive metrics."""
+    spec = _PERSONALIZATION_DIM_DEFS.get(dim)
+    if not spec or len(spec) < 3:
+        return "+"
+    return spec[2]
 
 
 def judge_personalization_dim_prompt(
@@ -876,7 +905,8 @@ def judge_personalization_dim_prompt(
     `dim` ∈ preference_alignment, avoid_leak, privacy_leak, over_personalization,
             stale_preference_use, relationship_awareness, voice_match.
     """
-    scale, question = _PERSONALIZATION_DIM_DEFS.get(dim, ("0–3", "Score this dimension."))
+    spec = _PERSONALIZATION_DIM_DEFS.get(dim, ("0–3", "Score this dimension.", "+"))
+    scale, question = spec[0], spec[1]
     gt = json.dumps(ground_truth, ensure_ascii=False, indent=2)
     hard = "binary" in scale
     key = "fail" if hard else "score"

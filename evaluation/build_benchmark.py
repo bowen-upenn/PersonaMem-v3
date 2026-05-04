@@ -1859,11 +1859,29 @@ def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
             "test_id": f"{b['test_id']}_c4",
             "source_test_id": b["test_id"],
             "source_timestamp": b["source_timestamp"],
+            "formatted_timestamp": b.get("formatted_timestamp", ""),
             "user_query": b["user_query"],
             "prior_conversation": b["prior_conversation"],
             "held_out_preference": b["held_out_preference"],
             "top_k_relevant_prefs": b.get("top_k_relevant_prefs") or [],
             "blind_check_generic_answer": b.get("blind_check_generic_answer", ""),
+            # The removal "event" for this task is the user tapping a UI
+            # control on the response that surfaced the held-out preference;
+            # the removal happens AT TEST MOMENT, not earlier in the
+            # conversation. Surface this on the test card so the
+            # groundtruth_preference render can show WHEN + WHAT was
+            # said/done to remove the preference.
+            "removal_signal": {
+                "kind": "ui_button_click",
+                "label": "Don't personalize on this",
+                "verbal_text": (
+                    "[UI signal — no verbal turn] User tapped the "
+                    "\"Don't personalize on this\" button on the prior "
+                    "response that drew on this preference."
+                ),
+                "ts": b["source_timestamp"],
+                "formatted_ts": b.get("formatted_timestamp", ""),
+            },
         })
     if skipped_no_overlap or skipped_no_pref:
         print(

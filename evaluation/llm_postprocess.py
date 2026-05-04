@@ -112,10 +112,15 @@ _DETERMINISTIC_GOLD_TASKS: set[str] = set()
 # foil to make sense. Note: ranking tasks are NOT in this set anymore —
 # they get a deterministic inferior via `_compute_ranking_inferior` (a
 # different index order in the same `Ranked indexes: [...]` wrapper).
-_TASKS_NO_FOIL = {
-    "agentic_wrong_recipient_check",
-    "agentic_vague_refind",
-}
+#
+# Schema-uniformity: the test card spec requires every instance to carry
+# an Inferior Response. `agentic_wrong_recipient_check` and
+# `agentic_vague_refind` were previously here because their golds are
+# short/structural — but both have meaningful failure modes that the
+# `factual_error` flaw can express (proceed-without-warning;
+# wrong-post-named). They're now mapped to `_FLAW_KINDS_FACTUAL` in
+# `_TASK_FLAW_KINDS` below, so the LLM-rewrite path produces a paired foil.
+_TASKS_NO_FOIL: set[str] = set()
 
 
 _EXAMPLE_GEN_PROMPT = """You are answering the user's request below. Reply naturally with the actual response — the words you would say.
@@ -1241,6 +1246,20 @@ _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     # rubric measures. Generic incorrect_personalization rewrites tend to
     # produce near-identical paraphrases that don't visibly fail the rubric.
     "daily_personalized_briefing":     ("disliked_recent",),
+    # Wrong-recipient check: gold = warn the user; failure mode = proceed
+    # without warning. `factual_error` lets the LLM mutate the gold by
+    # dropping the warning clause / replacing it with a confident proceed.
+    "agentic_wrong_recipient_check":   _FLAW_KINDS_FACTUAL,
+    # Control-arm over-personalization tasks: the gold is a generic, non-
+    # personalized response (restraint). The natural failure mode is to
+    # leak persona on a query that didn't invite it — the `over_personalization`
+    # flaw evidence picker returns the user's top category, and the LLM-
+    # rewrite injects it. Schema-uniformity: every control-arm test card now
+    # carries an Inferior Response paired against the restraint gold.
+    "over_personalization_chatbot_text":      ("over_personalization",),
+    "over_personalization_distractor_reject": ("over_personalization",),
+    "over_personalization_context_shift":     ("over_personalization",),
+    "over_personalization_sensitive_event":   ("over_personalization",),
 }
 
 _INFERIOR_PROMPT = """You are creating a paired *foil* response. The foil must be a \
@@ -2027,11 +2046,21 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                 if not check.get("passed", True):
                     n_self_check_failed += 1
 
-            # Workstream J: inferior_response. Skip for chatbot restraint-arm
-            # instances (control/adversarial/stale) where the gold response
-            # is intentionally generic — no inferior pair makes sense.
+            # Workstream J: inferior_response. Default rule: only proactive /
+            # contradiction arms get a foil — control arms test restraint and
+            # the gold response is intentionally generic, so no foil pair
+            # makes sense by default.
+            #
+            # Schema-uniformity exception: tasks explicitly registered in
+            # `_TASK_FLAW_KINDS` get a foil regardless of arm. Today this
+            # opens the gate for `over_personalization_*` control tasks
+            # (foil = same query but with persona leaked — the failure mode
+            # they grade). Other tasks not in the table fall through to the
+            # default arm-gated path.
             arm = inst.get("arm") or "proactive"
-            if (arm in ("proactive", "contradiction")
+            arm_eligible = arm in ("proactive", "contradiction")
+            task_force_eligible = task_id in _TASK_FLAW_KINDS
+            if ((arm_eligible or task_force_eligible)
                     and task_id not in _TASKS_NO_FOIL):
                 # Family 0 (deterministic-gold tasks) — extension point.
                 # Set is empty today (agentic_moment_recommendation merged
