@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from data_preparation.utils import extract_json_from_response
+from evaluation import ground_truth_builders
 from evaluation import metrics as metrics_mod
 from evaluation import personalization_rubric as pr
 from evaluation import prompts_agentic
@@ -1092,10 +1093,18 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
     for inst in instances:
         t = inst["t_test"]
         # Build the task-specific prompt.
+        # Always seed the prompt with a per-task ground-truth slice so the
+        # model has real user data to ground its response in (instead of
+        # refusing with "I can't access your DMs"). In mcp_agent mode the
+        # agent may still call MCP tools for additional reads if needed.
+        gt_block = ground_truth_builders.build_for_task(task_id, bq, user_id, t, inst)
         history_block = None
         if mode in ("agent_longctx", "llm_longctx"):
             history_block, _ = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
-        prompt = prompt_fn(inst, history_block)
+        allow_extra = (mode == "mcp_agent")
+        prompt = prompt_fn(inst, history_block,
+                            ground_truth_block=gt_block or None,
+                            allow_extra_tools=allow_extra)
 
         if dry_run:
             results.append({"task": task_id, "instance_id": inst["instance_id"], "mode": mode,
@@ -1138,23 +1147,29 @@ def _query_text_for(task_id: str, inst: dict) -> str:
 
 
 def _prompt_for(task_id: str):
-    """Return a closure (inst, history_block) -> prompt for the given task."""
+    """Return a closure (inst, history_block, **kwargs) -> prompt for the given task.
+
+    kwargs forwarded to each prompt template:
+      - ground_truth_block: focused per-task slice from ground_truth_builders
+      - allow_extra_tools:  True in mcp_agent mode (lets the directive note
+        that supplementary mcp__* read calls are permitted)
+    """
     pa = prompts_agentic
 
-    def t6(inst, h): return pa.t6_user_tone_post(inst["target_app"], h)
+    def t6(inst, h, **kw): return pa.t6_user_tone_post(inst["target_app"], h, **kw)
     # t7_moment_recommendation removed — moment instances now ride
     # personalized_recommendation_prompt with a voiced query_text.
-    def t8(inst, h): return pa.t8_dm_digest(inst["target_app"], h)
-    def t9(inst, h): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h)
-    def t10(inst, h): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"))
-    def t11(inst, h): return pa.t11_vague_refind(inst["topic"], h)
-    def t12(inst, h): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h)
-    def t13(inst, h): return pa.t13_send_post(inst["target_app"], inst["context"], h)
-    def t14(inst, h): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
-    def t16(inst, h): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"))
-    def t17(inst, h): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h, target_app=inst.get("target_app", "instagram"))
-    def t18(inst, h): return pa.t18_proactive_daily(h)
-    def t19(inst, h): return pa.t19_trending_alert(h)
+    def t8(inst, h, **kw): return pa.t8_dm_digest(inst["target_app"], h, **kw)
+    def t9(inst, h, **kw): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h, **kw)
+    def t10(inst, h, **kw): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"), **kw)
+    def t11(inst, h, **kw): return pa.t11_vague_refind(inst["topic"], h, **kw)
+    def t12(inst, h, **kw): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h, **kw)
+    def t13(inst, h, **kw): return pa.t13_send_post(inst["target_app"], inst["context"], h, **kw)
+    def t14(inst, h, **kw): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
+    def t16(inst, h, **kw): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"), **kw)
+    def t17(inst, h, **kw): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h, target_app=inst.get("target_app", "instagram"), **kw)
+    def t18(inst, h, **kw): return pa.t18_proactive_daily(h, **kw)
+    def t19(inst, h, **kw): return pa.t19_trending_alert(h, **kw)
 
     return {
         "agentic_user_tone_post": t6, "agentic_dm_digest": t8,
