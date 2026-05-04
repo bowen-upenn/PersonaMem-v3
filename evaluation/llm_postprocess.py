@@ -387,6 +387,92 @@ def _length_guidance(task_type: str, inst: dict | None = None,
     return "Length: 1–4 sentences."
 
 
+_CHATBOT_TRIPLET_FORBIDDEN_OPENERS = (
+    "clean ", "tighten ", "trim ", "shorten ", "edit ", "fix ", "polish ",
+    "rewrite ", "reword ", "copyedit", "make it sound", "translate ",
+    "proofread", "need a text", "need this text", "need it cleaned",
+    "for my friend", "for a girl",
+)
+
+
+def _triplet_passes_self_check(triplet: dict, held_out_preference: str) -> bool:
+    """Quick deterministic checks on a chatbot triplet before accepting it."""
+    if not isinstance(triplet, dict):
+        return False
+    uq = (triplet.get("user_query") or "").strip()
+    ex = (triplet.get("example_response") or "").strip()
+    inf = (triplet.get("inferior_response") or "").strip()
+    if not uq or not ex or not inf:
+        return False
+    uq_low = uq.lower()
+    if any(uq_low.startswith(p) for p in _CHATBOT_TRIPLET_FORBIDDEN_OPENERS):
+        return False
+    # Telegraph-phrase guard on the example response — same set as the
+    # generic example_response gen path.
+    if _TELEGRAPH_PHRASE_RE.search(ex):
+        return False
+    # Length sanity: example and inferior should be in the same band.
+    if len(ex.split()) > 140 or len(inf.split()) > 140:
+        return False
+    return True
+
+
+def _generate_chatbot_triplet(
+    llm: Callable[[str], str],
+    held_out_preference: str,
+    profile: dict,
+    user_voice: dict | None,
+    chatbot_persona: dict | None,
+    recent_topical_signals: list[str] | None = None,
+    max_attempts: int = 3,
+) -> dict | None:
+    """Generate a (user_query, example_response, inferior_response) triplet
+    for one chatbot_proactive_personalization test card via a single LLM call.
+
+    The prompt instructs the LLM to:
+      - write an open-ended user_query that does NOT mention the preference
+        verbatim (no copyedit / translate / compose / rewrite asks),
+      - write an example_response that weaves the preference IMPLICITLY
+        through content choice (no telegraph phrases like "as a fan of"),
+      - write a same-length, plausible, on-topic inferior_response that any
+        user could get (graceful degrade — misses the personalization).
+
+    This consolidates what PersonaMem-v2 split across `generate_user_question`
+    and `generate_answer_options`, with stricter anti-telegraphing rules and
+    explicit voice anchoring so the example response is more natural than v2.
+
+    Returns None if all attempts fail validation.
+    """
+    if not llm or not held_out_preference:
+        return None
+    from evaluation import prompts as _eval_prompts
+
+    prompt = _eval_prompts.chatbot_proactive_triplet_prompt(
+        held_out_preference=held_out_preference,
+        profile=profile or {},
+        user_voice=user_voice,
+        chatbot_persona=chatbot_persona,
+        recent_topical_signals=recent_topical_signals,
+    )
+    last: dict | None = None
+    for attempt in range(max_attempts):
+        try:
+            raw = llm(prompt)
+        except Exception:
+            continue
+        parsed = extract_json_from_response(raw)
+        if not isinstance(parsed, dict):
+            continue
+        last = {
+            "user_query": (parsed.get("user_query") or "").strip(),
+            "example_response": (parsed.get("example_response") or "").strip(),
+            "inferior_response": (parsed.get("inferior_response") or "").strip(),
+        }
+        if _triplet_passes_self_check(last, held_out_preference):
+            return last
+    return last  # graceful degrade — return last attempt even if it failed checks
+
+
 def _generate_example_response(llm: Callable[[str], str],
                                task_type: str, query: str,
                                grounding: str = "",
@@ -1791,6 +1877,9 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
     import data_preparation.visualize as _viz
     _viz._PERSONA_CONTEXT = _build_persona_context(user_id)
 
+    n_chatbot_triplet_built = 0
+    n_chatbot_triplet_failed = 0
+
     for task_id, items in bm.items():
         if not isinstance(items, list) or task_id not in _PERSONALIZATION_TASKS:
             continue
@@ -1812,6 +1901,56 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             inst["groundtruth_preference"] = groundtruth
             if "tool_call" in gt_out:
                 inst["tool_call"] = gt_out["tool_call"]
+
+            # ---- chatbot_proactive_personalization triplet regen ----------
+            # For chatbot proactive instances, replace the user_query (which
+            # was extracted from a multi-turn chatbot session and is often
+            # a copyedit / compose request that doesn't invite personalization)
+            # with a freshly-generated (user_query, example_response,
+            # inferior_response) triplet anchored on the held-out preference.
+            # Single LLM call. Skips the rest of this loop iteration's
+            # standard workstream-I/J generation paths.
+            if (task_id == "chatbot_proactive_personalization"
+                    and (inst.get("arm") or "proactive") == "proactive"
+                    and self_check_llm is not None
+                    and groundtruth):
+                t_test = int(inst.get("t_test") or inst.get("source_timestamp") or 0)
+                if t_test not in _ctx_cache:
+                    _ctx_cache[t_test] = _build_persona_ctx(bq, user_id, t_test)
+                ctx = _ctx_cache[t_test]
+                try:
+                    profile = bq._load_profile(user_id) if hasattr(bq, "_load_profile") else {}
+                except Exception:
+                    profile = {}
+                chatbot_app_persona = (ctx.get("app_personas") or {}).get("chatbot") or {}
+                user_voice_block = ctx.get("user_voice") or {}
+                topical_signals = [
+                    h for h, _ in (ctx.get("top_categories") or [])[:6]
+                ]
+                triplet = _generate_chatbot_triplet(
+                    self_check_llm, groundtruth, profile,
+                    user_voice=user_voice_block,
+                    chatbot_persona=chatbot_app_persona,
+                    recent_topical_signals=topical_signals,
+                )
+                if triplet and triplet.get("user_query") and triplet.get("example_response"):
+                    inst["user_query"] = triplet["user_query"]
+                    inst["example_response"] = triplet["example_response"]
+                    if triplet.get("inferior_response"):
+                        inst["inferior_response"] = {
+                            "text": triplet["inferior_response"],
+                            "flaw_kind": "missed_personalization",
+                            "flaw_evidence": {"_from": "chatbot_triplet_regen"},
+                        }
+                    n_chatbot_triplet_built += 1
+                    # Skip the rest of the standard workstream I/J path —
+                    # the triplet replaces user_query, example_response,
+                    # AND inferior_response in one shot.
+                    continue
+                else:
+                    n_chatbot_triplet_failed += 1
+                    # Fall through to the standard workstream-I/J path so
+                    # this instance still gets some example/inferior pair.
 
             # NEW pass: replace meta-instruction example_response with a
             # concrete one. The gold-gen LLM call receives ONLY the user
@@ -2009,7 +2148,9 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
               f"inferior_skipped={n_inferior_skipped} "
               f"voice_check_passed={n_voice_check_passed} "
               f"voice_check_failed={n_voice_check_failed} "
-              f"voice_check_regen={n_voice_check_regen}")
+              f"voice_check_regen={n_voice_check_regen} "
+              f"chatbot_triplet_built={n_chatbot_triplet_built} "
+              f"chatbot_triplet_failed={n_chatbot_triplet_failed}")
     bm["postprocess_stats"] = {
         "example_llm_gen": n_example_llm_gen,
         "example_ranking": n_example_ranking,

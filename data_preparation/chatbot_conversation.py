@@ -48,7 +48,13 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
             "composing chat messages",
             "composing social media posts",
         ],
-        "weight": 25.0,
+        "compatible_use_purposes": [
+            "draft messages or captions",
+        ],
+        "weight": 8.0,
+        # Editorial — preference hides in pasted draft. Routed straight to the
+        # control arm in build_benchmark.py:_EMBEDDED_CONV_TYPES.
+        "proactive_friendly": False,
     },
     "knowledge_query": {
         "description": "User asks a specific factual, how-to, or nuanced question that reveals hidden curiosity. "
@@ -60,18 +66,37 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
             "knowledge exploration",
             "medical consultations",
         ],
-        "weight": 30.0,
+        "compatible_use_purposes": [
+            "ask practical questions",
+            "work through ideas",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+        ],
+        "weight": 25.0,
+        "proactive_friendly": True,
     },
     "therapy_reflection": {
-        "description": "User discusses personal concerns, vents, or seeks life advice. The preference is NOT "
-                       "the topic of concern — it surfaces as incidental context while the user talks about "
-                       "something else. For example, a user who values fitness might say 'I've been stressed "
-                       "about work deadlines and it's cutting into my morning runs' — the concern is stress, "
-                       "the preference (running/fitness) is mentioned naturally as background.",
+        "description": "User vents or thinks out loud about a personal situation and asks the chatbot to help "
+                       "them process it — NOT to draft a message. The user's ASK is reflective: 'why does this "
+                       "keep happening', 'how do i feel about this', 'what do you make of this'. The preference "
+                       "is incidental context that surfaces as the user describes their situation. For example, "
+                       "a user who values fitness might say 'I keep snapping at my partner after long workdays "
+                       "and skipping my morning runs — i don't recognize myself lately. what gives?' — the ask "
+                       "is for self-understanding; the running/fitness preference is the backdrop. Do NOT have "
+                       "the user ask for a text/message/reply to be written. The user is talking to the bot "
+                       "about themselves, not asking it to compose anything.",
         "compatible_contexts": [
             "therapy and reflection",
         ],
-        "weight": 20.0,
+        "compatible_use_purposes": [
+            "reflect privately",
+        ],
+        "compatible_topical_focus": [
+            "relationship or life reflection",
+        ],
+        "weight": 22.0,
+        "proactive_friendly": True,
     },
     "troubleshooting": {
         "description": "User describes a practical problem and asks for a solution. The preference is embedded "
@@ -83,7 +108,16 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
             "knowledge exploration",
             "medical consultations",
         ],
-        "weight": 10.0,
+        "compatible_use_purposes": [
+            "ask practical questions",
+            "work through ideas",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "design and business help",
+        ],
+        "weight": 12.0,
+        "proactive_friendly": True,
     },
     "casual_chat": {
         "description": "User asks the chatbot to help compose a chat message or social reply to a friend, "
@@ -95,7 +129,13 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
             "knowledge exploration",
             "therapy and reflection",
         ],
-        "weight": 5.0,
+        "compatible_use_purposes": [
+            "draft messages or captions",
+        ],
+        "weight": 3.0,
+        # Composing — preference hides in message-being-composed. Routed
+        # straight to control arm.
+        "proactive_friendly": False,
     },
     "translation": {
         "description": "User provides text in another language and asks the chatbot to translate or rephrase it. "
@@ -105,7 +145,8 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "compatible_contexts": [
             "multilingual translation",
         ],
-        "weight": 10.0,
+        "weight": 3.0,
+        "proactive_friendly": False,
     },
     "health_consultation": {
         "description": "User asks a health or medical question. The preference surfaces through the specific "
@@ -115,7 +156,108 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "compatible_contexts": [
             "medical consultations",
         ],
+        "compatible_use_purposes": [
+            "ask practical questions",
+        ],
+        "compatible_topical_focus": [
+            "fitness and training",
+        ],
         "weight": 15.0,
+        "proactive_friendly": True,
+    },
+    "recommendation_seeking": {
+        "description": "User asks the chatbot for recommendations — what to watch tonight, a podcast worth "
+                       "binging on a road trip, a restaurant for date night, a workout to try this week, a "
+                       "book to pick up next, a gear upgrade, music for a specific mood. Personalization is "
+                       "the entire point — the response is supposed to reflect what THIS user is into right "
+                       "now. The preference surfaces through the assistant's choices (which titles / cuisines "
+                       "/ genres / brands it picks) and through the user's incidental framing ('something "
+                       "like X but lighter', 'I've been on a Y kick lately'). For example, a user into MMA "
+                       "might ask 'what's worth watching tonight, I want something I can get hyped about' "
+                       "and the assistant should pick combat-sport content over rom-coms.",
+        # Broadly compatible — recommendation-asking is one of the most common
+        # natural chatbot use cases. Eligible for any user with curiosity /
+        # entertainment / lifestyle / culture topical interests, regardless
+        # of their composing-vs-asking context split.
+        "compatible_contexts": [
+            "knowledge exploration",
+            "composing social media posts",
+            "composing chat messages",
+            "therapy and reflection",
+        ],
+        "compatible_use_purposes": [
+            "ask practical questions",
+            "work through ideas",
+            "draft messages or captions",
+            "reflect privately",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "fitness and training",
+            "relationship or life reflection",
+            "design and business help",
+        ],
+        "weight": 35.0,
+        "proactive_friendly": True,
+    },
+    "decision_support": {
+        "description": "User has 1–3 candidate options in mind and asks the chatbot to help compare or decide. "
+                       "Personalization is the lens — the user wants the chatbot to weigh the options against "
+                       "what THIS user values. The user names the options briefly ('A or B?', 'leaning between "
+                       "X and Y'); the assistant surfaces the dimensions that matter to this user. For example, "
+                       "a user into hip-hop culture asking 'open mic night vs. record store crawl, which one "
+                       "feels more like me right now?' — the assistant tilts toward the option that fits their "
+                       "current vibe. The user is NOT asking the assistant to compose, copyedit, or translate "
+                       "anything — only to help them choose.",
+        "compatible_contexts": [
+            "knowledge exploration",
+            "composing chat messages",
+            "therapy and reflection",
+        ],
+        "compatible_use_purposes": [
+            "ask practical questions",
+            "work through ideas",
+            "reflect privately",
+            "draft messages or captions",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "fitness and training",
+            "relationship or life reflection",
+            "design and business help",
+        ],
+        "weight": 12.0,
+        "proactive_friendly": True,
+    },
+    "discovery_open": {
+        "description": "User asks an open-ended 'what should i do / try / pick up' question with no specific "
+                       "category in mind. Mood- or vibe-driven. Personalization is the entire point — the "
+                       "assistant has to read the user's incidental framing (mood, time of day, recent vibe) "
+                       "and propose something that fits THIS user. For example, 'free saturday and the rain "
+                       "killed the cookout, give me something' or 'long week, brain is fried, what do i need "
+                       "tonight'. The preference surfaces in WHAT the assistant suggests. The user is NOT "
+                       "asking the assistant to compose, copyedit, or translate anything — they want a "
+                       "suggestion that lands for them specifically.",
+        "compatible_contexts": [
+            "knowledge exploration",
+            "therapy and reflection",
+            "composing chat messages",
+            "composing social media posts",
+        ],
+        "compatible_use_purposes": [
+            "work through ideas",
+            "ask practical questions",
+            "reflect privately",
+            "draft messages or captions",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "fitness and training",
+            "relationship or life reflection",
+            "design and business help",
+        ],
+        "weight": 10.0,
+        "proactive_friendly": True,
     },
 }
 
@@ -152,11 +294,36 @@ def _perturb_weights(base_weights: list[float], rng: random.Random,
 def select_conversation_type(
     user_chatbot_contexts: list[str],
     rng: random.Random,
+    user_use_purposes: list[str] | None = None,
+    user_topical_focus: list[str] | None = None,
 ) -> str:
-    """Pick a conversation type compatible with the user's chatbot contexts."""
+    """Pick a conversation type compatible with the user's chatbot AppPersona.
+
+    A conversation type is eligible when ANY of the three matchers fires:
+      - the user's `chatbot_contexts` includes one of the type's
+        `compatible_contexts`, OR
+      - the user's `use_purposes` includes one of the type's
+        `compatible_use_purposes`, OR
+      - the user's `topical_focus` includes one of the type's
+        `compatible_topical_focus`.
+
+    Pre-Layer-1 (legacy), only the first matcher fired. That left users whose
+    AppPersona put "ask practical questions" in `use_purposes` but did NOT
+    put "knowledge exploration" in `chatbot_contexts` getting only the
+    composing/reflection conversation types — and the resulting Task B
+    proactive arm got dominated by "clean this up" editorial drafts that
+    have no real personalization opportunity. Matching against use_purposes
+    + topical_focus unlocks `knowledge_query` / `troubleshooting` /
+    `health_consultation` / `recommendation_seeking` for those users.
+    """
+    use_purposes = user_use_purposes or []
+    topical_focus = user_topical_focus or []
     eligible: list[tuple[str, float]] = []
     for ctype, spec in CHATBOT_CONVERSATION_TYPES.items():
-        if any(ctx in spec["compatible_contexts"] for ctx in user_chatbot_contexts):
+        ctxs_ok = any(ctx in spec.get("compatible_contexts", []) for ctx in user_chatbot_contexts)
+        purposes_ok = any(p in spec.get("compatible_use_purposes", []) for p in use_purposes)
+        topics_ok = any(t in spec.get("compatible_topical_focus", []) for t in topical_focus)
+        if ctxs_ok or purposes_ok or topics_ok:
             eligible.append((ctype, spec["weight"]))
 
     if not eligible:
@@ -273,6 +440,8 @@ def generate_chatbot_conversations(
 
     rng = random.Random(user_seed * 1301 + 7)
     user_contexts = chatbot_persona.get("chatbot_contexts", [])
+    user_use_purposes = chatbot_persona.get("use_purposes", [])
+    user_topical_focus = chatbot_persona.get("topical_focus", [])
 
     # --- Phase 1: Sequential RNG decisions + prompt building ---
     # (Must be sequential to keep RNG deterministic)
@@ -289,7 +458,11 @@ def generate_chatbot_conversations(
         rec["conversation_type"] = None
         rec["ask_to_forget"] = False
 
-        conv_type = select_conversation_type(user_contexts, rng)
+        conv_type = select_conversation_type(
+            user_contexts, rng,
+            user_use_purposes=user_use_purposes,
+            user_topical_focus=user_topical_focus,
+        )
         variant: str | None = pick_conversation_variant(interaction_type, rng)
 
         # Pick the "primary" preference that the variant acts on.
@@ -357,6 +530,9 @@ def generate_chatbot_conversations(
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
                 interaction_type=interaction_type, num_turns=num_turns,
                 user_voice=user_voice,
+                proactive_friendly=bool(
+                    CHATBOT_CONVERSATION_TYPES[conv_type].get("proactive_friendly", False)
+                ),
             )
 
         work_items.append((i, prompt, conv_type, variant))
