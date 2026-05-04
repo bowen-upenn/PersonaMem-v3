@@ -206,9 +206,8 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
         ),
         "candidates": cands,
         "rubric_tags": [
-            "Place the held-out target at rank 1.",
-            "Avoid known-negative items in top-3.",
-            "Order non-target items by recency of engagement.",
+            "Rank the held-out target at #1.",
+            "Avoid known-negatives in top-3; order remaining items by recency.",
         ],
     }
 
@@ -233,10 +232,11 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
             "implicitly weaves in the held-out preference where it fits. "
             "Match the user's tone; do not parrot the preference verbatim."
         )
-        groundtruth_preference = (
-            f"Persona item: {held_pi}"
-            + (f"\nCategory: {held_cat}" if held_cat else "")
-        )
+        # Per the test-card spec, Groundtruth Preference renders ONLY the
+        # preference itself — no "Persona item:" / "Category:" labels. The
+        # category is still available on `groundtruth_preference_obj` for
+        # downstream consumers that need the structured form.
+        groundtruth_preference = held_pi
     else:
         example_response = (
             "Generic, well-researched answer to the user's question — no "
@@ -250,9 +250,8 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         "top_k_relevant": top_k,
         "prior_conversation": prior[-6:] if prior else [],
         "rubric_tags": [
-            "Weave in the held-out preference only if it fits the question.",
-            "Do not surface unrelated preferences (avoid_overpersonalization).",
-            "Match the user's tone; never lecture.",
+            "Weave in the held-out preference only when it fits — don't surface unrelated ones.",
+            "Match the user's tone; don't lecture.",
         ],
     }
 
@@ -269,7 +268,7 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
         "groundtruth_preference": "",
         "correct_but_irrelevant_prefs": top_k,
         "rubric_tags": [
-            "Do not surface any personal preferences (avoid_overpersonalization).",
+            "Don't surface any personal preferences.",
         ],
     }
 
@@ -424,9 +423,8 @@ def _gt_at_ai_directive(inst: dict) -> dict:
         ]),
         "candidates": cand_list,
         "rubric_tags": [
-            f"Honor the @ai directive '{action}'.",
-            "Top-1 should be an item matching past @ai-positive signal.",
-            "Do not surface @ai-negative carve-outs in top-3.",
+            f"Honor the @ai directive '{action}'; top-1 should match past @ai-positive signal.",
+            "Don't surface @ai-negative carve-outs in top-3.",
         ],
     }
 
@@ -446,8 +444,7 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
             "avoids the items the agent should not mention."
         )
         rubrics = [
-            "Detect the cross-signal contradiction and warn proactively.",
-            "Mention the items listed under 'should mention'; avoid the items listed under 'should not mention'.",
+            "Warn proactively about the contradiction; mention the right items, avoid the wrong ones.",
             "Phrase respectfully and actionably.",
         ]
     else:
@@ -457,8 +454,7 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
             "no hypothetical concern raised."
         )
         rubrics = [
-            "Do NOT issue a warning (this is a control scenario with no real contradiction).",
-            "Avoid the items listed under 'should not mention'.",
+            "Don't issue a warning — no real contradiction here.",
         ]
     gtp_lines = [scenario_label, f"What might go wrong: {summary}"]
     if must_mention:
@@ -503,7 +499,7 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "candidates": cand_list,
         "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
         "rubric_tags": [
-            "Reject all candidates — none is relevant to this query (avoid_overpersonalization).",
+            "Reject all candidates — none is relevant to this query.",
         ],
     }
 
@@ -522,7 +518,7 @@ def _gt_preference_removal_regen(inst: dict) -> dict:
         "held_out_pref": held.get("persona_item", ""),
         "top_k_relevant": [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")],
         "rubric_tags": [
-            "Do not use the removed preference (avoid_overpersonalization).",
+            "Don't use the removed preference.",
         ],
     }
 
@@ -546,7 +542,7 @@ def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
             "t_late": inst.get("t_late"),
         },
         "rubric_tags": [
-            "Top-1 at t_late should follow the shift_category, not the pre-dominant one (avoid_overpersonalization).",
+            "At t_late, top-1 should follow the shift_category — not the pre-dominant one.",
         ],
     }
 
@@ -564,8 +560,7 @@ def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
         ),
         "extra_meta": {"n_queries": len(queries)},
         "rubric_tags": [
-            "Vary which preferences you surface across the sequence.",
-            "Avoid reusing a preference already surfaced earlier (avoid_overpersonalization).",
+            "Vary which preferences you surface — don't reuse one already surfaced earlier.",
         ],
     }
 
@@ -585,8 +580,7 @@ def _gt_context_shift_scenarios(inst: dict) -> dict:
         "carve_out": _truncate(inst.get("carve_out", ""), 200),
         "forbidden_items": forbidden,
         "rubric_tags": [
-            "Recognize the context shift; do not assume prior preferences apply.",
-            "Do not surface forbidden_items (avoid_overpersonalization).",
+            "Recognize the context shift; don't apply prior preferences (no items from forbidden list).",
         ],
     }
 
@@ -620,9 +614,8 @@ def _gt_daily_personalized_briefing(inst: dict) -> dict:
         "example_response": example,
         "groundtruth_preference": "\n".join(gtp_lines) or "(no recent prefs available)",
         "rubric_tags": [
-            "Reference ≥1 hashtag from gt_positive_engagements (preference_alignment).",
-            "Avoid hashtags in gt_avoid_engagements (negative_leakage).",
-            "Do not surface unrelated preferences (avoid_overpersonalization).",
+            "Reference ≥1 hashtag the user has positively engaged with.",
+            "Avoid disliked hashtags and unrelated topics.",
         ],
     }
 
@@ -673,7 +666,7 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             ),
             "candidates": cand_list,
             "rubric_tags": [
-                "Top-1 must be the held-out item (recall_at_k, hit_at_k, ndcg_at_k, mrr).",
+                "Top-1 must be the held-out item.",
                 "Hard negatives should rank below all genuine matches.",
             ],
         }
@@ -719,8 +712,7 @@ def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
             + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)")
         ),
         "rubric_tags": [
-            "Surface long-term prefs when relevant.",
-            "Treat short-term prefs past expected_stop_ts as expired (stale_preference_use).",
+            "Surface long-term prefs when relevant; treat short-term prefs past expected_stop_ts as expired.",
         ],
     }
 
@@ -1021,15 +1013,61 @@ def _gt_agentic(inst: dict) -> dict:
 
     if arm == "overpersonalization":
         rubric = [
-            "Tool-call sequence + final state match (tool_call_match).",
-            "Avoid surfacing user preferences (avoid_overpersonalization).",
+            "Avoid surfacing user preferences; complete the task generically.",
         ]
     else:
-        rubric = [
-            "Tool-call sequence + final state match (tool_call_match).",
-            "Match the user's voice when composing content (voice_match).",
-            "Surface relevant preferences only when they fit (preference_alignment + avoid_overpersonalization).",
-        ]
+        # Per-task rubric_tags so each task surfaces what's actually graded
+        # by personalization_rubric.py for it — instead of three generic
+        # lines that don't apply to read-only / search / digest tasks.
+        _AGENTIC_TASK_RUBRICS: dict[str, list[str]] = {
+            # Voice-matching write tasks (T9/T10/T12/T13/T6) — voice + content
+            # alignment + the actual write tool call.
+            "agentic_user_tone_post": [
+                "Match the user's voice; reference what they've recently engaged with.",
+                "Don't include anything they wouldn't post publicly.",
+            ],
+            "agentic_cross_app_repost": [
+                "Adapt the source post to the target app's voice; preserve the core point.",
+                "Call create_post on the target app exactly once.",
+            ],
+            "agentic_auto_reply": [
+                "Reply in the user's voice; address the inbound message.",
+                "Send the DM exactly once; don't make commitments the user hasn't implied.",
+            ],
+            "agentic_composed_post": [
+                "Rewrite the user's update in their voice for this app.",
+                "Call create_post exactly once.",
+            ],
+            "agentic_send_post": [
+                "Compose the post in the user's voice on the target app.",
+                "Call create_post on the target app exactly once; don't post on any other app.",
+            ],
+            # Read-only summary / search / surfacing tasks — content fidelity only.
+            "agentic_dm_digest": [
+                "Summarize the relevant DM threads accurately; respect privacy.",
+            ],
+            "agentic_group_dm_summary": [
+                "Per-participant summary; identify decision points; suggest a reply in the user's voice.",
+                "Don't actually send the reply.",
+            ],
+            "agentic_vague_refind": [
+                "Identify the post the user is recalling; cite app + identifying detail (title/caption/hashtags).",
+            ],
+            "agentic_proactive_daily_catchup": [
+                "Surface 3-5 catch-up items aligned with the user's recent activity; avoid disliked topics.",
+            ],
+            "agentic_trending_alert": [
+                "Flag trending topics aligned with the user's interests; skip explicitly disliked ones.",
+            ],
+            "agentic_wrong_recipient_check": [
+                "If two contacts share the name, ASK for disambiguation rather than send.",
+                "Sensitive topics warrant extra caution.",
+            ],
+        }
+        rubric = _AGENTIC_TASK_RUBRICS.get(task_id, [
+            "Match the user's voice when composing content.",
+            "Surface relevant preferences only when they fit; don't overpersonalize.",
+        ])
     return {
         "example_response": example_response,
         "groundtruth_preference": groundtruth_preference,
@@ -2748,17 +2786,24 @@ if (eventsData.length === 0) {{
         tsDisplay = `${{pad(d.getUTCHours())}}:${{pad(d.getUTCMinutes())}}, ${{pad(d.getUTCMonth()+1)}}/${{pad(d.getUTCDate())}}/${{d.getUTCFullYear()}}`;
       }}
 
-      // Build rich-info sections — only render keys the extractor populated.
-      // Workstream C+H: four-section schema (Example Response, Tool Call,
-      // Groundtruth Preference, Rubric Dimensions). The legacy
-      // "Expected (ground truth)", "Tool-call rules", and "Final-state
-      // expected (writes.jsonl diff)" sections are all replaced.
+      // Test-card spec: only the 5 user-facing labels render —
+      //   1. User Query (rendered separately below the metadata strip)
+      //   2. Example Response
+      //   3. Inferior Response
+      //   4. Groundtruth Preference (just the preference itself)
+      //   5. Rubric dimensions
+      // Plus TWO task-essential extras when populated and informative:
+      //   • Tool Call — for agentic write tasks where the gold IS a tool call
+      //   • Candidate pool — for ranking tasks where the gold IS picking from a list
+      // Everything else (Held-out preference, Other supporting preferences,
+      // Correct but irrelevant preferences, Cross-signal evidence, Irrelevant
+      // prefs, Carve-out, Meta) is intentionally NOT rendered: it's either
+      // redundant with Groundtruth Preference or grader-internal context.
+      const isAgenticWrite = (t.task_type || '').match(/^agentic_(auto_reply|cross_app_repost|composed_post|send_post)$/);
+      const isRanking = (t.task_type || '').match(/^(personalized_feed_ranking|personalized_recommendation|at_ai_directive_followup|short_vs_long_term_lifecycle)$/);
+
       let sections = '';
       if (t.example_response) {{
-        // Example Response renders plain (no bolding). The bold anchors
-        // belong in Groundtruth Preference — see below — so reviewers can
-        // see what GT signal drove the example AND what the inferior failed
-        // to use, side-by-side with the GT itself.
         sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
       }}
       if (t.inferior_response && t.inferior_response.text) {{
@@ -2775,25 +2820,20 @@ if (eventsData.length === 0) {{
           ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(t.inferior_response.regen_reason)}})</small>` : '';
         sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small>${{smoke}}${{regen}}</div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
       }}
-      if (Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
+      if (isAgenticWrite && Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
         const calls = t.tool_call.map(tc => {{
           const args = tc.args ? JSON.stringify(tc.args) : '{{}}';
           return `<li><code>${{escapeHtml(tc.tool || '?')}}(${{escapeHtml(args)}})</code></li>`;
         }}).join('');
         sections += `<div class="ts-section"><div class="ts-label">Tool Call (ordered)</div><ol class="ts-list ts-mono">${{calls}}</ol></div>`;
       }}
-      if (Array.isArray(t.candidates) && t.candidates.length > 0) {{
+      if (isRanking && Array.isArray(t.candidates) && t.candidates.length > 0) {{
         const items = t.candidates.map(c => {{
           const tag = `<span class="ts-origin ts-origin-${{escapeHtml(c.origin || '')}}">${{escapeHtml(c.origin || '')}}</span>`;
           const star = c.is_held_out ? ' <span class="ts-target">★ target</span>' : '';
-          // Compact ±Xd delta vs the test moment so a reviewer can see at
-          // a glance how recent each candidate is.
           const delta = c.ts_delta_label
             ? ` <span class="ts-delta">${{escapeHtml(c.ts_delta_label)}}</span>`
             : '';
-          // Render title + hashtags inline at the same font size so a
-          // candidate without a title doesn't visually shrink relative to
-          // one that has both.
           const tags = (c.hashtags || []).slice(0, 4).map(h => `#${{escapeHtml(String(h).replace(/^#/, ''))}}`).join(' ');
           const title = escapeHtml(c.title || '');
           const body = [title, tags].filter(Boolean).join(' ');
@@ -2801,46 +2841,16 @@ if (eventsData.length === 0) {{
         }}).join('');
         sections += `<div class="ts-section"><div class="ts-label">Candidate pool (${{t.candidates.length}} items)</div><ul class="ts-list">${{items}}</ul></div>`;
       }}
-      // Render Groundtruth Preference whenever an Example Response is
-      // present (every personalization task carries one). Restraint-arm
-      // instances have an empty body — that's intentional and signals
-      // "no preference should be surfaced here".
-      // Bolded spans (when present): the specific GT tokens that the
-      // example_response actually used (and that the inferior_response
-      // is built to miss). Lets a reviewer see at a glance "the example
-      // honored these anchors; the inferior dropped them."
+      // Groundtruth Preference — clean, just the preference itself. No
+      // "Persona item:" / "Category:" labels (those are stripped at the
+      // extractor in TEST_GT_EXTRACTORS). Bold spans highlight voice
+      // anchors when example_response_voice_evidence is populated.
       if (t.example_response || t.groundtruth_preference) {{
         const gtEsc = escapeHtml(t.groundtruth_preference || '');
         const gtHtml = boldVoiceEvidence(gtEsc, t.example_response_voice_evidence || []);
         const gtHint = (Array.isArray(t.example_response_voice_evidence) && t.example_response_voice_evidence.length > 0)
           ? ` <small style="color:var(--text-secondary);font-weight:normal;">(bold = anchors the example uses; inferior misses them)</small>` : '';
         sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference${{gtHint}}</div><div class="ts-body" style="white-space:pre-wrap;">${{gtHtml}}</div></div>`;
-      }}
-      if (t.held_out_pref) {{
-        sections += `<div class="ts-section"><div class="ts-label">Held-out preference</div><div class="ts-body">${{escapeHtml(t.held_out_pref)}}</div></div>`;
-      }}
-      if (Array.isArray(t.top_k_relevant) && t.top_k_relevant.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Other supporting preferences (use sparingly, only if relevant)</div><ul class="ts-list">${{t.top_k_relevant.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
-      if (Array.isArray(t.correct_but_irrelevant_prefs) && t.correct_but_irrelevant_prefs.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Correct but irrelevant preferences (do NOT surface these here)</div><ul class="ts-list">${{t.correct_but_irrelevant_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
-      if (Array.isArray(t.signal_evidence) && t.signal_evidence.length > 0) {{
-        const items = t.signal_evidence.map(s => `<li><code>${{escapeHtml(s.source || '')}}</code> @${{escapeHtml(String(s.ts || ''))}} <small>${{escapeHtml(s.ref || '')}}</small><br>${{escapeHtml(s.quote || '')}}</li>`).join('');
-        sections += `<div class="ts-section"><div class="ts-label">Cross-signal evidence (mistake reasoning)</div><ul class="ts-list">${{items}}</ul></div>`;
-      }}
-      if (Array.isArray(t.irrelevant_persona_items) && t.irrelevant_persona_items.length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Irrelevant prefs (distractors agent must reject)</div><ul class="ts-list">${{t.irrelevant_persona_items.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
-      if (t.carve_out) {{
-        sections += `<div class="ts-section"><div class="ts-label">Carve-out (context shift)</div><div class="ts-body">${{escapeHtml(t.carve_out)}}</div></div>`;
-      }}
-      // forbidden_items intentionally NOT rendered as a standalone red
-      // block — it's already listed inside groundtruth_preference for
-      // over_personalization_context_shift, so the red section was
-      // redundant.
-      if (t.extra_meta && Object.keys(t.extra_meta).length > 0) {{
-        sections += `<div class="ts-section"><div class="ts-label">Meta</div><div class="ts-body ts-mono">${{escapeHtml(JSON.stringify(t.extra_meta, null, 2))}}</div></div>`;
       }}
       const tags = (t.rubric_tags || []).filter(Boolean);
       if (tags.length > 0) {{
