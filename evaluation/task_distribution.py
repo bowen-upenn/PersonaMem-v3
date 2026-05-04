@@ -18,38 +18,44 @@ from typing import Iterable
 # spread of 40 : 1). Targeted total per user ≈ 220-230.
 TASK_TARGETS: dict[str, dict[str, int]] = {
     # Core eval signals — get the most stat power
-    "chatbot_proactive_personalization":      {"min": 10, "max": 14},
-    "over_personalization_chatbot_text":      {"min": 10, "max": 14},
-    "over_personalization_distractor_reject": {"min": 10, "max": 14},
-    # Sensitive-event task is gated by the synthetic sensitive_life_event
-    # persona — 1–3 episodes per user → at most 3 instances. data_dependent
-    # so the audit treats the floor as advisory, not enforced.
-    "over_personalization_sensitive_event":   {"min": 1,  "max": 3, "data_dependent": True},
+    "chatbot_proactive_personalization":      {"min": 8,  "max": 9},
+    "over_personalization_chatbot_text":      {"min": 8,  "max": 10},
+    "over_personalization_distractor_reject": {"min": 8,  "max": 10},
+    # Sensitive-event task — one probe per planted evidence row
+    # (2–4 rows per episode × 1–3 episodes) → up to ~12 instances.
+    # data_dependent so the audit treats the floor as advisory.
+    "over_personalization_sensitive_event":   {"min": 2,  "max": 12, "data_dependent": True},
     "personalized_feed_ranking":              {"min": 10, "max": 14},
 
     # Secondary tasks
     "at_ai_directive_followup":               {"min": 8,  "max": 12},
-    "daily_personalized_briefing":            {"min": 8,  "max": 12},
+    "daily_personalized_briefing":            {"min": 5,  "max": 6},
     # Renamed from personalized_search_ranking — workstream D.
-    "personalized_recommendation":            {"min": 8,  "max": 12},
+    # Bumped to 30/35 — proactive recsys slate is the headline ranking task
+    # and was severely under-supplied (5/user) under the old day-only gating.
+    # Bumped max from 35 → 40 to accommodate moment-flavored instances
+    # (formerly agentic_moment_recommendation, target ~5/user) which now
+    # land in this bucket alongside the proactive recsys instances.
+    "personalized_recommendation":            {"min": 30, "max": 40},
     "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
-    "active_mistake_prevention":              {"min": 8,  "max": 12},
-    "preference_removal_regen":               {"min": 8,  "max": 12},
+    "active_mistake_prevention":              {"min": 5,  "max": 6},
+    "preference_removal_regen":               {"min": 6,  "max": 8},
 
     # Restraint sub-types
-    "repetition_fatigue_pairs":               {"min": 6,  "max": 10},
+    "repetition_fatigue_pairs":               {"min": 5,  "max": 6},
     "repetition_fatigue_sequences":           {"min": 6,  "max": 10},
-    "over_personalization_context_shift":     {"min": 6,  "max": 10},
+    "over_personalization_context_shift":     {"min": 5,  "max": 6},
 
     # Agentic — uniform target across 14 tasks
-    "agentic_user_tone_post":                {"min": 5,  "max": 8},
-    "agentic_moment_recommendation":          {"min": 5,  "max": 8},
+    "agentic_user_tone_post":                {"min": 5,  "max": 5},
+    # agentic_moment_recommendation merged into personalized_recommendation
+    # — quota for moment instances now lands inside personalized_recommendation.
     "agentic_dm_digest":                      {"min": 5,  "max": 8},
-    "agentic_cross_app_repost":               {"min": 5,  "max": 8},
-    "agentic_auto_reply":                     {"min": 5,  "max": 8},
-    "agentic_vague_refind":                   {"min": 5,  "max": 8},
-    "agentic_composed_post":                  {"min": 5,  "max": 8},
-    "agentic_send_post":                      {"min": 5,  "max": 8},
+    "agentic_cross_app_repost":               {"min": 5,  "max": 5},
+    "agentic_auto_reply":                     {"min": 5,  "max": 5},
+    "agentic_vague_refind":                   {"min": 5,  "max": 5},
+    "agentic_composed_post":                  {"min": 5,  "max": 6},
+    "agentic_send_post":                      {"min": 5,  "max": 5},
     # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},
