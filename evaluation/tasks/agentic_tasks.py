@@ -793,7 +793,15 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
     app and repost it to a target app. Persona-relevance filter: the
     source post's hashtags must intersect the user's top-20 hashtags so
     voice + hashtag adaptation is a meaningful signal. Generic posts the
-    user happened to like are skipped."""
+    user happened to like are skipped.
+
+    Caption-length filter: prefer source posts with substantive captions
+    (≥ 80 chars) so the rewritten example/inferior have enough material
+    to differ on voice. Fall back to the longest available caption when
+    no candidate clears the bar — the user reported one-liner sources
+    making example/inferior trivially short and indistinguishable.
+    """
+    MIN_CAPTION_CHARS = 80
     idx = _build_persona_topic_index(bq, user_id, t_anchor)
     PAIRS = [
         ("instagram", "threads"),
@@ -819,10 +827,26 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
         ]
         if not candidates:
             continue
-        src = candidates[-1]
+        # Prefer substantive captions; fall back to the longest available.
+        long_enough = [
+            e for e in candidates
+            if len((e.get("content") or {}).get("caption", "") or "") >= MIN_CAPTION_CHARS
+        ]
+        if long_enough:
+            src = long_enough[-1]
+        else:
+            src = max(
+                candidates,
+                key=lambda e: len((e.get("content") or {}).get("caption", "") or ""),
+            )
         source_post = {
             "caption": (src.get("content") or {}).get("caption", ""),
             "hashtags": src.get("source_hashtags", []),
+            # source_object_id propagates so _build_agentic_tool_call can
+            # populate `{src_app}_get_post.args.post_id` with a real id —
+            # the previous empty stub left the tool call obviously fake.
+            "source_object_id": src.get("source_object_id", ""),
+            "source_timestamp": src.get("source_timestamp", 0),
         }
         overlap = sorted({
             (h or "").lstrip("#").lower()
@@ -944,14 +968,46 @@ def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int)
 
 
 def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Chatbot → target_app dispatch. 6 examples spread across apps."""
+    """Chatbot → target_app dispatch. 6 examples spread across apps.
+
+    Each `context` is a multi-sentence first-person narration the user
+    might dictate to a chatbot before asking it to post on their behalf.
+    Long-enough so the agent has substantive material to compose with;
+    short examples produced one-line posts where the example_response and
+    inferior_response barely differed.
+    """
     contexts = [
-        ("threads", "I was just saying that discipline is what carries when motivation fades."),
-        ("instagram", "That gym selfie from this morning — want to post it."),
-        ("facebook", "Thinking about last night's family dinner. Wanted to share with the group."),
-        ("threads", "this whole 'algorithm vs taste' debate has been on my mind. quick take to post."),
-        ("instagram", "the iced coffee + bookshelf shot from this afternoon. minimal caption."),
-        ("facebook", "wanted to flag the local food drive to my friends list this weekend."),
+        ("threads",
+         "I was just saying that discipline is what carries when motivation fades — "
+         "that 5am-when-you-don't-feel-like-it streak is what actually moves the "
+         "needle, not the highlight reels everyone's posting. Want a quick threads "
+         "take on that, in my voice, no listicle vibes."),
+        ("instagram",
+         "Pulled off a clean session at the gym this morning — felt strong, hit the "
+         "lift I've been chasing for weeks, then got a decent shot in the mirror "
+         "after. Wanting to post the photo with a caption that's hype but not "
+         "preachy, just a real moment."),
+        ("facebook",
+         "Last night's family dinner was actually one of the good ones — my niece "
+         "made the dessert from scratch, my uncle finally stopped arguing about "
+         "politics for a whole hour, and we ended up looking at old photos until "
+         "almost midnight. Want to share something for the family group, warm but "
+         "not corny."),
+        ("threads",
+         "This 'algorithm vs taste' debate keeps coming up and I keep biting my "
+         "tongue. People are blaming the algorithm for stuff that's just lazy "
+         "scrolling — your taste is whatever you're willing to sit with for more "
+         "than three seconds. Quick take to post, sharper than usual."),
+        ("instagram",
+         "Took an iced-coffee-on-the-bookshelf shot this afternoon — the light was "
+         "nice, the spine of the book I'm halfway through is in frame, and the mug "
+         "is the chipped one I refuse to throw out. Want a minimal caption to go "
+         "with it, nothing precious."),
+        ("facebook",
+         "The neighborhood food drive is happening this weekend and last year was "
+         "kind of underwhelming on volunteer turnout. Trying to nudge my friends "
+         "list to actually show up this time — drop-off spot is the church on the "
+         "corner, Saturday 10–2. Keep it warm, not naggy."),
     ]
     return [
         {"instance_id": f"t13_{i}", "task_id": "agentic_send_post", "entry_point": "chatbot_routed",

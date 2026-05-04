@@ -1085,9 +1085,26 @@ def _gt_agentic(inst: dict) -> dict:
             gtp_lines.append(f"Source post: {_truncate(sp.get('caption',''), 100)}")
         if inst.get("recipient_name"):
             gtp_lines.append(f"Recipient name (collision): {inst['recipient_name']}")
+        # T6 specifically — narrate the underlying preference behind the
+        # user's ask so the reviewer sees WHY the user chose this seed
+        # topic. Pulls from `_t6_seed` which keys off instance_id, so the
+        # same persona_item shown here is the one the User Query topic
+        # was derived from.
+        if task_id == "agentic_user_tone_post":
+            t6_seed = _t6_seed(inst)
+            if t6_seed.get("persona_item"):
+                gtp_lines.append(
+                    f"Behind the user's ask: {_truncate(t6_seed['persona_item'], 160)}"
+                )
         groundtruth_preference = "\n".join(gtp_lines) or "(persona context — see profile)"
 
-    tool_call = _build_agentic_tool_call(inst, example_response)
+    # Prefer the LLM-postprocessed example_response (set on inst by
+    # llm_postprocess) over the placeholder fallback in `example_responses`.
+    # Without this preference the tool_call's `args.text` carries a generic
+    # stub even when the rendered Example Response section shows the
+    # in-context LLM-generated text — the two end up out of sync.
+    final_example_for_tool = (inst.get("example_response") or "").strip() or example_response
+    tool_call = _build_agentic_tool_call(inst, final_example_for_tool)
 
     if arm == "overpersonalization":
         rubric = [
@@ -1256,8 +1273,79 @@ def _q_active_mistake_prevention(inst: dict) -> str:
     return inst.get("user_query") or inst.get("triggering_user_query") or "[mistake-prevention probe]"
 
 
+def _t6_seed(inst: dict) -> dict:
+    """Deterministically pick a seed topic + underlying persona_item for an
+    `agentic_user_tone_post` instance.
+
+    Index by hash of `instance_id` so different T6 instances of the same
+    user get different topics. Returns:
+      {"topic": "<short noun phrase, lowercase>", "persona_item": "<the
+       underlying preference whose engagement signal anchors this topic>"}
+
+    Builds a pre-aligned pool of `(topic, pref)` pairs where the topic is
+    a hashtag the pref actually carries — guarantees the surfaced GT
+    persona_item matches the picked topic (no boxing-vs-entertainment
+    drift). Falls back gracefully when the persona context is empty.
+    """
+    iid = str(inst.get("instance_id") or inst.get("task_id") or "")
+    top_hashtags_raw = _PERSONA_CONTEXT.get("top_hashtags") or []
+    top_prefs = _PERSONA_CONTEXT.get("top_prefs") or []
+    pref_meta = _PERSONA_CONTEXT.get("pref_meta") or {}
+    if not top_hashtags_raw or not top_prefs:
+        return {"topic": "", "persona_item": ""}
+    _BANAL = {"life", "love", "selfie", "photo", "vibes", "mood"}
+    top_hashtags = {h.lower().lstrip("#") for h, _ in top_hashtags_raw if h.lower() not in _BANAL}
+    # Aligned pool: each entry pairs a topic with the most-engaged pref
+    # whose source_hashtags carry that topic.
+    aligned: list[tuple[str, str]] = []
+    seen_topics: set[str] = set()
+    for pi, _cnt in top_prefs:
+        meta = pref_meta.get(pi) or {}
+        ph_list = [str(h).lower().lstrip("#") for h in (meta.get("source_hashtags") or [])]
+        for ph in ph_list:
+            if ph and ph in top_hashtags and ph not in seen_topics:
+                aligned.append((ph, pi))
+                seen_topics.add(ph)
+                break  # one topic per pref keeps diversity
+    # Fallback: any top_hashtag, paired with top_prefs[0].
+    if not aligned:
+        for h, _ in top_hashtags_raw:
+            if h.lower() not in _BANAL:
+                aligned.append((h.lower().lstrip("#"), top_prefs[0][0]))
+                break
+    if not aligned:
+        return {"topic": "", "persona_item": ""}
+    idx = sum(map(ord, iid)) % len(aligned)
+    topic, chosen_pi = aligned[idx]
+    return {"topic": topic, "persona_item": chosen_pi}
+
+
 def _q_agentic_user_tone_post(inst: dict) -> str:
-    return f"[agentic] compose a post in the user's voice on {inst.get('target_app', '')}"
+    """First-person, scope-narrowed query. The user names a topic so the
+    agent has something concrete to write about. Seed comes from the user's
+    own engagement history (see `_t6_seed`).
+
+    Falls back to the legacy generic form when no seed is available (e.g.
+    sparse user data).
+    """
+    seed = _t6_seed(inst)
+    topic = (seed.get("topic") or "").lstrip("#")
+    app = (inst.get("target_app") or "").strip()
+    entry = (inst.get("entry_point") or "").strip()
+    if not topic:
+        return f"[agentic] compose a post in the user's voice on {app}"
+    # Pick a template based on app + entry_point to vary phrasing across
+    # the 6 T6 instances per user without going random.
+    templates = {
+        ("instagram", "app_native"):    "wanna post about {topic} on instagram, write it for me",
+        ("instagram", "chatbot_routed"): "draft me an instagram caption about {topic}",
+        ("facebook",  "app_native"):    "post about {topic} on facebook, keep it in my voice",
+        ("facebook",  "chatbot_routed"): "draft a facebook post about {topic} — sound like me",
+        ("threads",   "app_native"):    "drop a threads about {topic}, my style",
+        ("threads",   "chatbot_routed"): "write me a threads post about {topic}",
+    }
+    template = templates.get((app, entry)) or f"post about {{topic}} on {app}, write it in my voice"
+    return template.format(topic=topic)
 
 
 # _q_agentic_moment_recommendation removed — moment instances now ride
@@ -1271,8 +1359,20 @@ def _q_agentic_dm_digest(inst: dict) -> str:
 
 def _q_agentic_cross_app_repost(inst: dict) -> str:
     src = inst.get("source_post") or {}
-    cap = (src.get("caption") or "")[:120]
-    return f"[agentic] repost this to {inst.get('target_app', '')}: {cap}"
+    cap = (src.get("caption") or "").strip()
+    src_app = inst.get("source_app") or "the other app"
+    tgt = inst.get("target_app") or "the target app"
+    if not cap:
+        return f"crosspost my latest {src_app} post over to {tgt} — adapt it to my voice"
+    # First-person, scope-narrowed framing: the user names what they posted
+    # on the source app and explicitly asks for a voice-adapted repost on
+    # the target app. The full caption is included so the agent has
+    # concrete material to rewrite (and the reviewer can see what's
+    # being adapted in the Example / Inferior responses).
+    return (
+        f"crosspost this from {src_app} to {tgt} — adapt it to my voice for that audience: "
+        f"\"{cap}\""
+    )
 
 
 def _q_agentic_auto_reply(inst: dict) -> str:
@@ -1290,9 +1390,17 @@ def _q_agentic_composed_post(inst: dict) -> str:
 
 
 def _q_agentic_send_post(inst: dict) -> str:
-    ctx = inst.get("context") or ""
-    target = inst.get("target_app") or ""
-    return f"[chat → post on {target}] {ctx}" if ctx else f"[chat → post on {target}]"
+    ctx = (inst.get("context") or "").strip()
+    target = inst.get("target_app") or "the target app"
+    if not ctx:
+        return f"can you post something for me on {target}?"
+    # The user dictates context to the chatbot, then asks for a post.
+    # First-person, scope-narrowed: the user names what they want posted
+    # and explicitly delegates the writing to the chatbot. Strip a trailing
+    # period from the dictated context so the joiner doesn't produce an
+    # awkward double-period like "...vibes. — write that up...".
+    ctx_clean = ctx.rstrip(".!?")
+    return f"{ctx_clean} — write that up as a post on {target} for me, in my voice."
 
 
 # _q_agentic_draft_audit removed in workstream F.
@@ -2911,14 +3019,10 @@ if (eventsData.length === 0) {{
       }}
       if (t.inferior_response && t.inferior_response.text) {{
         const flaw = t.inferior_response.flaw_kind || '';
-        // Voice-evidence smoke check: prefer the post-regen result if present.
-        const sc = t.voice_evidence_smoke_check_after_regen || t.voice_evidence_smoke_check;
-        let smoke = '';
-        if (sc) {{
-          const ok = sc.passed ? '✓ verifier picked gold' : '✗ verifier failed to distinguish';
-          const colorOk = sc.passed ? '#15803D' : '#B91C1C';
-          smoke = ` <small style="color:${{colorOk}};font-weight:normal;">[smoke: ${{ok}}]</small>`;
-        }}
+        // The voice-evidence smoke check status is build-time QA metadata
+        // (`voice_evidence_smoke_check`) — kept on the instance for debugging
+        // but intentionally NOT rendered on the user-facing test card.
+        const smoke = '';
         const regen = (t.inferior_response.regen_reason)
           ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(t.inferior_response.regen_reason)}})</small>` : '';
         // Highlight violations (only daily_personalized_briefing for now —
@@ -2967,13 +3071,29 @@ if (eventsData.length === 0) {{
       }}
       // Groundtruth Preference — clean, just the preference itself. No
       // "Persona item:" / "Category:" labels (those are stripped at the
-      // extractor in TEST_GT_EXTRACTORS). Bold spans highlight voice
-      // anchors when example_response_voice_evidence is populated.
+      // extractor in TEST_GT_EXTRACTORS). Bold spans highlight tone /
+      // voice anchors that EITHER the Example Response or the Inferior
+      // Response actually uses, so the reviewer can see which aspects of
+      // the user's tone are leveraged by either side at a glance.
       if (t.example_response || t.groundtruth_preference) {{
         const gtEsc = escapeHtml(t.groundtruth_preference || '');
-        const gtHtml = boldVoiceEvidence(gtEsc, t.example_response_voice_evidence || []);
-        const gtHint = (Array.isArray(t.example_response_voice_evidence) && t.example_response_voice_evidence.length > 0)
-          ? ` <small style="color:var(--text-secondary);font-weight:normal;">(bold = anchors the example uses; inferior misses them)</small>` : '';
+        const exSpans = Array.isArray(t.example_response_voice_evidence) ? t.example_response_voice_evidence : [];
+        const infSpans = Array.isArray(t.inferior_response_voice_evidence) ? t.inferior_response_voice_evidence : [];
+        // Union (case-insensitive dedup, longest first so super-strings
+        // substitute before sub-strings).
+        const _seen = new Set();
+        const combinedSpans = [];
+        for (const s of [...exSpans, ...infSpans]) {{
+          if (typeof s !== 'string' || !s) continue;
+          const k = s.toLowerCase();
+          if (_seen.has(k)) continue;
+          _seen.add(k);
+          combinedSpans.push(s);
+        }}
+        combinedSpans.sort((a, b) => b.length - a.length);
+        const gtHtml = boldVoiceEvidence(gtEsc, combinedSpans);
+        const gtHint = combinedSpans.length > 0
+          ? ` <small style="color:var(--text-secondary);font-weight:normal;">(bold = tone anchors used by Example or Inferior)</small>` : '';
         sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference${{gtHint}}</div><div class="ts-body" style="white-space:pre-wrap;">${{gtHtml}}</div></div>`;
       }}
       const tags = (t.rubric_tags || []).filter(Boolean);
