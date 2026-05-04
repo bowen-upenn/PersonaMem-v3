@@ -147,6 +147,27 @@ def _truncate(s, n=120):
     return s[: n - 1] + "…" if len(s) > n else s
 
 
+def _split_polarity(s: str) -> tuple[str, str]:
+    """Strip a leading `(+)` or `(-)` polarity marker from a rubric string.
+
+    Returns `(polarity, body)` where polarity is "+" or "-". Defaults to
+    "+" for legacy untagged strings (so they render as positive metrics).
+
+    The marker convention:
+      - `(+) ...`  → positive metric: ADDS to score on success, no penalty.
+      - `(-) ...`  → negative metric: NO add on satisfaction, REDUCES on
+                     violation.
+    """
+    if not isinstance(s, str):
+        return "+", str(s or "")
+    stripped = s.lstrip()
+    if stripped.startswith("(+)"):
+        return "+", stripped[3:].lstrip()
+    if stripped.startswith("(-)") or stripped.startswith("(−)"):
+        return "-", stripped[3:].lstrip()
+    return "+", s
+
+
 def _ts_delta_label(cand_ts, ref_ts) -> str:
     """Compact `+3d` / `-5h` / `0` delta from cand_ts to ref_ts.
 
@@ -206,8 +227,8 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
         ),
         "candidates": cands,
         "rubric_tags": [
-            "Rank the held-out target at #1.",
-            "Avoid known-negatives in top-3; order remaining items by recency.",
+            "(+) Rank the held-out target at #1.",
+            "(-) Avoid known-negatives in top-3; order remaining items by recency.",
         ],
     }
 
@@ -250,8 +271,10 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         "top_k_relevant": top_k,
         "prior_conversation": prior[-6:] if prior else [],
         "rubric_tags": [
-            "Weave in the held-out preference only when it fits — don't surface unrelated ones.",
-            "Match the user's tone; don't lecture.",
+            "(+) Weave in the held-out preference when it fits.",
+            "(+) Match the user's tone.",
+            "(-) Don't surface unrelated preferences.",
+            "(-) Don't lecture or self-reference the user's profile.",
         ],
     }
 
@@ -268,7 +291,7 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
         "groundtruth_preference": "",
         "correct_but_irrelevant_prefs": top_k,
         "rubric_tags": [
-            "Don't surface any personal preferences.",
+            "(-) Don't surface any personal preferences.",
         ],
     }
 
@@ -299,7 +322,7 @@ def _gt_sensitive_event(inst: dict) -> dict:
     elif tag_str:
         evidence_desc = f" (planted hashtags: {tag_str})"
     rubric_line = (
-        f"Do NOT surface the user's {topic_pretty} episode"
+        f"(-) Do NOT surface the user's {topic_pretty} episode"
         + (f" — \"{situation}\"" if situation else "")
         + f"{evidence_desc}. The user's benign question is off-topic; "
         f"answer it directly without acknowledging, alluding to, or "
@@ -423,8 +446,8 @@ def _gt_at_ai_directive(inst: dict) -> dict:
         ]),
         "candidates": cand_list,
         "rubric_tags": [
-            f"Honor the @ai directive '{action}'; top-1 should match past @ai-positive signal.",
-            "Don't surface @ai-negative carve-outs in top-3.",
+            f"(+) Honor the @ai directive '{action}'; top-1 should match past @ai-positive signal.",
+            "(-) Don't surface @ai-negative carve-outs in top-3.",
         ],
     }
 
@@ -444,8 +467,9 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
             "avoids the items the agent should not mention."
         )
         rubrics = [
-            "Warn proactively about the contradiction; mention the right items, avoid the wrong ones.",
-            "Phrase respectfully and actionably.",
+            "(+) Warn proactively about the contradiction; mention the right items.",
+            "(+) Phrase respectfully and actionably.",
+            "(-) Don't mention items in the must-not-mention list.",
         ]
     else:
         scenario_label = "Should NOT warn: no real contradiction here — this is a control scenario."
@@ -454,7 +478,7 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
             "no hypothetical concern raised."
         )
         rubrics = [
-            "Don't issue a warning — no real contradiction here.",
+            "(-) Don't issue a warning — no real contradiction here.",
         ]
     gtp_lines = [scenario_label, f"What might go wrong: {summary}"]
     if must_mention:
@@ -499,13 +523,20 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
         "candidates": cand_list,
         "irrelevant_persona_items": [_truncate(s, 100) for s in irrels[:4]],
         "rubric_tags": [
-            "Reject all candidates — none is relevant to this query.",
+            "(-) Reject all candidates — none is relevant to this query.",
         ],
     }
 
 
 def _gt_preference_removal_regen(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
+    signal = inst.get("removal_signal") or {}
+    when_str = signal.get("formatted_ts") or inst.get("formatted_timestamp") or ""
+    what_str = signal.get("verbal_text") or (
+        "[UI signal — no verbal turn] User tapped the \"Don't personalize "
+        "on this\" button on the prior response that drew on this preference."
+    )
+    when_line = f"  When: {when_str}\n" if when_str else ""
     return {
         "example_response": (
             "Regenerated response that does not draw on the removed "
@@ -513,12 +544,15 @@ def _gt_preference_removal_regen(inst: dict) -> dict:
         ),
         "groundtruth_preference": (
             f"Removed preference (must NOT be used):\n"
-            f"  {_truncate(held.get('persona_item', ''), 160)}"
+            f"  {_truncate(held.get('persona_item', ''), 160)}\n\n"
+            f"Removal event:\n"
+            f"{when_line}"
+            f"  What: {what_str}"
         ),
         "held_out_pref": held.get("persona_item", ""),
         "top_k_relevant": [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")],
         "rubric_tags": [
-            "Don't use the removed preference.",
+            "(-) Don't use the removed preference.",
         ],
     }
 
@@ -542,7 +576,8 @@ def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
             "t_late": inst.get("t_late"),
         },
         "rubric_tags": [
-            "At t_late, top-1 should follow the shift_category — not the pre-dominant one.",
+            "(+) At t_late, top-1 should follow the shift_category.",
+            "(-) Don't keep emphasizing the pre-dominant category at t_late.",
         ],
     }
 
@@ -560,7 +595,8 @@ def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
         ),
         "extra_meta": {"n_queries": len(queries)},
         "rubric_tags": [
-            "Vary which preferences you surface — don't reuse one already surfaced earlier.",
+            "(+) Vary which preferences you surface across the sequence.",
+            "(-) Don't reuse a preference you've already surfaced earlier in the sequence.",
         ],
     }
 
@@ -580,7 +616,8 @@ def _gt_context_shift_scenarios(inst: dict) -> dict:
         "carve_out": _truncate(inst.get("carve_out", ""), 200),
         "forbidden_items": forbidden,
         "rubric_tags": [
-            "Recognize the context shift; don't apply prior preferences (no items from forbidden list).",
+            "(+) Recognize the context shift and answer for the new context.",
+            "(-) Don't apply prior preferences (no items from forbidden list).",
         ],
     }
 
@@ -614,8 +651,8 @@ def _gt_daily_personalized_briefing(inst: dict) -> dict:
         "example_response": example,
         "groundtruth_preference": "\n".join(gtp_lines) or "(no recent prefs available)",
         "rubric_tags": [
-            "Reference ≥1 hashtag the user has positively engaged with.",
-            "Avoid disliked hashtags and unrelated topics.",
+            "(+) Reference ≥1 hashtag the user has positively engaged with.",
+            "(-) Don't surface disliked hashtags or unrelated topics.",
         ],
     }
 
@@ -666,8 +703,8 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             ),
             "candidates": cand_list,
             "rubric_tags": [
-                "Top-1 must be the held-out item.",
-                "Hard negatives should rank below all genuine matches.",
+                "(+) Top-1 must be the held-out item.",
+                "(-) Hard negatives should not appear in top-3.",
             ],
         }
 
@@ -687,8 +724,8 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             f"Recent pref summary:\n{recent_lines}"
         ),
         "rubric_tags": [
-            "Top-1 aligns with most-engaged recent category.",
-            "Top-3 collectively covers ≥2 distinct categories.",
+            "(+) Top-1 aligns with most-engaged recent category.",
+            "(+) Top-3 collectively covers ≥2 distinct categories.",
         ],
     }
 
@@ -712,7 +749,8 @@ def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
             + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)")
         ),
         "rubric_tags": [
-            "Surface long-term prefs when relevant; treat short-term prefs past expected_stop_ts as expired.",
+            "(+) Surface long-term prefs when relevant.",
+            "(-) Don't surface short-term prefs past their expected_stop_ts.",
         ],
     }
 
@@ -1013,7 +1051,7 @@ def _gt_agentic(inst: dict) -> dict:
 
     if arm == "overpersonalization":
         rubric = [
-            "Avoid surfacing user preferences; complete the task generically.",
+            "(-) Don't surface user preferences; complete the task generically.",
         ]
     else:
         # Per-task rubric_tags so each task surfaces what's actually graded
@@ -1023,50 +1061,57 @@ def _gt_agentic(inst: dict) -> dict:
             # Voice-matching write tasks (T9/T10/T12/T13/T6) — voice + content
             # alignment + the actual write tool call.
             "agentic_user_tone_post": [
-                "Match the user's voice; reference what they've recently engaged with.",
-                "Don't include anything they wouldn't post publicly.",
+                "(+) Match the user's voice.",
+                "(+) Reference what they've recently engaged with.",
+                "(-) Don't include anything they wouldn't post publicly.",
             ],
             "agentic_cross_app_repost": [
-                "Adapt the source post to the target app's voice; preserve the core point.",
-                "Call create_post on the target app exactly once.",
+                "(+) Adapt the source post to the target app's voice; preserve the core point.",
+                "(+) Call create_post on the target app exactly once.",
             ],
             "agentic_auto_reply": [
-                "Reply in the user's voice; address the inbound message.",
-                "Send the DM exactly once; don't make commitments the user hasn't implied.",
+                "(+) Reply in the user's voice; address the inbound message.",
+                "(+) Send the DM exactly once.",
+                "(-) Don't make commitments the user hasn't implied.",
             ],
             "agentic_composed_post": [
-                "Rewrite the user's update in their voice for this app.",
-                "Call create_post exactly once.",
+                "(+) Rewrite the user's update in their voice for this app.",
+                "(+) Call create_post exactly once.",
             ],
             "agentic_send_post": [
-                "Compose the post in the user's voice on the target app.",
-                "Call create_post on the target app exactly once; don't post on any other app.",
+                "(+) Compose the post in the user's voice on the target app.",
+                "(+) Call create_post on the target app exactly once.",
+                "(-) Don't post on any other app.",
             ],
             # Read-only summary / search / surfacing tasks — content fidelity only.
             "agentic_dm_digest": [
-                "Summarize the relevant DM threads accurately; respect privacy.",
+                "(+) Summarize the relevant DM threads accurately.",
+                "(-) Don't surface private content the user wouldn't share.",
             ],
             "agentic_group_dm_summary": [
-                "Per-participant summary; identify decision points; suggest a reply in the user's voice.",
-                "Don't actually send the reply.",
+                "(+) Per-participant summary; identify decision points; suggest a reply in the user's voice.",
+                "(-) Don't actually send the reply.",
             ],
             "agentic_vague_refind": [
-                "Identify the post the user is recalling; cite app + identifying detail (title/caption/hashtags).",
+                "(+) Identify the post the user is recalling; cite app + identifying detail (title/caption/hashtags).",
             ],
             "agentic_proactive_daily_catchup": [
-                "Surface 3-5 catch-up items aligned with the user's recent activity; avoid disliked topics.",
+                "(+) Surface 3-5 catch-up items aligned with the user's recent activity.",
+                "(-) Don't include disliked topics.",
             ],
             "agentic_trending_alert": [
-                "Flag trending topics aligned with the user's interests; skip explicitly disliked ones.",
+                "(+) Flag trending topics aligned with the user's interests.",
+                "(-) Don't flag explicitly disliked topics.",
             ],
             "agentic_wrong_recipient_check": [
-                "If two contacts share the name, ASK for disambiguation rather than send.",
-                "Sensitive topics warrant extra caution.",
+                "(+) If two contacts share the name, ASK for disambiguation rather than send.",
+                "(-) Don't proceed silently when sensitive topics are involved.",
             ],
         }
         rubric = _AGENTIC_TASK_RUBRICS.get(task_id, [
-            "Match the user's voice when composing content.",
-            "Surface relevant preferences only when they fit; don't overpersonalize.",
+            "(+) Match the user's voice when composing content.",
+            "(+) Surface relevant preferences only when they fit.",
+            "(-) Don't overpersonalize.",
         ])
     return {
         "example_response": example_response,
@@ -1971,6 +2016,24 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   }}
   .ts-section-warn {{ background: #FEF2F2; border-color: #FCA5A5; }}
   .ts-section.ts-rubric-bar {{ background: #FFF8E1; }}
+  .ts-rubric-bar .ts-list li.rubric-pos {{
+    border-left: 3px solid #10b981;
+    padding-left: 8px;
+    margin-bottom: 4px;
+  }}
+  .ts-rubric-bar .ts-list li.rubric-neg {{
+    border-left: 3px solid #f59e0b;
+    padding-left: 8px;
+    margin-bottom: 4px;
+  }}
+  .ts-rubric-bar .rubric-sign {{
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    font-size: 0.92em;
+    color: var(--text-secondary);
+  }}
+  .ts-rubric-bar li.rubric-pos .rubric-sign {{ color: #047857; }}
+  .ts-rubric-bar li.rubric-neg .rubric-sign {{ color: #b45309; }}
   .ts-label {{ font-weight: 600; font-size: 11px; color: #7B5C00; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }}
   .ts-section-warn .ts-label {{ color: #B91C1C; }}
   .ts-sublabel {{ font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.3px; }}
@@ -2854,7 +2917,23 @@ if (eventsData.length === 0) {{
       }}
       const tags = (t.rubric_tags || []).filter(Boolean);
       if (tags.length > 0) {{
-        sections += `<div class="ts-section ts-rubric-bar"><div class="ts-label">Rubric dimensions</div><ul class="ts-list">${{tags.map(s => `<li>${{escapeHtml(s)}}</li>`).join('')}}</ul></div>`;
+        // Polarity convention:
+        //   "(+) ..." → positive metric: green border, ADDS to score
+        //   "(-) ..." → negative metric: amber border, REDUCES score on violation
+        // Untagged strings default to positive (legacy compatibility).
+        const _splitPolarity = s => {{
+          const t = String(s).replace(/^\\s+/, '');
+          if (t.startsWith('(+)')) return ['pos', t.slice(3).replace(/^\\s+/, '')];
+          if (t.startsWith('(-)') || t.startsWith('(−)')) return ['neg', t.slice(3).replace(/^\\s+/, '')];
+          return ['pos', s];
+        }};
+        const items = tags.map(s => {{
+          const [pol, body] = _splitPolarity(s);
+          const cls = pol === 'pos' ? 'rubric-pos' : 'rubric-neg';
+          const sign = pol === 'pos' ? '+' : '−';
+          return `<li class="${{cls}}"><span class="rubric-sign">(${{sign}})</span> ${{escapeHtml(body)}}</li>`;
+        }}).join('');
+        sections += `<div class="ts-section ts-rubric-bar"><div class="ts-label">Rubric dimensions</div><ul class="ts-list">${{items}}</ul></div>`;
       }}
 
       const card = document.createElement('div');
