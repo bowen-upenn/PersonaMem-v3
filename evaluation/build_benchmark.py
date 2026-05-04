@@ -822,6 +822,33 @@ def _build_post_test_window(bq: BackendQuery, user_id: str, t_test: int, window_
     }
 
 
+def _pick_held_out_for_event(event: dict) -> dict | None:
+    """Pick the highest-confidence positive preference on this event as the
+    candidate's held-out preference. Returns None if no qualifying pref exists.
+
+    Used by build_task_b_arms when an event isn't in `test_index` — every
+    chatbot event with a high-conf positive preference is a legitimate
+    proactive-arm candidate, not just the R8 selector's top-N test items.
+    """
+    from evaluation.inference_utils import _MIN_INIT_FOR_TEST, _MIN_XREF_FOR_TEST
+    best = None
+    best_xref = -1.0
+    for p in (event.get("preferences") or []):
+        init = float(p.get("confidence_score_init") or 0.0)
+        xref = float(p.get("confidence_cross_referenced") or 0.0)
+        if init < _MIN_INIT_FOR_TEST or xref < _MIN_XREF_FOR_TEST:
+            continue
+        if xref > best_xref:
+            best_xref = xref
+            best = p
+    if best is None:
+        return None
+    return {
+        "persona_item": best.get("persona_item"),
+        "category": best.get("category"),
+    }
+
+
 def build_task_b_arms(
     backend_dir: str | Path,
     bq: BackendQuery,
@@ -839,8 +866,10 @@ def build_task_b_arms(
     profile = bq.get_full_profile(user_id)
     all_events = _load_all_chatbot_events(backend_dir, user_id)
 
-    # Map source_object_id → held-out preference for test events (used when
-    # the candidate corresponds to a test event, to preserve continuity with v1).
+    # Map source_object_id → held-out preference for test events (preserved
+    # for v1 continuity — when a chatbot event happens to be one of the R8
+    # selector's top-N picks, prefer that pref over the highest-conf-on-event
+    # pick so the test item's grading anchor stays stable).
     test_index: dict[str, dict] = {}
     for t in test_items:
         if t.app == "chatbot":
@@ -849,24 +878,35 @@ def build_task_b_arms(
                 "category": t.preference.get("category"),
             }
 
-    # Stage 1: extract raw candidates.
+    # Stage 1: extract raw candidates. Held-out preference resolution:
+    # (a) prefer the test_index pref if this event is in it (R8 continuity);
+    # (b) otherwise, pick the highest-conf positive pref on the event itself.
+    # Decoupling this from the test_index cap (15) is the supply fix — the
+    # proactive arm now sees ALL chatbot events with a high-conf pref, not
+    # just the 15 R8-selected test moments.
     candidates = []
     for e in all_events:
-        held_out = test_index.get(str(e.get("source_object_id", "")))
+        held_out = test_index.get(str(e.get("source_object_id", ""))) \
+                   or _pick_held_out_for_event(e)
         c = _candidate_from_event(e, held_out_preference=held_out)
         if c is not None:
             candidates.append(c)
+    n_extracted = len(candidates)
 
     # Stage 2: fresh-start filter.
     candidates = [c for c in candidates if _fresh_start_ok(c)]
+    n_after_fresh_start = len(candidates)
     # Stage 3: proactive filter.
     candidates = [c for c in candidates if _proactive_filter_ok(c)]
+    n_after_proactive = len(candidates)
     # Stage 3.5: held-out / user_query topical-alignment guardrail.
     # Multi-turn chatbot events tag ONE pref on the whole convo; the last
     # user_message can be on a different topic. Skip misaligned candidates.
     candidates = [c for c in candidates if _query_aligns_with_held_out(c)]
+    n_after_alignment = len(candidates)
     # Stage 4: dedup.
     candidates = _dedup_candidates(candidates)
+    n_after_dedup = len(candidates)
 
     # Stage 5: blind-check → score each, split into proactive vs control.
     # Parallelized across candidates (default 16 workers) — was sequential
@@ -899,6 +939,8 @@ def build_task_b_arms(
             c["blind_check_score"] = 2
             c["blind_check_generic_answer"] = ""
             proactive.append(c)
+    n_blind_proactive = len(proactive)
+    n_blind_control = len(control)
 
     # Demote unanchored proactives: candidates without a held-out preference
     # cannot be scored against a target, so route them to the control arm
@@ -933,9 +975,17 @@ def build_task_b_arms(
         r")\b",
         _re.IGNORECASE,
     )
+    # Only demote SHORT editorial requests. A long query that opens with
+    # "edit this draft about boxing — and what should I add?" carries genuine
+    # personalization signal in the body even though the opener is editorial.
+    # The 100-char gate keeps pure-cleanup queries (e.g. "fix this typo") in
+    # the control arm while letting substantive personalization-relevant
+    # queries with editorial framing stay in the proactive arm.
+    _EDITORIAL_QUERY_MAX_CHARS = 100
     editorial_demoted = [
         c for c in proactive
         if _EDITORIAL_LEAD.match(c.get("user_query") or "")
+        and len((c.get("user_query") or "").strip()) <= _EDITORIAL_QUERY_MAX_CHARS
     ]
     if editorial_demoted:
         editorial_ids = {c["source_object_id"] for c in editorial_demoted}
@@ -1055,6 +1105,16 @@ def build_task_b_arms(
     # Phase J.5: stale-vs-fresh probes — short-term prefs past their
     # expected_stop_ts; agent must NOT surface them as if still active.
     stale = build_stale_vs_fresh_probes(bq, user_id)
+
+    # Funnel summary — useful when chatbot_proactive_personalization comes in
+    # under floor and you need to see WHERE candidates were dropped.
+    print(f"[task_b] funnel: extracted={n_extracted} → "
+          f"fresh_start={n_after_fresh_start} → "
+          f"proactive_filter={n_after_proactive} → "
+          f"alignment={n_after_alignment} → "
+          f"dedup={n_after_dedup} → "
+          f"blind_check(proactive={n_blind_proactive}, control={n_blind_control}) → "
+          f"final_proactive={len(proactive)}, final_control={len(control)}")
 
     return {
         "chatbot_proactive_personalization": (
@@ -2225,7 +2285,13 @@ def build_benchmark(
     capped_buckets = _task_dist.apply_caps(dict(pre_cap_buckets), rng_seed=rng_seed)
     floor_gaps = _task_dist.report_floor_gaps(capped_buckets)
     if floor_gaps:
-        print(f"[build_benchmark] floor gaps (will be filled by synthesis): {floor_gaps}")
+        # NB: most tasks have no synthesis path that fills these gaps. Only
+        # over_personalization_chatbot_text and over_personalization_distractor_reject
+        # have dedicated adversarial synthesis (Phase I.2). Other tasks (notably
+        # chatbot_proactive_personalization, personalized_feed_ranking,
+        # at_ai_directive_followup) are supply-side: a persistent gap means the
+        # builder isn't producing enough candidates and needs investigation.
+        print(f"[build_benchmark] floor gaps (supply-side; investigate if persistent): {floor_gaps}")
 
     return {
         "benchmark_version": BENCHMARK_VERSION,
