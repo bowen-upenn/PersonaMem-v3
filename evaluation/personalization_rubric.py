@@ -64,7 +64,8 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
     "preference_removal_regen":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     # Agentic family (was: t6..t19)
     "agentic_user_tone_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
-    "agentic_moment_recommendation":     {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    # agentic_moment_recommendation merged into personalized_recommendation
+    # (slate-based ranking, deterministic recall@k / ndcg@k / mrr metrics).
     "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
     "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
     "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": True},
@@ -81,7 +82,7 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
 SOURCE_B_APPLICABLE = {
     "personalized_feed_ranking", "chatbot_proactive_personalization",
-    "agentic_user_tone_post", "agentic_moment_recommendation", "agentic_cross_app_repost",
+    "agentic_user_tone_post", "agentic_cross_app_repost",
     "agentic_vague_refind",
     "agentic_proactive_daily_catchup", "agentic_trending_alert",
 }

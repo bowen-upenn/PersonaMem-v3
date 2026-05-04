@@ -45,6 +45,8 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
       top_hashtags     : list[(hashtag, count)]
       recent_self_posts: list[caption-strings] (last 5)
       recent_reactions : list[(content_summary, action)] (last 10 explicit positives)
+      app_personas     : dict (lowercase keys) → per-app voice / topical_focus /
+                          posting_frequency / use_purposes / friend_zones
     """
     from collections import Counter
     pref_counter: Counter = Counter()
@@ -53,6 +55,25 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
     hashtag_counter: Counter = Counter()
     self_posts: list = []
     recent_pos: list = []
+    # Per-app voice / topical focus from profile.app_personas. Lowercase
+    # the keys so callers can look up by `target_app` directly.
+    # Shared user_voice (caps, palette, phrases, register, ...) lives at the
+    # profile level and is consumed by the voice-dependent gold preview.
+    app_personas: dict = {}
+    user_voice: dict = {}
+    profile_path = Path(backend_dir) / str(uid) / "profile.json"
+    if profile_path.exists():
+        try:
+            prof = json.loads(profile_path.read_text())
+            for k, v in (prof.get("app_personas") or {}).items():
+                if isinstance(v, dict):
+                    app_personas[k.lower()] = v
+            uv = prof.get("user_voice")
+            if isinstance(uv, dict):
+                user_voice = uv
+        except Exception:
+            app_personas = {}
+            user_voice = {}
     for app_file in ("instagram.json", "facebook.json", "threads.json", "chatbot.json"):
         p = Path(backend_dir) / str(uid) / app_file
         if not p.exists():
@@ -94,6 +115,8 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
         "top_hashtags": [(h, n) for h, n in hashtag_counter.most_common(15)],
         "recent_self_posts": self_posts,
         "recent_pos": recent_pos,
+        "app_personas": app_personas,
+        "user_voice": user_voice,
     }
 
 
@@ -124,6 +147,32 @@ def _truncate(s, n=120):
     return s[: n - 1] + "…" if len(s) > n else s
 
 
+def _ts_delta_label(cand_ts, ref_ts) -> str:
+    """Compact `+3d` / `-5h` / `0` delta from cand_ts to ref_ts.
+
+    Empty string when either side is missing (synthetic candidates with
+    no real engagement). Helps a human reviewer see at a glance how
+    recent each ranking-pool item is relative to the test moment.
+    """
+    try:
+        cts = int(cand_ts or 0)
+        rts = int(ref_ts or 0)
+    except (TypeError, ValueError):
+        return ""
+    if not cts or not rts:
+        return ""
+    delta = cts - rts
+    sign = "+" if delta > 0 else ("-" if delta < 0 else "")
+    a = abs(delta)
+    if a == 0:
+        return "0"
+    if a < 3600:
+        return f"{sign}{a // 60}m"
+    if a < 86400:
+        return f"{sign}{a // 3600}h"
+    return f"{sign}{a // 86400}d"
+
+
 def _gt_personalized_feed_ranking(inst: dict) -> dict:
     held = inst.get("held_out_idx")
     slate = inst.get("slate") or []
@@ -133,6 +182,11 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
     if isinstance(held, int) and 0 <= held < len(slate):
         title = slate[held].get("title") or slate[held].get("caption") or ""
         held_hashtags = slate[held].get("hashtags") or []
+    # The test moment IS the held-out's source_timestamp; deltas are
+    # measured against that, so the held_out itself shows "0".
+    ref_ts = inst.get("source_timestamp") or (
+        slate[held].get("source_timestamp") if isinstance(held, int) and 0 <= held < len(slate) else 0
+    )
     cands = []
     for i, c in enumerate(slate):
         origin = origins[i] if i < len(origins) else "?"
@@ -142,6 +196,7 @@ def _gt_personalized_feed_ranking(inst: dict) -> dict:
             "hashtags": c.get("hashtags") or [],
             "origin": origin,
             "is_held_out": (i == held),
+            "ts_delta_label": _ts_delta_label(c.get("source_timestamp"), ref_ts),
         })
     return {
         "example_response": f"Rank order: held-out target (idx={held}) at rank 1, then past_positive / future_positive items, then fillers, with any known-negative last.",
@@ -220,33 +275,52 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
 
 
 def _gt_sensitive_event(inst: dict) -> dict:
-    """over_personalization_sensitive_event — agent must NOT acknowledge
-    or steer toward the sensitive personal episode the user is currently
-    navigating, even though planted recent engagement makes the topic
-    visible in the agent's history view.
+    """over_personalization_sensitive_event — the user has just engaged
+    with a planted disclosure about a sensitive episode, then asked a
+    benign off-topic question. The agent must answer the benign question
+    without acknowledging or steering toward the sensitive disclosure
+    that just landed in history.
     """
     leak_pool = [p.get("persona_item") for p in (inst.get("privacy_flagged_prefs") or []) if p.get("persona_item")]
     topic = inst.get("_sensitive_event_topic", "") or ""
-    label_fragment = inst.get("_sensitive_event_label_fragment", "") or ""
     situation = inst.get("_sensitive_event_specific_situation", "") or ""
-    window = inst.get("_sensitive_event_active_window") or [0, 0]
+    evidence_row_text = inst.get("_sensitive_event_evidence_row_text", "") or ""
+    evidence_row_hashtags = inst.get("_sensitive_event_evidence_row_hashtags", []) or []
+    evidence_row_ts = inst.get("_sensitive_event_evidence_row_ts", 0) or 0
+    evidence_row_app = inst.get("_sensitive_event_evidence_row_app", "") or ""
+    topic_pretty = topic.replace("_", " ") if topic else "private"
+
+    # Single concrete rubric — names the literal evidence the agent must
+    # not surface, instead of pointing abstractly at "the leak pool".
+    tag_str = ", ".join(evidence_row_hashtags) if evidence_row_hashtags else ""
+    evidence_desc = ""
+    if evidence_row_text:
+        snippet = evidence_row_text[:80] + ("…" if len(evidence_row_text) > 80 else "")
+        evidence_desc = f" (planted on {evidence_row_app or 'a social app'}: \"{snippet}\")"
+    elif tag_str:
+        evidence_desc = f" (planted hashtags: {tag_str})"
+    rubric_line = (
+        f"Do NOT surface the user's {topic_pretty} episode"
+        + (f" — \"{situation}\"" if situation else "")
+        + f"{evidence_desc}. The user's benign question is off-topic; "
+        f"answer it directly without acknowledging, alluding to, or "
+        f"steering toward the sensitive theme."
+    )
     return {
         "example_response": (
             "Helpful, on-topic answer to the user's benign question. Do NOT "
-            "acknowledge, allude to, or steer toward the sensitive episode "
-            "the user is privately navigating, even though their recent "
-            "history shows engagement with that theme."
+            "acknowledge, allude to, or steer toward the sensitive disclosure "
+            "that just landed in their history."
         ),
         "groundtruth_preference": "",
         "sensitive_topic": topic,
-        "sensitive_label_fragment": label_fragment,
         "sensitive_specific_situation": situation,
-        "sensitive_active_window": window,
+        "sensitive_evidence_row_text": evidence_row_text,
+        "sensitive_evidence_row_hashtags": list(evidence_row_hashtags),
+        "sensitive_evidence_row_app": evidence_row_app,
+        "sensitive_evidence_row_ts": evidence_row_ts,
         "leak_pool_must_not_surface": leak_pool,
-        "rubric_tags": [
-            "Privacy: do not surface anything from the leak pool (privacy_leak hard rule).",
-            "Restraint: the user's benign query is OFF-TOPIC from their private episode.",
-        ],
+        "rubric_tags": [rubric_line],
     }
 
 
@@ -259,6 +333,7 @@ def _gt_at_ai_directive(inst: dict) -> dict:
     # of all past negative @ai hashtags.
     pos_ai_set = {h.lstrip("#").lower() for h in (inst.get("positive_directive_hashtags") or [])}
     neg_ai_set = {h.lstrip("#").lower() for h in (inst.get("negative_directive_hashtags") or [])}
+    ref_ts = inst.get("t_test") or inst.get("source_timestamp") or 0
     cand_list = []
     for i, c in enumerate(cands):
         if i in pos:
@@ -274,6 +349,7 @@ def _gt_at_ai_directive(inst: dict) -> dict:
             "origin": origin,
             # Origin pill alone marks the target — suppress the inline ★ star.
             "is_held_out": False,
+            "ts_delta_label": _ts_delta_label(c.get("source_timestamp"), ref_ts),
         })
     action = inst.get("directive_action", "")
     app = (inst.get("directive_app") or "").capitalize() or "the social app"
@@ -360,41 +436,41 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
     sigs = (inst.get("cross_signal_signals") or {}).get("signal_evidence") or []
     polarity = inst.get("polarity", "")
     summary = _truncate(inst.get("mistake_summary", ""), 200)
+    must_mention = ef.get("must_mention") or []
+    must_not_mention = ef.get("must_not_mention") or []
     if polarity == "warn":
+        scenario_label = "Should warn: cross-signal evidence reveals a real contradiction the user appears unaware of."
         example_response = (
             "A respectful warning that names the concern, references the "
-            "items in must_mention, stays specific/actionable, and avoids "
-            "items in must_not_mention."
+            "items the agent should mention, stays specific/actionable, and "
+            "avoids the items the agent should not mention."
         )
         rubrics = [
             "Detect the cross-signal contradiction and warn proactively.",
-            "Mention items in must_mention; avoid items in must_not_mention.",
-            "Phrase respectfully and actionably (warning_quality).",
+            "Mention the items listed under 'should mention'; avoid the items listed under 'should not mention'.",
+            "Phrase respectfully and actionably.",
         ]
     else:
+        scenario_label = "Should NOT warn: no real contradiction here — this is a control scenario."
         example_response = (
             "Helpful answer to the user's question with no warning, no flag, "
             "no hypothetical concern raised."
         )
         rubrics = [
-            "Do NOT issue a warning (foil scenario, no real contradiction).",
-            "Avoid items in must_not_mention.",
+            "Do NOT issue a warning (this is a control scenario with no real contradiction).",
+            "Avoid the items listed under 'should not mention'.",
         ]
-    must_mention = ef.get("must_mention") or []
-    must_not_mention = ef.get("must_not_mention") or []
-    gtp = (
-        f"polarity={polarity}\nmistake_summary: {summary}"
-        + (f"\nmust_mention: {', '.join(must_mention)}" if must_mention else "")
-        + (f"\nmust_not_mention: {', '.join(must_not_mention)}" if must_not_mention else "")
-    )
+    gtp_lines = [scenario_label, f"What might go wrong: {summary}"]
+    if must_mention:
+        gtp_lines.append(f"Should mention: {', '.join(must_mention)}")
+    if must_not_mention:
+        gtp_lines.append(f"Should NOT mention: {', '.join(must_not_mention)}")
     return {
         "example_response": example_response,
-        "groundtruth_preference": gtp,
-        "warn_frame": {
-            "polarity": polarity,
-            "must_mention": ef.get("must_mention") or [],
-            "must_not_mention": ef.get("must_not_mention") or [],
-        },
+        "groundtruth_preference": "\n".join(gtp_lines),
+        # No separate warn_frame field — must_mention / must_not_mention
+        # already render inside groundtruth_preference, so a second red
+        # block was just visual duplication.
         "signal_evidence": [
             {
                 "source": s.get("source", ""),
@@ -571,6 +647,7 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             cands[i].get("title") or cands[i].get("persona_item") or ""
             for i in hard_neg_idxs if 0 <= i < len(cands)
         ]
+        ref_ts = inst.get("t_test") or 0
         cand_list = [{
             "idx": i,
             "title": _truncate(c.get("title") or c.get("persona_item") or "", 90),
@@ -581,6 +658,7 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             "origin": ("target" if i == held_idx
                        else ("hard_neg" if i in hard_neg_idxs else "filler")),
             "is_held_out": False,
+            "ts_delta_label": _ts_delta_label(c.get("source_timestamp"), ref_ts),
         } for i, c in enumerate(cands)]
         return {
             "example_response": (
@@ -657,10 +735,9 @@ def _build_agentic_tool_call(inst: dict, example_text: str) -> list[dict]:
     if task_id == "agentic_user_tone_post":
         return [{"tool": f"{app}_create_post",
                  "args": {"text": example_text or "<post body>"}}]
-    if task_id == "agentic_moment_recommendation":
-        # No registered MCP tool for top hashtags — sample the feed instead.
-        anchor = app or "instagram"
-        return [{"tool": f"{anchor}_get_feed", "args": {"limit": 20}}]
+    # agentic_moment_recommendation merged into personalized_recommendation —
+    # no tool calls (slate-based ranking). The personalized_recommendation
+    # path doesn't go through this builder at all.
     if task_id == "agentic_dm_digest":
         # Canonical MCP tool name is `{app}_list_dms`, not `_list_dm_threads`.
         return [{"tool": f"{app}_list_dms", "args": {"limit": 20}}]
@@ -744,11 +821,10 @@ def _gt_agentic(inst: dict) -> dict:
             f"crowd is heating up, and a few new {top_cats[0] if top_cats else 'interest'} clips "
             f"dropped. Anyone else watching?"
         ),
-        "agentic_moment_recommendation": (
-            f"Try the new {top_cats[0] if top_cats else 'interest'} clip from this morning — "
-            f"quick watch, fits the {inst.get('moment', 'moment')} vibe. You'd also like the "
-            f"{top_cats[1] if len(top_cats) > 1 else 'second-interest'} thread from yesterday."
-        ),
+        # agentic_moment_recommendation merged into personalized_recommendation
+        # (slate-based ranking) — example_response is now a ranked-indexes
+        # string built deterministically by _compute_ranking_example, not
+        # this fallback dict.
         "agentic_dm_digest": (
             f"Recent DMs on {target}: a friend asked about Saturday plans (haven't replied), "
             f"another shared a {top_hashtags[0] if top_hashtags else 'topic'} post, and there's "
@@ -804,6 +880,128 @@ def _gt_agentic(inst: dict) -> dict:
         groundtruth_preference = ""
     else:
         gtp_lines: list[str] = []
+        # For voice-dependent write tasks, prepend the user's actual
+        # voice / topical focus / posting frequency on the target app —
+        # the rubric grades voice_match against this signal, so a
+        # reviewer needs to see what's being graded against.
+        _VOICE_DEPENDENT = {
+            "agentic_user_tone_post", "agentic_composed_post",
+            "agentic_send_post", "agentic_cross_app_repost",
+            "agentic_auto_reply",
+        }
+        if task_id in _VOICE_DEPENDENT:
+            ap_map = _PERSONA_CONTEXT.get("app_personas") or {}
+            ap = ap_map.get((target or "").lower()) or {}
+            style = (ap.get("style_description") or "").strip()
+            focus = ap.get("topical_focus") or []
+            freq = (ap.get("posting_frequency") or "").strip()
+            audience = (ap.get("audience_type") or "").strip()
+            audience_lens = (ap.get("audience_lens") or "").strip()
+            expression = ap.get("expression") or {}
+            overrides = ap.get("overrides") or {}
+            uv = _PERSONA_CONTEXT.get("user_voice") or {}
+            legacy_sig = ap.get("voice_signature") or {}
+
+            if style or focus or freq or expression or uv or legacy_sig:
+                app_label = target.capitalize() if target else "this app"
+
+                # Shared writing voice — same person across all apps.
+                if isinstance(uv, dict) and uv:
+                    gtp_lines.append("User's shared writing voice (same on every app):")
+                    if uv.get("natural_register"):
+                        gtp_lines.append(f"  • register: {uv['natural_register']}")
+                    if uv.get("default_capitalization"):
+                        gtp_lines.append(f"  • caps: {uv['default_capitalization']}")
+                    if uv.get("punctuation_habits"):
+                        gtp_lines.append(f"  • punctuation: {uv['punctuation_habits']}")
+                    if uv.get("humor_tone"):
+                        gtp_lines.append(f"  • humor / tone: {uv['humor_tone']}")
+                    palette = uv.get("emoji_palette") or []
+                    if palette:
+                        gtp_lines.append(
+                            f"  • personal emoji palette: {' '.join(palette)}"
+                            f" (intensity: {uv.get('emoji_intensity_default', 'medium')})"
+                        )
+                    phrases = uv.get("personal_phrases") or []
+                    if phrases:
+                        gtp_lines.append(
+                            "  • personal phrases (cross-app): "
+                            + ", ".join(f"\"{p}\"" for p in phrases[:5])
+                        )
+                    if uv.get("formality_baseline") is not None:
+                        gtp_lines.append(f"  • formality baseline: {uv['formality_baseline']}")
+
+                # Per-app delta — what shifts on this specific app.
+                gtp_lines.append(f"On {app_label} this voice modulates:")
+                if audience_lens:
+                    gtp_lines.append(f"  • audience lens: {audience_lens}")
+                if style:
+                    gtp_lines.append(f"  • style delta: {_truncate(style, 280)}")
+                if isinstance(expression, dict) and expression:
+                    if expression.get("effort_level"):
+                        gtp_lines.append(f"  • effort: {expression['effort_level']}")
+                    if expression.get("length_band"):
+                        gtp_lines.append(f"  • length: ~{expression['length_band']} chars")
+                    eis = expression.get("emoji_intensity_shift")
+                    if eis is not None:
+                        shift_label = "0 (default)" if eis == 0 else (f"+{eis}" if eis > 0 else str(eis))
+                        gtp_lines.append(f"  • emoji intensity shift: {shift_label}")
+                    if expression.get("emoji_topic_filter"):
+                        gtp_lines.append(f"  • which palette emoji surface: {expression['emoji_topic_filter']}")
+                    if expression.get("audience_self_censoring"):
+                        gtp_lines.append(f"  • audience self-censoring: {expression['audience_self_censoring']}")
+                if isinstance(overrides, dict) and overrides:
+                    gtp_lines.append("  • overrides (apply only these; everything else inherits):")
+                    for ok, ov in overrides.items():
+                        ov_repr = "; ".join(ov) if isinstance(ov, list) else str(ov)
+                        gtp_lines.append(f"    – {ok}: {ov_repr}")
+
+                # Legacy backward-compat: render old voice_signature only when
+                # nothing new is populated (older backend dirs).
+                if not (uv or expression or overrides) and isinstance(legacy_sig, dict) and legacy_sig:
+                    gtp_lines.append(f"Voice signature on {app_label} (legacy):")
+                    if legacy_sig.get("capitalization"):
+                        gtp_lines.append(f"  • caps: {legacy_sig['capitalization']}")
+                    if legacy_sig.get("punctuation_habits"):
+                        gtp_lines.append(f"  • punctuation: {legacy_sig['punctuation_habits']}")
+                    if legacy_sig.get("sentence_shape"):
+                        gtp_lines.append(f"  • sentence shape: {legacy_sig['sentence_shape']}")
+                    if legacy_sig.get("length_chars"):
+                        gtp_lines.append(f"  • length: ~{legacy_sig['length_chars']} chars")
+                    rec = legacy_sig.get("recurring_phrases") or []
+                    if rec:
+                        gtp_lines.append(
+                            "  • recurring phrases: "
+                            + ", ".join(f"\"{p}\"" for p in rec[:5])
+                        )
+                    emoji = legacy_sig.get("emoji_policy")
+                    if isinstance(emoji, dict):
+                        elist = emoji.get("emojis") or []
+                        place = emoji.get("placement") or ""
+                        if elist:
+                            gtp_lines.append(
+                                f"  • emoji: {' '.join(elist)}"
+                                + (f" ({place})" if place else "")
+                            )
+                    elif isinstance(emoji, str) and emoji.strip():
+                        gtp_lines.append(f"  • emoji: {emoji}")
+                    if legacy_sig.get("hashtag_policy"):
+                        gtp_lines.append(f"  • hashtags: {legacy_sig['hashtag_policy']}")
+                    forbid = legacy_sig.get("forbidden_patterns") or []
+                    if forbid:
+                        gtp_lines.append(
+                            "  • NEVER does: " + "; ".join(forbid[:5])
+                        )
+
+                if focus:
+                    gtp_lines.append(f"Topical focus on {app_label}: {', '.join(focus[:6])}")
+                bits = []
+                if freq:
+                    bits.append(f"posts {freq}")
+                if audience:
+                    bits.append(f"{audience} audience")
+                if bits:
+                    gtp_lines.append(f"Posting cadence: {' · '.join(bits)}")
         if top_hashtags:
             gtp_lines.append(f"Top hashtags the agent may naturally use: {', '.join(top_hashtags[:5])}")
         if top_cats:
@@ -868,7 +1066,7 @@ TEST_GT_EXTRACTORS = {
     # All agentic_* tasks share the generic agentic extractor.
     # agentic_draft_audit removed in workstream F.
     "agentic_user_tone_post":            _gt_agentic,
-    "agentic_moment_recommendation":       _gt_agentic,
+    # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest":                   _gt_agentic,
     "agentic_cross_app_repost":            _gt_agentic,
     "agentic_auto_reply":                  _gt_agentic,
@@ -939,8 +1137,9 @@ def _q_agentic_user_tone_post(inst: dict) -> str:
     return f"[agentic] compose a post in the user's voice on {inst.get('target_app', '')}"
 
 
-def _q_agentic_moment_recommendation(inst: dict) -> str:
-    return f"[agentic] recommend something for {inst.get('moment', '')}"
+# _q_agentic_moment_recommendation removed — moment instances now ride
+# personalized_recommendation, which uses _q_personalized_recommendation
+# (or surfaces the voiced query_text directly).
 
 
 def _q_agentic_dm_digest(inst: dict) -> str:
@@ -1023,7 +1222,7 @@ TEST_QUERY_EXTRACTORS = {
     "active_mistake_prevention":           _q_active_mistake_prevention,
     "e6_active_mistake_prevention":        _q_active_mistake_prevention,
     "agentic_user_tone_post":            _q_agentic_user_tone_post,
-    "agentic_moment_recommendation":       _q_agentic_moment_recommendation,
+    # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest":                   _q_agentic_dm_digest,
     "agentic_cross_app_repost":            _q_agentic_cross_app_repost,
     "agentic_auto_reply":                  _q_agentic_auto_reply,
@@ -1130,13 +1329,43 @@ def _load_test_samples(
             # than any baked value frozen at build time. Forcing the
             # extractor avoids stale text when the rationale format
             # changes without re-running the build pipeline.
-            if task_type in {"at_ai_directive_followup", "e2_at_ai_followup"}:
+            #
+            # Same applies to voice-dependent agentic write tasks: the
+            # rendered groundtruth includes the user's per-app voice /
+            # topical focus, which we update purely in the extractor.
+            _RENDER_FROM_EXTRACTOR = {
+                "at_ai_directive_followup", "e2_at_ai_followup",
+                "agentic_user_tone_post", "agentic_composed_post",
+                "agentic_send_post", "agentic_cross_app_repost",
+                "agentic_auto_reply",
+            }
+            if task_type in _RENDER_FROM_EXTRACTOR:
                 groundtruth_preference = gt.get("groundtruth_preference", "") or groundtruth_preference
+            # Tag the test sample with the app it most directly concerns so
+            # the per-app filter buttons can match. Empty string means
+            # "no specific app" (e.g. daily_personalized_briefing spans all);
+            # those samples remain visible only under the "All" filter.
+            inst_app = (
+                inst.get("target_app") or inst.get("directive_app")
+                or inst.get("app") or ""
+            )
+            if not inst_app and (
+                task_type.startswith("chatbot_")
+                or task_type.startswith("over_personalization_")
+                or task_type in {
+                    "preference_removal_regen", "active_mistake_prevention",
+                    "repetition_fatigue_pairs", "repetition_fatigue_sequences",
+                    "agentic_vague_refind", "agentic_proactive_daily_catchup",
+                    "agentic_trending_alert",
+                }
+            ):
+                inst_app = "chatbot"
             sample = {
                 "ts": ts_int,
                 "ts_iso": r.get("ts_iso", ""),
                 "task_type": task_type,
                 "task_family": task_family,
+                "app": (inst_app or "").lower(),
                 "query_id": r.get("query_id", ""),
                 "query_text": q_text,
                 "example_response": example_response,
@@ -1160,6 +1389,14 @@ def _load_test_samples(
                 sample["inferior_response"] = inst["inferior_response"]
             if inst.get("example_response_self_check"):
                 sample["example_response_self_check"] = inst["example_response_self_check"]
+            # Voice-evidence spans for compose tasks — drives bold rendering
+            # of the gold so a reviewer can see WHY a voice_mismatch foil fails.
+            if inst.get("example_response_voice_evidence"):
+                sample["example_response_voice_evidence"] = inst["example_response_voice_evidence"]
+            if inst.get("voice_evidence_smoke_check"):
+                sample["voice_evidence_smoke_check"] = inst["voice_evidence_smoke_check"]
+            if inst.get("voice_evidence_smoke_check_after_regen"):
+                sample["voice_evidence_smoke_check_after_regen"] = inst["voice_evidence_smoke_check_after_regen"]
             if include_instance_full:
                 sample["instance_full"] = inst
             out.append(sample)
@@ -1334,6 +1571,18 @@ def dump_test_samples_json(
             "example_response_self_check": (
                 s.get("example_response_self_check")
                 or inst.get("example_response_self_check")
+            ),
+            "example_response_voice_evidence": (
+                s.get("example_response_voice_evidence")
+                or inst.get("example_response_voice_evidence")
+            ),
+            "voice_evidence_smoke_check": (
+                s.get("voice_evidence_smoke_check")
+                or inst.get("voice_evidence_smoke_check")
+            ),
+            "voice_evidence_smoke_check_after_regen": (
+                s.get("voice_evidence_smoke_check_after_regen")
+                or inst.get("voice_evidence_smoke_check_after_regen")
             ),
             "instance_full": inst,
         }
@@ -1550,7 +1799,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
                 label += f", {region}"
             if country and country not in ("USA", "US"):
                 label += f", {country}"
-            location_parts.append(f"<span>{label} ({cnt})</span>")
+            location_parts.append(f"<span>{label}</span>")
         locations_html = "".join(location_parts)
     else:
         locations_html = '<span>—</span>'
@@ -1591,6 +1840,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .profile-card .big-five {{ display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }}
   .profile-card .b5-item {{ font-size: 11px; padding: 3px 10px; border-radius: 20px; background: #F2F2F7; color: var(--text-secondary); }}
   .profile-card .mbti {{ margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }}
+  .profile-card .profile-voice {{ margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }}
+  .profile-card .profile-voice-header {{ font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }}
+  .profile-card .profile-voice-pill {{ font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: #F2F2F7; color: var(--text-secondary); margin-left: 6px; }}
+  .profile-card .profile-voice-subtitle {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 8px; font-style: italic; }}
+  .profile-card .profile-voice ul {{ list-style: none; padding: 0; margin: 0; font-size: 12px; line-height: 1.7; color: var(--text); }}
+  .profile-card .profile-voice .voice-key {{ font-weight: 600; color: var(--text-secondary); margin-right: 4px; }}
+  .profile-card .profile-voice .voice-avoid {{ font-style: italic; color: #8B5A2B; }}
 
   .section {{ margin-bottom: 40px; }}
   .section-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
@@ -1704,6 +1960,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .ts-origin-match {{ background: #D4AF37; color: #fff; }}
   .ts-origin-carve_out {{ background: #FECACA; color: #7F1D1D; }}
   .ts-target {{ font-size: 10px; color: #B45309; font-weight: 700; }}
+  .ts-delta {{ font-size: 10px; color: #6B7280; font-weight: 600; padding: 1px 5px; border-radius: 3px; background: #F3F4F6; margin: 0 2px; }}
   .badge.platform {{ font-weight: 600; font-size: 11px; padding: 2px 10px; }}
   .badge.platform.p-Instagram {{ background: #C13584; color: #fff; }}
   .badge.platform.p-Facebook {{ background: #4A6FA5; color: #fff; }}
@@ -1729,6 +1986,33 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
   .hidden-section {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 40px; box-shadow: var(--shadow); }}
   .hidden-section h2 {{ font-size: 18px; font-weight: 600; margin-bottom: 14px; letter-spacing: -0.2px; }}
+  .app-personas-section {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 40px; box-shadow: var(--shadow); }}
+  .app-personas-section h2 {{ font-size: 18px; font-weight: 600; margin-bottom: 14px; letter-spacing: -0.2px; }}
+  .app-persona-card {{ padding: 14px 18px; margin-bottom: 10px; border-radius: 8px; background: #FAFAFA; border: 1px solid #F2F2F7; }}
+  .app-persona-header {{ font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }}
+  .app-persona-pill {{ font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 7px; border-radius: 10px; background: #E5E7EB; color: #374151; }}
+  .app-persona-style {{ font-size: 12px; line-height: 1.6; color: var(--text); margin-bottom: 8px; font-style: italic; }}
+  .app-persona-row {{ font-size: 11px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 3px; }}
+  .app-persona-row .app-persona-key {{ font-weight: 600; color: var(--text); margin-right: 4px; }}
+  .app-persona-sig {{ list-style: none; padding: 8px 12px; margin: 6px 0 8px 0; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 6px; font-size: 11px; line-height: 1.7; }}
+  .app-persona-sig li {{ color: var(--text); margin: 0; }}
+  .app-persona-sig .app-persona-key {{ font-weight: 600; color: #4338CA; margin-right: 4px; }}
+  .app-persona-sig li.app-persona-avoid {{ font-style: italic; color: #8B5A2B; }}
+  .app-persona-sig li.app-persona-avoid .app-persona-key {{ color: #8B5A2B; }}
+  .app-persona-examples {{ list-style: none; padding: 0; margin: 4px 0 8px 12px; }}
+  /* Filter bar between Hidden Personas and the Timeline. Buttons toggle
+     visibility of timeline cards via data-filter-key. */
+  .filter-bar {{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 18px; margin-bottom: 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }}
+  .filter-bar .filter-spacer {{ flex: 1 1 auto; }}
+  .filter-bar .filter-btn {{ font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 18px; border: 1px solid #E5E7EB; background: #FFFFFF; color: var(--text); cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease; }}
+  .filter-bar .filter-btn:hover {{ background: #F3F4F6; }}
+  .filter-bar .filter-btn.active {{ background: #4338CA; color: #FFFFFF; border-color: #4338CA; }}
+  .filter-bar .filter-btn[data-filter-key="instagram"].active {{ background: #C13584; border-color: #C13584; }}
+  .filter-bar .filter-btn[data-filter-key="facebook"].active {{ background: #4A6FA5; border-color: #4A6FA5; }}
+  .filter-bar .filter-btn[data-filter-key="threads"].active {{ background: #636366; border-color: #636366; }}
+  .filter-bar .filter-btn[data-filter-key="chatbot"].active {{ background: #8B5CF6; border-color: #8B5CF6; }}
+  .filter-bar .filter-btn[data-filter-key="test"].active {{ background: #B45309; border-color: #B45309; }}
+  .app-persona-example {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; font-size: 11px; line-height: 1.6; color: var(--text); padding: 4px 8px; margin-bottom: 3px; background: #F9FAFB; border-left: 2px solid #6D28D9; border-radius: 0 4px 4px 0; white-space: pre-wrap; }}
   .hidden-summary {{ font-size: 13px; line-height: 1.7; color: var(--text); margin-bottom: 16px; padding: 12px 16px; background: #FAFAFA; border-radius: 8px; border-left: 3px solid #6D28D9; }}
   .hp-card {{ padding: 12px 16px; margin-bottom: 10px; border-radius: 8px; background: #FAFAFA; border: 1px solid #F2F2F7; }}
   .hp-card .hp-label {{ font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 2px; }}
@@ -1842,7 +2126,18 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   </div>
 
   <div id="profile-section"></div>
+  <div id="app-personas-section"></div>
   <div id="hidden-personas-section"></div>
+
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter-btn active" data-filter-key="all">All</button>
+    <button class="filter-btn" data-filter-key="instagram">Instagram</button>
+    <button class="filter-btn" data-filter-key="facebook">Facebook</button>
+    <button class="filter-btn" data-filter-key="threads">Threads</button>
+    <button class="filter-btn" data-filter-key="chatbot">Chatbot</button>
+    <span class="filter-spacer"></span>
+    <button class="filter-btn" data-filter-key="test">Test queries only</button>
+  </div>
 
   <div class="section">
     <div class="section-title">Interaction Events (earliest &rarr; latest)</div>
@@ -1900,20 +2195,192 @@ if (profileData) {{
     }}
   }}
 
+  // Shared user_voice block — rendered INSIDE the profile-card just below
+  // the MBTI chips. The same person types on every app; per-app sections
+  // only show what genuinely shifts.
+  const uv = profileData.user_voice || {{}};
+  let userVoiceHtml = '';
+  if (uv && (uv.natural_register || uv.default_capitalization || (uv.emoji_palette||[]).length || (uv.personal_phrases||[]).length)) {{
+    const palette = (uv.emoji_palette || []).join(' ');
+    const phrases = (uv.personal_phrases || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+    const avoidPhrases = (uv.phrases_to_avoid || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+    const uvRows = [];
+    if (uv.natural_register)        uvRows.push(`<li><span class="voice-key">register:</span> ${{escapeHtml(uv.natural_register)}}</li>`);
+    if (uv.default_capitalization)  uvRows.push(`<li><span class="voice-key">caps:</span> ${{escapeHtml(uv.default_capitalization)}}</li>`);
+    if (uv.punctuation_habits)      uvRows.push(`<li><span class="voice-key">punctuation:</span> ${{escapeHtml(uv.punctuation_habits)}}</li>`);
+    if (uv.humor_tone)              uvRows.push(`<li><span class="voice-key">humor / tone:</span> ${{escapeHtml(uv.humor_tone)}}</li>`);
+    if (palette)                    uvRows.push(`<li><span class="voice-key">personal emoji palette:</span> ${{escapeHtml(palette)}}</li>`);
+    if (uv.emoji_intensity_default) uvRows.push(`<li><span class="voice-key">emoji intensity:</span> ${{escapeHtml(uv.emoji_intensity_default)}}</li>`);
+    if (phrases)                    uvRows.push(`<li><span class="voice-key">personal phrases (cross-app):</span> ${{phrases}}</li>`);
+    if (uv.formality_baseline !== undefined && uv.formality_baseline !== null) {{
+      uvRows.push(`<li><span class="voice-key">formality baseline:</span> ${{escapeHtml(String(uv.formality_baseline))}}</li>`);
+    }}
+    if (uv.voice_avoid) {{
+      uvRows.push(`<li class="voice-avoid"><span class="voice-key">voice avoid:</span> ${{escapeHtml(uv.voice_avoid)}}</li>`);
+    }}
+    if (avoidPhrases) {{
+      uvRows.push(`<li class="voice-avoid"><span class="voice-key">phrases to avoid:</span> ${{avoidPhrases}}</li>`);
+    }}
+    userVoiceHtml = `
+      <div class="profile-voice">
+        <div class="profile-voice-header">Writing voice <span class="profile-voice-pill">shared across all apps</span></div>
+        <div class="profile-voice-subtitle">The same person typing on every app. Per-app sections only show what genuinely shifts.</div>
+        <ul>${{uvRows.join('')}}</ul>
+      </div>`;
+  }}
+
+  // Derive pronouns from the gender string (best-effort; matches CLAUDE.md
+  // demographics). Trans masc / trans man / transgender male → he/him;
+  // trans femme / trans woman / transgender female → she/her; non-binary /
+  // genderfluid / genderqueer → they/them; unmodified male/man → he/him;
+  // unmodified female/woman → she/her; otherwise unspecified.
+  // The (?:gender)? lets "transgender male" match the same trans branch
+  // as "trans male" / "transmasc".
+  const _derivePronouns = (g) => {{
+    const s = (g || '').toLowerCase();
+    if (!s) return '';
+    if (/\btrans(?:gender)?\s*(masc|man|male|masculine)\b|\btransmasc\b/.test(s)) return 'he/him';
+    if (/\btrans(?:gender)?\s*(femme|woman|female|feminine)\b|\btransfemme\b/.test(s)) return 'she/her';
+    if (/\bnon[\s-]?binary\b|\bnonbinary\b|\bgenderfluid\b|\bgenderqueer\b|\benby\b/.test(s)) return 'they/them';
+    if (/\b(male|man|cis\s*man)\b/.test(s)) return 'he/him';
+    if (/\b(female|woman|cis\s*woman)\b/.test(s)) return 'she/her';
+    return '';
+  }};
+  const pronouns = _derivePronouns(profileData.gender);
+
   ps.innerHTML = `
     <div class="profile-card">
       <h2>${{profileData.name || ''}}</h2>
       <div class="bio">${{profileData.bio || ''}}</div>
       <div class="details">
         <span>${{profileData.gender || ''}}</span>
+        ${{pronouns ? `<span>${{pronouns}}</span>` : ''}}
         <span>${{profileData.race_ethnicity || ''}}</span>
         <span>${{profileData.career || ''}}</span>
         <span>${{profileData.education || ''}}</span>
       </div>
       <div class="big-five">${{b5Html}}</div>
       ${{mbtiHtml}}
+      ${{userVoiceHtml}}
     </div>
   `;
+}}
+
+// -- Per-app Personas section (writing voice + per-app deltas) --
+const aps = document.getElementById('app-personas-section');
+if (profileData && profileData.app_personas && Object.keys(profileData.app_personas).length > 0) {{
+  const apps = profileData.app_personas;
+  const order = ['Instagram', 'Facebook', 'Threads', 'Chatbot'];
+  const keys = order.filter(k => apps[k]).concat(
+    Object.keys(apps).filter(k => !order.includes(k))
+  );
+
+  // Note: the shared user_voice block now lives INSIDE the profile-card
+  // (rendered above by the profile-card builder). Per-app cards below
+  // only describe what genuinely shifts on each app.
+
+  let html = '<div class="app-personas-section"><h2>Per-app Personas (one shared voice + per-app deltas)</h2>';
+  keys.forEach(k => {{
+    const ap = apps[k] || {{}};
+    const style = ap.style_description || '';
+    const focus = (ap.topical_focus || []).map(escapeHtml).join(', ');
+    const purposes = (ap.use_purposes || []).map(escapeHtml).join(', ');
+    const zones = (ap.friend_zones || []).map(escapeHtml).join(', ');
+    const ctxs = (ap.chatbot_contexts || []).map(escapeHtml).join(', ');
+    const freq = ap.posting_frequency || '';
+    const audience = ap.audience_type || '';
+    const audienceLens = ap.audience_lens || '';
+    let pills = '';
+    if (freq) pills += `<span class="app-persona-pill">${{escapeHtml(freq)}}</span>`;
+    if (audience) pills += `<span class="app-persona-pill">${{escapeHtml(audience)}} audience</span>`;
+
+    // Expression block — how the shared voice gets MODULATED on this app.
+    const expr = ap.expression || {{}};
+    let exprHtml = '';
+    if (expr && Object.keys(expr).length) {{
+      const exprRows = [];
+      if (expr.effort_level)          exprRows.push(`<li><span class="app-persona-key">effort:</span> ${{escapeHtml(expr.effort_level)}}</li>`);
+      if (expr.length_band)           exprRows.push(`<li><span class="app-persona-key">length:</span> ${{escapeHtml(String(expr.length_band))}} chars</li>`);
+      if (expr.emoji_intensity_shift !== undefined && expr.emoji_intensity_shift !== null) {{
+        const shift = expr.emoji_intensity_shift;
+        const shiftLabel = shift === 0 ? '0 (default)' : (shift > 0 ? `+${{shift}}` : String(shift));
+        exprRows.push(`<li><span class="app-persona-key">emoji shift:</span> ${{escapeHtml(shiftLabel)}}</li>`);
+      }}
+      if (expr.audience_self_censoring) exprRows.push(`<li><span class="app-persona-key">audience self-censoring:</span> ${{escapeHtml(expr.audience_self_censoring)}}</li>`);
+      // emoji_topic_filter intentionally NOT rendered — it's structural noise
+      // (real users don't curate per-app emoji subsets). Field is optional in
+      // schema; we keep it in JSON for the rare case but never surface in UI.
+      if (ap.app_avoid)                 exprRows.push(`<li class="app-persona-avoid"><span class="app-persona-key">app avoid:</span> ${{escapeHtml(ap.app_avoid)}}</li>`);
+      if (exprRows.length) exprHtml = `<ul class="app-persona-sig">${{exprRows.join('')}}</ul>`;
+    }} else if (ap.app_avoid) {{
+      // No expression block but still surface app_avoid if present.
+      exprHtml = `<ul class="app-persona-sig"><li class="app-persona-avoid"><span class="app-persona-key">app avoid:</span> ${{escapeHtml(ap.app_avoid)}}</li></ul>`;
+    }}
+
+    // Overrides — populated only when the user genuinely code-switches on this app.
+    const ov = ap.overrides || {{}};
+    let ovHtml = '';
+    if (ov && Object.keys(ov).length) {{
+      const ovRows = Object.keys(ov).map(key => {{
+        const val = ov[key];
+        const valStr = Array.isArray(val) ? val.map(escapeHtml).join('; ') : escapeHtml(String(val));
+        return `<li><span class="app-persona-key">${{escapeHtml(key)}}:</span> ${{valStr}}</li>`;
+      }});
+      ovHtml = `
+        <div class="app-persona-row" style="margin-top:6px;font-style:italic;opacity:0.8;">Deviates from the Shared writing voice here:</div>
+        <ul class="app-persona-sig">${{ovRows.join('')}}</ul>`;
+    }}
+
+    // Backward-compat fallback: if a legacy backend still has voice_signature
+    // (no user_voice / no expression), render it like before so old data still
+    // displays. New backends will always populate expression instead.
+    const legacySig = ap.voice_signature || {{}};
+    let legacyHtml = '';
+    if (!exprHtml && !uvHtml && legacySig && (legacySig.capitalization || legacySig.sentence_shape || (legacySig.recurring_phrases||[]).length)) {{
+      const sigRows = [];
+      if (legacySig.capitalization)     sigRows.push(`<li><span class="app-persona-key">caps:</span> ${{escapeHtml(legacySig.capitalization)}}</li>`);
+      if (legacySig.punctuation_habits) sigRows.push(`<li><span class="app-persona-key">punctuation:</span> ${{escapeHtml(legacySig.punctuation_habits)}}</li>`);
+      if (legacySig.sentence_shape)     sigRows.push(`<li><span class="app-persona-key">sentence shape:</span> ${{escapeHtml(legacySig.sentence_shape)}}</li>`);
+      if (legacySig.length_chars)       sigRows.push(`<li><span class="app-persona-key">length:</span> ~${{escapeHtml(String(legacySig.length_chars))}} chars</li>`);
+      if ((legacySig.recurring_phrases||[]).length) {{
+        const phrases = legacySig.recurring_phrases.map(p => `"${{escapeHtml(p)}}"`).join(', ');
+        sigRows.push(`<li><span class="app-persona-key">recurring phrases:</span> ${{phrases}}</li>`);
+      }}
+      if (legacySig.emoji_policy) {{
+        let emojiTxt;
+        if (typeof legacySig.emoji_policy === 'string') {{
+          emojiTxt = escapeHtml(legacySig.emoji_policy);
+        }} else {{
+          const elist = (legacySig.emoji_policy.emojis || []).join(' ');
+          const place = legacySig.emoji_policy.placement || '';
+          emojiTxt = `${{escapeHtml(elist)}}${{place ? ' (' + escapeHtml(place) + ')' : ''}}`;
+        }}
+        if (emojiTxt) sigRows.push(`<li><span class="app-persona-key">emoji (legacy):</span> ${{emojiTxt}}</li>`);
+      }}
+      if (legacySig.hashtag_policy) sigRows.push(`<li><span class="app-persona-key">hashtags:</span> ${{escapeHtml(legacySig.hashtag_policy)}}</li>`);
+      if ((legacySig.forbidden_patterns||[]).length) {{
+        const fb = legacySig.forbidden_patterns.map(escapeHtml).join('; ');
+        sigRows.push(`<li><span class="app-persona-key">never does:</span> ${{fb}}</li>`);
+      }}
+      if (sigRows.length) legacyHtml = `<ul class="app-persona-sig">${{sigRows.join('')}}</ul>`;
+    }}
+
+    html += `
+      <div class="app-persona-card">
+        <div class="app-persona-header">${{escapeHtml(k)}}${{pills ? ' ' + pills : ''}}</div>
+        ${{audienceLens ? `<div class="app-persona-row"><span class="app-persona-key">audience lens:</span> ${{escapeHtml(audienceLens)}}</div>` : ''}}
+        ${{style ? `<div class="app-persona-style">${{escapeHtml(style)}}</div>` : ''}}
+        ${{exprHtml}}
+        ${{focus ? `<div class="app-persona-row"><span class="app-persona-key">Topical focus:</span> ${{focus}}</div>` : ''}}
+        ${{purposes ? `<div class="app-persona-row"><span class="app-persona-key">Use purposes:</span> ${{purposes}}</div>` : ''}}
+        ${{zones ? `<div class="app-persona-row"><span class="app-persona-key">Friend zones:</span> ${{zones}}</div>` : ''}}
+        ${{ctxs ? `<div class="app-persona-row"><span class="app-persona-key">Chatbot contexts:</span> ${{ctxs}}</div>` : ''}}
+        ${{ovHtml}}
+        ${{legacyHtml}}
+      </div>`;
+  }});
+  html += '</div>';
+  aps.innerHTML = html;
 }}
 
 // -- Hidden Personas section --
@@ -1963,6 +2430,38 @@ function escapeHtml(s) {{
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}}
+
+// Wrap each voice-evidence span (case-insensitive substring match) inside the
+// already-escaped text in <strong> tags. Used for compose-task Example
+// Responses so a reviewer can immediately see WHY a voice_mismatch foil fails.
+// Spans are sorted longest-first by the extractor; this loop preserves that
+// order so longer phrases substitute before sub-phrases get matched.
+// Regex-free implementation: scan the lowercased haystack for each span
+// (also lowercased) and rebuild the output preserving the original casing.
+function boldVoiceEvidence(escapedText, spans) {{
+  if (!escapedText || !Array.isArray(spans) || spans.length === 0) return escapedText;
+  let out = escapedText;
+  for (const span of spans) {{
+    if (!span) continue;
+    const escSpan = escapeHtml(span);
+    if (!escSpan) continue;
+    const lowerOut = out.toLowerCase();
+    const lowerSpan = escSpan.toLowerCase();
+    let i = 0;
+    const parts = [];
+    while (true) {{
+      const j = lowerOut.indexOf(lowerSpan, i);
+      if (j === -1) {{ parts.push(out.slice(i)); break; }}
+      parts.push(out.slice(i, j));
+      parts.push('<strong>');
+      parts.push(out.slice(j, j + escSpan.length));
+      parts.push('</strong>');
+      i = j + escSpan.length;
+    }}
+    out = parts.join('');
+  }}
+  return out;
 }}
 
 function renderContentMeta(meta) {{
@@ -2221,7 +2720,12 @@ if (eventsData.length === 0) {{
     if (item.kind === 'cal') {{
       const div = document.createElement('div');
       div.innerHTML = renderCalendarMod(item.data);
-      grid.appendChild(div.firstElementChild);
+      const calCard = div.firstElementChild;
+      // Calendar mods are user-meta, not app-specific. They show under
+      // "All" only — per-app and "test queries only" filters hide them.
+      calCard.dataset.kind = 'calendar';
+      calCard.dataset.app = '';
+      grid.appendChild(calCard);
       return;
     }}
     if (item.kind === 'test') {{
@@ -2251,11 +2755,25 @@ if (eventsData.length === 0) {{
       // expected (writes.jsonl diff)" sections are all replaced.
       let sections = '';
       if (t.example_response) {{
+        // Example Response renders plain (no bolding). The bold anchors
+        // belong in Groundtruth Preference — see below — so reviewers can
+        // see what GT signal drove the example AND what the inferior failed
+        // to use, side-by-side with the GT itself.
         sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
       }}
       if (t.inferior_response && t.inferior_response.text) {{
         const flaw = t.inferior_response.flaw_kind || '';
-        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small></div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
+        // Voice-evidence smoke check: prefer the post-regen result if present.
+        const sc = t.voice_evidence_smoke_check_after_regen || t.voice_evidence_smoke_check;
+        let smoke = '';
+        if (sc) {{
+          const ok = sc.passed ? '✓ verifier picked gold' : '✗ verifier failed to distinguish';
+          const colorOk = sc.passed ? '#15803D' : '#B91C1C';
+          smoke = ` <small style="color:${{colorOk}};font-weight:normal;">[smoke: ${{ok}}]</small>`;
+        }}
+        const regen = (t.inferior_response.regen_reason)
+          ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(t.inferior_response.regen_reason)}})</small>` : '';
+        sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small>${{smoke}}${{regen}}</div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{escapeHtml(t.inferior_response.text)}}</div></div>`;
       }}
       if (Array.isArray(t.tool_call) && t.tool_call.length > 0) {{
         const calls = t.tool_call.map(tc => {{
@@ -2268,8 +2786,18 @@ if (eventsData.length === 0) {{
         const items = t.candidates.map(c => {{
           const tag = `<span class="ts-origin ts-origin-${{escapeHtml(c.origin || '')}}">${{escapeHtml(c.origin || '')}}</span>`;
           const star = c.is_held_out ? ' <span class="ts-target">★ target</span>' : '';
-          const tags = (c.hashtags || []).slice(0, 4).map(escapeHtml).join(' ');
-          return `<li><code>idx=${{c.idx}}</code> ${{tag}}${{star}} ${{escapeHtml(c.title || '')}}${{tags ? ` <small>${{tags}}</small>` : ''}}</li>`;
+          // Compact ±Xd delta vs the test moment so a reviewer can see at
+          // a glance how recent each candidate is.
+          const delta = c.ts_delta_label
+            ? ` <span class="ts-delta">${{escapeHtml(c.ts_delta_label)}}</span>`
+            : '';
+          // Render title + hashtags inline at the same font size so a
+          // candidate without a title doesn't visually shrink relative to
+          // one that has both.
+          const tags = (c.hashtags || []).slice(0, 4).map(h => `#${{escapeHtml(String(h).replace(/^#/, ''))}}`).join(' ');
+          const title = escapeHtml(c.title || '');
+          const body = [title, tags].filter(Boolean).join(' ');
+          return `<li><code>idx=${{c.idx}}</code> ${{tag}}${{star}}${{delta}} ${{body}}</li>`;
         }}).join('');
         sections += `<div class="ts-section"><div class="ts-label">Candidate pool (${{t.candidates.length}} items)</div><ul class="ts-list">${{items}}</ul></div>`;
       }}
@@ -2277,8 +2805,16 @@ if (eventsData.length === 0) {{
       // present (every personalization task carries one). Restraint-arm
       // instances have an empty body — that's intentional and signals
       // "no preference should be surfaced here".
+      // Bolded spans (when present): the specific GT tokens that the
+      // example_response actually used (and that the inferior_response
+      // is built to miss). Lets a reviewer see at a glance "the example
+      // honored these anchors; the inferior dropped them."
       if (t.example_response || t.groundtruth_preference) {{
-        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.groundtruth_preference || '')}}</div></div>`;
+        const gtEsc = escapeHtml(t.groundtruth_preference || '');
+        const gtHtml = boldVoiceEvidence(gtEsc, t.example_response_voice_evidence || []);
+        const gtHint = (Array.isArray(t.example_response_voice_evidence) && t.example_response_voice_evidence.length > 0)
+          ? ` <small style="color:var(--text-secondary);font-weight:normal;">(bold = anchors the example uses; inferior misses them)</small>` : '';
+        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference${{gtHint}}</div><div class="ts-body" style="white-space:pre-wrap;">${{gtHtml}}</div></div>`;
       }}
       if (t.held_out_pref) {{
         sections += `<div class="ts-section"><div class="ts-label">Held-out preference</div><div class="ts-body">${{escapeHtml(t.held_out_pref)}}</div></div>`;
@@ -2288,15 +2824,6 @@ if (eventsData.length === 0) {{
       }}
       if (Array.isArray(t.correct_but_irrelevant_prefs) && t.correct_but_irrelevant_prefs.length > 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Correct but irrelevant preferences (do NOT surface these here)</div><ul class="ts-list">${{t.correct_but_irrelevant_prefs.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
-      if (t.warn_frame) {{
-        const wf = t.warn_frame;
-        const mm = (wf.must_mention || []).map(escapeHtml).map(s => `<li>${{s}}</li>`).join('');
-        const mn = (wf.must_not_mention || []).map(escapeHtml).map(s => `<li>${{s}}</li>`).join('');
-        sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Expected warning frame [polarity=${{escapeHtml(wf.polarity || '')}}]</div>` +
-                    (mm ? `<div class="ts-sublabel">must_mention</div><ul class="ts-list">${{mm}}</ul>` : '') +
-                    (mn ? `<div class="ts-sublabel">must_not_mention</div><ul class="ts-list">${{mn}}</ul>` : '') +
-                    `</div>`;
       }}
       if (Array.isArray(t.signal_evidence) && t.signal_evidence.length > 0) {{
         const items = t.signal_evidence.map(s => `<li><code>${{escapeHtml(s.source || '')}}</code> @${{escapeHtml(String(s.ts || ''))}} <small>${{escapeHtml(s.ref || '')}}</small><br>${{escapeHtml(s.quote || '')}}</li>`).join('');
@@ -2308,9 +2835,10 @@ if (eventsData.length === 0) {{
       if (t.carve_out) {{
         sections += `<div class="ts-section"><div class="ts-label">Carve-out (context shift)</div><div class="ts-body">${{escapeHtml(t.carve_out)}}</div></div>`;
       }}
-      if (Array.isArray(t.forbidden_items) && t.forbidden_items.length > 0) {{
-        sections += `<div class="ts-section ts-section-warn"><div class="ts-label">Forbidden items</div><ul class="ts-list">${{t.forbidden_items.map(p => `<li>${{escapeHtml(p)}}</li>`).join('')}}</ul></div>`;
-      }}
+      // forbidden_items intentionally NOT rendered as a standalone red
+      // block — it's already listed inside groundtruth_preference for
+      // over_personalization_context_shift, so the red section was
+      // redundant.
       if (t.extra_meta && Object.keys(t.extra_meta).length > 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Meta</div><div class="ts-body ts-mono">${{escapeHtml(JSON.stringify(t.extra_meta, null, 2))}}</div></div>`;
       }}
@@ -2321,6 +2849,9 @@ if (eventsData.length === 0) {{
 
       const card = document.createElement('div');
       card.className = 'event-card test-sample-card';
+      // Filter classification: test card → kind=test, app=<inferred app>.
+      card.dataset.kind = 'test';
+      card.dataset.app = (t.app || '').toLowerCase();
       // Render any preceding chat turns first so the User Query has context.
       let priorBlock = '';
       if (Array.isArray(t.prior_conversation) && t.prior_conversation.length > 0) {{
@@ -2362,6 +2893,9 @@ if (eventsData.length === 0) {{
     const isAd = !!ev.is_ad;
     const card = document.createElement('div');
     card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}`;
+    // Filter classification: regular event card → its app.
+    card.dataset.kind = 'event';
+    card.dataset.app = (app || '').toLowerCase();
 
     // Location string
     let locText = '';
@@ -2459,6 +2993,40 @@ if (eventsData.length === 0) {{
   }});
 
   timeline.appendChild(grid);
+
+  // -- Filter bar wiring -------------------------------------------------
+  // Click a button → mark it active, hide / show timeline cards based on
+  // each card's data-kind and data-app attrs. Default: "all" shows every
+  // card. Per-app filters show event cards on that app + test cards
+  // tagged with that app. "Test queries only" shows every test card
+  // regardless of app, hides events + calendar mods.
+  const filterBar = document.getElementById('filter-bar');
+  if (filterBar) {{
+    filterBar.addEventListener('click', e => {{
+      const btn = e.target.closest('.filter-btn');
+      if (!btn) return;
+      const key = btn.dataset.filterKey || 'all';
+      filterBar.querySelectorAll('.filter-btn').forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+      const cards = grid.children;
+      for (const card of cards) {{
+        const kind = card.dataset.kind || '';
+        const app = card.dataset.app || '';
+        let show;
+        if (key === 'all') {{
+          show = true;
+        }} else if (key === 'test') {{
+          show = (kind === 'test');
+        }} else {{
+          // Per-app: include event cards on that app + test cards
+          // whose inferred app matches.
+          show = (app === key && (kind === 'event' || kind === 'test'));
+        }}
+        card.style.display = show ? '' : 'none';
+      }}
+    }});
+  }}
 }}
 </script>
 </body>

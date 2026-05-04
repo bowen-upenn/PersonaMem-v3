@@ -27,7 +27,18 @@ engaged with, and the user reacts.
 
 User:
 - Name: {name}
-- Style on {app_pretty}: {style_description}
+
+{user_voice_block}
+{app_pretty} expression (audience/length/effort — voice mechanics live in the Shared writing voice block above):
+- Audience lens: {audience_lens}
+- Style description (DELTA from base voice): {style_description}
+- Expression knobs:
+{expression_lines}
+- Overrides for this app (apply only listed keys; others inherit):
+{overrides_lines}
+- App avoid for {app_pretty} (audience-driven content / tone the user skips here): {app_avoid}
+
+Apply the user's `default_capitalization`, occasional `personal_phrases`, `punctuation_habits` from the Shared writing voice. DM threads are intimate; emoji intensity may run a bit hotter than feed posts (palette only — never invent new emoji). **Respect the negatives** — the shared voice block may include `Voice avoid` + `Phrases to avoid`, and the line above carries `App avoid`. Treat all as hard constraints when present: never produce text in those tones, never reach for those literal phrases, never touch those topics in this audience.
 
 The forwarded content (real, from the user's feed):
 - Topic / hashtags: {hashtags}
@@ -110,6 +121,52 @@ _THREAD_GUIDANCE = {
 }
 
 
+def _render_user_voice_for_dm(user_voice: dict) -> str:
+    """Compact shared-voice block for the DM commentary prompt."""
+    if not isinstance(user_voice, dict) or not user_voice:
+        return "## Shared writing voice\n\n(no shared voice block available — fall back to neutral casual register)\n"
+    palette = user_voice.get("emoji_palette") or []
+    palette_str = " ".join(palette) if palette else "(none)"
+    phrases = user_voice.get("personal_phrases") or []
+    phrases_str = ", ".join(f'"{p}"' for p in phrases) if phrases else "(none)"
+    block = (
+        "## Shared writing voice (the SAME person texts this on every app)\n\n"
+        f"- **Natural register:** {user_voice.get('natural_register', '(unspecified)')}\n"
+        f"- **Default capitalization:** {user_voice.get('default_capitalization', '(unspecified)')}\n"
+        f"- **Punctuation habits:** {user_voice.get('punctuation_habits', '(unspecified)')}\n"
+        f"- **Humor / tone:** {user_voice.get('humor_tone', '(unspecified)')}\n"
+        f"- **Personal emoji palette (subset only — never invent new):** {palette_str}\n"
+        f"- **Default emoji intensity:** {user_voice.get('emoji_intensity_default', 'medium')}\n"
+        f"- **Personal phrases (bleed across apps):** {phrases_str}\n"
+        f"- **Formality baseline:** {user_voice.get('formality_baseline', 0.3)}\n"
+    )
+    voice_avoid = (user_voice.get("voice_avoid") or "").strip()
+    if voice_avoid:
+        block += f"- **Voice avoid (never produce this tone / style):** {voice_avoid}\n"
+    avoid_phrases = user_voice.get("phrases_to_avoid") or []
+    if avoid_phrases:
+        avoid_str = ", ".join(f'"{p}"' for p in avoid_phrases)
+        block += f"- **Phrases to avoid (never reach for these):** {avoid_str}\n"
+    return block
+
+
+def _format_expression_block_dm(expression: dict) -> str:
+    if not isinstance(expression, dict) or not expression:
+        return "  (default — medium effort, no shifts)"
+    required_keys = ["effort_level", "length_band", "emoji_intensity_shift",
+                     "audience_self_censoring"]
+    lines = [f"  - {k}: {expression.get(k, '(default)')}" for k in required_keys]
+    if expression.get("emoji_topic_filter"):
+        lines.append(f"  - emoji_topic_filter: {expression['emoji_topic_filter']}")
+    return "\n".join(lines)
+
+
+def _format_overrides_block_dm(overrides: dict) -> str:
+    if not isinstance(overrides, dict) or not overrides:
+        return "  (none — inherit fully from Shared writing voice)"
+    return "\n".join(f"  - {k}: {v}" for k, v in overrides.items())
+
+
 def _friends_block(friends: list[dict]) -> str:
     if not friends:
         return "(no friend graph available — use stranger placeholders)"
@@ -185,7 +242,11 @@ def generate_dm_threads(
     """
     app_pretty = app.capitalize()
     app_persona = (profile.get("app_personas", {}) or {}).get(app_pretty, {}) or {}
-    style = (app_persona.get("style_description", "") or "")[:200]
+    user_voice = profile.get("user_voice", {}) or {}
+    style = (app_persona.get("style_description", "") or "")[:300]
+    audience_lens = app_persona.get("audience_lens", "") or "(unspecified)"
+    expression = app_persona.get("expression", {}) or {}
+    overrides = app_persona.get("overrides", {}) or {}
     rng = random.Random(rng_seed or hash(user_id) % (2**31))
 
     # Tag every event with its source app so _content_for_forward can record it.
@@ -269,7 +330,12 @@ def generate_dm_threads(
         prompt = DM_THREAD_COMMENTARY_PROMPT.format(
             app_pretty=app_pretty,
             name=profile.get("name", ""),
+            user_voice_block=_render_user_voice_for_dm(user_voice),
+            audience_lens=audience_lens,
             style_description=style,
+            expression_lines=_format_expression_block_dm(expression),
+            overrides_lines=_format_overrides_block_dm(overrides),
+            app_avoid=(app_persona.get("app_avoid", "") or "(none)"),
             initiator_id=plan["initiator_id"],
             initiator_label=("you" if plan["initiator_id"] == "self"
                               else f"a friend ({plan['initiator_id']})"

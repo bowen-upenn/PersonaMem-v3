@@ -545,25 +545,94 @@ Respond with ONLY a JSON array of {n_picks} ordered entries. No explanation outs
 
 
 
+def _render_user_voice_block(user_voice: dict) -> str:
+    """Render the shared user_voice as a prompt section.
+
+    Used by every composition prompt that emits user-voiced text so the
+    "writing voice" preamble is identical wherever it appears. Keep it
+    compact — 8 short bullets, not a structured sub-JSON.
+    """
+    if not isinstance(user_voice, dict) or not user_voice:
+        return "## Shared writing voice\n\n(no shared voice block available — fall back to neutral casual register)\n"
+
+    palette = user_voice.get("emoji_palette") or []
+    palette_str = " ".join(palette) if palette else "(none)"
+    phrases = user_voice.get("personal_phrases") or []
+    phrases_str = ", ".join(f'"{p}"' for p in phrases) if phrases else "(none)"
+
+    block = (
+        "## Shared writing voice (consistent across ALL apps for this user)\n\n"
+        "This is how the user types, period. The same person sounds the same on Instagram, Facebook, Threads, "
+        "and AI Chatbot — what changes per app is audience/length/effort/topic, NOT the voice itself. "
+        "Apply these defaults unless the per-app `overrides` block explicitly says otherwise.\n\n"
+        f"- **Natural register:** {user_voice.get('natural_register', '(unspecified)')}\n"
+        f"- **Default capitalization:** {user_voice.get('default_capitalization', '(unspecified)')}\n"
+        f"- **Punctuation habits:** {user_voice.get('punctuation_habits', '(unspecified)')}\n"
+        f"- **Humor / tone:** {user_voice.get('humor_tone', '(unspecified)')}\n"
+        f"- **Personal emoji palette (the user picks subsets of THIS list — never invents new emoji):** {palette_str}\n"
+        f"- **Default emoji intensity:** {user_voice.get('emoji_intensity_default', 'medium')}\n"
+        f"- **Personal phrases / catchphrases (bleed across apps):** {phrases_str}\n"
+        f"- **Formality baseline:** {user_voice.get('formality_baseline', 0.3)} (0.0 super casual — 1.0 very formal)\n"
+    )
+    voice_avoid = (user_voice.get("voice_avoid") or "").strip()
+    if voice_avoid:
+        block += f"- **Voice avoid (never produce this tone / style):** {voice_avoid}\n"
+    avoid_phrases = user_voice.get("phrases_to_avoid") or []
+    if avoid_phrases:
+        avoid_str = ", ".join(f'"{p}"' for p in avoid_phrases)
+        block += f"- **Phrases to avoid (never reach for these literal strings):** {avoid_str}\n"
+    return block
+
+
 def generate_app_personas_prompt(
     profile: dict,
     top_personas: list[str],
     chatbot_contexts: list[str],
+    source_samples: list[dict] | None = None,
 ) -> str:
-    """Build a prompt that generates per-app sub-personas for a user.
+    """Build a prompt that generates the user's shared writing voice + four
+    per-app sub-personas in a single LLM call.
+
+    Design intent: real people have ONE writing voice and code-switch ONLY
+    when audience pressure makes them. The prompt asks the LLM to produce
+    `user_voice` first (the canonical voice — caps, emoji palette, phrases,
+    punctuation, register, humor) then four `app_personas` describing how
+    that voice gets MODULATED on each app via audience/length/effort/topic.
+    Per-app `overrides` is the escape hatch — empty {} for most apps for
+    most users, only filled when source samples show genuine code-switching.
 
     Inputs:
       profile: dict with name, gender, race_ethnicity, career, education, big_five, bio
       top_personas: up to ~20 persona_item strings sampled from the user's strongest preferences
       chatbot_contexts: the full CHATBOT_CONTEXTS list from persona_agent.py
+      source_samples: optional list of ~10 stratified source rows
+                      ({interaction_time, interaction_type, object_text}) so the LLM
+                      grounds voice in real evidence rather than abstractions
     """
 
     profile_json = json.dumps(profile, indent=2)
     personas_text = "\n".join(f"- {p}" for p in top_personas)
     chatbot_contexts_str = ", ".join(chatbot_contexts)
 
+    if source_samples:
+        sample_lines = []
+        for s in source_samples:
+            ts = s.get("interaction_time", "")
+            it = s.get("interaction_type", "")
+            txt = (s.get("object_text") or "").replace("\n", " ").strip()
+            if len(txt) > 280:
+                txt = txt[:277] + "..."
+            sample_lines.append(f"- [{it} @ {ts}] {txt}")
+        samples_block = (
+            "## Sampled raw engagement rows (real evidence — ground voice in these, not in archetypes)\n\n"
+            + "\n".join(sample_lines)
+            + "\n"
+        )
+    else:
+        samples_block = ""
+
     return f"""\
-You are designing four distinct "app sub-personas" for a single synthetic user. The user already has a base profile and a set of preferences inferred from their social media activity. Your job is to describe how THIS specific user presents themselves and engages differently on each of four apps: **Instagram, Facebook, Threads, and AI Chatbot**.
+You are designing the writing voice and four app-specific sub-personas for a single synthetic user. The user already has a base profile and a set of preferences inferred from their activity. Your job is to capture how THIS user actually types, then describe how that one voice gets modulated across **Instagram, Facebook, Threads, and AI Chatbot** by the audiences and affordances of each app.
 
 ## Base profile
 
@@ -575,39 +644,59 @@ You are designing four distinct "app sub-personas" for a single synthetic user. 
 
 {personas_text}
 
+{samples_block}
 ## Your Task
 
-Write four distinct `AppPersona` entries — one per app. Each should describe how the user uses that app specifically, including which audiences they interact with, what they use it for, and how their engagement style varies.
+Output ONE `user_voice` block plus four `AppPersona` entries. The user_voice is the user's natural writing voice — the same person typing in all four apps. The per-app entries only describe what genuinely *changes* per app (audience, length, effort, topical filter) and an OPTIONAL `overrides` block for the rare case where the user truly code-switches.
 
-## Rules
+## Voice realism rules (read carefully — this is what we're trying to fix)
 
-1. **Be noticeably different across apps.** Real people compartmentalize their online presence. For example, the same user might:
-   - Use **Facebook** mostly for family updates, marketplace, and event planning with older relatives
-   - Use **Instagram** for lifestyle aesthetic, close friends, and inspiration browsing
-   - Use **Threads** for news, snark, quick opinions, and following public figures
-   - Use **AI Chatbot** for work tasks, knowledge exploration, and private reflection
+1. **One voice, four expressions.** Real people don't curate four disjoint emoji sets per app or rotate through four different capitalization styles. They have ONE personal palette, ONE default capitalization, ONE set of catchphrases. What changes per app is *which slice surfaces* (boxing emoji on a fight post, food emoji on a casserole) and *how much* (longer + more contextual on Facebook, sharper + shorter on Threads).
 
-2. **Allow some overlap.** Real users aren't perfectly compartmentalized. A couple of shared topics across apps is realistic. Do not force uniqueness.
+2. **Personal emoji palette, not per-app palettes.** Pick **5–12 emojis** the user genuinely uses based on their interests + personality. This is THE list. Per-app sections describe which subset of THIS list surfaces; they do not invent new emoji for each app. If the user truly never uses emoji at all, set palette to `[]` and intensity to `"low"`.
 
-3. **Ground everything in the base profile and preferences.** A conservative rural parent and a young urban creative should get *very* different app personas. Use the profile's career, age clues from education/bio, demographics, and Big Five personality as guiding signals.
+3. **Personal phrases bleed across apps.** Catchphrases are personal tics, not platform-bound. Put 3–6 in `user_voice.personal_phrases` and let them surface naturally on every app. Only put a phrase in an app's `overrides.extra_phrases` if it's a genuinely app-specific tic (e.g. live-sports reactions only fired during Threads game-watching) — most users will have ZERO of these.
 
-4. **Audience types must be realistic**:
+4. **Capitalization usually doesn't shift.** Most users type the same way everywhere. Set `user_voice.default_capitalization` to their natural default. Only set `app_personas[app].overrides.capitalization` if the source samples show the user genuinely shifts (e.g. lowercase elsewhere → sentence-case on Facebook because elderly relatives are reading).
+
+5. **`overrides` defaults to `{{}}`.** For most users, ALL FOUR apps have `overrides: {{}}`. Only populate an override when there's concrete evidence in the source samples / preferences above that this user code-switches on this app. If you can't cite specific evidence, leave it empty.
+
+6. **`style_description` is a DELTA, not a self-contained voice block.** 2–3 sentences explaining how/why the shared voice MODULATES on this app — what audience pressure changes, what topical slice surfaces, what effort shifts. Don't restate the voice mechanics (that's user_voice's job); just describe the shift. Bad: "On Threads she uses lowercase and short fragments with skull emoji." (re-templating). Good: "On Threads her natural lowercase notes-app voice gets shorter and louder because she's reacting in real time to live games — same palette, but boxing/wrestling emoji dominate and the personal phrases come out sharper without context."
+
+7. **Audience types must be realistic**:
    - **Facebook**: usually `mixed` leaning toward family/longtime friends
    - **Instagram**: usually `mixed` (close friends + public creators followed)
    - **Threads**: usually `public`
    - **AI Chatbot**: always `private`
 
-5. **Posting frequency** must be one of: `"daily"`, `"weekly"`, `"rarely"`, `"passive viewer only"`. Pick what's realistic for this user on this app — most users post rarely on most apps and are mainly consumers.
+8. **Posting frequency** must be one of: `"daily"`, `"weekly"`, `"rarely"`, `"passive viewer only"`. Most users post rarely on most apps and are mainly consumers.
 
-6. **Topical focus** is 3–5 broad domains (e.g., `"food and home cooking"`, `"local community news"`, `"parenting"`, `"crafts"`, `"fitness"`). These should be a subset of the domains the user actually shows interest in (from the sample above), not invented ones.
+9. **Topical focus** is 3–5 broad domains, a subset filter of the user's actual interests for THIS audience (not invented; not every interest fits every app — wildlife rescue might fit Facebook + Chatbot but not Threads).
 
-7. **Chatbot only**: populate `chatbot_contexts` with 2–3 items chosen from this exact list: {chatbot_contexts_str}. Pick the contexts that best match this user's profile (e.g., a student → `"knowledge exploration"`, `"composing chat messages"`; a therapist-curious user → `"therapy and reflection"`). Leave `chatbot_contexts` as an empty array for non-Chatbot apps.
+10. **Chatbot only**: populate `chatbot_contexts` with 2–3 items from this exact list: {chatbot_contexts_str}. Leave empty for non-Chatbot apps.
 
-8. **Use purposes** should be a list of 2–4 short phrases describing what the user gets out of this app (e.g., `["keep up with extended family", "marketplace deals", "event planning"]`).
+11. **Use purposes** = 2–4 short phrases. **Friend zones** = 2–4 short phrases.
 
-9. **Friend zones** should be a list of 2–4 short phrases describing which social circles they interact with (e.g., `["close friends", "acquaintances", "extended family", "strangers / public"]`).
+12. **`expression` is required for every app**. It captures how the shared voice is modulated:
+    - `effort_level`: `"high"` (curated, edit-before-posting) | `"medium"` | `"low"` (in-the-moment)
+    - `length_band`: numeric range like `"45-120"` (Threads) / `"120-220"` (Facebook) / `"70-150"` (Instagram captions) / `"90-190"` (Chatbot prompts)
+    - `emoji_intensity_shift`: integer in {{-1, 0, +1}} — delta from `user_voice.emoji_intensity_default`. **Default is 0.** Only -1 if the audience suppresses emoji (Chatbot is typically -1 for emoji-using users), only +1 if the audience pumps it up (DM-style intimate apps, but rare for these four).
+    - `audience_self_censoring`: 1 sentence on what the user OMITS given the audience (e.g. "no boxing trash talk on Facebook because boyfriend's elderly relatives are reading").
+    - `emoji_topic_filter` is OPTIONAL — only include it when the audience genuinely filters which palette emoji show up here (e.g. "no boxing emoji on Facebook because elderly relatives don't read it as humor"). Most apps for most users should omit this field entirely. Real users don't curate per-app emoji subsets, they just naturally don't reach for certain ones in certain audiences.
 
-10. **Style description** is 2–3 sentences describing the tone, aesthetic, or cadence of the user on THIS app (e.g., `"Warm, family-centric, and nostalgic. Shares birthday photos and milestone announcements. Rarely posts opinions."`).
+13. **`overrides` is OPTIONAL — empty {{}} unless cited evidence justifies it.** Possible keys (each independently optional):
+    - `capitalization`: only if user truly shifts here (rare).
+    - `extra_phrases`: 0–3 app-specific tics, each cited to a source-sample pattern.
+    - `extra_forbidden`: 0–3 things omitted only here, audience-driven.
+    - `punctuation_shift`: 1 sentence if punctuation truly shifts here.
+    For most users, expect `"overrides": {{}}` on all 4 apps.
+
+14. **Do NOT include sample / exemplar posts.** Voice mechanics + expression + overrides should be precise enough that downstream LLMs can write fresh user-voiced text without exemplars.
+
+15. **Negatives matter.** Capture what the user *avoids* on the voice axis — not just what they do. Almost every real person has at least 1 sentence of "they don't do X."
+    - `user_voice.voice_avoid`: 1–2 sentences of prose on tones / styles / habits this user steers clear of (e.g. "Avoids corporate or therapy-speak; doesn't curse much; never trauma-dumps in public; no snark-heavy humor.").
+    - `user_voice.phrases_to_avoid`: 0–5 short literal phrases that would feel off-brand if they appeared (e.g. ["slay", "living for this", "the girls"]). Skip the list entirely if nothing comes up — `[]` is a valid answer.
+    - Each app's `app_avoid`: 1 sentence on what THIS audience makes the user skip on THIS app specifically (e.g. "No boxing trash talk on Facebook because boyfriend's elderly relatives follow him here.", "No shop talk on Threads — that audience doesn't care."). Empty string `""` is fine when the audience doesn't drive any specific omission.
 
 ## Output Format
 
@@ -615,30 +704,70 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
 
 ```json
 {{
-  "Instagram": {{
-    "app_name": "Instagram",
-    "use_purposes": ["..."],
-    "friend_zones": ["..."],
-    "audience_type": "private" | "public" | "mixed",
-    "style_description": "...",
-    "posting_frequency": "daily" | "weekly" | "rarely" | "passive viewer only",
-    "topical_focus": ["..."],
-    "chatbot_contexts": []
+  "user_voice": {{
+    "natural_register": "...",
+    "default_capitalization": "all_lowercase" | "sentence_case" | "mixed_with_caps_for_emphasis",
+    "punctuation_habits": "...",
+    "humor_tone": "...",
+    "emoji_palette": ["...", "...", "..."],
+    "emoji_intensity_default": "low" | "medium" | "high",
+    "personal_phrases": ["...", "...", "..."],
+    "formality_baseline": 0.0,
+    "voice_avoid": "1-2 sentences on tones/styles/habits this user steers clear of",
+    "phrases_to_avoid": ["...", "..."]
   }},
-  "Facebook": {{ ... }},
-  "Threads": {{ ... }},
-  "Chatbot": {{
-    "app_name": "Chatbot",
-    "use_purposes": ["..."],
-    "friend_zones": ["..."],
-    "audience_type": "private",
-    "style_description": "...",
-    "posting_frequency": "...",
-    "topical_focus": ["..."],
-    "chatbot_contexts": ["..."]
+  "app_personas": {{
+    "Instagram": {{
+      "app_name": "Instagram",
+      "use_purposes": ["..."],
+      "friend_zones": ["..."],
+      "audience_type": "mixed",
+      "audience_lens": "1 sentence: who is realistically reading on this app",
+      "style_description": "2-3 sentences framed as a DELTA from the shared voice — why it shifts here, not what it sounds like",
+      "posting_frequency": "weekly",
+      "topical_focus": ["..."],
+      "chatbot_contexts": [],
+      "expression": {{
+        "effort_level": "medium",
+        "length_band": "70-150",
+        "emoji_intensity_shift": 0,
+        "audience_self_censoring": "..."
+      }},
+      "overrides": {{}},
+      "app_avoid": "1 sentence on what this audience makes the user skip — or \\"\\" if none"
+    }},
+    "Facebook": {{ ...same shape... }},
+    "Threads": {{ ...same shape... }},
+    "Chatbot": {{
+      "app_name": "Chatbot",
+      "use_purposes": ["..."],
+      "friend_zones": ["..."],
+      "audience_type": "private",
+      "audience_lens": "self / private back-office",
+      "style_description": "...",
+      "posting_frequency": "...",
+      "topical_focus": ["..."],
+      "chatbot_contexts": ["...", "...", "..."],
+      "expression": {{
+        "effort_level": "...",
+        "length_band": "90-190",
+        "emoji_intensity_shift": -1,
+        "audience_self_censoring": "..."
+      }},
+      "overrides": {{ "extra_forbidden": ["emoji"] }},
+      "app_avoid": "..."
+    }}
   }}
 }}
-```"""
+```
+
+(Note: `expression.emoji_topic_filter` is OPTIONAL — only include it on an app when the audience genuinely filters which palette emoji surface there. Most apps for most users should omit it.)
+
+Final self-check before submitting:
+1. Are all four apps' `overrides` empty `{{}}`? If yes, good — that's the expected default for most users. If you populated more than one or two, re-read the source samples; you probably re-templated voice instead of grounding it.
+2. Do the four `style_description`s explain WHY the voice shifts (audience/effort) rather than re-listing voice mechanics? They should read like a delta narrative, not a parallel voice spec.
+3. Does the `emoji_palette` come from the user's actual interests (boxing → 🥊, Bills fan → 🦬, etc.) rather than archetypal defaults (🥰😂🔥)?
+4. Are `voice_avoid` / `phrases_to_avoid` / `app_avoid` all empty? If so, you skipped the negatives rule — re-read the source samples and try again. Almost every real person has at least 1 sentence of `they don't do X`."""
 
 
 def assign_personas_to_apps_prompt(
@@ -711,6 +840,7 @@ def generate_interaction_format_prompt(
     app_persona: dict,
     action_catalog: list[dict],
     requires_user_message: bool,
+    user_voice: dict | None = None,
 ) -> str:
     """Build a prompt that picks an action for one preference on its assigned app.
 
@@ -718,11 +848,13 @@ def generate_interaction_format_prompt(
     caller looks up the canonical label from `action` after the LLM picks.
     A `user_message` is generated only when the chosen action is in one of
     two groups (social-media `@ai` comment actions, or AI Chatbot natural
-    chat-turn actions).
+    chat-turn actions). When a message is generated, the shared user_voice
+    block (caps, palette, phrases) drives consistency across apps.
     """
 
     app_persona_json = json.dumps(app_persona, indent=2)
     action_catalog_json = json.dumps(action_catalog, indent=2)
+    user_voice_block = _render_user_voice_block(user_voice or {}) if requires_user_message else ""
 
     message_clause = (
         "\n6. **Generate a `user_message`** IF the chosen action implies the user said something. "
@@ -741,6 +873,11 @@ def generate_interaction_format_prompt(
         "Example for 'Enjoys cooking Mexican food' + `asked_followup` on Chatbot: "
         "`\"give me a few quick Mexican recipes that work for a toddler — under 30 minutes\"`.\n"
         "   **User-voice rules — applies to BOTH cases:**\n"
+        "   - Anchor the message in the **Shared writing voice** block above. Same person typing on every app.\n"
+        "   - Use the user's `default_capitalization` unless the AppPersona's `overrides.capitalization` overrides it.\n"
+        "   - Pull at most 0–1 emoji from the user's `emoji_palette` (never invent new ones); apply `emoji_intensity_default + expression.emoji_intensity_shift` to decide whether to include any. Chatbot turns typically have NONE.\n"
+        "   - Personal phrases from `user_voice.personal_phrases` may surface naturally — they're tics, not mandatory.\n"
+        "   - Respect the **Voice avoid** + **Phrases to avoid** lines in the shared voice block (if present) — never produce anything in those tones / never reach for those literal phrases. Respect the AppPersona's `app_avoid` (if present) — content / tone the audience filters out should not appear.\n"
         "   - Use contractions: don't, I'm, it's, can't, won't, that's. Never expanded forms.\n"
         "   - At least one contraction per message.\n"
         "   - Allow fragments and lowercase opens (real phone typing).\n"
@@ -759,8 +896,8 @@ You are choosing a realistic interaction for a single user preference on a speci
 - `category`: {category}
 - `source_interaction_type`: {interaction_type}
 - `assigned_app`: {assigned_app}
-
-## The user's AppPersona for {assigned_app}
+{user_voice_block}
+## The user's AppPersona for {assigned_app} (audience/length/effort/topic — not voice mechanics)
 
 ```json
 {app_persona_json}
@@ -778,7 +915,7 @@ You are choosing a realistic interaction for a single user preference on a speci
 
 2. The action must match the polarity of `source_interaction_type` — if it's a positive interaction you must pick from the positive actions; if negative, from the negative actions. The catalog above is already filtered to the right bucket.
 
-3. Consider the AppPersona's `style_description` and `posting_frequency`. A "passive viewer only" user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
+3. Consider the AppPersona's `style_description`, `posting_frequency`, and `expression`. A "passive viewer only" user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
 
 4. Prefer implicit actions unless the interaction_type is `explicit_*`.
 
@@ -1623,6 +1760,7 @@ def generate_chatbot_conversation_prompt(
     chatbot_persona: dict,
     interaction_type: str,
     num_turns: int,
+    user_voice: dict | None = None,
 ) -> str:
     """Build a prompt that generates a multi-turn chatbot conversation implicitly
     embedding multiple user preferences.
@@ -1635,6 +1773,9 @@ def generate_chatbot_conversation_prompt(
     Args:
         preferences: list of dicts, each with 'persona_item', 'category',
             and 'interaction_type' keys.
+        user_voice: shared writing voice block — same person typing across all
+            apps. Anchors register/punctuation so the chatbot turns sound like
+            the same human who posts on Instagram and Threads.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -1643,6 +1784,7 @@ def generate_chatbot_conversation_prompt(
         indent=2,
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
+    user_voice_block = _render_user_voice_block(user_voice or {})
 
     # Build per-preference instruction block
     pref_lines = []
@@ -1675,7 +1817,8 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 {profile_json}
 ```
 
-## User's Chatbot Persona
+{user_voice_block}
+## User's Chatbot Persona (audience/length/effort/topic — voice mechanics live in the Shared writing voice block above)
 
 ```json
 {persona_json}
@@ -1706,7 +1849,8 @@ The conversation must naturally reveal ALL of the following preferences. Each pr
    - Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
    - Vary sentence length. Mix one fragment ("brain mushy today") with one short sentence.
    - Skip pleasantries. Real people don't say "Can you help me troubleshoot a setup?"; they say "this keeps coming out blurry, what am I doing wrong?".
-   - Match the Chatbot persona style ("{chatbot_persona.get("style_description", "")}") in register only — register can be casual/formal/vulnerable, but length and naturalness rules hold.
+   - Anchor in the **Shared writing voice** block above — this is the same person who posts on Instagram/Facebook/Threads. Apply the user's `default_capitalization`, occasional `personal_phrases`, and `punctuation_habits`. The Chatbot AppPersona's `expression` shifts register slightly (typically more task-direct, formality up); `overrides.extra_forbidden` typically includes `"emoji"`. Length and naturalness rules below still hold.
+   - **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). Treat all of these as hard constraints when present.
 
    FORBIDDEN patterns (never produce these):
    - Parallel-triplet lists ("blow out white, show every dust speck, or reflect my whole phone")
@@ -1743,6 +1887,7 @@ def generate_ask_to_forget_conversation_prompt(
     user_profile: dict,
     chatbot_persona: dict,
     additional_preferences: list[dict] | None = None,
+    user_voice: dict | None = None,
 ) -> str:
     """Build a prompt for a 4-turn ask-to-forget conversation.
 
@@ -1754,6 +1899,8 @@ def generate_ask_to_forget_conversation_prompt(
 
     additional_preferences: other preferences from the same event to weave
         in naturally alongside the primary forget target.
+    user_voice: shared writing voice block — anchors the user's chat-turn
+        voice to the same person who posts on Instagram/Facebook/Threads.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -1762,6 +1909,7 @@ def generate_ask_to_forget_conversation_prompt(
         indent=2,
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
+    user_voice_block = _render_user_voice_block(user_voice or {})
 
     # Build additional-preferences block if present
     extra_block = ""
@@ -1785,7 +1933,8 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 {profile_json}
 ```
 
-## User's Chatbot Persona
+{user_voice_block}
+## User's Chatbot Persona (audience/length/effort — voice mechanics live in the Shared writing voice block above)
 
 ```json
 {persona_json}
@@ -1809,7 +1958,8 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 
 ## Rules
 
-- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}") in register only.
+- Anchor the user's voice in the **Shared writing voice** block above (this is the same person who posts on Instagram, Facebook, and Threads). The Chatbot AppPersona's `expression` and `overrides` say what shifts here — typically `extra_forbidden: ["emoji"]`, formality up, no decorative punctuation. Apply the user's `default_capitalization`, `personal_phrases` (occasionally), and `punctuation_habits` unless overrides say otherwise.
+- **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). If any of these are present, treat them as hard constraints — never produce text that falls into those tones, never use those literal phrases, never touch those topics in this audience.
 - The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 should feel like a natural, human reaction — not a formal privacy request.
 - Any additional preferences should surface naturally throughout the conversation as side details.
@@ -1848,6 +1998,7 @@ def generate_correction_conversation_prompt(
     user_profile: dict,
     chatbot_persona: dict,
     additional_preferences: list[dict] | None = None,
+    user_voice: dict | None = None,
 ) -> str:
     """Build a prompt for a 4-turn correction/rejection conversation.
 
@@ -1860,6 +2011,8 @@ def generate_correction_conversation_prompt(
 
     additional_preferences: other preferences from the same event to weave
         in naturally alongside the primary correction target.
+    user_voice: shared writing voice block — anchors user-turn voice to the
+        same person who posts elsewhere.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -1868,6 +2021,7 @@ def generate_correction_conversation_prompt(
         indent=2,
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
+    user_voice_block = _render_user_voice_block(user_voice or {})
 
     # Build additional-preferences block if present
     extra_block = ""
@@ -1890,7 +2044,8 @@ You are generating a 4-turn conversation where an AI chatbot makes an incorrect 
 {profile_json}
 ```
 
-## User's Chatbot Persona
+{user_voice_block}
+## User's Chatbot Persona (audience/length/effort/topic — voice mechanics live in the Shared writing voice block above)
 
 ```json
 {persona_json}
@@ -1916,7 +2071,8 @@ The assistant wrongly believes this preference applies to the user. The user wil
 
 ## Rules
 
-- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}") in register only.
+- Anchor the user's voice in the **Shared writing voice** block above (this is the same person who posts on Instagram, Facebook, and Threads). The Chatbot AppPersona's `expression` and `overrides` say what shifts here — typically `extra_forbidden: ["emoji"]`, formality up, no decorative punctuation. Apply the user's `default_capitalization`, `personal_phrases` (occasionally), and `punctuation_habits` unless overrides say otherwise.
+- **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). If any of these are present, treat them as hard constraints — never produce text that falls into those tones, never use those literal phrases, never touch those topics in this audience.
 - Turn 2 must clearly show the assistant making an assumption based on the listed preference.
 - Turn 3 must clearly reject or correct the assumption.
 - The user should NOT directly quote the persona_item — they correct it in their own natural words.
@@ -1955,6 +2111,7 @@ def generate_do_not_personalize_conversation_prompt(
     user_profile: dict,
     chatbot_persona: dict,
     additional_preferences: list[dict] | None = None,
+    user_voice: dict | None = None,
 ) -> str:
     """Build a prompt for a 4-turn "don't personalize on this" conversation.
 
@@ -1966,6 +2123,8 @@ def generate_do_not_personalize_conversation_prompt(
                      it retracted, just not used to tailor future output)
       Turn 4 (assistant): acknowledges the request and explains how it will
                           adjust its personalization going forward
+      user_voice: shared writing voice block — anchors user-turn voice to
+          the same person who posts on the social apps.
     """
     profile_json = json.dumps(
         {k: v for k, v in user_profile.items() if k in (
@@ -1974,6 +2133,7 @@ def generate_do_not_personalize_conversation_prompt(
         indent=2,
     )
     persona_json = json.dumps(chatbot_persona, indent=2)
+    user_voice_block = _render_user_voice_block(user_voice or {})
 
     extra_block = ""
     if additional_preferences:
@@ -1997,7 +2157,8 @@ You are generating a 4-turn conversation where a user reveals a personal prefere
 {profile_json}
 ```
 
-## User's Chatbot Persona
+{user_voice_block}
+## User's Chatbot Persona (audience/length/effort — voice mechanics live in the Shared writing voice block above)
 
 ```json
 {persona_json}
@@ -2021,7 +2182,8 @@ You are generating a 4-turn conversation where a user reveals a personal prefere
 
 ## Rules
 
-- Match the user's voice from the chatbot persona's style_description ("{chatbot_persona.get("style_description", "")}") in register only.
+- Anchor the user's voice in the **Shared writing voice** block above (this is the same person who posts on Instagram, Facebook, and Threads). The Chatbot AppPersona's `expression` and `overrides` say what shifts here — typically `extra_forbidden: ["emoji"]`, formality up, no decorative punctuation. Apply the user's `default_capitalization`, `personal_phrases` (occasionally), and `punctuation_habits` unless overrides say otherwise.
+- **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). If any of these are present, treat them as hard constraints — never produce text that falls into those tones, never use those literal phrases, never touch those topics in this audience.
 - The primary preference must be embedded implicitly in Turn 1, not stated as a direct declaration.
 - Turn 3 is about opting out of personalization, NOT about forgetting or retracting the fact. The distinction matters.
 - Any additional preferences should surface naturally throughout the conversation as side details.
