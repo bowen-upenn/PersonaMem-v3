@@ -1865,7 +1865,9 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             # Runs independently of inferior generation so the renderer can
             # bold the gold's voice anchors even when no foil exists.
             if task_id in _VOICE_EVIDENCE_TASKS:
-                t_test_v = int(inst.get("t_test") or 0)
+                # Same fallback as the inferior block: instances without an
+                # explicit `t_test` key store the test moment as `source_timestamp`.
+                t_test_v = int(inst.get("t_test") or inst.get("source_timestamp") or 0)
                 if t_test_v not in _ctx_cache:
                     _ctx_cache[t_test_v] = _build_persona_ctx(bq, user_id, t_test_v)
                 _voice_ctx = _ctx_cache[t_test_v]
@@ -1916,7 +1918,14 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                 # Family 2/3/4 — LLM rewrite path with per-flaw instruction
                 # + similarity validator + 3-attempt retry loop.
                 elif inferior_llm is not None:
-                    t_test = int(inst.get("t_test") or 0)
+                    # Fall back to `source_timestamp` when `t_test` isn't on
+                    # the instance — chatbot_proactive_personalization (and
+                    # other Task B arms) store the per-instance test moment
+                    # as `source_timestamp`, not `t_test`. Without this
+                    # fallback, t_test=0 → ctx built at epoch → no top_prefs
+                    # → all flaws return None → all 30 instances silently
+                    # skip the inferior gen. (Pre-fix bug.)
+                    t_test = int(inst.get("t_test") or inst.get("source_timestamp") or 0)
                     if t_test not in _ctx_cache:
                         _ctx_cache[t_test] = _build_persona_ctx(bq, user_id, t_test)
                     ctx = _ctx_cache[t_test]
