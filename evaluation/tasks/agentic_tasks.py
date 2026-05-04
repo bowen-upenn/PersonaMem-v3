@@ -275,8 +275,12 @@ def _dispatch_and_score(
         claude_model=claude_model, llm_client=llm_client,
     )
     parsed = extract_json_from_response(raw) or {}
+    # `final_answer` is the llm_longctx (text-only) JSON key — checked first
+    # so write-task content lands in response_text instead of falling through
+    # to a stale `summary` field.
     response_text = (
-        parsed.get("response")
+        parsed.get("final_answer")
+        or parsed.get("response")
         or parsed.get("summary")
         or parsed.get("reply_to_user")
         or raw or ""
@@ -291,6 +295,31 @@ def _dispatch_and_score(
         source_b=source_b,
         judge_client=(judge_client if enable_llm_judge else None),
     )
+
+    # llm_longctx is graded final-answer-only: rubric on response_text, no
+    # tool-call rules, no overlay readout, no output_quality verifier (those
+    # all assume an MCP overlay that doesn't exist in this mode). Returning
+    # early keeps the cross-mode comparison honest — see DESIGN.md.
+    from evaluation.inference_utils import merge_token_metrics
+    if mode == "llm_longctx":
+        metrics = {
+            **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
+            "mode_grading": "final_answer_only",
+        }
+        merge_token_metrics(metrics, prompt=prompt, response=raw or "", stats=stats)
+        return {
+            "status": "ok",
+            "agent_response": response_text,
+            "raw_response": raw,
+            "parsed": parsed,
+            "tool_calls": 0,
+            "subagent_stats": stats,
+            "personalization_rubric": pers,
+            "tool_call_rules": {},
+            "final_state_diff": {},
+            "output_quality": {},
+            "metrics": metrics,
+        }
 
     # Read overlay writes first — needed for both final_state_diff AND for
     # the synthesized tool_trace (Phase H.3 fix).
@@ -330,7 +359,7 @@ def _dispatch_and_score(
     # `failed_writes` if a required write didn't happen OR the output content
     # is wrong (verifier failed). Tasks with only `must_not_contain` (audit-only,
     # e.g., draft_audit) skip the must_contain check but still subject to
-    # output_quality. llm_longctx mode is never flagged (no MCP write capability).
+    # output_quality.
     status = "ok"
     requires_write = bool((final_state_expected or {}).get("must_contain_count"))
     if mode == "mcp_agent":
@@ -345,9 +374,9 @@ def _dispatch_and_score(
     # the authority now — recall@k / ndcg@k / mrr).
     moment_report: dict = {}
 
-    from evaluation.inference_utils import merge_token_metrics
     metrics = {
         **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
+        "mode_grading": "full",
         "tool_call_rules_pass": sum(1 for v in tool_call_report.values() if v == "pass"),
         "tool_call_rules_fail": sum(1 for v in tool_call_report.values() if v.startswith("fail")),
         "final_state_rules_passed": final_state_report.get("final_state_rules_passed", 0),
@@ -1097,14 +1126,19 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
         # model has real user data to ground its response in (instead of
         # refusing with "I can't access your DMs"). In mcp_agent mode the
         # agent may still call MCP tools for additional reads if needed.
+        # In llm_longctx mode the prompt switches to final-answer-only:
+        # write tasks ask for the actual content as JSON instead of telling
+        # the model to call non-existent MCP tools.
         gt_block = ground_truth_builders.build_for_task(task_id, bq, user_id, t, inst)
         history_block = None
         if mode in ("agent_longctx", "llm_longctx"):
             history_block, _ = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
         allow_extra = (mode == "mcp_agent")
+        text_only = (mode == "llm_longctx")
         prompt = prompt_fn(inst, history_block,
                             ground_truth_block=gt_block or None,
-                            allow_extra_tools=allow_extra)
+                            allow_extra_tools=allow_extra,
+                            text_only=text_only)
 
         if dry_run:
             results.append({"task": task_id, "instance_id": inst["instance_id"], "mode": mode,
