@@ -2194,6 +2194,17 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .ts-section-warn .ts-label {{ color: #B91C1C; }}
   .ts-sublabel {{ font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.3px; }}
   .ts-body {{ font-size: 12px; color: var(--text); line-height: 1.45; }}
+  /* Voice / tone anchor highlight inside test-card bodies. <strong> alone
+     is invisible on emoji glyphs, so add a yellow background + outline so
+     reviewers can spot which palette emoji or personal phrases the
+     Example / Inferior actually leveraged. */
+  .ts-body strong {{
+    background: #fff3cd;
+    border-radius: 3px;
+    padding: 0 3px;
+    font-weight: 700;
+    box-shadow: inset 0 -2px 0 #f59e0b;
+  }}
   .ts-body.ts-mono {{ font-size: 11px; white-space: pre-wrap; color: var(--text-secondary); }}
   .ts-list {{ margin: 4px 0 0 0; padding-left: 18px; font-size: 12px; line-height: 1.5; }}
   .ts-list.ts-mono {{ font-size: 11px; color: var(--text-secondary); }}
