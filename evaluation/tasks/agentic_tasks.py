@@ -565,11 +565,12 @@ _MOMENT_QUERY_TEMPLATES_HIGH_FORMALITY = (
 def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Random) -> str:
     """Build a moment-aware user query that reads like the user typing on
     their phone. Pulls phrasing register from `user_voice.formality_baseline`
-    + `default_capitalization`, and may inline one of the user's
-    `personal_phrases` deterministically per (moment, user) pair.
+    + `default_capitalization`, and may inline one of the user's catchphrase
+    residue items deterministically per (moment, user) pair.
 
     Falls back to a neutral mid-formality template when user_voice is
-    missing or malformed.
+    missing or malformed. Backward-compat: reads `idiolect.catchphrase_residue`
+    from the new schema and falls back to legacy `personal_phrases`.
     """
     # Strip the parenthetical hour annotation so the query reads naturally
     # ("evening wind-down" not "evening wind-down (20-23)").
@@ -583,7 +584,10 @@ def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Rand
         except (TypeError, ValueError):
             formality = 0.3
         caps = str(user_voice.get("default_capitalization") or "")
-        phrases = [p for p in (user_voice.get("personal_phrases") or []) if isinstance(p, str) and p.strip()]
+        idio = user_voice.get("idiolect") or {}
+        residue = (idio.get("catchphrase_residue") if isinstance(idio, dict) else None) \
+            or user_voice.get("personal_phrases") or []
+        phrases = [p for p in residue if isinstance(p, str) and p.strip()]
 
     if formality < 0.35:
         templates = _MOMENT_QUERY_TEMPLATES_LOW_FORMALITY

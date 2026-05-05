@@ -761,7 +761,11 @@ def build_judge_evidence(
             "name": profile.get("name"),
             "career": profile.get("career"),
             "app_personas": {
-                a: {"style_description": (profile.get("app_personas", {}) or {}).get(a, {}).get("style_description")}
+                a: {
+                    # New schema: delta_summary. Legacy fallback: style_description.
+                    "delta_summary": (profile.get("app_personas", {}) or {}).get(a, {}).get("delta_summary")
+                                     or (profile.get("app_personas", {}) or {}).get(a, {}).get("style_description"),
+                }
                 for a in ("Instagram", "Facebook", "Threads", "Chatbot")
             },
         },

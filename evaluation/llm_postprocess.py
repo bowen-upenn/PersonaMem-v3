@@ -181,14 +181,18 @@ _VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_user_tone_post"}
 
 
 def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
-    """Heuristically extract the substrings of `text` that carry the user's
-    voice signal — personal_phrases (case-insensitive substring match) and
-    palette emoji (exact char match). Used to bold the spans in the rendered
-    Example Response so a reviewer can see WHY a voice_mismatch foil fails.
+    """Heuristically extract substrings of `text` that carry the user's voice
+    signal — `idiolect.catchphrase_residue` (case-insensitive substring) +
+    palette emoji (exact char match). Used to bold spans in the rendered
+    Example Response so a reviewer can see surface anchors.
 
-    Returns the matched substrings preserving the original casing as they
-    appear in `text`. Longest matches first so renderer can substitute
-    without nested-match collisions. Empty list when nothing matches.
+    NB: This is a *visual aid only*. It only catches surface (residue + emoji),
+    NOT Layer-2 idiolect templates (which are abstract slot patterns and don't
+    survive direct substring matching). The deeper voice judge
+    (`voice_self_consistency`) is what actually scores Layer-2 fidelity.
+
+    Backward-compatible: also reads the legacy `user_voice.personal_phrases`
+    field for old snapshots. Empty list when nothing matches.
     """
     if not isinstance(text, str) or not text:
         return []
@@ -198,10 +202,15 @@ def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
     seen: set[str] = set()
     text_lower = text.lower()
 
-    # 1. Personal phrases — case-insensitive substring lookup, preserve
-    #    original casing in the matched span (use the slice of `text`,
-    #    not the catalog entry).
-    for phrase in (user_voice.get("personal_phrases") or []):
+    # 1. Catchphrase residue — new schema (idiolect.catchphrase_residue),
+    #    plus legacy `personal_phrases` fallback. Case-insensitive substring,
+    #    preserves original casing of the matched slice.
+    idio = user_voice.get("idiolect") or {}
+    candidates: list[str] = []
+    if isinstance(idio, dict):
+        candidates.extend(idio.get("catchphrase_residue") or [])
+    candidates.extend(user_voice.get("personal_phrases") or [])  # legacy
+    for phrase in candidates:
         if not isinstance(phrase, str) or not phrase.strip():
             continue
         needle = phrase.lower()
@@ -285,9 +294,12 @@ def _verify_voice_evidence_distinguishability(
             voice_lines.append(f"- register: {user_voice['natural_register']}")
         if user_voice.get("default_capitalization"):
             voice_lines.append(f"- capitalization: {user_voice['default_capitalization']}")
-        phrases = user_voice.get("personal_phrases") or []
-        if phrases:
-            voice_lines.append(f"- personal phrases: {', '.join(phrases[:6])}")
+        # New-schema residue + legacy personal_phrases (backward-compat fallback).
+        idio = user_voice.get("idiolect") or {}
+        residue = (idio.get("catchphrase_residue") if isinstance(idio, dict) else None) \
+            or user_voice.get("personal_phrases") or []
+        if residue:
+            voice_lines.append(f"- catchphrase residue: {', '.join(residue[:6])}")
         palette = user_voice.get("emoji_palette") or []
         if palette:
             voice_lines.append(f"- emoji palette: {' '.join(palette)}")
@@ -874,22 +886,26 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
                 f"  personal emoji palette (subset only — never invent new): "
                 f"{' '.join(palette)} (intensity: {user_voice.get('emoji_intensity_default', 'medium')})"
             )
-        phrases = user_voice.get("personal_phrases") or []
-        if phrases:
+        # Catchphrase residue (new) or legacy personal_phrases (fallback)
+        idio = user_voice.get("idiolect") or {}
+        residue = (idio.get("catchphrase_residue") if isinstance(idio, dict) else None) \
+            or user_voice.get("personal_phrases") or []
+        if residue:
             lines.append(
-                "  personal phrases (cross-app, use SPARINGLY — ZERO is the "
-                "default; AT MOST one across the whole response, and only when "
-                "it lands naturally; the agent must NOT signature-stamp every "
-                "post with one of these): "
-                + ", ".join(f"\"{p}\"" for p in phrases[:6])
+                "  catchphrase residue (cross-app — these are TICS, NOT signatures: "
+                "use ZERO in most outputs, AT MOST one across the whole response, "
+                "never signature-stamp every post): "
+                + ", ".join(f"\"{p}\"" for p in residue[:6])
             )
         if user_voice.get("formality_baseline") is not None:
             lines.append(f"  formality baseline: {user_voice['formality_baseline']}")
 
-    # 1b. Per-app expression — what shifts on the target app.
-    style = (app_persona.get("style_description") or "").strip()
-    expression = app_persona.get("expression") or {}
-    overrides = app_persona.get("overrides") or {}
+    # 1b. Per-app modulation — what shifts on the target app.
+    # New schema: delta_summary + surface + idiolect_overrides. Legacy fallback:
+    # style_description + expression + overrides.
+    style = (app_persona.get("delta_summary") or app_persona.get("style_description") or "").strip()
+    expression = app_persona.get("surface") or app_persona.get("expression") or {}
+    overrides = app_persona.get("idiolect_overrides") or app_persona.get("overrides") or {}
     audience_lens = (app_persona.get("audience_lens") or "").strip()
     if style or expression or audience_lens:
         lines.append(f"On {target_app} this voice modulates:")
@@ -975,12 +991,15 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
         "any sentence that telegraphs personalization (\"as a fan of\", \"since you love\")."
     )
     lines.append(
-        "Mimic the shared writing voice mechanically — apply the user's "
-        "default_capitalization, occasional personal_phrases, punctuation_habits, "
-        "and a topic-fit subset of the emoji palette (NEVER invent new emoji). "
-        "The per-app expression block tells you how length / effort / emoji "
-        "intensity shift on this specific app. The gold should sound like THIS "
-        "user wrote it on this app, not a generic LLM."
+        "Mimic the user's voice via the LAYERED block — anchor on identity_spine "
+        "(signature_concerns drive WHAT they bring up) + idiolect (constructional_templates "
+        "applied ABSTRACTLY, hedge/booster habits, sentence-length shape, function-word profile) "
+        "+ active_stances/active_speech_genres (Layer-3 selection on this app). "
+        "Apply default_capitalization and punctuation_habits. Catchphrase residue may surface "
+        "ZERO times — these are tics, not signatures. Pull a topic-fit subset of the emoji "
+        "palette (NEVER invent new emoji). The per-app `surface` block tells you how length / "
+        "effort / emoji intensity / disclosure depth shift on this specific app. The gold should "
+        "sound like THIS user wrote it on this app, not a generic LLM."
     )
 
     # 3. Per-task specific input.
@@ -1691,7 +1710,8 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
         for app, ap in app_personas.items():
             if app == target_app:
                 continue
-            style = (ap.get("style_description") or "").strip()
+            # New schema: delta_summary. Legacy fallback: style_description.
+            style = (ap.get("delta_summary") or ap.get("style_description") or "").strip()
             if style:
                 # Truncate aggressively — the foil prompt only needs a
                 # short one-liner pointing at the contrasting voice.

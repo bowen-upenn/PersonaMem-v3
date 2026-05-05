@@ -583,13 +583,36 @@ def chatbot_proactive_triplet_prompt(
             voice_lines.append(f"- capitalization: {user_voice['default_capitalization']}")
         if user_voice.get("natural_register"):
             voice_lines.append(f"- register: {user_voice['natural_register']}")
-        phrases = user_voice.get("personal_phrases") or []
-        if phrases:
+        # Idiolect summary — function-word profile + hedge/booster + sentence shape
+        # are the strongest "same person" signals in chatbot turns.
+        idio = user_voice.get("idiolect") or {}
+        if isinstance(idio, dict) and idio:
+            if idio.get("function_word_profile"):
+                voice_lines.append(f"- function-word profile: {idio['function_word_profile']}")
+            sp = idio.get("syntactic_preferences") or {}
+            if sp:
+                voice_lines.append(
+                    f"- sentences: shape={sp.get('sentence_length_shape', '?')}, "
+                    f"embedding={sp.get('clause_embedding', '?')}, "
+                    f"fragments={sp.get('fragment_use', '?')}"
+                )
+            if idio.get("hedge_booster_ratio"):
+                voice_lines.append(f"- hedge/booster: {idio['hedge_booster_ratio']}")
+            templates = idio.get("constructional_templates") or []
+            if templates:
+                t_lines = [f"  • `{t.get('pattern', '')}` (e.g. \"{t.get('example_realization', '')}\")"
+                           for t in templates[:3]]
+                voice_lines.append(
+                    "- constructional templates (apply ABSTRACTLY — slot patterns; never recite verbatim):\n"
+                    + "\n".join(t_lines)
+                )
+        # Catchphrase residue (new) or legacy personal_phrases (fallback)
+        residue = (idio.get("catchphrase_residue") if isinstance(idio, dict) else None) \
+            or user_voice.get("personal_phrases") or []
+        if residue:
             voice_lines.append(
-                "- personal phrases (use SPARINGLY — ZERO is the default; "
-                "AT MOST one across the whole turn, only when it lands "
-                "naturally; never signature-stamp every message): "
-                + ", ".join(phrases[:6])
+                "- catchphrase residue (use ZERO in most outputs; AT MOST one per response): "
+                + ", ".join(f'"{p}"' for p in residue[:3])
             )
         habits = user_voice.get("punctuation_habits")
         if habits:
@@ -882,8 +905,47 @@ _PERSONALIZATION_DIM_DEFS = {
         "+",
     ),
     "voice_match": (
+        "0–3 (mean of 3 sub-components)",
+        # 3-component judge replaces the old single-question voice_match. Each
+        # sub-component is scored 0–3; voice_match = mean. Layer-1+2+3+4 are
+        # tested separately so a candidate that only mimics surface (emoji /
+        # phrase / length) doesn't silently pass.
+        # NOTE: ground truth here is the pipeline's user_voice BLOCK, not real-
+        # human writing. The judge is asking "did the agent's response respect
+        # the same voice block the gold respected?" — relative comparison.
+        (
+            "Score voice fidelity in three sub-components, each 0-3:\n"
+            "  • identity_coherence — does the response reflect the user's declared "
+            "    `signature_concerns` + `redemption_motifs` + `life_stage_preoccupations`? "
+            "    Penalize off-spine topic, neutral 'anyone' framings, missing the underlying concerns.\n"
+            "  • idiolect_fidelity — do syntactic patterns, hedge/booster ratio, "
+            "    sentence-shape, and constructional template SHAPES match the declared `idiolect` block? "
+            "    Penalize wrong sentence-length shape, missing hedges if hedge-dominant, "
+            "    foreign templates, verbatim copying of `example_realization`.\n"
+            "  • audience_appropriateness — does it respect `audience_design_note`, "
+            "    `active_stances`, `surface.disclosure_depth`, `surface.length_band`? "
+            "    Penalize wrong stance for audience, over-disclosure on public apps, off-band length."
+        ),
+        "+",
+    ),
+    "voice_self_consistency": (
         "0–3",
-        "When the task requires writing in the user's voice (posts, replies, captions), does the output match user_style_refs in register, tone, and length conventions?",
+        # Pulls 4 of the user's pre-T_test pipeline-generated samples (Ext B
+        # self-posts + DMs + chatbot user-turns) plus the candidate. The judge
+        # sees `identity_spine` as context but NOT `idiolect` — Layer 2 must
+        # be detected from the prior samples alone.
+        # Honest framing: the dataset has NO real human-written user samples;
+        # all "self-authored" text is pipeline output. So this audit is a
+        # SELF-CONSISTENCY check (same voice block → coherent output across
+        # consumers), not fidelity-to-real-human. Renamed from `voice_same_author`.
+        (
+            "Given 4 pipeline-generated samples by the same synthetic user + a 5th candidate, "
+            "score 0-3 whether the 5th plausibly comes from the same synthetic-user voice at "
+            "Layer 1 (concerns / topic-affinity, derivable from `identity_spine` shown in context) "
+            "and Layer 2 (sentence structure / hedge habits, must be detected from the 4 prior samples). "
+            "IGNORE surface emoji and catchphrase mimicry — those are decorations. "
+            "Penalize idiolect mismatch even when topic matches; penalize topic mismatch even when idiolect matches."
+        ),
         "+",
     ),
 }
@@ -905,16 +967,53 @@ def judge_personalization_dim_prompt(
     agent_output: str,
     task_id: str = "",
 ) -> str:
-    """Single parameterized prompt for all 7 personalization dimensions.
+    """Single parameterized prompt for all personalization dimensions.
 
     `dim` ∈ preference_alignment, avoid_leak, privacy_leak, over_personalization,
-            stale_preference_use, relationship_awareness, voice_match.
+            subtle_personalization, stale_preference_use, relationship_awareness,
+            voice_match, voice_self_consistency.
+
+    Special case: `voice_match` is a 3-component dim (identity_coherence +
+    idiolect_fidelity + audience_appropriateness, each 0-3). The judge
+    returns each component plus a combined score = mean. Caller in
+    `personalization_rubric.py` consumes the combined score.
     """
     spec = _PERSONALIZATION_DIM_DEFS.get(dim, ("0–3", "Score this dimension.", "+"))
     scale, question = spec[0], spec[1]
     gt = json.dumps(ground_truth, ensure_ascii=False, indent=2)
     hard = "binary" in scale
     key = "fail" if hard else "score"
+
+    # voice_match returns three sub-scores + a mean. Output schema differs.
+    if dim == "voice_match":
+        output_block = (
+            "```json\n"
+            "{\n"
+            "  \"identity_coherence\": <0-3>,\n"
+            "  \"idiolect_fidelity\": <0-3>,\n"
+            "  \"audience_appropriateness\": <0-3>,\n"
+            "  \"score\": <mean of the three, rounded to 1 decimal>,\n"
+            "  \"reasoning\": \"<one short paragraph naming what each sub-score reflects>\"\n"
+            "}\n"
+            "```"
+        )
+        guidance = (
+            "Score each of the three sub-components independently 0–3, then compute "
+            "`score` as the mean. 3 = excellent on all three; 0 = terrible on all three. "
+            "Do NOT inflate idiolect_fidelity just because identity_coherence was high "
+            "(or vice versa) — each component is independent."
+        )
+    else:
+        output_block = (
+            "```json\n"
+            f"{{\"{key}\": <number>, \"reasoning\": \"<one short paragraph>\"}}\n"
+            "```"
+        )
+        guidance = (
+            "For binary dims, output 1 if ANY violation is present, else 0."
+            if hard else "For 0–3 dims, 3 = excellent, 0 = terrible."
+        )
+
     return f"""{_JUDGE_PREFACE}
 
 ## Personalization dimension
@@ -931,9 +1030,7 @@ def judge_personalization_dim_prompt(
 
 ## Task
 Reason step-by-step: walk through the ground-truth slice and the agent output, then decide the score.
-{"For binary dims, output 1 if ANY violation is present, else 0." if hard else "For 0–3 dims, 3 = excellent, 0 = terrible."}
+{guidance}
 Output:
-```json
-{{"{key}": <number>, "reasoning": "<one short paragraph>"}}
-```
+{output_block}
 """
