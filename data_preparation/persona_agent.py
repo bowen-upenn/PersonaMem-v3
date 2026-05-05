@@ -124,27 +124,67 @@ class TemporalContradiction:
 class UserVoice:
     """The user's natural writing voice — ONE per user, shared across apps.
 
-    Real people don't curate four disjoint emoji palettes per platform; they
-    have one personal palette, one default capitalization habit, one set of
-    catchphrases, etc. Differences across apps emerge from audience, length,
-    effort, and topical filter — not from arbitrary stylistic re-tooling.
-    Per-app deviations live in AppPersona.overrides and are expected to be
-    empty for most apps for most users.
+    Modeled in four layers so coherence (Layers 1+2) survives across every
+    generated text and modulation (Layers 3+4) lands only where audience
+    pressure makes it. The deeper layers are the "fingerprint" — what
+    survives paraphrase per stylometry research; the shallow layers are
+    audience-driven and live on AppPersona.
 
-    Voice has BOTH a positive axis (this is how he writes) AND a negative
-    axis (these tones / styles / phrases would feel off-brand) — `voice_avoid`
-    + `phrases_to_avoid` capture the negatives so downstream LLMs writing
-    self-posts / DMs / chatbot turns / @ai comments don't reach for plausible
-    but tonally wrong language.
+      Layer 1 — Identity Spine (here, `identity_spine`): WHO this person is.
+      Layer 2 — Idiolect (here, `idiolect`): HOW they structure language.
+      Layer 3 — Indexical Repertoire (here, `repertoire`): the inventory of
+                stances/registers/genres they CAN deploy. Per-app picks a subset.
+      Layer 4 — Surface Modulation: lives on AppPersona.surface.
+
+    The "soft holdovers" (natural_register, capitalization, palette, etc.)
+    are descriptive surface summaries derived from Layers 1–3, not mimic
+    targets. Negatives axis (voice_avoid + phrases_to_avoid) is preserved
+    so downstream LLMs don't reach for plausible-but-off-brand language.
     """
+    # --- Layer 1 — Identity Spine (stable, never modulates) -------------
+    # dict with keys:
+    #   agency_communion: str (1 sentence)
+    #   redemption_motifs: list[str] (1–3 short noun phrases; each cites a
+    #     hidden_persona label or exemplar persona item)
+    #   contamination_motifs: list[str] (0–2)
+    #   life_stage_preoccupations: list[str] (2–3)
+    #   signature_concerns: list[str] (2–4 abstract concerns)
+    #   liwc_anchors: dict {analytic, clout, authentic, emotional_tone}
+    #   big_five_drivers: dict {trait: "level → behavioral implication"}
+    identity_spine: dict = field(default_factory=dict)
+
+    # --- Layer 2 — Idiolect (stable, slow drift; survives paraphrase) ---
+    # dict with keys:
+    #   function_word_profile: str (1 sentence)
+    #   syntactic_preferences: dict {sentence_length_shape, clause_embedding,
+    #     parataxis_hypotaxis, fragment_use}
+    #   hedge_booster_ratio: "hedge_dominant" | "balanced" | "booster_dominant"
+    #   appraisal_fingerprint: dict {attitude_dominant, engagement_style,
+    #     graduation}
+    #   constructional_templates: list[dict] (2–4) with keys
+    #     {pattern, example_realization, frequency}
+    #   catchphrase_residue: list[str] (0–2; default []; "ZERO is the right
+    #     answer for most users" — replaces the old personal_phrases attractor)
+    idiolect: dict = field(default_factory=dict)
+
+    # --- Layer 3 — Indexical Repertoire (stable inventory) --------------
+    # dict with keys:
+    #   stances: list[str] (3–6 short labels: "deadpan-affectionate", ...)
+    #   registers: list[str] (2–4)
+    #   backstage_frontstage_range: str (1 sentence)
+    #   speech_genre_fluency: list[str] (2–4)
+    repertoire: dict = field(default_factory=dict)
+
+    # --- Soft holdovers (descriptive surface summaries) -----------------
     natural_register: str = ""              # e.g. "casual conversational with deadpan humor"
     default_capitalization: str = ""        # "all_lowercase" | "sentence_case" | "mixed_with_caps_for_emphasis"
     punctuation_habits: str = ""            # 1 sentence — concrete habits, not enum
     humor_tone: str = ""                    # e.g. "deadpan, dry, occasional softness"
     emoji_palette: list[str] = field(default_factory=list)   # 5–12 emojis the user genuinely uses
     emoji_intensity_default: str = "medium"  # "low" | "medium" | "high"
-    personal_phrases: list[str] = field(default_factory=list)  # 3–6 catchphrases that bleed CROSS-APP
     formality_baseline: float = 0.3         # 0.0 (super casual) — 1.0 (very formal)
+
+    # --- Negatives axis (preserved) -------------------------------------
     voice_avoid: str = ""                   # 1–2 sentence prose: tones / styles / habits this user avoids
     phrases_to_avoid: list[str] = field(default_factory=list)  # 0–5 short literal phrases that would feel off-brand
 
@@ -158,39 +198,54 @@ class AppPersona:
     non-random app routing of preferences: each surviving preference is
     assigned to the app whose AppPersona use_purposes it best matches.
 
-    Voice mechanics (caps, palette, phrases, punctuation) live in
-    UserProfile.user_voice — the same shared voice across all four apps.
-    AppPersona only carries the per-app dimensions that genuinely vary:
-    audience, length, effort, topical filter. `overrides` is the optional
-    escape hatch for users who genuinely code-switch — empty {} by default.
+    Voice mechanics (Layers 1–3) live in UserProfile.user_voice — the same
+    shared voice across all four apps. AppPersona carries:
+      • Layer-3 SELECTION — `active_stances` / `active_registers` /
+        `active_speech_genres` are SUBSETS of the repertoire on user_voice;
+        validation rule: set(active_*) ⊆ set(repertoire.*).
+      • Layer-4 SURFACE MODULATION — `surface` (effort, length band, emoji
+        intensity shift, disclosure depth, etc.).
+      • Audience framing — `audience_design_note` (Bell's audience design),
+        `audience_lens`, `friend_zones`, `topical_focus`.
+      • `idiolect_overrides` — RARE escape hatch for genuine code-switching
+        (default {}; populate only when source rows show it).
 
     `app_avoid` carries the audience-driven negative axis for THIS app
-    specifically (politics on Facebook because elderly relatives, no shop
-    talk on Threads, etc.). Empty string is fine when the audience doesn't
-    drive any specific omission.
+    specifically. `delta_summary` (≤1 sentence) says WHY this audience
+    selects this stance subset — NOT what voice mechanics look like.
     """
     app_name: str                                          # "Instagram" | "Facebook" | "Threads" | "Chatbot"
+
+    # --- Layer-3 selection (subsets of user_voice.repertoire.*) ---------
+    active_stances: list[str] = field(default_factory=list)
+    active_registers: list[str] = field(default_factory=list)
+    active_speech_genres: list[str] = field(default_factory=list)
+
+    # --- Audience framing -----------------------------------------------
     use_purposes: list[str] = field(default_factory=list)  # e.g. ["close friends sharing", "aesthetic personal brand"]
     friend_zones: list[str] = field(default_factory=list)  # e.g. ["close friends", "family", "acquaintances"]
     audience_type: str = "mixed"                           # "private" | "public" | "mixed"
     audience_lens: str = ""                                # 1 sentence: WHO is realistically reading here
-    style_description: str = ""                            # 2-3 sentences framed as a DELTA from base voice
+    audience_design_note: str = ""                         # 1 sentence in Bell's terms (addressee/auditor/overhearer)
     posting_frequency: str = "weekly"                      # "daily" | "weekly" | "rarely" | "passive viewer only"
     topical_focus: list[str] = field(default_factory=list) # 3-5 domains — subset filter for THIS audience
     chatbot_contexts: list[str] = field(default_factory=list)  # Chatbot only; picked from CHATBOT_CONTEXTS
-    # How the shared user_voice gets MODULATED for this app's audience/affordance.
-    # Required keys: effort_level, length_band, emoji_intensity_shift,
-    # audience_self_censoring. Optional: emoji_topic_filter (only when the
-    # audience genuinely filters which palette emoji surface here).
-    expression: dict = field(default_factory=dict)
-    # OPTIONAL per-app voice deviations from the base user_voice. Empty {} for
-    # most users on most apps; only populated when the source data shows a
-    # genuine code-switch. Keys: capitalization, extra_phrases (0-3),
+
+    # --- Layer-4 surface modulation -------------------------------------
+    # dict with required keys: effort_level, length_band, emoji_intensity_shift,
+    # audience_self_censoring, disclosure_depth ("low"|"medium"|"high").
+    # Optional: emoji_topic_filter.
+    surface: dict = field(default_factory=dict)
+
+    # --- Layer-2 deviation hatch (RARE) ---------------------------------
+    # Default {} for most users on most apps; only populated when source data
+    # shows a genuine code-switch. Keys: capitalization, extra_phrases (0-3),
     # extra_forbidden (0-3), punctuation_shift.
-    overrides: dict = field(default_factory=dict)
-    # 1 sentence prose: audience-driven content/tone this user skips on THIS
-    # app. Empty string when the audience doesn't drive any specific omission.
-    app_avoid: str = ""
+    idiolect_overrides: dict = field(default_factory=dict)
+
+    # --- Negatives + per-app why ----------------------------------------
+    app_avoid: str = ""           # audience-driven content/tone the user skips on THIS app
+    delta_summary: str = ""       # ≤1 sentence: WHY this audience selects this stance subset
 
 
 @dataclass
@@ -307,7 +362,7 @@ class UserProfile:
     bio: str = ""
     # The user's natural writing voice (caps, emoji palette, phrases,
     # punctuation, register, humor). ONE shared voice across all apps;
-    # per-app deviations live in app_personas[*].overrides.
+    # per-app deviations live in app_personas[*].idiolect_overrides.
     user_voice: dict = field(default_factory=dict)  # asdict(UserVoice)
     # Per-app sub-personas — filled in by generate_app_personas() after the
     # base profile is written. Keyed by app_name.
@@ -4396,17 +4451,26 @@ class PersonaAgent:
         ]
 
     def generate_app_personas(self) -> None:
-        """Generate the user's shared writing voice + four AppPersona objects
-        in a single LLM call and attach them to self.user_profile.
+        """Step 8 — Generate writing voice (Layers 1+2+3) + four AppPersona modulations.
 
-        Outputs:
-          self.user_profile.user_voice  — shared voice (caps, palette, phrases, ...)
+        Two LLM calls (real people have ONE voice; per-app modulation only
+        SELECTS from the existing repertoire):
+
+          Call A — `generate_voice_core_prompt` produces the stable
+                   user_voice block (identity_spine + idiolect + repertoire +
+                   soft holdovers). Cached on `self.user_profile.user_voice`
+                   so re-running Step 8 doesn't redo Layer 1+2+3 unless a
+                   full regen is requested.
+
+          Call B — `generate_app_modulations_prompt` produces the four
+                   AppPersona entries. Each app's `active_*` lists must be
+                   subsets of the corresponding `repertoire.*`. At least 2
+                   of the 4 apps must differ on `active_stances` by ≥1
+                   element. On violation, re-prompt once.
+
+        Outputs (asdict'd onto user_profile):
+          self.user_profile.user_voice  — Layers 1+2+3 + soft holdovers
           self.user_profile.app_personas — dict[app_name -> AppPersona dict]
-                                            with audience/length/effort/topic + overrides
-
-        Uses the already-generated UserProfile, top preferences, and a small
-        stratified sample of raw source rows so the LLM grounds voice in real
-        evidence.
         """
         if not self.user_profile:
             if self.verbose:
@@ -4417,14 +4481,14 @@ class PersonaAgent:
             # only used in API mode. Nothing to do here in subagent mode.
             return
 
-        top_n = 20
+        # ---- Grounding shared by both calls --------------------------------
         top_personas = [
             p.persona_item
             for p in sorted(
                 self.cross_referenced_personas,
                 key=lambda x: (x.confidence_score_init + x.confidence_cross_referenced),
                 reverse=True,
-            )[:top_n]
+            )[:30]  # was 20 — Layer 2 needs a slightly broader inventory
         ]
 
         profile_dict = {
@@ -4437,80 +4501,224 @@ class PersonaAgent:
             "bio": self.user_profile.bio,
         }
 
-        source_samples = self._sample_source_rows_for_voice(max_rows=10)
+        # Layer-2 needs broader stylometric grounding — was 10, now 20.
+        source_samples = self._sample_source_rows_for_voice(max_rows=20)
 
-        prompt = prompts.generate_app_personas_prompt(
-            profile=profile_dict,
-            top_personas=top_personas,
-            chatbot_contexts=CHATBOT_CONTEXTS,
-            source_samples=source_samples,
-        )
-        response = self._query_llm_with_retry(prompt)
-        if not response:
-            print(f"{utils.Colors.WARNING}[User {self.user_id}] App persona generation failed.{utils.Colors.ENDC}")
-            return
+        # Pass hidden-persona summary so identity_spine motifs can cite them.
+        hp_summary = []
+        for hp in (self.user_profile.hidden_personas or []):
+            hp_summary.append({
+                "label": getattr(hp, "label", "") or "",
+                "persona_type": getattr(hp, "type", "") or "",
+                "signal_strength": getattr(hp, "signal_strength", "") or "",
+            })
 
-        parsed = utils.extract_json_from_response(response)
-        if not isinstance(parsed, dict):
-            print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable app persona response.{utils.Colors.ENDC}")
-            return
+        # Sensitive-life-event topics (background context for motif grounding;
+        # the prompt instructs the LLM NOT to name them as motifs directly).
+        sle_topics: list[str] = []
+        for hp in (self.user_profile.hidden_personas or []):
+            if getattr(hp, "type", "") == "sensitive_life_event":
+                for ev in (getattr(hp, "events", None) or []):
+                    topic = ev.get("topic_label") if isinstance(ev, dict) else None
+                    if topic:
+                        sle_topics.append(topic)
 
-        # Parse user_voice (shared across all apps)
-        uv_raw = parsed.get("user_voice") or {}
-        if isinstance(uv_raw, dict) and uv_raw:
-            user_voice = UserVoice(
+        # =====================================================================
+        # Call A — voice core (Layers 1+2+3 + soft holdovers)
+        # =====================================================================
+        if self.user_profile.user_voice and self.user_profile.user_voice.get("identity_spine"):
+            # Layer 1+2+3 already cached on profile (e.g. re-running just Step
+            # 8 to refresh per-app modulations). Skip Call A.
+            user_voice_dict = self.user_profile.user_voice
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Voice core cached — skipping Call A.{utils.Colors.ENDC}")
+        else:
+            prompt_a = prompts.generate_voice_core_prompt(
+                profile=profile_dict,
+                top_personas=top_personas,
+                source_samples=source_samples,
+                hidden_persona_summary=hp_summary,
+                sensitive_event_topics=sle_topics,
+            )
+            response_a = self._query_llm_with_retry(prompt_a)
+            if not response_a:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] Voice core (Call A) generation failed.{utils.Colors.ENDC}")
+                return
+            parsed_a = utils.extract_json_from_response(response_a)
+            if not isinstance(parsed_a, dict):
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable Call A response.{utils.Colors.ENDC}")
+                return
+
+            uv_raw = parsed_a.get("user_voice") or {}
+            if not (isinstance(uv_raw, dict) and uv_raw):
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] No user_voice in Call A response — leaving empty.{utils.Colors.ENDC}")
+                self.user_profile.user_voice = {}
+                return
+
+            # Cap catchphrase_residue at 2 (defense in depth — prompt says ≤2,
+            # we enforce it here too).
+            idio = uv_raw.get("idiolect") or {}
+            if isinstance(idio, dict):
+                residue = list(idio.get("catchphrase_residue") or [])
+                if len(residue) > 2:
+                    residue = residue[:2]
+                idio["catchphrase_residue"] = residue
+                uv_raw["idiolect"] = idio
+
+            user_voice_obj = UserVoice(
+                identity_spine=uv_raw.get("identity_spine") or {},
+                idiolect=uv_raw.get("idiolect") or {},
+                repertoire=uv_raw.get("repertoire") or {},
                 natural_register=str(uv_raw.get("natural_register", "")),
+                humor_tone=str(uv_raw.get("humor_tone", "")),
                 default_capitalization=str(uv_raw.get("default_capitalization", "")),
                 punctuation_habits=str(uv_raw.get("punctuation_habits", "")),
-                humor_tone=str(uv_raw.get("humor_tone", "")),
                 emoji_palette=list(uv_raw.get("emoji_palette", []) or []),
                 emoji_intensity_default=str(uv_raw.get("emoji_intensity_default", "medium")),
-                personal_phrases=list(uv_raw.get("personal_phrases", []) or []),
                 formality_baseline=float(uv_raw.get("formality_baseline", 0.3) or 0.3),
                 voice_avoid=str(uv_raw.get("voice_avoid", "")),
                 phrases_to_avoid=list(uv_raw.get("phrases_to_avoid", []) or []),
             )
-            self.user_profile.user_voice = asdict(user_voice)
-        else:
-            print(f"{utils.Colors.WARNING}[User {self.user_id}] No user_voice in response — leaving empty.{utils.Colors.ENDC}")
-            self.user_profile.user_voice = {}
+            self.user_profile.user_voice = asdict(user_voice_obj)
+            user_voice_dict = self.user_profile.user_voice
 
-        app_personas_block = parsed.get("app_personas") or {}
-        if not isinstance(app_personas_block, dict):
-            app_personas_block = {}
+        # =====================================================================
+        # Call B — per-app modulations (Layer-3 selection + Layer-4 surface)
+        # =====================================================================
+        rep = (user_voice_dict.get("repertoire") or {})
+        repertoire_stances = set(rep.get("stances") or [])
+        repertoire_registers = set(rep.get("registers") or [])
+        repertoire_genres = set(rep.get("speech_genre_fluency") or [])
 
-        app_personas: dict = {}
-        for app_name in PLATFORMS:
-            entry = app_personas_block.get(app_name)
-            if not isinstance(entry, dict):
-                continue
-            expression = entry.get("expression") or {}
-            if not isinstance(expression, dict):
-                expression = {}
-            overrides = entry.get("overrides") or {}
-            if not isinstance(overrides, dict):
-                overrides = {}
-            app_personas[app_name] = AppPersona(
-                app_name=app_name,
-                use_purposes=list(entry.get("use_purposes", [])),
-                friend_zones=list(entry.get("friend_zones", [])),
-                audience_type=entry.get("audience_type", "mixed"),
-                audience_lens=str(entry.get("audience_lens", "")),
-                style_description=str(entry.get("style_description", "")),
-                posting_frequency=entry.get("posting_frequency", "weekly"),
-                topical_focus=list(entry.get("topical_focus", [])),
-                chatbot_contexts=list(entry.get("chatbot_contexts", [])) if app_name == "Chatbot" else [],
-                expression=expression,
-                overrides=overrides,
-                app_avoid=str(entry.get("app_avoid", "")),
+        def _parse_call_b(parsed_b: dict) -> tuple[dict[str, AppPersona], list[str]]:
+            """Parse Call B output and validate. Returns (app_personas, violations)."""
+            block = parsed_b.get("app_personas") or {}
+            if not isinstance(block, dict):
+                return {}, ["app_personas_not_dict"]
+
+            built: dict[str, AppPersona] = {}
+            violations: list[str] = []
+            for app_name in PLATFORMS:
+                entry = block.get(app_name)
+                if not isinstance(entry, dict):
+                    violations.append(f"{app_name}:missing_entry")
+                    continue
+                a_stances = list(entry.get("active_stances") or [])
+                a_regs = list(entry.get("active_registers") or [])
+                a_genres = list(entry.get("active_speech_genres") or [])
+
+                # Subset rule: drop offending elements (we'll detect rejections
+                # by counting drops — if any non-trivial drop happened, that's
+                # a violation that warrants a re-prompt).
+                offending_stances = [s for s in a_stances if repertoire_stances and s not in repertoire_stances]
+                offending_regs = [r for r in a_regs if repertoire_registers and r not in repertoire_registers]
+                offending_genres = [g for g in a_genres if repertoire_genres and g not in repertoire_genres]
+                if offending_stances:
+                    violations.append(f"{app_name}:stances_not_subset:{offending_stances}")
+                if offending_regs:
+                    violations.append(f"{app_name}:registers_not_subset:{offending_regs}")
+                if offending_genres:
+                    violations.append(f"{app_name}:genres_not_subset:{offending_genres}")
+
+                # Sanitize — keep only valid subset members on the kept persona.
+                if repertoire_stances:
+                    a_stances = [s for s in a_stances if s in repertoire_stances]
+                if repertoire_registers:
+                    a_regs = [r for r in a_regs if r in repertoire_registers]
+                if repertoire_genres:
+                    a_genres = [g for g in a_genres if g in repertoire_genres]
+
+                surface = entry.get("surface") or {}
+                if not isinstance(surface, dict):
+                    surface = {}
+                idiolect_overrides = entry.get("idiolect_overrides") or {}
+                if not isinstance(idiolect_overrides, dict):
+                    idiolect_overrides = {}
+
+                built[app_name] = AppPersona(
+                    app_name=app_name,
+                    active_stances=a_stances,
+                    active_registers=a_regs,
+                    active_speech_genres=a_genres,
+                    use_purposes=list(entry.get("use_purposes", [])),
+                    friend_zones=list(entry.get("friend_zones", [])),
+                    audience_type=entry.get("audience_type", "mixed"),
+                    audience_lens=str(entry.get("audience_lens", "")),
+                    audience_design_note=str(entry.get("audience_design_note", "")),
+                    posting_frequency=entry.get("posting_frequency", "weekly"),
+                    topical_focus=list(entry.get("topical_focus", [])),
+                    chatbot_contexts=list(entry.get("chatbot_contexts", [])) if app_name == "Chatbot" else [],
+                    surface=surface,
+                    idiolect_overrides=idiolect_overrides,
+                    app_avoid=str(entry.get("app_avoid", "")),
+                    delta_summary=str(entry.get("delta_summary", "")),
+                )
+
+            # Diversity rule: ≥2 apps differ on active_stances by ≥1 element.
+            if built:
+                stance_sets = [tuple(sorted(set(p.active_stances))) for p in built.values()]
+                pairs_distinct = any(
+                    stance_sets[i] != stance_sets[j]
+                    for i in range(len(stance_sets))
+                    for j in range(i + 1, len(stance_sets))
+                )
+                if not pairs_distinct and len(built) >= 2:
+                    violations.append("diversity_rule:all_apps_same_stance_set")
+            return built, violations
+
+        # Tag source samples by inferred app for Call B grounding (best-effort —
+        # session-based routing happens later, but the LLM benefits from at
+        # least a hint).
+        samples_for_b = list(source_samples)
+
+        prompt_b = prompts.generate_app_modulations_prompt(
+            profile=profile_dict,
+            user_voice=user_voice_dict,
+            chatbot_contexts=CHATBOT_CONTEXTS,
+            source_samples_by_app=samples_for_b,
+        )
+        response_b = self._query_llm_with_retry(prompt_b)
+        if not response_b:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] App modulations (Call B) generation failed.{utils.Colors.ENDC}")
+            return
+        parsed_b = utils.extract_json_from_response(response_b)
+        if not isinstance(parsed_b, dict):
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] Unparseable Call B response.{utils.Colors.ENDC}")
+            return
+
+        app_personas, violations = _parse_call_b(parsed_b)
+        if violations:
+            # One re-prompt with explicit violation list. After that, accept
+            # whatever we have (sanitization already dropped offending items).
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] Call B violations on first pass: {violations}; re-prompting once.{utils.Colors.ENDC}")
+            retry_prompt = (
+                prompt_b
+                + "\n\n## RE-PROMPT — your previous output had these violations:\n"
+                + "\n".join(f"- {v}" for v in violations)
+                + "\n\nFix them and re-emit the JSON. Subset rule and diversity rule are both required."
             )
+            retry_response = self._query_llm_with_retry(retry_prompt)
+            if retry_response:
+                retry_parsed = utils.extract_json_from_response(retry_response)
+                if isinstance(retry_parsed, dict):
+                    retry_built, retry_violations = _parse_call_b(retry_parsed)
+                    if not retry_violations and retry_built:
+                        app_personas = retry_built
+                    elif retry_built and len(retry_violations) < len(violations):
+                        app_personas = retry_built  # accept partial improvement
 
         self.user_profile.app_personas = {k: asdict(v) for k, v in app_personas.items()}
 
         if self.verbose:
-            n_overrides = sum(1 for ap in app_personas.values() if ap.overrides)
-            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Generated user_voice + {len(app_personas)} app personas "
-                  f"({n_overrides}/{len(app_personas)} apps with non-empty overrides).{utils.Colors.ENDC}")
+            n_idio_overrides = sum(1 for ap in app_personas.values() if ap.idiolect_overrides)
+            stance_sets = sorted({tuple(sorted(set(ap.active_stances))) for ap in app_personas.values()})
+            print(
+                f"{utils.Colors.OKGREEN}[User {self.user_id}] Generated user_voice (4-layer) + "
+                f"{len(app_personas)} app personas "
+                f"(distinct stance subsets: {len(stance_sets)}; "
+                f"{n_idio_overrides}/{len(app_personas)} apps with idiolect_overrides).{utils.Colors.ENDC}"
+            )
 
     # ------------------------------------------------------------------
     # Session grouping + row-level app routing
@@ -5612,16 +5820,7 @@ class PersonaAgent:
         if not chatbot_persona:
             return
         if isinstance(chatbot_persona, AppPersona):
-            chatbot_persona_dict = {
-                "app_name": chatbot_persona.app_name,
-                "use_purposes": chatbot_persona.use_purposes,
-                "friend_zones": chatbot_persona.friend_zones,
-                "audience_type": chatbot_persona.audience_type,
-                "style_description": chatbot_persona.style_description,
-                "posting_frequency": chatbot_persona.posting_frequency,
-                "topical_focus": chatbot_persona.topical_focus,
-                "chatbot_contexts": chatbot_persona.chatbot_contexts,
-            }
+            chatbot_persona_dict = asdict(chatbot_persona)
         else:
             chatbot_persona_dict = chatbot_persona
 
@@ -5939,14 +6138,7 @@ class PersonaAgent:
         for app_name in ("Instagram", "Facebook", "Threads"):
             persona = self.user_profile.app_personas.get(app_name)
             if isinstance(persona, AppPersona):
-                app_persona_dicts[app_name] = {
-                    "use_purposes": persona.use_purposes,
-                    "friend_zones": persona.friend_zones,
-                    "audience_type": persona.audience_type,
-                    "style_description": persona.style_description,
-                    "posting_frequency": persona.posting_frequency,
-                    "topical_focus": persona.topical_focus,
-                }
+                app_persona_dicts[app_name] = asdict(persona)
             elif isinstance(persona, dict):
                 app_persona_dicts[app_name] = persona
             else:
@@ -6919,9 +7111,24 @@ class PersonaAgent:
             if not app:
                 app = random.choice(PLATFORMS)
 
-            # Build nested preferences list — only surviving canonicals
-            preferences: list[dict] = []
+            # Build nested preferences list — only surviving canonicals.
+            # Dedup atoms that map to the same canonical: when two raw rows
+            # of the same event both produced the same canonical persona_item
+            # (e.g. both rows about Burger King → "Enjoys fast-food burger
+            # content..."), keep ONLY the atom with the highest per-row
+            # confidence_score_init. Otherwise the event's preferences list
+            # carries the same persona_item twice with different init scores,
+            # which surfaces as visible duplicates in the rendered HTML.
+            best_atom_per_canonical: dict[str, "AtomicPersona"] = {}
             for ap in atoms:
+                key = _normalize_persona_text(ap.persona_item)
+                if key not in canonical_lookup:
+                    continue
+                prev = best_atom_per_canonical.get(key)
+                if prev is None or (ap.confidence_score_init or 0.0) > (prev.confidence_score_init or 0.0):
+                    best_atom_per_canonical[key] = ap
+            preferences: list[dict] = []
+            for ap in best_atom_per_canonical.values():
                 key = _normalize_persona_text(ap.persona_item)
                 cr = canonical_lookup.get(key)
                 if not cr:
@@ -7164,8 +7371,7 @@ class PersonaAgent:
                                    "interaction_type": itype} for p in preferences]
                 chatbot_p = self.user_profile.app_personas.get("Chatbot", {})
                 if isinstance(chatbot_p, AppPersona):
-                    chatbot_p = {"style_description": chatbot_p.style_description,
-                                 "chatbot_contexts": chatbot_p.chatbot_contexts}
+                    chatbot_p = asdict(chatbot_p)
                 fb_prompt = prompts.generate_chatbot_conversation_prompt(
                     preferences=fallback_prefs,
                     conversation_type="knowledge_query",
