@@ -1622,8 +1622,12 @@ def _load_test_samples(
                 sample["example_response_self_check"] = inst["example_response_self_check"]
             # Voice-evidence spans for compose tasks — drives bold rendering
             # of the gold so a reviewer can see WHY a voice_mismatch foil fails.
+            # Both sides are surfaced so the renderer can union them and bold
+            # tone anchors the Example or the Inferior actually leverage.
             if inst.get("example_response_voice_evidence"):
                 sample["example_response_voice_evidence"] = inst["example_response_voice_evidence"]
+            if inst.get("inferior_response_voice_evidence"):
+                sample["inferior_response_voice_evidence"] = inst["inferior_response_voice_evidence"]
             if inst.get("voice_evidence_smoke_check"):
                 sample["voice_evidence_smoke_check"] = inst["voice_evidence_smoke_check"]
             if inst.get("voice_evidence_smoke_check_after_regen"):
@@ -1806,6 +1810,10 @@ def dump_test_samples_json(
             "example_response_voice_evidence": (
                 s.get("example_response_voice_evidence")
                 or inst.get("example_response_voice_evidence")
+            ),
+            "inferior_response_voice_evidence": (
+                s.get("inferior_response_voice_evidence")
+                or inst.get("inferior_response_voice_evidence")
             ),
             "voice_evidence_smoke_check": (
                 s.get("voice_evidence_smoke_check")
