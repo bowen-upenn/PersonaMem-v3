@@ -962,13 +962,15 @@ def _gt_agentic(inst: dict) -> dict:
         if task_id in _VOICE_DEPENDENT:
             ap_map = _PERSONA_CONTEXT.get("app_personas") or {}
             ap = ap_map.get((target or "").lower()) or {}
-            style = (ap.get("style_description") or "").strip()
+            # New schema: delta_summary. Legacy fallback: style_description.
+            style = (ap.get("delta_summary") or ap.get("style_description") or "").strip()
             focus = ap.get("topical_focus") or []
             freq = (ap.get("posting_frequency") or "").strip()
             audience = (ap.get("audience_type") or "").strip()
             audience_lens = (ap.get("audience_lens") or "").strip()
-            expression = ap.get("expression") or {}
-            overrides = ap.get("overrides") or {}
+            # New schema: surface / idiolect_overrides. Legacy: expression / overrides.
+            expression = ap.get("surface") or ap.get("expression") or {}
+            overrides = ap.get("idiolect_overrides") or ap.get("overrides") or {}
             uv = _PERSONA_CONTEXT.get("user_voice") or {}
             legacy_sig = ap.get("voice_signature") or {}
 
@@ -992,10 +994,13 @@ def _gt_agentic(inst: dict) -> dict:
                             f"  • personal emoji palette: {' '.join(palette)}"
                             f" (intensity: {uv.get('emoji_intensity_default', 'medium')})"
                         )
-                    phrases = uv.get("personal_phrases") or []
+                    # New schema: idiolect.catchphrase_residue. Legacy: personal_phrases.
+                    _idio = uv.get("idiolect") or {}
+                    phrases = (_idio.get("catchphrase_residue") if isinstance(_idio, dict) else None) \
+                        or uv.get("personal_phrases") or []
                     if phrases:
                         gtp_lines.append(
-                            "  • personal phrases (cross-app): "
+                            "  • catchphrase residue (use ZERO in most outputs; AT MOST one per response): "
                             + ", ".join(f"\"{p}\"" for p in phrases[:5])
                         )
                     if uv.get("formality_baseline") is not None:
@@ -2086,6 +2091,13 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .profile-card .profile-voice ul {{ list-style: none; padding: 0; margin: 0; font-size: 12px; line-height: 1.7; color: var(--text); }}
   .profile-card .profile-voice .voice-key {{ font-weight: 600; color: var(--text-secondary); margin-right: 4px; }}
   .profile-card .profile-voice .voice-avoid {{ font-style: italic; color: #8B5A2B; }}
+  /* Layered 4-layer voice block — Layer 1/2/3 sub-sections inside the profile-voice card */
+  .profile-card .profile-voice-section {{ margin-top: 10px; padding-top: 8px; border-top: 1px dotted #d1d5db; }}
+  .profile-card .profile-voice-section:first-of-type {{ border-top: none; padding-top: 0; }}
+  .profile-card .profile-voice-section-header {{ font-size: 11px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }}
+  .profile-card .profile-voice-section-hint {{ font-weight: 400; text-transform: none; letter-spacing: 0; color: #9ca3af; font-style: italic; margin-left: 6px; }}
+  /* Stance/register/genre chips — used in both Layer-3 inventory and per-app active selection */
+  .stance-chip {{ display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; background: #eef2ff; color: #4338ca; margin: 1px 2px; border: 1px solid #c7d2fe; }}
 
   .section {{ margin-bottom: 40px; }}
   .section-title {{ font-size: 16px; font-weight: 600; letter-spacing: -0.2px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text); }}
@@ -2464,36 +2476,128 @@ if (profileData) {{
   }}
 
   // Shared user_voice block — rendered INSIDE the profile-card just below
-  // the MBTI chips. The same person types on every app; per-app sections
-  // only show what genuinely shifts.
+  // the MBTI chips. Layered: Identity spine (Layer 1) + Idiolect (Layer 2) +
+  // Indexical repertoire (Layer 3) + soft surface descriptors. Per-app
+  // sections only show what genuinely shifts.
   const uv = profileData.user_voice || {{}};
   let userVoiceHtml = '';
-  if (uv && (uv.natural_register || uv.default_capitalization || (uv.emoji_palette||[]).length || (uv.personal_phrases||[]).length)) {{
+  const _spine = uv.identity_spine || {{}};
+  const _idio  = uv.idiolect       || {{}};
+  const _rep   = uv.repertoire     || {{}};
+  const _hasNew = (Object.keys(_spine).length || Object.keys(_idio).length || Object.keys(_rep).length);
+  const _hasLegacy = uv.natural_register || uv.default_capitalization || (uv.emoji_palette||[]).length || (uv.personal_phrases||[]).length;
+  if (uv && (_hasNew || _hasLegacy)) {{
     const palette = (uv.emoji_palette || []).join(' ');
-    const phrases = (uv.personal_phrases || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
     const avoidPhrases = (uv.phrases_to_avoid || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
-    const uvRows = [];
-    if (uv.natural_register)        uvRows.push(`<li><span class="voice-key">register:</span> ${{escapeHtml(uv.natural_register)}}</li>`);
-    if (uv.default_capitalization)  uvRows.push(`<li><span class="voice-key">caps:</span> ${{escapeHtml(uv.default_capitalization)}}</li>`);
-    if (uv.punctuation_habits)      uvRows.push(`<li><span class="voice-key">punctuation:</span> ${{escapeHtml(uv.punctuation_habits)}}</li>`);
-    if (uv.humor_tone)              uvRows.push(`<li><span class="voice-key">humor / tone:</span> ${{escapeHtml(uv.humor_tone)}}</li>`);
-    if (palette)                    uvRows.push(`<li><span class="voice-key">personal emoji palette:</span> ${{escapeHtml(palette)}}</li>`);
-    if (uv.emoji_intensity_default) uvRows.push(`<li><span class="voice-key">emoji intensity:</span> ${{escapeHtml(uv.emoji_intensity_default)}}</li>`);
-    if (phrases)                    uvRows.push(`<li><span class="voice-key">personal phrases (cross-app):</span> ${{phrases}}</li>`);
-    if (uv.formality_baseline !== undefined && uv.formality_baseline !== null) {{
-      uvRows.push(`<li><span class="voice-key">formality baseline:</span> ${{escapeHtml(String(uv.formality_baseline))}}</li>`);
+
+    const sections = [];
+
+    // ---- Section 1: Identity spine -----------------------------------
+    if (Object.keys(_spine).length) {{
+      const sp = _spine;
+      const liwc = sp.liwc_anchors || {{}};
+      const liwcStr = Object.keys(liwc).map(k => `${{escapeHtml(k)}}=${{escapeHtml(String(liwc[k]))}}`).join(', ');
+      const b5 = sp.big_five_drivers || {{}};
+      const b5Str = Object.keys(b5).map(k => `<li><span class="voice-key">${{escapeHtml(k)}}:</span> ${{escapeHtml(String(b5[k]))}}</li>`).join('');
+      const rows = [];
+      if (sp.agency_communion)                            rows.push(`<li><span class="voice-key">agency/communion:</span> ${{escapeHtml(sp.agency_communion)}}</li>`);
+      if ((sp.redemption_motifs||[]).length)              rows.push(`<li><span class="voice-key">redemption motifs:</span> ${{(sp.redemption_motifs||[]).map(escapeHtml).join('; ')}}</li>`);
+      if ((sp.contamination_motifs||[]).length)           rows.push(`<li><span class="voice-key">contamination motifs:</span> ${{(sp.contamination_motifs||[]).map(escapeHtml).join('; ')}}</li>`);
+      if ((sp.life_stage_preoccupations||[]).length)      rows.push(`<li><span class="voice-key">life-stage preoccupations:</span> ${{(sp.life_stage_preoccupations||[]).map(escapeHtml).join('; ')}}</li>`);
+      if ((sp.signature_concerns||[]).length)             rows.push(`<li><span class="voice-key">signature concerns:</span> ${{(sp.signature_concerns||[]).map(escapeHtml).join('; ')}}</li>`);
+      if (liwcStr)                                        rows.push(`<li><span class="voice-key">LIWC anchors:</span> ${{liwcStr}}</li>`);
+      if (b5Str)                                          rows.push(`<li><span class="voice-key">Big-Five drivers:</span><ul style="margin-top:2px;">${{b5Str}}</ul></li>`);
+      if (rows.length) {{
+        sections.push(`
+          <div class="profile-voice-section">
+            <div class="profile-voice-section-header">Layer 1 — Identity spine <span class="profile-voice-section-hint">drives WHAT this person brings up</span></div>
+            <ul>${{rows.join('')}}</ul>
+          </div>`);
+      }}
     }}
-    if (uv.voice_avoid) {{
-      uvRows.push(`<li class="voice-avoid"><span class="voice-key">voice avoid:</span> ${{escapeHtml(uv.voice_avoid)}}</li>`);
+
+    // ---- Section 2: Idiolect -----------------------------------------
+    if (Object.keys(_idio).length) {{
+      const id = _idio;
+      const sp = id.syntactic_preferences || {{}};
+      const af = id.appraisal_fingerprint || {{}};
+      const tmpls = (id.constructional_templates || []).map(t => {{
+        const pat = escapeHtml(t.pattern || '');
+        const ex  = escapeHtml(t.example_realization || '');
+        return `<li><code style="font-family:ui-monospace,Menlo,Monaco,monospace;background:#fffbeb;padding:1px 5px;border-radius:3px;">${{pat}}</code> <span style="opacity:0.7;">e.g. "${{ex}}"</span></li>`;
+      }}).join('');
+      const residue = (id.catchphrase_residue || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+      const rows = [];
+      if (id.function_word_profile)                       rows.push(`<li><span class="voice-key">function-word profile:</span> ${{escapeHtml(id.function_word_profile)}}</li>`);
+      if (Object.keys(sp).length)                         rows.push(`<li><span class="voice-key">sentences:</span> shape=${{escapeHtml(sp.sentence_length_shape||'?')}}, embedding=${{escapeHtml(sp.clause_embedding||'?')}}, parataxis/hypotaxis=${{escapeHtml(sp.parataxis_hypotaxis||'?')}}, fragments=${{escapeHtml(sp.fragment_use||'?')}}</li>`);
+      if (id.hedge_booster_ratio)                         rows.push(`<li><span class="voice-key">hedge/booster:</span> ${{escapeHtml(id.hedge_booster_ratio)}}</li>`);
+      if (Object.keys(af).length)                         rows.push(`<li><span class="voice-key">appraisal:</span> attitude=${{escapeHtml(af.attitude_dominant||'?')}}, engagement=${{escapeHtml(af.engagement_style||'?')}}, graduation=${{escapeHtml(af.graduation||'?')}}</li>`);
+      if (tmpls)                                          rows.push(`<li><span class="voice-key">templates (slot patterns — apply abstractly):</span><ul style="margin-top:2px;">${{tmpls}}</ul></li>`);
+      if (residue)                                        rows.push(`<li><span class="voice-key">catchphrase residue (use ZERO in most outputs; AT MOST one per response):</span> ${{residue}}</li>`);
+      if (uv.default_capitalization)                      rows.push(`<li><span class="voice-key">capitalization:</span> ${{escapeHtml(uv.default_capitalization)}}</li>`);
+      if (uv.punctuation_habits)                          rows.push(`<li><span class="voice-key">punctuation:</span> ${{escapeHtml(uv.punctuation_habits)}}</li>`);
+      if (uv.formality_baseline !== undefined && uv.formality_baseline !== null) rows.push(`<li><span class="voice-key">formality:</span> ${{escapeHtml(String(uv.formality_baseline))}}</li>`);
+      if (palette)                                        rows.push(`<li><span class="voice-key">palette (subset only — never invent):</span> ${{escapeHtml(palette)}} <span style="opacity:0.7;">(intensity ${{escapeHtml(uv.emoji_intensity_default || 'medium')}})</span></li>`);
+      if (rows.length) {{
+        sections.push(`
+          <div class="profile-voice-section">
+            <div class="profile-voice-section-header">Layer 2 — Idiolect <span class="profile-voice-section-hint">must survive paraphrase — don't just imitate words</span></div>
+            <ul>${{rows.join('')}}</ul>
+          </div>`);
+      }}
     }}
-    if (avoidPhrases) {{
-      uvRows.push(`<li class="voice-avoid"><span class="voice-key">phrases to avoid:</span> ${{avoidPhrases}}</li>`);
+
+    // ---- Section 3: Indexical repertoire -----------------------------
+    if (Object.keys(_rep).length) {{
+      const rp = _rep;
+      const stanceChips = (rp.stances || []).map(s => `<span class="stance-chip">${{escapeHtml(s)}}</span>`).join(' ');
+      const regChips    = (rp.registers || []).map(s => `<span class="stance-chip">${{escapeHtml(s)}}</span>`).join(' ');
+      const genreChips  = (rp.speech_genre_fluency || []).map(s => `<span class="stance-chip">${{escapeHtml(s)}}</span>`).join(' ');
+      const rows = [];
+      if (stanceChips)                          rows.push(`<li><span class="voice-key">stances:</span> ${{stanceChips}}</li>`);
+      if (regChips)                             rows.push(`<li><span class="voice-key">registers:</span> ${{regChips}}</li>`);
+      if (rp.backstage_frontstage_range)        rows.push(`<li><span class="voice-key">backstage/frontstage range:</span> ${{escapeHtml(rp.backstage_frontstage_range)}}</li>`);
+      if (genreChips)                           rows.push(`<li><span class="voice-key">speech-genre fluency:</span> ${{genreChips}}</li>`);
+      if (rows.length) {{
+        sections.push(`
+          <div class="profile-voice-section">
+            <div class="profile-voice-section-header">Layer 3 — Indexical repertoire <span class="profile-voice-section-hint">stable inventory; per-app picks a subset</span></div>
+            <ul>${{rows.join('')}}</ul>
+          </div>`);
+      }}
     }}
+
+    // ---- Voice avoid -------------------------------------------------
+    const avoidRows = [];
+    if (uv.voice_avoid)  avoidRows.push(`<li class="voice-avoid"><span class="voice-key">tones to never produce:</span> ${{escapeHtml(uv.voice_avoid)}}</li>`);
+    if (avoidPhrases)    avoidRows.push(`<li class="voice-avoid"><span class="voice-key">phrases to avoid:</span> ${{avoidPhrases}}</li>`);
+    if (avoidRows.length) {{
+      sections.push(`
+        <div class="profile-voice-section">
+          <div class="profile-voice-section-header">Voice avoid</div>
+          <ul>${{avoidRows.join('')}}</ul>
+        </div>`);
+    }}
+
+    // ---- Legacy fallback for old snapshots without layered schema ----
+    if (!sections.length && _hasLegacy) {{
+      const legacyRows = [];
+      const phrases = (uv.personal_phrases || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+      if (uv.natural_register)        legacyRows.push(`<li><span class="voice-key">register:</span> ${{escapeHtml(uv.natural_register)}}</li>`);
+      if (uv.default_capitalization)  legacyRows.push(`<li><span class="voice-key">caps:</span> ${{escapeHtml(uv.default_capitalization)}}</li>`);
+      if (uv.punctuation_habits)      legacyRows.push(`<li><span class="voice-key">punctuation:</span> ${{escapeHtml(uv.punctuation_habits)}}</li>`);
+      if (uv.humor_tone)              legacyRows.push(`<li><span class="voice-key">humor / tone:</span> ${{escapeHtml(uv.humor_tone)}}</li>`);
+      if (palette)                    legacyRows.push(`<li><span class="voice-key">personal emoji palette:</span> ${{escapeHtml(palette)}}</li>`);
+      if (uv.emoji_intensity_default) legacyRows.push(`<li><span class="voice-key">emoji intensity:</span> ${{escapeHtml(uv.emoji_intensity_default)}}</li>`);
+      if (phrases)                    legacyRows.push(`<li><span class="voice-key">personal phrases (legacy):</span> ${{phrases}}</li>`);
+      if (legacyRows.length) sections.push(`<div class="profile-voice-section"><ul>${{legacyRows.join('')}}</ul></div>`);
+    }}
+
     userVoiceHtml = `
       <div class="profile-voice">
-        <div class="profile-voice-header">Writing voice <span class="profile-voice-pill">shared across all apps</span></div>
-        <div class="profile-voice-subtitle">The same person typing on every app. Per-app sections only show what genuinely shifts.</div>
-        <ul>${{uvRows.join('')}}</ul>
+        <div class="profile-voice-header">Writing voice <span class="profile-voice-pill">4-layer model</span></div>
+        <div class="profile-voice-subtitle">Layers 1–3 stay coherent across all apps; per-app sections show only what shifts.</div>
+        ${{sections.join('')}}
       </div>`;
   }}
 
@@ -2547,10 +2651,11 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
   // (rendered above by the profile-card builder). Per-app cards below
   // only describe what genuinely shifts on each app.
 
-  let html = '<div class="app-personas-section"><h2>Per-app Personas (one shared voice + per-app deltas)</h2>';
+  let html = '<div class="app-personas-section"><h2>Per-app Personas (one shared voice + per-app modulation)</h2>';
   keys.forEach(k => {{
     const ap = apps[k] || {{}};
-    const style = ap.style_description || '';
+    // New schema: delta_summary. Legacy fallback: style_description.
+    const delta = ap.delta_summary || ap.style_description || '';
     const focus = (ap.topical_focus || []).map(escapeHtml).join(', ');
     const purposes = (ap.use_purposes || []).map(escapeHtml).join(', ');
     const zones = (ap.friend_zones || []).map(escapeHtml).join(', ');
@@ -2558,12 +2663,18 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
     const freq = ap.posting_frequency || '';
     const audience = ap.audience_type || '';
     const audienceLens = ap.audience_lens || '';
+    const audienceDesign = ap.audience_design_note || '';
     let pills = '';
     if (freq) pills += `<span class="app-persona-pill">${{escapeHtml(freq)}}</span>`;
     if (audience) pills += `<span class="app-persona-pill">${{escapeHtml(audience)}} audience</span>`;
 
-    // Expression block — how the shared voice gets MODULATED on this app.
-    const expr = ap.expression || {{}};
+    // Layer-3 active selection (subsets of repertoire)
+    const stanceChips  = (ap.active_stances || []).map(s => `<span class="stance-chip">${{escapeHtml(s)}}</span>`).join(' ');
+    const regChips     = (ap.active_registers || []).map(s => `<span class="stance-chip">${{escapeHtml(s)}}</span>`).join(' ');
+    const genreChips   = (ap.active_speech_genres || []).map(s => `<span class="stance-chip">${{escapeHtml(s)}}</span>`).join(' ');
+
+    // New schema: surface. Legacy fallback: expression.
+    const expr = ap.surface || ap.expression || {{}};
     let exprHtml = '';
     if (expr && Object.keys(expr).length) {{
       const exprRows = [];
@@ -2574,19 +2685,17 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
         const shiftLabel = shift === 0 ? '0 (default)' : (shift > 0 ? `+${{shift}}` : String(shift));
         exprRows.push(`<li><span class="app-persona-key">emoji shift:</span> ${{escapeHtml(shiftLabel)}}</li>`);
       }}
+      if (expr.disclosure_depth)      exprRows.push(`<li><span class="app-persona-key">disclosure depth:</span> ${{escapeHtml(expr.disclosure_depth)}}</li>`);
       if (expr.audience_self_censoring) exprRows.push(`<li><span class="app-persona-key">audience self-censoring:</span> ${{escapeHtml(expr.audience_self_censoring)}}</li>`);
-      // emoji_topic_filter intentionally NOT rendered — it's structural noise
-      // (real users don't curate per-app emoji subsets). Field is optional in
-      // schema; we keep it in JSON for the rare case but never surface in UI.
+      // emoji_topic_filter intentionally NOT rendered — structural noise.
       if (ap.app_avoid)                 exprRows.push(`<li class="app-persona-avoid"><span class="app-persona-key">app avoid:</span> ${{escapeHtml(ap.app_avoid)}}</li>`);
       if (exprRows.length) exprHtml = `<ul class="app-persona-sig">${{exprRows.join('')}}</ul>`;
     }} else if (ap.app_avoid) {{
-      // No expression block but still surface app_avoid if present.
       exprHtml = `<ul class="app-persona-sig"><li class="app-persona-avoid"><span class="app-persona-key">app avoid:</span> ${{escapeHtml(ap.app_avoid)}}</li></ul>`;
     }}
 
-    // Overrides — populated only when the user genuinely code-switches on this app.
-    const ov = ap.overrides || {{}};
+    // New schema: idiolect_overrides. Legacy fallback: overrides.
+    const ov = ap.idiolect_overrides || ap.overrides || {{}};
     let ovHtml = '';
     if (ov && Object.keys(ov).length) {{
       const ovRows = Object.keys(ov).map(key => {{
@@ -2595,7 +2704,7 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
         return `<li><span class="app-persona-key">${{escapeHtml(key)}}:</span> ${{valStr}}</li>`;
       }});
       ovHtml = `
-        <div class="app-persona-row" style="margin-top:6px;font-style:italic;opacity:0.8;">Deviates from the Shared writing voice here:</div>
+        <div class="app-persona-row" style="margin-top:6px;font-style:italic;opacity:0.8;">RARE — code-switching on this app (deviates from base idiolect):</div>
         <ul class="app-persona-sig">${{ovRows.join('')}}</ul>`;
     }}
 
@@ -2637,7 +2746,11 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
       <div class="app-persona-card">
         <div class="app-persona-header">${{escapeHtml(k)}}${{pills ? ' ' + pills : ''}}</div>
         ${{audienceLens ? `<div class="app-persona-row"><span class="app-persona-key">audience lens:</span> ${{escapeHtml(audienceLens)}}</div>` : ''}}
-        ${{style ? `<div class="app-persona-style">${{escapeHtml(style)}}</div>` : ''}}
+        ${{audienceDesign ? `<div class="app-persona-row"><span class="app-persona-key">audience design (Bell):</span> ${{escapeHtml(audienceDesign)}}</div>` : ''}}
+        ${{stanceChips ? `<div class="app-persona-row"><span class="app-persona-key">active stances:</span> ${{stanceChips}}</div>` : ''}}
+        ${{regChips ? `<div class="app-persona-row"><span class="app-persona-key">active registers:</span> ${{regChips}}</div>` : ''}}
+        ${{genreChips ? `<div class="app-persona-row"><span class="app-persona-key">active speech genres:</span> ${{genreChips}}</div>` : ''}}
+        ${{delta ? `<div class="app-persona-style">${{escapeHtml(delta)}}</div>` : ''}}
         ${{exprHtml}}
         ${{focus ? `<div class="app-persona-row"><span class="app-persona-key">Topical focus:</span> ${{focus}}</div>` : ''}}
         ${{purposes ? `<div class="app-persona-row"><span class="app-persona-key">Use purposes:</span> ${{purposes}}</div>` : ''}}

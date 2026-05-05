@@ -63,15 +63,15 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
     "over_personalization_sensitive_event": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     "preference_removal_regen":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
     # Agentic family (was: t6..t19)
-    "agentic_user_tone_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
+    "agentic_user_tone_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
     # agentic_moment_recommendation merged into personalized_recommendation
     # (slate-based ranking, deterministic recall@k / ndcg@k / mrr metrics).
     "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
-    "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": True},
+    "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
+    "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": True, "voice_self_consistency": True},
     "agentic_vague_refind":              {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "agentic_composed_post":             {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True},
-    "agentic_send_post":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True},
+    "agentic_composed_post":             {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
+    "agentic_send_post":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
     "agentic_draft_audit":               {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
     "agentic_group_dm_summary":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
     "agentic_wrong_recipient_check":     {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
@@ -88,7 +88,8 @@ SOURCE_B_APPLICABLE = {
 }
 
 HARD_RULE_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use"}
-JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_personalization", "relationship_aware", "voice_match"}
+JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_personalization",
+                  "relationship_aware", "voice_match", "voice_self_consistency"}
 
 
 # --- Source A: persona ground truth ----------------------------------------
@@ -291,9 +292,21 @@ def _contradictions(bq, user_id, t_test):
 
 
 def _style_refs(bq, user_id, t_test, limit=6):
-    """User's own self-authored posts (Ext B output) as voice reference."""
+    """Pipeline-generated user-voice references for the same-user voice judge.
+
+    NB: there are NO real human-written user samples in the dataset — every
+    "self-authored" text below is pipeline output (Ext B self-posts/DMs +
+    Step-13 chatbot user turns). So these references are used by the
+    `voice_self_consistency` judge as a SELF-CONSISTENCY anchor: same voice
+    block → coherent output across consumers.
+
+    Spans consumers (self-posts + DMs + chatbot user-turns) so the judge
+    has cross-app evidence rather than only self-posts. Cap at `limit`.
+    """
     base = Path(bq.base) / user_id
-    out = []
+    out: list[dict] = []
+
+    # 1. Self-authored social posts (Ext B self_posts.py output)
     for app in ("instagram", "facebook", "threads"):
         p = base / f"{app}.json"
         if not p.exists():
@@ -303,17 +316,73 @@ def _style_refs(bq, user_id, t_test, limit=6):
         for e in events:
             if not e.get("is_self_authored"):
                 continue
+            if e.get("is_dm"):  # DMs handled in step 2 below
+                continue
             if int(e.get("source_timestamp", 0)) >= t_test:
                 continue
             content = e.get("content") or {}
             out.append({
+                "kind": "self_post",
                 "app": app,
                 "caption": content.get("caption", ""),
                 "hashtags": e.get("source_hashtags", []),
             })
+            if len(out) >= max(limit - 2, 4):  # leave 2 slots for DM + chatbot
+                break
+        if len(out) >= max(limit - 2, 4):
+            break
+
+    # 2. User-side messages from DM threads (Ext B dm_threads.py output)
+    if len(out) < limit:
+        for app in ("instagram", "facebook", "threads"):
+            p = base / f"{app}.json"
+            if not p.exists():
+                continue
+            with p.open() as f:
+                events = json.load(f)
+            picked = 0
+            for e in events:
+                if not e.get("is_dm"):
+                    continue
+                if int(e.get("source_timestamp", 0)) >= t_test:
+                    continue
+                for m in (e.get("messages") or []):
+                    if m.get("sender") != "self":
+                        continue
+                    text = (m.get("text") or "").strip()
+                    if not text:
+                        continue
+                    out.append({"kind": "dm_message", "app": app, "caption": text, "hashtags": []})
+                    picked += 1
+                    break
+                if picked or len(out) >= limit:
+                    break
             if len(out) >= limit:
-                return out
-    return out
+                break
+
+    # 3. One chatbot user-turn (Step-13 generated conversation)
+    if len(out) < limit:
+        cp = base / "chatbot.json"
+        if cp.exists():
+            with cp.open() as f:
+                cb_events = json.load(f)
+            for e in cb_events:
+                if int(e.get("source_timestamp", 0)) >= t_test:
+                    continue
+                conv = e.get("conversation") or []
+                for turn in conv:
+                    if turn.get("role") == "user" and (turn.get("content") or "").strip():
+                        out.append({
+                            "kind": "chatbot_turn",
+                            "app": "chatbot",
+                            "caption": turn["content"].strip(),
+                            "hashtags": [],
+                        })
+                        break
+                if len(out) >= limit:
+                    break
+
+    return out[:limit]
 
 
 # --- Source B: behavioral ground truth (NEVER shown to agent) --------------
@@ -487,7 +556,10 @@ def score(
 
     # Judge dims — skip if no judge available.
     if judge_client:
-        for dim in ("preference_alignment", "over_personalization", "subtle_personalization", "relationship_aware", "voice_match"):
+        for dim in (
+            "preference_alignment", "over_personalization", "subtle_personalization",
+            "relationship_aware", "voice_match", "voice_self_consistency",
+        ):
             if not applicable.get(dim):
                 continue
             prompt = prompts_mod.judge_personalization_dim_prompt(dim, ground_truth, agent_output, task_id)
@@ -500,6 +572,14 @@ def score(
                     score_val = parsed.get("score")
                     if isinstance(score_val, (int, float)):
                         out[f"{dim}_score"] = float(score_val)
+                    # voice_match returns 3 sub-scores plus the mean — surface
+                    # them all for diagnostic visibility (helps diagnose whether
+                    # a low score is identity / idiolect / audience).
+                    if dim == "voice_match":
+                        for sub in ("identity_coherence", "idiolect_fidelity", "audience_appropriateness"):
+                            sub_val = parsed.get(sub)
+                            if isinstance(sub_val, (int, float)):
+                                out[f"voice_match_{sub}"] = float(sub_val)
             except Exception as exc:
                 out[f"{dim}_judge_error"] = str(exc)
 

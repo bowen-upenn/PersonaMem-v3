@@ -103,10 +103,13 @@ def _format_voice_block(profile: dict, target_app: str | None) -> str:
         lines.append(f"- **Emoji palette**: {' '.join(palette[:12])}\n")
     if voice.get("emoji_intensity_default"):
         lines.append(f"- **Emoji intensity (default)**: {voice['emoji_intensity_default']}\n")
-    phrases = voice.get("personal_phrases") or []
+    # New schema: idiolect.catchphrase_residue. Legacy fallback: personal_phrases.
+    _idio = voice.get("idiolect") or {}
+    phrases = (_idio.get("catchphrase_residue") if isinstance(_idio, dict) else None) \
+        or voice.get("personal_phrases") or []
     if phrases:
         rendered = ", ".join(f'"{p}"' for p in phrases[:6])
-        lines.append(f"- **Personal phrases**: {rendered}\n")
+        lines.append(f"- **Catchphrase residue (use ZERO in most outputs; AT MOST one per response)**: {rendered}\n")
     if voice.get("formality_baseline") is not None:
         lines.append(f"- **Formality baseline**: {voice['formality_baseline']}\n")
     if voice.get("voice_avoid"):
@@ -123,9 +126,18 @@ def _format_voice_block(profile: dict, target_app: str | None) -> str:
             lines.append(_section_header(f"Voice on {target_app} (delta from baseline)"))
             if ap.get("audience_lens"):
                 lines.append(f"- **Audience lens**: {_truncate(ap['audience_lens'], 350)}\n")
-            if ap.get("style_description"):
-                lines.append(f"- **Style on {target_app}**: {_truncate(ap['style_description'], 400)}\n")
-            expr = ap.get("expression") or {}
+            if ap.get("audience_design_note"):
+                lines.append(f"- **Audience design**: {_truncate(ap['audience_design_note'], 300)}\n")
+            # New schema: delta_summary. Legacy fallback: style_description.
+            delta = ap.get("delta_summary") or ap.get("style_description")
+            if delta:
+                lines.append(f"- **Why this audience selects this stance subset**: {_truncate(delta, 400)}\n")
+            if ap.get("active_stances"):
+                lines.append(f"- **Active stances on {target_app}**: {', '.join(ap['active_stances'][:6])}\n")
+            if ap.get("active_speech_genres"):
+                lines.append(f"- **Active speech genres**: {', '.join(ap['active_speech_genres'][:6])}\n")
+            # New schema: surface. Legacy fallback: expression.
+            expr = ap.get("surface") or ap.get("expression") or {}
             if expr:
                 bits = []
                 if expr.get("effort_level"):
@@ -134,8 +146,10 @@ def _format_voice_block(profile: dict, target_app: str | None) -> str:
                     bits.append(f"length_band={expr['length_band']}")
                 if expr.get("emoji_intensity_shift") is not None:
                     bits.append(f"emoji_intensity_shift={expr['emoji_intensity_shift']}")
+                if expr.get("disclosure_depth"):
+                    bits.append(f"disclosure_depth={expr['disclosure_depth']}")
                 if bits:
-                    lines.append(f"- **Expression**: {', '.join(bits)}\n")
+                    lines.append(f"- **Surface knobs**: {', '.join(bits)}\n")
                 if expr.get("audience_self_censoring"):
                     lines.append(f"- **Self-censoring**: {_truncate(expr['audience_self_censoring'], 300)}\n")
             tf = ap.get("topical_focus") or []

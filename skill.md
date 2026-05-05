@@ -97,7 +97,21 @@ For each user, the subagent executes these steps in strict integer order (no fra
 
 10. **Infer MBTI** — rules from `prompts.py::infer_mbti_prompt`. One LLM call synthesizing the user's Big Five, hidden_persona_summary, validated hidden_personas, and top 50 hashtags into an MBTI type with per-dimension probabilities (E_I, S_N, T_F, J_P) and short reasons. Result stored on `UserProfile.mbti` and written to `profile.json`. Rendered below Big Five in `persona.html`.
 
-11. **Generate shared writing voice + per-app sub-personas** — rules from `prompts.py::generate_app_personas_prompt`. ONE LLM call returns BOTH `user_voice` (the user's writing voice — `default_capitalization`, `emoji_palette` (5–12 emoji), `personal_phrases` (cross-app catchphrases), `punctuation_habits`, `humor_tone`, `natural_register`, `formality_baseline`, `emoji_intensity_default`) AND four `app_personas` describing how that ONE voice gets modulated per app: `use_purposes`, `friend_zones`, `audience_type`, `audience_lens`, `topical_focus`, `posting_frequency`, `style_description` (framed as a DELTA from base voice), `expression` (`effort_level`, `length_band`, `emoji_intensity_shift`, `emoji_topic_filter`, `audience_self_censoring`), and `overrides` (OPTIONAL — empty `{}` for most apps for most users; only populated when source samples show genuine code-switching). For Chatbot, also populate `chatbot_contexts` with 2–3 entries from `CHATBOT_CONTEXTS` in `persona_agent.py`. The prompt receives ~10 stratified source-row samples for grounding so voice choices reflect real engagement, not archetypes.
+11. **Generate shared writing voice + per-app sub-personas (4-layer model, two LLM calls)**.
+
+    **Call A — `prompts.py::generate_voice_core_prompt`** produces `user_voice` (Layers 1+2+3 + soft holdovers). Layered structure:
+    - `identity_spine` (Layer 1, stable) — `agency_communion`, `redemption_motifs` (1–3, each citing a hidden_persona label or persona item), `contamination_motifs` (0–2), `life_stage_preoccupations` (2–3), `signature_concerns` (2–4), `liwc_anchors {analytic, clout, authentic, emotional_tone}`, `big_five_drivers {trait: "level → behavioral implication"}`.
+    - `idiolect` (Layer 2, stable, survives paraphrase) — `function_word_profile` (1 sentence), `syntactic_preferences {sentence_length_shape, clause_embedding, parataxis_hypotaxis, fragment_use}`, `hedge_booster_ratio`, `appraisal_fingerprint {attitude_dominant, engagement_style, graduation}`, `constructional_templates [{pattern, example_realization, frequency}]` (2–4 abstract slot patterns — NEVER complete catchphrases), `catchphrase_residue` (0–2; default `[]`).
+    - `repertoire` (Layer 3, stable inventory) — `stances` (3–6 short labels), `registers` (2–4), `backstage_frontstage_range`, `speech_genre_fluency` (2–4).
+    - Soft holdovers — `natural_register`, `humor_tone`, `default_capitalization`, `punctuation_habits`, `formality_baseline`, `emoji_palette` (5–12), `emoji_intensity_default`, `voice_avoid`, `phrases_to_avoid`.
+
+    Grounding: base profile, top-30 persona items, ~20 stratified raw source rows, hidden-persona summary, sensitive-life-event topics. **Cached on `profile.json`** — re-running Step 11 doesn't redo Call A unless `user_voice` is explicitly cleared.
+
+    **Call B — `prompts.py::generate_app_modulations_prompt`** produces the four `app_personas`. Each entry: `app_name`, `active_stances/active_registers/active_speech_genres` (subsets of `user_voice.repertoire.*` — subset rule enforced; offending elements dropped on parse, call re-prompts once on violation), `audience_type`, `audience_lens`, `audience_design_note` (Bell's audience design — addressee/auditor/overhearer), `use_purposes`, `friend_zones`, `posting_frequency`, `topical_focus`, `chatbot_contexts` (Chatbot only — 2–3 from `CHATBOT_CONTEXTS`), `surface` (`effort_level`, `length_band`, `emoji_intensity_shift`, `audience_self_censoring`, `disclosure_depth`, optional `emoji_topic_filter`), `idiolect_overrides` (default `{}`; rare code-switching only), `app_avoid`, `delta_summary` (≤1 sentence — WHY this audience selects this stance subset, not WHAT voice mechanics look like).
+
+    **Diversity rule**: ≥2 of the 4 apps must have `active_stances` differing by ≥1 element. Prevents Layer-4 collapse where every app picks the same subset.
+
+    The render helper `prompts.py::_render_voice_for_consumer(user_voice, app_persona, *, foreground=…)` is the single source for voice prompting downstream. Foreground keys per consumer: self-posts → `["templates", "speech_genres"]`; DMs → `["audience_design", "stances"]`; chatbot → `["hedge_booster", "disclosure"]`; `@ai` comments → `["signature_concerns", "surface"]`.
 
 12. **Build sessions** — group consecutive interaction rows whose timestamp gap ≤ `SESSION_GAP_SECONDS` (5 seconds) into browsing sessions. All rows in one session will be assigned to the same app.
 
@@ -197,11 +211,62 @@ Chatbot records gain three additional fields not present on social media app rec
   "education": "...",
   "big_five": {"openness": "medium", "conscientiousness": "high", ...},
   "bio": "...",
+  "user_voice": {
+    "identity_spine": {
+      "agency_communion": "...",
+      "redemption_motifs": ["..."],
+      "contamination_motifs": [],
+      "life_stage_preoccupations": ["..."],
+      "signature_concerns": ["..."],
+      "liwc_anchors": {"analytic": "low", "clout": "low", "authentic": "high", "emotional_tone": "..."},
+      "big_five_drivers": {"openness": "level → behavioral implication", ...}
+    },
+    "idiolect": {
+      "function_word_profile": "...",
+      "syntactic_preferences": {"sentence_length_shape": "short_dominant", "clause_embedding": "shallow", "parataxis_hypotaxis": "parataxis", "fragment_use": "frequent"},
+      "hedge_booster_ratio": "hedge_dominant",
+      "appraisal_fingerprint": {"attitude_dominant": "affect", "engagement_style": "heteroglossic_acknowledge", "graduation": "frequent_softeners"},
+      "constructional_templates": [{"pattern": "[hedge] just [verb] ___", "example_realization": "kinda just want easy", "frequency": "common"}],
+      "catchphrase_residue": []
+    },
+    "repertoire": {
+      "stances": ["deadpan-affectionate", "irritable-pragmatic", "hype-mode"],
+      "registers": ["notes-app casual", "polite-warm with elders"],
+      "backstage_frontstage_range": "...",
+      "speech_genre_fluency": ["live-game reaction", "casserole post", "venting DM"]
+    },
+    "natural_register": "...",
+    "humor_tone": "...",
+    "default_capitalization": "all_lowercase",
+    "punctuation_habits": "...",
+    "formality_baseline": 0.25,
+    "emoji_palette": ["🥊", "🦬", "🍝"],
+    "emoji_intensity_default": "medium",
+    "voice_avoid": "...",
+    "phrases_to_avoid": ["..."]
+  },
   "app_personas": {
-    "Instagram": {"app_name": "Instagram", "use_purposes": [...], "friend_zones": [...], "audience_type": "mixed", "style_description": "...", "posting_frequency": "weekly", "topical_focus": [...], "chatbot_contexts": []},
+    "Instagram": {
+      "app_name": "Instagram",
+      "active_stances": ["..."],         // ⊆ user_voice.repertoire.stances
+      "active_registers": ["..."],       // ⊆ user_voice.repertoire.registers
+      "active_speech_genres": ["..."],   // ⊆ user_voice.repertoire.speech_genre_fluency
+      "audience_type": "mixed",
+      "audience_lens": "...",
+      "audience_design_note": "addressee = ..., auditor = ..., overhearer = ...",
+      "use_purposes": ["..."],
+      "friend_zones": ["..."],
+      "posting_frequency": "weekly",
+      "topical_focus": ["..."],
+      "chatbot_contexts": [],
+      "surface": {"effort_level": "medium", "length_band": "70-150", "emoji_intensity_shift": 0, "audience_self_censoring": "...", "disclosure_depth": "medium"},
+      "idiolect_overrides": {},
+      "app_avoid": "...",
+      "delta_summary": "1-sentence WHY this audience selects this stance subset"
+    },
     "Facebook":  {...},
     "Threads":   {...},
-    "Chatbot":   {"app_name": "Chatbot", ..., "chatbot_contexts": ["therapy and reflection", "knowledge exploration"]}
+    "Chatbot":   {"app_name": "Chatbot", ..., "chatbot_contexts": ["therapy_and_reflection", "knowledge_exploration"]}
   }
 }
 ```

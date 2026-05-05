@@ -8,6 +8,7 @@
 
 Recent additions on top of the base pipeline, roughly in dependency order:
 
+- **R12 — `personalized_recommendation` rename + multi-anchor fan-out, sensitive_event per-evidence-row probes, plain-English mistake_prevention rendering, per-query auto-QA (eval):** the task formerly built by `evaluation/tasks/e4_google_search.py` is renamed `personalized_recommendation.py` (the runner never called Google Search; it ranks an in-app slate from time-masked history alone). Per-day single-anchor design replaced with **7 UTC anchor hours/day × 3-hour slate windows** (`_ANCHOR_HOURS=(5,8,11,14,17,20,23)`, `_MIN_HARD_NEGATIVES=2`); `task_distribution.py` target raised 8/12 → 30/35; user 115 now produces 34 instances vs. the previous 5. The `over_personalization_sensitive_event` builder switches from one-probe-per-episode to **one probe per Step-21b-planted evidence row**, with `t_test = planted_row.ts + 60–600 s` and a per-probe `must_not_surface` block carrying the planted row's literal title/caption/hashtags + episode situation; `data_preparation/visualize.py::_gt_sensitive_event` renders a single concrete rubric line that names the evidence text (replacing the prior redundant "Privacy / Restraint" two-line pair). `_gt_active_mistake_prevention` rewritten in plain English ("Should warn: …" / "Should NOT warn: …") and the redundant red `warn_frame` HTML block dropped. New tooling: `scripts/audit_benchmark_queries.py` + `evaluation/audit_query_quality.py` run an 8-dimension per-query mini-tier audit (naturalness, context-required vs context-restraint, example-vs-inferior plausibility, GT alignment, privacy leak, sensitive-probe placement, schema sanity) — see EVAL.md "Per-query quality audit" section. Dead code removed: `--enable_e4` / `--e4_allow_live` / `--e4_quota_per_day` CLI flags, `evaluation/mcp_servers/google_search_mcp_server.py`, `all_with_e4` task alias.
 - **R11 — Voice negatives + structural-emoji prune + voice-evidence verification (Step 8 + eval):** `UserVoice` adds `voice_avoid` (1–2 sentence prose) + `phrases_to_avoid` (0–5 short literal strings); each `AppPersona` adds `app_avoid` (1 sentence prose, audience-driven). All three voice-render helpers (`prompts._render_user_voice_block`, `extension_b/self_posts.py::_render_user_voice_for_self_posts`, `extension_b/dm_threads.py::_render_user_voice_for_dm`) surface these as bullets when populated; every downstream prompt anchor (4 chatbot prompts, `@ai` user_message generator, self_posts template, dm_threads template) instructs the LLM to treat them as hard constraints. `AppPersona.expression.emoji_topic_filter` is downgraded from required → optional and is no longer rendered in `persona.html` per-app cards (real users don't curate per-app emoji subsets, the field is structural noise). On the eval side, `evaluation/llm_postprocess.py::_length_guidance` now produces per-app caption-length bands (Instagram 70–150, Facebook 120–220, Threads 45–120 chars by default; user-specific `expression.length_band` honored when present) for `agentic_composed_post` / `agentic_send_post` / `agentic_cross_app_repost` / `agentic_auto_reply` instead of the old generic "1–4 sentences" — fixes too-short golds (and their length-matched inferiors) on these tasks. A new mini-tier verification gate (`_verify_voice_evidence_distinguishability`) runs after each compose-task example/inferior pair: heuristic `voice_evidence_spans` are extracted from the gold (matches against `personal_phrases` + `emoji_palette`), the mini LLM is shown the bolded anchors and asked to pick gold-vs-foil, and on fail the inferior is regenerated once. The HTML renderer surfaces the bolded anchors inside the Example Response and a `[smoke: ✓/✗]` chip on the Inferior Response so reviewers can immediately see why a `voice_mismatch` foil should fail.
 - **R10a — Canonical-modal hashtag prune (Step 3.1, in `cross_reference_personas`):** after merging atomics with identical `persona_item` text into a canonical, prune outlier atomics whose `source_hashtags` don't overlap the canonical's modal hashtag set (top-`CANONICAL_MODAL_TOP_K = 5` most-frequent hashtags across the cohort, computed by row-frequency so a single hallucination can't dominate). Only applied when `cohort_size ≥ CANONICAL_MODAL_MIN_COHORT = 3` — singletons / pairs are kept verbatim. Fixes a class of LLM-hallucination bug where a per-row inference call returned a `persona_item` topically unrelated to the row's hashtags but happened to lexically collide with a real canonical from another row, inflating `confidence_cross_referenced` and fanning out to topically-unrelated events at `save_to_backend` (e.g., a `#smokedhog` BBQ event carrying a "sour and gummy candy" preference). A post-hoc cleanup script (`scripts/clean_existing_personas.py`) applies the same gate to already-emitted `backend/{uid}/*.json` without a pipeline regen, with an LLM-judge tiebreaker (`pref_event_grounding_check_prompt`) for borderline pairs (lenient toward name/genre matches like `#kaicenat` for a "comedy" canonical, strict on clear semantic mismatches).
 - **R10c — Time-aware ranking gold for `personalized_recommendation` (`evaluation/llm_postprocess.py`):** the deterministic `example_response` and `inferior_response` orderings now respect candidate timestamps relative to `t_test` instead of using raw slate index. Example: held_out at rank 1 (anchored — it's the metric's single target), then fillers sorted by `|source_timestamp − t_test|` ascending with future-first tie-break, then hard_negs sorted the same way (closest hard_neg first, furthest hard_neg buried last). Inferior is the symmetric flip — hard_negs surfaced first (most-confusable bad item leading), fillers (same time-key), held_out buried last. Other ranking task families (`personalized_feed_ranking`, `at_ai_directive_followup`, `short_vs_long_term_lifecycle`) keep their existing origin-tier / index-based orderings.
@@ -357,52 +358,115 @@ Each cluster: label, type, description, evidence_hashtags, evidence_rows, `evide
 
 ---
 
-## 10. Step 8 — Shared Writing Voice + Per-App Sub-Personas
+## 10. Step 8 — Shared Writing Voice + Per-App Sub-Personas (4-layer model)
 
-ONE LLM call returns BOTH the shared writing voice AND four AppPersona objects. Real people have ONE voice; per-app sections only describe what genuinely shifts.
+Two LLM calls. Real people have ONE voice; what changes per app is audience selection and surface knobs, not voice mechanics. The schema is layered so coherence survives across all generated text and modulation lands only where it should.
 
-**`UserVoice`** (one per user, lives on `profile.json`):
+**Four layers** (named for the schema fields they map to):
 
-| Field | Description |
-|-------|-------------|
-| `natural_register` | e.g. "casual conversational with deadpan humor" |
-| `default_capitalization` | `all_lowercase` / `sentence_case` / `mixed_with_caps_for_emphasis` |
-| `punctuation_habits` | concrete habits, free text |
-| `humor_tone` | dominant flavor — deadpan / dry / earnest / sarcastic |
-| `emoji_palette` | 5–12 specific emoji the user actually uses (PERSONAL palette, applied across apps) |
-| `emoji_intensity_default` | `low` / `medium` / `high` |
-| `personal_phrases` | 3–6 catchphrases that bleed cross-app |
-| `formality_baseline` | 0.0 (super casual) — 1.0 (very formal) |
-| `voice_avoid` | 1–2 sentence prose: tones / styles / habits this user avoids (negatives axis) |
-| `phrases_to_avoid` | 0–5 short literal phrases that would feel off-brand if they appeared |
+| Layer | What it captures | Stability | Schema home |
+|---|---|---|---|
+| **1. Identity Spine** | Thematic spine: agency/communion mix, redemption/contamination motifs, life-stage preoccupations, signature concerns; LIWC summary anchors; Big-Five behavioral implications | Stable, never modulates | `UserVoice.identity_spine` |
+| **2. Idiolect** | Function-word profile, syntactic preferences (sentence-length shape, clause embedding, parataxis/hypotaxis, fragment use), hedge/booster ratio, APPRAISAL fingerprint, 2–4 abstract constructional templates, 0–2 catchphrase residue | Stable, slow drift | `UserVoice.idiolect` |
+| **3. Indexical Repertoire** | Stance inventory, register inventory, backstage/frontstage range, speech-genre fluency | Stable inventory; per-app *selects* a subset | `UserVoice.repertoire` + `AppPersona.active_*` |
+| **4. Surface Modulation** | Length band, emoji intensity shift, audience self-censoring, disclosure depth, topical filter, posting frequency | Audience-driven, derivable | `AppPersona.surface` + audience fields |
 
-**`AppPersona`** (four per user — one per app):
+**Coherence rule:** Layers 1+2 detectable in every generation. **Modulation rule:** cross-platform deltas land in Layer 4 plus Layer-3 reweighting; never Layers 1–2.
+
+### `UserVoice` (one per user, lives on `profile.json`)
 
 | Field | Description |
-|-------|-------------|
-| `use_purposes` | 2-4 items: why user uses this app |
-| `friend_zones` | 2-4 items: who they interact with |
-| `audience_type` | private / public / mixed |
-| `audience_lens` | 1 sentence: WHO is realistically reading on this app |
-| `style_description` | 2-3 sentences as a DELTA from base voice — why it shifts here |
-| `posting_frequency` | daily / weekly / rarely / passive viewer only |
-| `topical_focus` | 3-5 domains — subset filter for THIS audience |
-| `chatbot_contexts` | 2-3 items (Chatbot only) |
-| `expression` | required dict: `effort_level`, `length_band`, `emoji_intensity_shift` (delta from base), `audience_self_censoring`. **Optional:** `emoji_topic_filter` (only when audience genuinely filters which palette emoji surface here — most apps for most users omit it; the field is kept in JSON for the rare case but is no longer rendered in `persona.html`). |
-| `overrides` | OPTIONAL `{}`-by-default escape hatch for genuine code-switching: `capitalization`, `extra_phrases`, `extra_forbidden`, `punctuation_shift` |
-| `app_avoid` | 1 sentence prose: audience-driven content / tone the user skips on THIS app specifically. Empty `""` when the audience doesn't drive any specific omission. |
+|---|---|
+| `identity_spine` | dict: `agency_communion`, `redemption_motifs` (1–3, each citing a hidden_persona label or persona item), `contamination_motifs` (0–2), `life_stage_preoccupations` (2–3), `signature_concerns` (2–4), `liwc_anchors {analytic, clout, authentic, emotional_tone}`, `big_five_drivers {trait: "level → behavioral implication"}` |
+| `idiolect` | dict: `function_word_profile` (1 sentence), `syntactic_preferences {sentence_length_shape, clause_embedding, parataxis_hypotaxis, fragment_use}`, `hedge_booster_ratio`, `appraisal_fingerprint {attitude_dominant, engagement_style, graduation}`, `constructional_templates [{pattern, example_realization, frequency}]` (2–4 abstract slot patterns), `catchphrase_residue` (0–2; default `[]`; "ZERO is the right answer for most users") |
+| `repertoire` | dict: `stances` (3–6 short stance labels), `registers` (2–4), `backstage_frontstage_range` (1 sentence), `speech_genre_fluency` (2–4) |
+| `natural_register` | KEPT — 1-line surface summary derived from idiolect+repertoire |
+| `humor_tone` | KEPT |
+| `default_capitalization` | KEPT — `all_lowercase` / `sentence_case` / `mixed_with_caps_for_emphasis` |
+| `punctuation_habits` | KEPT |
+| `formality_baseline` | KEPT — 0.0 super casual — 1.0 very formal |
+| `emoji_palette` | KEPT — 5–12 specific emoji |
+| `emoji_intensity_default` | KEPT — `low` / `medium` / `high` |
+| `voice_avoid` | KEPT — negatives axis (1–2 sentences) |
+| `phrases_to_avoid` | KEPT — 0–5 literal phrases |
 
-**Grounding:** the prompt receives ~10 stratified raw source rows (`{interaction_time, interaction_type, object_text}`) so emoji palette and personal phrases are anchored in real engagement, not archetypes.
+CUT: `personal_phrases` (replaced by `idiolect.catchphrase_residue` with stricter framing — the old name was an attractor that pushed every consumer to signature-stamp).
 
-**Platform archetypes:** Facebook (family/extended network, longer + more contextual), Instagram (close friends + creators, shorter/aesthetic), Threads (public, faster/sharper hot-takes), Chatbot (private, task-direct; emoji typically suppressed via `overrides.extra_forbidden: ["emoji"]`).
+### `AppPersona` (four per user — Instagram, Facebook, Threads, Chatbot)
 
-**Override discipline:** ≥75% of `overrides` blocks should be `{}`. The prompt explicitly forbids populating overrides without source-sample evidence — this prevents the "Instagram has 🫶, Threads has 💀, Facebook has ❤️" templating that plagued the old per-app `voice_signature` schema.
+| Field | Description |
+|---|---|
+| `app_name` | as before |
+| `active_stances` | subset of `user_voice.repertoire.stances`. Subset rule enforced — non-subset entries are dropped on parse and the call is re-prompted. |
+| `active_registers` | subset of `user_voice.repertoire.registers` |
+| `active_speech_genres` | subset of `user_voice.repertoire.speech_genre_fluency` |
+| `audience_type` | KEPT — private / public / mixed |
+| `audience_lens` | KEPT — 1 sentence: WHO is realistically reading here |
+| `audience_design_note` | NEW — 1 sentence in Bell's audience-design terms (addressee / auditor / overhearer) |
+| `use_purposes` | KEPT |
+| `friend_zones` | KEPT |
+| `posting_frequency` | KEPT — daily / weekly / rarely / passive viewer only |
+| `topical_focus` | KEPT — 3–5 domains, subset filter for this audience |
+| `chatbot_contexts` | KEPT (Chatbot only) — 2–3 items from a fixed catalog |
+| `surface` | RENAMED from `expression`. Required: `effort_level`, `length_band`, `emoji_intensity_shift`, `audience_self_censoring`, `disclosure_depth` (`low` / `medium` / `high`). Optional: `emoji_topic_filter`. |
+| `idiolect_overrides` | RENAMED from `overrides`. Default `{}`; only populated when source rows show genuine code-switching. Keys: `capitalization`, `extra_phrases` (0–3), `extra_forbidden` (0–3), `punctuation_shift`. |
+| `app_avoid` | KEPT — 1 sentence: audience-driven content/tone the user skips on THIS app |
+| `delta_summary` | NEW — REPLACES `style_description`. ≤1 sentence saying WHY this audience selects this stance subset. Does NOT re-describe voice mechanics. |
 
-**Negatives axis:** `voice_avoid` + `phrases_to_avoid` (on `UserVoice`) and `app_avoid` (on each `AppPersona`) capture the things this user *doesn't* do. Without them, downstream LLMs writing self-posts / DMs / chatbot turns / `@ai` comments produce text that's correct on the positive axis but tonally wrong (a user who avoids snark suddenly snarking, etc.). All three voice-render helpers (`prompts._render_user_voice_block`, `extension_b/self_posts.py::_render_user_voice_for_self_posts`, `extension_b/dm_threads.py::_render_user_voice_for_dm`) surface these as additional bullets when populated, and every downstream prompt anchor instructs the LLM to treat them as hard constraints.
+CUT: `style_description` (free-form 2–3-sentence delta was prone to re-templating voice mechanics — replaced by `delta_summary` with strict scope cap).
 
-**Downstream consumers** (all read `user_voice` + per-app `expression`/`overrides`, NOT a per-app voice block): self-posts, DMs, chatbot conversations (4 prompt variants), `@ai` comments (`generate_interaction_format_prompt`), and the eval gold-gen voice anchor in `evaluation/llm_postprocess.py::_voice_grounding`.
+### Two-call generation
 
-**Chatbot contexts** (8 options): professional emails, personal emails, chat messages, social media posts, translation, knowledge exploration, therapy/reflection, medical consultations.
+**Call A — `generate_voice_core_prompt`** produces `user_voice` (Layers 1+2+3 + soft holdovers).
+- Grounding: base profile, top-30 persona items (was 20), ~20 stratified raw source rows (was 10 — Layer 2 needs broader stylometric grounding), hidden-persona summary, sensitive-life-event topic context.
+- Anti-patterns explicitly forbidden: complete-sentence "templates" (must be slot patterns); `catchphrase_residue` over 2 or without ≥2 source occurrences; inventing Big-Five values; ungrounded redemption/contamination motifs (must cite hidden_persona label or exemplar persona item); phrase-style stances (must be stance LABELS).
+- Cached on `profile.json` (`user_voice` already populated → skip Call A on re-run). Re-running Step 8 doesn't redo Layer 1+2+3 unless `user_voice` is cleared first.
+
+**Call B — `generate_app_modulations_prompt`** produces the four `AppPersona` entries.
+- Receives Call A's output verbatim plus source rows tagged with their inferred app.
+- Validation: `set(active_stances) ⊆ set(repertoire.stances)` (same for registers/genres). Offending elements are dropped on parse; if any drop happened, the call re-prompts once with an explicit violation list.
+- Diversity rule: ≥2 of the 4 apps must have `active_stances` differing by ≥1 element. Prevents Layer-4 collapse.
+
+Cost: 2 LLM calls vs. 1 today. Call A cacheable; Call B small enough to absorb.
+
+### Render block (`prompts._render_voice_for_consumer`)
+
+`_render_user_voice_block` is now a 3-section layered block (~250 tokens):
+1. **`## Identity spine`** — drives WHAT the user brings up; not how.
+2. **`## Idiolect`** — must survive paraphrase. Templates rendered as slot patterns + one short `example_realization`. Catchphrase residue rendered with explicit "ZERO is the right answer for most users" instruction.
+3. **`## Voice avoid`** — tones and phrases to never produce.
+
+Helper `_render_app_modulation_block(user_voice, app_persona)` emits a `## On {app}` section. Every consumer composes both via `_render_voice_for_consumer(user_voice, app_persona, *, foreground=[…])` where `foreground` keys decide which sub-section labels get bolded for attention salience. Per-consumer foreground:
+- self-posts (`extension_b/self_posts.py`): `templates`, `speech_genres`
+- DMs (`extension_b/dm_threads.py`): `audience_design`, `stances` — recipient-aware register selection at message granularity
+- chatbot (`generate_chatbot_conversation_prompt` + 3 variants): `hedge_booster`, `disclosure`
+- `@ai` comments (`generate_interaction_format_prompt`): `signature_concerns`, `surface`
+
+Duplicate render helpers in `extension_b/self_posts.py::_render_user_voice_for_self_posts` and `extension_b/dm_threads.py::_render_user_voice_for_dm` have been removed — both consumers now import from `prompts.py`.
+
+### Validation
+
+**`voice_match` is now a 3-component judge** (replaces single 0-3):
+- `identity_coherence` — Layer-1 detectable (signature concerns, redemption motifs, life-stage preoccupations).
+- `idiolect_fidelity` — Layer-2 detectable (syntactic patterns, hedge/booster, templates applied abstractly).
+- `audience_appropriateness` — Layer-3/4 fit (active stances, disclosure depth, length band).
+- `voice_match` = mean. Polarity `+`. Same 5 voice-graded agentic tasks (`agentic_user_tone_post`, `agentic_cross_app_repost`, `agentic_auto_reply`, `agentic_composed_post`, `agentic_send_post`).
+
+**`voice_self_consistency` (NEW audit)** — wires through the same judge driver. Pulls 4 of the synthetic user's pre-`T_test` pipeline-generated samples (Ext B self-posts + DMs + chatbot user-turns; `_style_refs` now spans all three consumers) plus the candidate. Judge sees `identity_spine` as context but NOT `idiolect` — Layer 2 must be detected from the prior samples alone, which tests whether voice mechanics are visible in *generated output* not just declared in the block.
+
+**Honest-framing constraint:** the dataset has NO real human-written user samples. Source CSVs only contain interactions WITH content (`object_text` is what the user engaged with, not what they wrote); every "self-authored" sample is pipeline output. So `voice_self_consistency` is structurally a SELF-CONSISTENCY check (same voice block → coherent output across consumers), NOT fidelity-to-real-human. Cross-user discriminability — invoking the same judge with another user's reference samples — is run as a panel-level diagnostic to validate that the schema produces inter-user-distinguishable idiolects.
+
+### Downstream consumers
+
+All read `user_voice` (Layers 1–3 + soft holdovers) and the per-app `AppPersona` (Layer-3 selection + Layer-4 surface). No per-app voice block exists.
+
+- self-posts (`extension_b/self_posts.py`) — uses unified helper.
+- DMs (`extension_b/dm_threads.py`) — uses unified helper. Per-message recipient-aware register selection (recipient `relationship_depth` × `audience_design_note`).
+- chatbot conversations (4 prompt variants in `prompts.py`) — `idiolect.constructional_templates` referenced as positive shapes; existing FORBIDDEN-patterns block kept as anti-shapes.
+- `@ai` comments (`generate_interaction_format_prompt`) — `signature_concerns` drive WHAT the user `@ai`s about; catchphrase residue may surface ZERO times.
+- eval gold-gen voice anchor (`evaluation/llm_postprocess.py`) — same 3-section render plus per-app modulation block.
+
+**Chatbot contexts** (8 options, unchanged): professional emails, personal emails, chat messages, social media posts, translation, knowledge exploration, therapy/reflection, medical consultations.
 
 ---
 
@@ -745,5 +809,59 @@ Red checks block the benchmark build until Extension B closes the gap.
 ### MCP contract for this data
 
 Each app JSON is served by a mock MCP server under `evaluation/mcp_servers/`. Servers expose `get_feed`, `get_post`, `search`, `list_dms`, `get_dm_thread`, `create_post`, `react`, `comment`, `send_dm`. `get_feed` / `search` filter out `is_dm=true` entries so the feed stream and DM stream stay cleanly separated despite sharing a single backing file. Writes go to a per-run overlay (`writes.jsonl`) which the server unions back into subsequent reads — mirrors real-app "post a reel → it appears in your feed" semantics. Details in [EVAL.md](EVAL.md).
+
+---
+
+## 19. Per-query Benchmark Audit (automated quality gate)
+
+After `scripts/prepare_eval_data.py` writes `benchmark/{uid}/queries.csv`, every row can be auto-checked against eight quality dimensions via:
+
+```bash
+python scripts/audit_benchmark_queries.py --user_id {uid}
+```
+
+The script is idempotent and read-only against the benchmark — it writes its own output to `benchmark/{uid}/runs/{ts}/audit_queries.{jsonl,_summary.json,_summary.md}`. Six dimensions are mini-tier (`gpt-5.4-mini`) LLM checks; two are deterministic. Implementation: `evaluation/audit_query_quality.py`.
+
+### Dimensions
+
+| # | Dimension | Type | Pass criterion | Skip when |
+|---|---|---|---|---|
+| 1 | `naturalness` | LLM (1–5) | score ≥ 4 — would a real user plausibly type this? | task carries no chatbot-style user message (recsys / briefing / agentic compose / vague-refind / mistake-prevention) |
+| 2 | `context_required` | LLM (bool) | response would NOT be writable by an assistant ignorant of this user (i.e. it really does require user history to write) | over-personalization tasks; `active_mistake_prevention` (gold is a warning frame, not a personalization response); tasks without a chatbot-style user message |
+| 3 | `context_restraint` | LLM (bool) | response WOULD be writable generically — proves the over-personalization bait is benign and not actually requiring user context | non-over-personalization tasks |
+| 4 | `example_vs_inferior` | LLM (bool + 1–5) | example is rated better than inferior AND inferior plausibility ≥ 3/5 (example clearly preferred for THIS user, inferior still reads as a plausible response that some other user might like) | no `inferior_response` field; over-personalization tasks (foils ARE designed to be visibly over-personalized — that's the failure mode); ranking tasks (foil is a deterministic order-flip — judging "plausible" is the wrong question, just check example > inferior) |
+| 5 | `gt_alignment` | LLM (bool) | `example_response` actually weaves in the user's relevant prefs / GT signal (not generic content that drifts from the held-out preference) | every task except `chatbot_proactive_personalization` — agentic / ranking / mistake-prevention / over-pers tasks have task-specific GTs unrelated to user prefs |
+| 6 | `privacy_leak` | LLM (bool) | `example_response` does NOT surface any item in the must-not-surface list (verbatim, paraphrased, or by topical implication) | tasks with no must-not-surface list (every task except over-pers + `over_personalization_sensitive_event`'s per-row evidence). For `sensitive_event` the must-not-surface list includes the planted evidence row's title, caption, hashtags, and the broader episode situation |
+| 7 | `sensitive_probe_placement` | deterministic | `t_test ≥ planted_row.source_timestamp` (the disclosure must be visible in history at probe time) | non-`sensitive_event` tasks |
+| 8 | `schema_sanity` | deterministic | required fields present: `task_type`; `user_query` for chatbot-style tasks; `candidates` or `gt_positive_engagements` for slate-ranking tasks | n/a (always runs) |
+
+### Per-task applicability (which dims actually evaluate, vs skip)
+
+`USER_MESSAGE_TASKS` = chatbot_proactive_personalization, over_personalization_chatbot_text, over_personalization_distractor_reject, over_personalization_context_shift, over_personalization_sensitive_event, active_mistake_prevention. Only these evaluate dim 1.
+
+`OVER_PERS_TASKS` = the five `over_personalization_*` tasks + `repetition_fatigue_pairs` + `repetition_fatigue_sequences`. These evaluate dim 3 (restraint), skip dim 2 (required), skip dim 4 (foil plausibility) except for `sensitive_event`.
+
+`GT_ALIGNMENT_APPLICABLE` = {`chatbot_proactive_personalization`} only. Every other task skips dim 5.
+
+`SLATE_RANKING_TASKS` (for the dim-8 schema check on `candidates`) = personalized_recommendation, personalized_feed_ranking, at_ai_directive_followup, daily_personalized_briefing, short_vs_long_term_lifecycle. `preference_removal_regen` is technically a ranking task in `task_distribution.py` but uses a different shape (held-out + post-removal re-ranking against the user's full pref soup) and is exempt from the candidate-pool requirement.
+
+Tasks pinned to `disliked_recent` flaw kind (`evaluation/llm_postprocess.py::_TASK_FLAW_KINDS`) — for these the inferior is built by injecting a freshly-disliked topic so the diff is **visible to a human reader, subtle + natural (the foil is plausible for some other user just not for this one at this moment), and not structural**: `daily_personalized_briefing`, `agentic_proactive_daily_catchup`, `agentic_trending_alert`. Compose tasks (`agentic_user_tone_post`, `agentic_composed_post`, `agentic_send_post`, `agentic_cross_app_repost`, `agentic_auto_reply`) use `voice_mismatch` (right content, wrong tone register). Pure-summarization tasks (`agentic_dm_digest`, `agentic_group_dm_summary`, `agentic_vague_refind`) use `factual_error` (wrong sender / count / item). Slate-ranking tasks use a deterministic order-inversion via `_compute_ranking_inferior` (no LLM call).
+
+### Robustness
+
+- `_safe_llm_json` regex-rescues binary decision fields (`leaked`, `requires_user_context`, `answerable_generically`, `addresses_gt`, `example_is_better`) and numeric scores when the mini-LLM truncates its response mid-`reason` (max-tokens hit) — the dim still records a verdict instead of failing on parse.
+- Schema and probe-placement dims are deterministic — no LLM cost, no flakiness.
+- LLM dims report per-row reasons in `audit_queries.jsonl` so triage is grep-friendly.
+- `--dry_run` mode runs only the deterministic dims (free smoke test); `--task X --limit N` audits a subset.
+
+### Failure-handling policy
+
+- A query failing dimension 8 (schema) is **dropped** from the benchmark — deterministic check, only triggers on real bugs.
+- A query failing dimensions 1–7 is **logged** with a structured reason but kept (we don't want a flaky LLM judge to silently shrink the benchmark).
+- The summary table reports per-dimension pass rates per task type so systemic regressions surface (e.g. "8/14 distractor_reject queries fail dim 3 → builder regression").
+
+### Cost
+
+≈ 5 mini-tier calls per applicable query × ~140 queries per user ≈ ~700 calls per user. Cheap; safe to re-run on every benchmark build.
 
 > Thresholds (especially high-confidence predicate values) are tentative and will be tuned empirically.
