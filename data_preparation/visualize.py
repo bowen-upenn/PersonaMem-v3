@@ -597,7 +597,7 @@ def _gt_preference_removal_regen(inst: dict) -> dict:
     }
 
 
-def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
+def _gt_recency_shift_recommendation(inst: dict) -> dict:
     pre = inst.get("dominant_category_pre", "")
     shift = inst.get("shift_category", "")
     return {
@@ -622,7 +622,7 @@ def _gt_repetition_fatigue_pairs(inst: dict) -> dict:
     }
 
 
-def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
+def _gt_cross_category_preference_breadth(inst: dict) -> dict:
     queries = inst.get("queries") or []
     return {
         "example_response": (
@@ -641,7 +641,61 @@ def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
     }
 
 
-def _gt_repetition_fatigue_same_preference(inst: dict) -> dict:
+def _gt_repetition_fatigue_chatbot(inst: dict) -> dict:
+    """Chatbot variant of c1c: N surface-diverse chatbot questions
+    each with a natural anchor for the target preference. After
+    `n_allowed_repetitions + 1` invocations, the agent must answer
+    subsequent questions WITHOUT invoking the preference."""
+    target_pref = inst.get("target_pref", "")
+    primary_category = inst.get("primary_category", "")
+    n_queries = int(inst.get("n_queries") or 0)
+    n_allowed = int(inst.get("n_allowed_repetitions") or 2)
+    head_window = n_allowed + 1
+    tail_start = head_window + 1
+    queries = inst.get("queries") or []
+    sample_queries = "\n".join(
+        f"  {i+1}. {q.get('user_query','')[:120]}"
+        for i, q in enumerate(queries[:5])
+    )
+
+    return {
+        "example_response": (
+            f"Across {n_queries} surface-diverse chatbot turns where each "
+            f"naturally invites '{target_pref}', invoke it freely on "
+            f"turns 1..{head_window}; from turn #{tail_start} onward "
+            f"answer the user's question without falling back to the "
+            f"preference, even if it's a tempting anchor."
+        ),
+        "groundtruth_preference": (
+            f"Target preference (must be backed off after {n_allowed + 1} uses): "
+            f"{target_pref}\n"
+            + (f"Primary category: {primary_category}\n" if primary_category else "")
+            + f"Tolerance: turns 1..{head_window} may invoke; "
+            + f"turns {tail_start}..{n_queries} must NOT invoke.\n"
+            + (f"Sample queries (each has a natural pref-anchor):\n{sample_queries}"
+               if sample_queries else "")
+        ),
+        "extra_meta": {
+            "target_pref": target_pref,
+            "n_queries": n_queries,
+            "n_allowed_repetitions": n_allowed,
+            "head_window": head_window,
+            "tail_start": tail_start,
+        },
+        "rubric_tags": [
+            f"(+) Turns 1..{head_window} may organically invoke '{target_pref}' "
+            f"if it fits the question — initial personalization is fine.",
+            f"(+) From turn #{tail_start}: answer the user's question without "
+            f"reaching for '{target_pref}'.",
+            f"(-) Don't invoke '{target_pref}' (or its category / close "
+            f"paraphrases) on any tail turn.",
+            f"(-) Don't refuse or meta-comment on the back-off rule — "
+            f"just answer the question on its own terms.",
+        ],
+    }
+
+
+def _gt_repetition_fatigue_recommendation(inst: dict) -> dict:
     """Same-preference repetition cluster: N successive queries on ONE
     preference (or hashtag-similar group) inside a 3-hour window.
     The first ``n_allowed_repetitions + 1`` responses may freely lean
@@ -1253,9 +1307,10 @@ TEST_GT_EXTRACTORS = {
     "irrelevant_query_restraint":          _gt_irrelevant_query_restraint,  # v2 alias
     "over_personalization_sensitive_event": _gt_sensitive_event,
     "preference_removal_regen":            _gt_preference_removal_regen,
-    "repetition_fatigue_pairs":            _gt_repetition_fatigue_pairs,
-    "repetition_fatigue_sequences":        _gt_repetition_fatigue_sequences,
-    "repetition_fatigue_same_preference":  _gt_repetition_fatigue_same_preference,
+    "recency_shift_recommendation":            _gt_recency_shift_recommendation,
+    "cross_category_preference_breadth":        _gt_cross_category_preference_breadth,
+    "repetition_fatigue_recommendation":  _gt_repetition_fatigue_recommendation,
+    "repetition_fatigue_chatbot":          _gt_repetition_fatigue_chatbot,
     "over_personalization_context_shift":  _gt_context_shift_scenarios,
     "context_shift_scenarios":             _gt_context_shift_scenarios,  # legacy alias
     "daily_personalized_briefing":         _gt_daily_personalized_briefing,
@@ -1645,8 +1700,9 @@ def _load_test_samples(
                 or task_type.startswith("over_personalization_")
                 or task_type in {
                     "preference_removal_regen", "active_mistake_prevention",
-                    "repetition_fatigue_pairs", "repetition_fatigue_sequences",
-                    "repetition_fatigue_same_preference",
+                    "recency_shift_recommendation", "cross_category_preference_breadth",
+                    "repetition_fatigue_recommendation",
+                    "repetition_fatigue_chatbot",
                     "agentic_vague_refind", "agentic_proactive_daily_catchup",
                     "agentic_trending_alert",
                 }

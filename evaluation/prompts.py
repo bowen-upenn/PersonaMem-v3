@@ -268,7 +268,7 @@ def repetition_fatigue_same_pref_prompt(
     n_allowed_repetitions: int,
     history_block: str | None = None,
 ) -> str:
-    """Build the per-anchor prompt for one repetition_fatigue_same_preference
+    """Build the per-anchor prompt for one repetition_fatigue_recommendation
     query. The same prompt template is reused across the cluster's 5
     successive calls; what changes per call is `prior_responses`
     (accumulating the agent's own outputs from earlier in the cluster).
@@ -381,6 +381,100 @@ These hashtags are deliberately **not aligned** with this user's persona. They'r
   "caption": "one-sentence description, in plain prose",
   "hashtags": ["#tag1", "#tag2", "#tag3"],
   "reasoning": "<=2 sentences. If diversification rule is in effect, name the angle you took to diversify."
+}}
+```
+"""
+
+
+# --- Task C1d: chatbot same-pref repetition (varied surface) ---------------
+
+def repetition_fatigue_chatbot_prompt(
+    user_query: str,
+    target_pref: str,
+    primary_category: str,
+    prior_responses: list[dict],
+    n_allowed_repetitions: int,
+    history_block: str | None = None,
+) -> str:
+    """Per-call prompt for the chatbot variant of c1c.
+
+    Surface: a NORMAL chatbot question (not a "give me a recommendation"
+    framing). The agent is told that prior chats with this user have
+    already invoked the target preference N times — past the
+    `n_allowed_repetitions + 1` head zone, the agent should answer THIS
+    question on its own merits without falling back to the same
+    preference, even though the question would naturally invite it.
+
+    The agent's prior in-cluster responses are surfaced verbatim so any
+    over-personalization is a deliberate choice, not a memory failure.
+    """
+    head_window = n_allowed_repetitions + 1
+    n_so_far = len(prior_responses)
+    is_in_tolerance = n_so_far < head_window
+
+    if prior_responses:
+        prior_lines = []
+        for i, r in enumerate(prior_responses, start=1):
+            text = (r.get("response") or "").strip()
+            text_short = text[:280] + ("…" if len(text) > 280 else "")
+            prior_lines.append(f"  [{i}] {text_short}")
+        prior_block = (
+            "\n## Your prior chat-turn responses to this user\n\n"
+            + "\n".join(prior_lines) + "\n"
+        )
+    else:
+        prior_block = ""
+
+    history = (
+        f"\n## Full user history (time-masked)\n{history_block}\n"
+        if history_block else ""
+    )
+
+    if is_in_tolerance:
+        rule_block = (
+            "\n*Rule status*: this is your "
+            f"#{n_so_far + 1} chat-turn for this user. The first "
+            f"{head_window} responses may organically invoke any of the "
+            "user's preferences if it genuinely fits the question — "
+            "initial personalization is fine. Just answer naturally.\n"
+        )
+    else:
+        rule_block = (
+            "\n## OVER-PERSONALIZATION RULE — IN EFFECT\n\n"
+            f"This is response #{n_so_far + 1}. In the first {head_window} "
+            f"responses you've already invoked the user's '{target_pref}' "
+            f"preference (or {primary_category or 'this same topical area'}) "
+            f"naturally — that was fine. **Now stop.** From this response "
+            f"onward, you must answer the user's question WITHOUT reaching "
+            f"for that preference, even if it feels like a natural anchor.\n\n"
+            "Concretely:\n"
+            f"  - Do NOT mention the persona_item '{target_pref}' or its "
+            f"close paraphrases.\n"
+            f"  - Do NOT pivot the answer toward content related to "
+            f"'{primary_category or 'that topical area'}'.\n"
+            "  - DO answer the user's question on its own terms — there are "
+            "many other angles, recommendations, or framings that fit. A "
+            "real human assistant who has noticed the user's interest will "
+            "consciously diversify after a few hits.\n"
+            "  - Stay helpful. Don't refuse. Don't meta-comment on the "
+            "diversification rule. Just answer the question without the "
+            "crutch.\n"
+        )
+
+    return f"""# Task: respond to a user chatbot turn
+
+You are responding to a single chatbot turn from a real user. The user's prior chat history with you is summarized below — pay attention to which preferences you have already leaned on this session, because over-personalization (hammering the same preference into every response when the user keeps asking different questions) reads as creepy.
+{prior_block}{history}{rule_block}
+
+## User question (turn #{n_so_far + 1})
+
+> {user_query}
+
+## Output
+
+```json
+{{
+  "response": "your response — write it as plain text, no markdown headers / bullet lists unless the question genuinely calls for them. 2-5 sentences typical."
 }}
 ```
 """
