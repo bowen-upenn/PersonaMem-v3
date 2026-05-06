@@ -19,7 +19,10 @@ from __future__ import annotations
 import json
 import random
 from data_preparation.utils import extract_json_from_response
-from data_preparation.prompts import _render_voice_for_consumer
+from data_preparation.prompts import (
+    _render_voice_for_consumer,
+    render_hidden_personas_frames_block,
+)
 
 
 DM_THREAD_COMMENTARY_PROMPT = """Write a short, realistic DM exchange on {app_pretty} \
@@ -30,6 +33,7 @@ User:
 - Name: {name}
 - DM recipient: {recipient_name} (relationship depth: {recipient_depth})
 
+{frames_block}
 {user_voice_block}
 Recipient-aware register selection: pick a register from `active_registers` that fits the recipient above. Close friends license backstage register; family typically draws polite-warm; acquaintances draw task-direct. The user's underlying idiolect (function-word habits, hedge/booster ratio, sentence-length shape) does NOT change per recipient — only the register selection does. DM threads are intimate; emoji intensity may run a bit hotter than feed posts (palette only — never invent new emoji). Apply `idiolect.constructional_templates` ABSTRACTLY (slot-pattern shape — never recite verbatim); catchphrase residue may surface ZERO times across the thread. **Respect the negatives** — Voice avoid + Phrases to avoid + App avoid are hard constraints when present.
 
@@ -201,6 +205,12 @@ def generate_dm_threads(
         app_persona,
         foreground=["audience_design", "stances"],
     )
+    # Frame block: anchors WHY the user reaches for this topic in DMs.
+    # Resolved per-cluster via dominant_frame (audited) or default frame
+    # (structural). Empty when the user has no hidden personas.
+    frames_block = render_hidden_personas_frames_block(
+        profile.get("hidden_personas") or []
+    )
     rng = random.Random(rng_seed or hash(user_id) % (2**31))
 
     # Tag every event with its source app so _content_for_forward can record it.
@@ -297,6 +307,7 @@ def generate_dm_threads(
             name=profile.get("name", ""),
             recipient_name=recipient_name,
             recipient_depth=recipient_depth,
+            frames_block=frames_block,
             user_voice_block=voice_block,
             initiator_id=plan["initiator_id"],
             initiator_label=("you" if plan["initiator_id"] == "self"

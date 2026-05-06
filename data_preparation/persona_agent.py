@@ -381,6 +381,11 @@ _MEDICAL_ACTIVE_USE_MARKERS = frozenset({
     " applying ", " started ", " on a regimen ", " prescribed ", " uses ",
 })
 
+# Frame-resolution helpers (`_TYPE_DEFAULT_FRAME` and
+# `cluster_dominant_frame`) live in `prompts.py` so all consumers
+# (persona_agent, extension_b, chatbot_conversation, evaluation) can
+# share one source without circular imports.
+
 
 # ---------------------------------------------------------------------------
 # Sensitive-life-event injection (Step 9b).
@@ -1497,6 +1502,14 @@ class PersonaAgent:
         # canonical, the opposing surviving canonical, and the reason.
         # Informational only; never written to disk.
         self._suppressed_stance_flips: list[dict] = []
+
+        # Number of hidden-persona clusters dropped by the Step 9
+        # specificity gate (Phase 3.5 in `infer_hidden_personas`). Mirrors
+        # the type-specific blocklists / privacy-ratio floor enforced
+        # post-hoc by Step 22's audit so generic / wrongly-typed
+        # clusters never propagate into voice or app_personas. Surfaces
+        # in the run summary alongside `n_suppressed_stance_flips`.
+        self._n_step9_dropped_specificity: int = 0
 
         # Per-session geolocation (Step 15). Keyed by session index →
         # {"city", "region", "country", "lat", "lon", "precision"}. Filled
@@ -3902,6 +3915,38 @@ class PersonaAgent:
         if not validated:
             return
 
+        # ── Phase 3.5: Type-specific specificity gate ────────────────────
+        # Mirror the Step 22 audit validators upstream so generic /
+        # wrongly-typed clusters never propagate into voice / app_personas
+        # / save. The audit catches these AFTER they've leaked downstream;
+        # this gate stops them at the source. Symmetric with the audit's
+        # FLAG/REMOVE outcomes, just earlier and deterministic.
+        filtered_v: list[HiddenPersona] = []
+        dropped_reasons: Counter = Counter()
+        for hp in validated:
+            passed, reason = self._validate_cluster_specificity_for_step9(
+                hp.label, hp.description, hp.type, hp.evidence_hashtags,
+                hp.privacy_ratio,
+            )
+            if passed:
+                filtered_v.append(hp)
+            else:
+                dropped_reasons[reason] += 1
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                          f"Step 9 specificity gate dropped {hp.type} cluster "
+                          f"{hp.label!r}: {reason}{utils.Colors.ENDC}")
+
+        self._n_step9_dropped_specificity = sum(dropped_reasons.values())
+        if self._n_step9_dropped_specificity and self.verbose:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Step 9 specificity "
+                  f"gate: dropped {self._n_step9_dropped_specificity} cluster(s) "
+                  f"({dict(dropped_reasons)}).{utils.Colors.ENDC}")
+        validated = filtered_v
+
+        if not validated:
+            return
+
         # ── Phase 4: Deduplicate by Hashtag Overlap ────────────────────
         # Merge hidden personas whose evidence_hashtags have Jaccard >= 0.5.
         # Iterative: repeat until no merges occur.
@@ -4581,12 +4626,19 @@ class PersonaAgent:
         source_samples = self._sample_source_rows_for_voice(max_rows=20)
 
         # Pass hidden-persona summary so identity_spine motifs can cite them.
+        # `frame` carries the cluster's dominant motivation frame slug
+        # (audited if available, else the structural default for the
+        # cluster's type) — anchors the voice prompt's motif guidance
+        # in a named academic framework instead of vibes.
         hp_summary = []
         for hp in (self.user_profile.hidden_personas or []):
+            frame = prompts.cluster_dominant_frame(hp)
             hp_summary.append({
                 "label": getattr(hp, "label", "") or "",
                 "persona_type": getattr(hp, "type", "") or "",
                 "signal_strength": getattr(hp, "signal_strength", "") or "",
+                "frame": frame,
+                "frame_description": prompts.FRAME_DESCRIPTIONS.get(frame, ""),
             })
 
         # Sensitive-life-event topics (background context for motif grounding;
@@ -4752,6 +4804,7 @@ class PersonaAgent:
             user_voice=user_voice_dict,
             chatbot_contexts=CHATBOT_CONTEXTS,
             source_samples_by_app=samples_for_b,
+            hidden_persona_summary=hp_summary,
         )
         response_b = self._query_llm_with_retry(prompt_b)
         if not response_b:
@@ -5907,6 +5960,15 @@ class PersonaAgent:
             "career": self.user_profile.career,
             "education": self.user_profile.education,
             "bio": self.user_profile.bio,
+            # Hidden personas + their dominant frames let chatbot turn
+            # generation anchor the user's "why" in a named motivational
+            # frame (Lazarus-Folkman coping vs Tajfel social identity vs
+            # Goffman back-stage) instead of generic affect. Frame is
+            # resolved by `prompts.cluster_dominant_frame` (audit-aware
+            # if Step 22 ran, structural-default otherwise).
+            "hidden_personas": [
+                asdict(hp) for hp in (self.user_profile.hidden_personas or [])
+            ],
         }
 
         # Build canonical lookup (same as save_to_backend) to find surviving
@@ -6229,6 +6291,46 @@ class PersonaAgent:
             "bio": self.user_profile.bio,
         }
 
+        # Hashtag → (cluster_label, evidence_rows) lookup for frame
+        # resolution. Events whose hashtags overlap a hidden-persona
+        # cluster carry that cluster's dominant frame into the
+        # title/caption prompt, so synthetic content reflects the
+        # cluster's motivational signature instead of generic topic.
+        # Skip synthetic clusters (sensitive_life_event) — they have
+        # their own planted-row pipeline (Step 21b).
+        hashtag_to_cluster_frame: dict[str, tuple[str, str, int]] = {}
+        for hp in (self.user_profile.hidden_personas or []):
+            if getattr(hp, "is_synthetic", False):
+                continue
+            frame = prompts.cluster_dominant_frame(hp)
+            if not frame or frame == "none":
+                continue
+            ev_rows = int(getattr(hp, "evidence_rows", 0) or 0)
+            for tag in (getattr(hp, "evidence_hashtags", None) or []):
+                tag_norm = (tag or "").lower().lstrip("#").strip()
+                if not tag_norm:
+                    continue
+                # Keep the cluster with most evidence_rows on conflict
+                # (largest cluster wins when one hashtag belongs to two).
+                prev = hashtag_to_cluster_frame.get(tag_norm)
+                if prev is None or ev_rows > prev[2]:
+                    hashtag_to_cluster_frame[tag_norm] = (
+                        getattr(hp, "label", ""), frame, ev_rows,
+                    )
+
+        def _frame_for_event(hashtags: list[str]) -> tuple[str, str]:
+            """Return (frame, frame_description) for the event's
+            best-matching cluster, or ('', '') when no overlap."""
+            best_label, best_frame, best_score = "", "", 0
+            for tag in hashtags or []:
+                tag_norm = (tag or "").lower().lstrip("#").strip()
+                hit = hashtag_to_cluster_frame.get(tag_norm)
+                if hit and hit[2] > best_score:
+                    best_label, best_frame, best_score = hit
+            if not best_frame:
+                return "", ""
+            return best_frame, prompts.FRAME_DESCRIPTIONS.get(best_frame, "")
+
         events_to_generate: list[dict] = []
         for oid, meta in self._action_by_oid.items():
             app = self._row_app.get(oid) or PLATFORMS[0]
@@ -6261,6 +6363,8 @@ class PersonaAgent:
                 seen_items.add(cr.persona_item)
                 prefs.append({"persona_item": cr.persona_item, "category": cr.category})
 
+            event_frame, event_frame_desc = _frame_for_event(event_hashtags)
+
             content_type = self._resolve_content_type(app, meta["action"], oid)
             events_to_generate.append({
                 "oid": oid,
@@ -6270,6 +6374,8 @@ class PersonaAgent:
                 "content_type": content_type,
                 "hashtags": event_hashtags,
                 "preferences": prefs,
+                "motivation_frame": event_frame,
+                "motivation_frame_description": event_frame_desc,
             })
 
         if not events_to_generate:
@@ -6290,6 +6396,8 @@ class PersonaAgent:
                     preferences=ev["preferences"],
                     action=ev["action"],
                     action_label=ev["action_label"],
+                    motivation_frame=ev.get("motivation_frame") or None,
+                    motivation_frame_description=ev.get("motivation_frame_description") or None,
                 )
                 response = self._query_mini_with_retry(prompt)
                 content = None
@@ -6942,6 +7050,7 @@ class PersonaAgent:
             "n_ad_events": len(self._ad_oids),
             "n_calendar_modifications": len(self._calendar_modifications),
             "n_suppressed_stance_flips": len(self._suppressed_stance_flips),
+            "n_step9_dropped_specificity": self._n_step9_dropped_specificity,
             "total_time_seconds": round(time.time() - pipeline_start, 1),
         }
         total_time = time.time() - pipeline_start
@@ -7162,6 +7271,49 @@ class PersonaAgent:
                   f"preferences provisionally linked via hashtag overlap.{utils.Colors.ENDC}")
 
     # -- Audit validators (deterministic, run AFTER LLM, before commit) -
+
+    @staticmethod
+    def _validate_cluster_specificity_for_step9(
+        label: str, description: str, hp_type: str,
+        evidence_hashtags: list, privacy_ratio: float,
+    ) -> tuple[bool, str]:
+        """Step 9 cluster-level specificity gate.
+
+        Mirrors the per-preference audit gate (`_audit_validate_specificity`)
+        upstream — applies the same type-specific blocklists / floors to
+        the cluster's LABEL + DESCRIPTION + privacy_ratio before the
+        cluster propagates into the voice / app_personas / save chain.
+        Returns ``(passed, reason)``. Without this gate, Step 22 catches
+        the violation but the cluster has already anchored downstream
+        artifacts; this is the audit-symmetric early drop.
+        """
+        text = f"{label} {description}".lower()
+
+        if hp_type == "parasocial_attachment":
+            # At least one evidence hashtag (the figure tag) must appear
+            # in the cluster label/description — same predicate as
+            # the audit's per-preference proper-noun check.
+            ev_tags = [h.strip("#").lower() for h in (evidence_hashtags or [])]
+            if not any(tag and tag in text for tag in ev_tags):
+                return False, "parasocial_no_named_figure"
+
+        elif hp_type == "intimate_interest":
+            if any(b in text for b in _INTIMATE_GENERIC_BLOCKLIST):
+                return False, "intimate_generic_phrasing"
+
+        elif hp_type == "medical_aesthetic_concern":
+            if not any(m in f" {text} " for m in _MEDICAL_ACTIVE_USE_MARKERS):
+                return False, "medical_no_active_use"
+
+        elif hp_type == "covert_concern":
+            if any(b in text for b in _COVERT_CONCERN_GENERIC_BLOCKLIST):
+                return False, "covert_generic_phrasing"
+
+        elif hp_type == "compensatory_need":
+            if privacy_ratio < 0.7:
+                return False, "compensatory_low_privacy_ratio"
+
+        return True, ""
 
     @staticmethod
     def _audit_validate_specificity(decision: str, hp_type: str,
@@ -7698,8 +7850,14 @@ class PersonaAgent:
         if not self.user_profile or not self.user_profile.hidden_personas:
             return
 
-        from collections import defaultdict as _ddict
+        from collections import defaultdict as _ddict, Counter as _Counter
         per_cluster_counts: dict[str, dict[str, int]] = _ddict(lambda: _ddict(int))
+        # Per-cluster frame tally — `frame_invoked` counts across the
+        # cluster's audited prefs. Used to compute the cluster's
+        # dominant_frame (modal, ties broken by deep-frame priority) so
+        # downstream voice / content / auto-QA generators can ground
+        # their text in the cluster's strongest motivational signature.
+        per_cluster_frames: dict[str, _Counter] = _ddict(_Counter)
 
         for entry in self._preference_links.values():
             audit = entry.get("motivation_audit") or {}
@@ -7717,6 +7875,9 @@ class PersonaAgent:
             counts[f"n_{head.lower()}"] += 1
             if depth == "deep_latent":
                 counts["n_deep_latent"] += 1
+            frame = audit.get("frame_invoked") or "none"
+            if frame and frame != "none":
+                per_cluster_frames[cluster_label][frame] += 1
 
         # Annotate each non-synthetic cluster with its rollup.
         surface_shares: list[float] = []
@@ -7760,6 +7921,22 @@ class PersonaAgent:
             else:
                 cluster_status = "mixed_evidence"
 
+            # Modal frame across audited prefs. Ties broken by deep-frame
+            # priority — a cluster with one tied surface frame and one tied
+            # deep frame picks the deep one, preserving the deep-latent
+            # reading whenever it's available. None when no frames were
+            # invoked (audit failed to attribute, or all "none").
+            frame_tally = per_cluster_frames.get(hp.label) or _Counter()
+            dominant_frame = None
+            if frame_tally:
+                top_count = max(frame_tally.values())
+                tied = [f for f, c in frame_tally.items() if c == top_count]
+                deep_tied = [f for f in tied if f in MOTIVATION_AUDIT_DEEP_FRAMES]
+                # Prefer deep frames on ties; otherwise alphabetical for
+                # determinism across runs.
+                pool = deep_tied or tied
+                dominant_frame = sorted(pool)[0]
+
             hp.motivation_audit = {
                 "audit_status": "audited",
                 "n_audited": n,
@@ -7774,6 +7951,8 @@ class PersonaAgent:
                 "deep_latent_rate": round(deep_latent_rate, 3),
                 "surface_share": round(surface_share, 3),
                 "cluster_status": cluster_status,
+                "dominant_frame": dominant_frame,
+                "frame_distribution": dict(frame_tally),
             }
 
         # Profile-level over-attribution warning.

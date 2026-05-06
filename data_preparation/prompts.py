@@ -11,6 +11,159 @@ import json
 from typing import List, Dict
 
 
+# One-line behavioral descriptions for every motivation frame the audit
+# (Step 22) may invoke. Keyed by the closed-enum frame slug. Single
+# source of truth — reused by the voice / self-posts / DM / chatbot /
+# synthetic-content prompts and by the eval-side frame-consistency
+# auto-QA judge so every consumer points at the same anchor text.
+# Structural default frame per hidden-persona type. Used by Step 11
+# voice synthesis, Step 18 chatbot conversations, Step 19 synthetic
+# content, and Extension B (self-posts / DMs) to ground prompts BEFORE
+# the motivation audit (Step 22) has run — the audit's
+# `motivation_audit.dominant_frame` overrides this once available.
+# Kept conservative: every type maps to the deep-frame that the
+# cluster's existence already implies (parasocial → Horton-Wohl,
+# compensatory_need → Kardefelt-Winther, etc.). For ambiguous types
+# this is a best-guess seed; the audit refines it with evidence.
+_TYPE_DEFAULT_FRAME: dict = {
+    "parasocial_attachment":      "horton_wohl:parasocial",
+    "compensatory_need":          "kardefelt_winther:compensatory_use",
+    "identity_anchor":            "tajfel:social_identity",
+    "intimate_interest":          "barthes:punctum",
+    "intellectual_curiosity":     "berlyne:specific_curiosity",
+    "private_hobby":              "goffman:back_stage",
+    "medical_aesthetic_concern":  "health_belief_model:active_use",
+    "covert_concern":             "lazarus_folkman:emotion_focused_coping",
+    "emotional_pattern":          "lazarus_folkman:emotion_focused_coping",
+    "aspiration":                 "higgins:ideal_self",
+    "personality_trait":          "stryker:role_identity",
+    "sensitive_life_event":       "lazarus_folkman:emotion_focused_coping",
+}
+
+
+def cluster_dominant_frame(hp) -> str:
+    """Return the best-available motivational frame slug for a
+    hidden-persona cluster.
+
+    Resolution order (most-evidence-rich first):
+      1. ``hp.motivation_audit["dominant_frame"]`` — the modal frame
+         emitted by Step 23 after the LLM audit ran.
+      2. ``_TYPE_DEFAULT_FRAME[hp.type]`` — structural default keyed
+         on the cluster's discovered type.
+      3. ``"none"`` — nothing applicable.
+
+    Accepts either the dataclass instance or a dict-shaped clone.
+    """
+    if hp is None:
+        return "none"
+    audit = (getattr(hp, "motivation_audit", None) if not isinstance(hp, dict)
+             else hp.get("motivation_audit"))
+    if isinstance(audit, dict):
+        df = audit.get("dominant_frame")
+        if df:
+            return df
+    hp_type = (getattr(hp, "type", None) if not isinstance(hp, dict)
+               else hp.get("type"))
+    return _TYPE_DEFAULT_FRAME.get(str(hp_type or ""), "none")
+
+
+def render_hidden_personas_frames_block(hidden_personas, *, max_personas: int = 8) -> str:
+    """Render a compact block listing each cluster's label, type, and
+    dominant motivational frame (with 1-line description). Used by
+    self-posts / DM-thread / chatbot-conversation prompts so LLM-written
+    user-voiced content can ground itself in the cluster's frame
+    signature instead of generic affect.
+
+    Returns "" when there are no hidden personas to render.
+    """
+    if not hidden_personas:
+        return ""
+    lines = []
+    for hp in (hidden_personas or [])[:max_personas]:
+        if isinstance(hp, dict):
+            label = hp.get("label", "?")
+            hp_type = hp.get("type", "?")
+        else:
+            label = getattr(hp, "label", "?")
+            hp_type = getattr(hp, "type", "?")
+        if hp_type == "sensitive_life_event":
+            # Skip — sensitive_life_event is grounded by its own per-event
+            # active_window, not by being shown to all generators.
+            continue
+        frame = cluster_dominant_frame(hp)
+        fdesc = FRAME_DESCRIPTIONS.get(frame, "")
+        line = f"- **{label}** ({hp_type})"
+        if frame and frame != "none":
+            line += f" — frame: `{frame}` ({fdesc})"
+        lines.append(line)
+    if not lines:
+        return ""
+    return (
+        "## Hidden personas + dominant motivational frames\n\n"
+        "When the topic of a piece of content overlaps with one of these clusters, "
+        "anchor the WHY of the engagement in the cluster's frame signature — pick "
+        "ONE frame per piece (the closest match), not all of them. The frame is "
+        "the engagement's *psychological purpose*, not its topic.\n\n"
+        + "\n".join(lines) + "\n"
+    )
+
+
+FRAME_DESCRIPTIONS: dict = {
+    # Deep-latent frames (eligible for CONFIRMED / REASSIGN).
+    "self_determination_theory:relatedness":
+        "engagement satisfies a need for connection / belonging.",
+    "self_determination_theory:autonomy":
+        "engagement is an expression of agency / self-direction.",
+    "self_determination_theory:competence":
+        "engagement builds a sense of skill / mastery.",
+    "goffman:back_stage":
+        "private consumption away from any audience — back-stage self.",
+    "uses_and_gratifications:identity":
+        "public identity construction — performing who they are.",
+    "uses_and_gratifications:integration":
+        "feeling part of a community / shared world.",
+    "kardefelt_winther:compensatory_use":
+        "closing an unmet real-world need privately (high privacy_ratio).",
+    "higgins:ideal_self":
+        "pursuing the version of self the user aspires to become.",
+    "higgins:ought_self":
+        "managing what the user feels they SHOULD be (obligation, anxiety).",
+    "horton_wohl:parasocial":
+        "sustained one-sided emotional bond with a specific named figure.",
+    "lazarus_folkman:emotion_focused_coping":
+        "regulating the feelings about a stressor (vent, ruminate, soothe).",
+    "csikszentmihalyi:flow":
+        "deep absorption — challenge matched to skill, time disappears.",
+    "berlyne:specific_curiosity":
+        "sustained inquiry into one specific topic over time.",
+    "barthes:punctum":
+        "a SPECIFIC arresting detail (object, texture, dynamic) does the hooking.",
+    "tajfel:social_identity":
+        "in-group signaling — drawing self-esteem from a group identity.",
+    "stryker:role_identity":
+        "role-based identity (parent, professional, fan, etc.).",
+    "health_belief_model:active_use":
+        "active medication / regimen / aesthetic-medicine practice — not curiosity.",
+    # Surface / situational frames.
+    "tversky_kahneman:salience_availability":
+        "engagement reflects what's available / trending right now, not stable preference.",
+    "bikhchandani:informational_cascade":
+        "peer-driven engagement — others are doing it, so they look.",
+    "berlyne:diversive_curiosity":
+        "one-off novelty click — does not recur.",
+    "schwarz:mood_as_information":
+        "momentary mood drove the click — wouldn't happen on a different day.",
+    "variable_ratio_reinforcement":
+        "habituated scrolling — the engagement IS the act, not the content.",
+    "algorithmic_surfacing":
+        "the recommender pushed it — user just glanced.",
+    "short_term_episodic_event":
+        "active life episode (travel, event prep, medical consultation).",
+    "none":
+        "no frame meaningfully applies.",
+}
+
+
 def hashtag_to_persona_prompt(
     object_text: str,
     interaction_type: str,
@@ -804,6 +957,195 @@ def _render_voice_for_consumer(
     return "\n".join(parts)
 
 
+_TEMPLATE_FREQ_RANK = {"common": 3, "frequent": 3, "occasional": 2, "rare": 1}
+
+
+def render_voice_for_test_card(
+    user_voice: dict | None,
+    app_persona: dict | None,
+    *,
+    target_app: str = "",
+    dominant_frame: str | None = None,
+    voice_evidence_spans: list | None = None,
+) -> str:
+    """Layered, scoped voice render for eval test cards.
+
+    Differs from ``_render_voice_for_consumer`` (used during data
+    generation, where the LLM needs the full layered voice) by showing
+    ONLY the subsections relevant to grading voice fidelity for a
+    single-app, single-topic test instance:
+
+      - Layer 1: ``identity_spine.signature_concerns`` (one line).
+      - Layer 2: the SINGLE highest-frequency
+        ``idiolect.constructional_templates`` entry (one example).
+      - Layer 2 markers: ``idiolect.hedge_booster_ratio`` + appraisal
+        attitude/engagement (one line).
+      - Per-app surface: ``surface.length_band`` /
+        ``emoji_intensity_shift`` / ``disclosure_depth`` /
+        ``audience_self_censoring`` (one compact line).
+      - Per-app Layer-3 selection: ``active_stances`` +
+        ``active_registers`` (chips, capped at 4 each).
+      - Per-app delta_summary (WHY this audience selects this stance
+        subset).
+      - ``app_avoid`` / ``voice_avoid`` / ``phrases_to_avoid``
+        (negatives — kept because they're the easiest place to fail).
+      - Optional motivational frame: ``dominant_frame`` + one-line
+        description from ``FRAME_DESCRIPTIONS``.
+      - Optional voice anchors: when ``voice_evidence_spans`` is
+        provided, palette emoji + catchphrase residue strings that
+        actually surface in the example/inferior pair are bolded
+        inline (matched case-insensitively, deduped).
+
+    Returns markdown text the eval-side renderer can drop directly
+    inside the GT preference card. Falls back to the layered
+    ``_render_voice_for_consumer`` output when the voice schema is
+    missing the new layered fields (legacy snapshots).
+    """
+    if not user_voice:
+        return ""
+
+    spine = user_voice.get("identity_spine") or {}
+    idio = user_voice.get("idiolect") or {}
+    repertoire = user_voice.get("repertoire") or {}
+
+    is_layered = bool(spine or idio or repertoire)
+    if not is_layered:
+        # Legacy snapshot — defer to the unified renderer; eval-side
+        # cards will at least show coherent text instead of erroring.
+        return _render_voice_for_consumer(user_voice, app_persona)
+
+    span_lookup: set = set()
+    if voice_evidence_spans:
+        for s in voice_evidence_spans:
+            if not isinstance(s, str):
+                continue
+            s = s.strip()
+            if s:
+                span_lookup.add(s.lower())
+
+    def _bold_if_anchor(token: str) -> str:
+        # Match against the inner-text key (strip surrounding quotes /
+        # whitespace before lookup) so "that part" anchored on a span
+        # `that part` still bolds correctly.
+        key = token.strip().strip('"').strip("'").lower()
+        return f"**{token}**" if key in span_lookup else token
+
+    lines: list[str] = []
+
+    # Layer 1 — Identity spine (signature_concerns only).
+    sigs = spine.get("signature_concerns") or []
+    if sigs:
+        lines.append(
+            "- **Identity spine — signature concerns**: "
+            + ", ".join(sigs[:4])
+        )
+
+    # Layer 2 — best-fit constructional template + key idiolect markers.
+    templates = idio.get("constructional_templates") or []
+    if templates:
+        # Highest-frequency entry (ties broken by first-seen).
+        ranked = sorted(
+            templates,
+            key=lambda t: -_TEMPLATE_FREQ_RANK.get(str(t.get("frequency", "")).lower(), 0),
+        )
+        top = ranked[0] if ranked else {}
+        pat = top.get("pattern", "")
+        ex = top.get("example_realization", "")
+        if pat:
+            lines.append(
+                f"- **Idiolect template** (apply abstractly, never recite): "
+                f"`{pat}` — e.g. \"{ex}\"" if ex else f"`{pat}`"
+            )
+
+    if idio.get("hedge_booster_ratio") or idio.get("appraisal_fingerprint"):
+        af = idio.get("appraisal_fingerprint") or {}
+        af_str = (
+            f"attitude={af.get('attitude_dominant', '?')}, "
+            f"engagement={af.get('engagement_style', '?')}"
+        ) if af else ""
+        hb = idio.get("hedge_booster_ratio") or "?"
+        bits = [f"hedge/booster={hb}"]
+        if af_str:
+            bits.append(af_str)
+        lines.append("- **Idiolect markers**: " + "; ".join(bits))
+
+    # Catchphrase residue — bolded when matched against evidence_spans.
+    residue = idio.get("catchphrase_residue") or user_voice.get("personal_phrases") or []
+    if residue:
+        rendered = ", ".join(_bold_if_anchor(f'"{p}"') for p in residue[:4])
+        lines.append(
+            f"- **Catchphrase residue** (use ZERO most of the time; AT MOST one): {rendered}"
+        )
+
+    palette = user_voice.get("emoji_palette") or []
+    if palette:
+        rendered = " ".join(_bold_if_anchor(p) for p in palette[:10])
+        lines.append(f"- **Emoji palette** (subset only): {rendered}")
+
+    # Negatives — these are how compose tasks most commonly fail; keep.
+    if user_voice.get("voice_avoid"):
+        lines.append(f"- **Voice avoid**: {str(user_voice['voice_avoid'])[:240]}")
+    p_avoid = user_voice.get("phrases_to_avoid") or []
+    if p_avoid:
+        lines.append(
+            "- **Phrases to avoid**: "
+            + ", ".join(f'"{p}"' for p in p_avoid[:6])
+        )
+
+    # Per-app — only the destination app's modulation. Skip when there
+    # is no app context (e.g. cross-app or app-agnostic test types).
+    if app_persona:
+        app_name = target_app or app_persona.get("app_name") or ""
+        header = (
+            f"- **On {app_name}** (audience selection from above repertoire):"
+            if app_name else "- **On this app**:"
+        )
+        lines.append(header)
+
+        stances = app_persona.get("active_stances") or []
+        regs = app_persona.get("active_registers") or []
+        bits = []
+        if stances:
+            bits.append(f"stances=[{', '.join(stances[:4])}]")
+        if regs:
+            bits.append(f"registers=[{', '.join(regs[:4])}]")
+        if bits:
+            lines.append("    • " + "  ".join(bits))
+
+        surface = app_persona.get("surface") or app_persona.get("expression") or {}
+        s_bits = []
+        if surface.get("length_band"):
+            s_bits.append(f"length={surface['length_band']}")
+        if surface.get("emoji_intensity_shift") is not None:
+            s_bits.append(f"emoji_shift={surface['emoji_intensity_shift']}")
+        if surface.get("disclosure_depth"):
+            s_bits.append(f"disclosure={surface['disclosure_depth']}")
+        if surface.get("effort_level"):
+            s_bits.append(f"effort={surface['effort_level']}")
+        if s_bits:
+            lines.append("    • surface: " + ", ".join(s_bits))
+        if surface.get("audience_self_censoring"):
+            lines.append(
+                f"    • self-censoring: {str(surface['audience_self_censoring'])[:200]}"
+            )
+
+        delta = app_persona.get("delta_summary") or app_persona.get("style_description")
+        if delta:
+            lines.append(f"    • why this audience picks this subset: {str(delta)[:240]}")
+
+        if app_persona.get("app_avoid"):
+            lines.append(f"    • app avoid: {str(app_persona['app_avoid'])[:200]}")
+
+    # Optional motivational frame — single-line anchor on the WHY.
+    if dominant_frame and dominant_frame != "none":
+        fdesc = FRAME_DESCRIPTIONS.get(dominant_frame, "")
+        lines.append(
+            f"- **Motivational frame**: `{dominant_frame}` — {fdesc}"
+        )
+
+    return "\n".join(lines) + "\n"
+
+
 def _format_source_samples_block(source_samples: list[dict] | None, header: str) -> str:
     """Render raw engagement rows for prompt grounding (used by both Call A and Call B)."""
     if not source_samples:
@@ -860,13 +1202,30 @@ def generate_voice_core_prompt(
 
     hp_block = ""
     if hidden_persona_summary:
-        lines = [
-            f"- {h.get('label', '?')} ({h.get('persona_type', '?')}, signal={h.get('signal_strength', '?')})"
-            for h in hidden_persona_summary
-        ]
+        lines = []
+        for h in hidden_persona_summary:
+            frame = h.get("frame") or "none"
+            fdesc = h.get("frame_description") or FRAME_DESCRIPTIONS.get(frame, "")
+            line = (
+                f"- {h.get('label', '?')} "
+                f"({h.get('persona_type', '?')}, signal={h.get('signal_strength', '?')})"
+            )
+            if frame and frame != "none":
+                line += f"\n    motivational frame: `{frame}` — {fdesc}"
+            lines.append(line)
         hp_block = (
-            "## Hidden personas already discovered for this user (cite these in redemption / "
-            "contamination motifs when appropriate)\n\n" + "\n".join(lines) + "\n"
+            "## Hidden personas already discovered for this user\n\n"
+            "Each cluster carries a named **motivational frame** drawn from "
+            "behavioral science. The frame is what the engagement is *for* "
+            "psychologically — your `redemption_motifs`, `contamination_motifs`, "
+            "and `signature_concerns` should cite these clusters AND reflect "
+            "their frames' signature. A `lazarus_folkman:emotion_focused_coping` "
+            "cluster's motif should center mood-regulation language (vent / "
+            "ruminate / soothe), not aspirational growth. A "
+            "`tajfel:social_identity` cluster's motif should center in-group "
+            "signaling. A `goffman:back_stage` cluster's motif should center "
+            "private consumption away from any audience.\n\n"
+            + "\n".join(lines) + "\n"
         )
 
     sle_block = ""
@@ -1008,6 +1367,7 @@ def generate_app_modulations_prompt(
     user_voice: dict,
     chatbot_contexts: list[str],
     source_samples_by_app: list[dict] | None = None,
+    hidden_persona_summary: list[dict] | None = None,
 ) -> str:
     """Step-11 Call B — produce the four AppPersona entries.
 
@@ -1035,6 +1395,31 @@ def generate_app_modulations_prompt(
         "Sampled raw engagement rows tagged by inferred app (use these to choose per-app stance subsets)",
     )
 
+    hp_block = ""
+    if hidden_persona_summary:
+        hp_lines = []
+        for h in hidden_persona_summary:
+            frame = h.get("frame") or "none"
+            fdesc = h.get("frame_description") or FRAME_DESCRIPTIONS.get(frame, "")
+            line = (
+                f"- {h.get('label', '?')} "
+                f"({h.get('persona_type', '?')})"
+            )
+            if frame and frame != "none":
+                line += f" — frame: `{frame}` ({fdesc})"
+            hp_lines.append(line)
+        hp_block = (
+            "## Hidden personas + dominant motivational frames\n\n"
+            "Use these to choose **which** stance / register / speech-genre subset "
+            "each app gets (Layer-3 selection) and to write `delta_summary`. The "
+            "delta_summary should explain WHY this audience surfaces this frame's "
+            "expression differently — e.g. a `goffman:back_stage` cluster's frame "
+            "is loud on the AI Chatbot (private back-stage) but quiet on Threads "
+            "(public front-stage); a `tajfel:social_identity` cluster surfaces on "
+            "Threads / Instagram (public in-group signaling) but is muted on the "
+            "Chatbot.\n\n" + "\n".join(hp_lines) + "\n\n"
+        )
+
     return f"""\
 You are producing the four per-app modulations (Instagram, Facebook, Threads, AI Chatbot) for a synthetic user whose stable writing-voice core has already been generated. Real people have ONE voice — what changes per app is **audience selection from the existing repertoire** + **surface knobs (length, emoji density, disclosure)**. You are NOT inventing new voice mechanics here.
 
@@ -1050,7 +1435,7 @@ You are producing the four per-app modulations (Instagram, Facebook, Threads, AI
 {user_voice_json}
 ```
 
-{samples_block}
+{hp_block}{samples_block}
 ## Anti-patterns — read carefully
 
 1. **You are SELECTING, not INVENTING.** `active_stances` MUST be a subset of `user_voice.repertoire.stances`. Same for `active_registers` (⊆ `repertoire.registers`) and `active_speech_genres` (⊆ `repertoire.speech_genre_fluency`). If a stance is not in the repertoire above, you cannot use it.
@@ -1345,6 +1730,8 @@ def generate_synthetic_content_prompt(
     preferences: list[dict],
     action: str,
     action_label: str,
+    motivation_frame: str | None = None,
+    motivation_frame_description: str | None = None,
 ) -> str:
     """Build a prompt that fabricates one piece of realistic feed content.
 
@@ -1456,6 +1843,26 @@ def generate_synthetic_content_prompt(
                      "Rich mix of text / image / short video. Twitter-like voice, not LinkedIn-serious.",
     }.get(app, "")
 
+    # Optional motivational-frame block. When the event's hashtags
+    # overlap a hidden persona's cluster, the cluster's dominant frame
+    # is passed in here so the synthesized title/caption can carry the
+    # frame's psychological tone (coping, in-group signaling, back-stage
+    # private consumption, etc.) — not just the topic.
+    frame_block = ""
+    if motivation_frame and motivation_frame != "none":
+        fdesc = motivation_frame_description or FRAME_DESCRIPTIONS.get(motivation_frame, "")
+        frame_block = (
+            f"\n## Motivational frame for this engagement\n"
+            f"This item lands inside the user's `{motivation_frame}` cluster — "
+            f"{fdesc} The content's caption / title / on-screen text should subtly "
+            f"carry that signature (without naming the frame). For example: a "
+            f"`lazarus_folkman:emotion_focused_coping` frame favors mood-regulation "
+            f"language (vent / reassure / soothe); `goffman:back_stage` favors "
+            f"unguarded, unpolished detail; `tajfel:social_identity` favors "
+            f"in-group cues (lingo, references, shared landmarks); "
+            f"`horton_wohl:parasocial` foregrounds a specific named figure.\n"
+        )
+
     return f"""\
 You are generating ONE piece of realistic feed content that just appeared in a user's {app} feed.
 The user then took this action on it: **{action_label}** (`{action}`).
@@ -1478,7 +1885,7 @@ The user then took this action on it: **{action_label}** (`{action}`).
 
 ## Preferences context
 {pref_block}
-
+{frame_block}
 ## Content type requested
 **{content_type}**
 
@@ -2205,6 +2612,9 @@ def generate_chatbot_conversation_prompt(
         chatbot_persona or {},
         foreground=["hedge_booster", "disclosure"],
     )
+    frames_block = render_hidden_personas_frames_block(
+        user_profile.get("hidden_personas") or []
+    )
 
     # Build per-preference instruction block
     pref_lines = []
@@ -2273,6 +2683,7 @@ You are generating a realistic multi-turn conversation between a user and an AI 
 {profile_json}
 ```
 
+{frames_block}
 {user_voice_block}
 ## User's Chatbot Persona (audience/length/effort/topic — voice mechanics live in the Shared writing voice block above)
 
@@ -2370,6 +2781,9 @@ def generate_ask_to_forget_conversation_prompt(
         chatbot_persona or {},
         foreground=["hedge_booster", "disclosure"],
     )
+    frames_block = render_hidden_personas_frames_block(
+        user_profile.get("hidden_personas") or []
+    )
 
     # Build additional-preferences block if present
     extra_block = ""
@@ -2393,6 +2807,7 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 {profile_json}
 ```
 
+{frames_block}
 {user_voice_block}
 ## User's Chatbot Persona (audience/length/effort — voice mechanics live in the Shared writing voice block above)
 
@@ -2486,6 +2901,9 @@ def generate_correction_conversation_prompt(
         chatbot_persona or {},
         foreground=["hedge_booster", "disclosure"],
     )
+    frames_block = render_hidden_personas_frames_block(
+        user_profile.get("hidden_personas") or []
+    )
 
     # Build additional-preferences block if present
     extra_block = ""
@@ -2508,6 +2926,7 @@ You are generating a 4-turn conversation where an AI chatbot makes an incorrect 
 {profile_json}
 ```
 
+{frames_block}
 {user_voice_block}
 ## User's Chatbot Persona (audience/length/effort/topic — voice mechanics live in the Shared writing voice block above)
 
@@ -2602,6 +3021,9 @@ def generate_do_not_personalize_conversation_prompt(
         chatbot_persona or {},
         foreground=["hedge_booster", "disclosure"],
     )
+    frames_block = render_hidden_personas_frames_block(
+        user_profile.get("hidden_personas") or []
+    )
 
     extra_block = ""
     if additional_preferences:
@@ -2625,6 +3047,7 @@ You are generating a 4-turn conversation where a user reveals a personal prefere
 {profile_json}
 ```
 
+{frames_block}
 {user_voice_block}
 ## User's Chatbot Persona (audience/length/effort — voice mechanics live in the Shared writing voice block above)
 
@@ -2882,6 +3305,16 @@ These types are grounded in established behavioral science frameworks (Uses & Gr
 6. For each cluster, explain the **inferred motivation** — WHY does this user engage with this content? What deeper need does it serve?
 7. Note which known surface preferences each hidden persona EXPLAINS — connect the hidden layer to the visible behavior.
 8. **No near-duplicates**: Do NOT produce clusters that overlap >50% of their evidence hashtags. If two potential clusters would share more than half their hashtags, combine them into a single cluster. Each cluster must be thematically distinct.
+
+## HARD CONSTRAINTS (clusters violating any of these will be DROPPED)
+
+These are not preferences — they are deterministic gates a downstream validator enforces verbatim. Match the rule before emitting; do not "explain around" a violation.
+
+- **`parasocial_attachment`** — the figure's name (matching at least one `evidence_hashtags` tag, e.g. `#KaiCenat` → "Kai Cenat") MUST appear in the cluster `label` or `description`. A label like "Strong attachment to a streamer" with no name fails the gate.
+- **`intimate_interest`** — the cluster `label` and `description` MUST name the specific objects / clothing / body areas / dynamics / aesthetics. Generic phrasings will fail: avoid `"likes suggestive content"`, `"attractive content"`, `"sexy content"`, `"thirst content"`, `"adult content"`, `"nsfw content"` (substring-checked, lowercased). Replace with concrete nouns ("black tights", "pool-party flirtation", "femboy aesthetic").
+- **`medical_aesthetic_concern`** — the `label` or `description` MUST imply ACTIVE USE of a regimen via at least one of these markers (substring-checked): `takes`, `taking`, `using`, `applies`, `applied`, `applying`, `started`, `on a regimen`, `prescribed`, `uses`, `on` (as in "on tretinoin"). Pure curiosity ("interested in retinoids") is NOT this type — use `intellectual_curiosity` instead.
+- **`covert_concern`** — the `label` MUST name a SPECIFIC concrete worry. Generic phrasings will fail: avoid `"worries about money"`, `"worries about health"`, `"worries about career"`, `"general anxiety"`, `"stress in general"` (substring-checked). Replace with the concrete situation ("fear of losing the house after a layoff", "anxiety about a parent's recent diagnosis").
+- **`compensatory_need`** — the cluster's evidence rows MUST be ≥70% implicit_positive (privacy_ratio > 0.7). The `interaction-type distribution` shown for each hashtag is what determines this. If the cluster's hashtags are mostly explicit_positive (likes / saves / shares), it is NOT a compensatory_need cluster — it is a public-identity / `identity_anchor` / `private_hobby` cluster instead. Pick the type that matches the evidence's implicit/explicit balance, not the type whose narrative sounds catchier.
 
 ## Output Format
 
