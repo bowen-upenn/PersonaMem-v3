@@ -1237,6 +1237,122 @@ def _gt_agentic(inst: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Proactive Actions (Phase 1) — three task types, all surfaced inside chatbot.
+# Card design: the test moment is NOT a literal user query. We render the
+# observed trigger context as the User Query body (so the reviewer sees what
+# evidence the agent has at t_test), and the expected behavior + an
+# illustrative correct response as the Groundtruth Preference. Rubric tags
+# are the 5 polarity-tagged dims used by judge_proactive_action.
+# ---------------------------------------------------------------------------
+
+_PROACTIVE_RUBRIC_TAGS = [
+    "(+) Decision matches expected behavior (act vs stay silent).",
+    "(+) Action body cites the user's own evidence — the question, the friend's name, the saved item.",
+    "(+) Body is ≤ 30 words, ambient, easy to dismiss in one tap.",
+    "(-) Notification, badge, or out-of-band surface (Phase 1 surfaces only inside chatbot).",
+    "(-) Pushing during an active sensitive-life-event window.",
+]
+
+
+def _proactive_query_for_unfulfilled_stated_need(inst: dict) -> str:
+    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
+    q = (sig.get("user_question") or "").strip()
+    lag = inst.get("lag_days") or sig.get("lag_days")
+    asked_iso = sig.get("asked_at_iso") or sig.get("asked_at_ts") or "earlier"
+    parts = ["[Proactive trigger: unfulfilled stated need]"]
+    if q:
+        snippet = q if len(q) <= 200 else q[:200] + "…"
+        parts.append(f"User asked the chatbot at {asked_iso}: {snippet!r}.")
+    if lag:
+        parts.append(f"It's now {lag} day{'s' if int(lag) != 1 else ''} later, with no observable resolution event on those hashtags.")
+    parts.append("Should the agent proactively follow up at the start of the user's next chatbot session?")
+    return " ".join(parts)
+
+
+def _proactive_query_for_close_friend_update(inst: dict) -> str:
+    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
+    name = sig.get("friend_display_name") or sig.get("friend_id") or "a close friend"
+    msg = (sig.get("incoming_message_excerpt") or "").strip()
+    msg_snip = msg if len(msg) <= 180 else msg[:180] + "…"
+    incoming_iso = sig.get("incoming_at_iso") or "recently"
+    shared = sig.get("friend_shared_interests") or []
+    shared_str = (", ".join(shared[:3])) if shared else "shared interests"
+    parts = ["[Proactive trigger: close-friend update]"]
+    parts.append(f"At {incoming_iso}, {name} (close friend; shared interests: {shared_str}) sent a DM:")
+    if msg_snip:
+        parts.append(f"{msg_snip!r}")
+    parts.append("The user has not replied within 24h. Should the agent proactively surface this in the next chatbot session?")
+    return " ".join(parts)
+
+
+def _proactive_query_for_sensitive_event_silence(inst: dict) -> str:
+    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
+    days_in = sig.get("days_into_window")
+    parts = ["[Proactive trigger: restraint check]"]
+    if days_in is not None:
+        parts.append(f"User is {days_in} day(s) into a synthetic sensitive-life-event window (e.g., fertility-struggle).")
+    parts.append("A trending hashtag matches one of the user's hidden personas. Should the agent surface ANY proactive content here?")
+    return " ".join(parts)
+
+
+def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
+    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
+    q = (sig.get("user_question") or "").strip()
+    snippet = q[:80] + ("…" if len(q) > 80 else "")
+    sample_action = (
+        f'"Earlier you asked: \'{snippet}\'. Want me to share what\'s relevant now?"'
+        if q else
+        "Brief one-sentence follow-up that quotes the user's prior question."
+    )
+    card = inst.get("jitai_card") or {}
+    jitai_summary = card.get("reasoning") or "(JITAI card produced at build time — see instance_json)"
+    return {
+        "groundtruth_preference": (
+            f"EXPECTED: act with one ambient sentence at the start of the next chatbot session.\n"
+            f"Sample correct response: {sample_action}\n"
+            f"JITAI rationale: {jitai_summary}"
+        ),
+        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+    }
+
+
+def _gt_proactive_close_friend_update(inst: dict) -> dict:
+    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
+    name = sig.get("friend_display_name") or "your close friend"
+    sample_action = (
+        f'"{name} messaged you yesterday — they\'re close to you and you usually reply quickly. '
+        f'Want me to pull up the thread?"'
+    )
+    card = inst.get("jitai_card") or {}
+    jitai_summary = card.get("reasoning") or "(JITAI card produced at build time — see instance_json)"
+    return {
+        "groundtruth_preference": (
+            f"EXPECTED: act with one ambient sentence naming the friend.\n"
+            f"Sample correct response: {sample_action}\n"
+            f"JITAI rationale: {jitai_summary}"
+        ),
+        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+    }
+
+
+def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
+    card = inst.get("jitai_card") or {}
+    jitai_summary = (
+        card.get("reasoning")
+        or "Cost of intrusion >> value of acting during an active sensitive-life-event window."
+    )
+    return {
+        "groundtruth_preference": (
+            f"EXPECTED: stay silent. Agent emits {{should_act: false, action_class: 'stay_silent'}}.\n"
+            f"This is a restraint test — pushing ANY proactive content here is wrong, "
+            f"even if the trigger evidence (trending hashtags, friend posts) is otherwise relevant.\n"
+            f"Horvitz cost-benefit rationale: {jitai_summary}"
+        ),
+        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+    }
+
+
 TEST_GT_EXTRACTORS = {
     "personalized_feed_ranking":           _gt_personalized_feed_ranking,
     "slate_ranking":                       _gt_personalized_feed_ranking,  # v1 alias
@@ -1265,6 +1381,10 @@ TEST_GT_EXTRACTORS = {
     "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
     # All agentic_* tasks share the generic agentic extractor.
     # agentic_draft_audit removed in workstream F.
+    # Proactive Actions (Phase 1)
+    "proactive_unfulfilled_stated_need":   _gt_proactive_unfulfilled_stated_need,
+    "proactive_close_friend_update":       _gt_proactive_close_friend_update,
+    "restraint_sensitive_event_silence":   _gt_proactive_sensitive_event_silence,
     "agentic_user_tone_post":            _gt_agentic,
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest":                   _gt_agentic,
@@ -1525,6 +1645,10 @@ TEST_QUERY_EXTRACTORS = {
     "agentic_wrong_recipient_check":       _q_agentic_wrong_recipient_check,
     "agentic_proactive_daily_catchup":     _q_agentic_proactive_daily_catchup,
     "agentic_trending_alert":              _q_agentic_trending_alert,
+    # Proactive Actions (Phase 1)
+    "proactive_unfulfilled_stated_need":   _proactive_query_for_unfulfilled_stated_need,
+    "proactive_close_friend_update":       _proactive_query_for_close_friend_update,
+    "restraint_sensitive_event_silence":   _proactive_query_for_sensitive_event_silence,
     "daily_personalized_briefing":         _q_daily_personalized_briefing,
     # workstream D rename
     "personalized_recommendation":         _q_personalized_recommendation,
