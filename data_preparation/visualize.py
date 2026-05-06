@@ -35,6 +35,11 @@ APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
 # reference the user's actual recent preferences / hashtags / categories.
 _PERSONA_CONTEXT: dict = {}
 
+# Per-render chatbot-event lookup by `source_object_id` — used by the
+# proactive_unfulfilled_stated_need extractor to surface the original
+# user→AI exchange as a prior-conversation chat thread on the test card.
+_CHATBOT_EVENT_BY_OID: dict = {}
+
 
 def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
     """Walk backend/{uid}/*.json once; produce the lookup bank.
@@ -1307,12 +1312,29 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
     )
     card = inst.get("jitai_card") or {}
     jitai_summary = card.get("reasoning") or "(JITAI card produced at build time — see instance_json)"
+    # Render the original chatbot exchange as a prior-conversation chat
+    # thread so the reviewer can SEE the user's question in the same chat-
+    # bubble format the agent will see at eval time. Pulls the source
+    # event from the persona_context bank if available, else falls back
+    # to a single user-bubble built from the cited question.
+    prior = []
+    cb_event_id = str(sig.get("chatbot_event_id") or "")
+    src_event = _CHATBOT_EVENT_BY_OID.get(cb_event_id) if cb_event_id else None
+    if src_event:
+        for m in (src_event.get("conversation") or [])[:6]:
+            role = m.get("role")
+            content = (m.get("content") or "").strip()
+            if role in ("user", "assistant") and content:
+                prior.append({"role": role, "content": content[:500]})
+    if not prior and q:
+        prior = [{"role": "user", "content": q[:500]}]
     return {
         "groundtruth_preference": (
             f"EXPECTED: act with one ambient sentence at the start of the next chatbot session.\n"
             f"Sample correct response: {sample_action}\n"
             f"JITAI rationale: {jitai_summary}"
         ),
+        "prior_conversation": prior,
         "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
     }
 
@@ -1692,8 +1714,22 @@ def _load_test_samples(
         return out
     # Build the persona context bank ONCE; extractors use it to fill in
     # concrete expected-answer shapes when the instance itself is sparse.
-    global _PERSONA_CONTEXT
+    global _PERSONA_CONTEXT, _CHATBOT_EVENT_BY_OID
     _PERSONA_CONTEXT = _build_persona_context(uid, backend_dir)
+    # Build a chatbot-event-by-source_object_id lookup — used by the
+    # proactive_unfulfilled_stated_need extractor to render the original
+    # user→AI exchange as a prior-conversation chat thread on the test card.
+    _CHATBOT_EVENT_BY_OID = {}
+    chatbot_path = os.path.join(backend_dir, str(uid), "chatbot.json")
+    if os.path.exists(chatbot_path):
+        try:
+            with open(chatbot_path, "r", encoding="utf-8") as _cf:
+                for ev in json.load(_cf) or []:
+                    oid = str(ev.get("source_object_id") or "")
+                    if oid:
+                        _CHATBOT_EVENT_BY_OID[oid] = ev
+        except (ValueError, OSError):
+            pass
     csv.field_size_limit(10_000_000)
     with open(qcsv, "r", encoding="utf-8") as f:
         first = f.readline()
