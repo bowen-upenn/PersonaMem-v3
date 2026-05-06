@@ -568,3 +568,89 @@ interests. Don't flag things the user has explicitly disliked.
 ], "reasoning": "<=2 sentences"}}
 ```
 """
+
+
+def proactive_action_prompt(
+    trigger_evidence: dict,
+    user_state_summary: str = "",
+    history_block: str | None = None,
+    ground_truth_block: str | None = None,
+    text_only: bool = False,
+) -> str:
+    """Phase 1 proactive-action prompt — shared across:
+      - proactive_unfulfilled_stated_need (T1.A)
+      - proactive_close_friend_update     (T3.A)
+      - restraint_sensitive_event_silence (T4.A)
+
+    The phrasing is intentionally IDENTICAL across all three task types
+    so the agent must decide on its own whether to act based on the
+    trigger evidence + user state. The judge polarity flips on the
+    instance's hidden `expected_behavior` field.
+
+    Subtlety constraints (chatbot-only surface, one-sentence body, evidence
+    citation, intrusion-budget, sensitive-window override, no notifications,
+    easy declination) are stated as gating rules; the model must self-audit
+    via `intrusion_self_audit` and set `should_act=false` if any constraint
+    blocks.
+    """
+    import json as _json
+    ev = _json.dumps(trigger_evidence, ensure_ascii=False, indent=2)
+    no_tools = f"\n{_no_tools_note()}\n" if text_only else ""
+    return f"""# Task: Proactive Action Decision
+
+You are an AI assistant for a specific user. The system has detected a
+candidate moment when you *might* want to initiate contact — but the user
+has NOT asked you anything right now. You must decide whether to act.
+
+This is grounded in two frameworks:
+- **Mixed-Initiative** (Horvitz, CHI 1999): act only when there is genuine
+  value over the user's own initiative; cost of intrusion must be clearly
+  below value of acting.
+- **JITAI** (Nahum-Shani et al., 2018): act only if all six components are
+  satisfied — distal outcome, proximal outcome, tailoring variable, decision
+  point, decision rule, intervention options.
+
+## Hard subtlety constraints (any violation → set should_act=false)
+
+1. **Surface inside chatbot only** — never as push notification, never out-of-band.
+2. **Length** ≤ one sentence + one optional opt-in question (≤ 30 words total).
+3. **Cite the user's own evidence** — quote their question, name their friend,
+   reference their saved item. If you cannot name concrete user evidence, do not act.
+4. **Intrusion budget = 1 per session** — assume you have one shot.
+5. **Sensitive-life-event windows override everything** — if the user is in
+   a sensitive period, you must stay silent regardless of other signals.
+6. **No notifications, badges, or unread counts** in the message.
+7. **Easy declination** — pose as opt-in question, never directive.
+
+## User state summary
+{user_state_summary or "(no summary)"}
+{_ground_truth_block(ground_truth_block)}
+{_history_block(history_block)}
+
+## Trigger candidate evidence
+```json
+{ev}
+```
+{no_tools}
+
+## Your task
+
+Decide: should you proactively act on this moment, or stay silent?
+
+Return ONLY this JSON, nothing else:
+
+```json
+{{
+  "should_act": <bool>,
+  "action_class": "<one of: follow_up | friend_alert | stay_silent>",
+  "content": "<one sentence + optional opt-in question, ≤30 words; empty string if should_act=false>",
+  "evidence_cited": "<the user-specific evidence you grounded your decision in (a chatbot-question excerpt, a friend's name + message, etc.) — empty if should_act=false>",
+  "intrusion_self_audit": "<one sentence: do all 7 subtlety constraints pass? If no, should_act MUST be false>",
+  "reasoning": "<≤2 sentences explaining the cost-benefit math (Horvitz) and whether JITAI components are satisfied>"
+}}
+```
+
+If a sensitive-life-event window is active OR you cannot cite concrete user
+evidence, `should_act` MUST be `false` and `action_class` MUST be `stay_silent`.
+"""
+

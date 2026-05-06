@@ -1,4 +1,5 @@
 # Skill: Run Persona Pipeline via Claude Code Subagents
+# (24-step pipeline; Step 24 is Proactive Trigger Candidate Inference)
 
 ## When to use
 
@@ -142,6 +143,10 @@ For each user, the subagent executes these steps in strict integer order (no fra
     - `profile.json`: UserProfile dataclass + shared `user_voice` block + `app_personas` dict (one entry per app, each carrying audience/length/effort/topic + optional `overrides`) + hidden personas + MBTI
     - `instagram.json`, `facebook.json`, `threads.json`, `chatbot.json`: list of interaction events **sorted strictly by `source_timestamp` ascending**. Every event carries `event_location` from Step 15, `is_ad` + `content.ad_metadata` if promoted in Step 20, and every surviving preference carries `time_horizon` + optional `stop_condition` from Step 4. `implicit_negative` events whose canonicals survived the ≥5 gate are promoted to `source_interaction_type: "explicit_negative"` and carry full preferences. All other `implicit_negative` rows appear as stub events with empty `preferences: []` (no predictions needed). In `persona.html` these stubs render in full greyscale.
     - `calendar.json`: `{"modifications": [...]}` — the CRUD stream from Step 16.
+
+23. **Extension B** (post-save) — self-posts, DM threads, friends graph, `trending.json`. Adds `friends[]` to `profile.json` and writes `trending.json` alongside the app JSONs. Idempotent.
+
+24. **Proactive Trigger Candidate Inference** — catalog moments where the agent could legitimately initiate contact, scored by an LLM against the JITAI 6-component framework (Nahum-Shani et al., 2018) and Horvitz mixed-initiative principles (CHI 1999). Three Phase-1 trigger types: `unfulfilled_stated_need` (chatbot question N days unresolved), `close_friend_update` (close-friend DM with no reply within 24h), `sensitive_event_silence` (restraint window during synthetic `sensitive_life_event`). Stage 1 deterministically gathers candidates from `chatbot.json` + per-app DM events + hidden-persona windows; Stage 2 calls `infer_proactive_trigger_prompt` per candidate (LLM produces a JITAI card). Output saved to `profile.json.proactive_trigger_candidates`. Skipped gracefully when no LLM client is configured.
 
 (R8 removed the old `build_test_split` step entirely. Eval now picks its own test moments from the full timeline at any `T_test` cut — no pre-flagged train/test partition in the data.)
 

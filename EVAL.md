@@ -284,6 +284,45 @@ Four new top-level tasks keyed to PersonaMem-v3's new data-gen signals. Each pic
 
 **Contradiction-aware ground truth** applies to all of the above (and to existing A/B/C once they're refactored to stop reading `split`): `BackendQuery.get_preferences(..., include_superseded=False)` filters out canonicals that were contradicted-and-superseded (Phase 3 Case B) before `T_test`, so the ground truth at any moment is the LATER stance only.
 
+### Task F — Proactive Actions (Phase 1)
+
+The agent decides **on its own** whether to initiate contact at a moment the user did NOT explicitly open. Three task types in this Phase 1 cut, all surfaced only inside the chatbot (`mcp_tools_allowed: chatbot`, `state_write_policy: read_only`).
+
+**Theoretical grounding** — the prompt and the judge cite published frameworks:
+- **Mixed-Initiative Principles** (Horvitz, CHI 1999, [erichorvitz.com/chi99horvitz.pdf](https://erichorvitz.com/chi99horvitz.pdf)) — "genuine value" rule + cost-benefit math.
+- **JITAI** (Nahum-Shani et al., *Annals of Behavioral Medicine* 2018, [academic.oup.com/abm/article/52/6/446](https://academic.oup.com/abm/article/52/6/446)) — six required components per intervention.
+- **Inner Thoughts** (Liu et al., CHI 2025, [arxiv.org/abs/2501.00383](https://arxiv.org/abs/2501.00383)).
+- **Memory-aware Proactive Dialogue (MapDia)** (Chen et al., CoNLL 2025, [aclanthology.org/2025.conll-1.4](https://aclanthology.org/2025.conll-1.4.pdf)).
+- **Notification interruption science** ([cacm.acm.org/research/attuning-notification-design](https://cacm.acm.org/research/attuning-notification-design-to-user-goals-and-attention-costs/)).
+
+**7 subtlety constraints** (gating rules; any violation → `should_act=false`):
+1. Surface-channel: chatbot only — never notifications, never out-of-band.
+2. Length: ≤ 30 words (one sentence + one optional opt-in question).
+3. Evidence-citation: must quote the user's own behavior (their question / friend's name / saved item). No fabrication.
+4. Intrusion budget: at most one proactive surface per chatbot session.
+5. Sensitive-life-event windows over-ride everything → silence.
+6. No notifications, badges, or unread counts in the message.
+7. Easy declination — opt-in question, never directive.
+
+**Task types** (priority order: `restraint > unfulfilled_stated_need > close_friend_update`):
+
+- **`proactive_unfulfilled_stated_need` (T1.A)** — chatbot question N days ago (1d/3d/7d lags) with no observable resolution event since (no save/post/return-question on same hashtags). Skipped if convo closed via `asked_to_change_topic` or `corrected_assumption`. Expected behavior: `act` with one-sentence follow-up citing the user's own question. Grounding: MapDia interpersonal memory + Horvitz "genuine value".
+- **`proactive_close_friend_update` (T3.A)** — incoming DM from a close friend (`relationship_depth="close"` in `profile.friends[]`) with no reply within 24h. Expected behavior: `act` with one-sentence alert naming the friend. Grounding: notification-urgency calibration + relationship-grounded justification.
+- **`restraint_sensitive_event_silence` (T4.A)** — restraint moment inside the first ~14 days of a synthetic `sensitive_life_event` hidden persona window. Expected behavior: `restrain` (`should_act=false`). Grounding: Horvitz cost-benefit + ethics literature.
+
+**Build pipeline (Step 28 in `data_preparation/persona_agent.py`)** — runs after Extension B so trending + friends are populated. Stage 1 deterministically gathers candidate moments; Stage 2 calls `infer_proactive_trigger_prompt` (LLM judge) per candidate, producing a **JITAI card** (`distal_outcome`, `proximal_outcome`, `tailoring_variable`, `decision_rule_pass`, `eligibility_score 0-3`, `subtlety_check_pass`, `recommended_action_class`). Output saved to `profile.json.proactive_trigger_candidates`. Skipped gracefully when no LLM client is configured.
+
+**Evaluation metric** — `proactive_action_score ∈ [0,1]` (composite, weighted):
+- `trigger_detection_correctness` (0-3): act vs restrain decision matches `expected_behavior`.
+- `action_appropriateness` (0-3): action class + content fit the trigger evidence.
+- `subtlety_compliance` (0-3): all 7 subtlety constraints satisfied.
+- `restraint_quality` (0-2): silence preserved on restraint cases; no over-personalization on proactive.
+- `cost_benefit_alignment` (0-2): act/restrain decision matches Horvitz cost-benefit math.
+
+**Hard metrics** also reported (no LLM needed): `decision_correct`, `content_word_count`, `content_length_ok`, `evidence_cited`. The runner falls back to a hard-metric composite (0.5·decision + 0.25·length + 0.25·evidence) when the judge is disabled.
+
+**Critical: identical prompt phrasing** for proactive vs restraint instances. The agent must decide on its own; the polarity flip lives only in the judge prompt (`evaluation/prompts.py:judge_proactive_action_prompt`) via the hidden `expected_behavior` field.
+
 ## Modes
 
 | Mode | Runner | Backend access | What it isolates |

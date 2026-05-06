@@ -881,6 +881,58 @@ Eval tasks now select test moments by task-specific criteria (e.g., @ai directiv
 
 ---
 
+## Step 28 — Proactive Trigger Candidate Inference
+
+After Extension B (Step 27) populates `friends[]` and `trending.json`, Step 28 catalogs moments where the agent could legitimately initiate contact. The catalog is consumed by the eval harness's Task F (Proactive Actions) builders. **Skipped gracefully when no LLM client is configured.**
+
+**Theoretical grounding** — the prompt and the keep/drop filter cite two published frameworks:
+- **Mixed-Initiative Principles** (Horvitz, CHI 1999) — automation only when there is **genuine value** over direct manipulation; cost of intrusion must be clearly below value of acting.
+- **JITAI** (Nahum-Shani et al., *Annals of Behavioral Medicine* 2018) — six required components: distal outcome, proximal outcome, tailoring variable, decision point, decision rule, intervention options.
+
+Plus 7 **subtlety constraints** that gate every candidate (see EVAL.md Task F): chatbot-only surface, ≤30-word body, evidence-citation required, intrusion-budget=1, sensitive-life-event windows over-ride everything, no notifications, easy declination.
+
+**Three Phase-1 trigger types** (no new event types in `{app}.json` yet — eval-only consumption):
+
+- **T1.A `unfulfilled_stated_need`** — chatbot user-turn asked something N days ago (1d/3d/7d lags) AND no subsequent event in next 14d has hashtag overlap AND convo did NOT close via `asked_to_change_topic`/`corrected_assumption`. Signal: user has open thread the agent legitimately remembers.
+- **T3.A `close_friend_update`** — incoming DM event (`is_dm=true`, `author_id != "self"`) from a friend with `relationship_depth="close"`, no reply event within 24h. (Friend-feed posts as a separate stream don't yet exist in the data model — DM is the available friend-signal source. Phase 2 will extend.)
+- **T4.A `sensitive_event_silence` (restraint)** — 3-5 sample timestamps inside the first ~14 days of each synthetic `sensitive_life_event` hidden persona window. Eligibility is hardcoded `score=0` → keep as restraint test cases.
+
+**Two-stage pipeline** (`data_preparation.persona_agent.PersonaAgent.infer_proactive_trigger_candidates`):
+
+1. **Stage 1 (deterministic)** — gather candidate moments from `chatbot.json` + per-app DM events + hidden-persona windows. Output capped to `_PROACTIVE_MAX_CANDIDATES_PER_TYPE = 12` per type.
+2. **Stage 2 (LLM-judged)** — for each candidate, call `infer_proactive_trigger_prompt` (citing JITAI + Horvitz + subtlety in the prompt body). The LLM produces a structured **JITAI card**:
+   ```json
+   {
+     "distal_outcome": "...",
+     "proximal_outcome": "...",
+     "tailoring_variable": "<concrete user-state observation>",
+     "decision_point": "...",
+     "decision_rule_pass": <bool>,
+     "eligibility_score": <0-3>,
+     "recommended_action_class": "follow_up | friend_alert | stay_silent",
+     "subtlety_check_pass": <bool>,
+     "reasoning": "..."
+   }
+   ```
+   Keep rule: proactive types require `score >= 2 AND subtlety_check_pass AND action_class != "stay_silent"`. Restraint type requires `score == 0 AND action_class == "stay_silent"`. Sensitive-window override: any candidate whose `t_test` falls inside a sensitive window is dropped from proactive types regardless of LLM score.
+
+**Output** — written into `profile.json` at the end of Step 28:
+```json
+{
+  "proactive_trigger_candidates": {
+    "unfulfilled_stated_need": [...],
+    "close_friend_update":     [...],
+    "sensitive_event_silence": [...]
+  }
+}
+```
+
+Each candidate carries `trigger_type`, `tier`, `t_test`, `t_test_iso`, `signal_evidence` (the raw user-cited evidence — chatbot question text, friend DM excerpt, sensitive-window metadata) and the `jitai_card` from Stage 2. The eval harness reads this catalog directly via `evaluation.tasks.proactive_actions.build_*` builders.
+
+**Reproducibility** — Step 28 should be run with `temperature=0` and ideally with a deterministic cache keyed by `(user_id, candidate_signature)` so re-builds don't re-pay the LLM cost. Phase 1 uses naive per-call invocation; aggressive caching is a Phase 2 follow-up.
+
+---
+
 ## 16. Noise Summary
 
 All noise applied after skeleton establishment. Skeleton (Steps 1-2) is deterministic; noise enters at Steps 5+.
