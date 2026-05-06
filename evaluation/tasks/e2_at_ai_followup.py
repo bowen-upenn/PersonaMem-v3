@@ -87,6 +87,9 @@ def _strip_candidate(event: dict) -> dict:
     item = {
         "content_type": content_type,
         "hashtags": list(hashtags),
+        # Real engagement timestamp — the visualizer renders a `±Xd`
+        # delta vs t_test so a reviewer can see how recent each candidate is.
+        "source_timestamp": int(event.get("source_timestamp") or 0),
     }
     for key in ("title", "caption", "overall_description"):
         val = content.get(key)

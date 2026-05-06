@@ -51,6 +51,11 @@ try:
 except Exception:
     pass
 
+from evaluation.audit_query_quality import (  # noqa: E402
+    TOOL_CALL_VALIDITY_TASKS,
+    check_tool_call_deterministic,
+)
+from evaluation.backend_query import BackendQuery  # noqa: E402
 from evaluation.build_benchmark import build_benchmark  # noqa: E402
 from evaluation.task_registry import (  # noqa: E402
     QUERIES_CSV_VERSION,
@@ -280,6 +285,69 @@ def _build_benchmark_in_memory(
         return None
 
 
+def _drop_invalid_tool_call_instances(
+    bm: dict,
+    user_id: str,
+    backend_dir: Path,
+    verbose: bool = True,
+) -> None:
+    """Mutate `bm` in place: drop agentic / E3 / E6 instances whose tool-call
+    layer fails deterministic validation.
+
+    Failures are appended to
+    `benchmark/{user_id}/build_benchmark.dropped.jsonl` so a reviewer can see
+    exactly which instances were filtered and why. Format: one JSON object
+    per line with `{instance_id, task_type, drop_reason}`.
+
+    Only `TOOL_CALL_VALIDITY_TASKS` are checked. Other buckets are untouched.
+    """
+    try:
+        bq = BackendQuery(str(backend_dir))
+    except Exception as exc:
+        if verbose:
+            print(f"[{user_id}] WARN: tool-call gate skipped — couldn't init "
+                  f"BackendQuery({backend_dir!r}): {exc}")
+        return
+
+    dropped: list[dict] = []
+    for task_type in list(bm.keys()):
+        if task_type not in TOOL_CALL_VALIDITY_TASKS:
+            continue
+        bucket = bm.get(task_type)
+        if not isinstance(bucket, list) or not bucket:
+            continue
+        kept: list[dict] = []
+        for inst in bucket:
+            if not isinstance(inst, dict):
+                kept.append(inst)
+                continue
+            check_inst = dict(inst)
+            check_inst.setdefault("task_type", task_type)
+            check_inst.setdefault("user_id", user_id)
+            report = check_tool_call_deterministic(check_inst, bq)
+            if not report["applicable"] or report["ok"]:
+                kept.append(inst)
+                continue
+            dropped.append({
+                "instance_id": inst.get("instance_id", "?"),
+                "task_type": task_type,
+                "drop_reason": "; ".join(report["errors"])[:400],
+            })
+        bm[task_type] = kept
+
+    if dropped and verbose:
+        print(f"[{user_id}] tool-call gate dropped {len(dropped)} instance(s) — "
+              f"see benchmark/{user_id}/build_benchmark.dropped.jsonl")
+    out_path = Path("benchmark") / user_id / "build_benchmark.dropped.jsonl"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    # Always write (truncate) so the file reflects the LATEST run, not a
+    # cumulative log. Empty file when nothing was dropped — useful as a
+    # heartbeat that the gate ran.
+    with out_path.open("w", encoding="utf-8") as f:
+        for row in dropped:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
 def prepare_one(
     user_id: str,
     backend_dir: Path,
@@ -325,6 +393,13 @@ def prepare_one(
         except Exception as exc:
             if verbose:
                 print(f"[{user_id}] WARNING: postprocess failed: {exc}")
+
+    # Build-time tool-call validation gate: drop any agentic / E3 / E6
+    # instance whose declared tool calls reference unknown tool names OR
+    # whose required read tools return zero data at the instance's t_test.
+    # Schema-only (deterministic) — no LLM call. The full LLM judge sub-
+    # check is reserved for the post-build audit pass.
+    _drop_invalid_tool_call_instances(bm, user_id, backend_dir, verbose=verbose)
 
     pairs: list[tuple[str, dict, int]] = []
     unknown_task_types: set[str] = set()

@@ -100,9 +100,9 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     elif task_type == "daily_personalized_briefing":
         from evaluation.tasks import e3_daily_briefing_multi as _e3
         rows = _e3.run_e3_daily_briefing_multi(**common)
-    elif task_type == "personalized_search_ranking":
-        from evaluation.tasks import e4_google_search as _e4
-        rows = _e4.run_e4_google_search(**common)
+    elif task_type in ("personalized_recommendation", "personalized_search_ranking"):
+        from evaluation.tasks import personalized_recommendation as _pr
+        rows = _pr.run_personalized_recommendation(**common)
     elif task_type == "short_vs_long_term_lifecycle":
         from evaluation.tasks import e5_horizon_lifecycle as _e5
         rows = _e5.run_e5_horizon_lifecycle(**common)
