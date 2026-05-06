@@ -88,6 +88,8 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
         rows = over_personalization.run_task_c1a(**common)
     elif task_type == "repetition_fatigue_sequences":
         rows = over_personalization.run_task_c1b(**common)
+    elif task_type == "repetition_fatigue_same_preference":
+        rows = over_personalization.run_task_c1c(**common)
     elif task_type == "over_personalization_context_shift":
         rows = over_personalization.run_task_c2(**common)
     elif task_type == "over_personalization_distractor_reject":

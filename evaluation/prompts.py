@@ -255,6 +255,137 @@ ONE new item for the user that they would likely positively engage with next on 
 """
 
 
+# --- Task C1c: same-preference repetition cluster --------------------------
+
+def repetition_fatigue_same_pref_prompt(
+    target_pref: str,
+    primary_category: str,
+    user_query: str,
+    persona_top_categories: list[str],
+    persona_top_hashtags: list[str],
+    off_persona_distractor_hashtags: list[str],
+    prior_responses: list[dict],
+    n_allowed_repetitions: int,
+    history_block: str | None = None,
+) -> str:
+    """Build the per-anchor prompt for one repetition_fatigue_same_preference
+    query. The same prompt template is reused across the cluster's 5
+    successive calls; what changes per call is `prior_responses`
+    (accumulating the agent's own outputs from earlier in the cluster).
+
+    The prompt:
+      (1) Frames the user's question naturally — they're asking for a
+          recommendation right now.
+      (2) Surfaces a persona hint (top categories + top hashtags) so
+          the agent knows what fits this user.
+      (3) Surfaces an off-persona distractor pool — explicitly NOT to
+          reach for. Tests whether the agent diversifies *within* the
+          persona, not by escaping into generic content.
+      (4) Surfaces this cluster's `prior_responses` so any repetition
+          is a deliberate choice, not because the agent forgot what
+          it just said.
+      (5) States the diversification rule explicitly: the first
+          `n_allowed_repetitions + 1` responses can repeat freely;
+          starting from response #(n_allowed_repetitions + 2), the
+          agent must use NEW hashtags (persona-aligned but not
+          overlapping its own prior responses).
+    """
+    persona_cat_str = ", ".join(persona_top_categories[:6]) or "(no persona summary)"
+    persona_tag_str = ", ".join(f"#{h}" for h in persona_top_hashtags[:15]) or "(no top hashtags)"
+    distractor_str = ", ".join(f"#{h}" for h in off_persona_distractor_hashtags[:10]) \
+        or "(no distractor pool)"
+
+    # Render prior responses as a numbered transcript so the agent
+    # can see exactly which titles + hashtags it already produced.
+    if prior_responses:
+        lines = []
+        for i, r in enumerate(prior_responses, start=1):
+            title = (r.get("title") or "").strip()
+            tags = r.get("hashtags") or []
+            tag_str = " ".join(f"#{h.lstrip('#')}" for h in tags[:6])
+            lines.append(f"  {i}. \"{title}\"  {tag_str}")
+        prior_block = (
+            "\n## Your prior recommendations in this cluster (last "
+            f"{len(prior_responses)})\n\n" + "\n".join(lines) + "\n"
+        )
+    else:
+        prior_block = ""
+
+    # The "may repeat freely" zone bounds. Index n_allowed_repetitions+1
+    # (1-indexed for the user message) is where the rule kicks in.
+    must_diversify_from = n_allowed_repetitions + 2
+    is_in_tolerance = len(prior_responses) <= n_allowed_repetitions
+
+    if is_in_tolerance:
+        diversification_note = (
+            "\n*Note*: this is recommendation "
+            f"#{len(prior_responses) + 1} in the cluster. The first "
+            f"{n_allowed_repetitions + 1} recommendations may freely "
+            "lean on the same preference / similar hashtags — initial "
+            "repetitions are tolerated by design. Just produce the "
+            "best recommendation for this moment.\n"
+        )
+    else:
+        diversification_note = (
+            "\n*DIVERSIFICATION RULE — IN EFFECT*\n\n"
+            f"This is recommendation #{len(prior_responses) + 1} in the "
+            f"cluster (past the {n_allowed_repetitions}-repetition tolerance). "
+            "From this point on, your recommendation MUST:\n\n"
+            "  1. Use **NEW hashtags** that do NOT appear in any of your "
+            "prior recommendations above. Reusing a single hashtag "
+            "from a prior response counts as a failure.\n"
+            "  2. Stay **persona-aligned** — pick hashtags that genuinely "
+            "fit this user's interests (you may invent NEW hashtags "
+            "outside the persona's existing top hashtags, as long as "
+            "they're plausibly something this user would engage with). "
+            "DO NOT pick from the off-persona distractor pool below — "
+            "those are deliberately not aligned with this user.\n"
+            "  3. Differ in title and caption from your prior responses "
+            "(token-level Jaccard < 0.5).\n"
+            "  4. Be a real, helpful recommendation — not a refusal, "
+            "not a meta-comment about repetition. The user expects an "
+            "answer; back off topic-density, not effort.\n"
+        )
+
+    history = f"\n## Full user history (time-masked)\n{history_block}\n" if history_block else ""
+
+    return f"""# Task: recommend something for this user
+
+The user is asking for a personalized recommendation right now. You will be called several times in close succession on the same general theme; each call you can see your own prior recommendations in this cluster.
+
+## Target preference signal
+
+This user's strongest active preference cluster: **{target_pref}**{f' (category: {primary_category})' if primary_category else ''}.
+
+## Persona hint
+
+The user's top engaged categories: {persona_cat_str}
+The user's top engaged hashtags (their existing space — fine to use, but you can also invent NEW hashtags that fit): {persona_tag_str}
+
+## Off-persona distractor pool (do NOT reach for these)
+
+These hashtags are deliberately **not aligned** with this user's persona. They're listed as a foil — picking from this pool is a sign the agent has lost the persona thread:
+
+{distractor_str}
+{prior_block}{history}{diversification_note}
+
+## User query
+
+{user_query}
+
+## Output
+
+```json
+{{
+  "title": "short title for the recommendation",
+  "caption": "one-sentence description, in plain prose",
+  "hashtags": ["#tag1", "#tag2", "#tag3"],
+  "reasoning": "<=2 sentences. If diversification rule is in effect, name the angle you took to diversify."
+}}
+```
+"""
+
+
 # --- Task C2: scenario library prompts -------------------------------------
 
 def scenario_prompt(

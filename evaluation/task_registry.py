@@ -48,6 +48,7 @@ OLD_TO_NEW: dict[str, str] = {
     "chatbot_response_sensitive_event": "over_personalization_sensitive_event",
     "c1a_pairs":                     "repetition_fatigue_pairs",
     "c1b_sequences":                 "repetition_fatigue_sequences",
+    "c1c_same_preference_cluster":   "repetition_fatigue_same_preference",
     "c2_scenarios":                  "over_personalization_context_shift",
     # Workstream cleanup: context_shift_scenarios was always part of the
     # over_personalization family; renamed so the membership is obvious
@@ -231,6 +232,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
+        "rubric_tags": ["avoid_overpersonalization"],
+    },
+    "repetition_fatigue_same_preference": {
+        "task_family": "over_personalization",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "freeform",
         "rubric_tags": ["avoid_overpersonalization"],
     },
     "over_personalization_context_shift": {
@@ -467,6 +475,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_chatbot_text":      "user_query",
     "repetition_fatigue_pairs":               "user_query",
     "repetition_fatigue_sequences":           "user_query",
+    "repetition_fatigue_same_preference":     "user_query",
     "over_personalization_context_shift":                "user_query",
     "over_personalization_distractor_reject": "user_query",
     "over_personalization_sensitive_event":   "user_query",
@@ -501,6 +510,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_chatbot_text":      "avoid_overpersonalization",
     "repetition_fatigue_pairs":               "avoid_overpersonalization",
     "repetition_fatigue_sequences":           "avoid_overpersonalization",
+    "repetition_fatigue_same_preference":     "avoid_overpersonalization",
     "over_personalization_context_shift":                "avoid_overpersonalization",
     "over_personalization_distractor_reject": "avoid_overpersonalization",
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
@@ -561,6 +571,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "short_vs_long_term_lifecycle":      ("recall@1", "fraction"),
     "repetition_fatigue_pairs":          ("response_divergence", "fraction"),
     "repetition_fatigue_sequences":      ("preference_repetition_rate", "inverted_fraction"),
+    "repetition_fatigue_same_preference": ("tail_passed", "boolean"),
     # Chatbot response — held-out preference alignment for proactive arm,
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
     "chatbot_proactive_personalization":           ("held_out_score", "fraction"),

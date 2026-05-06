@@ -62,6 +62,7 @@ _RANKING_TASKS = {
 _DIVERSIFICATION_TASKS = {
     "repetition_fatigue_pairs",
     "repetition_fatigue_sequences",
+    "repetition_fatigue_same_preference",
 }
 
 # Tasks that are intentionally hollow at build time: the agent is
@@ -87,6 +88,7 @@ _RESTRAINT_TASKS = {
     "over_personalization_context_shift",
     "repetition_fatigue_pairs",
     "repetition_fatigue_sequences",
+    "repetition_fatigue_same_preference",
 }
 
 _AGENTIC_PRECONDITION_HINTS = {

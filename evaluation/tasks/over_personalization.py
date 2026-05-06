@@ -414,6 +414,210 @@ def run_task_c1b(
     return results
 
 
+# --- Task C1c: same-preference repetition cluster ------------------------
+
+_C1C_PERSONA_ALIGNMENT_PROMPT = """You are a persona-alignment auditor. Decide whether a recommendation's hashtags would actually fit a user with the persona below — not generic plausibility, but "would THIS user engage with content carrying these hashtags?"
+
+The user's persona signature (top categories + top hashtags they actually engage with):
+
+  Top categories: {persona_categories}
+  Top hashtags:   {persona_hashtags}
+
+Off-persona distractor pool (these are deliberately NOT aligned with this user — picking from this pool is failure):
+
+  {off_persona_distractors}
+
+Recommendation under review:
+
+  Title:    "{title}"
+  Caption:  "{caption}"
+  Hashtags: {hashtags}
+
+Question: do the recommendation's hashtags fit this user's persona? Hashtags can be NEW (not in the user's existing top hashtags) AS LONG AS they're plausibly something this user would engage with — read across the title + caption to judge fit. Picking distractors from the off-persona pool, OR picking generic-but-clearly-off-persona hashtags, is a fail.
+
+Output ONLY JSON:
+
+```json
+{{"persona_aligned": true | false, "reason": "<one short sentence>"}}
+```
+"""
+
+
+def _c1c_persona_alignment_check(
+    response: dict,
+    persona_categories: list[str],
+    persona_hashtags: list[str],
+    off_persona_distractors: list[str],
+    judge_query_fn,
+) -> bool:
+    """LLM judge: do this response's hashtags fit the user's persona?
+    On any error / parse failure → return True (auto-pass — soft gate;
+    we don't want a flaky judge to fail the metric).
+    """
+    if not callable(judge_query_fn):
+        return True
+    title = (response.get("title") or "").strip()
+    caption = (response.get("caption") or "").strip()
+    tags = response.get("hashtags") or []
+    if not tags:
+        return True
+    prompt = _C1C_PERSONA_ALIGNMENT_PROMPT.format(
+        persona_categories=", ".join(persona_categories[:6]) or "(none)",
+        persona_hashtags=", ".join(f"#{h.lstrip('#')}" for h in persona_hashtags[:15]) or "(none)",
+        off_persona_distractors=", ".join(f"#{h.lstrip('#')}" for h in off_persona_distractors[:10]) or "(none)",
+        title=title[:200],
+        caption=caption[:300],
+        hashtags=", ".join(f"#{str(h).lstrip('#')}" for h in tags[:10]),
+    )
+    try:
+        raw = judge_query_fn(prompt)
+    except Exception:
+        return True
+    if not raw:
+        return True
+    parsed = extract_json_from_response(raw) or {}
+    if not isinstance(parsed, dict):
+        return True
+    val = parsed.get("persona_aligned")
+    if val is None:
+        return True
+    return bool(val)
+
+
+def run_task_c1c(
+    instances,
+    user_id,
+    bq: BackendQuery,
+    llm_client,
+    judge_client,
+    mode: str,
+    snapshot_cache: SnapshotCache,
+    model_name: str | None,
+    claude_model: str,
+    context_budget: int | None,
+    enable_llm_judge: bool,
+    dry_run: bool,
+    limit: int | None = None,
+) -> list[dict]:
+    """For each same-preference repetition cluster, dispatch the agent on
+    each anchor in sequence, threading prior responses into every
+    subsequent prompt. Score the tail responses for diversification:
+    pairwise text Jaccard ≤ 0.5, zero pairwise hashtag overlap, < 30%
+    head-hashtag reuse, persona-aligned (LLM judge).
+    """
+    if limit is not None:
+        instances = instances[:limit]
+    from evaluation import metrics  # local — avoid circular at module load
+    results: list[dict] = []
+    for cluster in instances:
+        queries = cluster.get("queries") or []
+        if not queries:
+            continue
+
+        # Snapshot at the FINAL anchor when in long-context modes.
+        # Earlier anchors share the same snapshot — the agent's
+        # behavior under repetition isn't grounded by the marginal
+        # 90 minutes of history.
+        t_test = int(cluster.get("t_test") or queries[-1]["ts"])
+        history_block = None
+        if mode in ("agent_longctx", "llm_longctx"):
+            history_block, _stats = snapshot_cache.get_or_build(
+                bq, user_id, t_test, model_name, context_budget,
+            )
+
+        if dry_run:
+            results.append({
+                "task": "c1c_same_preference_cluster",
+                "cluster_id": cluster["cluster_id"],
+                "mode": mode,
+                "responses": None,
+                "metrics": None,
+            })
+            continue
+
+        target_pref = cluster.get("target_pref", "")
+        primary_category = cluster.get("primary_category", "")
+        persona_hint = cluster.get("persona_hint") or {}
+        persona_categories = list(persona_hint.get("top_categories") or [])
+        persona_hashtags = list(persona_hint.get("top_hashtags") or [])
+        off_persona_distractors = list(cluster.get("off_persona_distractor_hashtags") or [])
+        n_allowed_repetitions = int(cluster.get("n_allowed_repetitions") or 2)
+
+        responses: list[dict] = []
+        total_turns = 0
+        stats_per_query: list[dict] = []
+        for q in queries:
+            ts = int(q["ts"])
+            prompt = prompts.repetition_fatigue_same_pref_prompt(
+                target_pref=target_pref,
+                primary_category=primary_category,
+                user_query=q["user_query"],
+                persona_top_categories=persona_categories,
+                persona_top_hashtags=persona_hashtags,
+                off_persona_distractor_hashtags=off_persona_distractors,
+                prior_responses=responses,
+                n_allowed_repetitions=n_allowed_repetitions,
+                history_block=history_block,
+            )
+            raw, turns, stats = _dispatch_agent(
+                mode, prompt, bq=bq, user_id=user_id, t=ts,
+                claude_model=claude_model, llm_client=llm_client,
+            )
+            parsed = extract_json_from_response(raw) or {}
+            if not isinstance(parsed, dict):
+                parsed = {"title": "", "caption": raw, "hashtags": []}
+            resp = {
+                "title": parsed.get("title") or "",
+                "caption": parsed.get("caption") or "",
+                "hashtags": list(parsed.get("hashtags") or []),
+                "reasoning": parsed.get("reasoning") or "",
+                "ts": ts,
+            }
+            responses.append(resp)
+            total_turns += turns
+            stats_per_query.append(stats)
+
+        # Persona-alignment judge runs only on tail responses (the
+        # head zone is allowed to repeat, so persona-alignment there
+        # is structurally satisfied by the user's own preference).
+        head_n = min(n_allowed_repetitions + 1, len(responses))
+        tail_responses = responses[head_n:]
+        persona_alignment_passes: list[bool] = []
+        if enable_llm_judge and judge_client is not None:
+            judge_fn = (judge_client.query_llm
+                        if hasattr(judge_client, "query_llm") else judge_client)
+            for r in tail_responses:
+                persona_alignment_passes.append(
+                    _c1c_persona_alignment_check(
+                        r, persona_categories, persona_hashtags,
+                        off_persona_distractors, judge_fn,
+                    )
+                )
+        else:
+            persona_alignment_passes = [True] * len(tail_responses)
+
+        diversity = metrics.within_cluster_diversity(
+            responses,
+            n_allowed_repetitions=n_allowed_repetitions,
+            persona_alignment_passes=persona_alignment_passes,
+        )
+
+        results.append({
+            "task": "c1c_same_preference_cluster",
+            "cluster_id": cluster["cluster_id"],
+            "mode": mode,
+            "target_pref": target_pref,
+            "primary_category": primary_category,
+            "n_queries": len(queries),
+            "n_allowed_repetitions": n_allowed_repetitions,
+            "responses": responses,
+            "tool_calls": total_turns,
+            "subagent_stats": stats_per_query,
+            "metrics": diversity,
+        })
+    return results
+
+
 # --- Task C4: do-not-personalize button regeneration ---------------------
 
 def run_task_c4(
