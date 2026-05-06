@@ -2,50 +2,50 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775192400,
-      "formatted_timestamp": "06:20, 04/02/2025",
+      "ts": 1775177400,
+      "formatted_timestamp": "10:10, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Early shift at water treatment plant",
-        "start_ts": 1775192400,
-        "end_ts": 1775210400,
+        "title": "Prototype bench foam test",
+        "start_ts": 1775179200,
+        "end_ts": 1775186400,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
+        "linked_preferences": [
+          "museum fabrication and tactile builds"
+        ],
+        "is_preference_driven": true,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775214000,
-      "formatted_timestamp": "15:00, 04/02/2025",
+      "ts": 1775212800,
+      "formatted_timestamp": "20:00, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "Boxing gym bag work",
-        "start_ts": 1775214000,
+        "title": "Upper-body lift",
+        "start_ts": 1775212200,
         "end_ts": 1775219400,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "health",
+        "type": "personal",
         "linked_preferences": [
-          "combat sports fandom",
-          "boxing",
           "strength training and weightlifting workouts"
         ],
         "is_preference_driven": true,
@@ -54,52 +54,49 @@
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775221200,
-      "formatted_timestamp": "17:00, 04/02/2025",
+      "ts": 1775251800,
+      "formatted_timestamp": "06:30, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "Pick up groceries and casserole ingredients",
-        "start_ts": 1775221200,
-        "end_ts": 1775224200,
+        "title": "Train commute to Queens supplier",
+        "start_ts": 1775253600,
+        "end_ts": 1775260800,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [
-          "home cooking"
-        ],
-        "is_preference_driven": true,
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775270400,
-      "formatted_timestamp": "07:00, 04/03/2025",
+      "ts": 1775280600,
+      "formatted_timestamp": "14:30, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Boxing sparring session",
-        "start_ts": 1775270400,
-        "end_ts": 1775276400,
+        "title": "Install tactile wall panels",
+        "start_ts": 1775282400,
+        "end_ts": 1775293200,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "health",
+        "type": "work",
         "linked_preferences": [
-          "boxing",
-          "combat sports fandom"
+          "museum fabrication and tactile builds"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -107,406 +104,300 @@
     },
     {
       "mod_id": "mod_005",
-      "ts": 1775289600,
-      "formatted_timestamp": "12:20, 04/03/2025",
+      "ts": 1775336400,
+      "formatted_timestamp": "06:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_005",
-        "title": "Lunch with plant supervisor",
-        "start_ts": 1775289600,
-        "end_ts": 1775293200,
+        "title": "Boxing card watch party planning text",
+        "start_ts": 1775340000,
+        "end_ts": 1775343600,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "social",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "adjacent"
+        "linked_preferences": [
+          "combat sports fandom",
+          "player-specific sports following"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
       }
     },
     {
       "mod_id": "mod_006",
-      "ts": 1775310000,
-      "formatted_timestamp": "18:00, 04/03/2025",
+      "ts": 1775368800,
+      "formatted_timestamp": "15:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_006",
-        "title": "Dinner at home: meatless pasta night",
-        "start_ts": 1775310000,
-        "end_ts": 1775315400,
+        "title": "Dentist cleaning",
+        "start_ts": 1775370600,
+        "end_ts": 1775376000,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [
-          "home cooking"
-        ],
-        "is_preference_driven": true,
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_007",
-      "ts": 1775350800,
-      "formatted_timestamp": "06:20, 04/04/2025",
+      "ts": 1775410800,
+      "formatted_timestamp": "05:00, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_007",
-        "title": "Transit to church volunteer meeting",
-        "start_ts": 1775350800,
-        "end_ts": 1775352600,
+        "title": "Coffee with Ana",
+        "start_ts": 1775413800,
+        "end_ts": 1775419200,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "travel",
-        "linked_preferences": [
-          "faith and volunteering"
+        "type": "social",
+        "attendees": [
+          "self",
+          "Ana"
         ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
+        "linked_preferences": [
+          "romantic relationships"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "related"
       }
     },
     {
       "mod_id": "mod_008",
-      "ts": 1775354400,
-      "formatted_timestamp": "07:20, 04/04/2025",
+      "ts": 1775445000,
+      "formatted_timestamp": "14:30, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_008",
-        "title": "Church young families volunteer shift",
-        "start_ts": 1775354400,
-        "end_ts": 1775361600,
+        "title": "Workshop materials pickup",
+        "start_ts": 1775446800,
+        "end_ts": 1775452200,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "social",
+        "type": "work",
         "linked_preferences": [
-          "faith and volunteering"
+          "museum fabrication and tactile builds"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775487600,
+      "formatted_timestamp": "02:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Group chat meme dump",
+        "start_ts": 1775489400,
+        "end_ts": 1775491200,
+        "location": {
+          "city": "New York",
+          "region": "NY",
+          "country": "USA",
+          "lat": 40.7128,
+          "lon": -74.006,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "nostalgia media",
+          "internet humor"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_009",
-      "ts": 1775412000,
-      "formatted_timestamp": "23:00, 04/04/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_009",
-        "title": "Watch Canelo highlights and boxing clips",
-        "start_ts": 1775412000,
-        "end_ts": 1775417400,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "combat sports fandom",
-          "boxing"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
       "mod_id": "mod_010",
-      "ts": 1775455200,
-      "formatted_timestamp": "11:00, 04/05/2025",
+      "ts": 1775523600,
+      "formatted_timestamp": "12:20, 04/05/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_010",
-        "title": "Forage walk and mushroom ID notes",
-        "start_ts": 1775455200,
-        "end_ts": 1775466000,
+        "title": "Sunday grocery run and meal prep",
+        "start_ts": 1775525400,
+        "end_ts": 1775534400,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "foraging for wild edible plants",
-          "nature"
+          "food content"
         ],
-        "is_preference_driven": true,
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_011",
-      "ts": 1775487600,
-      "formatted_timestamp": "20:00, 04/05/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_011",
-        "title": "Family dinner at home",
-        "start_ts": 1775487600,
-        "end_ts": 1775494800,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
+      "ts": 1775563200,
+      "formatted_timestamp": "23:20, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_010",
+      "diff": {
+        "end_ts": {
+          "from": 1775534400,
+          "to": 1775536200
         },
-        "type": "social",
-        "linked_preferences": [
-          "family and marriage",
-          "home cooking"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "related"
+        "notes": {
+          "from": "",
+          "to": "added squid and lemons"
+        }
       }
     },
     {
       "mod_id": "mod_012",
-      "ts": 1775533200,
-      "formatted_timestamp": "09:00, 04/06/2025",
+      "ts": 1775614800,
+      "formatted_timestamp": "13:40, 04/06/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_012",
-        "title": "Sunday service",
-        "start_ts": 1775533200,
-        "end_ts": 1775542200,
+        "entry_id": "cal_011",
+        "title": "Exhibit sprint review",
+        "start_ts": 1775616600,
+        "end_ts": 1775622000,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "social",
+        "type": "work",
         "linked_preferences": [
-          "faith and volunteering"
+          "museum fabrication and tactile builds"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "related"
+        "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_013",
-      "ts": 1775550000,
-      "formatted_timestamp": "13:40, 04/06/2025",
+      "ts": 1775659200,
+      "formatted_timestamp": "02:00, 04/07/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_013",
-        "title": "Chat with Ana about weekend foraging spots",
-        "start_ts": 1775550000,
-        "end_ts": 1775553600,
+        "entry_id": "cal_012",
+        "title": "Old R&B playlist and cleanup",
+        "start_ts": 1775661000,
+        "end_ts": 1775668200,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "foraging for wild edible plants",
-          "nature"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related",
-        "attendees": [
-          "self",
-          "Ana"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_014",
-      "ts": 1775584800,
-      "formatted_timestamp": "23:20, 04/06/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_014",
-        "title": "Draft budget notes for possible baby expenses",
-        "start_ts": 1775584800,
-        "end_ts": 1775588400,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "marriage and possible parenthood",
-          "home budgeting and planning"
+          "music and dance"
         ],
         "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775696400,
+      "formatted_timestamp": "12:20, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Haircut",
+        "start_ts": 1775698200,
+        "end_ts": 1775701800,
+        "location": {
+          "city": "New York",
+          "region": "NY",
+          "country": "USA",
+          "lat": 40.7128,
+          "lon": -74.006,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_015",
-      "ts": 1775624400,
-      "formatted_timestamp": "10:20, 04/07/2025",
+      "ts": 1775739600,
+      "formatted_timestamp": "00:20, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_015",
-        "title": "Dental cleaning",
-        "start_ts": 1775624400,
-        "end_ts": 1775629800,
+        "entry_id": "cal_014",
+        "title": "Watch Canelo clips and Threads reactions",
+        "start_ts": 1775741400,
+        "end_ts": 1775746800,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
+        "type": "social",
+        "linked_preferences": [
+          "combat sports fandom",
+          "player-specific sports following"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
       }
     },
     {
       "mod_id": "mod_016",
-      "ts": 1775647800,
-      "formatted_timestamp": "16:50, 04/07/2025",
+      "ts": 1775772000,
+      "formatted_timestamp": "09:20, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_016",
-        "title": "Boxing gym conditioning class",
-        "start_ts": 1775647800,
-        "end_ts": 1775655000,
+        "entry_id": "cal_015",
+        "title": "One-on-one with shop lead",
+        "start_ts": 1775773800,
+        "end_ts": 1775777400,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "boxing",
-          "strength training and weightlifting workouts"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_017",
-      "ts": 1775696400,
-      "formatted_timestamp": "06:20, 04/08/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_017",
-        "title": "Auto inspection appointment",
-        "start_ts": 1775696400,
-        "end_ts": 1775700000,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_018",
-      "ts": 1775728800,
-      "formatted_timestamp": "15:20, 04/08/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_018",
-        "title": "Threads post draft: Crawford vs. Canelo take",
-        "start_ts": 1775728800,
-        "end_ts": 1775730600,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "boxing",
-          "combat sports fandom"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_019",
-      "ts": 1775755800,
-      "formatted_timestamp": "23:50, 04/08/2025",
-      "action": "updated",
-      "entry_id": "cal_018",
-      "diff": {
-        "end_ts": {
-          "from": 1775730600,
-          "to": 1775732400
-        },
-        "notes": {
-          "from": "",
-          "to": "include a lighter joke version"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_020",
-      "ts": 1775793600,
-      "formatted_timestamp": "10:00, 04/09/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "Worksite safety refresher",
-        "start_ts": 1775793600,
-        "end_ts": 1775800800,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "work",
@@ -516,26 +407,120 @@
       }
     },
     {
-      "mod_id": "mod_021",
-      "ts": 1775822400,
-      "formatted_timestamp": "18:00, 04/09/2025",
+      "mod_id": "mod_017",
+      "ts": 1775800800,
+      "formatted_timestamp": "17:20, 04/08/2026",
+      "action": "updated",
+      "entry_id": "cal_015",
+      "diff": {
+        "end_ts": {
+          "from": 1775777400,
+          "to": 1775779200
+        },
+        "notes": {
+          "from": "",
+          "to": "include display hardware checklist"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775829600,
+      "formatted_timestamp": "01:20, 04/09/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_020",
-        "title": "Cook dinner and pack leftovers",
-        "start_ts": 1775822400,
-        "end_ts": 1775827800,
+        "entry_id": "cal_016",
+        "title": "Vintage Honda battery trickle charge",
+        "start_ts": 1775831400,
+        "end_ts": 1775836800,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "home cooking"
+          "motorcycling and biker culture"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775866800,
+      "formatted_timestamp": "11:40, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Boxing footwork class",
+        "start_ts": 1775868600,
+        "end_ts": 1775874000,
+        "location": {
+          "city": "New York",
+          "region": "NY",
+          "country": "USA",
+          "lat": 40.7128,
+          "lon": -74.006,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "combat sports fandom",
+          "fitness"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775902800,
+      "formatted_timestamp": "21:40, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Call with Aunt Renee",
+        "start_ts": 1775904600,
+        "end_ts": 1775906400,
+        "location": {
+          "city": "New York",
+          "region": "NY",
+          "country": "USA",
+          "lat": 40.7128,
+          "lon": -74.006,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775919600,
+      "formatted_timestamp": "02:20, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "Dinner: garlic squid and rice",
+        "start_ts": 1775921400,
+        "end_ts": 1775926800,
+        "location": {
+          "city": "New York",
+          "region": "NY",
+          "country": "USA",
+          "lat": 40.7128,
+          "lon": -74.006,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "food content"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -543,135 +528,54 @@
     },
     {
       "mod_id": "mod_022",
-      "ts": 1775872800,
-      "formatted_timestamp": "08:00, 04/10/2025",
+      "ts": 1775928600,
+      "formatted_timestamp": "04:50, 04/10/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_021",
-        "title": "One-on-one check-in with wife",
-        "start_ts": 1775872800,
-        "end_ts": 1775876400,
+        "entry_id": "cal_020",
+        "title": "Late-night scheduling cleanup",
+        "start_ts": 1775930400,
+        "end_ts": 1775934000,
         "location": {
-          "city": "Nashville",
-          "region": "TN",
+          "city": "New York",
+          "region": "NY",
           "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "marriage and possible parenthood",
-          "healthy romantic relationship dynamics"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_023",
-      "ts": 1775887200,
-      "formatted_timestamp": "12:00, 04/10/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_022",
-        "title": "Church volunteer planning call",
-        "start_ts": 1775887200,
-        "end_ts": 1775890800,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "faith and volunteering"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_024",
-      "ts": 1775908800,
-      "formatted_timestamp": "18:00, 04/10/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_023",
-        "title": "Watch classic East Coast rap interviews",
-        "start_ts": 1775908800,
-        "end_ts": 1775914200,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
+          "lat": 40.7128,
+          "lon": -74.006,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "hip-hop culture",
-          "rap media and hip-hop nostalgia"
+          "money and schedule triage"
         ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_025",
-      "ts": 1775920800,
-      "formatted_timestamp": "21:20, 04/10/2025",
-      "action": "removed",
-      "entry_id": "cal_023",
-      "removal_reason": "canceled: got pulled into an earlier family errand."
-    },
-    {
-      "mod_id": "mod_026",
-      "ts": 1775931000,
-      "formatted_timestamp": "00:10, 04/11/2025",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_024",
-        "title": "Late-night chatbot planning: budget and routines",
-        "start_ts": 1775931000,
-        "end_ts": 1775934600,
-        "location": {
-          "city": "Nashville",
-          "region": "TN",
-          "country": "USA",
-          "lat": 36.1627,
-          "lon": -86.7816,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "home budgeting and planning",
-          "fitness and routine-building"
-        ],
-        "is_preference_driven": true,
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_027",
-      "ts": 1775935200,
-      "formatted_timestamp": "01:20, 04/11/2025",
+      "mod_id": "mod_023",
+      "ts": 1775937600,
+      "formatted_timestamp": "07:20, 04/10/2026",
       "action": "updated",
-      "entry_id": "cal_024",
+      "entry_id": "cal_019",
       "diff": {
         "end_ts": {
-          "from": 1775934600,
-          "to": 1775936400
+          "from": 1775926800,
+          "to": 1775925600
         },
         "notes": {
           "from": "",
-          "to": "add spouse discussion points"
+          "to": "ate earlier than planned"
         }
       }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775937800,
+      "formatted_timestamp": "07:23, 04/10/2026",
+      "action": "removed",
+      "entry_id": "cal_018",
+      "removal_reason": "canceled: Aunt Renee got stuck at work"
     }
   ]
 }
