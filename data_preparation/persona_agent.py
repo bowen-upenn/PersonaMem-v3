@@ -290,6 +290,13 @@ class HiddenPersona:
     #    "active_window_end", "evidence_hashtags", "exemplar_persona_items"}
     # Other types leave this empty.
     events: list = field(default_factory=list)
+    # Motivation-audit rollup attached by Step 23
+    # (aggregate_motivation_audit_to_summary). Carries cluster_status
+    # (validated / mixed_evidence / contested / likely_invalid /
+    # synthetic_skipped / unaudited / no_audited_preferences), confirm_rate,
+    # deep_latent_rate, surface_share, and per-decision counts. Never
+    # mutates the cluster; advisory only.
+    motivation_audit: dict = field(default_factory=dict)
 
 
 # Validation thresholds for hidden persona inference
@@ -304,6 +311,75 @@ HIDDEN_PERSONA_TOP_HASHTAGS = 200  # Number of top hashtags passed to LLM
 # downstream chatbot personalization that needs to factor them in subtly.
 MIN_HIDDEN_PERSONA_ROWS_MEDICAL = 15
 MIN_HIDDEN_PERSONA_DAYS_MEDICAL = 2
+
+# Motivation audit (Step 22) thresholds. The audit re-judges every hashtag-
+# overlap-linked (preference, hidden_persona) pair against named academic
+# motivation frames, producing structured corrections (CONFIRMED / REASSIGN
+# / SURFACE_ENGAGEMENT / SHORT_TERM_EPISODIC / REMOVE / NO_OTHER_CLUSTER_FITS
+# / FLAG) plus a `motivation_depth` rating. Parsimony-biased: when signal is
+# ambiguous, prefer SURFACE_ENGAGEMENT over force-fitting to the closest
+# cluster.
+MOTIVATION_AUDIT_BATCH_SIZE = 8                    # preferences per LLM call
+MOTIVATION_AUDIT_MIN_CONFIRM_CONFIDENCE = 0.6      # CONFIRMED requires fit_confidence >= this
+MOTIVATION_AUDIT_PROTECTED_REMOVE_FLOOR = 0.3      # protected prefs require fit_confidence < this to REMOVE
+MOTIVATION_AUDIT_DECOY_BIAS_THRESHOLD = 0.20       # decoy-CONFIRM rate above this fails the batch
+MOTIVATION_AUDIT_DECOYS_PER_BATCH = 1              # 1 decoy mixed in per batch (drawn from a different cluster)
+MOTIVATION_AUDIT_USER_OVER_ATTRIBUTION_RATE = 0.40 # mean cluster surface_share above this triggers user-level warning
+# Cluster types that are stable identity/trait — short-term-horizon
+# preferences cannot CONFIRM into these without the deterministic
+# depth-vs-horizon validator demoting them.
+MOTIVATION_AUDIT_STABLE_TRAIT_TYPES = frozenset({
+    "personality_trait",
+    "aspiration",
+    "identity_anchor",
+    "parasocial_attachment",
+    "private_hobby",
+})
+# Closed enum of frames the audit may invoke. Validated post-hoc.
+MOTIVATION_AUDIT_DEEP_FRAMES = frozenset({
+    "self_determination_theory:relatedness",
+    "self_determination_theory:autonomy",
+    "self_determination_theory:competence",
+    "goffman:back_stage",
+    "uses_and_gratifications:identity",
+    "uses_and_gratifications:integration",
+    "kardefelt_winther:compensatory_use",
+    "higgins:ideal_self",
+    "higgins:ought_self",
+    "horton_wohl:parasocial",
+    "lazarus_folkman:emotion_focused_coping",
+    "csikszentmihalyi:flow",
+    "berlyne:specific_curiosity",
+    "barthes:punctum",
+    "tajfel:social_identity",
+    "stryker:role_identity",
+    "health_belief_model:active_use",
+})
+MOTIVATION_AUDIT_SURFACE_FRAMES = frozenset({
+    "tversky_kahneman:salience_availability",
+    "bikhchandani:informational_cascade",
+    "berlyne:diversive_curiosity",
+    "schwarz:mood_as_information",
+    "variable_ratio_reinforcement",
+    "algorithmic_surfacing",
+    "short_term_episodic_event",
+    "none",
+})
+# Generic-token blocklists for type-specific specificity validators.
+# Lowercase, substring match against the preference's persona_item.
+_INTIMATE_GENERIC_BLOCKLIST = frozenset({
+    "suggestive content", "attractive content", "sexy content",
+    "thirst content", "adult content", "nsfw content",
+})
+_COVERT_CONCERN_GENERIC_BLOCKLIST = frozenset({
+    "worries about money", "worries about health", "worries about career",
+    "general anxiety", "stress in general",
+})
+# Active-use verbs/markers that grant medical_aesthetic_concern CONFIRM.
+_MEDICAL_ACTIVE_USE_MARKERS = frozenset({
+    " takes ", " taking ", " using ", " on ", " applies ", " applied ",
+    " applying ", " started ", " on a regimen ", " prescribed ", " uses ",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -6760,7 +6836,7 @@ class PersonaAgent:
     def run_pipeline(self) -> dict:
         """Run the full persona inference pipeline.
 
-        Order (24 sequential steps — renumbered so every addition slots in
+        Order (27 sequential steps — renumbered so every addition slots in
         cleanly rather than carrying .5 / b / c suffixes):
 
            1. infer atomic personas
@@ -6785,10 +6861,16 @@ class PersonaAgent:
           18. generate chatbot conversations (multi-turn, implicit embedding)
           19. generate synthetic per-event content (text/image/short_video)
           20. inject ad events (~6% of commerce-adjacent events become ads)
-          21. annotate stereotype marks
-          22. enrich substrate (plant cross-signal evidence for e6)
-          23. save pipeline outputs to backend/{uid}/ subfolder
-          24. run Extension B layer (self-posts, DM threads, friends graph,
+          21. link preferences to hidden personas (hashtag-overlap, lifted out
+              of save_to_backend so the audit can operate on it)
+          22. audit hidden persona motivations (parsimony-biased re-judgment
+              against named academic frames; mutates link table)
+          23. aggregate motivation audit to summary (cluster_status tiers —
+              never mutates the cluster, only annotates)
+          24. annotate stereotype marks (now operates on AUDITED links)
+          25. enrich substrate (plant cross-signal evidence for e6)
+          26. save pipeline outputs to backend/{uid}/ subfolder
+          27. run Extension B layer (self-posts, DM threads, friends graph,
               trending hashtags) directly on top of the just-saved files —
               produces a fully-complete backend in one invocation.
 
@@ -6819,10 +6901,13 @@ class PersonaAgent:
             ("18. Generate chatbot conversations",      self.generate_chatbot_conversations),
             ("19. Generate synthetic content",          self.generate_synthetic_content),
             ("20. Inject ad events",                    self.inject_ad_events),
-            ("21. Annotate stereotype marks",           self.annotate_stereotype_marks),
-            ("22. Enrich substrate (e6 grounding)",     self.enrich_substrate),
-            ("23. Save to backend",                     self.save_to_backend),
-            ("24. Extension B (self-posts + DMs + friends + trending)",
+            ("21. Link preferences to hidden personas", self.link_preferences_to_hidden_personas),
+            ("22. Audit hidden persona motivations",    self.audit_hidden_persona_motivations),
+            ("23. Aggregate motivation audit summary",  self.aggregate_motivation_audit_to_summary),
+            ("24. Annotate stereotype marks",           self.annotate_stereotype_marks),
+            ("25. Enrich substrate (e6 grounding)",     self.enrich_substrate),
+            ("26. Save to backend",                     self.save_to_backend),
+            ("27. Extension B (self-posts + DMs + friends + trending)",
                                                         self.run_extension_b),
         ]
 
@@ -6977,6 +7062,747 @@ class PersonaAgent:
                   f"planting deferred.{utils.Colors.ENDC}")
 
     # ------------------------------------------------------------------
+    # Hidden-persona linking + motivation audit (Steps 21–23)
+    # ------------------------------------------------------------------
+
+    def link_preferences_to_hidden_personas(self) -> None:
+        """Step 21: Build the per-(source_object_id, persona_item) link table
+        by hashtag-overlap (cluster.evidence_oids → preference's source row).
+
+        Relocated from inside save_to_backend so the link table is an
+        inspectable artifact the motivation audit (Step 22) operates on,
+        and so save_to_backend can be thinned to a pure consumer.
+
+        Output: ``self._preference_links`` is a dict keyed by
+        ``(source_object_id, _normalize_persona_text(persona_item))``
+        carrying the provisional cluster label, evidence_rows tie-break
+        score, link_provenance, and a placeholder ``motivation_audit``
+        block that the audit step (22) populates.
+        """
+        # Reset every run so re-invocations don't leak across users in
+        # batch contexts.
+        self._preference_links: dict[tuple[str, str], dict] = {}
+        self._motivation_audit_user_warning: dict = {}
+
+        if not self.user_profile or not self.user_profile.hidden_personas:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"link_preferences_to_hidden_personas: no hidden "
+                      f"personas; skipping.{utils.Colors.ENDC}")
+            return
+
+        # Backward lookup: oid -> [(label, evidence_rows, type, is_synthetic), ...]
+        from collections import defaultdict as _ddict
+        oid_to_hp: dict[str, list[tuple[str, int, str, bool]]] = _ddict(list)
+        for hp in self.user_profile.hidden_personas:
+            for oid in hp.evidence_oids:
+                oid_to_hp[str(oid)].append(
+                    (hp.label, int(hp.evidence_rows or 0), hp.type, bool(hp.is_synthetic))
+                )
+
+        # Canonical lookup (positive + negative) keyed by normalized text.
+        canonical_lookup: dict[str, CrossReferencedPersona] = {}
+        for cr in self.cross_referenced_personas:
+            canonical_lookup[_normalize_persona_text(cr.persona_item)] = cr
+            for ap in self._canonical_groups.get(_normalize_persona_text(cr.persona_item), []):
+                canonical_lookup.setdefault(_normalize_persona_text(ap.persona_item), cr)
+        for cr in self.cross_referenced_negatives:
+            canonical_lookup[_normalize_persona_text(cr.persona_item)] = cr
+            for ap in self._negative_canonical_groups.get(_normalize_persona_text(cr.persona_item), []):
+                canonical_lookup.setdefault(_normalize_persona_text(ap.persona_item), cr)
+
+        # Walk every atom that has a surviving canonical and a matching oid.
+        # Dedup atoms with the same canonical from the same oid (the same
+        # rule save_to_backend uses when building the per-event preferences).
+        per_event_seen: set[tuple[str, str]] = set()
+        for ap in list(self.atomic_personas) + list(self.negative_personas):
+            canonical_key = _normalize_persona_text(ap.persona_item)
+            cr = canonical_lookup.get(canonical_key)
+            if cr is None:
+                continue  # canonical filtered out — nothing to link
+            cr_key = _normalize_persona_text(cr.persona_item)
+            link_key = (str(ap.source_object_id or ""), cr_key)
+            if link_key in per_event_seen:
+                continue
+            per_event_seen.add(link_key)
+
+            matches = oid_to_hp.get(str(ap.source_object_id or ""), [])
+            if matches:
+                # Tie-break by evidence_rows (largest wins).
+                best = max(matches, key=lambda m: m[1])
+                provisional_label, provisional_rows, hp_type, is_synth = best
+                self._preference_links[link_key] = {
+                    "original_label": provisional_label,
+                    "label": provisional_label,
+                    "evidence_rows": provisional_rows,
+                    "hp_type": hp_type,
+                    "is_synthetic": is_synth,
+                    "link_provenance": "hashtag_overlap_v1",
+                    "canonical_persona_item": cr.persona_item,
+                    "motivation_audit": {},
+                }
+            else:
+                # Unmatched preferences carry no link — preserved for traceability.
+                self._preference_links[link_key] = {
+                    "original_label": None,
+                    "label": None,
+                    "evidence_rows": 0,
+                    "hp_type": "",
+                    "is_synthetic": False,
+                    "link_provenance": "hashtag_overlap_v1",
+                    "canonical_persona_item": cr.persona_item,
+                    "motivation_audit": {},
+                }
+
+        if self.verbose:
+            n_linked = sum(1 for v in self._preference_links.values() if v["label"])
+            n_total = len(self._preference_links)
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"link_preferences_to_hidden_personas: {n_linked}/{n_total} "
+                  f"preferences provisionally linked via hashtag overlap.{utils.Colors.ENDC}")
+
+    # -- Audit validators (deterministic, run AFTER LLM, before commit) -
+
+    @staticmethod
+    def _audit_validate_specificity(decision: str, hp_type: str,
+                                    persona_item: str, rationale: str,
+                                    cluster_evidence_hashtags: list[str],
+                                    cluster_privacy_ratio: float) -> tuple[bool, str]:
+        """Type-specific specificity post-hoc validator.
+
+        Returns ``(passed, downgrade_reason)``. When ``passed`` is False,
+        the caller must downgrade the decision to FLAG (or, for medical
+        curiosity, to SHORT_TERM_EPISODIC). Embedding these checks in
+        the prompt drifts under load; deterministic code does not.
+        """
+        if decision != "CONFIRMED":
+            return True, ""
+        pi_low = (persona_item or "").lower()
+        rat_low = (rationale or "").lower()
+
+        if hp_type == "parasocial_attachment":
+            # Need a proper-noun figure name in pi or rationale that overlaps
+            # the cluster's evidence_hashtags (which contain the figure tag).
+            ev_low = [h.strip("#").lower() for h in cluster_evidence_hashtags]
+            if not any(tag and tag in pi_low or tag in rat_low for tag in ev_low):
+                return False, "parasocial_no_named_figure"
+
+        elif hp_type == "intimate_interest":
+            if any(b in pi_low for b in _INTIMATE_GENERIC_BLOCKLIST):
+                return False, "intimate_generic_phrasing"
+
+        elif hp_type == "medical_aesthetic_concern":
+            if not any(m in f" {pi_low} " for m in _MEDICAL_ACTIVE_USE_MARKERS):
+                return False, "medical_no_active_use"
+
+        elif hp_type == "covert_concern":
+            if any(b in pi_low for b in _COVERT_CONCERN_GENERIC_BLOCKLIST):
+                return False, "covert_generic_phrasing"
+
+        elif hp_type == "compensatory_need":
+            if cluster_privacy_ratio < 0.7:
+                return False, "compensatory_low_privacy_ratio"
+
+        return True, ""
+
+    @staticmethod
+    def _audit_apply_horizon_rule(decision: str, motivation_depth: str,
+                                  hp_type: str, time_horizon: str,
+                                  is_protected: bool) -> tuple[str, str, str]:
+        """Hard depth-vs-horizon rules: short-term-horizon prefs cannot
+        CONFIRM into stable-trait clusters; auto-downgrade.
+
+        Returns ``(new_decision, new_motivation_depth, downgrade_reason)``.
+        Empty downgrade_reason means no change.
+        """
+        if (decision == "CONFIRMED"
+                and time_horizon == "short_term"
+                and hp_type in MOTIVATION_AUDIT_STABLE_TRAIT_TYPES):
+            return "SHORT_TERM_EPISODIC", "medium_episodic", "short_horizon_into_stable_trait"
+        # Protected prefs never auto-flip to SURFACE_ENGAGEMENT — protect
+        # contradiction-survivor / high-confidence signal.
+        if is_protected and decision == "SURFACE_ENGAGEMENT":
+            return "FLAG", motivation_depth, "protected_pref_blocked_surface"
+        return decision, motivation_depth, ""
+
+    @staticmethod
+    def _audit_apply_protection_floor(decision: str, fit_confidence: float,
+                                      is_protected: bool) -> tuple[str, str]:
+        """Protected (update_history-bearing or high-confidence) prefs
+        require fit_confidence < MOTIVATION_AUDIT_PROTECTED_REMOVE_FLOOR
+        before REMOVE is honored.
+        """
+        if (decision == "REMOVE"
+                and is_protected
+                and fit_confidence >= MOTIVATION_AUDIT_PROTECTED_REMOVE_FLOOR):
+            return "FLAG", "protected_remove_blocked"
+        return decision, ""
+
+    @staticmethod
+    def _audit_validate_confirm_floor(decision: str, motivation_depth: str,
+                                      fit_confidence: float) -> tuple[str, str]:
+        """CONFIRMED requires deep_latent + fit_confidence >= floor.
+        REASSIGN holds the same bar.
+        """
+        is_confirm_class = decision == "CONFIRMED" or decision.startswith("REASSIGN:")
+        if not is_confirm_class:
+            return decision, ""
+        if motivation_depth != "deep_latent":
+            return ("SURFACE_ENGAGEMENT" if motivation_depth == "shallow_situational"
+                    else "SHORT_TERM_EPISODIC"), "confirm_required_deep_latent"
+        if fit_confidence < MOTIVATION_AUDIT_MIN_CONFIRM_CONFIDENCE:
+            return "FLAG", "confirm_low_fit_confidence"
+        return decision, ""
+
+    def _audit_resolve_decision(self, raw: dict, *, hp_type: str,
+                                cluster_evidence_hashtags: list[str],
+                                cluster_privacy_ratio: float,
+                                persona_item: str,
+                                time_horizon: str,
+                                is_protected: bool) -> dict:
+        """Apply all post-hoc deterministic validators to a single LLM
+        decision. Returns a finalized audit record with `decision`,
+        `motivation_depth`, `fit_confidence`, `frame_invoked`,
+        `rationale`, `validator_passed`, `downgrade_reasons`.
+        """
+        decision = str(raw.get("decision") or "FLAG")
+        motivation_depth = str(raw.get("motivation_depth") or "shallow_situational")
+        try:
+            fit_confidence = float(raw.get("fit_confidence", 0.0))
+        except (ValueError, TypeError):
+            fit_confidence = 0.0
+        fit_confidence = max(0.0, min(1.0, fit_confidence))
+        frame_invoked = str(raw.get("frame_invoked") or "none")
+        if (frame_invoked not in MOTIVATION_AUDIT_DEEP_FRAMES
+                and frame_invoked not in MOTIVATION_AUDIT_SURFACE_FRAMES):
+            frame_invoked = "none"
+        rationale = str(raw.get("rationale") or "").strip()
+
+        downgrade_reasons: list[str] = []
+
+        # Specificity gate (parasocial / intimate / medical / covert / compensatory).
+        passed, reason = self._audit_validate_specificity(
+            decision, hp_type, persona_item, rationale,
+            cluster_evidence_hashtags, cluster_privacy_ratio,
+        )
+        if not passed:
+            downgrade_reasons.append(reason)
+            # Medical curiosity-only → SHORT_TERM_EPISODIC; everything else → FLAG.
+            decision = ("SHORT_TERM_EPISODIC" if reason == "medical_no_active_use"
+                        else "FLAG")
+            if decision == "SHORT_TERM_EPISODIC":
+                motivation_depth = "medium_episodic"
+
+        # Hard horizon rule (short-term cannot CONFIRM into stable traits).
+        decision, motivation_depth, hreason = self._audit_apply_horizon_rule(
+            decision, motivation_depth, hp_type, time_horizon, is_protected,
+        )
+        if hreason:
+            downgrade_reasons.append(hreason)
+
+        # Protection floor (protected prefs need fit < 0.3 to REMOVE).
+        decision, preason = self._audit_apply_protection_floor(
+            decision, fit_confidence, is_protected,
+        )
+        if preason:
+            downgrade_reasons.append(preason)
+
+        # Confirm-class floor (must be deep_latent + fit >= 0.6).
+        decision, creason = self._audit_validate_confirm_floor(
+            decision, motivation_depth, fit_confidence,
+        )
+        if creason:
+            downgrade_reasons.append(creason)
+
+        return {
+            "decision": decision,
+            "motivation_depth": motivation_depth,
+            "fit_confidence": round(fit_confidence, 3),
+            "frame_invoked": frame_invoked,
+            "rationale": rationale,
+            "validator_passed": not downgrade_reasons,
+            "downgrade_reasons": downgrade_reasons,
+        }
+
+    # -- Audit step (LLM) -----------------------------------------------
+
+    def audit_hidden_persona_motivations(self) -> None:
+        """Step 22: re-judge every (preference, hidden_persona) link with
+        a flagship-tier LLM call against named motivation frames.
+        Parsimony-biased — defaults to SURFACE_ENGAGEMENT under ambiguity
+        rather than force-fitting deep motivation.
+
+        Operates on ``self._preference_links`` (built by Step 21) and
+        populates each entry's ``motivation_audit`` block. The mutation
+        of ``label`` happens here per the audit decision; the original
+        is preserved as ``original_label``.
+
+        Synthetic ``sensitive_life_event`` clusters are bypassed
+        entirely (audit_status: "synthetic_skipped"). The cluster's
+        planted evidence rows are never audited.
+        """
+        if not getattr(self, "_preference_links", None):
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"audit_hidden_persona_motivations: no link table; "
+                      f"skipping.{utils.Colors.ENDC}")
+            return
+        if not self.user_profile or not self.user_profile.hidden_personas:
+            return
+
+        if self.llm_client is None:
+            # Claude-Code-subagent mode — leave links as hashtag-overlap
+            # provenance and tag every preference's audit as skipped.
+            for entry in self._preference_links.values():
+                if entry["label"]:
+                    entry["motivation_audit"] = {
+                        "decision": "AUDIT_SKIPPED",
+                        "audit_status": "no_llm_client",
+                    }
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"audit_hidden_persona_motivations: no llm_client; "
+                      f"skipping audit.{utils.Colors.ENDC}")
+            return
+
+        # Build per-cluster preference batches.
+        # Skip synthetic sensitive_life_event clusters AND any planted-row
+        # preferences (which carry the _planted_sensitive_event marker via
+        # save_to_backend — but the link table is built BEFORE save runs,
+        # so we identify synthetic preferences by their cluster's flag).
+        cluster_by_label: dict[str, HiddenPersona] = {
+            hp.label: hp for hp in self.user_profile.hidden_personas
+        }
+        non_synthetic_clusters = [
+            hp for hp in self.user_profile.hidden_personas if not hp.is_synthetic
+        ]
+
+        # Mark synthetic-cluster prefs as skipped up-front.
+        for link_key, entry in self._preference_links.items():
+            if entry.get("is_synthetic"):
+                entry["motivation_audit"] = {
+                    "decision": "AUDIT_SKIPPED",
+                    "audit_status": "synthetic_skipped",
+                }
+
+        # Per-canonical metadata lookup for protected / time_horizon flags.
+        cr_lookup: dict[str, CrossReferencedPersona] = {}
+        for cr in list(self.cross_referenced_personas) + list(self.cross_referenced_negatives):
+            cr_lookup[_normalize_persona_text(cr.persona_item)] = cr
+
+        # Per-row source-context lookup (for content_snippet etc.).
+        # Map source_object_id -> (interaction_type, action label, content snippet).
+        row_ctx: dict[str, dict] = {}
+        for ap in self.atomic_personas + self.negative_personas:
+            oid = str(ap.source_object_id or "")
+            if oid and oid not in row_ctx:
+                row_ctx[oid] = {
+                    "app": self._row_app.get(oid, "") if hasattr(self, "_row_app") else "",
+                    "action": "",
+                    "source_interaction_type": ap.source_interaction_type or "",
+                    "content_snippet": "",
+                    "source_hashtags": list(ap.source_hashtags or [])[:8],
+                }
+        # Augment with action/content from sampled metadata if available.
+        action_by_oid = getattr(self, "_action_by_oid", {}) or {}
+        content_by_oid = getattr(self, "_content_by_oid", {}) or {}
+        for oid, meta in action_by_oid.items():
+            if oid in row_ctx and isinstance(meta, dict):
+                row_ctx[oid]["action"] = meta.get("action", "") or ""
+        for oid, content in content_by_oid.items():
+            if oid in row_ctx and isinstance(content, dict):
+                snip = (content.get("caption") or content.get("text")
+                        or content.get("overall_description") or "")
+                row_ctx[oid]["content_snippet"] = (snip or "")[:200]
+
+        # Group preferences by cluster label.
+        from collections import defaultdict as _ddict
+        prefs_by_cluster: dict[str, list[tuple[tuple[str, str], dict]]] = _ddict(list)
+        for link_key, entry in self._preference_links.items():
+            label = entry.get("label")
+            if not label:
+                continue
+            if entry.get("is_synthetic"):
+                continue  # already marked skipped
+            prefs_by_cluster[label].append((link_key, entry))
+
+        n_audited = 0
+        n_decisions: dict[str, int] = _ddict(int)
+        n_validator_failed = 0
+        n_decoy_batches_failed = 0
+        model_version = getattr(self.llm_client, "model", "unknown") or "unknown"
+
+        for cluster in non_synthetic_clusters:
+            label = cluster.label
+            entries = prefs_by_cluster.get(label, [])
+            if not entries:
+                continue
+
+            # Sort for idempotence: by source_timestamp via cr.persona_item lookup,
+            # then by canonical text — falling back to link_key tuple.
+            def _sort_key(e):
+                lk, val = e
+                cr = cr_lookup.get(_normalize_persona_text(val.get("canonical_persona_item", "")))
+                ts = 0
+                if cr is not None:
+                    # Earliest atom timestamp for this canonical (deterministic).
+                    atoms = self._canonical_groups.get(_normalize_persona_text(cr.persona_item), []) \
+                        or self._negative_canonical_groups.get(_normalize_persona_text(cr.persona_item), [])
+                    if atoms:
+                        ts = min((a.source_timestamp or 0) for a in atoms)
+                return (ts, val.get("canonical_persona_item", ""), lk)
+            entries.sort(key=_sort_key)
+
+            # Prepare other-cluster menu (closed reassignment options).
+            others_menu = [
+                {
+                    "label": hp.label,
+                    "type": hp.type,
+                    "description": hp.description,
+                }
+                for hp in non_synthetic_clusters if hp.label != label
+            ]
+
+            # Build batches with decoys.
+            BATCH = MOTIVATION_AUDIT_BATCH_SIZE
+            for batch_start in range(0, len(entries), BATCH):
+                batch = entries[batch_start:batch_start + BATCH]
+
+                # Decoy injection: pick one entry from a different cluster of
+                # the same user, deterministic seed.
+                decoy_entries: list[tuple[tuple[str, str], dict, str]] = []
+                if MOTIVATION_AUDIT_DECOYS_PER_BATCH > 0 and len(non_synthetic_clusters) > 1:
+                    # Deterministic decoy selection.
+                    seed = hash((str(self.user_id), label, batch_start)) & 0xffffffff
+                    rng = random.Random(seed)
+                    other_clusters = [hp for hp in non_synthetic_clusters if hp.label != label]
+                    rng.shuffle(other_clusters)
+                    for hp_other in other_clusters:
+                        candidates = [
+                            (lk, val) for lk, val in prefs_by_cluster.get(hp_other.label, [])
+                            if val.get("label") == hp_other.label
+                        ]
+                        if not candidates:
+                            continue
+                        rng.shuffle(candidates)
+                        for lk, val in candidates[:MOTIVATION_AUDIT_DECOYS_PER_BATCH]:
+                            decoy_entries.append((lk, val, hp_other.label))
+                        if len(decoy_entries) >= MOTIVATION_AUDIT_DECOYS_PER_BATCH:
+                            break
+
+                # Compose LLM payload (real prefs first, then decoys appended).
+                def _to_payload(lk, val, decoy: bool = False) -> dict:
+                    cr = cr_lookup.get(_normalize_persona_text(val.get("canonical_persona_item", "")))
+                    polarity = "positive"
+                    time_horizon = "long_term"
+                    xref = 0.0
+                    update_history = []
+                    if cr is not None:
+                        polarity = ("negative"
+                                    if "negative" in (cr.source_interaction_type or "")
+                                    else "positive")
+                        time_horizon = getattr(cr, "time_horizon", "long_term")
+                        xref = float(cr.confidence_cross_referenced or 0.0)
+                        update_history = list(cr.update_history or [])
+                    is_protected = bool(update_history) or xref >= 5.0
+                    oid = lk[0]
+                    ctx = row_ctx.get(oid, {})
+                    pref_key = f"{oid}::{val.get('canonical_persona_item','')[:80]}"
+                    if decoy:
+                        pref_key = f"DECOY::{pref_key}"
+                    return {
+                        "preference_key": pref_key,
+                        "persona_item": val.get("canonical_persona_item", ""),
+                        "category": cr.category if cr else "",
+                        "polarity": polarity,
+                        "time_horizon": time_horizon,
+                        "confidence_cross_referenced": xref,
+                        "protected": is_protected,
+                        "source_hashtags": ctx.get("source_hashtags", []),
+                        "event_context": {
+                            "app": ctx.get("app", ""),
+                            "action": ctx.get("action", ""),
+                            "source_interaction_type": ctx.get("source_interaction_type", ""),
+                            "content_snippet": ctx.get("content_snippet", ""),
+                        },
+                        "_link_key": lk,
+                        "_is_decoy": decoy,
+                        "_is_protected": is_protected,
+                        "_time_horizon": time_horizon,
+                    }
+
+                payload_real = [_to_payload(lk, val) for lk, val in batch]
+                payload_decoy = [_to_payload(lk, val, decoy=True) for lk, val, _ in decoy_entries]
+                payload_all = payload_real + payload_decoy
+
+                # Strip private-prefixed fields before sending to the LLM.
+                payload_for_llm = [
+                    {k: v for k, v in p.items() if not k.startswith("_")}
+                    for p in payload_all
+                ]
+
+                cluster_card = {
+                    "type": cluster.type,
+                    "label": cluster.label,
+                    "description": cluster.description,
+                    "inferred_motivation": cluster.inferred_motivation,
+                    "evidence_hashtags": list(cluster.evidence_hashtags or []),
+                    "privacy_ratio": float(cluster.privacy_ratio or 0.0),
+                    "temporal_spread_days": int(cluster.temporal_spread_days or 0),
+                    "app_distribution": dict(cluster.app_distribution or {}),
+                }
+
+                prompt = prompts.audit_hidden_persona_motivations_prompt(
+                    cluster=cluster_card,
+                    other_clusters_menu=others_menu,
+                    preferences_with_decoys=payload_for_llm,
+                )
+
+                response = self._query_llm_with_retry(prompt, temperature=0.0)
+                if not response:
+                    # Audit failed for this batch — leave entries unmutated,
+                    # tag as audit-failed. Caller can re-run later.
+                    for lk, val in batch:
+                        val["motivation_audit"] = {
+                            "decision": "AUDIT_SKIPPED",
+                            "audit_status": "llm_call_failed",
+                            "model_version": model_version,
+                        }
+                    continue
+
+                parsed = utils.extract_json_from_response(response)
+                if not isinstance(parsed, list):
+                    # One retry at temperature 0; on second failure, FLAG the batch.
+                    response2 = self._query_llm_with_retry(prompt, temperature=0.0)
+                    parsed = utils.extract_json_from_response(response2) if response2 else None
+                    if not isinstance(parsed, list):
+                        for lk, val in batch:
+                            val["motivation_audit"] = {
+                                "decision": "FLAG",
+                                "audit_status": "unparseable_llm_response",
+                                "model_version": model_version,
+                            }
+                        continue
+
+                # Index returned decisions by preference_key.
+                decisions_by_key: dict[str, dict] = {}
+                for d in parsed:
+                    if isinstance(d, dict) and d.get("preference_key"):
+                        decisions_by_key[str(d["preference_key"])] = d
+
+                # Decoy calibration check.
+                if payload_decoy:
+                    decoy_confirm = 0
+                    for p in payload_decoy:
+                        d = decisions_by_key.get(p["preference_key"], {})
+                        if str(d.get("decision", "")).startswith("CONFIRMED"):
+                            decoy_confirm += 1
+                    decoy_rate = decoy_confirm / max(1, len(payload_decoy))
+                    if decoy_rate > MOTIVATION_AUDIT_DECOY_BIAS_THRESHOLD:
+                        n_decoy_batches_failed += 1
+                        # Calibration failed for this batch — FLAG real prefs
+                        # so a follow-up per-preference re-run can target them.
+                        for p in payload_real:
+                            lk = p["_link_key"]
+                            entry = self._preference_links.get(lk, {})
+                            entry["motivation_audit"] = {
+                                "decision": "FLAG",
+                                "audit_status": "decoy_calibration_failed",
+                                "decoy_confirm_rate": round(decoy_rate, 3),
+                                "model_version": model_version,
+                            }
+                        continue
+
+                # Apply each decision to the real entries.
+                for p in payload_real:
+                    lk = p["_link_key"]
+                    entry = self._preference_links.get(lk)
+                    if entry is None:
+                        continue
+                    raw = decisions_by_key.get(p["preference_key"])
+                    if not raw:
+                        # LLM didn't return a decision for this row — FLAG.
+                        entry["motivation_audit"] = {
+                            "decision": "FLAG",
+                            "audit_status": "llm_omitted_decision",
+                            "model_version": model_version,
+                        }
+                        continue
+
+                    finalized = self._audit_resolve_decision(
+                        raw,
+                        hp_type=cluster.type,
+                        cluster_evidence_hashtags=list(cluster.evidence_hashtags or []),
+                        cluster_privacy_ratio=float(cluster.privacy_ratio or 0.0),
+                        persona_item=p["persona_item"],
+                        time_horizon=p["_time_horizon"],
+                        is_protected=p["_is_protected"],
+                    )
+
+                    decision = finalized["decision"]
+                    n_audited += 1
+                    n_decisions[decision.split(":", 1)[0]] += 1
+                    if not finalized["validator_passed"]:
+                        n_validator_failed += 1
+
+                    # Mutate the link's `label` per the audit decision.
+                    new_label = entry.get("label")
+                    if decision == "REMOVE" or decision == "SURFACE_ENGAGEMENT":
+                        new_label = None
+                    elif decision == "SHORT_TERM_EPISODIC":
+                        # Stable-trait demotions clear the link; episodic
+                        # support is via short-term canonical's stop_condition,
+                        # not the cluster system.
+                        if cluster.type in MOTIVATION_AUDIT_STABLE_TRAIT_TYPES:
+                            new_label = None
+                    elif decision.startswith("REASSIGN:"):
+                        target_label = decision.split(":", 1)[1].strip()
+                        # Validate the target is a real cluster of this user.
+                        if target_label in cluster_by_label and not cluster_by_label[target_label].is_synthetic:
+                            new_label = target_label
+                        else:
+                            # Invalid reassign target — FLAG.
+                            decision = "FLAG"
+                            finalized["decision"] = decision
+                            finalized.setdefault("downgrade_reasons", []).append("reassign_target_invalid")
+                            finalized["validator_passed"] = False
+                            n_validator_failed += 1
+                    # CONFIRMED / NO_OTHER_CLUSTER_FITS / FLAG keep the original label.
+
+                    entry["label"] = new_label
+                    entry["motivation_audit"] = {
+                        **finalized,
+                        "original_label": entry.get("original_label"),
+                        "model_version": model_version,
+                        "audit_status": "audited",
+                    }
+
+        if self.verbose:
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"audit_hidden_persona_motivations: "
+                  f"audited={n_audited}, decisions={dict(n_decisions)}, "
+                  f"validator_failed={n_validator_failed}, "
+                  f"decoy_batches_failed={n_decoy_batches_failed}.{utils.Colors.ENDC}")
+
+    # -- Cluster-level rollup --------------------------------------------
+
+    def aggregate_motivation_audit_to_summary(self) -> None:
+        """Step 23: roll up per-preference audit decisions into per-cluster
+        rollup metrics + cluster_status tier (validated / mixed_evidence /
+        contested / likely_invalid). Never mutates the cluster — only
+        annotates it. Also emits a profile-level over_attribution_warning
+        when the user's mean cluster surface_share is high.
+        """
+        if not getattr(self, "_preference_links", None):
+            return
+        if not self.user_profile or not self.user_profile.hidden_personas:
+            return
+
+        from collections import defaultdict as _ddict
+        per_cluster_counts: dict[str, dict[str, int]] = _ddict(lambda: _ddict(int))
+
+        for entry in self._preference_links.values():
+            audit = entry.get("motivation_audit") or {}
+            audit_status = audit.get("audit_status")
+            if audit_status not in ("audited",):
+                continue
+            cluster_label = entry.get("original_label")
+            if not cluster_label:
+                continue
+            decision = str(audit.get("decision") or "FLAG")
+            depth = str(audit.get("motivation_depth") or "")
+            head = decision.split(":", 1)[0]
+            counts = per_cluster_counts[cluster_label]
+            counts["n_audited"] += 1
+            counts[f"n_{head.lower()}"] += 1
+            if depth == "deep_latent":
+                counts["n_deep_latent"] += 1
+
+        # Annotate each non-synthetic cluster with its rollup.
+        surface_shares: list[float] = []
+        for hp in self.user_profile.hidden_personas:
+            if hp.is_synthetic:
+                # Synthetic cluster — record skip status.
+                hp.motivation_audit = {
+                    "audit_status": "synthetic_skipped",
+                }
+                continue
+            counts = per_cluster_counts.get(hp.label, _ddict(int))
+            n = int(counts.get("n_audited", 0))
+            if n == 0:
+                hp.motivation_audit = {
+                    "audit_status": "no_audited_preferences",
+                    "cluster_status": "unaudited",
+                }
+                continue
+            n_confirmed = int(counts.get("n_confirmed", 0))
+            n_reassigned = int(counts.get("n_reassign", 0))
+            n_surface = int(counts.get("n_surface_engagement", 0))
+            n_short_term = int(counts.get("n_short_term_episodic", 0))
+            n_removed = int(counts.get("n_remove", 0))
+            n_flagged = int(counts.get("n_flag", 0))
+            n_no_fit = int(counts.get("n_no_other_cluster_fits", 0))
+            n_deep = int(counts.get("n_deep_latent", 0))
+
+            confirm_rate = n_confirmed / n
+            deep_latent_rate = n_deep / n
+            surface_share = n_surface / n
+            surface_shares.append(surface_share)
+
+            if confirm_rate >= 0.7 and deep_latent_rate >= 0.6:
+                cluster_status = "validated"
+            elif 0.5 <= confirm_rate < 0.7:
+                cluster_status = "mixed_evidence"
+            elif 0.3 <= confirm_rate < 0.5 or surface_share >= 0.5:
+                cluster_status = "contested"
+            elif confirm_rate < 0.3:
+                cluster_status = "likely_invalid"
+            else:
+                cluster_status = "mixed_evidence"
+
+            hp.motivation_audit = {
+                "audit_status": "audited",
+                "n_audited": n,
+                "n_confirmed": n_confirmed,
+                "n_reassigned": n_reassigned,
+                "n_surface_engagement": n_surface,
+                "n_short_term_episodic": n_short_term,
+                "n_removed": n_removed,
+                "n_flagged": n_flagged,
+                "n_no_other_cluster_fits": n_no_fit,
+                "confirm_rate": round(confirm_rate, 3),
+                "deep_latent_rate": round(deep_latent_rate, 3),
+                "surface_share": round(surface_share, 3),
+                "cluster_status": cluster_status,
+            }
+
+        # Profile-level over-attribution warning.
+        if surface_shares:
+            mean_surface = sum(surface_shares) / len(surface_shares)
+            if mean_surface >= MOTIVATION_AUDIT_USER_OVER_ATTRIBUTION_RATE:
+                self._motivation_audit_user_warning = {
+                    "over_attribution_warning": True,
+                    "mean_cluster_surface_share": round(mean_surface, 3),
+                    "threshold": MOTIVATION_AUDIT_USER_OVER_ATTRIBUTION_RATE,
+                }
+            else:
+                self._motivation_audit_user_warning = {
+                    "over_attribution_warning": False,
+                    "mean_cluster_surface_share": round(mean_surface, 3),
+                }
+
+        if self.verbose:
+            statuses = [
+                getattr(hp, "motivation_audit", {}).get("cluster_status", "unaudited")
+                for hp in self.user_profile.hidden_personas
+            ]
+            from collections import Counter as _Counter
+            print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                  f"aggregate_motivation_audit_to_summary: "
+                  f"cluster_status={dict(_Counter(statuses))}, "
+                  f"user_warning={self._motivation_audit_user_warning}{utils.Colors.ENDC}")
+
+    # ------------------------------------------------------------------
     # Persistence
     # ------------------------------------------------------------------
 
@@ -7007,19 +7833,16 @@ class PersonaAgent:
         # --- Build lookups ---
         all_annotated_items = {ap.persona_item: ap for ap in self.annotated_personas}
 
-        # Backward lookup: which hidden persona cluster(s) did each
-        # source_object_id contribute to? Each hidden persona's
-        # `evidence_oids` is the sorted list of oids whose hashtags placed
-        # the row inside the cluster during Step 7. A preference's source
-        # row being in the cluster IS the motivation trace — we attach the
-        # cluster label back onto that preference. When a single oid feeds
-        # multiple clusters, the one with the most evidence_rows wins.
-        from collections import defaultdict as _ddict_oid
-        _oid_to_hp: dict[str, list[tuple[str, int]]] = _ddict_oid(list)
-        if self.user_profile and self.user_profile.hidden_personas:
-            for hp in self.user_profile.hidden_personas:
-                for oid in hp.evidence_oids:
-                    _oid_to_hp[oid].append((hp.label, hp.evidence_rows))
+        # Per-preference hidden-persona links live on self._preference_links,
+        # populated by Step 21 (link_preferences_to_hidden_personas) and
+        # mutated by Step 22 (audit_hidden_persona_motivations). Each entry's
+        # `label` is the AUDITED label (post-mutation), `original_label` is
+        # the pre-audit hashtag-overlap label, and `motivation_audit` carries
+        # the structured decision + rationale for the change. Save_to_backend
+        # is a pure consumer here — it does no inline label computation.
+        preference_links: dict[tuple[str, str], dict] = (
+            getattr(self, "_preference_links", {}) or {}
+        )
 
         # Canonical metadata lookup (positive + negative)
         # Also map absorbed members' atom texts to the representative canonical
@@ -7225,16 +8048,20 @@ class PersonaAgent:
                         "source_app": rel_cr.assigned_app if rel_cr else "",
                     })
 
-                # Backward-link from hidden personas' evidence_oids: label a
-                # preference with at most ONE hidden persona — the cluster
-                # whose evidence includes this preference's source row.
-                # Ties (a row in multiple clusters) resolve to the cluster
-                # with the most evidence_rows. Rows that didn't contribute
-                # to any cluster stay unlabeled — traceability is required.
+                # Per-preference hidden-persona link is the AUDITED label.
+                # Step 21 built the hashtag-overlap link table; Step 22 audit
+                # may have downgraded the link to None (SURFACE_ENGAGEMENT /
+                # REMOVE / SHORT_TERM_EPISODIC against stable-trait clusters)
+                # or REASSIGNed it to a different cluster. Step 23 rolled
+                # the per-preference decisions into per-cluster status. Here
+                # we just consume the resolved link + audit trail.
+                link_key = (str(ap.source_object_id or ""),
+                            _normalize_persona_text(cr.persona_item))
+                link_entry = preference_links.get(link_key) or {}
                 hp_labels: list[str] = []
-                matches = _oid_to_hp.get(ap.source_object_id, [])
-                if matches:
-                    hp_labels = [max(matches, key=lambda m: m[1])[0]]
+                if link_entry.get("label"):
+                    hp_labels = [link_entry["label"]]
+                motivation_audit_trail = link_entry.get("motivation_audit") or {}
 
                 pref = {
                     "persona_item": cr.persona_item,
@@ -7243,6 +8070,8 @@ class PersonaAgent:
                     "confidence_cross_referenced": cr.confidence_cross_referenced,
                     "stereotype_mark": ann.stereotype_mark if ann else "neutral",
                     "hidden_persona_labels": hp_labels,
+                    "link_provenance": link_entry.get("link_provenance", "hashtag_overlap_v1"),
+                    "motivation_audit": motivation_audit_trail,
                     "update_history": merged_history,
                     "time_horizon": getattr(cr, "time_horizon", "long_term"),
                 }
@@ -7527,6 +8356,12 @@ class PersonaAgent:
                 prefs_with_ts.append((latest_ts, f"{ts_str} : {pi}" if ts_str else pi))
             prefs_with_ts.sort(key=lambda x: x[0], reverse=True)
             profile_dict["preferences"] = [p for _, p in prefs_with_ts]
+            # Profile-level motivation-audit warning (Step 23 emits this when
+            # the user's mean cluster surface_share is high — signals that
+            # hashtag-overlap linking was over-attributing across the board).
+            user_warning = getattr(self, "_motivation_audit_user_warning", {}) or {}
+            if user_warning:
+                profile_dict["motivation_audit"] = user_warning
             profile_path = os.path.join(user_dir, "profile.json")
             with open(profile_path, "w", encoding="utf-8") as f:
                 json.dump(profile_dict, f, indent=2, ensure_ascii=False)
