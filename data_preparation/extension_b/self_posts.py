@@ -19,7 +19,10 @@ from __future__ import annotations
 import json
 import random
 from data_preparation.utils import extract_json_from_response
-from data_preparation.prompts import _render_voice_for_consumer
+from data_preparation.prompts import (
+    _render_voice_for_consumer,
+    render_hidden_personas_frames_block,
+)
 
 
 _DEFAULT_COUNTS = {"instagram": 10, "facebook": 8, "threads": 12}
@@ -47,6 +50,7 @@ User profile:
 - Big Five: {big_five}
 - MBTI: {mbti}
 
+{frames_block}
 {user_voice_block}
 Produce {n} distinct posts. Each must:
 1. Sound like the SAME PERSON typing — apply `default_capitalization` and `punctuation_habits` from the voice block. Apply the `idiolect.constructional_templates` ABSTRACTLY (slot-pattern shape — never recite the `example_realization` verbatim). Catchphrase residue may surface ZERO times across all {n} posts; AT MOST one across any single post.
@@ -122,6 +126,15 @@ def generate_self_posts(
         app_persona,
         foreground=["templates", "speech_genres"],
     )
+    # Hidden-persona frames anchor WHY this user reaches for a topic.
+    # Resolved per-cluster via `motivation_audit.dominant_frame` if the
+    # audit ran (Steps 21-23), else via the structural type-default
+    # mapping (`_TYPE_DEFAULT_FRAME`). The block is empty when the user
+    # has no hidden personas; in that case the prompt falls back to
+    # voice-only grounding.
+    frames_block = render_hidden_personas_frames_block(
+        profile.get("hidden_personas") or []
+    )
     prompt = SELF_POSTS_PROMPT.format(
         app_pretty=app_pretty,
         n=n,
@@ -131,6 +144,7 @@ def generate_self_posts(
         bio=(profile.get("bio", "") or "")[:400],
         big_five=", ".join(f"{k}={v}" for k, v in big_five.items()),
         mbti=profile.get("mbti", ""),
+        frames_block=frames_block,
         user_voice_block=voice_block,
     )
     resp = llm_client.query_llm(prompt)
