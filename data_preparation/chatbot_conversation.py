@@ -15,7 +15,7 @@ from __future__ import annotations
 import random
 from typing import Callable
 
-from data_preparation import prompts, utils
+from data_preparation import prompts, utils, voice_quality
 
 try:
     from tqdm import tqdm
@@ -410,6 +410,7 @@ def generate_chatbot_conversations(
     user_seed: int,
     max_workers: int = 20,
     user_voice: dict | None = None,
+    mini_query_fn: Callable[[str], str | None] | None = None,
 ) -> list[dict]:
     """Generate multi-turn conversations for chatbot event records.
 
@@ -587,17 +588,75 @@ def generate_chatbot_conversations(
                 turn.pop("embeds_pref_idx", None)
         return parsed
 
+    # Voice judge runs on the mini tier when supplied (matches the
+    # rest of the cost-sensitive auto-QA path). Falls back to the
+    # flagship `llm_query_fn` so single-tier callers still work.
+    voice_judge_fn = mini_query_fn or llm_query_fn
+
+    # Conversation types where the user pastes a draft (email, caption,
+    # cover letter, message) and asks for editorial help. The pasted
+    # draft must ALSO carry the user's voice — it's the strongest
+    # implicit-pref signal the AI under eval will read. See
+    # CHATBOT_CONVERSATION_TYPES; embedded types are the ones with
+    # `proactive_friendly: False`.
+    _embedded_conv_types = {
+        ct for ct, meta in CHATBOT_CONVERSATION_TYPES.items()
+        if not meta.get("proactive_friendly", True)
+    }
+
     def _call_llm_with_retry(item):
         idx, prompt, conv_type, variant = item
+        n_prefs = len((chatbot_records[idx].get("preferences") or []))
+        last_judgment: dict | None = None
+        last_parsed: list | None = None
+        is_embedded = conv_type in _embedded_conv_types
+        surface_label = (
+            "chatbot conversation user turns + pasted drafts"
+            if is_embedded else "chatbot conversation user turns"
+        )
+
         for attempt in range(1 + MAX_RETRIES):
+            attempt_prompt = prompt
+            if last_judgment:
+                # Thread the judge's specific feedback into the regen so
+                # the second-attempt LLM has concrete steering, not a
+                # blind re-roll.
+                attempt_prompt = (
+                    prompt + "\n\n"
+                    + voice_quality.render_fix_hint_for_regen(last_judgment)
+                )
             try:
-                response = llm_query_fn(prompt)
+                response = llm_query_fn(attempt_prompt)
             except Exception:
                 continue
-            parsed = _validate_conversation(response)
-            if parsed is not None:
+            parsed = _validate_conversation(response, n_prefs=n_prefs)
+            if parsed is None:
+                continue
+            last_parsed = parsed
+
+            # Voice-quality gate. Skipped (auto-pass) when no user_voice
+            # is available — the judge has nothing to compare against.
+            if not user_voice:
                 return idx, parsed, conv_type, variant
-        return idx, None, conv_type, variant
+
+            user_text = voice_quality.extract_user_text_from_chatbot_conversation(parsed)
+            passed, judgment = voice_quality.validate_user_voiced_sample(
+                user_text,
+                user_voice=user_voice,
+                app_persona=chatbot_persona,
+                llm_query_fn=voice_judge_fn,
+                surface_label=surface_label,
+                embedded_drafts=is_embedded,
+            )
+            if passed:
+                return idx, parsed, conv_type, variant
+            last_judgment = judgment
+            # All retries exhausted: graceful-degrade to the last parsed
+            # conversation. Better to ship a voice-imperfect sample than
+            # to drop the conversation entirely (test cards still get
+            # 173 instances even if some user turns are off-voice).
+
+        return idx, last_parsed, conv_type, variant
 
     failed_count = 0
     pbar = tqdm(

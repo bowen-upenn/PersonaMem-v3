@@ -25,6 +25,85 @@ from evaluation.backend_query import APPS, BackendQuery
 
 _DAY = 24 * 3600
 _SOCIAL_APPS = ("instagram", "facebook", "threads")
+_ALL_APPS = ("instagram", "facebook", "threads", "chatbot")
+
+# Voice-mimic compose tasks (agentic_user_tone_post, agentic_composed_post,
+# agentic_send_post, agentic_cross_app_repost, agentic_auto_reply) require
+# at least this many user-voiced samples in history before t_test. Below
+# the floor, the AI under evaluation has insufficient evidence of how the
+# user writes — `profile.user_voice` is firewalled at test time, so the
+# only voice signal it can read is what self-posts, DM-thread user-side
+# messages, and chatbot user-turns actually contain. 5 is the empirical
+# minimum that lets a model reasonably infer a recurring voice pattern.
+USER_VOICED_SAMPLES_FLOOR = 5
+
+
+def count_user_voiced_samples_before(
+    bq: BackendQuery, user_id: str, t_test: int,
+) -> int:
+    """Count distinct user-voiced sample events visible to the AI under
+    evaluation before ``t_test``. A "sample" is one of:
+
+      (a) a self-authored post (``is_self_authored=True``, ``is_dm=False``).
+      (b) a DM thread (``is_dm=True``) with at least one message where
+          ``sender == "self"``.
+      (c) a chatbot event with at least one ``role: "user"`` turn carrying
+          non-empty content (the user's chat-turn text + any pasted
+          drafts inside it).
+
+    Counted across all 4 apps; one event = at most one sample. Used as
+    the pre-test floor for voice-mimic agentic tasks (T6/T9/T10/T12/T13)
+    via ``has_enough_user_voiced_history``.
+    """
+    n = 0
+    for app in _ALL_APPS:
+        try:
+            events = bq.get_events(
+                user_id, app, since_timestamp=t_test, include_dms=True,
+            )
+        except Exception:
+            continue
+        for e in events:
+            if not isinstance(e, dict):
+                continue
+            # (a) self-authored social post
+            if e.get("is_self_authored") and not e.get("is_dm"):
+                n += 1
+                continue
+            # (b) DM thread with user-side outbound text
+            if e.get("is_dm"):
+                msgs = e.get("messages") or []
+                has_user_msg = any(
+                    isinstance(m, dict)
+                    and (m.get("sender") or "") == "self"
+                    and (m.get("text") or "").strip()
+                    for m in msgs
+                )
+                if has_user_msg:
+                    n += 1
+                continue
+            # (c) chatbot conversation with at least one user turn
+            conv = e.get("conversation") or []
+            if isinstance(conv, list) and any(
+                isinstance(t, dict)
+                and t.get("role") == "user"
+                and (t.get("content") or "").strip()
+                for t in conv
+            ):
+                n += 1
+    return n
+
+
+def has_enough_user_voiced_history(
+    bq: BackendQuery, user_id: str, t_test: int,
+    floor: int = USER_VOICED_SAMPLES_FLOOR,
+) -> bool:
+    """Convenience wrapper used by voice-mimic compose-task builders.
+    Returns True iff the user has at least ``floor`` user-voiced samples
+    before ``t_test``. Compose-task builders short-circuit (return
+    ``[]``) when this returns False — the test card would be unanswerable
+    by an agent that cannot see the user's voice ground truth."""
+    return count_user_voiced_samples_before(bq, user_id, t_test) >= floor
 
 
 # =========================================================================

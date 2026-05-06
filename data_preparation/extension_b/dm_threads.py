@@ -23,6 +23,12 @@ from data_preparation.prompts import (
     _render_voice_for_consumer,
     render_hidden_personas_frames_block,
 )
+from data_preparation import voice_quality
+
+
+# Max attempts for voice-quality regeneration per DM thread. Same
+# budget pattern as self_posts and chatbot_conversation.
+_VOICE_REGEN_BUDGET = 2
 
 
 DM_THREAD_COMMENTARY_PROMPT = """Write a short, realistic DM exchange on {app_pretty} \
@@ -302,7 +308,7 @@ def generate_dm_threads(
         )
 
         # LLM call: generate the human commentary around the forwarded post.
-        prompt = DM_THREAD_COMMENTARY_PROMPT.format(
+        base_prompt = DM_THREAD_COMMENTARY_PROMPT.format(
             app_pretty=app_pretty,
             name=profile.get("name", ""),
             recipient_name=recipient_name,
@@ -319,12 +325,56 @@ def generate_dm_threads(
             thread_kind=kind,
             conversation_guidance=_THREAD_GUIDANCE.get(kind, ""),
         )
-        try:
-            resp = llm_client.query_llm(prompt)
-        except Exception:
-            continue
-        parsed = extract_json_from_response(resp) or {}
-        msgs_raw = parsed.get("messages") or []
+
+        # Voice-quality retry loop: validate the user-side messages
+        # against `user_voice` + the (Chatbot fallback) DM-context
+        # surface. The recipient_depth + register-selection guidance
+        # in the base prompt should produce voice-aligned outputs;
+        # the audit-level retry catches drift on the long tail.
+        msgs_raw = []
+        last_judgment: dict | None = None
+        for attempt in range(_VOICE_REGEN_BUDGET):
+            prompt = base_prompt
+            if last_judgment:
+                prompt = base_prompt + "\n\n" + voice_quality.render_fix_hint_for_regen(last_judgment)
+            try:
+                resp = llm_client.query_llm(prompt)
+            except Exception:
+                break
+            parsed = extract_json_from_response(resp) or {}
+            cand = parsed.get("messages") or []
+            if not cand:
+                continue
+            msgs_raw = cand
+            if not user_voice:
+                break
+            # Concatenate the USER's outbound text only (ignore the
+            # friend/stranger side — they're not user-voiced and the
+            # judge would conflate them with the user's voice). Match
+            # the same `sender == "self"` rule the persistence path
+            # uses to identify user-side messages.
+            user_lines = [
+                (m.get("text") or "").strip()
+                for m in cand
+                if isinstance(m, dict) and (m.get("sender") or "") == "self"
+                and (m.get("text") or "").strip()
+            ]
+            if not user_lines:
+                # Inbound-only thread (user_no_reply, stranger cold
+                # outreach) — no user-voiced content to validate.
+                break
+            user_text = "\n".join(user_lines)
+            passed, judgment = voice_quality.validate_user_voiced_sample(
+                user_text,
+                user_voice=user_voice,
+                app_persona=app_persona,
+                llm_query_fn=llm_client.query_llm,
+                surface_label=f"DM thread (user-side, {len(user_lines)} msgs) on {app_pretty}",
+                embedded_drafts=False,
+            )
+            if passed:
+                break
+            last_judgment = judgment
         if not msgs_raw:
             continue
 
