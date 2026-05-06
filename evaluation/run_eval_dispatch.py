@@ -111,6 +111,11 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     elif task_type == "active_mistake_prevention":
         from evaluation.tasks import e6_active_mistake_prevention as _e6
         rows = _e6.run_e6_active_mistake_prevention(**common)
+    elif task_type in ("proactive_unfulfilled_stated_need",
+                       "proactive_close_friend_update",
+                       "restraint_sensitive_event_silence"):
+        from evaluation.tasks import proactive_actions as _proactive
+        rows = _proactive.run_proactive_task(**common)
     elif task_type in AGENTIC_TASK_IDS:
         rows = agentic_tasks.run_task(task_id=task_type, **common)
     else:

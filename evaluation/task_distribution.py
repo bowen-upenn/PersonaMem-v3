@@ -68,6 +68,13 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
     "agentic_trending_alert":                 {"min": 5,  "max": 8},
+
+    # Proactive Actions (Phase 1) — small quotas; agent decides whether to
+    # act on user evidence. All `data_dependent` because eligibility depends
+    # on user history producing the right kind of moment.
+    "proactive_unfulfilled_stated_need":      {"min": 2, "max": 4, "data_dependent": True},
+    "proactive_close_friend_update":          {"min": 2, "max": 3, "data_dependent": True},
+    "restraint_sensitive_event_silence":      {"min": 1, "max": 3, "data_dependent": True},
 }
 
 # Tasks marked ``data_dependent: True`` produce 0 instances when the
