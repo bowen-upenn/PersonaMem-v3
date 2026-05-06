@@ -342,13 +342,21 @@ def _verify_voice_evidence_distinguishability(
     return {"passed": passed, "picked": picked, "expected": expected,
             "confidence": confidence, "reason": reason, "raw": raw[:300]}
 
-# Per-app fallback bands matching the AppPersona.expression.length_band defaults
-# in prompts.generate_app_personas_prompt. Used when the user-specific band is
-# unavailable so compose-task golds still land on a real-post-length target.
+# Per-app fallback bands matching the AppPersona.surface.length_band defaults
+# in prompts.generate_app_modulations_prompt. Used when the user-specific band
+# is unavailable so compose-task golds land on a real-post-length target.
+#
+# Bands intentionally err LONG (compared to the platform minimum) so the
+# layered voice fingerprint — signature_concerns, an idiolect template, a
+# stance pick, hedge/booster habit, palette emoji, optional hashtag — has
+# room to surface visibly. Short captions starve the voice contrast and
+# collapse the example/inferior diff onto trivial axes (mostly emoji
+# count). Real Instagram captions allow up to 2200 chars; we pick a band
+# wide enough to carry voice without hitting the platform ceiling.
 _COMPOSE_DEFAULT_BANDS = {
-    "instagram": (70, 150),
-    "facebook":  (120, 220),
-    "threads":   (45, 120),
+    "instagram": (200, 440),
+    "facebook":  (260, 560),
+    "threads":   (150, 320),
     "chatbot":   (90, 190),
 }
 
@@ -1383,9 +1391,36 @@ def _normalize_for_compare(s: str) -> str:
     return " ".join((s or "").lower().split())
 
 
+# Common Unicode emoji code-point ranges. Sufficient for the rubric's
+# emoji-density check on voice-mismatch foils — we don't need to be
+# exhaustive about every grapheme cluster, just to catch when one
+# response carries 4 emoji and the other carries 0.
+_EMOJI_RANGES = (
+    (0x1F300, 0x1FAFF),  # Misc symbols & pictographs (most modern emoji)
+    (0x2600,  0x27BF),   # Misc symbols & dingbats (older set: ☀️ ✨ 🚀-adjacent)
+    (0x1F000, 0x1F1FF),  # Mahjong, dominoes, regional flags
+    (0x2B00,  0x2BFF),   # Arrows / star-like symbols
+)
+
+
+def _count_emoji(text: str) -> int:
+    """Count emoji-like code points in `text` using common ranges. Used
+    by the voice-mismatch foil validator to ensure the gold/foil
+    contrast doesn't collapse onto emoji density."""
+    if not text:
+        return 0
+    n = 0
+    for ch in text:
+        cp = ord(ch)
+        if any(lo <= cp <= hi for lo, hi in _EMOJI_RANGES):
+            n += 1
+    return n
+
+
 def _validate_inferior(example: str, inferior: str,
                        jaccard_max: float = 0.85,
-                       jaccard_min: float = 0.05) -> tuple[bool, str]:
+                       jaccard_min: float = 0.05,
+                       flaw_kind: str = "") -> tuple[bool, str]:
     """Reject foils that fail any of the structural similarity bounds.
 
     Returns (passed, reason). The reason string is fed back to the LLM on
@@ -1457,6 +1492,28 @@ def _validate_inferior(example: str, inferior: str,
             f"length_mismatch ({len(b)} chars vs gold {len(a)} chars; "
             f"too far apart — grader could win on length alone)"
         )
+    # Voice-mismatch foils MUST NOT differ from the gold primarily on
+    # emoji density. The rubric grades the layered voice schema (idiolect
+    # templates / stances / signature_concerns / appraisal fingerprint /
+    # surface knobs); emoji presence is not a graded axis. A foil whose
+    # only contrast is "fewer emoji" tests nothing the rubric measures.
+    if flaw_kind == "voice_mismatch":
+        gold_emoji = _count_emoji(a)
+        foil_emoji = _count_emoji(b)
+        emoji_max = max(gold_emoji, foil_emoji)
+        emoji_diff = abs(gold_emoji - foil_emoji)
+        # Trigger only when at least one side carries ≥2 emoji AND the
+        # diff is large in absolute terms (≥2) and relative terms (≥50%
+        # of the larger count). Avoids false positives on responses that
+        # happen to have 0/1 emoji.
+        if emoji_max >= 2 and emoji_diff >= 2 and emoji_diff >= 0.5 * emoji_max:
+            return False, (
+                f"emoji_density_mismatch (gold has {gold_emoji} emoji, foil "
+                f"has {foil_emoji}; the rubric does not grade emoji "
+                f"density — keep both within ±1 emoji and shift the "
+                f"contrast to opener / idiolect template / stance / "
+                f"vocabulary instead)"
+            )
     return True, ""
 
 
@@ -1598,21 +1655,55 @@ def _flaw_instruction(flaw_kind: str, evidence: dict, task_id: str = "") -> str:
             f"contrasting voice register: \"{contrasting}\". The foil "
             f"communicates the SAME factual gist, but in a voice that's "
             f"clearly off for this user.\n"
-            f"  - PARAPHRASE — do NOT preserve word-for-word matches with "
-            f"the gold. Use different vocabulary and different sentence "
-            f"structures. Aim for token-level Jaccard with the gold UNDER "
-            f"0.6 (i.e., share at most ~60% of distinct word tokens).\n"
-            f"  - Examples of correctly contrasted voice pairs:\n"
-            f"      • casual IG caption (\"just dropped, link in bio 👀\") ↔ "
-            f"stiff PR (\"Pleased to announce the launch is now live; full "
-            f"details available.\")\n"
-            f"      • friendly DM (\"hey omg congrats!! so excited for u "
-            f"🥳\") ↔ formal corporate (\"I would like to extend my "
-            f"congratulations on this milestone.\")\n"
-            f"  - Length within ±20% of the gold. Structure: do NOT begin "
-            f"the foil with the same opening words as the gold.\n"
+            f"  - **EMOJI-AXIS IS BANNED AS THE PRIMARY DIFFERENTIATOR.** "
+            f"Both gold and foil must keep the user's ambient emoji "
+            f"density: if the gold uses 2 emoji, the foil uses ~2 emoji "
+            f"(same palette is OK). DO NOT make the foil's distinguishing "
+            f"feature 'fewer emoji' or 'no emoji'. The benchmark's "
+            f"`voice_match` rubric grades the LAYERED voice schema "
+            f"(identity_spine signature_concerns + idiolect templates + "
+            f"appraisal fingerprint + repertoire stances + surface "
+            f"length/disclosure), and emoji presence is NOT one of those "
+            f"axes. A foil whose only contrast is emoji count is a "
+            f"validator failure.\n"
+            f"  - The contrast MUST land on at least 3 of these axes:\n"
+            f"      (1) **opener / sentence shape** — different first "
+            f"clause; different sentence-length profile (e.g., gold mixes "
+            f"fragments and short sentences → foil uses long subordinate "
+            f"clauses).\n"
+            f"      (2) **idiolect template** — gold uses an abstract slot "
+            f"pattern like '[hedge] just [verb] ___' or 'not gonna lie, "
+            f"[observation]'; foil uses a parallel-triplet list, "
+            f"meta-framing verbs ('troubleshoot', 'navigate'), or noun-"
+            f"phrase scaffolding ('engagement-ring close-ups at home').\n"
+            f"      (3) **stance / register** — gold's stance (e.g., "
+            f"deadpan-affectionate) replaced with the contrasting "
+            f"register's stance (e.g., performative-aspirational, "
+            f"trade-pub formality, deadpan reportage).\n"
+            f"      (4) **vocabulary / hedge-booster ratio** — different "
+            f"lexical band (gold's casual 'kinda' / 'tbh' ↔ foil's formal "
+            f"'arguably' / 'one might say'). Token-level Jaccard with the "
+            f"gold UNDER 0.6.\n"
+            f"  - Examples of correctly contrasted voice pairs (note that "
+            f"emoji density is similar within each pair):\n"
+            f"      • gold (deadpan-affectionate, fragment-heavy): "
+            f"\"caught the late round live last night. brutal stoppage. "
+            f"my dude was cooked 👀 still respect, dude went out on his "
+            f"shield though\" ↔ foil (performative-aspirational): "
+            f"\"there's something poetic about watching greatness meet "
+            f"its limits — last night was a masterclass in resilience and "
+            f"surrender 👀 these moments stay with you\"\n"
+            f"      • gold (irritable-pragmatic): \"the studio scheduling "
+            f"this on a tuesday is wild. 😂 nobody's getting off work for "
+            f"that\" ↔ foil (deadpan reportage): \"the event is scheduled "
+            f"for Tuesday evening. 😂 attendance may be limited by "
+            f"workday conflicts\"\n"
+            f"  - Length within ±20% of the gold. Structure: the foil "
+            f"MUST NOT begin with the same opening words as the gold.\n"
             f"  - Do NOT introduce new hashtags, new topics, or new "
-            f"factual claims. The ONLY axis that varies is voice register.\n"
+            f"factual claims. The ONLY axes that vary are voice register, "
+            f"opener, idiolect template, stance, and vocabulary — NEVER "
+            f"emoji presence/count.\n"
             f"  - Both gold and foil must read as plausible utterances "
             f"someone might actually send — the foil is just plausibly "
             f"sent by a different user/persona than this one."
@@ -1699,41 +1790,72 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
         # content. Return a sentinel non-None dict so the caller proceeds.
         return {"persona_item": ""}
     if flaw_kind == "voice_mismatch":
-        # Pick a CONTRASTING voice register: prefer another app's voice
-        # from the user's own app_personas (cross-app voice swap), fall
-        # back to a generic stiff/corporate register opposite to the
-        # casual social-app default.
+        # Pick a CONTRASTING voice register that differs from the user's
+        # natural voice on idiolect / stance / syntax — NOT on emoji
+        # density. The eval is graded by `voice_match` over the layered
+        # voice schema (identity_spine signature_concerns + idiolect
+        # templates + repertoire stances + per-app surface), so foils
+        # whose only diff is "fewer emoji" don't actually exercise the
+        # rubric.
         target_app = (inst.get("target_app") or "").lower()
         app_personas = persona_ctx.get("app_personas") or {}
-        # Build candidates: every app voice EXCEPT the target.
-        candidates: list[tuple[str, str]] = []
+        # Build candidates: every app voice EXCEPT the target. Prefer
+        # the candidate whose `active_stances` differ MOST from the
+        # target's, so the foil pulls a genuinely different stance
+        # subset rather than a near-duplicate of the target voice.
+        target_stances = set((app_personas.get(target_app) or {}).get("active_stances") or [])
+        candidates: list[tuple[str, str, int]] = []
         for app, ap in app_personas.items():
             if app == target_app:
                 continue
             # New schema: delta_summary. Legacy fallback: style_description.
             style = (ap.get("delta_summary") or ap.get("style_description") or "").strip()
-            if style:
-                # Truncate aggressively — the foil prompt only needs a
-                # short one-liner pointing at the contrasting voice.
-                candidates.append((app, style[:280]))
+            if not style:
+                continue
+            cand_stances = set(ap.get("active_stances") or [])
+            stance_diff = len(target_stances.symmetric_difference(cand_stances))
+            candidates.append((app, style[:320], stance_diff))
         if candidates:
+            # Highest stance-divergence wins; ties broken by random shuffle.
             rng.shuffle(candidates)
-            other_app, style = candidates[0]
-            register = f"the user's {other_app} voice — {style}"
+            candidates.sort(key=lambda t: -t[2])
+            other_app, style, _ = candidates[0]
+            register = (
+                f"the user's {other_app} voice — {style} "
+                f"(differs from {target_app} on stance / register / syntax, "
+                f"NOT on emoji density)"
+            )
             return {
                 "contrasting_register": register,
                 "target_app": target_app,
                 "_from": f"app_personas[{other_app}]",
             }
-        # Fallback: stiff corporate register opposite the casual social default.
+        # Fallbacks: pick a stance/idiolect-divergent register, NOT an
+        # emoji-axis swap. The previous "stiff corporate, no emoji"
+        # fallback collapsed every voice_mismatch foil onto emoji
+        # presence/absence; replaced with three idiolect-/stance-axis
+        # contrasts so the foil tests the rubric's voice signal.
+        non_emoji_fallbacks = (
+            "performative-aspirational lifestyle-influencer voice — "
+            "metaphorical scaffolding, motivational verbs ('manifest', "
+            "'unlocked', 'on a journey'), parallel-triplet lists, life-coach "
+            "framing. Same emoji density as the gold; the contrast is the "
+            "moralizing scaffolding and the parallel-list cadence.",
+            "buttoned-up trade-publication voice — long noun phrases, "
+            "third-person framing, hedged claims with formal hedges "
+            "('arguably', 'one might note'), zero contractions, dense "
+            "subject-matter vocabulary. Same emoji density as the gold; "
+            "the contrast is in syntax and lexical register.",
+            "deadpan reportage voice — short flat declarative sentences, "
+            "no rhetorical questions, no in-group references, neutral "
+            "register, factual phrasing. Same emoji density as the gold; "
+            "the contrast is the absence of stance and idiolect markers.",
+        )
+        register = rng.choice(non_emoji_fallbacks)
         return {
-            "contrasting_register": (
-                "stiff, formal, fully-capitalized corporate-announcement "
-                "voice — long noun phrases, no emoji, no lowercase, no "
-                "casual contractions, like a press release"
-            ),
+            "contrasting_register": register,
             "target_app": target_app,
-            "_from": "fallback_corporate",
+            "_from": "fallback_non_emoji_axis",
         }
     return None
 
@@ -1792,7 +1914,8 @@ def _generate_inferior(llm: Callable[[str], str], response: str,
             continue
         passed, reason = _validate_inferior(response, text,
                                             jaccard_max=jaccard_max,
-                                            jaccard_min=jaccard_min)
+                                            jaccard_min=jaccard_min,
+                                            flaw_kind=flaw_kind)
         if not passed:
             last_text, last_reason = text, reason
             continue

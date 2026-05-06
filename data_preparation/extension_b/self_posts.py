@@ -23,6 +23,14 @@ from data_preparation.prompts import (
     _render_voice_for_consumer,
     render_hidden_personas_frames_block,
 )
+from data_preparation import voice_quality
+
+
+# Max attempts for voice-quality regeneration. Same budget as the
+# chatbot conversation retry loop (1 + MAX_RETRIES). Keep low — the
+# regen prompt carries concrete fix_hint feedback so 2 tries is
+# usually enough.
+_VOICE_REGEN_BUDGET = 2
 
 
 _DEFAULT_COUNTS = {"instagram": 10, "facebook": 8, "threads": 12}
@@ -135,7 +143,7 @@ def generate_self_posts(
     frames_block = render_hidden_personas_frames_block(
         profile.get("hidden_personas") or []
     )
-    prompt = SELF_POSTS_PROMPT.format(
+    base_prompt = SELF_POSTS_PROMPT.format(
         app_pretty=app_pretty,
         n=n,
         name=profile.get("name", "the user"),
@@ -147,8 +155,44 @@ def generate_self_posts(
         frames_block=frames_block,
         user_voice_block=voice_block,
     )
-    resp = llm_client.query_llm(prompt)
-    posts = extract_json_from_response(resp) or []
+
+    # Voice-quality retry loop: generate the batch, validate that the
+    # concatenated post captions actually carry the user's layered
+    # voice, regen with concrete fix_hint feedback on fail. Cap at
+    # `_VOICE_REGEN_BUDGET` attempts; graceful-degrade to the last
+    # parsed batch on persistent failure.
+    posts: list = []
+    last_judgment: dict | None = None
+    for attempt in range(_VOICE_REGEN_BUDGET):
+        prompt = base_prompt
+        if last_judgment:
+            prompt = base_prompt + "\n\n" + voice_quality.render_fix_hint_for_regen(last_judgment)
+        resp = llm_client.query_llm(prompt)
+        batch = extract_json_from_response(resp) or []
+        if not isinstance(batch, list):
+            continue
+        posts = batch
+        if not user_voice or not posts:
+            break
+        # Concatenate captions to validate the batch as evidence of
+        # how this user writes. The judge sees them together so a
+        # batch-level voice pattern (e.g. consistent stance + idiolect
+        # template usage across posts) is gradeable.
+        concat = "\n\n---\n\n".join(
+            (p.get("caption") or "").strip() for p in posts
+            if isinstance(p, dict) and (p.get("caption") or "").strip()
+        )
+        passed, judgment = voice_quality.validate_user_voiced_sample(
+            concat,
+            user_voice=user_voice,
+            app_persona=app_persona,
+            llm_query_fn=llm_client.query_llm,
+            surface_label=f"{app_pretty} self-posts batch ({len(posts)} captions)",
+            embedded_drafts=False,
+        )
+        if passed:
+            break
+        last_judgment = judgment
     if not isinstance(posts, list):
         return []
 

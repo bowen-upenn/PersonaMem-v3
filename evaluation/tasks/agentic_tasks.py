@@ -414,7 +414,15 @@ def _build_common_args(task_id: str, extra: dict) -> dict:
 
 def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One per social app via app_native + one per app via chatbot_routed —
-    6 instances total. Each entry-point exercises a different tool path."""
+    6 instances total. Each entry-point exercises a different tool path.
+
+    Pre-test floor: skip the whole task when the user has fewer than
+    `USER_VOICED_SAMPLES_FLOOR` user-voiced samples (self-posts, DM
+    user-side, chatbot user-turns) before t_anchor — without enough
+    voice evidence, the AI under eval has nothing to mimic.
+    """
+    if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
+        return []
     out: list[dict] = []
     for app in SOCIAL_APPS:
         out.append({
@@ -804,7 +812,12 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
     to differ on voice. Fall back to the longest available caption when
     no candidate clears the bar — the user reported one-liner sources
     making example/inferior trivially short and indistinguishable.
+
+    Pre-test floor: voice-mimic task — skip when the user has fewer than
+    `USER_VOICED_SAMPLES_FLOOR` user-voiced samples before t_anchor.
     """
+    if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
+        return []
     MIN_CAPTION_CHARS = 80
     idx = _build_persona_topic_index(bq, user_id, t_anchor)
     PAIRS = [
@@ -881,13 +894,18 @@ def build_t9_cross_app_repost(bq: BackendQuery, user_id: str, t_anchor: int) -> 
 
 def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
     """One per inbound DM where the user's persona materially shapes the
-    right reply. We look across more threads than we keep, then filter to
-    instances passing at least one persona-relevance check:
+    right reply. Voice-mimic task — short-circuits when history lacks
+    `USER_VOICED_SAMPLES_FLOOR` user-voiced samples before t_anchor.
+
+    We look across more threads than we keep, then filter to instances
+    passing at least one persona-relevance check:
       - inbound message overlaps user's top hashtags / categories
       - sender is a friend whose shared_interests overlap user's persona
       - inbound asks an opinion / recommendation question
     Generic logistics replies ("yeah saturday works") are dropped — both
     memory-using and memory-blind agents handle those equally."""
+    if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
+        return []
     idx = _build_persona_topic_index(bq, user_id, t_anchor)
     out = []
     per_app_cap = 2
@@ -956,7 +974,11 @@ def build_t11_vague_refind(bq: BackendQuery, user_id: str, t_anchor: int) -> lis
 
 
 def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Three example updates per social app."""
+    """Three example updates per social app. Voice-mimic task —
+    short-circuits when history lacks ``USER_VOICED_SAMPLES_FLOOR``
+    user-voiced samples before t_anchor."""
+    if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
+        return []
     updates = [
         "finally wrapped up that project I've been grinding on",
         "great run this morning",
@@ -979,7 +1001,12 @@ def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[d
     Long-enough so the agent has substantive material to compose with;
     short examples produced one-line posts where the example_response and
     inferior_response barely differed.
+
+    Voice-mimic task — short-circuits when history lacks
+    ``USER_VOICED_SAMPLES_FLOOR`` user-voiced samples before t_anchor.
     """
+    if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
+        return []
     contexts = [
         ("threads",
          "I was just saying that discipline is what carries when motivation fades — "

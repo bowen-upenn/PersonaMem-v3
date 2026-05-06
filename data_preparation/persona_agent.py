@@ -6049,6 +6049,15 @@ class PersonaAgent:
         def _conv_query_fn(prompt: str):
             return self._query_llm_with_retry(prompt, temperature=0.7)
 
+        # Mini-tier query fn for the voice-quality auto-judge in
+        # chatbot_conversation.py — a per-conversation pass/fail check
+        # that retries with concrete feedback when the user-side turns
+        # (or pasted drafts) drift off the user's layered voice. Mini
+        # tier keeps the audit cheap; conversation generation itself
+        # stays on flagship.
+        def _voice_judge_query_fn(prompt: str):
+            return self._query_mini_with_retry(prompt)
+
         chatbot_conversation.generate_chatbot_conversations(
             chatbot_records=chatbot_records,
             user_profile=user_profile_dict,
@@ -6057,6 +6066,7 @@ class PersonaAgent:
             user_seed=user_seed,
             max_workers=self.max_workers,
             user_voice=(self.user_profile.user_voice or {}),
+            mini_query_fn=_voice_judge_query_fn,
         )
 
         # Store results keyed by source_object_id

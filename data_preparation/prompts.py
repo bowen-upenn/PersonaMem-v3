@@ -1014,21 +1014,15 @@ def render_voice_for_test_card(
         # cards will at least show coherent text instead of erroring.
         return _render_voice_for_consumer(user_voice, app_persona)
 
-    span_lookup: set = set()
-    if voice_evidence_spans:
-        for s in voice_evidence_spans:
-            if not isinstance(s, str):
-                continue
-            s = s.strip()
-            if s:
-                span_lookup.add(s.lower())
-
-    def _bold_if_anchor(token: str) -> str:
-        # Match against the inner-text key (strip surrounding quotes /
-        # whitespace before lookup) so "that part" anchored on a span
-        # `that part` still bolds correctly.
-        key = token.strip().strip('"').strip("'").lower()
-        return f"**{token}**" if key in span_lookup else token
+    # NOTE: `voice_evidence_spans` is intentionally unused inside this
+    # function. The eval-side / viz-side renderers DON'T process markdown,
+    # so wrapping anchors in `**...**` here would (a) display literal
+    # asterisks in the test card and (b) break the JS-side
+    # `boldVoiceEvidence(text, spans)` matcher (which scans the rendered
+    # text for the literal anchor string and wraps it in `<strong>` tags
+    # so the `.ts-body strong` highlight CSS fires). Return clean text;
+    # let the JS bolder do the highlighting.
+    _ = voice_evidence_spans  # accepted for forward-compat; not used here
 
     lines: list[str] = []
 
@@ -1069,17 +1063,20 @@ def render_voice_for_test_card(
             bits.append(af_str)
         lines.append("- **Idiolect markers**: " + "; ".join(bits))
 
-    # Catchphrase residue — bolded when matched against evidence_spans.
+    # Catchphrase residue + palette — clean text only. The viz layer's
+    # `boldVoiceEvidence(text, voice_evidence_spans)` JS pass will wrap
+    # any of these tokens in `<strong>` if they actually surfaced in
+    # the example or inferior response.
     residue = idio.get("catchphrase_residue") or user_voice.get("personal_phrases") or []
     if residue:
-        rendered = ", ".join(_bold_if_anchor(f'"{p}"') for p in residue[:4])
+        rendered = ", ".join(f'"{p}"' for p in residue[:4])
         lines.append(
             f"- **Catchphrase residue** (use ZERO most of the time; AT MOST one): {rendered}"
         )
 
     palette = user_voice.get("emoji_palette") or []
     if palette:
-        rendered = " ".join(_bold_if_anchor(p) for p in palette[:10])
+        rendered = " ".join(palette[:10])
         lines.append(f"- **Emoji palette** (subset only): {rendered}")
 
     # Negatives — these are how compose tasks most commonly fail; keep.
@@ -1468,7 +1465,12 @@ You are producing the four per-app modulations (Instagram, Facebook, Threads, AI
 
 10. **`surface` is required for every app**:
     - `effort_level`: `"high"` | `"medium"` | `"low"`
-    - `length_band`: `"45-120"` (Threads) / `"120-220"` (Facebook) / `"70-150"` (Instagram caption) / `"90-190"` (Chatbot)
+    - `length_band` (in characters; pick a sub-range of these defaults that fits this user's effort_level — heavier-effort users skew toward the high end, lower-effort users toward the low end):
+        - **Threads**: `"150-320"` — pithy multi-sentence takes; long enough to carry the user's idiolect templates + 1–2 stances visibly
+        - **Facebook**: `"260-560"` — paragraph-length status updates / community posts; longer-form is the FB norm
+        - **Instagram caption**: `"200-440"` — multi-line caption with the user's voice fingerprint visible across 2–3 sentences (NOT a one-liner)
+        - **Chatbot**: `"90-190"` — task-direct chat-turn length
+      Caption-length bands intentionally err LONG so a real benchmark response has room for the user's signature_concerns, an idiolect template, a stance shift, and 1–2 hashtags. Short captions starve the voice fingerprint.
     - `emoji_intensity_shift`: integer ∈ {{-1, 0, +1}} — delta from `user_voice.emoji_intensity_default`. Default 0. Chatbot is typically -1 for emoji-using users.
     - `audience_self_censoring`: 1 sentence on what the user OMITS given this audience.
     - `disclosure_depth`: `"low"` | `"medium"` | `"high"` — how much personal detail this audience licenses. Public Threads ≈ low; private Chatbot can be high.
@@ -1500,7 +1502,7 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
       "chatbot_contexts": [],
       "surface": {{
         "effort_level": "medium",
-        "length_band": "70-150",
+        "length_band": "200-440",
         "emoji_intensity_shift": 0,
         "audience_self_censoring": "...",
         "disclosure_depth": "medium"
@@ -1509,8 +1511,8 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
       "app_avoid": "...",
       "delta_summary": "1 sentence on WHY this audience selects this stance subset"
     }},
-    "Facebook": {{ ...same shape... }},
-    "Threads": {{ ...same shape... }},
+    "Facebook": {{ ...same shape, length_band typically "260-560"... }},
+    "Threads": {{ ...same shape, length_band typically "150-320"... }},
     "Chatbot": {{
       "app_name": "Chatbot",
       "active_stances": ["..."],
@@ -3822,4 +3824,150 @@ input order:
   {{"pair_id": 1, "grounded": false, "reason": "<one short sentence>"}}
 ]
 ```"""
+
+
+# ---------------------------------------------------------------------------
+# Voice-quality judge — gates every user-voiced sample produced at data-gen
+# time (chatbot user turns + their embedded drafts/emails, self-posts, DMs)
+# against the layered voice ground truth. Failed samples get regenerated;
+# this is what the AI under eval relies on to learn the user's tone, since
+# `profile.user_voice` is firewalled from the agent at test time.
+# ---------------------------------------------------------------------------
+
+def voice_quality_check_prompt(
+    sample_text: str,
+    user_voice: dict,
+    app_persona: dict | None = None,
+    *,
+    surface_label: str = "user-voiced text",
+    embedded_drafts: bool = False,
+) -> str:
+    """Mini-tier voice-fidelity judge.
+
+    Asked to score whether `sample_text` actually carries the layered
+    voice schema's signature — NOT generic plausibility, NOT writing
+    quality. Output is JSON `{score, passes, reason, weakest_axis}`.
+    Pass requires score >= 3 AND `passes: true`.
+
+    Args:
+        sample_text: the user-voiced text to grade. For chatbot
+            conversations, this is the concatenated user-side turns
+            (skip the assistant turns) — when the user pasted a draft
+            email / message / caption inside a turn, the draft is
+            INSIDE this string and graded along with the surrounding
+            chat-turn voice.
+        user_voice: full layered voice block from profile.json — the
+            ground truth.
+        app_persona: optional per-app modulation. When provided, the
+            judge also checks that the active stances/registers and
+            surface knobs (length_band, disclosure_depth, emoji
+            intensity) are respected.
+        surface_label: human-readable noun for the kind of sample —
+            e.g., "Instagram self-post", "DM thread (user side)",
+            "chatbot conversation user turns + pasted drafts".
+        embedded_drafts: when True, signals that the sample contains
+            user-pasted material (PersonaMem-v2 implicit-pref design:
+            an email draft / caption draft / cover letter the user
+            asked the chatbot to improve). The judge then grades the
+            DRAFT TEXT specifically — it must follow the user's voice
+            in its own right, not just "sound generically like a
+            draft", since the agent under eval may quote it back when
+            mimicking the user.
+    """
+    voice_json = json.dumps(user_voice or {}, indent=2, ensure_ascii=False)[:6000]
+    ap_json = json.dumps(app_persona or {}, indent=2, ensure_ascii=False)[:2400] \
+        if app_persona else "(no app persona — sample is app-agnostic)"
+    sample_capped = (sample_text or "").strip()
+    if len(sample_capped) > 4000:
+        sample_capped = sample_capped[:4000] + "…(truncated)"
+
+    embedded_block = ""
+    if embedded_drafts:
+        embedded_block = (
+            "\n## SPECIAL CASE — embedded user drafts\n\n"
+            "The sample below contains user-pasted material (an email, a "
+            "caption, a cover letter, a message draft) that the user is "
+            "asking the assistant to improve. PersonaMem-v2 implicit-pref "
+            "design: the preference is supposed to hide INSIDE that pasted "
+            "draft. Critically, the DRAFT TEXT itself must follow this "
+            "user's voice — not just be a generic email. Reasoning: the "
+            "agent under eval reads the draft as evidence of how the user "
+            "writes; if the draft is generic, the agent has nothing to "
+            "learn the user's voice from. So when judging, separately "
+            "consider:\n"
+            "  (a) does the user's chat-turn framing around the draft "
+            "match this user's voice (their idiolect templates, their "
+            "register, their hedge/booster ratio)?\n"
+            "  (b) does the pasted draft text itself carry the user's "
+            "voice signature, even though it's a different speech genre "
+            "than a chat turn?\n"
+            "Both must pass. If the draft is voice-neutral / generic / "
+            "could be anyone's, fail with `weakest_axis: 'embedded_draft'`."
+        )
+
+    return f"""\
+You are a voice-quality auditor. Your job is to judge whether a piece of user-voiced text actually CARRIES this user's specific writing-voice signature, or whether it reads as voice-neutral / generic / could-be-anyone-else.
+
+You are NOT grading writing quality, fluency, or topic relevance. You are grading **voice fidelity** — does this text wear the layered voice schema below?
+
+## Sample to grade ({surface_label})
+
+```
+{sample_capped}
+```
+
+## Ground-truth user voice (the layered schema)
+
+```json
+{voice_json}
+```
+
+## Per-app modulation (if applicable)
+
+```json
+{ap_json}
+```
+{embedded_block}
+
+## What to check
+
+The voice schema has 4 layers; the sample should carry visible evidence of layers 1-3 (Layer 4 is per-app surface). Run through each axis:
+
+1. **Identity spine — `signature_concerns`**: does at least one signature concern (or related preoccupation) bleed into the sample's framing? (Even a draft email about logistics can carry the user's signature concern — e.g., a user whose spine is "dignity in defeat" might frame even a routine apology around taking ownership.)
+
+2. **Idiolect — `constructional_templates`**: at least ONE template's slot pattern should be visible in the sample. The slot pattern, NOT the verbatim `example_realization`. If the user has `[hedge] just [verb] ___` as a template, the sample uses some hedge + just + verb construction.
+
+3. **Idiolect — `hedge_booster_ratio`**: does the hedge/booster mix match? A `hedge_dominant` user shouldn't produce a sample that's all-bold-claims; a `booster_dominant` user shouldn't produce a sample of pure qualifications.
+
+4. **Idiolect — `appraisal_fingerprint`**: attitude-dominant + engagement-style should be visible (e.g., `attitude=judgment, engagement=heteroglossic_acknowledge` produces hedged value-judgments, not flat affirmations).
+
+5. **Repertoire — stance / register / speech-genre**: does the sample's stance and register sit inside the user's `repertoire.stances` / `repertoire.registers` set? (If the per-app `active_stances` is provided, the sample should be drawing from that subset.)
+
+6. **Surface knobs (per-app)**: when `app_persona.surface` is provided —
+   - **`length_band`**: is the sample within the band's character range?
+   - **`emoji_intensity_shift`**: emoji density consistent with `user_voice.emoji_intensity_default + shift`?
+   - **`disclosure_depth`**: doesn't over-share or under-share for this audience?
+
+7. **Negatives — `voice_avoid` / `phrases_to_avoid` / `app_avoid`**: hard constraints. The sample MUST NOT carry any forbidden phrase verbatim, MUST NOT use the avoided tone register, and (if app_persona is set) MUST NOT cross the app_avoid line.
+
+8. **Catchphrase residue**: the user's residue phrases should appear AT MOST ONCE in the whole sample, often ZERO times. A sample that signature-stamps multiple residues is over-using them.
+
+9. **Palette emoji only**: any emoji in the sample must be in `user_voice.emoji_palette`. Inventing new emoji = fail.
+
+## Output format
+
+Respond with ONLY a JSON object. No prose outside the fence.
+
+```json
+{{
+  "score": <integer 1-5>,
+  "passes": <true if score >= 3 AND the sample carries the layered voice signature without violating any negative constraint>,
+  "weakest_axis": "<one of: signature_concerns | idiolect_templates | hedge_booster | appraisal | stance_register | length_band | emoji_density | disclosure_depth | voice_avoid_violation | phrases_to_avoid_violation | app_avoid_violation | catchphrase_overuse | palette_invented | embedded_draft | none>",
+  "reason": "<≤2 sentences naming the specific axis the sample fails or passes on; cite the schema field by name>",
+  "fix_hint": "<≤1 sentence the regenerator can use as concrete steering — e.g. 'lean into the [hedge] just [verb] template; drop the parallel-triplet list'>"
+}}
+```
+
+Be strict on negatives (any forbidden-phrase violation forces a fail) but reasonable on positives (one strong layer-1/layer-2 marker plus a fitting stance is enough — you don't need every axis lit up).
+"""
 
