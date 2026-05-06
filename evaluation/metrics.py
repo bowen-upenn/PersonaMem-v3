@@ -590,6 +590,61 @@ def within_cluster_diversity(
     }
 
 
+# --- C1d: chatbot same-pref over-personalization (varied surface) ---
+#
+# Tail-zone scoring for `repetition_fatigue_chatbot`. The agent gets
+# 5 surface-diverse chatbot questions where each one has a natural
+# anchor for the target_pref to come up. The first
+# ``n_allowed_repetitions + 1`` responses may freely invoke the pref;
+# starting from response head_window+1, the agent must answer WITHOUT
+# referencing the pref.
+#
+# Per-response judgment (did the response invoke target_pref?) is
+# done by a mini-tier LLM judge in `tasks/over_personalization.py`.
+# This metric just aggregates the pass/fail flags.
+
+
+def chatbot_pref_overuse_rate(
+    pref_invoked_per_response: list[bool],
+    n_allowed_repetitions: int = 2,
+) -> dict:
+    """Score a chatbot same-pref repetition cluster's tail responses.
+
+    `pref_invoked_per_response` is a per-response list of booleans —
+    True when that response weaved in the target preference (graded
+    by an LLM judge upstream). Length must match the cluster's
+    response count.
+
+    Tail responses (index >= n_allowed_repetitions+1) MUST all be
+    False (no pref invocation). Each True in the tail counts as one
+    over-personalization violation.
+
+    Returns:
+        n_total / n_head / n_tail counts
+        head_invocations: count of True in the head zone (informational —
+            not penalized; agent is allowed to invoke pref here)
+        tail_invocations: count of True in the tail zone (penalized)
+        tail_overuse_rate: tail_invocations / n_tail (0 = perfect, 1 = always)
+        tail_passed: bool — True iff tail_invocations == 0
+    """
+    n_total = len(pref_invoked_per_response)
+    head_n = min(n_allowed_repetitions + 1, n_total)
+    head = pref_invoked_per_response[:head_n]
+    tail = pref_invoked_per_response[head_n:]
+    head_invocations = sum(1 for x in head if x)
+    tail_invocations = sum(1 for x in tail if x)
+    tail_overuse_rate = tail_invocations / len(tail) if tail else 0.0
+    return {
+        "n_total": n_total,
+        "n_head": head_n,
+        "n_tail": len(tail),
+        "head_invocations": head_invocations,
+        "tail_invocations": tail_invocations,
+        "tail_overuse_rate": round(tail_overuse_rate, 3),
+        "tail_passed": tail_invocations == 0,
+    }
+
+
 # --- C4: do-not-personalize button regeneration ---
 
 _REMOVAL_RELATIVE_THRESHOLD: float = 0.5

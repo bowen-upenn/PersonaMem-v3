@@ -618,6 +618,192 @@ def run_task_c1c(
     return results
 
 
+# --- Task C1d: chatbot same-pref repetition (varied surface) -------------
+
+_C1D_PREF_INVOCATION_JUDGE_PROMPT = """You are auditing whether a chatbot response invoked a specific user preference. The preference is given below. Determine whether the response — by topic choice, recommendation, framing, or specific reference — leans on this preference.
+
+A response "invokes" the preference when:
+  - It explicitly recommends content / activities / items in that preference area, OR
+  - It pivots the answer toward the preference's topic (even subtly), OR
+  - It mentions the preference by name, by category, or by a close paraphrase.
+
+A response does NOT invoke the preference when:
+  - It answers the user's question on the question's own terms, with no detour through the preference area.
+  - It picks a recommendation, angle, or framing that's unrelated to the preference.
+
+## Target preference
+
+  persona_item: "{target_pref}"
+  category:     "{primary_category}"
+  hashtags this user engages with on the topic: {target_hashtags}
+
+## User's chatbot question
+
+  > {user_query}
+
+## Response under audit
+
+  {response}
+
+## Output
+
+```json
+{{"invoked": true | false, "reason": "<one short sentence>"}}
+```
+"""
+
+
+def _c1d_check_pref_invoked(
+    response_text: str,
+    user_query: str,
+    target_pref: str,
+    primary_category: str,
+    target_hashtags: list,
+    judge_query_fn,
+) -> bool:
+    """LLM judge: did `response_text` invoke `target_pref`? On any error,
+    return False (auto-pass) — flaky judge shouldn't break the metric.
+    """
+    if not callable(judge_query_fn):
+        return False
+    if not (response_text or "").strip():
+        return False
+    prompt = _C1D_PREF_INVOCATION_JUDGE_PROMPT.format(
+        target_pref=target_pref[:200],
+        primary_category=primary_category or "(none)",
+        target_hashtags=", ".join(f"#{h.lstrip('#')}" for h in target_hashtags[:8]) or "(none)",
+        user_query=user_query[:240],
+        response=response_text[:800],
+    )
+    try:
+        raw = judge_query_fn(prompt)
+    except Exception:
+        return False
+    if not raw:
+        return False
+    parsed = extract_json_from_response(raw) or {}
+    if not isinstance(parsed, dict):
+        return False
+    return bool(parsed.get("invoked"))
+
+
+def run_task_c1d(
+    instances,
+    user_id,
+    bq: BackendQuery,
+    llm_client,
+    judge_client,
+    mode: str,
+    snapshot_cache: SnapshotCache,
+    model_name: str | None,
+    claude_model: str,
+    context_budget: int | None,
+    enable_llm_judge: bool,
+    dry_run: bool,
+    limit: int | None = None,
+) -> list[dict]:
+    """For each chatbot same-pref cluster, dispatch the agent on each of
+    the cluster's surface-diverse chatbot queries in sequence (prior
+    responses surfaced each turn). After dispatch, an LLM judge per
+    response decides whether it invoked the target preference. Score
+    via ``metrics.chatbot_pref_overuse_rate`` — tail responses must
+    NOT invoke target_pref."""
+    if limit is not None:
+        instances = instances[:limit]
+    from evaluation import metrics  # local — avoid circular at module load
+    results: list[dict] = []
+    for cluster in instances:
+        queries = cluster.get("queries") or []
+        if not queries:
+            continue
+
+        t_test = int(cluster.get("t_test") or queries[-1]["ts"])
+        history_block = None
+        if mode in ("agent_longctx", "llm_longctx"):
+            history_block, _stats = snapshot_cache.get_or_build(
+                bq, user_id, t_test, model_name, context_budget,
+            )
+
+        if dry_run:
+            results.append({
+                "task": "c1d_chatbot_same_pref",
+                "cluster_id": cluster["cluster_id"],
+                "mode": mode,
+                "responses": None,
+                "metrics": None,
+            })
+            continue
+
+        target_pref = cluster.get("target_pref", "")
+        primary_category = cluster.get("primary_category", "")
+        target_hashtags = list(cluster.get("target_hashtags") or [])
+        n_allowed_repetitions = int(cluster.get("n_allowed_repetitions") or 2)
+
+        responses: list[dict] = []
+        total_turns = 0
+        stats_per_query: list[dict] = []
+        for q in queries:
+            ts = int(q["ts"])
+            prompt = prompts.repetition_fatigue_chatbot_prompt(
+                user_query=q["user_query"],
+                target_pref=target_pref,
+                primary_category=primary_category,
+                prior_responses=responses,
+                n_allowed_repetitions=n_allowed_repetitions,
+                history_block=history_block,
+            )
+            raw, turns, stats = _dispatch_agent(
+                mode, prompt, bq=bq, user_id=user_id, t=ts,
+                claude_model=claude_model, llm_client=llm_client,
+            )
+            parsed = extract_json_from_response(raw) or {}
+            response_text = (parsed.get("response") or raw or "").strip()
+            responses.append({
+                "ts": ts,
+                "user_query": q["user_query"],
+                "natural_anchor": q.get("natural_anchor", ""),
+                "response": response_text,
+            })
+            total_turns += turns
+            stats_per_query.append(stats)
+
+        # Per-response LLM judge: did this response invoke target_pref?
+        pref_invoked: list[bool] = []
+        if enable_llm_judge and judge_client is not None:
+            judge_fn = (judge_client.query_llm
+                        if hasattr(judge_client, "query_llm") else judge_client)
+            for r in responses:
+                pref_invoked.append(
+                    _c1d_check_pref_invoked(
+                        r["response"], r["user_query"],
+                        target_pref, primary_category, target_hashtags,
+                        judge_fn,
+                    )
+                )
+        else:
+            pref_invoked = [False] * len(responses)
+
+        overuse = metrics.chatbot_pref_overuse_rate(
+            pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
+        )
+
+        results.append({
+            "task": "c1d_chatbot_same_pref",
+            "cluster_id": cluster["cluster_id"],
+            "mode": mode,
+            "target_pref": target_pref,
+            "primary_category": primary_category,
+            "n_queries": len(queries),
+            "n_allowed_repetitions": n_allowed_repetitions,
+            "responses": responses,
+            "pref_invoked_per_response": pref_invoked,
+            "tool_calls": total_turns,
+            "subagent_stats": stats_per_query,
+            "metrics": overuse,
+        })
+    return results
+
+
 # --- Task C4: do-not-personalize button regeneration ---------------------
 
 def run_task_c4(

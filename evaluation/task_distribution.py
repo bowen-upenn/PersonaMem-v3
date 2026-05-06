@@ -48,9 +48,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "preference_removal_regen":               {"min": 6,  "max": 8},
 
     # Restraint sub-types
-    "repetition_fatigue_pairs":               {"min": 5,  "max": 6},
-    "repetition_fatigue_sequences":           {"min": 6,  "max": 10},
-    "repetition_fatigue_same_preference":     {"min": 2,  "max": 3},
+    "recency_shift_recommendation":               {"min": 5,  "max": 6},
+    "cross_category_preference_breadth":           {"min": 6,  "max": 10},
+    "repetition_fatigue_recommendation":     {"min": 2,  "max": 3},
+    "repetition_fatigue_chatbot":            {"min": 1,  "max": 2},
     "over_personalization_context_shift":     {"min": 5,  "max": 6},
 
     # Agentic — uniform target across 14 tasks

@@ -1774,7 +1774,7 @@ def build_c1b_sequence(
     Each sequence requires queries spanning ≥ min_distinct_categories distinct
     top-1-preference categories. We now emit up to ``max_sequences`` distinct
     sequences by rotating which instance per category is picked — this fills
-    the floor for repetition_fatigue_sequences (was 1 per user, now 6).
+    the floor for cross_category_preference_breadth (was 1 per user, now 6).
     """
     if not b_proactive_instances:
         return []
@@ -2151,8 +2151,8 @@ def build_c1c_same_preference_clusters(
         out.append({
             "cluster_id": cluster_id,
             "instance_id": cluster_id,
-            "task_id": "repetition_fatigue_same_preference",
-            "task_type": "repetition_fatigue_same_preference",
+            "task_id": "repetition_fatigue_recommendation",
+            "task_type": "repetition_fatigue_recommendation",
             "target_pref": target_pref,
             "primary_category": primary_category,
             "all_persona_items_in_cluster": cluster["persona_items"][:5],
@@ -2165,6 +2165,256 @@ def build_c1c_same_preference_clusters(
             "anchor_timestamps": anchor_ts,
             "queries": queries,
             "t_test": anchor_ts[-1],   # final anchor = last query moment
+            "window_seconds": window_seconds,
+            "n_queries": len(queries),
+            "n_allowed_repetitions": n_allowed_repetitions,
+        })
+    return out
+
+
+# --- Task C1d: chatbot-style same-pref repetition cluster ----------------
+# Sibling to C1c. Where C1c sets up *recommendation-loop* surface
+# (every query is "show me a new {category} item"), C1d tests the
+# CHATBOT pattern: 5 SURFACE-DIVERSE chatbot questions (different
+# topics, different speech acts, different emotional tones) where
+# each one has a natural anchor for the target preference to come up
+# in the answer. The agent should freely weave the pref into the
+# first 3 responses (head zone — initial repetitions tolerated) and
+# then STOP referencing it from response 4 onward, instead answering
+# the user's question on its own terms without the pref crutch.
+
+_C1D_QUERIES_PER_CLUSTER = 5
+_C1D_N_ALLOWED_REPETITIONS = 2
+_C1D_WINDOW_SECONDS = 3 * 3600
+_C1D_MAX_INSTANCES_PER_USER = 2
+
+
+_C1D_DIVERSE_QUERY_GEN_PROMPT = """You are designing a benchmark probe for AI-assistant over-personalization. The probe tests whether the assistant keeps falling back to ONE specific user preference even when the user asks about something nominally unrelated.
+
+To do that, you need to write {n_queries} chatbot questions a user might naturally ask their AI assistant. The questions must be:
+
+(1) **Surface-diverse**. Different topics, different speech acts (asking for advice vs. brainstorming vs. troubleshooting vs. logistics vs. emotional check-in), different tones. Don't have all 5 be "give me a recommendation for X" — vary the shape of the conversation. A real user doesn't ask 5 recommendation questions in a row.
+
+(2) **Each one has a NATURAL anchor for the target preference to come up.** A skilled assistant who is mildly over-personalized would invoke the preference in the answer — there's a plausible reason to mention it. But each question is ALSO answerable without invoking the preference. That's the test: a well-calibrated assistant covers the topic on its own merits the first 3 times, then stops referencing the pref by response 4.
+
+(3) **Realistic and short.** 5–25 words each. Real chat-turn length, not benchmark-essay length.
+
+## Target preference
+
+  persona_item: "{target_pref}"
+  category:     "{primary_category}"
+  example hashtags the user engages with: {persona_hashtags}
+
+## User profile snippet
+
+  Name:    {name}
+  Career:  {career}
+  Bio:     {bio}
+
+## Examples of correctly varied surface
+
+If the target preference were "boxing fandom", surface-diverse chatbot questions might look like:
+
+  - "any ideas for what to make for dinner tonight, want something high-protein"  (food / nutrition speech act)
+  - "feeling kinda restless this evening, low energy"                              (emotional check-in)
+  - "saturday's looking open, need ideas"                                          (logistics / planning)
+  - "wrist been bugging me this week, what should i do"                            (health / advice)
+  - "looking for a podcast for my morning commute"                                  (recommendation)
+
+Each one COULD organically invoke boxing — but each one is fully answerable without it.
+
+## Output
+
+```json
+[
+  {{"query": "<the user's question, 5-25 words, lowercase casual>", "natural_anchor": "<one short sentence explaining how a mildly over-personalized assistant would naturally invoke the target preference here>"}},
+  ...
+]
+```
+
+Return EXACTLY {n_queries} entries. No prose outside the JSON fence.
+"""
+
+
+def _c1d_pick_strong_prefs(rich_prefs: list[dict], n: int) -> list[dict]:
+    """Pick the user's strongest distinct preferences for chatbot probes.
+
+    Sort by ``confidence_cross_referenced`` desc; require each picked
+    pref to have ≥ 2 distinct hashtags (so the natural-anchor space
+    isn't too narrow). Drop any prefs whose hashtags fully subset an
+    earlier pick — pick MUST cover a distinct topical region.
+    """
+    sorted_prefs = sorted(
+        (p for p in rich_prefs if len(p.get("source_hashtags") or []) >= 2),
+        key=lambda p: -float(p.get("confidence_cross_referenced") or 0.0),
+    )
+    out: list[dict] = []
+    for p in sorted_prefs:
+        ptags = {h.lower().lstrip("#") for h in p.get("source_hashtags") or []}
+        # Skip if covered by an earlier pick (≥75% hashtag overlap).
+        covered = False
+        for q in out:
+            qtags = {h.lower().lstrip("#") for h in q.get("source_hashtags") or []}
+            if ptags and len(ptags & qtags) / max(1, len(ptags)) >= 0.75:
+                covered = True
+                break
+        if covered:
+            continue
+        out.append(p)
+        if len(out) >= n:
+            break
+    return out
+
+
+def build_c1d_chatbot_diverse_clusters(
+    bq: BackendQuery,
+    user_id: str,
+    test_items: list[TestItem],
+    discovery_llm=None,
+    n_clusters: int = _C1D_MAX_INSTANCES_PER_USER,
+    queries_per_cluster: int = _C1D_QUERIES_PER_CLUSTER,
+    window_seconds: int = _C1D_WINDOW_SECONDS,
+    n_allowed_repetitions: int = _C1D_N_ALLOWED_REPETITIONS,
+) -> list[dict]:
+    """Build chatbot-style same-pref repetition clusters.
+
+    For each picked target preference, calls `discovery_llm` once to
+    generate `queries_per_cluster` surface-diverse chatbot questions
+    that each have a natural anchor for the target pref. Anchors them
+    at real engagement timestamps inside a `window_seconds` window
+    (similar to C1c). Returns up to `n_clusters` instances.
+
+    Skipped entirely when `discovery_llm` is None (graceful — eval
+    just gets fewer instances of this task).
+    """
+    if discovery_llm is None or not test_items:
+        return []
+    t_anchor = max(t.source_timestamp for t in test_items)
+    base = Path(bq.base) / user_id
+
+    # Reuse the same rich-prefs scan + persona-hint computation as C1c
+    # for consistency. Inlined here to keep the modules independent
+    # — both pull from app JSONs at the same t_anchor floor.
+    rich_prefs: list[dict] = []
+    seen_pi: set[str] = set()
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts >= t_anchor:
+                continue
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                pi = pref.get("persona_item") or ""
+                if not pi or pi in seen_pi:
+                    continue
+                tags = pref.get("source_hashtags") or e.get("source_hashtags") or []
+                if not tags:
+                    continue
+                seen_pi.add(pi)
+                rich_prefs.append({
+                    "persona_item": pi,
+                    "category": pref.get("category", ""),
+                    "source_hashtags": list(tags),
+                    "confidence_cross_referenced": float(
+                        pref.get("confidence_cross_referenced") or 0.0
+                    ),
+                })
+
+    # Profile slice for the diverse-query gen prompt.
+    profile_path = base / "profile.json"
+    profile: dict = {}
+    if profile_path.exists():
+        try:
+            profile = json.loads(profile_path.read_text())
+        except Exception:
+            profile = {}
+    name = (profile.get("name") or "").strip()
+    career = (profile.get("career") or "").strip()
+    bio = (profile.get("bio") or "").strip()[:300]
+
+    targets = _c1d_pick_strong_prefs(rich_prefs, n_clusters)
+    if not targets:
+        return []
+
+    out: list[dict] = []
+    for tgt in targets:
+        target_pref = tgt["persona_item"]
+        primary_category = tgt.get("category") or ""
+        target_hashtags = list(tgt.get("source_hashtags") or [])
+
+        # Anchor 5 real engagement timestamps within the window using
+        # the target's hashtags (same approach as C1c — keep behavior
+        # parallel). If the user doesn't have enough engagement on
+        # this pref's hashtags inside any 3h window, skip the cluster.
+        anchor_ts = _c1c_anchor_timestamps(
+            bq, user_id,
+            cluster_hashtags=set(target_hashtags),
+            t_floor=t_anchor,
+            n_anchors=queries_per_cluster,
+            window_seconds=window_seconds,
+        )
+        if len(anchor_ts) < queries_per_cluster:
+            continue
+
+        # Build-time LLM call: generate surface-diverse chatbot queries.
+        gen_prompt = _C1D_DIVERSE_QUERY_GEN_PROMPT.format(
+            n_queries=queries_per_cluster,
+            target_pref=target_pref,
+            primary_category=primary_category or "(no category)",
+            persona_hashtags=", ".join(f"#{h.lstrip('#')}" for h in target_hashtags[:8]) or "(none)",
+            name=name or "(unspecified)",
+            career=career or "(unspecified)",
+            bio=bio or "(no bio)",
+        )
+        try:
+            raw = discovery_llm.query_llm(gen_prompt)
+        except Exception:
+            raw = None
+        from data_preparation.utils import extract_json_from_response
+        gen_queries = extract_json_from_response(raw) or []
+        if not isinstance(gen_queries, list) or len(gen_queries) < queries_per_cluster:
+            # Couldn't get enough diverse queries — skip the cluster
+            # rather than fall back to recommendation-loop framing
+            # (that's what C1c is for).
+            continue
+
+        # Pair each LLM-generated query with one anchor timestamp.
+        queries = []
+        for i, q in enumerate(gen_queries[:queries_per_cluster]):
+            if not isinstance(q, dict):
+                continue
+            text = (q.get("query") or "").strip()
+            if not text:
+                continue
+            queries.append({
+                "anchor_index": i,
+                "ts": anchor_ts[i],
+                "user_query": text[:300],
+                "natural_anchor": (q.get("natural_anchor") or "").strip()[:240],
+            })
+        if len(queries) < queries_per_cluster:
+            continue
+
+        cluster_id = f"{user_id}_c1d_{anchor_ts[0]}"
+        out.append({
+            "cluster_id": cluster_id,
+            "instance_id": cluster_id,
+            "task_id": "repetition_fatigue_chatbot",
+            "task_type": "repetition_fatigue_chatbot",
+            "target_pref": target_pref,
+            "primary_category": primary_category,
+            "target_hashtags": target_hashtags[:8],
+            "anchor_timestamps": anchor_ts,
+            "queries": queries,
+            "t_test": anchor_ts[-1],
             "window_seconds": window_seconds,
             "n_queries": len(queries),
             "n_allowed_repetitions": n_allowed_repetitions,
@@ -2633,11 +2883,14 @@ def build_benchmark(
         blind_check_limit=blind_check_limit,
     )
 
-    # Task C1a/C1b/C1c/C2/C3/C4.
+    # Task C1a/C1b/C1c/C1d/C2/C3/C4.
     t_probe = max(t.source_timestamp for t in test_items)
     c1a_pairs = build_c1a_pairs(bq, user_id, test_items)
     c1b_sequences = build_c1b_sequence(b_arms["chatbot_proactive_personalization"])
     c1c_clusters = build_c1c_same_preference_clusters(bq, user_id, test_items)
+    c1d_chatbot_clusters = build_c1d_chatbot_diverse_clusters(
+        bq, user_id, test_items, discovery_llm=discovery_llm,
+    )
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
@@ -2760,9 +3013,10 @@ def build_benchmark(
         "personalized_feed_ranking":              slate_instances,
         "chatbot_proactive_personalization":      b_arms["chatbot_proactive_personalization"],
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
-        "repetition_fatigue_pairs":               c1a_pairs,
-        "repetition_fatigue_sequences":           c1b_sequences,
-        "repetition_fatigue_same_preference":     c1c_clusters,
+        "recency_shift_recommendation":               c1a_pairs,
+        "cross_category_preference_breadth":           c1b_sequences,
+        "repetition_fatigue_recommendation":     c1c_clusters,
+        "repetition_fatigue_chatbot":   c1d_chatbot_clusters,
         "over_personalization_context_shift":     c2_instances,
         "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,
