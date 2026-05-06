@@ -2340,20 +2340,29 @@ def build_c1d_chatbot_diverse_clusters(
     career = (profile.get("career") or "").strip()
     bio = (profile.get("bio") or "").strip()[:300]
 
-    targets = _c1d_pick_strong_prefs(rich_prefs, n_clusters)
-    if not targets:
+    # Cluster prefs by ≥1 hashtag-overlap (same as C1c) — gives each
+    # target a wider hashtag pool for anchor lookup. Picking individual
+    # prefs collapsed the anchor pool to 2-3 narrow hashtags per
+    # target, which never satisfied the ≥5-events-in-3h requirement.
+    pref_clusters = _c1c_pref_signatures(rich_prefs)
+    if not pref_clusters:
         return []
+    # Iterate clusters in confidence-desc order until we've emitted
+    # `n_clusters` viable instances. Some clusters lack a 3h window
+    # with ≥5 anchor moments — skip those and try the next strongest.
 
     out: list[dict] = []
-    for tgt in targets:
-        target_pref = tgt["persona_item"]
-        primary_category = tgt.get("category") or ""
-        target_hashtags = list(tgt.get("source_hashtags") or [])
+    for cluster in pref_clusters:
+        if len(out) >= n_clusters:
+            break
+        target_pref = cluster["persona_items"][0] if cluster["persona_items"] else ""
+        primary_category = cluster["categories"][0] if cluster["categories"] else ""
+        target_hashtags = list(cluster["hashtags"])
 
         # Anchor 5 real engagement timestamps within the window using
-        # the target's hashtags (same approach as C1c — keep behavior
-        # parallel). If the user doesn't have enough engagement on
-        # this pref's hashtags inside any 3h window, skip the cluster.
+        # the cluster's UNION of hashtags. If the user doesn't have
+        # enough engagement on this cluster inside any 3h window,
+        # skip — cluster wider than individual pref reduces this.
         anchor_ts = _c1c_anchor_timestamps(
             bq, user_id,
             cluster_hashtags=set(target_hashtags),
