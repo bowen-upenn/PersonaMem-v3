@@ -3006,6 +3006,190 @@ JSON array of at most {n_events} objects. No prose outside the JSON.
 """
 
 
+def audit_hidden_persona_motivations_prompt(
+    cluster: dict,
+    other_clusters_menu: list[dict],
+    preferences_with_decoys: list[dict],
+) -> str:
+    """Audit whether each preference's link to a hidden_persona cluster
+    actually reflects deep motivational fit, not just hashtag co-occurrence.
+
+    Used by Step 22 (`audit_hidden_persona_motivations`). The audit is
+    parsimony-biased: many social-media engagements are surface-level
+    (algorithm-surfaced, salience-driven, cascade-driven, or one-off
+    curiosity), and the right call is to NOT attribute deep motivation.
+    Force-fitting every link to a deep frame fabricates psychological
+    depth. The default decision under ambiguous signal is
+    `SURFACE_ENGAGEMENT`, not CONFIRM.
+
+    Frames are drawn from named academic theories so each rationale is
+    grounded, not vibes. Closed enum — the LLM cannot invent frames.
+
+    Decoys (1–2 per batch) are preferences from a DIFFERENT cluster of
+    the same user, mixed in unlabeled. The audit's CONFIRM rate on
+    decoys is the batch's calibration check (caller failure-handles).
+    """
+    cluster_lines = [
+        f"- **type**: {cluster.get('type', '')}",
+        f"- **label**: {cluster.get('label', '')}",
+        f"- **description**: {cluster.get('description', '')}",
+        f"- **inferred_motivation**: {cluster.get('inferred_motivation', '')}",
+        f"- **evidence_hashtags**: {', '.join(cluster.get('evidence_hashtags', []))}",
+        f"- **privacy_ratio**: {cluster.get('privacy_ratio', 0.0):.2f}",
+        f"- **temporal_spread_days**: {cluster.get('temporal_spread_days', 0)}",
+        f"- **app_distribution**: {cluster.get('app_distribution', {})}",
+    ]
+    cluster_card = "\n".join(cluster_lines)
+
+    if other_clusters_menu:
+        menu_lines = [
+            f"  - `{c.get('label', '')}` ({c.get('type', '')}): {c.get('description', '')[:120]}"
+            for c in other_clusters_menu
+        ]
+        menu_str = "\n".join(menu_lines)
+    else:
+        menu_str = "  (no other clusters available — REASSIGN is not an option for this user)"
+
+    pref_lines = []
+    for i, p in enumerate(preferences_with_decoys):
+        ev = p.get("event_context") or {}
+        ev_line = (
+            f"        engagement: app={ev.get('app','')} | action={ev.get('action','')} | "
+            f"itype={ev.get('source_interaction_type','')}"
+        )
+        content_snip = (ev.get("content_snippet") or "").replace("\n", " ")[:200]
+        if content_snip:
+            ev_line += f"\n        content_snippet: \"{content_snip}\""
+        pref_lines.append(
+            f"  {i+1}. preference_key: {p.get('preference_key','')}\n"
+            f"        persona_item: \"{p.get('persona_item','')}\"\n"
+            f"        category: {p.get('category','')} | polarity: {p.get('polarity','')} | "
+            f"time_horizon: {p.get('time_horizon','long_term')} | "
+            f"xref: {p.get('confidence_cross_referenced', 0):.1f} | "
+            f"protected: {p.get('protected', False)} | "
+            f"hashtags: {', '.join(p.get('source_hashtags', [])[:8])}\n"
+            f"{ev_line}"
+        )
+    prefs_str = "\n".join(pref_lines)
+
+    return f"""\
+You are an expert behavioral analyst auditing whether a list of user preferences truly reflect a single underlying motivational pattern (a "hidden persona cluster"), or whether some are surface-level engagements that were merely co-located with the cluster's hashtags.
+
+## The cluster being audited
+
+{cluster_card}
+
+## Other clusters this user has (the closed reassignment menu)
+
+{menu_str}
+
+## Preferences to judge
+
+Each preference was provisionally linked to the cluster above by hashtag co-occurrence. Some may genuinely fit; some may be surface scrolling that happened to share a hashtag; some may better fit one of the user's *other* clusters. A few preferences here are DECOYS pulled from a different cluster — your CONFIRM rate on those is the calibration check.
+
+{prefs_str}
+
+## Decision schema
+
+For each preference, output ONE decision from this closed list:
+
+- **CONFIRMED** — the preference shows a DEEP, STABLE motivational signature that matches THIS cluster. Requires `motivation_depth: "deep_latent"` and `fit_confidence >= 0.6`.
+- **REASSIGN:<other_cluster_label>** — better fits a DIFFERENT cluster from the closed menu above. Same depth/confidence bar. Use the EXACT label string from the menu.
+- **SURFACE_ENGAGEMENT** — engagement was algorithmically surfaced, salience-driven, cascade-driven, mood-driven, or one-off curiosity. NOT a failure — this is the correct call for casual scrolling. `motivation_depth: "shallow_situational"`.
+- **SHORT_TERM_EPISODIC** — preference reflects an active short-term episode (travel, event prep, medical consultation, ongoing research). `motivation_depth: "medium_episodic"`.
+- **REMOVE** — preference is too generic or noisy to carry any cluster link.
+- **NO_OTHER_CLUSTER_FITS** — has deep motivation but no existing cluster captures it (signals under-clustering — for human review).
+- **FLAG** — fits but the cluster itself looks weakly grounded; escalate to human review.
+
+## Motivation depth (must be set on every decision)
+
+- **`deep_latent`** — stable trait/need/identity expressed across multiple engagements over time; signature is consistent.
+- **`medium_episodic`** — active life episode driving engagement; will fade when the episode resolves.
+- **`shallow_situational`** — single-impression or salience-driven; would not generalize.
+
+## Frame enum (closed list — pick exactly one per decision)
+
+**Deep-latent frames** (eligible for CONFIRMED / REASSIGN with `deep_latent`):
+- `self_determination_theory:relatedness` — the engagement satisfies a need for connection / belonging.
+- `self_determination_theory:autonomy` — agency / self-direction expression.
+- `self_determination_theory:competence` — mastery / skill development.
+- `goffman:back_stage` — private consumption away from audience.
+- `uses_and_gratifications:identity` — public identity construction.
+- `uses_and_gratifications:integration` — group / community integration.
+- `kardefelt_winther:compensatory_use` — closing an unmet real-world need privately (key signal: privacy_ratio > 0.7).
+- `higgins:ideal_self` — pursuing the version of self the user wants to become (aspirational).
+- `higgins:ought_self` — managing what the user feels they SHOULD be (anxiety / obligation).
+- `horton_wohl:parasocial` — sustained one-sided bond with a specific named figure.
+- `lazarus_folkman:emotion_focused_coping` — affect regulation (rumination, reassurance-seeking).
+- `csikszentmihalyi:flow` — deep absorption, skill-challenge match.
+- `berlyne:specific_curiosity` — sustained inquiry into a specific topic across time.
+- `barthes:punctum` — preference is driven by a SPECIFIC arresting detail (object, texture, dynamic), not the broader topic.
+- `tajfel:social_identity` — in-group signaling, subcultural belonging.
+- `stryker:role_identity` — role-based identity (parent, professional, etc.).
+- `health_belief_model:active_use` — active medication/regimen use, not curiosity.
+
+**Surface / situational frames** (eligible for SURFACE_ENGAGEMENT / SHORT_TERM_EPISODIC):
+- `tversky_kahneman:salience_availability` — recent news cycle, trending topic; engagement reflects what was AVAILABLE.
+- `bikhchandani:informational_cascade` — peer-driven; user engaged because others did.
+- `berlyne:diversive_curiosity` — one-off novelty click; distinct from sustained curiosity.
+- `schwarz:mood_as_information` — momentary mood drove the click; doesn't generalize.
+- `variable_ratio_reinforcement` — habituated scrolling / micro-rewards; engagement is the act of scrolling, not preference.
+- `algorithmic_surfacing` — recommender pushed it; user just glanced.
+- `short_term_episodic_event` — active episode (travel, event prep, medical consultation).
+- `none` — when no frame meaningfully applies.
+
+## CRITICAL: parsimony bias
+
+**Default to NOT attributing deep motivation.** When the signal is ambiguous between deep latent motivation and situational engagement, prefer the situational reading. Hidden-persona attribution is the EXCEPTION, not the default. A SURFACE_ENGAGEMENT decision is the correct answer for most casual scrolling-era engagements. Forcing every preference into a deep frame fabricates psychological depth where none exists.
+
+Indicators favoring **SURFACE_ENGAGEMENT** / `shallow_situational`:
+- Generic persona_item text ("interested in viral content", "likes funny posts").
+- Single-impression source row (low `confidence_cross_referenced`, no recurrence).
+- Hashtags overlap the cluster's evidence_hashtags only at the broad-topic level, missing the cluster's specific punctum/figure/concern.
+- No clear emotional, identity, or compensatory signature in the engagement.
+
+Indicators favoring **CONFIRMED** with `deep_latent`:
+- Specific persona_item naming the same thing the cluster's `inferred_motivation` describes.
+- Multiple cross-referenced corroborating rows.
+- Hashtags hit the cluster's distinctive tags (named figure, specific object, specific concern).
+- Engagement context (action, content_snippet) shows the SAME motivational signature as the cluster.
+
+## Type-specific specificity expectations (CRITICAL — caller will validate)
+
+- `parasocial_attachment` CONFIRM → preference text or your rationale MUST contain a proper-noun figure name.
+- `intimate_interest` CONFIRM → preference must NAME a specific object/aesthetic/dynamic. Generic phrasings like "likes suggestive content" must NOT confirm.
+- `medical_aesthetic_concern` CONFIRM → preference text must imply ACTIVE USE (taking, using, applying, on a regimen). Curiosity-only must NOT confirm.
+- `covert_concern` CONFIRM → preference must name a SPECIFIC worry, not a generic anxiety theme.
+- `compensatory_need` CONFIRM → only valid when the cluster's `privacy_ratio > 0.7`.
+
+## Hard depth-vs-horizon rules
+
+- A preference with `time_horizon: "short_term"` cannot CONFIRM into a stable-trait cluster (`personality_trait`, `aspiration`, `identity_anchor`, `parasocial_attachment`, `private_hobby`). Prefer SHORT_TERM_EPISODIC.
+- A preference whose source row is a single-day, single-engagement signal cannot have `motivation_depth: "deep_latent"`.
+
+## Protected preferences
+
+When `protected: true` on a preference, it survived contradiction gates or is high-confidence — treat it as evidence-rich. Bias toward CONFIRMED. Reach for REMOVE / SURFACE_ENGAGEMENT only with strong evidence (fit_confidence < 0.3).
+
+## Output format
+
+Respond with ONLY a JSON array. One entry per preference, in the same order. No explanation outside the JSON.
+
+```json
+[
+  {{
+    "preference_key": "<echo back the preference_key>",
+    "decision": "CONFIRMED" | "REASSIGN:<other_cluster_label>" | "SURFACE_ENGAGEMENT" | "SHORT_TERM_EPISODIC" | "REMOVE" | "NO_OTHER_CLUSTER_FITS" | "FLAG",
+    "motivation_depth": "shallow_situational" | "medium_episodic" | "deep_latent",
+    "fit_confidence": 0.0,
+    "frame_invoked": "<one frame from the closed enum, or 'none'>",
+    "rationale": "1–2 sentences citing the frame and the specific preference signal."
+  }}
+]
+```
+"""
+
+
 def generate_sensitive_event_evidence_rows_prompt(
     profile: dict,
     sensitive_event: dict,

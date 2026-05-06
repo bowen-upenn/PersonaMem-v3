@@ -4,6 +4,85 @@
 
 > Design rationale for the PersonaMem-v3 data generation pipeline. For implementation, see `persona_agent.py`, `prompts.py`, and `skill.md`.
 
+## Theoretical Foundations
+
+The pipeline's persona model, voice schema, hidden-persona taxonomy, and motivation audit are not invented from scratch — every gate, frame, and field traces to a named framework in social, cognitive, behavioral, or media-studies literature. This is a working list of every reference the pipeline cites by name (in code or in prompts), grouped by the layer it informs.
+
+### Personality & individual differences
+
+| Framework | Pipeline use |
+|---|---|
+| **Big Five / Five-Factor Model** (McCrae & Costa, 1992) | `profile.big_five` (qualitative low/medium/high per dimension); `user_voice.identity_spine.big_five_drivers` adds the *behavioral implication* per trait (e.g., `"neuroticism": "medium → frequent hedges, soft retreats"`). Step 11 enforces this is derived from, not invented for, the profile. |
+| **Myers-Briggs (MBTI)** (Myers & Briggs, 1944) | `infer_mbti_type` derives a 4-letter type from Big Five + hidden personas + top hashtags. Used as a profile-side narrative anchor only — never as a clinical claim. |
+| **Dark Triad behavioral markers** (Paulhus & Williams, 2002) | `personality_trait` hidden-persona-type basis (DESIGN.md §Hidden Personas table). |
+| **Maslow's hierarchy of needs** (Maslow, 1943) | `aspiration` hidden-persona-type basis (esteem / self-actualization). |
+
+### Narrative identity & self-presentation
+
+| Framework | Pipeline use |
+|---|---|
+| **McAdams' life-story / narrative identity** (McAdams, 1985, 2001) | `user_voice.identity_spine.redemption_motifs` and `contamination_motifs` (1–3 / 0–2 short noun phrases). Each motif must cite a hidden_persona label or persona item — generic "growth" / "comeback" without citation is forbidden. |
+| **Goffman's dramaturgical theory & back-stage / front-stage** (Goffman, 1959) | `goffman:back_stage` motivation frame in Step 22 (private consumption away from audience); informs `compensatory_need` cluster's `privacy_ratio > 0.7` floor. |
+| **Higgins' Self-Discrepancy Theory** (Higgins, 1987) | `higgins:ideal_self` (aspirational pursuit) and `higgins:ought_self` (felt-obligation, anxiety) motivation frames. |
+| **Tajfel & Turner's Social Identity Theory** (Tajfel, 1979; Tajfel & Turner, 1979) | `tajfel:social_identity` frame; `identity_anchor` cluster basis (Identity Signaling Theory branch). |
+| **Stryker's Identity Theory / role identities** (Stryker, 1980) | `stryker:role_identity` frame (parent, professional, etc.). |
+| **Self-presentation research** (Goffman, 1959; Leary & Kowalski, 1990) | `intimate_interest` cluster basis. |
+
+### Need & motivation theories
+
+| Framework | Pipeline use |
+|---|---|
+| **Self-Determination Theory (SDT)** (Deci & Ryan, 1985, 2000) | Three frames in Step 22: `self_determination_theory:autonomy` (agency / self-direction), `:competence` (mastery), `:relatedness` (connection / belonging). Also basis of `intellectual_curiosity` cluster type. |
+| **Uses and Gratifications Theory** (Katz, Blumler & Gurevitch, 1973) | `uses_and_gratifications:identity` (public identity construction), `:integration` (group / community integration). Multiple cluster bases (`emotional_pattern` — affective; `private_hobby` — escapist; `covert_concern` — reassurance-seeking). |
+| **Compensatory Internet Use Theory** (Kardefelt-Winther, 2014) | `kardefelt_winther:compensatory_use` frame (closing an unmet real-world need privately); `compensatory_need` cluster's `privacy_ratio > 0.7` invariant; also basis of `medical_aesthetic_concern` (active-management branch). |
+
+### Affect, coping, and attention
+
+| Framework | Pipeline use |
+|---|---|
+| **Lazarus & Folkman's coping theory** (Lazarus & Folkman, 1984) | `lazarus_folkman:emotion_focused_coping` frame (rumination, reassurance-seeking). |
+| **Csikszentmihalyi's flow theory** (Csikszentmihalyi, 1990) | `csikszentmihalyi:flow` frame (deep absorption, skill-challenge match). |
+| **Berlyne's curiosity theory** (Berlyne, 1960) | Two-frame distinction: `berlyne:specific_curiosity` (sustained inquiry into a specific topic, deep-latent eligible) vs. `berlyne:diversive_curiosity` (one-off novelty click, surface-only). |
+| **Schwarz's mood-as-information** (Schwarz, 1990) | `schwarz:mood_as_information` frame (momentary mood drove the click; doesn't generalize). |
+| **Barthes' punctum** (Barthes, *Camera Lucida*, 1980) | `barthes:punctum` frame — engagement driven by a SPECIFIC arresting detail (object, texture, dynamic), not the broader topic. Used to discriminate genuine `intimate_interest` from generic suggestive-content engagement. |
+
+### Media engagement & parasocial
+
+| Framework | Pipeline use |
+|---|---|
+| **Horton & Wohl's parasocial relationships** (Horton & Wohl, 1956) | `horton_wohl:parasocial` frame; `parasocial_attachment` cluster type (≥ 15 rows with one named figure; CONFIRM requires proper-noun figure name). |
+| **Bell's audience design** (Bell, 1984) | `app_personas[*].audience_design_note` is a 1-sentence statement in Bell's terms — addressee / auditor / overhearer. DM threads apply audience design at *message* granularity (`extension_b/dm_threads.py` selects register per-recipient). |
+
+### Social influence & decision heuristics
+
+| Framework | Pipeline use |
+|---|---|
+| **Tversky & Kahneman's heuristics & biases** (Tversky & Kahneman, 1974) | `tversky_kahneman:salience_availability` frame (recent news cycle / trending topic; engagement reflects what was AVAILABLE, not what's wanted). |
+| **Bikhchandani et al.'s informational cascades** (Bikhchandani, Hirshleifer & Welch, 1992) | `bikhchandani:informational_cascade` frame (peer-driven engagement). |
+| **Skinner's variable-ratio reinforcement** (Skinner, 1953) | `variable_ratio_reinforcement` frame (habituated scrolling / micro-rewards; the engagement IS the act of scrolling, not a preference). |
+
+### Health behavior
+
+| Framework | Pipeline use |
+|---|---|
+| **Health Belief Model** (Rosenstock, 1974; Becker, 1974) | `health_belief_model:active_use` frame; `medical_aesthetic_concern` cluster's "active use" specificity gate (must imply taking / applying / on a regimen — pure curiosity disqualifies). |
+
+### Linguistic & discourse frameworks (voice schema)
+
+| Framework | Pipeline use |
+|---|---|
+| **LIWC (Linguistic Inquiry and Word Count)** (Pennebaker, Boyd, Jordan & Blackburn, 2015) | `user_voice.identity_spine.liwc_anchors` — qualitative anchors on `analytic`, `clout`, `authentic`, `emotional_tone` (low / medium / high) per user. Drives chatbot / DM / @ai voice realization. |
+| **Martin & White's APPRAISAL framework** (Martin & White, 2005; systemic-functional linguistics) | `user_voice.idiolect.appraisal_fingerprint` — `attitude_dominant` (affect / judgment / appreciation) and `engagement_style` (`monoglossic` / `heteroglossic_acknowledge` / `heteroglossic_distance`). |
+| **Constructional templates** (Construction Grammar; Goldberg, 1995) | `user_voice.idiolect.constructional_templates` — abstract slot patterns like `[hedge] just [verb] ___`, NOT complete catchphrases. Survives paraphrase. |
+| **Speech-genre theory** (Bakhtin, 1986) | `user_voice.repertoire.speech_genre_fluency` — the inventory of speech genres a user can deploy; per-app `active_speech_genres` is a strict subset. |
+
+### Methodological framing
+
+The whole pipeline rests on two cross-cutting methodological commitments:
+
+- **Parsimony bias** (William of Ockham, c. 1320; reaffirmed in the motivation-audit prompt): when a hashtag-overlap link could plausibly reflect either deep latent motivation or surface algorithmic exposure, the audit's default is `SURFACE_ENGAGEMENT`, not the closest cluster. Forcing every engagement into a deep frame fabricates psychological depth.
+- **Closed-enum frame discipline**: every motivation frame the LLM may invoke is drawn from a fixed enum (`MOTIVATION_AUDIT_DEEP_FRAMES` ∪ `MOTIVATION_AUDIT_SURFACE_FRAMES`) — the LLM cannot invent new frames mid-judgment. This is how we keep "grounded in named theory" from drifting into vibes.
+
 ## What's in this release (R1, R5–R10)
 
 Recent additions on top of the base pipeline, roughly in dependency order:
@@ -350,7 +429,51 @@ When the gate fires, the gold-gen prompt instructs the LLM to naturally choose i
 
 ### Per-Preference Labels (backward-linked)
 
-Each cluster records the distinct `source_object_id`s that placed a row inside it during validation (stored as `evidence_oids`). In Step 16, each preference carries `hidden_persona_labels` = **at most 1** cluster label — the cluster (if any) whose `evidence_oids` contains the preference's source row. When a single row belongs to multiple clusters, the one with the largest `evidence_rows` wins. Preferences whose source row didn't contribute to any cluster stay unlabeled — traceability is required, not forced coverage.
+Each cluster records the distinct `source_object_id`s that placed a row inside it during validation (stored as `evidence_oids`). In Step 21 (`link_preferences_to_hidden_personas`), each preference receives a **provisional** `hidden_persona_labels` of at most 1 cluster — the cluster (if any) whose `evidence_oids` contains the preference's source row, tie-broken by largest `evidence_rows`. Preferences whose source row didn't contribute to any cluster stay unlabeled — traceability is required, not forced coverage. The provisional label is tagged with `link_provenance: "hashtag_overlap_v1"` so post-audit links are distinguishable.
+
+### Per-Preference Motivation Audit (Step 22)
+
+Hashtag overlap is structurally clean but psychologically blind: a preference can inherit a `compensatory_need` link purely because its source row's hashtag co-occurred with the cluster's evidence, when the actual psychological signature would fit `identity_anchor` or no cluster at all. Step 22 (`audit_hidden_persona_motivations`) re-judges every (preference, cluster) link with a flagship-tier LLM call against named motivation frames. Cluster creation already enforces specificity gates (parasocial→named figure, intimate→named object, medical→active use, covert→named worry); Step 22 propagates those gates to every link.
+
+**Guiding principle — parsimony.** Many social-media engagements are algorithmically surfaced, salience-driven, cascade-driven, mood-driven, or one-off curious. The audit's default stance is *no hidden persona unless evidence is clear*: ambiguous signal lands on `SURFACE_ENGAGEMENT`, not on the closest cluster. Frames covered:
+
+| Layer | Frames |
+|---|---|
+| **Deep latent** (eligible for `CONFIRMED` / `REASSIGN`) | SDT (autonomy / competence / relatedness), Goffman back-stage, Uses & Gratifications (identity / integration), Kardefelt-Winther compensatory use, Higgins ideal-/ought-self, Horton-Wohl parasocial, Lazarus-Folkman emotion-focused coping, Csikszentmihalyi flow, Berlyne specific curiosity, Barthes punctum, Tajfel social identity, Stryker role identity, Health Belief Model active-use |
+| **Surface / situational** (eligible for `SURFACE_ENGAGEMENT` / `SHORT_TERM_EPISODIC`) | Tversky-Kahneman salience/availability, Bikhchandani informational cascade, Berlyne diversive curiosity, Schwarz mood-as-information, variable-ratio reinforcement, algorithmic surfacing, short-term episodic event |
+
+**Algorithm** (one LLM call per cluster × ≤ `MOTIVATION_AUDIT_BATCH_SIZE` (8) preferences, ≈ 150 calls/user):
+
+1. Per cluster (excluding `sensitive_life_event`, which is synthetic), batch its currently-linked preferences. Each batch carries the cluster card, a closed menu of the user's *other* clusters (reassignment-only, never invent), and 1 unlabeled decoy drawn from a different cluster of the same user.
+2. LLM emits per-preference `decision ∈ {CONFIRMED, REASSIGN:<other>, SURFACE_ENGAGEMENT, SHORT_TERM_EPISODIC, REMOVE, NO_OTHER_CLUSTER_FITS, FLAG}`, `motivation_depth ∈ {shallow_situational, medium_episodic, deep_latent}`, `fit_confidence`, `frame_invoked` (closed enum), and a 1–2 sentence rationale.
+3. **Decoy calibration**: if decoy-CONFIRM rate > `MOTIVATION_AUDIT_DECOY_BIAS_THRESHOLD` (0.20) in a batch, the batch's confirmation bias is failed → the real preferences in that batch are FLAGed for re-run.
+4. **Deterministic post-hoc validators** (cannot drift):
+   - `parasocial_attachment` CONFIRM → preference text or rationale must contain a proper-noun figure name; else downgrade.
+   - `intimate_interest` CONFIRM → must name specific object/aesthetic/dynamic; generic-token blocklist enforced.
+   - `medical_aesthetic_concern` CONFIRM → preference must imply active use; curiosity-only downgrades to `SHORT_TERM_EPISODIC`.
+   - `covert_concern` CONFIRM → must name a specific worry.
+   - `compensatory_need` CONFIRM → cluster's `privacy_ratio > 0.7`; else `FLAG`.
+5. **Hard depth-vs-horizon rules**: a `time_horizon: "short_term"` preference cannot CONFIRM into a stable-trait cluster (`personality_trait`, `aspiration`, `identity_anchor`, `parasocial_attachment`, `private_hobby`); auto-downgrade to `SHORT_TERM_EPISODIC`. CONFIRMED requires `motivation_depth == "deep_latent"` AND `fit_confidence >= 0.6`.
+6. **Protection rules**: preferences carrying `update_history` (contradiction-survivors) or with `confidence_cross_referenced >= 5.0` (high-confidence) require `fit_confidence < 0.3` before REMOVE is honored, and never auto-downgrade to SURFACE_ENGAGEMENT (they FLAG instead).
+
+**Idempotence:** `temperature=0`, sorted inputs, `model_version` pinned per audit record. Two runs on identical input produce identical decisions.
+
+**Mutation policy:** `hidden_persona_labels` is updated in place; every preference also gains a sibling `motivation_audit` block preserving original_label, decision, motivation_depth, fit_confidence, frame_invoked, rationale, model_version, validator_passed, downgrade_reasons.
+
+### Per-Cluster Audit Rollup (Step 23)
+
+`aggregate_motivation_audit_to_summary` computes per cluster: `n_audited`, `n_confirmed`, `n_reassigned`, `n_surface_engagement`, `n_short_term_episodic`, `n_removed`, `n_flagged`, `n_no_other_cluster_fits`, `confirm_rate`, `deep_latent_rate`, `surface_share`. Tiered cluster status (advisory only — never mutates the cluster):
+
+| Range | Status |
+|---|---|
+| `confirm_rate >= 0.7 AND deep_latent_rate >= 0.6` | `validated` |
+| `0.5 <= confirm_rate < 0.7` | `mixed_evidence` |
+| `0.3 <= confirm_rate < 0.5` OR `surface_share >= 0.5` | `contested` (human review) |
+| `confirm_rate < 0.3` | `likely_invalid` (human review) |
+
+If user-mean `surface_share >= MOTIVATION_AUDIT_USER_OVER_ATTRIBUTION_RATE` (0.40), emit a profile-level `motivation_audit.over_attribution_warning`. Synthetic `sensitive_life_event` clusters are skipped (`audit_status: "synthetic_skipped"`); planted evidence rows skipped likewise.
+
+The rollup is written to each cluster's entry in `hidden_personas[*].motivation_audit` in `profile.json`.
 
 ### Output
 
@@ -656,6 +779,8 @@ Each preference gets a stereotype mark based on demographics **only** (gender, s
 
 Three marks: `neutral` (no association, ~80%+), `stereotypical` (aligns with recognized stereotype), `anti-stereotypical` (contradicts). Conservative: when in doubt, neutral.
 
+**Sequencing note (R-current):** stereotype annotation now runs AFTER motivation audit (Steps 21 → 22 → 23 → 24), so demographic stereotype detection operates on audited links — not on links that the motivation audit would have removed or reassigned. Pre-audit links would force stereotype scoring on noise.
+
 ---
 
 ## Step 22 — Enrich Substrate (v0, e6 grounding)
@@ -675,17 +800,17 @@ A small, targeted enrichment pass that runs AFTER all content is generated and B
 
 **Cost:** No LLM calls (fixed phrasing pool). ~O(ms) per user.
 
-## Step 23 — Save (no test-split label)
+## Step 26 — Save (no test-split label)
 
 As of R8, **data-gen no longer produces a train/test split.** The eval harness (see EVAL.md) picks test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — so pre-flagging a held-out subset in the emitted data was redundant and limiting. Both `split` and `over_personalization_irrelevant` have been dropped from per-preference output; `build_test_split` has been removed from the pipeline.
 
 Eval tasks now select test moments by task-specific criteria (e.g., @ai directive timestamps for E2, day tertiles for E3/E4, short-term canonicals for E5). The inferrability gate that used to live in data-gen is available to the eval harness at benchmark-build time if any task needs it — but it's no longer a pipeline step.
 
-**Step 23 (formerly Step 22 before v0):**
+**Step 26 (formerly Step 23 / 22):**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
 - `profile.json` now also carries `mobility_class` and `geo_trip_arcs` (see Step 6 / Step 15).
 - `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
-- `hidden_persona_labels` are derived by **backward lookup** (row → cluster via `evidence_oids`), so causality is guaranteed by construction: a preference is labeled iff its own source row is part of the cluster's evidence. No separate availability gate needed.
+- `hidden_persona_labels` are produced by Step 21 (backward lookup row → cluster via `evidence_oids`, causality guaranteed by construction), then re-judged by Step 22 (motivation audit) which may downgrade to `SURFACE_ENGAGEMENT` / `SHORT_TERM_EPISODIC` / `REMOVE` or `REASSIGN` to a different existing cluster. The audit-final value lives on `hidden_persona_labels`; the original is preserved in the per-preference `motivation_audit.original_label`. Each preference also carries `link_provenance: "hashtag_overlap_v1"` so post-audit links remain distinguishable from raw hashtag overlap. Cluster-level rollup with `confirm_rate`, `deep_latent_rate`, `surface_share`, `cluster_status` lives on each entry in `profile.json::hidden_personas[*].motivation_audit`. Profile-level `over_attribution_warning` lands at `profile.json::motivation_audit` when the user's mean cluster surface_share is high.
 
 ---
 
