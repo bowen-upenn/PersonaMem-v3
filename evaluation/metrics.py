@@ -405,6 +405,191 @@ def preference_repetition_rate(
     }
 
 
+# --- C1c: same-preference repetition cluster diversity ---
+#
+# Score the diversification "tail" of a same-preference cluster, where
+# the first ``n_allowed_repetitions + 1`` responses may freely overlap
+# (no penalty) and subsequent responses must (a) use no shared hashtags
+# pairwise within the tail or with the head, (b) reuse <30% of the head
+# response set's hashtag union, (c) maintain pairwise text Jaccard
+# ≤ 0.5 across the tail and against the head, (d) stay persona-aligned.
+# Persona alignment is graded externally (LLM judge); this metric just
+# computes the deterministic checks.
+
+_C1C_TEXT_JACCARD_MAX: float = 0.5
+_C1C_HEAD_HASHTAG_REUSE_MAX: float = 0.30
+_C1C_PAIRWISE_HASHTAG_OVERLAP_MAX: int = 0  # zero shared hashtags
+
+
+def _c1c_normalize_tags(tags) -> set[str]:
+    """Lowercase + strip leading '#' for set ops on agent-emitted hashtags."""
+    if not tags:
+        return set()
+    out = set()
+    for t in tags:
+        if not isinstance(t, str):
+            continue
+        norm = t.strip().lstrip("#").strip().lower()
+        if norm:
+            out.add(norm)
+    return out
+
+
+def within_cluster_diversity(
+    responses: list[dict],
+    n_allowed_repetitions: int = 2,
+    persona_alignment_passes: list[bool] | None = None,
+) -> dict:
+    """Grade a same-preference repetition cluster's tail responses for
+    diversification.
+
+    Args:
+        responses: list of agent responses, each shape
+            ``{"title": ..., "caption": ..., "hashtags": [...]}``.
+            Order matches dispatch order.
+        n_allowed_repetitions: how many "head" responses are tolerated
+            as fully-repeating (no diversification pressure). Tail =
+            responses[n_allowed_repetitions+1:].
+        persona_alignment_passes: optional aligned-with-tail list
+            (each entry True iff that tail response's hashtags pass
+            the persona-alignment LLM judge). When None, persona-
+            alignment dimension is reported as ``unaudited``.
+
+    Returns dict with:
+        - n_total / n_head / n_tail: shape stats.
+        - tail_pairwise_text_jaccard_mean: mean Jaccard on (title +
+          caption) tokens across all tail × tail pairs. Lower = more
+          diverse. Pass ≤ 0.5.
+        - tail_vs_head_text_jaccard_max: max Jaccard between any tail
+          response and any head response. Pass ≤ 0.5.
+        - tail_pairwise_hashtag_overlap_max: max pairwise hashtag
+          intersection size across tail × tail pairs. Pass = 0.
+        - tail_head_hashtag_reuse_rate_max: per-tail-response, fraction
+          of its hashtags that appear in the head's hashtag union.
+          We report the max across tail responses. Pass ≤ 0.30.
+        - persona_alignment_pass_rate: fraction of tail responses that
+          passed the LLM persona-alignment judge.
+        - tail_passed: bool — true iff every tail response satisfies
+          all four deterministic checks AND the persona-alignment
+          judge passed (when provided).
+        - n_tail_violating: count of tail responses flagged on at
+          least one check.
+    """
+    n_total = len(responses)
+    head_n = min(n_allowed_repetitions + 1, n_total)
+    head = responses[:head_n]
+    tail = responses[head_n:]
+    n_tail = len(tail)
+    if n_tail == 0:
+        return {
+            "n_total": n_total,
+            "n_head": head_n,
+            "n_tail": 0,
+            "tail_pairwise_text_jaccard_mean": 0.0,
+            "tail_vs_head_text_jaccard_max": 0.0,
+            "tail_pairwise_hashtag_overlap_max": 0,
+            "tail_head_hashtag_reuse_rate_max": 0.0,
+            "persona_alignment_pass_rate": 1.0,
+            "tail_passed": True,
+            "n_tail_violating": 0,
+            "violations_by_check": {},
+            "skip_reason": "no_tail_responses",
+        }
+
+    def _resp_text(r: dict) -> str:
+        return f"{r.get('title','')} {r.get('caption','')}".strip()
+
+    head_hashtags_union = set()
+    for r in head:
+        head_hashtags_union |= _c1c_normalize_tags(r.get("hashtags") or [])
+
+    # Pairwise text Jaccard within tail.
+    tail_jaccards: list[float] = []
+    for i in range(len(tail)):
+        for j in range(i + 1, len(tail)):
+            tail_jaccards.append(jaccard(_resp_text(tail[i]), _resp_text(tail[j])))
+    tail_pairwise_text_jaccard_mean = (sum(tail_jaccards) / len(tail_jaccards)
+                                        if tail_jaccards else 0.0)
+
+    # Max text Jaccard tail vs. head.
+    tail_vs_head_jaccards: list[float] = []
+    for r_tail in tail:
+        for r_head in head:
+            tail_vs_head_jaccards.append(
+                jaccard(_resp_text(r_tail), _resp_text(r_head))
+            )
+    tail_vs_head_text_jaccard_max = max(tail_vs_head_jaccards, default=0.0)
+
+    # Pairwise hashtag overlap within tail (0 is the bar).
+    tail_pairwise_overlap_max = 0
+    for i in range(len(tail)):
+        ti = _c1c_normalize_tags(tail[i].get("hashtags") or [])
+        for j in range(i + 1, len(tail)):
+            tj = _c1c_normalize_tags(tail[j].get("hashtags") or [])
+            tail_pairwise_overlap_max = max(tail_pairwise_overlap_max, len(ti & tj))
+
+    # Per-tail-response, what fraction of its hashtags are reused from head.
+    head_reuse_rates: list[float] = []
+    for r in tail:
+        tags = _c1c_normalize_tags(r.get("hashtags") or [])
+        if not tags:
+            head_reuse_rates.append(0.0)
+            continue
+        reused = tags & head_hashtags_union
+        head_reuse_rates.append(len(reused) / len(tags))
+    tail_head_hashtag_reuse_rate_max = max(head_reuse_rates, default=0.0)
+
+    # Persona alignment (LLM-graded externally; metric just reports).
+    if persona_alignment_passes is None:
+        persona_alignment_pass_rate = None
+    elif not persona_alignment_passes:
+        persona_alignment_pass_rate = 1.0
+    else:
+        passes = persona_alignment_passes[:n_tail]
+        persona_alignment_pass_rate = sum(1 for p in passes if p) / max(1, len(passes))
+
+    # Per-check violation counts (tail-level).
+    violations: dict[str, int] = {}
+    if tail_pairwise_text_jaccard_mean > _C1C_TEXT_JACCARD_MAX:
+        violations["tail_pairwise_text_jaccard_too_high"] = 1
+    if tail_vs_head_text_jaccard_max > _C1C_TEXT_JACCARD_MAX:
+        violations["tail_vs_head_text_jaccard_too_high"] = 1
+    if tail_pairwise_overlap_max > _C1C_PAIRWISE_HASHTAG_OVERLAP_MAX:
+        violations["tail_pairwise_hashtag_overlap"] = tail_pairwise_overlap_max
+    if tail_head_hashtag_reuse_rate_max > _C1C_HEAD_HASHTAG_REUSE_MAX:
+        violations["tail_head_hashtag_reuse_too_high"] = 1
+    persona_failed = (
+        persona_alignment_pass_rate is not None
+        and persona_alignment_pass_rate < 1.0
+    )
+    if persona_failed:
+        violations["persona_alignment_failed"] = 1
+
+    tail_passed = not violations
+    n_tail_violating = sum(1 for r in tail if any([
+        # Per-response-level signal: which tail responses contributed
+        # to a violation. Approximation — for hashtag-reuse we already
+        # iterated; for jaccard we mark all tail responses if the
+        # mean breached.
+        head_reuse_rates[i] > _C1C_HEAD_HASHTAG_REUSE_MAX
+        for i in [tail.index(r)] if r in tail
+    ]))
+    return {
+        "n_total": n_total,
+        "n_head": head_n,
+        "n_tail": n_tail,
+        "tail_pairwise_text_jaccard_mean": round(tail_pairwise_text_jaccard_mean, 3),
+        "tail_vs_head_text_jaccard_max": round(tail_vs_head_text_jaccard_max, 3),
+        "tail_pairwise_hashtag_overlap_max": tail_pairwise_overlap_max,
+        "tail_head_hashtag_reuse_rate_max": round(tail_head_hashtag_reuse_rate_max, 3),
+        "persona_alignment_pass_rate": (None if persona_alignment_pass_rate is None
+                                         else round(persona_alignment_pass_rate, 3)),
+        "tail_passed": tail_passed,
+        "n_tail_violating": n_tail_violating,
+        "violations_by_check": violations,
+    }
+
+
 # --- C4: do-not-personalize button regeneration ---
 
 _REMOVAL_RELATIVE_THRESHOLD: float = 0.5

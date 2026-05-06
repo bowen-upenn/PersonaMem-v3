@@ -641,6 +641,70 @@ def _gt_repetition_fatigue_sequences(inst: dict) -> dict:
     }
 
 
+def _gt_repetition_fatigue_same_preference(inst: dict) -> dict:
+    """Same-preference repetition cluster: N successive queries on ONE
+    preference (or hashtag-similar group) inside a 3-hour window.
+    The first ``n_allowed_repetitions + 1`` responses may freely lean
+    on the cluster; subsequent responses must use NEW persona-aligned
+    hashtags (no overlap with prior responses, no off-persona
+    distractors)."""
+    target_pref = inst.get("target_pref", "")
+    primary_category = inst.get("primary_category", "")
+    n_queries = int(inst.get("n_queries") or 0)
+    n_allowed = int(inst.get("n_allowed_repetitions") or 2)
+    window_hours = int(inst.get("window_seconds") or 0) / 3600
+    cluster_hashtags = (inst.get("cluster_hashtags") or [])[:8]
+    distractors = (inst.get("off_persona_distractor_hashtags") or [])[:6]
+    persona_hint = inst.get("persona_hint") or {}
+    top_cats = (persona_hint.get("top_categories") or [])[:4]
+    top_tags = (persona_hint.get("top_hashtags") or [])[:8]
+
+    head_window = n_allowed + 1   # 1-indexed: queries 1..head_window may repeat
+    tail_start = head_window + 1  # query #tail_start onward must diversify
+
+    return {
+        "example_response": (
+            f"Queries 1..{head_window} (the {n_allowed}-repetition tolerance) may "
+            f"freely lean on '{target_pref}'. From query #{tail_start} onward, "
+            f"use NEW persona-aligned hashtags — no overlap with any prior "
+            f"response in the cluster, < 30% reuse of the head's hashtag "
+            f"pool, < 0.5 token Jaccard with prior titles+captions, and "
+            f"hashtags must still fit this user (not the off-persona "
+            f"distractor pool)."
+        ),
+        "groundtruth_preference": (
+            f"Target preference: {target_pref}\n"
+            + (f"Primary category: {primary_category}\n" if primary_category else "")
+            + f"Cluster window: {window_hours:.1f}h, {n_queries} successive queries\n"
+            + f"Tolerance: queries 1..{head_window} may repeat freely; "
+            + f"queries {tail_start}..{n_queries} must diversify\n"
+            + (f"Cluster hashtags (head zone): {', '.join('#' + h for h in cluster_hashtags)}\n"
+               if cluster_hashtags else "")
+            + (f"Top persona categories: {', '.join(top_cats)}\n" if top_cats else "")
+            + (f"Top persona hashtags (NEW persona-aligned tags fine too): "
+               f"{', '.join('#' + h for h in top_tags)}\n" if top_tags else "")
+            + (f"Off-persona distractors (do NOT reach for these): "
+               f"{', '.join('#' + h for h in distractors)}" if distractors else "")
+        ),
+        "extra_meta": {
+            "target_pref": target_pref,
+            "n_queries": n_queries,
+            "n_allowed_repetitions": n_allowed,
+            "window_hours": round(window_hours, 1),
+            "head_window": head_window,
+            "tail_start": tail_start,
+        },
+        "rubric_tags": [
+            f"(+) Queries 1..{head_window} are allowed to repeat the same preference / cluster hashtags.",
+            f"(+) From query #{tail_start} on: pick NEW hashtags persona-aligned with the user (you may invent tags beyond the user's existing set).",
+            f"(-) Don't reuse a hashtag that appeared in any prior response within the cluster.",
+            f"(-) Don't recycle > 30% of head-zone hashtags into a tail response.",
+            f"(-) Don't reach for the off-persona distractor pool.",
+            f"(-) Don't produce near-duplicate titles/captions across the cluster (token Jaccard ≤ 0.5).",
+        ],
+    }
+
+
 def _gt_context_shift_scenarios(inst: dict) -> dict:
     forbidden = [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]]
     surfaced = _inferior_surfaced_pref(inst)
@@ -1191,6 +1255,7 @@ TEST_GT_EXTRACTORS = {
     "preference_removal_regen":            _gt_preference_removal_regen,
     "repetition_fatigue_pairs":            _gt_repetition_fatigue_pairs,
     "repetition_fatigue_sequences":        _gt_repetition_fatigue_sequences,
+    "repetition_fatigue_same_preference":  _gt_repetition_fatigue_same_preference,
     "over_personalization_context_shift":  _gt_context_shift_scenarios,
     "context_shift_scenarios":             _gt_context_shift_scenarios,  # legacy alias
     "daily_personalized_briefing":         _gt_daily_personalized_briefing,
@@ -1581,6 +1646,7 @@ def _load_test_samples(
                 or task_type in {
                     "preference_removal_regen", "active_mistake_prevention",
                     "repetition_fatigue_pairs", "repetition_fatigue_sequences",
+                    "repetition_fatigue_same_preference",
                     "agentic_vague_refind", "agentic_proactive_daily_catchup",
                     "agentic_trending_alert",
                 }

@@ -35,6 +35,7 @@ OVER_PERS_TASKS = {
     "over_personalization_sensitive_event",
     "repetition_fatigue_pairs",
     "repetition_fatigue_sequences",
+    "repetition_fatigue_same_preference",
 }
 RANKING_TASKS = {
     "personalized_recommendation",

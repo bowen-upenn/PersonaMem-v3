@@ -1824,6 +1824,354 @@ def build_c1b_sequence(
     return out
 
 
+# --- Task C1c: same-preference repetition cluster --------------------------
+# Tests whether the agent backs off / diversifies when fired N successive
+# proactive-recommendation prompts on ONE preference (or a similar-preference
+# cluster: ≥1 hashtag overlap) inside a 3-hour window. Each successive
+# call shows the agent its own prior responses; the score is whether the
+# agent produces meaningfully different titles + DIFFERENT hashtag sets
+# across the cluster while staying persona-aligned.
+
+# Window in which the cluster's queries fire. 3 hours is empirically
+# tight enough to feel "spammy" if the agent repeats but loose enough
+# that real users have multiple natural anchor moments (lunch / commute
+# / wind-down).
+_C1C_WINDOW_SECONDS = 3 * 3600
+
+# Number of successive queries per cluster. 5 = 1 original + 2 allowed
+# repetitions + 2 must-diversify queries. Bumped from the originally-
+# proposed 4 because "the first two repetitions are allowed" leaves
+# only 1 must-diversify slot at N=4 — which collapses the diversification
+# signal into a single sample.
+_C1C_QUERIES_PER_CLUSTER = 5
+
+# How many opening responses are tolerated as fully-repeating. The
+# 0-indexed range [0, N_ALLOWED_REPETITIONS] is the "head" zone — the
+# agent may surface the same target preference / similar hashtags
+# without penalty. Past this index, responses must (a) text-Jaccard
+# ≤ 0.5 with every prior response, (b) reuse < 30% of the head's
+# hashtag set, (c) keep zero hashtag overlap among themselves, and
+# (d) stay persona-aligned (LLM-judged) — i.e. NEW hashtags that
+# fit the user's profile, not generic substitutes.
+_C1C_N_ALLOWED_REPETITIONS = 2
+
+# Min cluster size we'll emit. If we can't anchor on ≥`_C1C_QUERIES_PER_CLUSTER`
+# real engagement moments inside the window for any of the user's
+# top preferences, the cluster is dropped (no instance).
+_C1C_MIN_ANCHORS = _C1C_QUERIES_PER_CLUSTER
+
+
+def _c1c_pref_signatures(prefs: list[dict]) -> list[dict]:
+    """Group a user's preferences into similarity clusters keyed by
+    overlapping hashtags. Two preferences belong to the same cluster
+    iff they share ≥1 hashtag (case-insensitive, stripped of #).
+
+    Returns list of cluster dicts with `members: [persona_item, ...]`,
+    `hashtags: set(...)`, `categories: set(...)` — sorted by total
+    `confidence_cross_referenced` desc so the strongest cluster comes
+    first.
+    """
+    if not prefs:
+        return []
+    nodes: list[dict] = []
+    for p in prefs:
+        if not isinstance(p, dict):
+            continue
+        tags = {h.lower().lstrip("#").strip()
+                for h in (p.get("source_hashtags") or [])
+                if isinstance(h, str) and h.strip()}
+        if not tags:
+            continue
+        nodes.append({
+            "persona_item": p.get("persona_item", ""),
+            "category": p.get("category", ""),
+            "hashtags": tags,
+            "confidence": float(p.get("confidence_cross_referenced") or 0.0),
+        })
+    # Union-find by shared-hashtag adjacency.
+    parent = list(range(len(nodes)))
+
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[rb] = ra
+
+    for i in range(len(nodes)):
+        for j in range(i + 1, len(nodes)):
+            if nodes[i]["hashtags"] & nodes[j]["hashtags"]:
+                union(i, j)
+    groups: dict[int, list[int]] = {}
+    for i in range(len(nodes)):
+        groups.setdefault(find(i), []).append(i)
+    clusters: list[dict] = []
+    for member_ixs in groups.values():
+        members = [nodes[i] for i in member_ixs]
+        all_tags: set[str] = set()
+        all_cats: set[str] = set()
+        total_conf = 0.0
+        for m in members:
+            all_tags |= m["hashtags"]
+            if m["category"]:
+                all_cats.add(m["category"])
+            total_conf += m["confidence"]
+        clusters.append({
+            "persona_items": [m["persona_item"] for m in members],
+            "categories": sorted(all_cats),
+            "hashtags": sorted(all_tags),
+            "total_confidence": round(total_conf, 1),
+            "n_members": len(members),
+        })
+    clusters.sort(key=lambda c: -c["total_confidence"])
+    return clusters
+
+
+def _c1c_anchor_timestamps(
+    bq: BackendQuery, user_id: str, cluster_hashtags: set[str], t_floor: int,
+    n_anchors: int, window_seconds: int,
+) -> list[int]:
+    """Find ``n_anchors`` engagement timestamps inside a single
+    ``window_seconds``-long window where the user actually engaged
+    with the cluster's hashtags. Returns sorted ts list, or [] when
+    no qualifying window exists.
+
+    Strategy: collect every event whose hashtags overlap the cluster,
+    sort by ts, and slide a window over them looking for the densest
+    cluster of ≥n_anchors events. Pick the LATEST qualifying window
+    (more recent → more relevant test moment) and return its first
+    n_anchors timestamps.
+    """
+    if not cluster_hashtags:
+        return []
+    base = Path(bq.base) / user_id
+    candidates: list[int] = []
+    cluster_low = {h.lower().lstrip("#") for h in cluster_hashtags}
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts <= 0 or ts >= t_floor:
+                continue
+            tags = {h.lower().lstrip("#") for h in (e.get("source_hashtags") or [])}
+            if tags & cluster_low:
+                candidates.append(ts)
+    if len(candidates) < n_anchors:
+        return []
+    candidates.sort()
+    # Slide a `window_seconds` window from the END (most recent) backwards.
+    best: list[int] = []
+    for i in range(len(candidates) - 1, -1, -1):
+        # Window starts at candidates[i] going backward.
+        lo = candidates[i] - window_seconds
+        in_window = [t for t in candidates[: i + 1] if t >= lo]
+        if len(in_window) >= n_anchors:
+            best = in_window[-n_anchors:]
+            break
+    if not best:
+        return []
+    return sorted(best)
+
+
+def build_c1c_same_preference_clusters(
+    bq: BackendQuery,
+    user_id: str,
+    test_items: list[TestItem],
+    n_clusters: int = 3,
+    window_seconds: int = _C1C_WINDOW_SECONDS,
+    queries_per_cluster: int = _C1C_QUERIES_PER_CLUSTER,
+    min_anchors: int = _C1C_MIN_ANCHORS,
+    n_allowed_repetitions: int = _C1C_N_ALLOWED_REPETITIONS,
+) -> list[dict]:
+    """Build same-preference repetition clusters: N successive queries on
+    ONE preference (or a hashtag-overlap-similar group) inside a tight
+    time window, scoring whether the agent diversifies across the
+    cluster after the allowed-repetition tolerance.
+
+    Per cluster:
+      - target_pref: the strongest persona_item in the similarity group.
+      - cluster_hashtags: union of all member hashtags. The first
+        `n_allowed_repetitions + 1` responses may freely use these;
+        the "tail" responses must reuse < 30% of them and must not
+        share any hashtags pairwise within the tail.
+      - persona_hint: top-N user categories + top-K user hashtags
+        embedded in the prompt so the agent can reach for persona-
+        aligned NEW hashtags rather than recycling. Hashtags can be
+        invented as long as they fit the persona (LLM-judged at
+        score time).
+      - off_persona_distractor_hashtags: a small pool of hashtags
+        deliberately NOT aligned with this user — the prompt shows
+        them as "filler / distractor" choices the agent should NOT
+        reach for. Tests whether the agent is using its persona
+        knowledge for diversification, not just any random tag.
+      - anchor_timestamps: N real engagement moments inside the window.
+      - queries: per-anchor `(t, user_query)` to dispatch sequentially.
+      - n_allowed_repetitions: head zone size — the eval scorer only
+        grades responses[n_allowed_repetitions+1:] for diversification.
+
+    Returns up to `n_clusters` instances. Skips users whose preference
+    structure can't support ≥`min_anchors` real engagement moments
+    inside the window for any cluster.
+    """
+    if not test_items:
+        return []
+    t_anchor = max(t.source_timestamp for t in test_items)
+
+    # Pull the user's preferences (use profile.json's flat list as a
+    # fallback when test_items don't carry rich pref structure).
+    base = Path(bq.base) / user_id
+    profile_path = base / "profile.json"
+    profile: dict = {}
+    if profile_path.exists():
+        try:
+            profile = json.loads(profile_path.read_text())
+        except Exception:
+            profile = {}
+    canonical_prefs = profile.get("preferences") or []
+    # Normalize: profile.preferences is a flat list of strings under
+    # the new schema. Fall back to scanning canonicals from app JSONs
+    # (with hashtag context) when profile has the legacy shape.
+    rich_prefs: list[dict] = []
+    seen_pi: set[str] = set()
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts >= t_anchor:
+                continue
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                pi = pref.get("persona_item") or ""
+                if not pi or pi in seen_pi:
+                    continue
+                tags = pref.get("source_hashtags") or e.get("source_hashtags") or []
+                if not tags:
+                    continue
+                seen_pi.add(pi)
+                rich_prefs.append({
+                    "persona_item": pi,
+                    "category": pref.get("category", ""),
+                    "source_hashtags": list(tags),
+                    "confidence_cross_referenced": float(
+                        pref.get("confidence_cross_referenced") or 0.0
+                    ),
+                })
+
+    # Group by hashtag-overlap similarity.
+    clusters = _c1c_pref_signatures(rich_prefs)
+    if not clusters:
+        return []
+
+    # Build a persona hint block (top-K hashtags + top categories)
+    # surfaced to the agent in the prompt — gives concrete guidance
+    # for picking persona-aligned NEW hashtags on each repeat.
+    pref_tag_counts: dict[str, int] = {}
+    pref_cat_counts: dict[str, int] = {}
+    for p in rich_prefs:
+        for h in p["source_hashtags"]:
+            k = h.lower().lstrip("#").strip()
+            if k:
+                pref_tag_counts[k] = pref_tag_counts.get(k, 0) + 1
+        c = (p.get("category") or "").strip()
+        if c:
+            pref_cat_counts[c] = pref_cat_counts.get(c, 0) + 1
+    top_persona_hashtags = sorted(pref_tag_counts.items(), key=lambda kv: -kv[1])[:20]
+    top_persona_categories = sorted(pref_cat_counts.items(), key=lambda kv: -kv[1])[:6]
+    persona_hashtag_set = {h for h, _ in pref_tag_counts.items()}
+
+    # Off-persona distractor pool: a small set of generic-but-trendy
+    # hashtags the user is NOT engaged with. Surfaced in the prompt
+    # as "filler / distractor — do NOT reach for these on repeats"
+    # so the persona-alignment grader has a real foil to grade
+    # against. Drawn from a fixed catalog of hashtags-that-people-on-
+    # the-internet-use, minus anything that overlaps the user's
+    # persona space. Bounded at ~12 to keep the prompt compact.
+    _GENERIC_HASHTAG_CATALOG = (
+        "asmr", "studyspo", "cottagecore", "knitting", "sourdough",
+        "quietluxury", "scandinavianhome", "minimalism", "bookishlife",
+        "cottagegarden", "watercolor", "linenshirt", "foggyhike",
+        "toddlermom", "homebirth", "vanlife", "nomadlife",
+        "marathontraining", "hottubparty", "mahjong", "boardgames",
+        "antiquing", "thriftflip", "daddybloggers", "sourdoughstarter",
+    )
+    off_persona_distractors = [
+        h for h in _GENERIC_HASHTAG_CATALOG
+        if h.lower() not in persona_hashtag_set
+    ][:12]
+
+    out: list[dict] = []
+    for cluster in clusters:
+        if len(out) >= n_clusters:
+            break
+        anchor_ts = _c1c_anchor_timestamps(
+            bq, user_id, set(cluster["hashtags"]), t_anchor,
+            n_anchors=queries_per_cluster, window_seconds=window_seconds,
+        )
+        if len(anchor_ts) < min_anchors:
+            continue
+        target_pref = cluster["persona_items"][0] if cluster["persona_items"] else ""
+        primary_category = cluster["categories"][0] if cluster["categories"] else ""
+
+        # Per-query natural recommendation prompts. Each carries an
+        # idiomatic "show me something" framing — the agent decides
+        # what specific recommendation to make. The prompt at run
+        # time will surface the prior responses so any repetition is
+        # the agent's own choice.
+        queries = []
+        for i, ts in enumerate(anchor_ts):
+            queries.append({
+                "anchor_index": i,
+                "ts": ts,
+                "user_query": (
+                    f"Show me one new {primary_category or 'recommendation'} "
+                    f"item I'd be into right now."
+                    if primary_category else
+                    "Show me one new thing I'd be into right now."
+                ),
+            })
+
+        cluster_id = f"{user_id}_c1c_{anchor_ts[0]}"
+        out.append({
+            "cluster_id": cluster_id,
+            "instance_id": cluster_id,
+            "task_id": "repetition_fatigue_same_preference",
+            "task_type": "repetition_fatigue_same_preference",
+            "target_pref": target_pref,
+            "primary_category": primary_category,
+            "all_persona_items_in_cluster": cluster["persona_items"][:5],
+            "cluster_hashtags": cluster["hashtags"],
+            "off_persona_distractor_hashtags": off_persona_distractors,
+            "persona_hint": {
+                "top_categories": [c for c, _ in top_persona_categories],
+                "top_hashtags":   [h for h, _ in top_persona_hashtags],
+            },
+            "anchor_timestamps": anchor_ts,
+            "queries": queries,
+            "t_test": anchor_ts[-1],   # final anchor = last query moment
+            "window_seconds": window_seconds,
+            "n_queries": len(queries),
+            "n_allowed_repetitions": n_allowed_repetitions,
+        })
+    return out
+
+
 # --- Task C4: do-not-personalize button regeneration ----------------------
 
 def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
@@ -2285,10 +2633,11 @@ def build_benchmark(
         blind_check_limit=blind_check_limit,
     )
 
-    # Task C1a/C1b/C2/C3/C4.
+    # Task C1a/C1b/C1c/C2/C3/C4.
     t_probe = max(t.source_timestamp for t in test_items)
     c1a_pairs = build_c1a_pairs(bq, user_id, test_items)
     c1b_sequences = build_c1b_sequence(b_arms["chatbot_proactive_personalization"])
+    c1c_clusters = build_c1c_same_preference_clusters(bq, user_id, test_items)
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
@@ -2413,6 +2762,7 @@ def build_benchmark(
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
         "repetition_fatigue_pairs":               c1a_pairs,
         "repetition_fatigue_sequences":           c1b_sequences,
+        "repetition_fatigue_same_preference":     c1c_clusters,
         "over_personalization_context_shift":     c2_instances,
         "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,
