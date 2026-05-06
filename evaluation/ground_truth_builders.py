@@ -80,86 +80,59 @@ def _wrap_block(body_sections: list[str]) -> str:
             + "".join(body_sections))
 
 
-def _format_voice_block(profile: dict, target_app: str | None) -> str:
-    """Render user_voice + app_personas[target_app] from profile.json.
+def _format_voice_block(
+    profile: dict,
+    target_app: str | None,
+    *,
+    voice_evidence_spans: list | None = None,
+) -> str:
+    """Render a SCOPED voice slice for the GT preference card on
+    voice-matching tasks (T6/T9/T10/T12/T13/T16).
 
-    Used by voice-matching tasks (T6/T9/T10/T12/T13/T16). Skipped if
-    profile is empty.
+    Delegates to ``data_preparation.prompts.render_voice_for_test_card``
+    so eval-side and viz-side share one renderer. The scope rule:
+      - Always: identity_spine.signature_concerns + idiolect markers +
+        ONE constructional template + per-app surface block + per-app
+        delta_summary.
+      - If the user's profile carries a strongest hidden_persona with a
+        resolvable dominant_frame, include it.
+      - If `voice_evidence_spans` is provided, palette emoji and
+        catchphrase residue strings that actually surface in the
+        example/inferior pair are bolded inline.
+
+    Skipped if the profile has no user_voice. Falls back to legacy flat
+    rendering when the layered schema fields are absent (older
+    snapshots).
     """
     voice = (profile or {}).get("user_voice") or {}
     if not voice:
         return ""
-    lines = [_section_header("User voice baseline")]
-    if voice.get("natural_register"):
-        lines.append(f"- **Register**: {_truncate(voice['natural_register'], 400)}\n")
-    if voice.get("default_capitalization"):
-        lines.append(f"- **Capitalization**: {voice['default_capitalization']}\n")
-    if voice.get("punctuation_habits"):
-        lines.append(f"- **Punctuation**: {_truncate(voice['punctuation_habits'], 300)}\n")
-    if voice.get("humor_tone"):
-        lines.append(f"- **Humor tone**: {_truncate(voice['humor_tone'], 250)}\n")
-    palette = voice.get("emoji_palette") or []
-    if palette:
-        lines.append(f"- **Emoji palette**: {' '.join(palette[:12])}\n")
-    if voice.get("emoji_intensity_default"):
-        lines.append(f"- **Emoji intensity (default)**: {voice['emoji_intensity_default']}\n")
-    # New schema: idiolect.catchphrase_residue. Legacy fallback: personal_phrases.
-    _idio = voice.get("idiolect") or {}
-    phrases = (_idio.get("catchphrase_residue") if isinstance(_idio, dict) else None) \
-        or voice.get("personal_phrases") or []
-    if phrases:
-        rendered = ", ".join(f'"{p}"' for p in phrases[:6])
-        lines.append(f"- **Catchphrase residue (use ZERO in most outputs; AT MOST one per response)**: {rendered}\n")
-    if voice.get("formality_baseline") is not None:
-        lines.append(f"- **Formality baseline**: {voice['formality_baseline']}\n")
-    if voice.get("voice_avoid"):
-        lines.append(f"- **Voice avoid**: {_truncate(voice['voice_avoid'], 250)}\n")
-    avoid = voice.get("phrases_to_avoid") or []
-    if avoid:
-        rendered = ", ".join(f'"{p}"' for p in avoid[:6])
-        lines.append(f"- **Phrases to avoid**: {rendered}\n")
+    cap_app = _capitalize_app(target_app) if target_app else ""
+    ap = ((profile or {}).get("app_personas") or {}).get(cap_app) or {} if cap_app else {}
 
-    if target_app:
-        cap_app = _capitalize_app(target_app)
-        ap = ((profile or {}).get("app_personas") or {}).get(cap_app) or {}
-        if ap:
-            lines.append(_section_header(f"Voice on {target_app} (delta from baseline)"))
-            if ap.get("audience_lens"):
-                lines.append(f"- **Audience lens**: {_truncate(ap['audience_lens'], 350)}\n")
-            if ap.get("audience_design_note"):
-                lines.append(f"- **Audience design**: {_truncate(ap['audience_design_note'], 300)}\n")
-            # New schema: delta_summary. Legacy fallback: style_description.
-            delta = ap.get("delta_summary") or ap.get("style_description")
-            if delta:
-                lines.append(f"- **Why this audience selects this stance subset**: {_truncate(delta, 400)}\n")
-            if ap.get("active_stances"):
-                lines.append(f"- **Active stances on {target_app}**: {', '.join(ap['active_stances'][:6])}\n")
-            if ap.get("active_speech_genres"):
-                lines.append(f"- **Active speech genres**: {', '.join(ap['active_speech_genres'][:6])}\n")
-            # New schema: surface. Legacy fallback: expression.
-            expr = ap.get("surface") or ap.get("expression") or {}
-            if expr:
-                bits = []
-                if expr.get("effort_level"):
-                    bits.append(f"effort={expr['effort_level']}")
-                if expr.get("length_band"):
-                    bits.append(f"length_band={expr['length_band']}")
-                if expr.get("emoji_intensity_shift") is not None:
-                    bits.append(f"emoji_intensity_shift={expr['emoji_intensity_shift']}")
-                if expr.get("disclosure_depth"):
-                    bits.append(f"disclosure_depth={expr['disclosure_depth']}")
-                if bits:
-                    lines.append(f"- **Surface knobs**: {', '.join(bits)}\n")
-                if expr.get("audience_self_censoring"):
-                    lines.append(f"- **Self-censoring**: {_truncate(expr['audience_self_censoring'], 300)}\n")
-            tf = ap.get("topical_focus") or []
-            if tf:
-                lines.append(f"- **Topical focus**: {', '.join(tf[:6])}\n")
-            if ap.get("posting_frequency"):
-                lines.append(f"- **Posting frequency**: {ap['posting_frequency']}\n")
-            if ap.get("app_avoid"):
-                lines.append(f"- **App-specific avoid**: {_truncate(ap['app_avoid'], 250)}\n")
-    return "".join(lines)
+    # Resolve the user's strongest hidden_persona dominant_frame.
+    # Prefer the audited frame on motivation_audit; fall back to the
+    # structural type-default. None when no organic clusters exist.
+    dominant_frame: str | None = None
+    hps = [hp for hp in ((profile or {}).get("hidden_personas") or [])
+           if not hp.get("is_synthetic")]
+    if hps:
+        from data_preparation.prompts import cluster_dominant_frame as _resolve_frame
+        top = max(hps, key=lambda h: int(h.get("evidence_rows") or 0))
+        f = _resolve_frame(top)
+        if f and f != "none":
+            dominant_frame = f
+
+    from data_preparation.prompts import render_voice_for_test_card as _layered_render
+    body = _layered_render(
+        voice, ap,
+        target_app=target_app or "",
+        dominant_frame=dominant_frame,
+        voice_evidence_spans=voice_evidence_spans or [],
+    )
+    if not body.strip():
+        return ""
+    return _section_header("User voice — scoped for this task") + body
 
 
 def _format_self_posts(bq: BackendQuery, user_id: str, t_test: int,

@@ -69,6 +69,24 @@ GT_ALIGNMENT_APPLICABLE = {
     "chatbot_proactive_personalization",
 }
 
+# Tasks the `frame_consistency` dimension applies to — user-voiced
+# agentic responses + chatbot proactive triplets. For each instance the
+# dimension resolves the user's strongest hidden-persona dominant_frame
+# (via `bq.get_full_profile(user_id)::hidden_personas[*].motivation_audit
+# .dominant_frame`, falling back to the structural type-default frame
+# when the audit hasn't run) and asks a mini-tier LLM whether the
+# example_response carries that frame's signature. Self-skips when bq
+# is None or no frames can be resolved for the user.
+FRAME_CONSISTENCY_TASKS = {
+    "agentic_composed_post",
+    "agentic_send_post",
+    "agentic_cross_app_repost",
+    "agentic_user_tone_post",
+    "agentic_auto_reply",
+    "chatbot_proactive_personalization",
+}
+
+
 # Tasks the `tool_call_validity` dimension applies to. These are the only
 # tasks where the agent is expected to call MCP tools (everything else has
 # `mcp_tools_allowed: "none"` in TASK_TYPE_META and ranks from time-masked
@@ -845,6 +863,138 @@ def _setup_text_for(inst: dict, task_type: str) -> str:
     return ""
 
 
+def _frame_consistency_prompt(
+    task_type: str,
+    user_query: str,
+    example_response: str,
+    cluster_label: str,
+    frame: str,
+    frame_description: str,
+) -> str:
+    return f"""\
+You are auditing whether a user-voiced response carries a specific motivational signature.
+
+Each user has 1–3 strong "hidden personas" — durable motivational clusters discovered from their engagement history. Each cluster has a `dominant_frame` drawn from named behavioral-science theories. The frame is what the engagement is *for* psychologically (coping with feelings vs. signaling group identity vs. private back-stage consumption, etc.).
+
+For this user the strongest cluster — the one most likely to be implicated by this particular task instance — is:
+- Cluster: "{cluster_label}"
+- Dominant frame: `{frame}` — {frame_description}
+
+The task is: `{task_type}`
+The user-style input / context: {user_query!r}
+The user-voiced example response: {example_response!r}
+
+Question: does the example response naturally carry the dominant frame's signature in tone, substance, or framing? You are NOT asking whether the response is good prose. You are asking whether the WHY behind it matches the user's frame. Forced or absent frame signature → fail.
+
+For example, with frame `lazarus_folkman:emotion_focused_coping` (regulating feelings about a stressor), a passing response might vent / soothe / look for reassurance; a failing one might just deliver bare facts. With frame `tajfel:social_identity` (in-group signaling), a passing response uses in-group references / shared lingo / shared aesthetic cues; a failing one is generic.
+
+Respond with ONLY:
+```json
+{{"frame_present": true | false, "score": 1-5, "reason": "..."}}
+```
+"""
+
+
+def _dim_frame_consistency(inst: dict, llm, *, bq=None) -> DimensionResult:
+    """For user-voiced agentic tasks + chatbot proactive: verify the
+    example_response carries the user's strongest hidden-persona
+    `dominant_frame` signature. The frame is resolved at audit time
+    from the user's profile.json (audit-aware via
+    `motivation_audit.dominant_frame`, falling back to the structural
+    type-default frame). Self-skips when no profile is reachable or
+    the user has no non-synthetic clusters with a usable frame.
+    """
+    task_type = inst.get("task_type") or inst.get("task_id") or ""
+    if task_type not in FRAME_CONSISTENCY_TASKS:
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason=f"{task_type} is not a user-voiced agentic / chatbot task",
+        )
+    if bq is None:
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason="no BackendQuery provided — cannot resolve user frames",
+        )
+    user_id = str(inst.get("user_id") or "")
+    if not user_id:
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason="instance has no user_id",
+        )
+    try:
+        profile = bq.get_full_profile(user_id) or {}
+    except Exception as exc:
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason=f"profile load failed: {exc}",
+        )
+    hps = [hp for hp in (profile.get("hidden_personas") or [])
+           if not hp.get("is_synthetic")]
+    if not hps:
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason="no organic hidden personas",
+        )
+    # Lazy import to avoid circular dep at module load.
+    from data_preparation.prompts import (
+        FRAME_DESCRIPTIONS as _FD,
+        cluster_dominant_frame as _resolve_frame,
+    )
+    # Pick the cluster with highest evidence_rows; that's the user's
+    # strongest motivational pattern and the most likely implicated by
+    # any user-voiced response.
+    hps_sorted = sorted(hps, key=lambda h: int(h.get("evidence_rows") or 0), reverse=True)
+    top = hps_sorted[0]
+    frame = _resolve_frame(top)
+    if not frame or frame == "none":
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason=f"top cluster {top.get('label','?')!r} has no resolvable frame",
+        )
+    cluster_label = str(top.get("label") or "")
+    frame_description = _FD.get(frame, "")
+
+    example_response = inst.get("example_response")
+    if isinstance(example_response, dict):
+        example_response = example_response.get("response") or example_response.get("text") \
+            or json.dumps(example_response, ensure_ascii=False)[:600]
+    example_response = str(example_response or "").strip()
+    if not example_response:
+        return DimensionResult(
+            name="frame_consistency", passed=True, skipped=True,
+            skip_reason="no example_response to grade",
+        )
+    user_query = _get_user_query(inst) or _setup_text_for(inst, task_type) or "(no user-side input on this task)"
+
+    res = _safe_llm_json(
+        llm,
+        _frame_consistency_prompt(
+            task_type=task_type,
+            user_query=user_query[:280],
+            example_response=example_response[:800],
+            cluster_label=cluster_label[:80],
+            frame=frame,
+            frame_description=frame_description,
+        ),
+    )
+    if res is None or "_error" in (res or {}):
+        return DimensionResult(
+            name="frame_consistency", passed=False,
+            reason=res.get("_error") if res else "no_response",
+        )
+    score = float(res.get("score") or 0)
+    frame_present = bool(res.get("frame_present"))
+    return DimensionResult(
+        name="frame_consistency",
+        # Pass when the LLM judges the frame is present AND the score
+        # is at least 4. Strict: the dimension is meant to surface
+        # responses that drifted off the user's motivational signature.
+        passed=(frame_present and score >= 4),
+        score=score,
+        reason=str(res.get("reason", ""))[:200],
+    )
+
+
 _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_schema_sanity,           # deterministic, run first
     _dim_sensitive_probe_placement,  # deterministic
@@ -854,7 +1004,8 @@ _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_example_vs_inferior,
     _dim_gt_alignment,
     _dim_privacy_leak,
-    _dim_tool_call_validity,      # NEW: agentic + E3/E6 tool-call layer
+    _dim_tool_call_validity,      # agentic + E3/E6 tool-call layer
+    _dim_frame_consistency,       # NEW: user-voiced response × motivational frame
 ]
 
 
@@ -942,4 +1093,5 @@ __all__ = [
     "OVER_PERS_TASKS",
     "RANKING_TASKS",
     "TOOL_CALL_VALIDITY_TASKS",
+    "FRAME_CONSISTENCY_TASKS",
 ]

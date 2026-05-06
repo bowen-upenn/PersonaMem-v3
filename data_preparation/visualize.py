@@ -61,6 +61,7 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
     # profile level and is consumed by the voice-dependent gold preview.
     app_personas: dict = {}
     user_voice: dict = {}
+    hidden_personas: list = []  # for dominant_frame resolution in test cards
     profile_path = Path(backend_dir) / str(uid) / "profile.json"
     if profile_path.exists():
         try:
@@ -71,9 +72,13 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
             uv = prof.get("user_voice")
             if isinstance(uv, dict):
                 user_voice = uv
+            hps = prof.get("hidden_personas") or []
+            if isinstance(hps, list):
+                hidden_personas = [h for h in hps if isinstance(h, dict)]
         except Exception:
             app_personas = {}
             user_voice = {}
+            hidden_personas = []
     for app_file in ("instagram.json", "facebook.json", "threads.json", "chatbot.json"):
         p = Path(backend_dir) / str(uid) / app_file
         if not p.exists():
@@ -117,6 +122,7 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
         "recent_pos": recent_pos,
         "app_personas": app_personas,
         "user_voice": user_voice,
+        "hidden_personas": hidden_personas,
     }
 
 
@@ -977,96 +983,80 @@ def _gt_agentic(inst: dict) -> dict:
             if style or focus or freq or expression or uv or legacy_sig:
                 app_label = target.capitalize() if target else "this app"
 
-                # Shared writing voice — same person across all apps.
-                if isinstance(uv, dict) and uv:
-                    gtp_lines.append("User's shared writing voice (same on every app):")
-                    if uv.get("natural_register"):
-                        gtp_lines.append(f"  • register: {uv['natural_register']}")
-                    if uv.get("default_capitalization"):
-                        gtp_lines.append(f"  • caps: {uv['default_capitalization']}")
-                    if uv.get("punctuation_habits"):
-                        gtp_lines.append(f"  • punctuation: {uv['punctuation_habits']}")
-                    if uv.get("humor_tone"):
-                        gtp_lines.append(f"  • humor / tone: {uv['humor_tone']}")
-                    palette = uv.get("emoji_palette") or []
-                    if palette:
-                        gtp_lines.append(
-                            f"  • personal emoji palette: {' '.join(palette)}"
-                            f" (intensity: {uv.get('emoji_intensity_default', 'medium')})"
+                # Resolve the user's strongest hidden_persona dominant_frame.
+                # Prefer the audited frame on motivation_audit (Step 23);
+                # fall back to the structural type-default. Anchors the WHY
+                # behind the user's voice in a named academic frame so the
+                # GT renders motivational signature, not just style.
+                hidden_personas = _PERSONA_CONTEXT.get("hidden_personas") or []
+                dominant_frame: str | None = None
+                organic = [h for h in hidden_personas if not h.get("is_synthetic")]
+                if organic:
+                    try:
+                        from data_preparation.prompts import (
+                            cluster_dominant_frame as _resolve_frame,
                         )
-                    # New schema: idiolect.catchphrase_residue. Legacy: personal_phrases.
-                    _idio = uv.get("idiolect") or {}
-                    phrases = (_idio.get("catchphrase_residue") if isinstance(_idio, dict) else None) \
-                        or uv.get("personal_phrases") or []
-                    if phrases:
-                        gtp_lines.append(
-                            "  • catchphrase residue (use ZERO in most outputs; AT MOST one per response): "
-                            + ", ".join(f"\"{p}\"" for p in phrases[:5])
-                        )
-                    if uv.get("formality_baseline") is not None:
-                        gtp_lines.append(f"  • formality baseline: {uv['formality_baseline']}")
+                        top_hp = max(organic, key=lambda h: int(h.get("evidence_rows") or 0))
+                        f = _resolve_frame(top_hp)
+                        if f and f != "none":
+                            dominant_frame = f
+                    except Exception:
+                        dominant_frame = None
 
-                # Per-app delta — what shifts on this specific app.
-                gtp_lines.append(f"On {app_label} this voice modulates:")
-                if audience_lens:
-                    gtp_lines.append(f"  • audience lens: {audience_lens}")
-                if style:
-                    gtp_lines.append(f"  • style delta: {_truncate(style, 280)}")
-                if isinstance(expression, dict) and expression:
-                    if expression.get("effort_level"):
-                        gtp_lines.append(f"  • effort: {expression['effort_level']}")
-                    if expression.get("length_band"):
-                        gtp_lines.append(f"  • length: ~{expression['length_band']} chars")
-                    eis = expression.get("emoji_intensity_shift")
-                    if eis is not None:
-                        shift_label = "0 (default)" if eis == 0 else (f"+{eis}" if eis > 0 else str(eis))
-                        gtp_lines.append(f"  • emoji intensity shift: {shift_label}")
-                    if expression.get("emoji_topic_filter"):
-                        gtp_lines.append(f"  • which palette emoji surface: {expression['emoji_topic_filter']}")
-                    if expression.get("audience_self_censoring"):
-                        gtp_lines.append(f"  • audience self-censoring: {expression['audience_self_censoring']}")
-                if isinstance(overrides, dict) and overrides:
-                    gtp_lines.append("  • overrides (apply only these; everything else inherits):")
-                    for ok, ov in overrides.items():
-                        ov_repr = "; ".join(ov) if isinstance(ov, list) else str(ov)
-                        gtp_lines.append(f"    – {ok}: {ov_repr}")
+                # Bold any palette emoji / catchphrase strings that
+                # actually appear in the example or inferior response.
+                # Renderer adds these spans on the test card; we union
+                # both so reviewers can see exactly what landed.
+                anchor_spans: list = []
+                for k in ("example_response_voice_evidence",
+                          "inferior_response_voice_evidence"):
+                    v = inst.get(k) or []
+                    if isinstance(v, list):
+                        anchor_spans.extend(s for s in v if isinstance(s, str))
 
-                # Legacy backward-compat: render old voice_signature only when
-                # nothing new is populated (older backend dirs).
-                if not (uv or expression or overrides) and isinstance(legacy_sig, dict) and legacy_sig:
-                    gtp_lines.append(f"Voice signature on {app_label} (legacy):")
-                    if legacy_sig.get("capitalization"):
-                        gtp_lines.append(f"  • caps: {legacy_sig['capitalization']}")
-                    if legacy_sig.get("punctuation_habits"):
-                        gtp_lines.append(f"  • punctuation: {legacy_sig['punctuation_habits']}")
-                    if legacy_sig.get("sentence_shape"):
-                        gtp_lines.append(f"  • sentence shape: {legacy_sig['sentence_shape']}")
-                    if legacy_sig.get("length_chars"):
-                        gtp_lines.append(f"  • length: ~{legacy_sig['length_chars']} chars")
-                    rec = legacy_sig.get("recurring_phrases") or []
-                    if rec:
-                        gtp_lines.append(
-                            "  • recurring phrases: "
-                            + ", ".join(f"\"{p}\"" for p in rec[:5])
-                        )
-                    emoji = legacy_sig.get("emoji_policy")
-                    if isinstance(emoji, dict):
-                        elist = emoji.get("emojis") or []
-                        place = emoji.get("placement") or ""
-                        if elist:
+                # Layered, scoped render — single call, single source of
+                # truth (data_preparation.prompts.render_voice_for_test_card).
+                # Falls back to the existing flat blob when the voice
+                # schema has no layered fields populated.
+                try:
+                    from data_preparation.prompts import (
+                        render_voice_for_test_card as _layered_render,
+                    )
+                    body = _layered_render(
+                        uv if isinstance(uv, dict) else {},
+                        ap if isinstance(ap, dict) else {},
+                        target_app=target or "",
+                        dominant_frame=dominant_frame,
+                        voice_evidence_spans=anchor_spans,
+                    )
+                except Exception:
+                    body = ""
+
+                if body.strip():
+                    gtp_lines.append(f"User voice — scoped for {app_label}:")
+                    for ln in body.rstrip("\n").split("\n"):
+                        gtp_lines.append(ln)
+                else:
+                    # Legacy snapshot fallback — flat schema only. Trim
+                    # to the essentials so we don't dump 40 lines.
+                    if isinstance(uv, dict) and uv:
+                        if uv.get("natural_register"):
+                            gtp_lines.append(f"  • register: {uv['natural_register']}")
+                        palette = uv.get("emoji_palette") or []
+                        if palette:
                             gtp_lines.append(
-                                f"  • emoji: {' '.join(elist)}"
-                                + (f" ({place})" if place else "")
+                                f"  • personal emoji palette: {' '.join(palette[:8])}"
                             )
-                    elif isinstance(emoji, str) and emoji.strip():
-                        gtp_lines.append(f"  • emoji: {emoji}")
-                    if legacy_sig.get("hashtag_policy"):
-                        gtp_lines.append(f"  • hashtags: {legacy_sig['hashtag_policy']}")
-                    forbid = legacy_sig.get("forbidden_patterns") or []
-                    if forbid:
-                        gtp_lines.append(
-                            "  • NEVER does: " + "; ".join(forbid[:5])
-                        )
+                        _idio = uv.get("idiolect") or {}
+                        phrases = (_idio.get("catchphrase_residue") if isinstance(_idio, dict) else None) \
+                            or uv.get("personal_phrases") or []
+                        if phrases:
+                            gtp_lines.append(
+                                "  • catchphrase residue: "
+                                + ", ".join(f"\"{p}\"" for p in phrases[:4])
+                            )
+                    if style:
+                        gtp_lines.append(f"On {app_label}: {_truncate(style, 240)}")
 
                 if focus:
                     gtp_lines.append(f"Topical focus on {app_label}: {', '.join(focus[:6])}")
