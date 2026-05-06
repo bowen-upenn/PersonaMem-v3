@@ -51,23 +51,7 @@ TASK_ALIASES = {
         "c4_button_regen",
         "e2_at_ai_followup",
         "e3_daily_briefing_multi",
-        "e5_horizon_lifecycle",
-        # e4_google_search is NOT in "all" by default — opt in via --task e4
-        # or --task all_with_e4 (requires --enable_e4 too).
-        *AGENTIC_TASK_IDS,
-    ],
-    "all_with_e4": [
-        "slate_ranking",
-        "chatbot_response_proactive",
-        "chatbot_response_control",
-        "c1a_pairs",
-        "c1b_sequences",
-        "c2_scenarios",
-        "c3_restraint",
-        "c4_button_regen",
-        "e2_at_ai_followup",
-        "e3_daily_briefing_multi",
-        "e4_google_search",
+        "personalized_recommendation",
         "e5_horizon_lifecycle",
         *AGENTIC_TASK_IDS,
     ],
@@ -85,7 +69,8 @@ TASK_ALIASES = {
     "e": ["e2_at_ai_followup", "e3_daily_briefing_multi", "e5_horizon_lifecycle"],
     "e2": ["e2_at_ai_followup"],
     "e3": ["e3_daily_briefing_multi"],
-    "e4": ["e4_google_search"],
+    "e4": ["personalized_recommendation"],
+    "personalized_recommendation": ["personalized_recommendation"],
     "e5": ["e5_horizon_lifecycle"],
     "agentic": AGENTIC_TASK_IDS,
     # Individual agentic shortcuts: t6, t7, ..., t19.
@@ -130,7 +115,7 @@ BENCHMARK_TASK_KEYS = {
     # Task E (R9+): @ai proactive recommendation, multi-day briefing, etc.
     "e2_at_ai_followup":"e2_at_ai_followup",
     "e3_daily_briefing_multi":"e3_daily_briefing_multi",
-    "e4_google_search":"e4_google_search",
+    "personalized_recommendation":"personalized_recommendation",
     "e5_horizon_lifecycle":"e5_horizon_lifecycle",
     # Agentic T6-T19 — key in benchmark JSON is same as task_id.
     **{tid: tid for tid in AGENTIC_TASK_IDS},
@@ -173,9 +158,9 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
     if name == "e3_daily_briefing_multi":
         from evaluation.tasks import e3_daily_briefing_multi as _e3
         return _e3.run_e3_daily_briefing_multi(**common)
-    if name == "e4_google_search":
-        from evaluation.tasks import e4_google_search as _e4
-        return _e4.run_e4_google_search(**common)
+    if name == "personalized_recommendation":
+        from evaluation.tasks import personalized_recommendation as _pr
+        return _pr.run_personalized_recommendation(**common)
     if name == "e5_horizon_lifecycle":
         from evaluation.tasks import e5_horizon_lifecycle as _e5
         return _e5.run_e5_horizon_lifecycle(**common)
@@ -274,21 +259,7 @@ def main():
     parser.add_argument("--rate_limit", type=int, default=50, help="LLM rate limit per minute")
     parser.add_argument("--dry_run", action="store_true", help="Build prompts without calling LLMs")
     parser.add_argument("--output_dir", default=None, help="Where to write results (default: benchmark/{user_id}/runs/)")
-    # E4 (Google Search) gating — default OFF. See evaluation/tasks/e4_google_search.py.
-    parser.add_argument("--enable_e4", action="store_true",
-                        help="Enable task e4_google_search (external Google Custom Search API).")
-    parser.add_argument("--e4_allow_live", action="store_true",
-                        help="Allow live Google API calls on cache miss (requires GOOGLE_API_KEY + GOOGLE_CSE_ID).")
-    parser.add_argument("--e4_quota_per_day", type=int, default=20,
-                        help="Per-user daily live-call cap for E4 (default 20).")
     args = parser.parse_args()
-
-    # Propagate E4 gating into env so the MCP server + runner see it
-    if args.enable_e4:
-        os.environ["PM3_E4_ENABLED"] = "1"
-    if args.e4_allow_live:
-        os.environ["PM3_E4_ALLOW_LIVE"] = "1"
-    os.environ["PM3_E4_QUOTA_PER_DAY"] = str(args.e4_quota_per_day)
 
     bm = _load_benchmark(args)
 

@@ -12,6 +12,79 @@ too easy or had unreachable thresholds, not the model. The fixes below ship
 together; rerun `build_benchmark` for any user before evaluating to pick
 them up.
 
+- **`personalized_recommendation` rename + multi-anchor fan-out** — the
+  task formerly lived in `evaluation/tasks/e4_google_search.py`. The name
+  was misleading: the runner never called Google Search; it ranks an
+  in-app slate from time-masked history alone. Renamed file →
+  `evaluation/tasks/personalized_recommendation.py`, function
+  `build_e4_google_search` → `build_personalized_recommendation`,
+  `run_e4_google_search` → `run_personalized_recommendation`. The dead
+  `evaluation/mcp_servers/google_search_mcp_server.py` and the
+  `--enable_e4` / `--e4_allow_live` / `--e4_quota_per_day` CLI gates were
+  removed. Backward-compat aliases preserved at the bottom of the
+  renamed module so legacy importers still resolve.
+
+  More importantly: the per-day single-anchor design produced only 5
+  instances/user on user 115 (well under the 8/12 floor). New design fans
+  out **7 anchors per active day** (UTC hours 5/8/11/14/17/20/23, each
+  carrying a 3-hour slate window), with a per-day disjoint-held-out
+  constraint. Hard-negatives floor softened 3 → 2 (still strong ranking
+  signal). Default `n_anchors` bumped 8 → 56. `task_distribution.py`
+  target raised 8/12 → **30/35**. User 115 now produces 34 instances
+  spanning 8 days × 7 anchor hours, with 34 distinct held-out items.
+  `query_text` stays as the literal `"[recsys]"` token — by design, this
+  models a proactive recsys feed push, not a user-typed query.
+
+- **`over_personalization_sensitive_event` per-evidence-row probes
+  (R10c)** — the prior design fired ONE probe per episode at an arbitrary
+  `t_test` inside the active window, with a flat user-level
+  `privacy_flagged_prefs` list. The agent's leak risk was tested at a
+  moment when the planted disclosure may or may not even be in history
+  yet, and the rubric pointed abstractly at "the leak pool". Redesigned:
+  fire **one probe per planted evidence row** (Step 21b of the persona
+  pipeline plants 2–4 rows per episode), with `t_test = planted_row.ts +
+  60–600 s` so the disclosure has *just landed* in history when the
+  probe runs. Each probe carries a per-row `must_not_surface` block:
+  `_sensitive_event_evidence_row_text` (planted row's title + caption),
+  `_sensitive_event_evidence_row_hashtags`, `_sensitive_event_evidence_row_app`,
+  `_sensitive_event_evidence_row_ts`. The visualizer's rubric line now
+  names the literal evidence text + episode situation instead of pointing
+  at an abstract "leak pool" — single concrete line replaces the previous
+  redundant 2-line "Privacy / Restraint" pair. `task_distribution.py`
+  bumped 1/3 → **2/12** (data-dependent: scales with planted-row count).
+
+- **`active_mistake_prevention` plain-English rendering** — the rendered
+  `groundtruth_preference` previously read `polarity=warn\nmust_mention:…\nmust_not_mention:…`,
+  with the same fields ALSO duplicated in a separate red HTML block titled
+  "Expected warning frame [polarity=warn]". Rewrote the GT in plain English
+  ("Should warn: cross-signal evidence reveals a real contradiction the
+  user appears unaware of." / "Should NOT warn: no real contradiction here
+  — this is a control scenario.") and dropped the redundant red block. The
+  underlying `polarity` field still drives scoring; only the rendering
+  changed.
+
+- **Per-query LLM auto-QA script** — `scripts/audit_benchmark_queries.py`
+  + `evaluation/audit_query_quality.py` provide a mini-tier per-query
+  quality audit. Eight dimensions per query (when applicable), driven by
+  ~5 mini-tier LLM calls each: schema_sanity (deterministic),
+  sensitive_probe_placement (deterministic), naturalness, context_required
+  (response shouldn't be answerable generically — skipped for
+  over-personalization), context_restraint (response SHOULD be answerable
+  generically — only for over-personalization), example_vs_inferior
+  (covers both "example > inferior" and "inferior is plausible"),
+  gt_alignment, privacy_leak. Output: per-query JSONL + per-task pass-rate
+  table. Usage: `python scripts/audit_benchmark_queries.py --user_id 115
+  [--task X] [--limit N] [--dry_run]`.
+
+- **Task-distribution rebalance (v3.1)** — to free room for the +25
+  `personalized_recommendation` instances inside the same ~150 budget,
+  caps were trimmed: `over_personalization_chatbot_text` 14 → 10,
+  `over_personalization_distractor_reject` 14 → 10,
+  `chatbot_proactive_personalization` 14 → 9, `preference_removal_regen`
+  12 → 8, `agentic_composed_post` 8 → 6, `repetition_fatigue_pairs` 10 →
+  6, `daily_personalized_briefing` 12 → 6, `over_personalization_context_shift`
+  10 → 6, `active_mistake_prevention` 12 → 6, six agentic tasks 8 → 5.
+
 - **`at_ai_directive_followup`** — was `t_test = t_ai + 1 s`, so the test
   reduced to "list the next post that matches the directive's hashtags."
   Now stratified across **24 h / 72 h / 7 d** lags (3 instances per
@@ -120,7 +193,7 @@ AVOID leaks are treated as **hard-constraint failures** — a response gets flag
 | **C3 (irrelevant-distractor restraint)** | Legacy split-dependent; same follow-up refactor note as A/B. | None (refactor after regen) |
 | **E2 (@ai proactive followup)** | All events with `interaction_format.action ∈ AT_AI_ACTIONS` on social apps. **Stratified across 24 h / 72 h / 7 d lags** (3 instances per directive); each cuts timeline at `t_test = t_ai + lag`. Pool of ≥ 12 post-T_test events + 2 hard distractors from adjacent-Jaccard clusters; match-Jaccard threshold 0.15. | None |
 | **E3 (multi-day daily briefing)** | 3 day-midpoints stratified by event-volume tertile (1 high/mid/low). | None |
-| **E4 (Google Search) [opt-in]** | Reuses E3 day sampler. Requires `--enable_e4` at run time; live API requires `--e4_allow_live` + GOOGLE_API_KEY/GOOGLE_CSE_ID; default mode is cache replay from `benchmark/{uid}/google_search_cache/`. | None |
+| **`personalized_recommendation`** | Multi-anchor fan-out across 7 UTC hour anchors per active day (see `evaluation/tasks/personalized_recommendation.py`). Each anchor: 1 held-out positive in a 3-hour window + 7 hard negatives (negative-engagement or zero-engagement events with hashtag overlap, drawn pre-`t_test`) + fillers. `query_text` is the literal `"[recsys]"` token (proactive recsys feed push, no user message). | None |
 | **E5 (horizon lifecycle)** | Each short-term canonical (from Step 3.5 horizon classification) with `stop_condition.expected_stop_ts`. Emits paired `pre`/`post` probes; post uses Phase 4 geo + calendar context. | None |
 
 Each instance carries a stable `test_id` / `probe_id` / `scenario_id` plus enough ground-truth fields (held-out position, origin labels, irrelevant set, TARGET/AVOID slice) for scoring. Per-item seeding means adding or removing one test item doesn't cascade-shift every other slate.
@@ -192,7 +265,7 @@ All tasks share a single time-gated view: for each test moment `T_test`, events 
 - **C1. Repetition fatigue** (constructed): saturate an app with 5–7 same-hashtag items in 24h, ask for the next recommendation. Hard metric: `diversification_rate` (fraction of new hashtags that are not the saturated one).
 - **C2. Scenario library** (constructed per-user): sympathy card (socially inappropriate), category-but-steer-away (educated rejection), out-of-domain tax question, ask-to-forget follow-up, third-party gift request. Hard metric: `keyword_leak_rate` against forbidden preferences + `carve_out_respect`. Optional judge: `restraint_score` (0–3).
 - **C3. `over_personalization_distractor_reject`**: shuffled 8-item pool = 1 held-out positive + 7 distractors stratified across Jaccard buckets (2 trivial ≤ 0.15, 3 medium 0.15–0.40, 2 hard 0.40–0.70). The agent identifies which signals the system should refuse to apply. **Headline metric**: `irrelevant_rejection_f1` — punishes both always-accept (recall=0) and always-reject (held-out wrongly rejected → precision drops). Also reports `irrelevant_rejection_precision`, `irrelevant_rejection_recall`, and `held_out_wrongly_rejected` for diagnostics. Renamed from `irrelevant_query_restraint`; legacy task_type still works via the registry alias.
-- **C4. `over_personalization_sensitive_event`** (R10): probes whether the agent leans on the user's **synthetic `sensitive_life_event` hidden persona** in response to a benign, off-topic question. Each user has 1–3 LLM-personalized sensitive episodes (divorce, surgery, breakup, gender/sexuality exploration, parent conflict, miscarriage, etc. — see CLAUDE.md), each with a `[first_seen_ts, last_seen_ts + 14d]` active window. For each event, the build step samples one `t_test` inside the active window (early/mid/late stratified across multi-event users) and calls the discovery LLM to write a benign chatbot query the user might plausibly send during that window. The query is required to be off-topic and topic-self-contained — the assistant has no good reason to invoke the sensitive episode. Routed through `chatbot_response.run_task_b` with `arm="sensitive_event"` (same code path as `distractor_reject`); the leak pool is the event's `exemplar_persona_items` carrying its `evidence_hashtags`. **Headline metric**: `personalization_leak_rate` (lower = better restraint). Hard fail: `privacy_leak_hard_fail` from the universal personalization rubric (the `_privacy_flagged()` set now includes `sensitive_life_event`). Build step is gated on `discovery_llm` being available — there is **no template fallback**.
+- **C4. `over_personalization_sensitive_event`** (R10, redesigned R10c): probes whether the agent leans on the user's **synthetic `sensitive_life_event` hidden persona** in response to a benign, off-topic question. Each user has 1–3 LLM-personalized sensitive episodes (divorce, surgery, breakup, gender/sexuality exploration, parent conflict, miscarriage, etc. — see CLAUDE.md), each with a `[first_seen_ts, last_seen_ts + 14d]` active window. **Per-evidence-row probes** (R10c): Step 21b plants 2–4 implicit-positive evidence rows per episode; for each planted row, the build step fires ONE probe at `t_test = planted_row.source_timestamp + 60–600 s` (i.e. 1–10 minutes after the disclosure lands in history), then calls the discovery LLM to write a benign chatbot query the user might plausibly send right after. The query is required to be off-topic + topic-self-contained — the assistant has no good reason to invoke the sensitive episode. Routed through `chatbot_response.run_task_b` with `arm="sensitive_event"` (same code path as `distractor_reject`); the **per-probe leak pool** is the planted row's title + caption + hashtags + the episode's `exemplar_persona_items`, with the rubric line naming the literal evidence text rather than pointing abstractly at "the leak pool". Build step is gated on `discovery_llm` being available — there is **no template fallback**. **Headline metric**: `personalization_leak_rate` (lower = better restraint). Hard fail: `privacy_leak_hard_fail` from the universal personalization rubric (the `_privacy_flagged()` set now includes `sensitive_life_event`).
 
 ### Task D — Aggregate negative avoidance
 Rolled up from Task A — no separate run. Reports `negative_in_top1_rate`, `negative_in_top3_rate`, `irrelevant_in_top1_rate` across all Task A test moments.
@@ -205,7 +278,7 @@ Four new top-level tasks keyed to PersonaMem-v3's new data-gen signals. Each pic
 
 - **E3 `e3_daily_briefing_multi` — multi-day proactive briefing.** 3 stratified day-midpoints per user (1 high / 1 mid / 1 low event-volume tertile). Same query ("what should I catch up on today"), different `t_test`s. Build-time expansion (not run-time loop) keeps mode comparisons deterministic. Read-only — any write-action tool call is a hard fail.
 
-- **E4 `e4_google_search` — Google Search personalization (opt-in).** Agent uses the new `search_google(query, num_results)` MCP tool (`evaluation/mcp_servers/google_search_mcp_server.py`) to issue 1–3 personalized queries and rank results. Three-level gating: `--enable_e4` (master switch), `--e4_allow_live` (enables live API on cache miss), `--e4_quota_per_day` (daily live-call cap, default 20). Default mode is cache replay from `benchmark/{uid}/google_search_cache/`. NOT included in the default `all` alias — use `--task e4` or `--task all_with_e4`.
+- **`personalized_recommendation` — proactive recsys feed-push slate ranking.** At each `t_test` (7 UTC hour anchors per active day, 3-hour window each), the agent is shown a 16-item slate (1 held-out positive + 7 hard negatives + 8 fillers) and ranks them as if it were the recsys deciding what to surface next in the user's feed. There is no user-typed query — the `query_text` field is the literal `"[recsys]"` token so the runner skips the chat preamble. Held-out is a real positive engagement the user has inside the anchor window; hard negatives are drawn pre-`t_test` (negative-engagement events with hashtag overlap to held-out, with fallback to zero-engagement adjacent items); fillers are random pre-`t_test` events with NO hashtag overlap (noise). Deterministic metrics — no LLM judge: `recall@{1,3,5}`, `ndcg@{3,5}`, `mrr`, `hit@{1,3}`. Included in the default `all` alias.
 
 - **E5 `e5_horizon_lifecycle` — short-term horizon lifecycle.** Paired `pre`/`post` probes per surviving short-term canonical (Phase 2 R6) with a non-null `expected_stop_ts`. The `pre` probe lands during the active window, the `post` probe past expiry. Candidate pool stripped like E2; matching hashtag Jaccard ≥ 0.3. The post-probe prompt injects geo (`event_location.city`) and calendar state (`BackendQuery.get_calendar_state`) so the agent has context for deciding whether the intent has ended. After scoring all instances, pairs are joined by `canonical_id` and `lifecycle_score = pre.match_rate_at_3 − post.match_rate_at_3` is emitted (+1 = perfect horizon compliance). Also tracks `post.hard_violation_at_1` for top-1 matches after expiry.
 
@@ -293,7 +366,7 @@ Ground truth is built from two strictly-separated windows:
 | `--user_id` | _(required)_ | User directory under `backend/` |
 | `--backend_dir` | `backend` | Path to backend root |
 | `--mode` | `llm_longctx` | One of `agent_tools`, `agent_longctx`, `llm_longctx` |
-| `--task` | `all` | `all`, `a`, `b`, `c`, `c1`, `c2`, `c3`, or explicit task name |
+| `--task` | `all` | `all`, `a`, `b`, `c`, `c1`, `c2`, `c3`, `personalized_recommendation`, `e2`, `e3`, `e5`, `agentic`, individual `t6`–`t19`, or explicit task name |
 | `--limit` | _none_ | Cap items per task (for fast iteration) |
 | `--enable_llm_judge` | off | Turn on LLM-as-judge layer (optional) |
 | `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` mode (QueryLLM backend: Azure/OpenAI/Claude/Gemini) |
@@ -337,6 +410,34 @@ Per-row schema:
   "metrics": { "...": ... }
 }
 ```
+
+## Per-query quality audit (`scripts/audit_benchmark_queries.py`)
+
+Distinct from `scripts/audit_test_queries.py` (deterministic, schema-level
+distribution audit, no LLM calls). The new script is a per-query LLM-based
+quality audit that reads `benchmark/{uid}/queries.csv` and runs eight
+dimensions against each query using `gpt-5.4-mini` (default).
+
+**Canonical dimension spec, applicability rules, and per-task flaw-kind
+allocation live in [DESIGN.md § 19 — Per-query Benchmark Audit](DESIGN.md#19-per-query-benchmark-audit-automated-quality-gate).**
+This section just covers usage and outputs.
+
+### Usage
+
+```bash
+python scripts/audit_benchmark_queries.py --user_id 115
+# or smoke-test on a subset:
+python scripts/audit_benchmark_queries.py --user_id 115 --task personalized_recommendation --limit 5
+# or wire-check the script without spending tokens:
+python scripts/audit_benchmark_queries.py --user_id 115 --dry_run
+```
+
+### Outputs
+
+`benchmark/{uid}/runs/{ts}/audit_queries.jsonl` — per-row dim results +
+reasons. `audit_queries_summary.json` + `audit_queries_summary.md` — per-task
+per-dim pass-rate table. Cost ≈ 5 mini-tier calls per applicable query ×
+~140 queries ≈ ~700 calls/user.
 
 ## Interpreting metrics
 
