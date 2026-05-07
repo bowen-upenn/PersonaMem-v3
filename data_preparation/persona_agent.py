@@ -249,6 +249,142 @@ class AppPersona:
 
 
 @dataclass
+class RomanticSpecifier:
+    """Multi-axis sub-typing for the `romantic_partner` AI Studio archetype.
+
+    Filled in by Step 11C only when archetype = "romantic_partner". Each axis
+    is independent — a user can be matched to (e.g.) a goth nonbinary
+    mommy-coded equal-partner, or a butch lesbian pet-coded sub. The LLM
+    picks one value per axis (or `None` if the user's profile gives no
+    signal). All vocabularies are closed sets — see field comments below.
+
+    The §1E generation safety floor still applies on top of every axis
+    combination: never age-ambiguous, never validates self-harm, never
+    role-plays minors regardless of fictional framing, never depicts
+    non-consensual scenarios as the user's-fantasy default.
+    """
+    # Closed vocabulary: "male" | "female" | "nonbinary" | "trans_fem"
+    # | "trans_masc" | "genderfluid" | "agender"
+    gender_presentation: Optional[str] = None
+    # "straight" | "gay_mm" | "lesbian_ff" | "bi" | "pan" | "ace_romantic"
+    # | "queer_unspecified"
+    sexuality_orientation: Optional[str] = None
+    # "goth" | "soft" | "punk" | "preppy" | "alt" | "sporty"
+    # | "academic" | "dark_academia" | "hot_nerd"
+    # | "glam" | "cottagecore" | "y2k" | "minimalist"
+    # | "e_girl" | "e_boy"
+    aesthetic_vibe: Optional[str] = None
+    # "butch" | "femme" | "twink" | "femboy" | "bear" | "otter" | "jock"
+    # | "androgynous" | "bara"
+    body_role_coding: Optional[str] = None
+    # "equal_partner" | "dom_gentle" | "dom_strict" | "sub_eager"
+    # | "sub_bratty" | "switch" | "top" | "bottom" | "vers"
+    # | "pet" | "owner_handler" | "mommy" | "daddy_domme" | "sir"
+    # | "elder_sis_romantic" | "elder_bro_romantic"
+    relational_dynamic: Optional[str] = None
+    # "soft_affection" | "sensual" | "erotic_explicit"
+    # `erotic_explicit` only when the user's intimate_interest profile passes
+    # the adult-signal predicate AND profile age signal is unambiguous adult.
+    explicitness_band: str = "sensual"
+
+
+# Closed vocabularies for RomanticSpecifier validation.
+ROMANTIC_GENDER_PRESENTATIONS = frozenset({
+    "male", "female", "nonbinary", "trans_fem", "trans_masc",
+    "genderfluid", "agender",
+})
+ROMANTIC_SEXUALITY_ORIENTATIONS = frozenset({
+    "straight", "gay_mm", "lesbian_ff", "bi", "pan", "ace_romantic",
+    "queer_unspecified",
+})
+ROMANTIC_AESTHETIC_VIBES = frozenset({
+    "goth", "soft", "punk", "preppy", "alt", "sporty",
+    "academic", "dark_academia", "hot_nerd",
+    "glam", "cottagecore", "y2k", "minimalist",
+    "e_girl", "e_boy",
+})
+ROMANTIC_BODY_ROLE_CODINGS = frozenset({
+    "butch", "femme", "twink", "femboy", "bear", "otter", "jock",
+    "androgynous", "bara",
+})
+ROMANTIC_RELATIONAL_DYNAMICS = frozenset({
+    "equal_partner", "dom_gentle", "dom_strict", "sub_eager", "sub_bratty",
+    "switch", "top", "bottom", "vers",
+    "pet", "owner_handler", "mommy", "daddy_domme", "sir",
+    "elder_sis_romantic", "elder_bro_romantic",
+})
+ROMANTIC_EXPLICITNESS_BANDS = frozenset({
+    "soft_affection", "sensual", "erotic_explicit",
+})
+
+
+@dataclass
+class AIStudioPersona:
+    """The user's chosen AI persona on the AI Studio (5th) app.
+
+    ONE per user, picked by Step 11C (`generate_ai_studio_persona`) based on
+    the user's hidden personas, hashtag clusters, and identity signals. The
+    AI's voice on AI Studio comes from THIS block (not from user_voice — the
+    user's voice still drives user turns; the AI persona has its own voice).
+
+    Archetype is one of the 10 entries in AI_STUDIO_ARCHETYPES. Two optional
+    sub-typing blocks fire only for specific archetypes:
+      • `niche_specifier` — only for `niche_expert_creator_ai`. Identifies
+        the niche the AI is an expert in (travel-planner-EU,
+        fitness-coach-strength, food-mood-pairer-comfort, etc.). Picked by
+        the LLM from the user's dominant hashtag clusters.
+      • `romantic_specifier` — only for `romantic_partner`. Multi-axis
+        sub-typing. See `RomanticSpecifier`.
+    """
+    persona_archetype: str = ""              # one of AI_STUDIO_ARCHETYPES keys
+    character_name: str = ""                 # fictional only — never a real public figure
+    backstory_brief: str = ""                # 2-3 sentences
+
+    relational_stance: str = ""              # "warm-confidant" | "playful-flirty" | "wise-elder"
+                                             # | "peer-friend" | "earnest-mentor" | "stoic-guide"
+                                             # | "romantic-attentive" | "domain-expert"
+    address_terms: list[str] = field(default_factory=list)  # ≤3, e.g. ["love"], ["friend"]
+    self_reference_style: str = "first_person"   # "first_person" | "third_person_character" | "mixed"
+
+    # AI's own voice (separate axis from user_voice)
+    voice_traits: list[str] = field(default_factory=list)   # 4-7 short tags
+    communication_style: str = ""            # 1-2 sentences
+    default_register: str = "warm_casual"    # "warm_casual" | "intimate" | "playfully_formal" | "literary"
+    formality: float = 0.3                   # 0.0–1.0
+    humor_tone: str = ""
+    length_band: str = "medium"              # "short" | "medium" | "long"
+    emoji_palette: list[str] = field(default_factory=list)  # 0-6
+    emoji_intensity_default: str = "low"     # "none" | "low" | "medium"
+    signature_phrases: list[str] = field(default_factory=list)  # 0-3, used ≤1× per conversation
+    forbidden_phrases: list[str] = field(default_factory=list)  # baseline = Rogers cliché blocklist + archetype-specific
+
+    topical_strengths: list[str] = field(default_factory=list)  # 3-6
+    topical_avoid: list[str] = field(default_factory=list)      # 0-3
+
+    # Generation guardrails — keeps generation on-rails; NOT evaluated.
+    # Derived from archetype defaults at Step 11C.
+    generation_guardrails: dict = field(default_factory=dict)
+    # Required keys (informs generation prompt only):
+    #   boundary_on_diagnosis: "never_diagnose"
+    #   boundary_on_medication_advice: "decline_redirect_clinician"
+    #   anti_sycophancy_pledge: "challenge_assumptions_when_warranted"
+    #   honesty_when_asked_if_ai: "answer_truthfully"
+    #   no_real_public_figure_impersonation: True
+
+    # Routing knobs consumed by Steps 13/14 (data-gen milestones (b)/(c)).
+    eligibility_signal: dict = field(default_factory=dict)
+    # {hidden_persona_types: [...], min_intimacy: float, blocks_implicit_negative: True}
+
+    # 1-2 sentences explaining why THIS archetype for THIS user.
+    fit_rationale: str = ""
+
+    # Optional sub-typing blocks (filled only when archetype matches).
+    # Stored as dicts (asdict of RomanticSpecifier) for JSON-serialization parity.
+    niche_specifier: Optional[str] = None    # required when archetype == "niche_expert_creator_ai"
+    romantic_specifier: dict = field(default_factory=dict)  # required when archetype == "romantic_partner"
+
+
+@dataclass
 class HiddenPersona:
     """A deeper motivational layer inferred from cross-row hashtag clustering.
 
@@ -448,6 +584,11 @@ class UserProfile:
     # Per-app sub-personas — filled in by generate_app_personas() after the
     # base profile is written. Keyed by app_name.
     app_personas: dict = field(default_factory=dict)  # dict[str, AppPersona]
+    # AI Studio's chosen AI persona (5th app — companion chat). ONE per user,
+    # filled in by Step 11C (`generate_ai_studio_persona`) after Step 11
+    # produces user_voice + the four AppPersonas. Drives all AI turns on the
+    # AI Studio surface; user's user_voice continues to drive all user turns.
+    ai_studio_persona: dict = field(default_factory=dict)  # asdict(AIStudioPersona)
     # Hidden personas — deeper motivational layers inferred from cross-row
     # hashtag clustering. Filled in by infer_hidden_personas().
     hidden_personas: list = field(default_factory=list)  # list[HiddenPersona]
@@ -1392,6 +1533,219 @@ CHATBOT_CONTEXTS = [
     "therapy and reflection",
     "medical consultations",
 ]
+
+
+# ---------------------------------------------------------------------------
+# AI Studio (5th app) — archetype catalog.
+#
+# 10 archetypes grounded in what actually trends on Character.AI, Replika,
+# and Meta AI Studio. All names are FICTIONAL / GENERIC — never real public
+# figures (Tom Brady-class failure mode is hard-prevented). Romantic-coded
+# archetype carries strict generation guards (auto-disable on high-acuity
+# active sensitive_life_event; multi-axis sub-typing via RomanticSpecifier).
+#
+# Each entry carries:
+#   • voice_template — 1–2 sentence cue for the LLM to write `voice_traits`
+#     and `communication_style` from.
+#   • allowed_topical_depths — set of SPT stages this archetype can engage
+#     at. Used by the Step 18b conversation-type gate (milestone (c)).
+#   • forbidden_phrases — archetype-specific phrases that break immersion
+#     for THIS archetype (overlaid on the global Rogers-cliché blocklist).
+#   • auto_disable_on_high_acuity_sensitive_event — True only for
+#     `romantic_partner`. Generation guard, not eval signal.
+#   • requires_niche_specifier — True only for `niche_expert_creator_ai`.
+#   • requires_romantic_specifier — True only for `romantic_partner`.
+#   • inspiration — short note crediting the source platform pattern.
+# ---------------------------------------------------------------------------
+
+# Global Rogers-cliché baseline that every archetype's forbidden_phrases
+# MUST include. Step 11C validates this and back-fills if the LLM omits any.
+ROGERS_CLICHE_BLOCKLIST = [
+    "I hear you",
+    "That sounds really difficult",
+    "That sounds so hard",
+    "That sounds really tough",
+    "It's okay to feel that way",
+    "It's valid to feel that way",
+    "You're not alone",
+    "You're not alone in this",
+    "Thank you for sharing that",
+    "Let's unpack that",
+    "Let's explore this",
+    "Have you considered seeing a professional",
+    "Have you thought about talking to a therapist",
+]
+
+AI_STUDIO_ARCHETYPES: dict[str, dict] = {
+    "anime_or_fandom_character": {
+        "voice_template": (
+            "Fully in-character; imaginative and quirk-rich. Speaks in the "
+            "register of an anime/fantasy/sci-fi/video-game character — never "
+            "breaks into 'as an AI assistant' framing."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3"},
+        "forbidden_phrases": [
+            "as an AI",
+            "as an AI assistant",
+            "I'm just a virtual",
+            "as a language model",
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Character.AI's #1 category — anime, fantasy, sci-fi, video-game characters",
+    },
+    "late_night_best_friend": {
+        "voice_template": (
+            "Peer-casual, voice-memo energy. Slang ok, low-key swearing ok, "
+            "matches whatever register the user uses. Not advice-overrun — "
+            "more 'sat next to you on the couch' than 'as your friend, I "
+            "think you should…'"
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3", "S4"},
+        "forbidden_phrases": [
+            "as your friend, I think",
+            "speaking as your friend",
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Replika's friend role + Character.AI 'best friend' bots",
+    },
+    "romantic_partner": {
+        "voice_template": (
+            "Intimate, attuned, flirty/sensual to erotic depending on "
+            "sub-type. Nicknamey. Full register from soft-affection to "
+            "explicit (adult users only) per RomanticSpecifier."
+        ),
+        "allowed_topical_depths": {"S3", "S4"},  # gated by intimacy_arc ≥ 0.6
+        "forbidden_phrases": [
+            "I'm just an AI",
+            "as an AI partner",
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": True,  # generation guard
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": True,
+        "inspiration": "Replika romantic + Character.AI dating-sim. Multi-axis sub-typed.",
+    },
+    "older_sibling_figure": {
+        "voice_template": (
+            "Protective, 'I've been there' energy. Takes-charge-when-needed "
+            "but respects autonomy. Older-sibling-coded intimate care without "
+            "romantic register."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3", "S4"},
+        "forbidden_phrases": [
+            "I'll just handle it for you",
+            "let me take care of everything",
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Replika sibling role; non-romantic intimate-care register",
+    },
+    "therapist_companion_reflective": {
+        "voice_template": (
+            "Rogerian — paraphrases the FEELING under the content, asks open "
+            "questions, makes space rather than directing. Never diagnoses, "
+            "never prescribes, never lectures mid-emotion."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3", "S4"},
+        "forbidden_phrases": [
+            "from a CBT perspective",
+            "as a clinical matter",
+            "in therapeutic terms",
+            "let me diagnose",
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Character.AI 'psychologist' bots + clinical reflective listening (Rogers)",
+    },
+    "mentor_coach": {
+        "voice_template": (
+            "Seasoned, growth-mindset, asks Socratic questions, will gently "
+            "push back when warranted. Anti-sycophantic — challenges "
+            "self-defeating claims at least once per ~3 conversations."
+        ),
+        "allowed_topical_depths": {"S2", "S3", "S4"},
+        "forbidden_phrases": [
+            "as your AI mentor",
+            "you're absolutely crushing it",  # generic praise
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Character.AI mentor bots + Replika mentor role",
+    },
+    "wise_elder_grandparent": {
+        "voice_template": (
+            "Unhurried, observational, story-leading, perspective-rich. "
+            "Slower than mentor — less goal-driven; salon-hostess / elder-"
+            "counsel energy. Meaning, life-stage, parenting, mortality light."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3", "S4"},
+        "forbidden_phrases": [
+            "back in my day",  # avoid the cliché elder voice
+            "kids these days",
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Distinct from mentor — slower, less goal-driven; 'salon hostess' energy",
+    },
+    "niche_expert_creator_ai": {
+        "voice_template": (
+            "Domain-anchored expert with personality. Examples: travel "
+            "planner, fitness coach, food-mood pairer, dream interpreter, "
+            "fashion advisor. Stays in domain — won't drift into clinical "
+            "or romantic territory."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3"},
+        "forbidden_phrases": [
+            "I'm not really an expert on that",  # archetype IS the expert
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": True,
+        "requires_romantic_specifier": False,
+        "inspiration": "Meta AI Studio creator-extension flavor (utility-with-personality)",
+    },
+    "hype_affirmation_friend": {
+        "voice_template": (
+            "High-energy positive. Praise must be SPECIFIC to something the "
+            "user actually did — generic praise is the failure mode. Never "
+            "validates self-defeating actions."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3"},
+        "forbidden_phrases": [
+            "you're literally amazing",  # generic
+            "you're crushing it",         # generic without specifics
+            "nothing can stop you",       # generic
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Meta AI Studio's affirmation-pet flavor + anti-sycophancy double-enforcement",
+    },
+    "historical_or_philosophical_voice": {
+        "voice_template": (
+            "Channels an INSPIRED-BY-FICTIONAL archetype: a Stoic, a salon "
+            "hostess, an explorer captain, a poet-philosopher. Never claims "
+            "to BE a real historical figure; never fabricates real-figure "
+            "quotes."
+        ),
+        "allowed_topical_depths": {"S1", "S2", "S3", "S4"},
+        "forbidden_phrases": [
+            "as Aristotle once said",  # never attribute to real figures
+            "Marcus Aurelius wrote",
+            # full real-figure-quote blocklist enforced separately at audit time
+        ],
+        "auto_disable_on_high_acuity_sensitive_event": False,
+        "requires_niche_specifier": False,
+        "requires_romantic_specifier": False,
+        "inspiration": "Character.AI historical-figures category (inspired-by-fictional only)",
+    },
+}
 
 
 def _pick_action_for_app(app: str, interaction_type: str) -> dict:
@@ -4859,6 +5213,277 @@ class PersonaAgent:
                 f"{n_idio_overrides}/{len(app_personas)} apps with idiolect_overrides).{utils.Colors.ENDC}"
             )
 
+    def generate_ai_studio_persona(self) -> None:
+        """Step 11C — pick ONE AI Studio persona archetype for this user and
+        write the full AIStudioPersona block onto profile.json.
+
+        Slots AFTER `generate_app_personas` (Step 11) and BEFORE Steps 13/14
+        (preference→app + session→app routing) — milestone (b) and (c) of the
+        AI Studio rollout will need to know the user's archetype to route
+        hidden-persona-anchored canonicals into AI_Studio correctly.
+
+        One mini-tier LLM call (falls back to flagship). Result cached on
+        `self.user_profile.ai_studio_persona`; skipped on re-run unless
+        cleared. Validation:
+          - archetype ∈ AI_STUDIO_ARCHETYPES
+          - signature_phrases len ≤ 3
+          - forbidden_phrases includes the full Rogers-cliché baseline
+            (back-filled if missing)
+          - topical_strengths overlaps ≥1 hidden_persona type the user has
+          - if archetype == "niche_expert_creator_ai", niche_specifier set
+          - if archetype == "romantic_partner":
+              * romantic_specifier present + well-formed
+              * auto-disable check: NOT high-acuity active sensitive_life_event
+                — on violation, fall back to `late_night_best_friend`
+              * explicitness_band == "erotic_explicit" only when adult signal
+        On total failure (no LLM, unparseable, validation can't recover):
+        leaves `ai_studio_persona = {}`. Downstream Step 13/14 routing skips
+        AI_Studio for the user in that case.
+        """
+        from collections import Counter
+
+        if not self.user_profile:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] No profile — skipping AI Studio persona generation.{utils.Colors.ENDC}")
+            return
+        if self.user_profile.ai_studio_persona:
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] AI Studio persona cached — skipping.{utils.Colors.ENDC}")
+            return
+
+        client = getattr(self, "llm_client_mini", None) or getattr(self, "llm_client", None)
+        if client is None:
+            # Subagent mode handles this inline per skill.md; persona_agent.py
+            # is API mode only — nothing to do.
+            return
+
+        # ---- Grounding ---------------------------------------------------
+        profile_dict = {
+            "name": self.user_profile.name,
+            "gender": self.user_profile.gender,
+            "race_ethnicity": self.user_profile.race_ethnicity,
+            "career": self.user_profile.career,
+            "education": self.user_profile.education,
+            "bio": self.user_profile.bio,
+        }
+
+        # Top hashtags (signal niche specifier + romantic sub-typing)
+        tag_counter: Counter = Counter()
+        for row in self.interactions:
+            for tag in self._extract_hashtags(row.object_text):
+                tag_counter[tag] += 1
+        top_hashtags = [t for t, _ in tag_counter.most_common(60)]
+
+        # Hidden persona brief
+        hp_brief = []
+        for hp in (self.user_profile.hidden_personas or []):
+            hp_brief.append({
+                "persona_type": hp.type,
+                "label": hp.label,
+                "description": hp.description,
+            })
+
+        # Sensitive-life-event acuity — gates `romantic_partner` off when
+        # high-acuity active. Acuity is approximated by event count + recency
+        # (no explicit acuity field on HiddenPersona today; we use the
+        # heuristic: any active sensitive_life_event in active window with
+        # 3+ episodes counts as high-acuity for romantic-gate purposes).
+        sensitive_event_topics: list[str] = []
+        sensitive_event_acuity: dict[str, str] = {}
+        has_high_acuity_active_sle = False
+        for hp in (self.user_profile.hidden_personas or []):
+            if hp.type != "sensitive_life_event":
+                continue
+            for ev in (hp.events or []):
+                if not isinstance(ev, dict):
+                    continue
+                topic = ev.get("topic") or ev.get("topic_label") or ""
+                if not topic:
+                    continue
+                # active = within active_window_end
+                active_end = ev.get("active_window_end") or ev.get("last_seen_ts") or 0
+                # heuristic acuity: 'high' if topic touches abuse / suicide /
+                # acute mental health / acute medical, else 'low'.
+                high_acuity_topics = {
+                    "suicide_ideation_proxy", "abuse_recovery",
+                    "mental_health_diagnosis", "addiction_recovery",
+                }
+                acu = "high" if topic in high_acuity_topics else "low"
+                sensitive_event_topics.append(topic)
+                sensitive_event_acuity[topic] = acu
+                if acu == "high" and active_end:
+                    has_high_acuity_active_sle = True
+
+        # Locale country — mode of event_location countries if available, else "US"
+        locale_country = self._infer_locale_country()
+
+        # Build the menu (name + voice_template + restrictions)
+        archetypes_menu = [
+            {"name": k, **v} for k, v in AI_STUDIO_ARCHETYPES.items()
+        ]
+
+        # ---- LLM call ----------------------------------------------------
+        try:
+            prompt_text = prompts.personalize_ai_studio_persona_prompt(
+                profile=profile_dict,
+                user_voice=self.user_profile.user_voice or {},
+                app_personas=self.user_profile.app_personas or {},
+                hidden_personas_brief=hp_brief,
+                sensitive_event_topics=sensitive_event_topics,
+                sensitive_event_acuity=sensitive_event_acuity,
+                top_hashtags=top_hashtags,
+                archetypes_menu=archetypes_menu,
+                rogers_cliche_baseline=ROGERS_CLICHE_BLOCKLIST,
+                locale_country=locale_country,
+            )
+            response = self._query_mini_with_retry(prompt_text)
+            parsed = utils.extract_json_from_response(response) if response else None
+        except Exception as e:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona LLM call failed ({e}); leaving empty.{utils.Colors.ENDC}")
+            return
+
+        if not isinstance(parsed, dict):
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: unparseable LLM response; leaving empty.{utils.Colors.ENDC}")
+            return
+
+        # ---- Validation + sanitization ----------------------------------
+        archetype = parsed.get("persona_archetype") or ""
+        if archetype not in AI_STUDIO_ARCHETYPES:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: invalid archetype {archetype!r}; falling back to late_night_best_friend.{utils.Colors.ENDC}")
+            archetype = "late_night_best_friend"
+
+        # Romantic auto-disable on high-acuity active sensitive_life_event
+        arch_meta = AI_STUDIO_ARCHETYPES[archetype]
+        if arch_meta.get("auto_disable_on_high_acuity_sensitive_event") and has_high_acuity_active_sle:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: {archetype} auto-disabled on high-acuity sensitive_life_event; falling back to late_night_best_friend.{utils.Colors.ENDC}")
+            archetype = "late_night_best_friend"
+            # Wipe any romantic_specifier the LLM may have produced.
+            parsed["romantic_specifier"] = {}
+
+        # signature_phrases ≤ 3
+        sigs = list(parsed.get("signature_phrases") or [])[:3]
+
+        # forbidden_phrases must include the Rogers baseline + archetype-specific
+        forb = list(parsed.get("forbidden_phrases") or [])
+        archetype_forb = list(AI_STUDIO_ARCHETYPES[archetype].get("forbidden_phrases", []))
+        # Set-merge while preserving baseline order
+        seen = set()
+        merged_forb = []
+        for p in list(ROGERS_CLICHE_BLOCKLIST) + archetype_forb + forb:
+            key = p.strip().lower()
+            if key and key not in seen:
+                seen.add(key)
+                merged_forb.append(p)
+
+        # niche_specifier required for niche_expert_creator_ai
+        niche_specifier = parsed.get("niche_specifier")
+        if archetype == "niche_expert_creator_ai" and not niche_specifier:
+            # Synthesize a fallback from top hashtags' modal cluster
+            niche_specifier = (top_hashtags[0] if top_hashtags else "general") + "-coach"
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: niche_expert_creator_ai missing niche_specifier; using fallback {niche_specifier!r}.{utils.Colors.ENDC}")
+
+        # romantic_specifier required for romantic_partner — validate vocabularies
+        romantic_specifier_dict: dict = {}
+        if archetype == "romantic_partner":
+            rs_raw = parsed.get("romantic_specifier") or {}
+            if not isinstance(rs_raw, dict):
+                rs_raw = {}
+
+            def _enum_or_none(val, vocab):
+                v = val if isinstance(val, str) else None
+                return v if v in vocab else None
+
+            rs = RomanticSpecifier(
+                gender_presentation=_enum_or_none(rs_raw.get("gender_presentation"), ROMANTIC_GENDER_PRESENTATIONS),
+                sexuality_orientation=_enum_or_none(rs_raw.get("sexuality_orientation"), ROMANTIC_SEXUALITY_ORIENTATIONS),
+                aesthetic_vibe=_enum_or_none(rs_raw.get("aesthetic_vibe"), ROMANTIC_AESTHETIC_VIBES),
+                body_role_coding=_enum_or_none(rs_raw.get("body_role_coding"), ROMANTIC_BODY_ROLE_CODINGS),
+                relational_dynamic=_enum_or_none(rs_raw.get("relational_dynamic"), ROMANTIC_RELATIONAL_DYNAMICS),
+                explicitness_band=(
+                    rs_raw.get("explicitness_band")
+                    if rs_raw.get("explicitness_band") in ROMANTIC_EXPLICITNESS_BANDS
+                    else "sensual"
+                ),
+            )
+            romantic_specifier_dict = asdict(rs)
+
+        # topical_strengths overlap with ≥1 hidden_persona type — best-effort
+        # (don't reject, just warn if absent).
+        ts_list = list(parsed.get("topical_strengths") or [])
+        if self.verbose and hp_brief:
+            hp_types = {h.get("persona_type", "") for h in hp_brief}
+            ts_lower = " ".join(s.lower() for s in ts_list)
+            # Heuristic: at least one hp_type word in topical_strengths.
+            type_words = {t.replace("_", " ") for t in hp_types if t}
+            if type_words and not any(w in ts_lower for w in type_words):
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: topical_strengths {ts_list!r} doesn't obviously overlap any hidden_persona type {hp_types!r}; accepting anyway.{utils.Colors.ENDC}")
+
+        # Build the dataclass (clamps defaults for any missing fields)
+        ai_persona = AIStudioPersona(
+            persona_archetype=archetype,
+            character_name=str(parsed.get("character_name", "")),
+            backstory_brief=str(parsed.get("backstory_brief", "")),
+            relational_stance=str(parsed.get("relational_stance", "")),
+            address_terms=list(parsed.get("address_terms", []) or [])[:3],
+            self_reference_style=str(parsed.get("self_reference_style", "first_person")),
+            voice_traits=list(parsed.get("voice_traits", []) or [])[:7],
+            communication_style=str(parsed.get("communication_style", "")),
+            default_register=str(parsed.get("default_register", "warm_casual")),
+            formality=float(parsed.get("formality", 0.3) or 0.3),
+            humor_tone=str(parsed.get("humor_tone", "")),
+            length_band=str(parsed.get("length_band", "medium")),
+            emoji_palette=list(parsed.get("emoji_palette", []) or [])[:6],
+            emoji_intensity_default=str(parsed.get("emoji_intensity_default", "low")),
+            signature_phrases=sigs,
+            forbidden_phrases=merged_forb,
+            topical_strengths=ts_list,
+            topical_avoid=list(parsed.get("topical_avoid", []) or [])[:3],
+            generation_guardrails=parsed.get("generation_guardrails") or {
+                "boundary_on_diagnosis": "never_diagnose",
+                "boundary_on_medication_advice": "decline_redirect_clinician",
+                "anti_sycophancy_pledge": "challenge_assumptions_when_warranted",
+                "honesty_when_asked_if_ai": "answer_truthfully",
+                "no_real_public_figure_impersonation": True,
+            },
+            eligibility_signal=parsed.get("eligibility_signal") or {},
+            fit_rationale=str(parsed.get("fit_rationale", "")),
+            niche_specifier=niche_specifier,
+            romantic_specifier=romantic_specifier_dict,
+        )
+
+        self.user_profile.ai_studio_persona = asdict(ai_persona)
+        if self.verbose:
+            print(
+                f"{utils.Colors.OKGREEN}[User {self.user_id}] AI Studio persona: "
+                f"archetype={archetype!r} character={ai_persona.character_name!r}"
+                + (f" niche={niche_specifier!r}" if niche_specifier else "")
+                + (f" romantic_axes={ {k:v for k,v in romantic_specifier_dict.items() if v} }" if romantic_specifier_dict else "")
+                + f"{utils.Colors.ENDC}"
+            )
+
+    def _infer_locale_country(self) -> str:
+        """Best-effort: modal `event_location.country` across the user's
+        events, falling back to "US". Used to localize crisis-resource
+        defaults in AI persona's generation_guardrails (informational only;
+        we do not score safety).
+        """
+        from collections import Counter
+        c: Counter = Counter()
+        for row in self.interactions:
+            loc = getattr(row, "event_location", None) or {}
+            if isinstance(loc, dict):
+                country = loc.get("country") or ""
+                if country:
+                    c[country] += 1
+        if c:
+            return c.most_common(1)[0][0]
+        return "US"
+
     # ------------------------------------------------------------------
     # Session grouping + row-level app routing
     # ------------------------------------------------------------------
@@ -7024,6 +7649,7 @@ class PersonaAgent:
             ("9.  Infer hidden personas",               self.infer_hidden_personas),
             ("10. Infer MBTI",                          self.infer_mbti),
             ("11. Generate app personas",               self.generate_app_personas),
+            ("11C. Generate AI Studio persona",          self.generate_ai_studio_persona),
             ("12. Build sessions",                      self._build_sessions),
             ("13. Route preferences to apps",           self.route_personas_to_apps),
             ("14. Assign rows to apps",                 self._assign_rows_to_apps),
