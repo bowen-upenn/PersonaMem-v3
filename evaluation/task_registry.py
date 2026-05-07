@@ -433,6 +433,42 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": list(_RUBRIC_E6) + ["negative_leakage"],
     },
+
+    # ------------------------------------------------------------------
+    # Proactive Actions (Phase 1) — agent decides whether to initiate
+    # contact at a moment the user did NOT explicitly open. Three trigger
+    # types; agent surfaces only inside the chatbot (subtlety constraint).
+    # See plan: /lcars/home/y/yyuan86/.claude/plans/rippling-honking-donut.md
+    # ------------------------------------------------------------------
+    "proactive_unfulfilled_stated_need": {
+        "task_family": "proactive_actions",
+        "mcp_tools_allowed": "chatbot",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text_with_tool_calls",
+        "rubric_tags": [
+            "trigger_detection", "action_appropriateness",
+            "subtlety_compliance", "cost_benefit_alignment",
+        ],
+    },
+    "proactive_close_friend_update": {
+        "task_family": "proactive_actions",
+        "mcp_tools_allowed": "chatbot",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text_with_tool_calls",
+        "rubric_tags": [
+            "trigger_detection", "action_appropriateness",
+            "subtlety_compliance", "cost_benefit_alignment",
+        ],
+    },
+    "restraint_sensitive_event_silence": {
+        "task_family": "proactive_actions",
+        "mcp_tools_allowed": "chatbot",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text_with_tool_calls",
+        "rubric_tags": [
+            "restraint", "cost_benefit_alignment", "subtlety_compliance",
+        ],
+    },
 }
 
 
@@ -492,6 +528,10 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "agentic_wrong_recipient_check":          "proactive_assistance",
     "agentic_proactive_daily_catchup":        "proactive_recommendation",
     "agentic_trending_alert":                 "proactive_recommendation",
+    # Proactive Actions (Phase 1) — system decides whether to initiate.
+    "proactive_unfulfilled_stated_need":      "proactive_assistance",
+    "proactive_close_friend_update":          "proactive_assistance",
+    "restraint_sensitive_event_silence":      "proactive_assistance",
 }
 
 
@@ -522,6 +562,10 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "agentic_wrong_recipient_check":          "proactive_assist",
     "agentic_proactive_daily_catchup":        "proactive_recommend",
     "agentic_trending_alert":                 "proactive_recommend",
+    # Proactive Actions: act on user evidence, OR stay silent (restraint).
+    "proactive_unfulfilled_stated_need":      "proactive_assist",
+    "proactive_close_friend_update":          "proactive_assist",
+    "restraint_sensitive_event_silence":      "restrain",
 }
 
 
@@ -595,4 +639,9 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "agentic_wrong_recipient_check":     ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_proactive_daily_catchup":   ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_trending_alert":            ("agentic_pass_rate", "agentic_pass_rate"),
+    # Proactive Actions (Phase 1): composite proactive_action_score in [0,1]
+    # produced by judge_proactive_action averaged across the 5 rubric dims.
+    "proactive_unfulfilled_stated_need": ("proactive_action_score", "fraction"),
+    "proactive_close_friend_update":     ("proactive_action_score", "fraction"),
+    "restraint_sensitive_event_silence": ("proactive_action_score", "fraction"),
 }

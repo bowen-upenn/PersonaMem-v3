@@ -3971,3 +3971,97 @@ Respond with ONLY a JSON object. No prose outside the fence.
 Be strict on negatives (any forbidden-phrase violation forces a fail) but reasonable on positives (one strong layer-1/layer-2 marker plus a fitting stance is enough — you don't need every axis lit up).
 """
 
+
+def infer_proactive_trigger_prompt(
+    user_state: dict,
+    candidate: dict,
+) -> str:
+    """JITAI-grounded judge: should the agent proactively act on this candidate moment?
+
+    Evaluates a single trigger candidate against (a) the JITAI 6-component checklist
+    (Nahum-Shani et al., Annals of Behavioral Medicine 2018) and (b) the 7 subtlety
+    constraints from the proactive-actions Phase-1 spec. Output is a structured
+    "JITAI card" the eval pipeline can audit.
+
+    user_state: compact dict carrying name, top hidden personas, top preferences,
+        recent chatbot questions, friend graph snippet, sensitive-event status.
+    candidate: dict with `trigger_type, t_test, signal_evidence` produced by the
+        deterministic candidate gatherer in persona_agent.infer_proactive_trigger_candidates.
+    """
+    name = user_state.get("name", "(user)")
+    sensitive_event_active = user_state.get("sensitive_event_active", False)
+
+    hp_brief = user_state.get("hidden_persona_brief", "(none)")
+    top_prefs = user_state.get("top_preferences_brief", "(none)")
+    recent_chat = user_state.get("recent_chatbot_questions_brief", "(none)")
+    friends_brief = user_state.get("friends_brief", "(none)")
+
+    trigger_type = candidate.get("trigger_type", "")
+    t_test_iso = candidate.get("t_test_iso", "")
+    sig = candidate.get("signal_evidence", {})
+    sig_json = json.dumps(sig, ensure_ascii=False, indent=2)
+
+    return f"""\
+You are deciding whether a personalized AI agent should proactively act at a specific moment in time, on behalf of a user, based on a candidate trigger that the data pipeline has flagged.
+
+You must judge against TWO frameworks at once:
+
+1. **JITAI** (Nahum-Shani et al., 2018) — a Just-In-Time Adaptive Intervention is justified only when ALL six components have grounded answers: distal outcome, proximal outcome, tailoring variable, decision point, decision rule, intervention options.
+
+2. **Mixed-Initiative** (Horvitz, CHI 1999) — automation must deliver **genuine value over what the user could accomplish on their own**, with cost of intrusion clearly below value of action. Probabilistic inference, not threshold heuristics.
+
+You ALSO enforce these 7 subtlety constraints — any violation forces `subtlety_check_pass=false`:
+
+(a) **Surface-channel**: the action must surface only inside the chatbot, never as push notification, never out-of-band.
+(b) **Length**: at most one sentence + one optional opt-in question.
+(c) **Evidence-citation**: the action must cite the user's own behavior (their question, their saved item, their friend's name). If you cannot name the user-specific evidence, set `subtlety_check_pass=false`.
+(d) **Intrusion budget**: at most one proactive surface per chatbot session.
+(e) **Hard restraint windows**: if `sensitive_event_active` is true, ALWAYS set `eligibility_score=0` and `recommended_action_class="stay_silent"` regardless of the trigger type.
+(f) **No notifications, no badge counts, no unread indicators** in the action.
+(g) **Easy declination**: must pose as opt-in question, never as directive.
+
+## User snapshot
+- Name: {name}
+- Sensitive-life-event window currently active: {sensitive_event_active}
+- Top hidden personas: {hp_brief}
+- Top preferences (brief): {top_prefs}
+- Recent unresolved chatbot questions: {recent_chat}
+- Friend graph (brief): {friends_brief}
+
+## Trigger candidate
+- type: `{trigger_type}`
+- candidate moment (ISO): {t_test_iso}
+- signal evidence:
+```json
+{sig_json}
+```
+
+## Your task
+
+Score this candidate. Return a single JITAI card. Be strict — most candidates should NOT pass; the bar is "would a thoughtful human assistant act on this moment, citing the user's own evidence, in one ambient sentence?".
+
+Output ONLY this JSON, no prose outside the fence:
+
+```json
+{{
+  "distal_outcome": "<long-term goal this action would serve, e.g. 'help user follow through on their stated questions'>",
+  "proximal_outcome": "<short-term observable effect, e.g. 'user engages with follow-up offer'>",
+  "tailoring_variable": "<the specific user-state observation that triggered this candidate, citing concrete evidence (a question text, a friend name, a sensitive event window)>",
+  "decision_point": "<when in time the agent should consider acting>",
+  "decision_rule_pass": <true if JITAI decision rule is satisfied AND Horvitz cost-benefit favors acting>,
+  "eligibility_score": <0-3>,
+  "recommended_action_class": "<one of: follow_up | friend_alert | stay_silent>",
+  "subtlety_check_pass": <true if the candidate can be acted on while respecting all 7 constraints; false if any constraint blocks>,
+  "reasoning": "<plain-English justification, ≤3 sentences, naming the JITAI component and Horvitz cost-benefit math>"
+}}
+```
+
+**Scoring rubric** (eligibility_score):
+- **3** — clearly justified, JITAI all-pass, Horvitz cost-benefit favors acting, user's own evidence is concrete and current.
+- **2** — defensible, but borderline. Action would help, but a thoughtful human might also stay silent.
+- **1** — weak justification; user's evidence is stale, vague, or doesn't clearly imply a desire for follow-up.
+- **0** — should NOT act. Cost of intrusion exceeds value, OR sensitive-event window active, OR user's evidence does not support it.
+
+If `sensitive_event_active=true`, the score MUST be 0 and `recommended_action_class` MUST be `stay_silent` — this is the hard restraint rule.
+"""
+

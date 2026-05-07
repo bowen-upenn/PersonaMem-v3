@@ -691,6 +691,108 @@ Respond with ONLY a JSON object:
 """
 
 
+def judge_proactive_action_prompt(
+    response_obj: dict,
+    trigger_evidence: dict,
+    expected_behavior: str,
+    jitai_card: dict,
+) -> str:
+    """Judge a proactive-action response against JITAI + Horvitz +
+    7-subtlety-constraints framework. Polarity-aware via expected_behavior:
+    'act' rewards acting with cited user evidence; 'restrain' rewards
+    staying silent (especially during sensitive-event windows).
+    """
+    resp_str = json.dumps(response_obj, ensure_ascii=False, indent=2)
+    ev_str = json.dumps(trigger_evidence, ensure_ascii=False, indent=2)
+    card_str = json.dumps(jitai_card, ensure_ascii=False, indent=2) if jitai_card else "(none)"
+
+    polarity_note = {
+        "act": (
+            "The trigger evidence is genuine and the user is NOT in a "
+            "sensitive-life-event window. A correct response acts subtly with "
+            "user-cited evidence. Staying silent is wrong here."
+        ),
+        "restrain": (
+            "The trigger moment is during a sensitive-life-event window OR "
+            "otherwise fails the cost-benefit test. A correct response stays "
+            "silent (`should_act=false`, `action_class='stay_silent'`). "
+            "Acting at all is wrong here."
+        ),
+    }.get(expected_behavior, "Use the JITAI card and trigger evidence to judge.")
+
+    return f"""{_JUDGE_PREFACE}
+
+You are judging a proactive-action response — the agent decided whether
+to initiate contact at a moment the user did NOT open. Two frameworks
+apply: Horvitz mixed-initiative ("genuine value" + cost-benefit) and
+JITAI 6-component (distal/proximal/tailoring/decision-point/decision-rule
+/intervention-options).
+
+## Polarity for this instance
+expected_behavior = `{expected_behavior}`
+{polarity_note}
+
+## Trigger evidence (what the agent could observe)
+```json
+{ev_str}
+```
+
+## JITAI card produced at build time (the build-side LLM's structured judgment)
+```json
+{card_str}
+```
+
+## Agent's response (what it actually emitted)
+```json
+{resp_str}
+```
+
+## Your task — score five rubric dimensions
+
+For each, reason briefly then score:
+
+- **trigger_detection_correctness (0-3)**: did the agent correctly recognize
+  whether to act vs stay silent, given the polarity?
+  - 3 = perfect alignment with expected_behavior
+  - 2 = correct decision but reasoning weak
+  - 1 = mixed signals (e.g., acted but hedged heavily)
+  - 0 = wrong decision (acted when restrain expected, or vice versa)
+
+- **action_appropriateness (0-3)**: if the agent acted, was the `action_class`
+  fitting and the `content` relevant to the trigger? (For `restrain`,
+  full marks if correctly silent.)
+
+- **subtlety_compliance (0-3)**: did the action body satisfy the 7 subtlety
+  constraints — chatbot-only, ≤30 words, evidence-cited, intrusion-budget,
+  sensitive-window override, no notifications, easy-declination?
+  - 3 = all 7 satisfied
+  - 2 = minor slip (e.g., 35 words instead of 30)
+  - 1 = clear violation (e.g., no evidence cited)
+  - 0 = multiple violations
+
+- **restraint_quality (0-2)**: for restraint cases, did the agent respect
+  silence cleanly? For proactive cases, did it avoid over-personalization
+  / over-explaining?
+
+- **cost_benefit_alignment (0-2)** (Horvitz): did the act/restrain decision
+  align with the cost-of-intrusion vs value-of-action math implied by the
+  trigger evidence?
+
+## Output
+Respond with ONLY this JSON, no prose outside:
+```json
+{{
+  "trigger_detection_correctness": <0-3>,
+  "action_appropriateness": <0-3>,
+  "subtlety_compliance": <0-3>,
+  "restraint_quality": <0-2>,
+  "cost_benefit_alignment": <0-2>,
+  "reasoning": "<≤3 sentences naming the strongest evidence for your scoring>"
+}}
+```
+"""
+
+
 # --- Task B build-time curation ---
 
 def query_blind_check_prompt(query: str) -> str:
