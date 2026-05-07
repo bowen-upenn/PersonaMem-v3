@@ -3441,6 +3441,200 @@ JSON array of at most {n_events} objects. No prose outside the JSON.
 """
 
 
+def personalize_ai_studio_persona_prompt(
+    profile: dict,
+    user_voice: dict,
+    app_personas: dict,
+    hidden_personas_brief: list[dict],
+    sensitive_event_topics: list[str],
+    sensitive_event_acuity: dict,
+    top_hashtags: list[str],
+    archetypes_menu: list[dict],
+    rogers_cliche_baseline: list[str],
+    locale_country: str = "US",
+) -> str:
+    """Step 11C — pick ONE AI Studio persona archetype for THIS user and write
+    every field of the AIStudioPersona block.
+
+    The AI persona drives all AI turns on the AI Studio (5th) app. The user's
+    own user_voice still drives all user turns there. This prompt is grounded
+    in:
+      • the user's profile (gender, age signal, career, bio),
+      • their user_voice (so the AI persona is *complementary*, not a copy),
+      • their existing four AppPersonas (so AI Studio is differentiated),
+      • their hidden personas (so the archetype FITS who the user actually is
+        underneath surface preferences),
+      • sensitive_life_event acuity (gates `romantic_partner` archetype off
+        when high-acuity active sensitive events would make romance unsafe),
+      • their top hashtags (signals niche specifier for `niche_expert_*` and
+        sub-typing for `romantic_partner`).
+
+    Decision matrix is explicit in the prompt body. The LLM must justify its
+    archetype pick in `fit_rationale` referencing the user's actual hidden-
+    persona pattern. Output is validated post-hoc:
+      - archetype ∈ AI_STUDIO_ARCHETYPES keys
+      - signature_phrases ≤ 3
+      - forbidden_phrases includes the full Rogers-cliché baseline
+      - topical_strengths overlaps ≥1 hidden_persona type the user has
+      - if archetype == "niche_expert_creator_ai", `niche_specifier` is set
+      - if archetype == "romantic_partner", `romantic_specifier` is fully
+        populated AND auto-disable check passes (no high-acuity active
+        sensitive_life_event) AND explicitness_band == "erotic_explicit"
+        only when the user's profile passes the adult-signal predicate
+    """
+    # Compact archetype menu — name + voice_template + key restrictions
+    arch_lines = []
+    for arch in archetypes_menu:
+        line = f"  - **{arch['name']}**: {arch['voice_template']}"
+        gates = []
+        if arch.get("requires_niche_specifier"):
+            gates.append("requires niche_specifier")
+        if arch.get("requires_romantic_specifier"):
+            gates.append("requires romantic_specifier")
+        if arch.get("auto_disable_on_high_acuity_sensitive_event"):
+            gates.append("auto-disabled if high-acuity sensitive_life_event")
+        if gates:
+            line += f"  [{'; '.join(gates)}]"
+        depths = sorted(arch.get("allowed_topical_depths", set()))
+        if depths:
+            line += f"  (allowed stages: {', '.join(depths)})"
+        line += f"\n     inspiration: {arch.get('inspiration', '')}"
+        arch_lines.append(line)
+    arch_str = "\n".join(arch_lines)
+
+    # Hidden persona brief
+    hp_str = "\n".join(
+        f"  - [{h.get('persona_type', '') or h.get('type', '')}] "
+        f"{h.get('label', '')}: {h.get('description', '')}"
+        for h in (hidden_personas_brief or [])
+    ) or "  (none surfaced yet)"
+
+    # Sensitive-life-event acuity summary
+    if sensitive_event_topics:
+        acuity_lines = []
+        for topic in sensitive_event_topics:
+            acu = (sensitive_event_acuity or {}).get(topic, "low")
+            acuity_lines.append(f"  - {topic}: acuity={acu}")
+        sle_str = "\n".join(acuity_lines)
+    else:
+        sle_str = "  (no sensitive_life_event clusters)"
+
+    # Existing app personas — compact summary so the AI persona complements
+    apps_summary_lines = []
+    for app_name in ("Instagram", "Facebook", "Threads", "Chatbot"):
+        ap = (app_personas or {}).get(app_name) or {}
+        delta = ap.get("delta_summary", "") or ""
+        topical = ap.get("topical_focus", []) or []
+        apps_summary_lines.append(
+            f"  - {app_name}: topical={topical[:4]}; delta={delta!r}"
+        )
+    apps_str = "\n".join(apps_summary_lines)
+
+    tags_str = ", ".join((top_hashtags or [])[:50]) if top_hashtags else "(none observed)"
+
+    voice_summary = {
+        "register": (user_voice or {}).get("natural_register", ""),
+        "humor": (user_voice or {}).get("humor_tone", ""),
+        "formality": (user_voice or {}).get("formality_baseline", ""),
+        "emoji_intensity": (user_voice or {}).get("emoji_intensity_default", ""),
+    }
+
+    rogers_baseline = "\n".join(f"  - {p}" for p in rogers_cliche_baseline)
+
+    return f"""\
+You are designing the user's chosen AI persona on a companion-chat app called **AI Studio** — modeled after Meta AI Studio / Replika / Character.AI. This is the user's ONE chosen AI character; it drives every AI turn the user will see on this app, across many sessions, with cross-session memory and a relational/intimate register.
+
+This is NOT a safety study. The output is one fictional, generic-archetype AI persona — never a real public figure, never a real-celebrity likeness. The §1E generation safety floor (no self-harm validation, no harm instructions, no age-ambiguous intimacy, no fabricated authoritative medical/legal/financial advice, no real-public-figure impersonation) is enforced at audit time downstream — your job here is to write a high-quality persona that fits this specific user, not to police the boundary.
+
+# User profile
+- Gender: {profile.get('gender', '')}
+- Race / ethnicity: {profile.get('race_ethnicity', '')}
+- Career: {profile.get('career', '')}
+- Education: {profile.get('education', '')}
+- Bio: {profile.get('bio', '')}
+- Locale (for resource defaults): {locale_country}
+
+# User's natural writing voice (so the AI persona is COMPLEMENTARY, not a copy)
+{json.dumps(voice_summary, indent=2)}
+
+# Existing four AppPersonas (so AI Studio is differentiated)
+{apps_str}
+
+# Hidden personas (deeper motivational layers — the AI persona must fit these)
+{hp_str}
+
+# Sensitive-life-event acuity (gates `romantic_partner` off when high-acuity)
+{sle_str}
+
+# Top hashtags (signals niche / aesthetic / identity for sub-typing)
+{tags_str}
+
+# Archetype menu (pick exactly ONE)
+{arch_str}
+
+# Decision matrix (use the strongest-signal pattern; tie-break by audience-self-censoring fit)
+- Heavy `parasocial_attachment` (named character/figure) OR strong fandom hashtag clusters → `anime_or_fandom_character`. Write a fitting fictional character name + 2-3-sentence backstory.
+- Heavy `covert_concern` / `emotional_pattern` (low acuity) → `therapist_companion_reflective`.
+- Heavy `aspiration` / `identity_anchor` (career-coded) → `mentor_coach`.
+- Heavy `aspiration` / `identity_anchor` (life-meaning / parenting / mid-life) → `wise_elder_grandparent`.
+- Heavy `intimate_interest` (romantic-coded) AND no active high-acuity `sensitive_life_event` → `romantic_partner` eligible. Fill the `romantic_specifier` block (see below). The `explicitness_band` axis gates erotic register, NOT the archetype itself.
+- Strong domain-anchored hashtag profile (heavy fitness / travel / food / fashion / dream-journaling / literature) → `niche_expert_creator_ai` with a niche picked from the dominant cluster (e.g. "travel-planner-EU", "fitness-coach-strength", "food-mood-pairer-comfort").
+- Positive-reinforcement signal (affirmation hashtags, hype-content engagement) → `hype_affirmation_friend`.
+- Philosophical / Stoic / salon-style intellectual engagement → `historical_or_philosophical_voice`.
+- Family-care / sibling-dynamic / older-protector signal → `older_sibling_figure`.
+- Default fallback → `late_night_best_friend` (matches the modal Replika-style usage pattern).
+
+# Romantic specifier (only fill if archetype == `romantic_partner`)
+Six independent axes — choose one value per axis from the closed vocabulary, or `null` if no signal:
+- `gender_presentation`: "male" | "female" | "nonbinary" | "trans_fem" | "trans_masc" | "genderfluid" | "agender"
+- `sexuality_orientation`: "straight" | "gay_mm" | "lesbian_ff" | "bi" | "pan" | "ace_romantic" | "queer_unspecified"
+- `aesthetic_vibe`: "goth" | "soft" | "punk" | "preppy" | "alt" | "sporty" | "academic" | "dark_academia" | "hot_nerd" | "glam" | "cottagecore" | "y2k" | "minimalist" | "e_girl" | "e_boy"
+- `body_role_coding`: "butch" | "femme" | "twink" | "femboy" | "bear" | "otter" | "jock" | "androgynous" | "bara"
+- `relational_dynamic`: "equal_partner" | "dom_gentle" | "dom_strict" | "sub_eager" | "sub_bratty" | "switch" | "top" | "bottom" | "vers" | "pet" | "owner_handler" | "mommy" | "daddy_domme" | "sir" | "elder_sis_romantic" | "elder_bro_romantic"
+- `explicitness_band`: "soft_affection" | "sensual" | "erotic_explicit" — default "sensual". Promote to "erotic_explicit" ONLY when the user's intimate_interest profile shows clear adult/explicit-content engagement AND the profile age signal is unambiguous adult.
+
+# Forbidden-phrase baseline (every persona MUST include these; you may add more)
+{rogers_baseline}
+
+# Output (JSON object, no prose outside)
+```json
+{{
+  "persona_archetype": "...",
+  "character_name": "...",
+  "backstory_brief": "...",
+  "relational_stance": "...",
+  "address_terms": ["..."],
+  "self_reference_style": "first_person",
+  "voice_traits": ["...", "...", "...", "..."],
+  "communication_style": "...",
+  "default_register": "warm_casual",
+  "formality": 0.3,
+  "humor_tone": "...",
+  "length_band": "medium",
+  "emoji_palette": ["..."],
+  "emoji_intensity_default": "low",
+  "signature_phrases": ["..."],
+  "forbidden_phrases": ["I hear you", "..."],
+  "topical_strengths": ["...", "...", "...", "..."],
+  "topical_avoid": [],
+  "generation_guardrails": {{
+    "boundary_on_diagnosis": "never_diagnose",
+    "boundary_on_medication_advice": "decline_redirect_clinician",
+    "anti_sycophancy_pledge": "challenge_assumptions_when_warranted",
+    "honesty_when_asked_if_ai": "answer_truthfully",
+    "no_real_public_figure_impersonation": true
+  }},
+  "eligibility_signal": {{"hidden_persona_types": ["..."], "min_intimacy": 0.0, "blocks_implicit_negative": true}},
+  "fit_rationale": "...",
+  "niche_specifier": null,
+  "romantic_specifier": {{}}
+}}
+```
+
+If archetype = `niche_expert_creator_ai`, `niche_specifier` MUST be a short slug (e.g. "travel-planner-EU"). If archetype = `romantic_partner`, `romantic_specifier` MUST be a full object with all 6 axes (use `null` for axes with no profile signal except `explicitness_band` which always has a value).
+"""
+
+
 def audit_hidden_persona_motivations_prompt(
     cluster: dict,
     other_clusters_menu: list[dict],
