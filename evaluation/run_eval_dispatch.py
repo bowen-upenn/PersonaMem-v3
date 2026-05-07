@@ -84,13 +84,9 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
         # R10: sensitive_event runs through the same path with arm="sensitive_event"
         # and a leak pool sourced from the synthetic sensitive_life_event persona.
         rows = chatbot_response.run_task_b(**common)
-    elif task_type == "recency_shift_recommendation":
-        rows = over_personalization.run_task_c1a(**common)
-    elif task_type == "cross_category_preference_breadth":
-        rows = over_personalization.run_task_c1b(**common)
-    elif task_type == "repetition_fatigue_recommendation":
+    elif task_type == "over_personalization_repetition_recsys":
         rows = over_personalization.run_task_c1c(**common)
-    elif task_type == "repetition_fatigue_chatbot":
+    elif task_type == "over_personalization_repetition_chatbot":
         rows = over_personalization.run_task_c1d(**common)
     elif task_type == "over_personalization_context_shift":
         rows = over_personalization.run_task_c2(**common)

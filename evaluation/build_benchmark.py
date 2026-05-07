@@ -1662,167 +1662,6 @@ def build_chatbot_instance(bq: BackendQuery, test: TestItem) -> dict | None:
     }
 
 
-# --- Task C1a: counterfactual history-diff pairs ---------------------------
-
-def build_c1a_pairs(
-    bq: BackendQuery,
-    user_id: str,
-    test_items: list[TestItem],
-    max_pairs: int = 8,
-    window_hours: int = 24,
-    min_diff_events: int = 3,
-) -> list[dict]:
-    """Find pairs of (T_early, T_late) such that events in [T_early, T_late]
-    include ≥ min_diff_events, and the diff's hashtag center differs from
-    the user's long-term dominant category (shifts topical interest).
-
-    Each pair freezes:
-    - `t_early`, `t_late`, `target_app`
-    - `diff_events`: summaries of the events added between the two moments
-    - `shared_context_size`: event count at T_early (rough indicator)
-    - `dominant_category_pre`: user's top category before T_early
-    - `shift_category`: dominant category of the diff events
-
-    Returns up to `max_pairs` pairs spanning diverse (app, category) slots.
-    """
-    if not test_items:
-        return []
-    # Anchor candidate moments at social-app test item timestamps (we already
-    # know the user engages meaningfully at these times).
-    anchors = sorted(
-        {(t.app, t.source_timestamp) for t in test_items if t.app in SOCIAL_APPS},
-        key=lambda x: x[1],
-    )
-    if len(anchors) < 2:
-        return []
-
-    # Dominant category = most-frequent positive preference category across history.
-    base = Path(bq.base) / user_id
-    cat_counts: dict[str, int] = {}
-    for app in APPS:
-        p = base / f"{app}.json"
-        if not p.exists():
-            continue
-        with p.open() as f:
-            events = json.load(f)
-        for e in events:
-            if "positive" not in e.get("source_interaction_type", ""):
-                continue
-            for pref in (e.get("preferences") or []):
-                c = pref.get("category")
-                if c:
-                    cat_counts[c] = cat_counts.get(c, 0) + 1
-    dominant_pre = max(cat_counts.items(), key=lambda kv: kv[1])[0] if cat_counts else None
-
-    pairs: list[dict] = []
-    for i, (app_early, t_early) in enumerate(anchors[:-1]):
-        for app_late, t_late in anchors[i + 1:]:
-            if t_late - t_early > window_hours * 3600 or t_late - t_early <= 0:
-                continue
-            # Collect diff events: events in (t_early, t_late] for any app.
-            diff_events: list[dict] = []
-            for app in APPS:
-                p = base / f"{app}.json"
-                if not p.exists():
-                    continue
-                with p.open() as f:
-                    events = json.load(f)
-                for e in events:
-                    ts = int(e.get("source_timestamp", 0))
-                    if t_early < ts <= t_late:
-                        diff_events.append({
-                            "event_id": str(e.get("source_object_id", "")),
-                            "app": app,
-                            "t": ts,
-                            "hashtags": e.get("source_hashtags", []),
-                            "categories": [pref.get("category") for pref in (e.get("preferences") or []) if pref.get("category")],
-                        })
-            if len(diff_events) < min_diff_events:
-                continue
-            # Shift-check: does the diff introduce a category that's not dominant_pre?
-            diff_cats = [c for e in diff_events for c in e["categories"]]
-            non_dominant_diff = [c for c in diff_cats if c != dominant_pre]
-            if not non_dominant_diff:
-                continue
-            shift_category = max(set(non_dominant_diff), key=non_dominant_diff.count)
-            pair_id = f"{user_id}_c1a_{t_early}_{t_late}"
-            pairs.append({
-                "pair_id": pair_id,
-                "target_app": app_late,
-                "t_early": t_early,
-                "t_late": t_late,
-                "diff_events": diff_events[:15],
-                "dominant_category_pre": dominant_pre,
-                "shift_category": shift_category,
-                "query": f"Recommend something on {app_late} this user would engage with next.",
-            })
-            if len(pairs) >= max_pairs:
-                return pairs
-    return pairs
-
-
-# --- Task C1b: chatbot-sequence preference repetition ----------------------
-
-def build_c1b_sequence(
-    b_proactive_instances: list[dict],
-    max_seq_len: int = 5,
-    min_distinct_categories: int = 3,
-    max_sequences: int = 6,
-) -> list[dict]:
-    """Assemble one or more sequences from diverse-topic B-proactive queries.
-
-    Each sequence requires queries spanning ≥ min_distinct_categories distinct
-    top-1-preference categories. We now emit up to ``max_sequences`` distinct
-    sequences by rotating which instance per category is picked — this fills
-    the floor for cross_category_preference_breadth (was 1 per user, now 6).
-    """
-    if not b_proactive_instances:
-        return []
-    by_cat: dict[str, list[dict]] = {}
-    for inst in b_proactive_instances:
-        top = inst.get("top_k_relevant_prefs") or []
-        if not top:
-            continue
-        cat = top[0].get("category") or "uncategorized"
-        by_cat.setdefault(cat, []).append(inst)
-
-    if len(by_cat) < min_distinct_categories:
-        return []
-
-    # Sort each bucket by timestamp so ``rotation`` k picks the k-th instance
-    # within each category (cycling). Each rotation produces a sequence with
-    # different concrete user_queries but the same category coverage.
-    for cat in by_cat:
-        by_cat[cat] = sorted(by_cat[cat], key=lambda x: x.get("source_timestamp", 0))
-
-    out: list[dict] = []
-    for k in range(max_sequences):
-        picks: list[dict] = []
-        for cat, insts in list(by_cat.items())[:max_seq_len]:
-            picks.append(insts[k % len(insts)])
-        picks.sort(key=lambda x: x.get("source_timestamp", 0))
-        if len({p["top_k_relevant_prefs"][0]["category"]
-                for p in picks if p.get("top_k_relevant_prefs")}) < min_distinct_categories:
-            continue
-        # Skip if this rotation is identical to a previous one (small users
-        # with few instances per category will collapse into duplicates).
-        sig = tuple(p["test_id"] for p in picks)
-        if any(tuple(q["source_test_id"] for q in s["queries"]) == sig for s in out):
-            continue
-        out.append({
-            "sequence_id": f"c1b_seq_{k}",
-            "queries": [
-                {
-                    "source_test_id": p["test_id"],
-                    "source_timestamp": p["source_timestamp"],
-                    "user_query": p["user_query"],
-                    "top_k_relevant_prefs": p["top_k_relevant_prefs"],
-                }
-                for p in picks
-            ],
-        })
-    return out
-
 
 # --- Task C1c: same-preference repetition cluster --------------------------
 # Tests whether the agent backs off / diversifies when fired N successive
@@ -2151,8 +1990,8 @@ def build_c1c_same_preference_clusters(
         out.append({
             "cluster_id": cluster_id,
             "instance_id": cluster_id,
-            "task_id": "repetition_fatigue_recommendation",
-            "task_type": "repetition_fatigue_recommendation",
+            "task_id": "over_personalization_repetition_recsys",
+            "task_type": "over_personalization_repetition_recsys",
             "target_pref": target_pref,
             "primary_category": primary_category,
             "all_persona_items_in_cluster": cluster["persona_items"][:5],
@@ -2416,8 +2255,8 @@ def build_c1d_chatbot_diverse_clusters(
         out.append({
             "cluster_id": cluster_id,
             "instance_id": cluster_id,
-            "task_id": "repetition_fatigue_chatbot",
-            "task_type": "repetition_fatigue_chatbot",
+            "task_id": "over_personalization_repetition_chatbot",
+            "task_type": "over_personalization_repetition_chatbot",
             "target_pref": target_pref,
             "primary_category": primary_category,
             "target_hashtags": target_hashtags[:8],
@@ -2496,26 +2335,6 @@ def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
             f"kept={len(out)} skipped_no_overlap={skipped_no_overlap} "
             f"skipped_no_pref={skipped_no_pref}"
         )
-    return out
-
-
-# --- Task C1: repetition-fatigue probes (LEGACY — kept but deprecated) -----
-
-def build_c1_instances(bq: BackendQuery, user_id: str, t_probe: int, min_positive_count: int = 10) -> list[dict]:
-    hashtag_rows = bq.hashtag_summary(user_id=user_id, since_timestamp=t_probe)
-    out: list[dict] = []
-    for row in hashtag_rows:
-        if row["positive"] < min_positive_count:
-            continue
-        for app in SOCIAL_APPS:
-            probe = scenarios_mod.build_repetition_probe(bq, user_id, t_probe, app, row["hashtag"])
-            if probe:
-                out.append({
-                    "probe_id": f"{user_id}_{app}_{row['hashtag'].lstrip('#')}",
-                    "t_probe": t_probe,
-                    **probe,
-                })
-                break
     return out
 
 
@@ -2892,10 +2711,11 @@ def build_benchmark(
         blind_check_limit=blind_check_limit,
     )
 
-    # Task C1a/C1b/C1c/C1d/C2/C3/C4.
+    # Task C1c/C1d/C2/C3/C4. (C1a/C1b dropped — they tested
+    # recency-shift and cross-category-breadth respectively, both
+    # distinct from the actual repetition-fatigue concept the suite
+    # is now organized around.)
     t_probe = max(t.source_timestamp for t in test_items)
-    c1a_pairs = build_c1a_pairs(bq, user_id, test_items)
-    c1b_sequences = build_c1b_sequence(b_arms["chatbot_proactive_personalization"])
     c1c_clusters = build_c1c_same_preference_clusters(bq, user_id, test_items)
     c1d_chatbot_clusters = build_c1d_chatbot_diverse_clusters(
         bq, user_id, test_items, discovery_llm=discovery_llm,
@@ -3022,10 +2842,8 @@ def build_benchmark(
         "personalized_feed_ranking":              slate_instances,
         "chatbot_proactive_personalization":      b_arms["chatbot_proactive_personalization"],
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
-        "recency_shift_recommendation":               c1a_pairs,
-        "cross_category_preference_breadth":           c1b_sequences,
-        "repetition_fatigue_recommendation":     c1c_clusters,
-        "repetition_fatigue_chatbot":   c1d_chatbot_clusters,
+        "over_personalization_repetition_recsys":  c1c_clusters,
+        "over_personalization_repetition_chatbot": c1d_chatbot_clusters,
         "over_personalization_context_shift":     c2_instances,
         "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,

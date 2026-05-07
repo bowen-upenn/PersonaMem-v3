@@ -18,72 +18,6 @@ from evaluation.inference_utils import (
 )
 
 
-# --- C1: repetition fatigue ------------------------------------------------
-
-def run_task_c1(
-    instances,
-    user_id,
-    bq: BackendQuery,
-    llm_client,
-    judge_client,
-    mode: str,
-    snapshot_cache: SnapshotCache,
-    model_name: str | None,
-    claude_model: str,
-    context_budget: int | None,
-    enable_llm_judge: bool,
-    dry_run: bool,
-    limit: int | None = None,
-) -> list[dict]:
-    if limit is not None:
-        instances = instances[:limit]
-    results: list[dict] = []
-    for probe in instances:
-        t_probe = probe["t_probe"]
-        history_block = None
-        history_tokens = 0
-        if mode in ("agent_longctx", "llm_longctx"):
-            history_block, stats = snapshot_cache.get_or_build(bq, user_id, t_probe, model_name, context_budget)
-            history_tokens = stats["total_tokens"]
-
-        prompt = prompts.repetition_fatigue_prompt(
-            probe["app"], probe["saturated_hashtag"], probe["recent_titles"], history_block,
-        )
-
-        if dry_run:
-            results.append({
-                "task": "c1_repetition_fatigue",
-                "user_id": user_id,
-                "probe_id": probe["probe_id"],
-                "mode": mode,
-                "agent_response": None,
-                "metrics": None,
-            })
-            continue
-
-        raw_response, tool_call_count, subagent_stats = _dispatch_agent(
-            mode, prompt, bq=bq, user_id=user_id, t=t_probe,
-            claude_model=claude_model, llm_client=llm_client,
-        )
-
-        parsed = extract_json_from_response(raw_response) or {}
-        new_hashtags = parsed.get("hashtags") or []
-        div_rate = metrics.diversification_rate(probe["recent_hashtags_flat"], new_hashtags)
-
-        results.append({
-            "task": "c1_repetition_fatigue",
-            "user_id": user_id,
-            "probe_id": probe["probe_id"],
-            "mode": mode,
-            "agent_response": raw_response,
-            "tool_calls": tool_call_count,
-            "subagent_stats": subagent_stats,
-            "history_tokens": history_tokens,
-            "metrics": {"diversification_rate": div_rate, "num_new_hashtags": len(new_hashtags)},
-        })
-    return results
-
-
 # --- C2: scenario library --------------------------------------------------
 
 def run_task_c2(
@@ -254,166 +188,6 @@ def run_task_c3(
     return results
 
 
-# --- Task C1a: counterfactual history-diff pairs --------------------------
-
-def run_task_c1a(
-    instances,
-    user_id,
-    bq: BackendQuery,
-    llm_client,
-    judge_client,
-    mode: str,
-    snapshot_cache: SnapshotCache,
-    model_name: str | None,
-    claude_model: str,
-    context_budget: int | None,
-    enable_llm_judge: bool,
-    dry_run: bool,
-    limit: int | None = None,
-) -> list[dict]:
-    """For each counterfactual pair, ask the model for a recommendation at
-    t_early then at t_late. Score the divergence between the two responses.
-    Low divergence in the face of a substantive event diff → over-anchoring.
-    """
-    if limit is not None:
-        instances = instances[:limit]
-    results: list[dict] = []
-    for pair in instances:
-        t_early = pair["t_early"]
-        t_late = pair["t_late"]
-        app = pair["target_app"]
-        query = pair["query"]
-
-        def _run_at(t):
-            history_block = None
-            if mode in ("agent_longctx", "llm_longctx"):
-                history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
-            # For recommendation-style queries on a social app, reuse the
-            # chatbot response prompt (it's flexible enough for "recommend X for this user").
-            prompt = prompts.chatbot_response_prompt(query, [], history_block)
-            raw, turns, stats = _dispatch_agent(mode, prompt, bq=bq, user_id=user_id, t=t,
-                                                 claude_model=claude_model, llm_client=llm_client)
-            parsed = extract_json_from_response(raw) or {}
-            return parsed.get("response") or raw, turns, stats
-
-        if dry_run:
-            results.append({
-                "task": "c1a_counterfactual",
-                "pair_id": pair["pair_id"],
-                "mode": mode,
-                "agent_response_early": None,
-                "agent_response_late": None,
-                "metrics": None,
-            })
-            continue
-
-        resp_early, turns_early, stats_early = _run_at(t_early)
-        resp_late, turns_late, stats_late = _run_at(t_late)
-
-        divergence = metrics.response_divergence(resp_early, resp_late)
-        results.append({
-            "task": "c1a_counterfactual",
-            "pair_id": pair["pair_id"],
-            "mode": mode,
-            "target_app": app,
-            "t_early": t_early,
-            "t_late": t_late,
-            "diff_events_count": len(pair.get("diff_events") or []),
-            "dominant_category_pre": pair.get("dominant_category_pre"),
-            "shift_category": pair.get("shift_category"),
-            "agent_response_early": resp_early,
-            "agent_response_late": resp_late,
-            "tool_calls": turns_early + turns_late,
-            "subagent_stats": {"early": stats_early, "late": stats_late},
-            "metrics": {
-                "response_divergence": divergence,
-                "recency_sensitivity": divergence / max(1, len(pair.get("diff_events") or [])),
-                "over_anchored_flag": 1 if divergence < 0.15 else 0,
-            },
-        })
-    return results
-
-
-# --- Task C1b: chatbot-sequence preference repetition ---------------------
-
-def run_task_c1b(
-    instances,
-    user_id,
-    bq: BackendQuery,
-    llm_client,
-    judge_client,
-    mode: str,
-    snapshot_cache: SnapshotCache,
-    model_name: str | None,
-    claude_model: str,
-    context_budget: int | None,
-    enable_llm_judge: bool,
-    dry_run: bool,
-    limit: int | None = None,
-) -> list[dict]:
-    """Present a sequence of diverse-topic queries as a single conversation;
-    measure how often the same preference is surfaced across responses.
-    """
-    if limit is not None:
-        instances = instances[:limit]
-    results: list[dict] = []
-    for seq in instances:
-        queries = seq.get("queries") or []
-        if not queries:
-            continue
-        # Anchor time = max timestamp in the sequence.
-        t_anchor = max(q["source_timestamp"] for q in queries)
-        history_block = None
-        if mode in ("agent_longctx", "llm_longctx"):
-            history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t_anchor, model_name, context_budget)
-
-        # Run each query sequentially, passing previous turns as conversation history.
-        responses: list[str] = []
-        conversation: list[dict] = []
-        total_turns = 0
-        stats_per_query: list[dict] = []
-        if dry_run:
-            results.append({
-                "task": "c1b_sequence",
-                "sequence_id": seq["sequence_id"],
-                "mode": mode,
-                "responses": None,
-                "metrics": None,
-            })
-            continue
-        for q in queries:
-            prompt = prompts.chatbot_response_prompt(q["user_query"], conversation, history_block)
-            raw, turns, stats = _dispatch_agent(mode, prompt, bq=bq, user_id=user_id, t=q["source_timestamp"],
-                                                 claude_model=claude_model, llm_client=llm_client)
-            parsed = extract_json_from_response(raw) or {}
-            resp = parsed.get("response") or raw
-            responses.append(resp)
-            total_turns += turns
-            stats_per_query.append(stats)
-            conversation.append({"role": "user", "content": q["user_query"]})
-            conversation.append({"role": "assistant", "content": resp})
-
-        gt_prefs_per_query = [q.get("top_k_relevant_prefs") or [] for q in queries]
-        rep = metrics.preference_repetition_rate(responses, gt_prefs_per_query)
-
-        results.append({
-            "task": "c1b_sequence",
-            "sequence_id": seq["sequence_id"],
-            "mode": mode,
-            "responses": responses,
-            "query_categories": [q["top_k_relevant_prefs"][0].get("category") if q.get("top_k_relevant_prefs") else None for q in queries],
-            "tool_calls": total_turns,
-            "subagent_stats": stats_per_query,
-            "metrics": {
-                "preference_repetition_rate": rep["repetition_rate"],
-                "wrong_preference_reuse": rep["wrong_preference_reuse"],
-                "top_repeated_pref": rep["top_repeated_pref"],
-                "n_queries": rep["n"],
-            },
-        })
-    return results
-
-
 # --- Task C1c: same-preference repetition cluster ------------------------
 
 _C1C_PERSONA_ALIGNMENT_PROMPT = """You are a persona-alignment auditor. Decide whether a recommendation's hashtags would actually fit a user with the persona below — not generic plausibility, but "would THIS user engage with content carrying these hashtags?"
@@ -548,7 +322,7 @@ def run_task_c1c(
         stats_per_query: list[dict] = []
         for q in queries:
             ts = int(q["ts"])
-            prompt = prompts.repetition_fatigue_same_pref_prompt(
+            prompt = prompts.over_personalization_repetition_recsys_prompt(
                 target_pref=target_pref,
                 primary_category=primary_category,
                 user_query=q["user_query"],
@@ -744,7 +518,7 @@ def run_task_c1d(
         stats_per_query: list[dict] = []
         for q in queries:
             ts = int(q["ts"])
-            prompt = prompts.repetition_fatigue_chatbot_prompt(
+            prompt = prompts.over_personalization_repetition_chatbot_prompt(
                 user_query=q["user_query"],
                 target_pref=target_pref,
                 primary_category=primary_category,

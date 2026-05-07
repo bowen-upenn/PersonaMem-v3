@@ -49,8 +49,6 @@ _PERSONALIZATION_TASKS = {
     "daily_personalized_briefing",
     "short_vs_long_term_lifecycle",
     "active_mistake_prevention",
-    "recency_shift_recommendation",
-    "cross_category_preference_breadth",
     "agentic_user_tone_post",
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest",
@@ -389,8 +387,6 @@ def _length_guidance(task_type: str, inst: dict | None = None,
         return "Length: 1–3 sentences."
     if task_type == "daily_personalized_briefing":
         return "Length: 3–5 short bullet items."
-    if task_type == "recency_shift_recommendation":
-        return "Length: 2 short labelled lines."
     if task_type == "active_mistake_prevention":
         return "Length: 1–3 sentences."
     if task_type in _COMPOSE_TASKS:

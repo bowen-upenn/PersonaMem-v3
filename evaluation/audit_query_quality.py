@@ -33,10 +33,8 @@ OVER_PERS_TASKS = {
     "over_personalization_distractor_reject",
     "over_personalization_context_shift",
     "over_personalization_sensitive_event",
-    "recency_shift_recommendation",
-    "cross_category_preference_breadth",
-    "repetition_fatigue_recommendation",
-    "repetition_fatigue_chatbot",
+    "over_personalization_repetition_recsys",
+    "over_personalization_repetition_chatbot",
 }
 RANKING_TASKS = {
     "personalized_recommendation",

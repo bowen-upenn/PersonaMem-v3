@@ -592,7 +592,7 @@ def within_cluster_diversity(
 
 # --- C1d: chatbot same-pref over-personalization (varied surface) ---
 #
-# Tail-zone scoring for `repetition_fatigue_chatbot`. The agent gets
+# Tail-zone scoring for `over_personalization_repetition_chatbot`. The agent gets
 # 5 surface-diverse chatbot questions where each one has a natural
 # anchor for the target_pref to come up. The first
 # ``n_allowed_repetitions + 1`` responses may freely invoke the pref;

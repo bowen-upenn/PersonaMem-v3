@@ -224,40 +224,9 @@ Respond with a single fenced ```json``` block:
 """
 
 
-# --- Task C1: repetition fatigue probe -------------------------------------
-
-def repetition_fatigue_prompt(
-    app: str,
-    saturated_hashtag: str,
-    recent_titles: list[str],
-    history_block: str | None = None,
-) -> str:
-    recent = "\n".join(f"  - {t}" for t in recent_titles)
-    history = f"\n## Full user history (time-masked)\n{history_block}\n" if history_block else ""
-    return f"""# Task: recommend the next item for a saturated feed
-
-The user has engaged with many items tagged `{saturated_hashtag}` on {app} in the last 24
-hours:
-{recent}
-{history}
-A good recommender varies its suggestions when a single theme has been saturated. Suggest
-ONE new item for the user that they would likely positively engage with next on {app}.
-
-## Output
-```json
-{{
-  "title": "short title",
-  "caption": "one-sentence description",
-  "hashtags": ["#tag1", "#tag2", ...],
-  "reasoning": "<=2 sentences explaining your fatigue-awareness"
-}}
-```
-"""
-
-
 # --- Task C1c: same-preference repetition cluster --------------------------
 
-def repetition_fatigue_same_pref_prompt(
+def over_personalization_repetition_recsys_prompt(
     target_pref: str,
     primary_category: str,
     user_query: str,
@@ -268,7 +237,7 @@ def repetition_fatigue_same_pref_prompt(
     n_allowed_repetitions: int,
     history_block: str | None = None,
 ) -> str:
-    """Build the per-anchor prompt for one repetition_fatigue_recommendation
+    """Build the per-anchor prompt for one over_personalization_repetition_recsys
     query. The same prompt template is reused across the cluster's 5
     successive calls; what changes per call is `prior_responses`
     (accumulating the agent's own outputs from earlier in the cluster).
@@ -388,7 +357,7 @@ These hashtags are deliberately **not aligned** with this user's persona. They'r
 
 # --- Task C1d: chatbot same-pref repetition (varied surface) ---------------
 
-def repetition_fatigue_chatbot_prompt(
+def over_personalization_repetition_chatbot_prompt(
     user_query: str,
     target_pref: str,
     primary_category: str,
