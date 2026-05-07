@@ -60,10 +60,8 @@ _RANKING_TASKS = {
 # elsewhere (category shift, hashtag spread); they don't need a
 # distractor_preferences pool.
 _DIVERSIFICATION_TASKS = {
-    "recency_shift_recommendation",
-    "cross_category_preference_breadth",
-    "repetition_fatigue_recommendation",
-    "repetition_fatigue_chatbot",
+    "over_personalization_repetition_recsys",
+    "over_personalization_repetition_chatbot",
 }
 
 # Tasks that are intentionally hollow at build time: the agent is
@@ -87,10 +85,8 @@ _RESTRAINT_TASKS = {
     "over_personalization_distractor_reject",
     "over_personalization_sensitive_event",
     "over_personalization_context_shift",
-    "recency_shift_recommendation",
-    "cross_category_preference_breadth",
-    "repetition_fatigue_recommendation",
-    "repetition_fatigue_chatbot",
+    "over_personalization_repetition_recsys",
+    "over_personalization_repetition_chatbot",
 }
 
 _AGENTIC_PRECONDITION_HINTS = {

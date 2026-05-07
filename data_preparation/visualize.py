@@ -597,51 +597,8 @@ def _gt_preference_removal_regen(inst: dict) -> dict:
     }
 
 
-def _gt_recency_shift_recommendation(inst: dict) -> dict:
-    pre = inst.get("dominant_category_pre", "")
-    shift = inst.get("shift_category", "")
-    return {
-        "example_response": (
-            f"At t_early: top-1 emphasizes {pre}.\n"
-            f"At t_late:  top-1 shifts toward {shift} (recency-sensitive)."
-        ),
-        "groundtruth_preference": (
-            f"Pre-dominant category: {pre}\n"
-            f"Recent shift category: {shift}"
-        ),
-        "extra_meta": {
-            "dominant_category_pre": inst.get("dominant_category_pre"),
-            "shift_category": inst.get("shift_category"),
-            "t_early": inst.get("t_early"),
-            "t_late": inst.get("t_late"),
-        },
-        "rubric_tags": [
-            "(+) At t_late, top-1 should follow the shift_category.",
-            "(-) Don't keep emphasizing the pre-dominant category at t_late.",
-        ],
-    }
 
-
-def _gt_cross_category_preference_breadth(inst: dict) -> dict:
-    queries = inst.get("queries") or []
-    return {
-        "example_response": (
-            f"Across {len(queries)} successive queries on the same persona, "
-            "vary which preferences you draw on each turn — do not repeat "
-            "the same 1-2 favorites every response."
-        ),
-        "groundtruth_preference": (
-            f"Sequence length: {len(queries)} (preference diversity is the signal)"
-        ),
-        "extra_meta": {"n_queries": len(queries)},
-        "rubric_tags": [
-            "(+) Vary which preferences you surface across the sequence.",
-            "(-) Don't reuse a preference you've already surfaced earlier in the sequence.",
-        ],
-    }
-
-
-def _gt_repetition_fatigue_chatbot(inst: dict) -> dict:
+def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
     """Chatbot variant of c1c: N surface-diverse chatbot questions
     each with a natural anchor for the target preference. After
     `n_allowed_repetitions + 1` invocations, the agent must answer
@@ -695,7 +652,7 @@ def _gt_repetition_fatigue_chatbot(inst: dict) -> dict:
     }
 
 
-def _gt_repetition_fatigue_recommendation(inst: dict) -> dict:
+def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
     """Same-preference repetition cluster: N successive queries on ONE
     preference (or hashtag-similar group) inside a 3-hour window.
     The first ``n_allowed_repetitions + 1`` responses may freely lean
@@ -1307,10 +1264,8 @@ TEST_GT_EXTRACTORS = {
     "irrelevant_query_restraint":          _gt_irrelevant_query_restraint,  # v2 alias
     "over_personalization_sensitive_event": _gt_sensitive_event,
     "preference_removal_regen":            _gt_preference_removal_regen,
-    "recency_shift_recommendation":            _gt_recency_shift_recommendation,
-    "cross_category_preference_breadth":        _gt_cross_category_preference_breadth,
-    "repetition_fatigue_recommendation":  _gt_repetition_fatigue_recommendation,
-    "repetition_fatigue_chatbot":          _gt_repetition_fatigue_chatbot,
+    "over_personalization_repetition_recsys":  _gt_over_personalization_repetition_recsys,
+    "over_personalization_repetition_chatbot": _gt_over_personalization_repetition_chatbot,
     "over_personalization_context_shift":  _gt_context_shift_scenarios,
     "context_shift_scenarios":             _gt_context_shift_scenarios,  # legacy alias
     "daily_personalized_briefing":         _gt_daily_personalized_briefing,
@@ -1700,9 +1655,8 @@ def _load_test_samples(
                 or task_type.startswith("over_personalization_")
                 or task_type in {
                     "preference_removal_regen", "active_mistake_prevention",
-                    "recency_shift_recommendation", "cross_category_preference_breadth",
-                    "repetition_fatigue_recommendation",
-                    "repetition_fatigue_chatbot",
+                    "over_personalization_repetition_recsys",
+                    "over_personalization_repetition_chatbot",
                     "agentic_vague_refind", "agentic_proactive_daily_catchup",
                     "agentic_trending_alert",
                 }

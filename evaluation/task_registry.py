@@ -46,10 +46,8 @@ OLD_TO_NEW: dict[str, str] = {
     # the rubric APPLICABILITY entry / aggregator headline are isolated from
     # the generic chatbot restraint metric.
     "chatbot_response_sensitive_event": "over_personalization_sensitive_event",
-    "c1a_pairs":                     "recency_shift_recommendation",
-    "c1b_sequences":                 "cross_category_preference_breadth",
-    "c1c_same_preference_cluster":   "repetition_fatigue_recommendation",
-    "c1d_chatbot_same_pref_cluster": "repetition_fatigue_chatbot",
+    "c1c_same_preference_cluster":   "over_personalization_repetition_recsys",
+    "c1d_chatbot_same_pref_cluster": "over_personalization_repetition_chatbot",
     "c2_scenarios":                  "over_personalization_context_shift",
     # Workstream cleanup: context_shift_scenarios was always part of the
     # over_personalization family; renamed so the membership is obvious
@@ -219,30 +217,16 @@ TASK_TYPE_META: dict[str, dict] = {
     },
 
     # ------------------------------------------------------------------
-    # Over-personalization probes (was: c1a/c1b/c2/c3/c4)
+    # Over-personalization probes
     # ------------------------------------------------------------------
-    "recency_shift_recommendation": {
-        "task_family": "over_personalization",
-        "mcp_tools_allowed": "none",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "ranking",
-        "rubric_tags": ["avoid_overpersonalization"],
-    },
-    "cross_category_preference_breadth": {
-        "task_family": "over_personalization",
-        "mcp_tools_allowed": "none",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "ranking",
-        "rubric_tags": ["avoid_overpersonalization"],
-    },
-    "repetition_fatigue_recommendation": {
+    "over_personalization_repetition_recsys": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "freeform",
         "rubric_tags": ["avoid_overpersonalization"],
     },
-    "repetition_fatigue_chatbot": {
+    "over_personalization_repetition_chatbot": {
         "task_family": "over_personalization",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -479,12 +463,10 @@ def get_meta(task_type: str) -> dict:
 
 QUERY_KIND_BY_TASK: dict[str, str] = {
     "personalized_feed_ranking":              "proactive_recommendation",
-    "chatbot_proactive_personalization":      "user_query",
-    "over_personalization_chatbot_text":      "user_query",
-    "recency_shift_recommendation":               "user_query",
-    "cross_category_preference_breadth":           "user_query",
-    "repetition_fatigue_recommendation":     "user_query",
-    "repetition_fatigue_chatbot":            "user_query",
+    "chatbot_proactive_personalization":       "user_query",
+    "over_personalization_chatbot_text":       "user_query",
+    "over_personalization_repetition_recsys":  "user_query",
+    "over_personalization_repetition_chatbot": "user_query",
     "over_personalization_context_shift":                "user_query",
     "over_personalization_distractor_reject": "user_query",
     "over_personalization_sensitive_event":   "user_query",
@@ -516,11 +498,9 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
 EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "personalized_feed_ranking":              "proactive_recommend",
     "chatbot_proactive_personalization":      "personalize",
-    "over_personalization_chatbot_text":      "avoid_overpersonalization",
-    "recency_shift_recommendation":               "avoid_overpersonalization",
-    "cross_category_preference_breadth":           "avoid_overpersonalization",
-    "repetition_fatigue_recommendation":     "avoid_overpersonalization",
-    "repetition_fatigue_chatbot":            "avoid_overpersonalization",
+    "over_personalization_chatbot_text":       "avoid_overpersonalization",
+    "over_personalization_repetition_recsys":  "avoid_overpersonalization",
+    "over_personalization_repetition_chatbot": "avoid_overpersonalization",
     "over_personalization_context_shift":                "avoid_overpersonalization",
     "over_personalization_distractor_reject": "avoid_overpersonalization",
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
@@ -579,10 +559,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # absent ground-truth (no scorer existed; metric was never populated).
     "personalized_search_ranking":       ("top3_alignment_rate", "fraction"),
     "short_vs_long_term_lifecycle":      ("recall@1", "fraction"),
-    "recency_shift_recommendation":          ("response_divergence", "fraction"),
-    "cross_category_preference_breadth":      ("preference_repetition_rate", "inverted_fraction"),
-    "repetition_fatigue_recommendation": ("tail_passed", "boolean"),
-    "repetition_fatigue_chatbot":        ("tail_passed", "boolean"),
+    "over_personalization_repetition_recsys":  ("tail_passed", "boolean"),
+    "over_personalization_repetition_chatbot": ("tail_passed", "boolean"),
     # Chatbot response — held-out preference alignment for proactive arm,
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
     "chatbot_proactive_personalization":           ("held_out_score", "fraction"),

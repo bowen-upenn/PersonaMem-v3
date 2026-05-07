@@ -161,10 +161,11 @@ def _synthesize_ts_for_no_ts_instance(
 ) -> int:
     """Fallback timestamp for instances that have none.
 
-    c1b_sequences is the known offender — one instance, no per-instance
-    timestamp. Place it at (latest observed ts in this benchmark - 1h)
-    so it lands reasonably near the rest of the day-8 cluster rather than
-    dropping out of the manifest.
+    Sequence-of-queries-style instances (e.g. an over-personalization
+    cluster) sometimes carry a `t_test` for the LAST query but no
+    instance-level top-level timestamp. Place those at (latest observed
+    ts in this benchmark - 1h) so they land reasonably near the rest of
+    the day-8 cluster rather than dropping out of the manifest.
     """
     latest = 0
     for bucket in benchmark.values():

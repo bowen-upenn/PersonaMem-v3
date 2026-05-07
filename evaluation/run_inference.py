@@ -44,8 +44,8 @@ TASK_ALIASES = {
         "slate_ranking",
         "chatbot_response_proactive",
         "chatbot_response_control",
-        "c1a_pairs",
-        "c1b_sequences",
+        "c1c_same_preference_cluster",
+        "c1d_chatbot_same_pref_cluster",
         "c2_scenarios",
         "c3_restraint",
         "c4_button_regen",
@@ -59,10 +59,11 @@ TASK_ALIASES = {
     "b": ["chatbot_response_proactive", "chatbot_response_control"],
     "b_proactive": ["chatbot_response_proactive"],
     "b_control": ["chatbot_response_control"],
-    "c": ["c1a_pairs", "c1b_sequences", "c2_scenarios", "c3_restraint", "c4_button_regen"],
-    "c1": ["c1a_pairs", "c1b_sequences"],
-    "c1a": ["c1a_pairs"],
-    "c1b": ["c1b_sequences"],
+    "c": ["c1c_same_preference_cluster", "c1d_chatbot_same_pref_cluster",
+          "c2_scenarios", "c3_restraint", "c4_button_regen"],
+    "c1": ["c1c_same_preference_cluster", "c1d_chatbot_same_pref_cluster"],
+    "c1c": ["c1c_same_preference_cluster"],
+    "c1d": ["c1d_chatbot_same_pref_cluster"],
     "c2": ["c2_scenarios"],
     "c3": ["c3_restraint"],
     "c4": ["c4_button_regen"],
@@ -107,8 +108,8 @@ BENCHMARK_TASK_KEYS = {
     "chatbot_response_proactive": "chatbot_response_proactive",
     "chatbot_response_control":   "chatbot_response_control",
     # Task C v2.
-    "c1a_pairs":        "c1a_pairs",
-    "c1b_sequences":    "c1b_sequences",
+    "c1c_same_preference_cluster":   "c1c_same_preference_cluster",
+    "c1d_chatbot_same_pref_cluster": "c1d_chatbot_same_pref_cluster",
     "c2_scenarios":     "c2_scenarios",
     "c3_restraint":     "c3_restraint",
     "c4_button_regen":  "c4_button_regen",
@@ -142,10 +143,10 @@ def _run_task(name, instances, user_id, bq, llm_client, judge_client, args, snap
         return slate_ranking.run_task_a(**common)
     if name in ("chatbot_response_proactive", "chatbot_response_control"):
         return chatbot_response.run_task_b(**common)
-    if name == "c1a_pairs":
-        return over_personalization.run_task_c1a(**common)
-    if name == "c1b_sequences":
-        return over_personalization.run_task_c1b(**common)
+    if name == "c1c_same_preference_cluster":
+        return over_personalization.run_task_c1c(**common)
+    if name == "c1d_chatbot_same_pref_cluster":
+        return over_personalization.run_task_c1d(**common)
     if name == "c2_scenarios":
         return over_personalization.run_task_c2(**common)
     if name == "c3_restraint":
