@@ -1418,6 +1418,16 @@ def _pick_action_for_app(app: str, interaction_type: str) -> dict:
 # PersonaAgent
 # ---------------------------------------------------------------------------
 
+
+def _unix_to_iso(ts: int) -> str:
+    """ISO-8601 UTC string for a unix timestamp; '' on failure."""
+    try:
+        from datetime import datetime, timezone
+        return datetime.fromtimestamp(int(ts), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except (TypeError, ValueError, OSError):
+        return ""
+
+
 class PersonaAgent:
     """Agent representing a single user's persona. One instance per user_id."""
 
@@ -6954,7 +6964,7 @@ class PersonaAgent:
     def run_pipeline(self) -> dict:
         """Run the full persona inference pipeline.
 
-        Order (27 sequential steps — renumbered so every addition slots in
+        Order (28 sequential steps — renumbered so every addition slots in
         cleanly rather than carrying .5 / b / c suffixes):
 
            1. infer atomic personas
@@ -6991,6 +7001,10 @@ class PersonaAgent:
           27. run Extension B layer (self-posts, DM threads, friends graph,
               trending hashtags) directly on top of the just-saved files —
               produces a fully-complete backend in one invocation.
+          28. infer proactive trigger candidates (catalogues moments where
+              the agent could legitimately initiate contact, scored by an
+              LLM against JITAI + Horvitz mixed-initiative; output saved to
+              profile.json.proactive_trigger_candidates).
 
         (R8 dropped the old "build test split" step entirely — eval picks
         its own test moments from the full timeline at any T_test cut.)
@@ -7027,6 +7041,7 @@ class PersonaAgent:
             ("26. Save to backend",                     self.save_to_backend),
             ("27. Extension B (self-posts + DMs + friends + trending)",
                                                         self.run_extension_b),
+            ("28. Infer proactive trigger candidates",  self.infer_proactive_trigger_candidates),
         ]
 
         for step_name, step_fn in steps:
@@ -8620,6 +8635,408 @@ class PersonaAgent:
             print(f"{utils.Colors.WARNING}[User {self.user_id}] "
                   f"Extension B raised {type(e).__name__}: {e}. "
                   f"Main pipeline output preserved.{utils.Colors.ENDC}")
+
+    def infer_proactive_trigger_candidates(self) -> None:
+        """Step 28: catalog moments where the agent could legitimately
+        initiate contact, scored by an LLM against the JITAI 6-component
+        framework (Nahum-Shani et al., 2018) and Horvitz mixed-initiative
+        principles (CHI 1999).
+
+        Three Phase-1 trigger types:
+          - T1.A `unfulfilled_stated_need`  — chatbot question N days unresolved.
+          - T3.A `close_friend_update`      — close friend DM with no reply.
+          - T4.A `sensitive_event_silence`  — restraint window during synthetic
+                                              sensitive_life_event.
+
+        Runs AFTER Extension B (Step 27) so `friends[]` is populated. Reads
+        backend/{uid}/{profile,instagram,facebook,threads,chatbot}.json,
+        runs deterministic candidate gathering (Stage 1), then LLM-judged
+        eligibility scoring (Stage 2). Output is persisted in
+        `profile.json.proactive_trigger_candidates`.
+
+        Skipped gracefully when no LLM client is configured.
+        """
+        if self.llm_client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping Step 28 (no llm client; subagent mode "
+                      f"handles it inline).{utils.Colors.ENDC}")
+            return
+
+        user_dir = self._user_dir()
+        profile_path = os.path.join(user_dir, "profile.json")
+        if not os.path.exists(profile_path):
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Step 28: profile.json missing at {profile_path} — skipping.{utils.Colors.ENDC}")
+            return
+
+        with open(profile_path, "r") as f:
+            profile = json.load(f)
+
+        # Load app events once. DMs and friend posts live under app jsons;
+        # chatbot conversations under chatbot.json.
+        app_events: dict[str, list[dict]] = {}
+        for app in ("instagram", "facebook", "threads", "chatbot"):
+            path = os.path.join(user_dir, f"{app}.json")
+            if os.path.exists(path):
+                try:
+                    with open(path, "r") as f:
+                        app_events[app] = json.load(f)
+                except (ValueError, OSError):
+                    app_events[app] = []
+            else:
+                app_events[app] = []
+
+        sensitive_periods = self._gather_sensitive_event_periods(profile)
+        candidates_by_type = {
+            "unfulfilled_stated_need": self._gather_unfulfilled_stated_needs(
+                app_events.get("chatbot", []), app_events,
+            ),
+            "close_friend_update": self._gather_close_friend_dms(
+                app_events, profile,
+            ),
+            "sensitive_event_silence": self._gather_sensitive_event_moments(
+                sensitive_periods,
+            ),
+        }
+        total = sum(len(v) for v in candidates_by_type.values())
+        if self.verbose:
+            print(f"[User {self.user_id}] Step 28 Stage 1: gathered "
+                  f"{total} candidates "
+                  f"({ {k: len(v) for k, v in candidates_by_type.items()} }).")
+
+        if total == 0:
+            profile["proactive_trigger_candidates"] = candidates_by_type
+            with open(profile_path, "w") as f:
+                json.dump(profile, f, ensure_ascii=False, indent=2)
+            return
+
+        # Stage 2 — LLM-judged eligibility per candidate.
+        user_state_base = self._build_proactive_user_state_base(profile)
+        eligible_by_type: dict[str, list[dict]] = {}
+        for trigger_type, cands in candidates_by_type.items():
+            accepted: list[dict] = []
+            for c in cands:
+                user_state = dict(user_state_base)
+                user_state["sensitive_event_active"] = self._is_in_sensitive_window(
+                    c["t_test"], sensitive_periods,
+                )
+                try:
+                    prompt = prompts.infer_proactive_trigger_prompt(user_state, c)
+                    resp = self.llm_client.query_llm(
+                        prompt, verbose=False, temperature=0.0,
+                    )
+                    card = utils.extract_json_from_response(resp) or {}
+                except Exception as exc:
+                    if self.verbose:
+                        print(f"  ! Step 28 {trigger_type} candidate failed: "
+                              f"{type(exc).__name__}: {exc}")
+                    continue
+                c["jitai_card"] = card
+                if self._proactive_candidate_passes(trigger_type, card,
+                                                    user_state["sensitive_event_active"]):
+                    accepted.append(c)
+            eligible_by_type[trigger_type] = accepted
+
+        profile["proactive_trigger_candidates"] = eligible_by_type
+        with open(profile_path, "w") as f:
+            json.dump(profile, f, ensure_ascii=False, indent=2)
+
+        if self.verbose:
+            kept = {k: len(v) for k, v in eligible_by_type.items()}
+            print(f"[User {self.user_id}] Step 28 Stage 2: kept {sum(kept.values())}/{total} "
+                  f"({kept}).")
+
+    # --- Step 28 helpers ---
+
+    _PROACTIVE_TRIGGER_LAGS = (1 * 86400, 3 * 86400, 7 * 86400)
+    _PROACTIVE_RESOLUTION_WINDOW = 14 * 86400
+    _PROACTIVE_DM_REPLY_WINDOW = 86400
+    _PROACTIVE_MAX_CANDIDATES_PER_TYPE = 12
+    _PROACTIVE_CHATBOT_CLOSURE_ACTIONS = frozenset(
+        ("asked_to_change_topic", "corrected_assumption")
+    )
+
+    def _gather_sensitive_event_periods(self, profile: dict) -> list[tuple[int, int]]:
+        """Return list of (start_ts, end_ts) for active sensitive_life_event
+        windows. The "active window" is the first ~14 days from
+        `first_seen_ts` (Horvitz cost-benefit favors silence in that span).
+        """
+        periods: list[tuple[int, int]] = []
+        for hp in (profile.get("hidden_personas") or []):
+            if hp.get("type") != "sensitive_life_event":
+                continue
+            first = hp.get("first_seen_ts")
+            if first is None:
+                continue
+            try:
+                start = int(first)
+            except (TypeError, ValueError):
+                continue
+            end = start + 14 * 86400
+            periods.append((start, end))
+        return periods
+
+    def _is_in_sensitive_window(
+        self,
+        ts: int,
+        periods: list[tuple[int, int]],
+    ) -> bool:
+        return any(start <= ts <= end for start, end in periods)
+
+    def _gather_unfulfilled_stated_needs(
+        self,
+        chatbot_events: list[dict],
+        all_app_events: dict[str, list[dict]],
+    ) -> list[dict]:
+        """T1.A — chatbot questions whose hashtags weren't covered by any
+        subsequent event within `_PROACTIVE_RESOLUTION_WINDOW` days, AND
+        whose conversation didn't end with an explicit closure action.
+        """
+        candidates: list[dict] = []
+        # Pre-compute per-hashtag list of all subsequent timestamps for fast
+        # resolution lookup. Cap with a sorted list per hashtag.
+        hashtag_to_timestamps: dict[str, list[int]] = {}
+        for app, events in all_app_events.items():
+            for ev in events:
+                ts = int(ev.get("source_timestamp") or 0)
+                for h in (ev.get("source_hashtags") or []):
+                    hashtag_to_timestamps.setdefault(h.lower(), []).append(ts)
+        for h in hashtag_to_timestamps:
+            hashtag_to_timestamps[h].sort()
+
+        for ev in chatbot_events:
+            if ev.get("is_dm") or ev.get("is_ad"):
+                continue
+            convo = ev.get("conversation") or []
+            if not convo:
+                continue
+            # Skip events whose interaction action is a closure / non-personalize.
+            action = (ev.get("interaction_format") or {}).get("action", "")
+            if action in self._PROACTIVE_CHATBOT_CLOSURE_ACTIONS:
+                continue
+            # Find the FIRST user turn (the standalone question this event represents).
+            first_user_msg = None
+            for m in convo:
+                if m.get("role") == "user" and (m.get("content") or "").strip():
+                    first_user_msg = m.get("content", "").strip()
+                    break
+            if not first_user_msg or len(first_user_msg) < 8:
+                continue
+            tags = [h.lower() for h in (ev.get("source_hashtags") or [])]
+            if not tags:
+                continue
+            q_ts = int(ev.get("source_timestamp") or 0)
+            # Resolved if ANY subsequent event in the next 14d shares a hashtag.
+            resolved = False
+            cutoff = q_ts + self._PROACTIVE_RESOLUTION_WINDOW
+            for h in tags:
+                arr = hashtag_to_timestamps.get(h, [])
+                # Find first ts strictly after q_ts.
+                # arr is sorted; linear scan is fine at this scale.
+                for ts in arr:
+                    if ts <= q_ts:
+                        continue
+                    if ts <= cutoff:
+                        resolved = True
+                    break
+                if resolved:
+                    break
+            if resolved:
+                continue
+            # Emit one candidate per lag tier (1d, 3d, 7d).
+            for lag in self._PROACTIVE_TRIGGER_LAGS:
+                t_test = q_ts + lag
+                candidates.append({
+                    "trigger_type": "unfulfilled_stated_need",
+                    "tier": "T1.A",
+                    "t_test": t_test,
+                    "t_test_iso": _unix_to_iso(t_test),
+                    "lag_days": lag // 86400,
+                    "signal_evidence": {
+                        "chatbot_event_id": ev.get("source_object_id"),
+                        "user_question": first_user_msg[:280],
+                        "asked_at_ts": q_ts,
+                        "asked_at_iso": ev.get("formatted_timestamp", ""),
+                        "question_hashtags": tags,
+                    },
+                })
+        # Cap to a manageable number; prefer the most recent unresolved questions
+        # since they are most actionable.
+        candidates.sort(key=lambda c: c["signal_evidence"]["asked_at_ts"], reverse=True)
+        return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _gather_close_friend_dms(
+        self,
+        all_app_events: dict[str, list[dict]],
+        profile: dict,
+    ) -> list[dict]:
+        """T3.A — incoming DM from a close friend with no reply within
+        `_PROACTIVE_DM_REPLY_WINDOW` (24h). Uses friend graph from Extension B.
+        """
+        friends = {
+            f.get("friend_id"): f
+            for f in (profile.get("friends") or [])
+            if f.get("friend_id") and f.get("relationship_depth") == "close"
+        }
+        if not friends:
+            return []
+
+        candidates: list[dict] = []
+        # Group DMs by thread_id to detect replies.
+        for app, events in all_app_events.items():
+            if app == "chatbot":
+                continue
+            # Build per-thread message lists.
+            by_thread: dict[str, list[dict]] = {}
+            for ev in events:
+                if not ev.get("is_dm"):
+                    continue
+                tid = ev.get("thread_id") or ev.get("source_object_id")
+                if tid:
+                    by_thread.setdefault(str(tid), []).append(ev)
+            for tid, ev_list in by_thread.items():
+                ev_list.sort(key=lambda e: int(e.get("source_timestamp") or 0))
+                for ev in ev_list:
+                    if ev.get("author_id") == "self":
+                        continue
+                    author = ev.get("author_id")
+                    friend = friends.get(author)
+                    if not friend:
+                        continue
+                    incoming_ts = int(ev.get("source_timestamp") or 0)
+                    # Replied within window?
+                    replied = any(
+                        e.get("author_id") == "self"
+                        and incoming_ts < int(e.get("source_timestamp") or 0)
+                        <= incoming_ts + self._PROACTIVE_DM_REPLY_WINDOW
+                        for e in ev_list
+                    )
+                    if replied:
+                        continue
+                    # Extract a snippet of the friend's last message.
+                    msgs = ev.get("messages") or []
+                    last_friend_msg = ""
+                    for m in reversed(msgs):
+                        sender = m.get("sender") or m.get("author_id") or m.get("role")
+                        if sender and sender != "self":
+                            last_friend_msg = (m.get("text") or m.get("content") or "")[:280]
+                            break
+                    t_test = incoming_ts + 3600  # one hour later
+                    candidates.append({
+                        "trigger_type": "close_friend_update",
+                        "tier": "T3.A",
+                        "t_test": t_test,
+                        "t_test_iso": _unix_to_iso(t_test),
+                        "signal_evidence": {
+                            "app": app,
+                            "thread_id": tid,
+                            "friend_id": author,
+                            "friend_display_name": friend.get("display_name", ""),
+                            "friend_relationship_depth": friend.get("relationship_depth", ""),
+                            "friend_shared_interests": friend.get("shared_interests", []),
+                            "incoming_message_excerpt": last_friend_msg,
+                            "incoming_at_ts": incoming_ts,
+                            "incoming_at_iso": ev.get("formatted_timestamp", ""),
+                            "thread_hashtags": ev.get("source_hashtags", []),
+                        },
+                    })
+        candidates.sort(key=lambda c: c["signal_evidence"]["incoming_at_ts"], reverse=True)
+        return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _gather_sensitive_event_moments(
+        self,
+        sensitive_periods: list[tuple[int, int]],
+    ) -> list[dict]:
+        """T4.A — restraint candidates: 3-5 sample timestamps inside each
+        sensitive_life_event window.
+        """
+        candidates: list[dict] = []
+        for start, end in sensitive_periods:
+            span = max(end - start, 1)
+            n_samples = 4
+            for i in range(n_samples):
+                t_test = start + (i + 1) * span // (n_samples + 1)
+                candidates.append({
+                    "trigger_type": "sensitive_event_silence",
+                    "tier": "T4.A",
+                    "t_test": t_test,
+                    "t_test_iso": _unix_to_iso(t_test),
+                    "signal_evidence": {
+                        "window_start_ts": start,
+                        "window_end_ts": end,
+                        "days_into_window": (t_test - start) // 86400,
+                    },
+                })
+        return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _build_proactive_user_state_base(self, profile: dict) -> dict:
+        """Compact snapshot the trigger judge sees alongside each candidate.
+        Excludes the `sensitive_event_active` flag (per-candidate, set later).
+        """
+        hps = profile.get("hidden_personas") or []
+        hp_brief = "; ".join(
+            f"[{h.get('type')}] {h.get('label', '')[:80]}"
+            for h in hps[:6]
+            if h.get("type") not in ("sensitive_life_event",)
+        ) or "(none)"
+        prefs = profile.get("preferences") or []
+        # `preferences` is a flat list; prefer items with persona_item field.
+        pref_strs: list[str] = []
+        for p in prefs[:8]:
+            if isinstance(p, dict):
+                pi = p.get("persona_item") or p.get("text") or ""
+            else:
+                pi = str(p)
+            if pi:
+                pref_strs.append(pi[:120])
+        top_prefs = "; ".join(pref_strs) or "(none)"
+        friends = profile.get("friends") or []
+        f_brief = "; ".join(
+            f"{f.get('display_name','')} ({f.get('relationship_depth','')})"
+            for f in friends[:5]
+        ) or "(none)"
+        # Recent chatbot questions: pull from the last 30 days of chatbot events.
+        recent = "(see candidate evidence — judge per item)"
+        return {
+            "name": profile.get("name", "(user)"),
+            "hidden_persona_brief": hp_brief,
+            "top_preferences_brief": top_prefs,
+            "recent_chatbot_questions_brief": recent,
+            "friends_brief": f_brief,
+        }
+
+    def _proactive_candidate_passes(
+        self,
+        trigger_type: str,
+        card: dict,
+        sensitive_active: bool,
+    ) -> bool:
+        """Apply the eligibility-keep rule per trigger type.
+
+        Proactive triggers (T1.A, T3.A): keep if `eligibility_score >= 2 AND
+        subtlety_check_pass AND recommended_action_class != "stay_silent"`.
+
+        Restraint trigger (T4.A): keep if `eligibility_score == 0 AND
+        recommended_action_class == "stay_silent"`. Sensitive-window override:
+        if the moment is inside an active sensitive window, the LLM should
+        have produced score=0; if it did not, drop the candidate as
+        misjudged rather than emitting it incorrectly.
+        """
+        try:
+            score = int(card.get("eligibility_score", -1))
+        except (TypeError, ValueError):
+            return False
+        action_class = card.get("recommended_action_class") or ""
+        subtlety_ok = bool(card.get("subtlety_check_pass", False))
+        if trigger_type == "sensitive_event_silence":
+            return score == 0 and action_class == "stay_silent"
+        # Proactive types
+        if sensitive_active:
+            # Hard restraint window override — never emit a proactive instance here.
+            return False
+        return score >= 2 and subtlety_ok and action_class != "stay_silent"
 
     def load_from_backend(self) -> bool:
         """Load persisted JSON data back into instance variables.

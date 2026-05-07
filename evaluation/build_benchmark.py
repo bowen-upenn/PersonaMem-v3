@@ -2828,6 +2828,20 @@ def build_benchmark(
         sensitive_event_instances = []
         print(f"[build_benchmark] WARN: sensitive_event builder failed: {exc}")
 
+    # Proactive Actions (Phase 1) — three task types from data-gen Step 28.
+    # Builders simply consume profile.proactive_trigger_candidates; if Step 28
+    # didn't run (no LLM client at data-gen time), all three return empty.
+    try:
+        from evaluation.tasks.proactive_actions import build_all_proactive_instances
+        proactive_buckets = build_all_proactive_instances(bq, user_id, t_probe)
+    except Exception as exc:
+        proactive_buckets = {
+            "proactive_unfulfilled_stated_need": [],
+            "proactive_close_friend_update": [],
+            "restraint_sensitive_event_silence": [],
+        }
+        print(f"[build_benchmark] WARN: proactive_actions builder failed: {exc}")
+
     # Persist Phase D audit report.
     try:
         out_dir = Path("benchmark") / user_id
@@ -2856,6 +2870,10 @@ def build_benchmark(
         "short_vs_long_term_lifecycle":           e5_instances,
         "active_mistake_prevention":              e6_instances,
         **agentic_buckets,
+        # Proactive Actions (Phase 1)
+        "proactive_unfulfilled_stated_need":      proactive_buckets["proactive_unfulfilled_stated_need"],
+        "proactive_close_friend_update":          proactive_buckets["proactive_close_friend_update"],
+        "restraint_sensitive_event_silence":      proactive_buckets["restraint_sensitive_event_silence"],
     }
     capped_buckets = _task_dist.apply_caps(dict(pre_cap_buckets), rng_seed=rng_seed)
     floor_gaps = _task_dist.report_floor_gaps(capped_buckets)
