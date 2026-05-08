@@ -41,6 +41,7 @@ from data_preparation.ai_studio_memory import (
     compute_intimacy_stage,
     eligible_conversation_types,
     increment_intimacy_arc,
+    mark_events_as_permanently_demoted,
     update_open_thread,
     set_persona_consistency_anchor,
     CONVERSATION_TYPES,
@@ -184,10 +185,17 @@ def _generate_one_event(
     oblique_targets = _pick_oblique_targets(routed_prefs, hidden_personas, rng)
 
     # Build the cross-session memory snapshot that the prompt needs.
+    # token_budget=32000 is generous enough that demotion rarely fires for
+    # typical users (~30-60 events × ~250 tokens). When it does fire, the
+    # newly-demoted event ids returned below get persisted into
+    # memory_state.running_relational_state.permanently_demoted_event_ids
+    # so future prompts render them as summary in a STABLE way — that's
+    # the prompt-cache invariant that lets Azure / Anthropic cache the
+    # constants + memory prefix across consecutive events.
     ctx = assemble_generation_context(
         memory_state=memory_state,
         all_prior_events=prior_records,
-        token_budget=12000,
+        token_budget=32000,
     )
 
     # Build prompt — pick standard vs romantic variant by archetype.
@@ -268,6 +276,12 @@ def _generate_one_event(
     })
 
     # Update memory state (called BEFORE next event's generation).
+    # Persist newly-demoted prior-event ids so future prompts render them
+    # as summary in a STABLE way — preserves the prompt-cache prefix.
+    mark_events_as_permanently_demoted(
+        memory_state,
+        ctx.get("newly_demoted_event_ids", []),
+    )
     increment_intimacy_arc(memory_state, conv_type, record.get("source_timestamp", 0))
     # Append a thin summary now (the audit pass may overwrite with a richer one later).
     append_episodic_item(memory_state, EpisodicMemoryItem(

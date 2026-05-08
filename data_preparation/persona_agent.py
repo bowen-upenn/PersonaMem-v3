@@ -7120,6 +7120,12 @@ class PersonaAgent:
             for hp in (self.user_profile.hidden_personas or [])
         ]
 
+        # Snapshot LLM usage BEFORE Step 18B so we can report the cache
+        # hit-rate over just this step. Sequential AI Studio generation
+        # reuses ~80% of each prior prompt verbatim — caching is the single
+        # biggest cost+latency lever once enabled.
+        usage_before = self.llm_client.get_usage_totals() if self.llm_client else {}
+
         out, mem = ai_studio_conversation.generate_ai_studio_conversations(
             ai_studio_records=ai_studio_records,
             user_profile=user_profile_dict,
@@ -7142,8 +7148,24 @@ class PersonaAgent:
                 f"Generated {len(out)}/{len(ai_studio_records)} AI Studio conversations "
                 f"(archetype={archetype!r} character={character!r}; "
                 f"final intimacy_arc={mem.running_relational_state.intimacy_arc:.2f} "
-                f"stage={mem.running_relational_state.intimacy_stage}).{utils.Colors.ENDC}"
+                f"stage={mem.running_relational_state.intimacy_stage}; "
+                f"permanently_demoted={len(mem.running_relational_state.permanently_demoted_event_ids)})"
+                f"{utils.Colors.ENDC}"
             )
+
+            # Cache hit-rate report (after-before delta from the LLM client).
+            usage_after = self.llm_client.get_usage_totals() if self.llm_client else {}
+            calls_d = (usage_after.get("calls", 0) - usage_before.get("calls", 0))
+            input_d = (usage_after.get("input_tokens", 0) - usage_before.get("input_tokens", 0))
+            cached_d = (usage_after.get("cached_input_tokens", 0) - usage_before.get("cached_input_tokens", 0))
+            if input_d > 0:
+                hit_pct = 100.0 * cached_d / input_d
+                print(
+                    f"{utils.Colors.OKBLUE}[User {self.user_id}] AI Studio Step 18B "
+                    f"prompt-cache: {calls_d} calls, "
+                    f"{cached_d:,}/{input_d:,} input tokens cached "
+                    f"({hit_pct:.1f}% hit rate).{utils.Colors.ENDC}"
+                )
 
     def audit_ai_studio_conversations(self) -> None:
         """Step Z — quality + safety audit over AI Studio events.

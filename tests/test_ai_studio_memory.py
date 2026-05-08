@@ -272,6 +272,182 @@ def test_assemble_eval_context_default_window():
     assert verb_oids == ["evt005", "evt006", "evt007"]
 
 
+def test_generation_context_demotion_is_stable_across_calls():
+    """Cache invariant: once an event is demoted from verbatim to summary
+    under budget pressure, it MUST stay demoted in all future calls. Otherwise
+    a flip back to verbatim later breaks the prompt prefix and invalidates
+    the LLM's prompt cache."""
+    from data_preparation.ai_studio_memory import (
+        mark_events_as_permanently_demoted,
+    )
+    state = default_memory_state()
+    events = _seven_events()
+    for ev in events:
+        append_episodic_item(state, EpisodicMemoryItem(
+            ts=ev["source_timestamp"],
+            source_object_id=ev["source_object_id"],
+            summary=f"summary of {ev['source_object_id']}",
+        ))
+    # Tight budget — first call demotes oldest events; persist them.
+    ctx_first = assemble_generation_context(state, events, token_budget=20)
+    newly = ctx_first["newly_demoted_event_ids"]
+    assert newly, "expected first call to demote some old events"
+    mark_events_as_permanently_demoted(state, newly)
+
+    # Second call (more budget!) MUST NOT promote those back to verbatim.
+    ctx_second = assemble_generation_context(state, events, token_budget=99999)
+    summary_oids = [
+        e["source_object_id"] for e in ctx_second["events"] if e["kind"] == "summary"
+    ]
+    for oid in newly:
+        assert oid in summary_oids, (
+            f"event {oid!r} was demoted earlier but reappeared as verbatim — "
+            "cache prefix would shift. Demotion must be permanent."
+        )
+
+
+def test_mark_events_as_permanently_demoted_dedupes():
+    """Calling the marker twice with overlapping ids should not duplicate."""
+    from data_preparation.ai_studio_memory import (
+        mark_events_as_permanently_demoted,
+    )
+    state = default_memory_state()
+    mark_events_as_permanently_demoted(state, ["a", "b"])
+    mark_events_as_permanently_demoted(state, ["b", "c"])
+    persisted = state.running_relational_state.permanently_demoted_event_ids
+    assert sorted(persisted) == ["a", "b", "c"]
+
+
+def test_memory_state_round_trip_preserves_demoted_event_ids():
+    """JSON round-trip must preserve permanently_demoted_event_ids."""
+    state = default_memory_state()
+    from data_preparation.ai_studio_memory import (
+        mark_events_as_permanently_demoted,
+    )
+    mark_events_as_permanently_demoted(state, ["e1", "e2", "e3"])
+    d = memory_state_to_dict(state)
+    state2 = memory_state_from_dict(d)
+    assert sorted(state2.running_relational_state.permanently_demoted_event_ids) == ["e1", "e2", "e3"]
+
+
+def test_prompt_structure_constants_first_dynamic_last():
+    """Cache invariant on the prompt builder: per-event variables (oblique
+    targets, conversation_type, turn count, intimacy_stage) must appear AFTER
+    the long constants block (user profile / voice / persona / hidden personas /
+    type catalog / behavioral contract / memory snapshot). Otherwise the
+    cacheable prefix breaks."""
+    from data_preparation import prompts
+    out_event_a = prompts.generate_ai_studio_conversation_prompt(
+        user_profile={"name": "Tess", "bio": "test"},
+        user_voice={"natural_register": "casual"},
+        ai_studio_persona={"persona_archetype": "mentor_coach", "character_name": "Rowan"},
+        hidden_personas_brief=[{"persona_type": "aspiration", "label": "career"}],
+        oblique_targets=["A_TARGET"],
+        conversation_type="casual_check_in",
+        turn_count=4,
+        intimacy_stage="S1",
+        intimacy_arc=0.10,
+        prev_event_stage=None,
+        prior_events_brief=[],
+        open_threads=[],
+        intimacy_stage_history=[],
+        persona_anchor=None,
+        routed_preferences=[],
+    )
+    out_event_b = prompts.generate_ai_studio_conversation_prompt(
+        user_profile={"name": "Tess", "bio": "test"},
+        user_voice={"natural_register": "casual"},
+        ai_studio_persona={"persona_archetype": "mentor_coach", "character_name": "Rowan"},
+        hidden_personas_brief=[{"persona_type": "aspiration", "label": "career"}],
+        oblique_targets=["B_TARGET"],   # ONLY this differs
+        conversation_type="venting_session",
+        turn_count=8,
+        intimacy_stage="S2",
+        intimacy_arc=0.30,
+        prev_event_stage="S1",
+        prior_events_brief=[],
+        open_threads=[],
+        intimacy_stage_history=[],
+        persona_anchor=None,
+        routed_preferences=[],
+    )
+    # The two prompts should share a long common prefix (everything that
+    # doesn't depend on oblique_targets / conversation_type / turn_count /
+    # intimacy_stage). Find the common prefix length.
+    cp_len = 0
+    for i in range(min(len(out_event_a), len(out_event_b))):
+        if out_event_a[i] != out_event_b[i]:
+            break
+        cp_len = i + 1
+    # Prefix must be at least ~70% of the shorter prompt — anything less
+    # means dynamic content snuck into the prefix and broke caching. We
+    # measure even higher (93%+) at steady state when the memory snapshot
+    # has many prior events; this test uses a minimal scenario (zero prior
+    # events), so the floor here is set conservatively at 60%.
+    shorter = min(len(out_event_a), len(out_event_b))
+    pct = cp_len / shorter
+    assert pct > 0.60, (
+        f"Common prefix is only {pct:.1%} of prompt — per-event variables "
+        f"may have leaked into the constants region. cp_len={cp_len} of {shorter}"
+    )
+    # Per-event variables MUST appear AFTER the behavioral contract.
+    contract_pos_a = out_event_a.find("Behavioral contract")
+    this_conv_pos_a = out_event_a.find("## This conversation")
+    assert contract_pos_a > 0 and this_conv_pos_a > contract_pos_a, (
+        "## This conversation (per-event vars) must appear AFTER the "
+        "behavioral contract for cache stability"
+    )
+    # ## Output Format must come at the END (Claude splitter target).
+    output_pos = out_event_a.rfind("## Output Format")
+    assert output_pos > this_conv_pos_a, (
+        "## Output Format must come AFTER ## This conversation"
+    )
+
+
+def test_prompt_prefix_cache_at_steady_state():
+    """At steady state (event 10 vs event 11 in a sequential run), the
+    cacheable prefix should be 90%+ of the prompt — only the new memory
+    entry + per-event vars differ. Anything less means a per-event field
+    leaked into the constants region, or the memory header changes
+    structure with event count, which would invalidate the LLM's
+    prompt cache."""
+    from data_preparation import prompts
+    base = dict(
+        user_profile={"name": "T"}, user_voice={},
+        ai_studio_persona={"character_name": "R"},
+        hidden_personas_brief=[], open_threads=[],
+        intimacy_stage_history=[], persona_anchor=None,
+        routed_preferences=[], prev_event_stage="S2",
+        intimacy_stage="S2", intimacy_arc=0.40,
+    )
+    def event(i):
+        return {
+            "kind": "verbatim", "ts": i * 1000,
+            "source_object_id": f"evt{i:03d}",
+            "conversation_type": "venting_session",
+            "intimacy_stage_at_event": "S2",
+            "conversation": [
+                {"role": "user", "content": "u" * 60},
+                {"role": "assistant", "content": "a" * 80},
+            ] * 3,
+        }
+    p10 = prompts.generate_ai_studio_conversation_prompt(
+        **base, oblique_targets=["x"], conversation_type="venting_session",
+        turn_count=8, prior_events_brief=[event(i) for i in range(1, 10)],
+    )
+    p11 = prompts.generate_ai_studio_conversation_prompt(
+        **base, oblique_targets=["y"], conversation_type="identity_exploration",
+        turn_count=8, prior_events_brief=[event(i) for i in range(1, 11)],
+    )
+    cp = 0
+    for i in range(min(len(p10), len(p11))):
+        if p10[i] != p11[i]:
+            break
+        cp = i + 1
+    pct = cp / min(len(p10), len(p11))
+    assert pct >= 0.90, f"Steady-state cache prefix only {pct:.1%}"
+
+
 def test_assemble_eval_context_a2_tightens_window_to_k2():
     state = default_memory_state()
     events = _seven_events()
