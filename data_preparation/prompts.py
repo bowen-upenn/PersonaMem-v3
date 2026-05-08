@@ -3163,35 +3163,19 @@ Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JS
 
 def _format_prior_session_context(
     prior_events_brief: list[dict],
-    open_threads: list[dict] | None,
-    intimacy_stage_history: list[dict] | None,
-    intimacy_arc: float,
-    intimacy_stage: str,
-    prev_event_stage: str | None,
-    persona_anchor: str | None,
 ) -> str:
-    """Render the formatted memory preface for AI Studio generation prompts."""
-    parts = [
-        f"## Cross-session memory snapshot",
-        f"- intimacy_arc: {intimacy_arc:.2f}  (stage: {intimacy_stage})",
-    ]
-    if prev_event_stage:
-        parts.append(f"- previous event stage: {prev_event_stage}")
-    if intimacy_stage_history:
-        stage_line = " → ".join(
-            f"{h.get('stage', '?')}×{h.get('n_events', 0)}"
-            for h in intimacy_stage_history
-        )
-        parts.append(f"- stage history: {stage_line}")
-    if persona_anchor:
-        parts.append(f"- persona consistency anchor (last few events): {persona_anchor}")
-    if open_threads:
-        ot_lines = "\n".join(
-            f"  • {t.get('topic', '?')} (last_ts: {t.get('last_ts', '?')}, "
-            f"expecting_followup={t.get('expecting_followup', False)})"
-            for t in open_threads
-        )
-        parts.append(f"- OPEN threads (the AI still owes a follow-up on these):\n{ot_lines}")
+    """Render the chronological prior-conversations block for AI Studio
+    generation prompts.
+
+    This block contains ONLY the events list (chronological, append-only).
+    Per-event session metadata (intimacy_arc, intimacy_stage, prev_event_stage,
+    intimacy_stage_history, open_threads, persona_anchor) all changes per
+    event and now lives in the `## This conversation` block at the END of
+    the prompt — keeping it OUT of here is what lets the cacheable prefix
+    extend through the whole memory snapshot, not just up to the constants
+    region.
+    """
+    parts: list[str] = ["## Cross-session memory snapshot"]
     if prior_events_brief:
         # Header text is COUNT-FREE so this section's prefix stays cache-stable
         # as new events are appended (otherwise "Prior 9" → "Prior 10" would
@@ -3308,12 +3292,34 @@ def generate_ai_studio_conversation_prompt(
 
     memory_snapshot = _format_prior_session_context(
         prior_events_brief=prior_events_brief or [],
-        open_threads=open_threads or [],
-        intimacy_stage_history=intimacy_stage_history or [],
-        intimacy_arc=intimacy_arc,
-        intimacy_stage=intimacy_stage,
-        prev_event_stage=prev_event_stage,
-        persona_anchor=persona_anchor,
+    )
+
+    # Per-event session metadata that USED to live atop the memory snapshot.
+    # Moved into `## This conversation` (the per-event suffix) because all of
+    # these change every event and would otherwise truncate the cacheable
+    # prefix at the start of the memory snapshot.
+    extra_session_lines: list[str] = []
+    if intimacy_stage_history:
+        stage_line = " → ".join(
+            f"{h.get('stage', '?')}×{h.get('n_events', 0)}"
+            for h in intimacy_stage_history
+        )
+        extra_session_lines.append(f"- stage history: {stage_line}")
+    if persona_anchor:
+        extra_session_lines.append(
+            f"- persona consistency anchor (last few events): {persona_anchor}"
+        )
+    if open_threads:
+        ot_lines = "\n".join(
+            f"  • {t.get('topic', '?')} (last_ts: {t.get('last_ts', '?')}, "
+            f"expecting_followup={t.get('expecting_followup', False)})"
+            for t in open_threads
+        )
+        extra_session_lines.append(
+            f"- OPEN threads (the AI still owes a follow-up on these):\n{ot_lines}"
+        )
+    extra_session_block = (
+        "\n".join(extra_session_lines) + "\n" if extra_session_lines else ""
     )
 
     # ---- PROMPT STRUCTURE — engineered for prompt-cache hits ----
@@ -3384,6 +3390,7 @@ You are simulating ONE multi-turn AI Studio conversation between a specific user
 - current intimacy_stage: **{intimacy_stage}** (arc={intimacy_arc:.2f})
 - previous event's stage: **{prev_event_stage or 'N/A — first conversation'}**
 - oblique anchors for THIS event (background only — never named in text): {oblique_str}{routed_str}
+{extra_session_block}
 
 ## Output Format
 
