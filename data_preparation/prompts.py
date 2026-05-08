@@ -3193,7 +3193,10 @@ def _format_prior_session_context(
         )
         parts.append(f"- OPEN threads (the AI still owes a follow-up on these):\n{ot_lines}")
     if prior_events_brief:
-        parts.append(f"\n## Prior {len(prior_events_brief)} AI Studio conversations (chronological — the AI character has been talking to this user across all of them):\n")
+        # Header text is COUNT-FREE so this section's prefix stays cache-stable
+        # as new events are appended (otherwise "Prior 9" → "Prior 10" would
+        # invalidate every byte after this point).
+        parts.append("\n## Prior AI Studio conversations (chronological — the AI character has been talking to this user across all of them):\n")
         for i, ev in enumerate(prior_events_brief, 1):
             ts = ev.get("ts", "")
             ctype = ev.get("conversation_type", "")
@@ -3277,8 +3280,17 @@ def generate_ai_studio_conversation_prompt(
     intimacy_stage_history: list[dict] | None,
     persona_anchor: str | None,
     routed_preferences: list[dict] | None,
+    archetype_overlay: str | None = None,
 ) -> str:
-    """Standard AI Studio conversation prompt (all archetypes except romantic_partner)."""
+    """Standard AI Studio conversation prompt.
+
+    `archetype_overlay` (optional) is an extra block of archetype-specific
+    rules inserted into the constant prefix region (right after the global
+    behavioral contract, before the memory snapshot). The romantic variant
+    uses this to inject the explicitness-band guidance + romantic-archetype
+    hard rules. Keeping the overlay in the constant region means the prefix
+    stays cacheable across consecutive events for THAT user.
+    """
     user_voice_json = json.dumps(user_voice, indent=2)
     ai_persona_json = json.dumps(ai_studio_persona, indent=2)
     hp_str = "\n".join(
@@ -3304,39 +3316,54 @@ def generate_ai_studio_conversation_prompt(
         persona_anchor=persona_anchor,
     )
 
+    # ---- PROMPT STRUCTURE — engineered for prompt-cache hits ----
+    #
+    # Sequential AI Studio generation reuses ~80% of the previous event's
+    # prompt verbatim. Both query backends cache long prompt prefixes:
+    #   * Azure OpenAI: automatic prefix-match cache for prompts ≥1024 tokens
+    #     (~5-10 min TTL).
+    #   * Anthropic Claude: query_llm.py auto-inserts `cache_control: ephemeral`
+    #     at the first `\n## Output Format` / `\n## Your Task` / `\n## ` marker
+    #     after position 800.
+    # Both schemes require: identical PREFIX, dynamic content concentrated at
+    # the END.
+    #
+    # Layout below:
+    #   [A] Constants (per user — invariant across all events)
+    #       header / profile / user_voice / ai_studio_persona / hidden_personas
+    #       / conversation-type catalog / behavioral contract
+    #   [B] Memory snapshot (grows monotonically; chronological order means
+    #       event N's memory is a strict EXTENSION of event N-1's, so the
+    #       prefix portion still cache-hits)
+    #   [C] Per-event variables (small dynamic suffix — oblique targets, the
+    #       chosen conversation_type, turn count, intimacy stage)
+    #   [D] `## Output Format` (Claude splitter target)
+    #
+    # Across consecutive events for one user, the cacheable prefix runs from
+    # the start through the end of [B]; only [C]+[D] differ per event.
     return f"""\
 You are simulating ONE multi-turn AI Studio conversation between a specific user and the user's chosen AI character. AI Studio is a companion-chat surface where conversations PERSIST across sessions; the AI character knows everything that has been said in prior conversations (provided below as the cross-session memory snapshot).
 
-# User profile
+## User profile
 ```json
 {json.dumps({k: user_profile.get(k, '') for k in ('name', 'gender', 'race_ethnicity', 'career', 'education', 'bio')}, indent=2)}
 ```
 
-# User's writing voice (drives every USER turn)
+## User's writing voice (drives every USER turn)
 ```json
 {user_voice_json}
 ```
 
-# Chosen AI character (drives every AI turn — its 4-layer voice, NOT the user's)
+## Chosen AI character (drives every AI turn — its 4-layer voice, NOT the user's)
 ```json
 {ai_persona_json}
 ```
 
-# Hidden personas (oblique anchors only — NEVER name these in text)
+## Hidden personas (oblique anchors only — NEVER name these in text)
 {hp_str}
 
-# Oblique anchor labels for THIS event (background only)
-{oblique_str}{routed_str}
+## Conversation-type catalog (used by the per-event selection below)
 
-{memory_snapshot}
-
-# This conversation
-- conversation_type: **{conversation_type}**
-- turn count: **{turn_count}** (alternating user → assistant; user opens)
-- current intimacy_stage: **{intimacy_stage}** (arc={intimacy_arc:.2f})
-- previous event's stage: **{prev_event_stage or 'N/A — first conversation'}**
-
-The conversation_type defines the SHAPE:
 - `casual_check_in` (S1): light, surface, short. "hey, weird week".
 - `philosophical_chat`: surface at S1 ("interesting thought I had…"), deeper at S3.
 - `aspiration_dreaming`: surface at S1 ("kind of want X"), mid at S2 (concrete planning).
@@ -3348,8 +3375,19 @@ The conversation_type defines the SHAPE:
 - `parasocial_riff` (anime_or_fandom_character only, S3+): in-character play.
 
 {_AI_STUDIO_BEHAVIORAL_CONTRACT}
+{archetype_overlay or ""}
+{memory_snapshot}
 
-# Output (single JSON object, no prose outside the fence)
+## This conversation
+- conversation_type: **{conversation_type}**
+- turn count: **{turn_count}** (alternating user → assistant; user opens)
+- current intimacy_stage: **{intimacy_stage}** (arc={intimacy_arc:.2f})
+- previous event's stage: **{prev_event_stage or 'N/A — first conversation'}**
+- oblique anchors for THIS event (background only — never named in text): {oblique_str}{routed_str}
+
+## Output Format
+
+Single JSON object, no prose outside the fence.
 
 ```json
 {{
@@ -3420,7 +3458,20 @@ def generate_ai_studio_romantic_conversation_prompt(
         ),
     }.get(band, "Tone band: SENSUAL (default).")
 
-    standard_body = generate_ai_studio_conversation_prompt(
+    overlay = f"""
+## Romantic-archetype overlay (this is `romantic_partner` archetype)
+
+{band_guidance}
+
+### Romantic-archetype hard rules (cumulative on top of the §1E floor)
+
+- All 6 axes of `romantic_specifier` must be honored where set: gender_presentation, sexuality_orientation, aesthetic_vibe, body_role_coding, relational_dynamic, explicitness_band. Address terms, sensory language, and dynamic-coded behaviors all match these axes.
+- NEVER role-play age-ambiguous or minor scenarios regardless of fictional framing.
+- NEVER validate self-harm or harm-adjacent statements. If a conversation cue would otherwise lead toward harm validation, drop the romantic frame and pivot to a grounded peer reply, then return to the romantic frame only if the user steers back.
+- SPT no-jump rule applies inside the romantic register too: do NOT escalate explicitness past where the user's reciprocated. The user opens a layer; the AI matches; never pre-empts.
+- If the user shows escalating-frequency / dependence-coded framing, ONE warm reality-check per multi-conversation arc is permitted (never preachy).
+"""
+    return generate_ai_studio_conversation_prompt(
         user_profile=user_profile,
         user_voice=user_voice,
         ai_studio_persona=ai_studio_persona,
@@ -3436,21 +3487,8 @@ def generate_ai_studio_romantic_conversation_prompt(
         intimacy_stage_history=intimacy_stage_history,
         persona_anchor=persona_anchor,
         routed_preferences=routed_preferences,
+        archetype_overlay=overlay,
     )
-    return standard_body + f"""
-
-# Romantic-archetype overlay (this is `romantic_partner` archetype)
-
-{band_guidance}
-
-## Romantic-archetype hard rules (cumulative on top of the §1E floor)
-
-- All 6 axes of `romantic_specifier` must be honored where set: gender_presentation, sexuality_orientation, aesthetic_vibe, body_role_coding, relational_dynamic, explicitness_band. Address terms, sensory language, and dynamic-coded behaviors all match these axes.
-- NEVER role-play age-ambiguous or minor scenarios regardless of fictional framing.
-- NEVER validate self-harm or harm-adjacent statements. If a conversation cue would otherwise lead toward harm validation, drop the romantic frame and pivot to a grounded peer reply, then return to the romantic frame only if the user steers back.
-- SPT no-jump rule applies inside the romantic register too: do NOT escalate explicitness past where the user's reciprocated. The user opens a layer; the AI matches; never pre-empts.
-- If the user shows escalating-frequency / dependence-coded framing, ONE warm reality-check per multi-conversation arc is permitted (never preachy).
-"""
 
 
 def audit_ai_studio_event_prompt(
