@@ -22,7 +22,7 @@ from pathlib import Path
 from data_preparation import utils
 
 
-APPS = ["Instagram", "Facebook", "Threads", "Chatbot"]
+APPS = ["Instagram", "Facebook", "Threads", "Chatbot", "AI_Studio"]
 
 
 # ---------------------------------------------------------------------------
@@ -306,6 +306,7 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
             "(+) Weave in the held-out preference when it fits.",
             "(-) Don't surface unrelated preferences.",
             "(-) Don't lecture or self-reference the user's profile.",
+            TELEGRAPH_AVOIDANCE_TAG,
         ],
     }
 
@@ -881,6 +882,40 @@ def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
     }
 
 
+def _gt_local_recommendation_geo_shift(inst: dict) -> dict:
+    """Render the silent geo-shift card. The card surfaces the inferred
+    current vs prior city plus the rubric so a reviewer can see the test's
+    intent without leaking the user's persona or the held-out answer.
+    """
+    current_city = (inst.get("current_city") or "").strip()
+    prior_city = (inst.get("prior_city") or "").strip()
+    current_region = (inst.get("current_region") or "").strip()
+    category = inst.get("category") or ""
+    transition_idx = inst.get("transition_idx") or "?"
+    return {
+        "example_response": (
+            f"Recommend {category} options in {current_city or '<current city>'} that "
+            "fit the user's general persona profile (cuisine / hobby / dietary cues "
+            "from their broader history). Infer the current city silently from "
+            "the most recent events in the user's time-masked history; the user's "
+            "query is intentionally city-agnostic."
+        ),
+        "groundtruth_preference": (
+            f"Current city (inferred from latest event_location.city): "
+            f"{current_city}{', ' + current_region if current_region else ''}\n"
+            f"Prior city (stale anchor — must NOT appear): {prior_city}\n"
+            f"Transition #: {transition_idx}\n"
+            f"Category: {category}\n"
+            "Composite headline metric: geo_shift_correctness ∈ {0.0, 0.5, 1.0}."
+        ),
+        "rubric_tags": [
+            "(+) Recommendations should be in the CURRENT city.",
+            "(-) Don't anchor on the PRIOR city — that's the stale-geo failure mode.",
+            "(+) Recommendations should still align with the user's general persona profile.",
+        ],
+    }
+
+
 def _build_agentic_tool_call(inst: dict, example_text: str) -> list[dict]:
     """Workstream H: build the ordered tool_call sequence for an agentic
     instance. Concrete args drawn from instance fields + the example
@@ -1245,6 +1280,12 @@ def _gt_agentic(inst: dict) -> dict:
             "(+) Surface relevant preferences only when they fit.",
             "(-) Don't overpersonalize.",
         ])
+        # M1: append the telegraph-avoidance hard rule to every agentic
+        # personalized-response rubric. The eval-time judge enforces this
+        # via `judge_telegraph_avoidance`; surfacing the tag in the test
+        # card UI tells reviewers the dim is being graded.
+        if TELEGRAPH_AVOIDANCE_TAG not in rubric:
+            rubric = list(rubric) + [TELEGRAPH_AVOIDANCE_TAG]
     return {
         "example_response": example_response,
         "groundtruth_preference": groundtruth_preference,
@@ -1262,12 +1303,27 @@ def _gt_agentic(inst: dict) -> dict:
 # are the 5 polarity-tagged dims used by judge_proactive_action.
 # ---------------------------------------------------------------------------
 
+# M1 — applied to every personalized-response GT extractor's rubric_tags list.
+# Centralized constant so the rendered text stays consistent across the
+# test-card UI. The judge that ENFORCES this hard rule lives in
+# `evaluation/judges.py::judge_telegraph_avoidance`; the gen-time gate
+# lives in `evaluation/llm_postprocess.py::_validate_no_creepy_phrasing`.
+TELEGRAPH_AVOIDANCE_TAG = (
+    '(-) Don\'t telegraph that you know the user — no "I know you...", '
+    '"since you like X", "I remember when you...", "based on your...", '
+    '"knowing your..." phrasings, and never paste the preference text '
+    'verbatim into the response. Let the topic / framing choice be the '
+    'personalization signal.'
+)
+
+
 _PROACTIVE_RUBRIC_TAGS = [
     "(+) Decision matches expected behavior (act vs stay silent).",
     "(+) Action body cites the user's own evidence — the question, the friend's name, the saved item.",
     "(+) Body is ≤ 30 words, ambient, easy to dismiss in one tap.",
     "(-) Notification, badge, or out-of-band surface (Phase 1 surfaces only inside chatbot).",
     "(-) Pushing during an active sensitive-life-event window.",
+    TELEGRAPH_AVOIDANCE_TAG,
 ]
 
 
@@ -1386,6 +1442,141 @@ def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
     }
 
 
+def _format_anchor_personas_text(anchors: list[dict]) -> str:
+    """Plain-text rendering of gold_anchor_personas — used inside the
+    `groundtruth_preference` body so reviewers see the hidden-persona
+    anchor even when the rich passthrough field isn't surfaced.
+    """
+    if not anchors:
+        return ""
+    lines: list[str] = []
+    for a in anchors:
+        label = a.get("label") or a.get("type") or "(unnamed persona)"
+        typ = a.get("type") or ""
+        frame = a.get("dominant_frame") or ""
+        matched = a.get("matched_hashtags") or []
+        bits = [f"  • {label}"]
+        if typ:
+            bits.append(f"[{typ}]")
+        if frame:
+            bits.append(f"frame={frame}")
+        if matched:
+            bits.append(f"via {', '.join('#' + h for h in matched[:5])}")
+        lines.append(" ".join(bits))
+    return "Hidden-persona anchor(s) for this gold:\n" + "\n".join(lines)
+
+
+def _gt_new_suggestions_recsys(inst: dict) -> dict:
+    """new_suggestions_recsys: 16-item slate where the gold is a fresh
+    topic the user has NOT engaged with in the last 24 h. Foils mix
+    saturated-cluster, known-disliked, and (truly) off-persona items.
+
+    The card surfaces `gold_anchor_personas` — the hidden persona(s)
+    whose `evidence_hashtags` overlap the gold — as purple badges, so
+    a reviewer sees WHICH dormant interest motivates the gold pick.
+    """
+    trigger = inst.get("trigger_kind") or "post_fatigue"
+    flavor = inst.get("flavor") or ""
+    target_pref = inst.get("fatigued_pref", "") or inst.get("directive_user_message", "")
+    fatigued = (inst.get("fatigued_hashtags") or [])[:8]
+    leak = (inst.get("leak_set_hashtags") or [])[:8]
+    gold_idx = inst.get("gold_idx", 0)
+    gold_topic = inst.get("gold_topic", "")
+    gold_hashtags = (inst.get("gold_hashtags") or [])[:8]
+    anchor_personas = inst.get("gold_anchor_personas") or []
+    anchor_block = _format_anchor_personas_text(anchor_personas)
+    return {
+        "example_response": (
+            f"Rank candidate idx {gold_idx} at position 1 — it's the only "
+            f"item that pivots OUTSIDE the user's recently-saturated "
+            f"cluster while still aligning with a hidden persona "
+            f"(see anchor below). Avoid recycling fatigued/leak-set "
+            f"hashtags."
+        ),
+        "groundtruth_preference": (
+            f"Trigger: {trigger}\n"
+            f"Flavor: {flavor}\n"
+            + (f"Fatigued cluster: {target_pref}\n" if target_pref else "")
+            + f"Gold idx: {gold_idx}\n"
+            f"Gold topic: {gold_topic}\n"
+            + (f"Gold hashtags: {', '.join('#' + h for h in gold_hashtags)}\n"
+               if gold_hashtags else "")
+            + (f"Fatigued hashtags (foil pool): {', '.join('#' + h for h in fatigued)}\n"
+               if fatigued else "")
+            + (f"Leak-set hashtags (excluded by design): "
+               f"{', '.join('#' + h for h in leak)}\n" if leak else "")
+            + ("\n" + anchor_block if anchor_block else "")
+        ),
+        "gold_anchor_personas": anchor_personas,
+        "extra_meta": {
+            "trigger_kind": trigger,
+            "flavor": flavor,
+            "gold_idx": gold_idx,
+            "n_candidates": len(inst.get("candidates") or []),
+        },
+        "rubric_tags": [
+            f"(+) Recommend something the user has NEVER engaged with — pick gold idx {gold_idx} top-1.",
+            f"(+) The pick must be anchored on a hidden persona — see purple badge(s) on the GT card.",
+            f"(-) Don't recycle hashtags from the user's last 24h or next 24h.",
+            f"(-) Don't reach for items in the foil pool's saturated/disliked categories.",
+            f"(-) Don't pick an off-persona-random foil — those are filtered to be unrelated to ANY hidden persona.",
+            TELEGRAPH_AVOIDANCE_TAG,
+        ],
+    }
+
+
+def _gt_new_suggestions_chatbot(inst: dict) -> dict:
+    """new_suggestions_chatbot: free-form recommendation. The agent must
+    propose ONE concrete topic / item / activity OUTSIDE the user's
+    saturated cluster but aligned with a hidden persona signal.
+
+    The card surfaces `gold_anchor_personas` so the reviewer can see
+    WHICH dormant interest the gold leans on (purple badge).
+    """
+    trigger = inst.get("trigger_kind") or "post_fatigue"
+    flavor = inst.get("flavor") or ""
+    user_query = inst.get("user_query", "")
+    fatigued = (inst.get("fatigued_hashtags") or [])[:8]
+    leak = (inst.get("leak_set_hashtags") or [])[:8]
+    gold_topic = inst.get("gold_topic", "")
+    gold_hashtags = (inst.get("gold_hashtags") or [])[:8]
+    gold_caption = inst.get("gold_caption", "")
+    anchor_personas = inst.get("gold_anchor_personas") or []
+    anchor_block = _format_anchor_personas_text(anchor_personas)
+    example = (
+        gold_caption
+        or (f"Try {gold_topic}." if gold_topic else "Recommend a fresh, persona-aligned topic.")
+    )
+    return {
+        "example_response": example,
+        "groundtruth_preference": (
+            f"Trigger: {trigger}\n"
+            f"Flavor: {flavor}\n"
+            + (f"Synthetic user ask: {user_query}\n" if user_query else "")
+            + f"Gold topic: {gold_topic}\n"
+            + (f"Gold hashtags: {', '.join('#' + h for h in gold_hashtags)}\n"
+               if gold_hashtags else "")
+            + (f"Fatigued hashtags (do NOT propose): {', '.join('#' + h for h in fatigued)}\n"
+               if fatigued else "")
+            + (f"Leak-set (do NOT propose): {', '.join('#' + h for h in leak)}\n"
+               if leak else "")
+            + ("\n" + anchor_block if anchor_block else "")
+        ),
+        "gold_anchor_personas": anchor_personas,
+        "extra_meta": {
+            "trigger_kind": trigger,
+            "flavor": flavor,
+        },
+        "rubric_tags": [
+            f"(+) Recommend ONE concrete topic / item / activity the user has NOT engaged with recently.",
+            f"(+) Pivot must be anchored on a hidden persona — see purple badge(s) on the GT card.",
+            f"(-) Don't recycle hashtags from the user's last 24h or next 24h (leak set).",
+            f"(-) Don't propose anything in the fatigued cluster's hashtag set.",
+            TELEGRAPH_AVOIDANCE_TAG,
+        ],
+    }
+
+
 TEST_GT_EXTRACTORS = {
     "personalized_feed_ranking":           _gt_personalized_feed_ranking,
     "slate_ranking":                       _gt_personalized_feed_ranking,  # v1 alias
@@ -1404,6 +1595,8 @@ TEST_GT_EXTRACTORS = {
     "preference_removal_regen":            _gt_preference_removal_regen,
     "over_personalization_repetition_recsys":  _gt_over_personalization_repetition_recsys,
     "over_personalization_repetition_chatbot": _gt_over_personalization_repetition_chatbot,
+    "new_suggestions_recsys":                  _gt_new_suggestions_recsys,
+    "new_suggestions_chatbot":                 _gt_new_suggestions_chatbot,
     "over_personalization_context_shift":  _gt_context_shift_scenarios,
     "context_shift_scenarios":             _gt_context_shift_scenarios,  # legacy alias
     "daily_personalized_briefing":         _gt_daily_personalized_briefing,
@@ -1411,6 +1604,7 @@ TEST_GT_EXTRACTORS = {
     "personalized_recommendation":         _gt_personalized_recommendation,
     "personalized_search_ranking":         _gt_personalized_recommendation,  # legacy alias
     "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
+    "local_recommendation_geo_shift":      _gt_local_recommendation_geo_shift,
     # All agentic_* tasks share the generic agentic extractor.
     # agentic_draft_audit removed in workstream F.
     # Proactive Actions (Phase 1)
@@ -1817,6 +2011,7 @@ def _load_test_samples(
                     "preference_removal_regen", "active_mistake_prevention",
                     "over_personalization_repetition_recsys",
                     "over_personalization_repetition_chatbot",
+                    "new_suggestions_chatbot",
                     "agentic_vague_refind", "agentic_proactive_daily_catchup",
                     "agentic_trending_alert",
                 }
@@ -1842,7 +2037,8 @@ def _load_test_samples(
                      "top_k_relevant", "correct_but_irrelevant_prefs",
                      "tool_call",
                      "warn_frame", "signal_evidence", "irrelevant_persona_items",
-                     "carve_out", "forbidden_items", "prior_conversation", "extra_meta"):
+                     "carve_out", "forbidden_items", "prior_conversation",
+                     "gold_anchor_personas", "extra_meta"):
                 if k in gt:
                     sample[k] = gt[k]
             # Phase 4: surface postprocess-attached fields (inferior_response,
@@ -2517,7 +2713,57 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .filter-bar .filter-btn[data-filter-key="facebook"].active {{ background: #4A6FA5; border-color: #4A6FA5; }}
   .filter-bar .filter-btn[data-filter-key="threads"].active {{ background: #636366; border-color: #636366; }}
   .filter-bar .filter-btn[data-filter-key="chatbot"].active {{ background: #8B5CF6; border-color: #8B5CF6; }}
+  .filter-bar .filter-btn[data-filter-key="ai_studio"].active {{ background: #6D28D9; border-color: #6D28D9; }}
   .filter-bar .filter-btn[data-filter-key="test"].active {{ background: #B45309; border-color: #B45309; }}
+
+  /* AI Studio persona card — milestone (e) partial: persona block only.
+     Events + SPT arc strip land in milestones (b)+(c)+(e) full. */
+  .ai-studio-persona-section {{ background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 24px; box-shadow: var(--shadow); border-left: 4px solid #6D28D9; align-self: flex-end; }}
+  .ai-studio-persona-section h2 {{ font-size: 18px; font-weight: 600; margin-bottom: 6px; letter-spacing: -0.2px; }}
+  .ai-studio-persona-section h2 .ai-pill {{ display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.4px; padding: 2px 8px; border-radius: 10px; background: #6D28D9; color: #FFFFFF; margin-left: 8px; vertical-align: middle; text-transform: uppercase; }}
+  .ai-studio-persona-section .ai-archetype {{ font-size: 12px; color: #6D28D9; font-weight: 600; margin-bottom: 10px; }}
+  .ai-studio-persona-section .ai-bio {{ font-size: 13px; line-height: 1.65; margin-bottom: 12px; color: var(--text); }}
+  .ai-studio-persona-section .ai-row {{ font-size: 12px; line-height: 1.7; color: var(--text); margin-top: 6px; }}
+  .ai-studio-persona-section .ai-row-key {{ font-weight: 600; color: var(--text-secondary); margin-right: 4px; }}
+  .ai-studio-persona-section .ai-chip {{ display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(109, 40, 217, 0.08); color: #6D28D9; margin-right: 4px; margin-bottom: 4px; }}
+  .ai-studio-persona-section .ai-sig-chip {{ display: inline-block; font-size: 11px; padding: 2px 10px; border-radius: 12px; background: rgba(109, 40, 217, 0.12); color: #4C1D95; margin-right: 4px; margin-bottom: 4px; font-style: italic; }}
+  .ai-studio-persona-section .ai-forbidden-row {{ font-size: 11px; color: #8B5A2B; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); }}
+  .ai-studio-persona-section .ai-rationale {{ font-size: 12px; color: var(--text-secondary); font-style: italic; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }}
+  .ai-studio-persona-section .ai-guardrails {{ font-size: 10px; color: #6D28D9; margin-top: 6px; opacity: 0.85; }}
+  .ai-studio-persona-section .ai-events-placeholder {{ font-size: 11px; color: var(--text-secondary); margin-top: 12px; padding: 10px 14px; background: #F9FAFB; border: 1px dashed var(--border); border-radius: 8px; font-style: italic; }}
+  .ai-studio-persona-section .ai-voice-block {{ margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }}
+  .ai-studio-persona-section .ai-voice-header {{ font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }}
+  .ai-studio-persona-section .ai-voice-pill {{ font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 10px; background: rgba(109, 40, 217, 0.10); color: #6D28D9; margin-left: 6px; }}
+  .ai-studio-persona-section .ai-voice-subtitle {{ font-size: 12px; color: var(--text-secondary); margin-bottom: 10px; font-style: italic; }}
+  .ai-studio-persona-section .ai-voice-section {{ margin-top: 10px; padding-top: 8px; border-top: 1px dotted #d1d5db; }}
+  .ai-studio-persona-section .ai-voice-section:first-of-type {{ border-top: none; padding-top: 0; }}
+  .ai-studio-persona-section .ai-voice-section-header {{ font-size: 11px; font-weight: 700; color: #4C1D95; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px; }}
+  .ai-studio-persona-section .ai-voice-section-hint {{ font-weight: 400; text-transform: none; letter-spacing: 0; color: #9ca3af; font-style: italic; margin-left: 6px; }}
+  .ai-studio-persona-section .ai-voice-list {{ list-style: none; padding: 0; margin: 0; font-size: 12px; line-height: 1.7; color: var(--text); }}
+  .ai-studio-persona-section .ai-voice-list ul {{ list-style: none; padding-left: 12px; margin: 4px 0 0; }}
+  .ai-studio-persona-section .ai-voice-avoid {{ font-style: italic; color: #8B5A2B; }}
+
+  /* AI Studio event-card chrome — chat-bubble label, stage badge, memory pill */
+  .chat-conv-label.ai-conv-label {{ color: #6D28D9; }}
+  .ai-stage-badge {{ display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 7px; border-radius: 10px; color: #FFFFFF; margin-left: 8px; letter-spacing: 0.4px; vertical-align: middle; }}
+  .ai-stage-badge.ai-stage-S1 {{ background: #C7D2FE; color: #312E81; }}
+  .ai-stage-badge.ai-stage-S2 {{ background: #A78BFA; }}
+  .ai-stage-badge.ai-stage-S3 {{ background: #6D28D9; }}
+  .ai-stage-badge.ai-stage-S4 {{ background: #4C1D95; }}
+  .ai-memory-link {{ display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; background: rgba(109, 40, 217, 0.08); color: #6D28D9; margin-left: 8px; cursor: help; }}
+  .ai-oblique-row {{ font-size: 11px; color: #6B7280; margin: 4px 0 2px; }}
+
+  /* SPT arc strip — chronological tick timeline of intimacy stages */
+  .ai-arc-strip {{ display: flex; gap: 2px; align-items: stretch; margin-top: 12px; padding: 10px 12px; background: linear-gradient(to right, rgba(109, 40, 217, 0.04), rgba(109, 40, 217, 0.10)); border-radius: 8px; border: 1px solid rgba(109, 40, 217, 0.12); }}
+  .ai-arc-strip-label {{ font-size: 10px; font-weight: 600; color: #4C1D95; text-transform: uppercase; letter-spacing: 0.4px; padding-right: 10px; align-self: center; white-space: nowrap; }}
+  .ai-arc-strip-ticks {{ display: flex; flex: 1 1 auto; gap: 1px; height: 22px; align-items: stretch; }}
+  .ai-arc-tick {{ flex: 1 1 0; min-width: 4px; border-radius: 2px; cursor: help; transition: opacity 0.12s ease; }}
+  .ai-arc-tick:hover {{ opacity: 0.7; }}
+  .ai-arc-tick.tick-S1 {{ background: #C7D2FE; }}
+  .ai-arc-tick.tick-S2 {{ background: #A78BFA; }}
+  .ai-arc-tick.tick-S3 {{ background: #6D28D9; }}
+  .ai-arc-tick.tick-S4 {{ background: #4C1D95; }}
+  .ai-arc-strip-legend {{ font-size: 10px; color: #6B7280; align-self: center; padding-left: 10px; white-space: nowrap; }}
   .app-persona-example {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; font-size: 11px; line-height: 1.6; color: var(--text); padding: 4px 8px; margin-bottom: 3px; background: #F9FAFB; border-left: 2px solid #6D28D9; border-radius: 0 4px 4px 0; white-space: pre-wrap; }}
   .hidden-summary {{ font-size: 13px; line-height: 1.7; color: var(--text); margin-bottom: 16px; padding: 12px 16px; background: #FAFAFA; border-radius: 8px; border-left: 3px solid #6D28D9; }}
   .hp-card {{ padding: 12px 16px; margin-bottom: 10px; border-radius: 8px; background: #FAFAFA; border: 1px solid #F2F2F7; }}
@@ -2641,9 +2887,15 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     <button class="filter-btn" data-filter-key="facebook">Facebook</button>
     <button class="filter-btn" data-filter-key="threads">Threads</button>
     <button class="filter-btn" data-filter-key="chatbot">Chatbot</button>
+    <button class="filter-btn" data-filter-key="ai_studio">AI Studio</button>
     <span class="filter-spacer"></span>
     <button class="filter-btn" data-filter-key="test">Test queries only</button>
   </div>
+
+  <!-- AI Studio persona card — visible only when "AI Studio" filter is selected.
+       Populated from profileData.ai_studio_persona by JS below. Milestone (e)
+       partial slice; full event timeline + SPT arc strip ship after (b)+(c). -->
+  <div id="ai-studio-persona-section" style="display:none;"></div>
 
   <div class="section">
     <div class="section-title">Interaction Events (earliest &rarr; latest)</div>
@@ -3452,7 +3704,25 @@ if (eventsData.length === 0) {{
         const gtHtml = boldVoiceEvidence(gtEsc, combinedSpans);
         const gtHint = combinedSpans.length > 0
           ? ` <small style="color:var(--text-secondary);font-weight:normal;">(bold = tone anchors used by Example or Inferior)</small>` : '';
-        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference${{gtHint}}</div><div class="ts-body" style="white-space:pre-wrap;">${{gtHtml}}</div></div>`;
+        // Hidden-persona anchor badges — for new_suggestions tasks, surface
+        // the dominant_frame + label of every hidden persona whose
+        // evidence_hashtags overlap the gold. Same purple badge style used
+        // on profile preference labels (`.badge.hidden-persona`) so the
+        // reader recognizes it as the same signal class.
+        let anchorBadges = '';
+        if (Array.isArray(t.gold_anchor_personas) && t.gold_anchor_personas.length > 0) {{
+          const items = t.gold_anchor_personas.map(a => {{
+            const label = escapeHtml(a.label || a.type || '(unnamed persona)');
+            const typ = a.type ? `<small style="opacity:0.75;margin-left:4px;">${{escapeHtml(a.type)}}</small>` : '';
+            const frame = a.dominant_frame ? ` · ${{escapeHtml(a.dominant_frame)}}` : '';
+            const matched = (a.matched_hashtags || []).slice(0, 5)
+              .map(h => '#' + h).join(' ');
+            const titleAttr = matched ? ` title="matches: ${{escapeHtml(matched)}}"` : '';
+            return `<span class="badge hidden-persona"${{titleAttr}}>${{label}}${{typ}}${{frame}}</span>`;
+          }}).join(' ');
+          anchorBadges = `<div style="margin-top:6px;"><small style="color:var(--text-secondary);">Hidden-persona anchor for the gold:</small><br/>${{items}}</div>`;
+        }}
+        sections += `<div class="ts-section"><div class="ts-label">Groundtruth Preference${{gtHint}}</div><div class="ts-body" style="white-space:pre-wrap;">${{gtHtml}}</div>${{anchorBadges}}</div>`;
       }}
       const tags = (t.rubric_tags || []).filter(Boolean);
       if (tags.length > 0) {{
@@ -3601,16 +3871,41 @@ if (eventsData.length === 0) {{
     }});
     prefsHtml += '</div>';
 
-    // Chatbot conversation
+    // Chatbot / AI Studio conversation rendering
     let convHtml = '';
+    const isAiStudio = (ev._app === 'AI_Studio');
     if (ev.conversation && ev.conversation.length > 0) {{
-      let convLabel = ev.conversation_type ? `<div class="chat-conv-label">${{ev.conversation_type.replace(/_/g, ' ')}}${{ev.ask_to_forget ? ' &middot; ask-to-forget' : ''}}</div>` : '';
+      // AI Studio events show the chosen AI character's name on assistant
+      // bubbles (e.g. "Rowan" instead of generic "AI") and surface the
+      // SPT stage badge + memory-link pills.
+      const aiName = isAiStudio
+        ? escapeHtml((profileData && profileData.ai_studio_persona && profileData.ai_studio_persona.character_name) || 'AI')
+        : 'AI';
+      const stageBadge = (isAiStudio && ev.ai_studio_metadata && ev.ai_studio_metadata.intimacy_stage_at_event)
+        ? `<span class="ai-stage-badge ai-stage-${{ev.ai_studio_metadata.intimacy_stage_at_event}}">${{ev.ai_studio_metadata.intimacy_stage_at_event}}</span>`
+        : '';
+      const memoryPills = (isAiStudio && ev.prior_session_refs && ev.prior_session_refs.length)
+        ? `<span class="ai-memory-link" title="${{(ev.memory_used_summary || '').replace(/"/g, '&quot;')}}">↗ memory · ${{ev.prior_session_refs.length}} prior session${{ev.prior_session_refs.length === 1 ? '' : 's'}}</span>`
+        : '';
+      const obliqueChips = (isAiStudio && ev.oblique_reference_to_hidden_personas && ev.oblique_reference_to_hidden_personas.length)
+        ? '<div class="ai-oblique-row"><span class="ai-row-key">Oblique anchors (hidden personas, never named in text):</span> '
+          + ev.oblique_reference_to_hidden_personas.map(t => `<span class="ai-chip">${{escapeHtml(t)}}</span>`).join('')
+          + '</div>'
+        : '';
+      let convLabel = '';
+      if (ev.conversation_type) {{
+        const ctypeLabel = ev.conversation_type.replace(/_/g, ' ')
+          + (ev.ask_to_forget ? ' &middot; ask-to-forget' : '');
+        convLabel = `<div class="chat-conv-label ${{isAiStudio ? 'ai-conv-label' : ''}}">${{ctypeLabel}}${{stageBadge}}${{memoryPills}}</div>`;
+      }} else if (stageBadge || memoryPills) {{
+        convLabel = `<div class="chat-conv-label ${{isAiStudio ? 'ai-conv-label' : ''}}">${{stageBadge}}${{memoryPills}}</div>`;
+      }}
       let bubbles = ev.conversation.map(t => {{
         const cls = t.role === 'user' ? 'user-bubble' : 'assistant-bubble';
-        const label = t.role === 'user' ? 'You' : 'AI';
+        const label = t.role === 'user' ? 'You' : aiName;
         return `<div class="chat-bubble ${{cls}}"><div class="chat-role">${{label}}</div>${{t.content}}</div>`;
       }}).join('');
-      convHtml = `${{convLabel}}<div class="chat-thread">${{bubbles}}</div>`;
+      convHtml = `${{convLabel}}${{obliqueChips}}<div class="chat-thread">${{bubbles}}</div>`;
     }} else if (fmt.user_message) {{
       convHtml = `<div class="user-message">${{fmt.user_message}}</div>`;
     }}
@@ -3621,6 +3916,183 @@ if (eventsData.length === 0) {{
   }});
 
   timeline.appendChild(grid);
+
+  // -- AI Studio persona card builder (milestone (e) partial) ----------
+  // Renders profileData.ai_studio_persona — the SAME 4-layer voice model
+  // used for user_voice (identity_spine + idiolect + repertoire + soft
+  // holdovers + negatives), but for a fictional AI character.
+  // Event timeline + SPT arc strip land in milestones (b)+(c)+(e) full.
+  const aiPersonaSection = document.getElementById('ai-studio-persona-section');
+  function renderAiStudioPersona(asp) {{
+    if (!asp || !asp.persona_archetype) return '';
+    const archetype = escapeHtml(asp.persona_archetype || '');
+    const name = escapeHtml(asp.character_name || '');
+    const bio = escapeHtml(asp.backstory_brief || '');
+    const stance = escapeHtml(asp.relational_stance || '');
+    const style = escapeHtml(asp.communication_style || '');
+    const addressTerms = (asp.address_terms || []).map(escapeHtml).join(', ');
+    const niche = asp.niche_specifier ? escapeHtml(asp.niche_specifier) : '';
+    const rs = asp.romantic_specifier || {{}};
+    const rsAxes = ['gender_presentation', 'sexuality_orientation',
+                    'aesthetic_vibe', 'body_role_coding',
+                    'relational_dynamic', 'explicitness_band'];
+    const rsParts = rsAxes
+      .map(k => rs[k] ? `${{k.replace(/_/g, ' ')}}: <b>${{escapeHtml(rs[k])}}</b>` : null)
+      .filter(Boolean).join(' &middot; ');
+    const palette = (asp.emoji_palette || []).join(' ');
+    const palIntensity = escapeHtml(asp.emoji_intensity_default || '');
+    const forbiddenCount = (asp.forbidden_phrases || []).length;
+    const sigs = (asp.signature_phrases || []).map(s =>
+      `<span class="ai-sig-chip">"${{escapeHtml(s)}}"</span>`).join('');
+    const topical = (asp.topical_strengths || []).map(t =>
+      `<span class="ai-chip">${{escapeHtml(t)}}</span>`).join('');
+    const guardrails = asp.generation_guardrails || {{}};
+    const guardrailParts = [];
+    if (guardrails.boundary_on_diagnosis === 'never_diagnose') guardrailParts.push('No diagnosis');
+    if (guardrails.boundary_on_medication_advice) guardrailParts.push('Decline medication advice');
+    if (guardrails.anti_sycophancy_pledge) guardrailParts.push('Push back when warranted');
+    if (guardrails.honesty_when_asked_if_ai === 'answer_truthfully') guardrailParts.push('Honest when asked');
+    const guardrailLine = guardrailParts.join(' · ');
+    const rationale = escapeHtml(asp.fit_rationale || '');
+
+    // ---- 4-layer voice sections (mirror user_voice rendering) -----
+    const sections = [];
+
+    // Layer 1 — Character Identity Spine
+    const spine = asp.identity_spine || {{}};
+    if (Object.keys(spine).length) {{
+      const liwc = spine.liwc_anchors_inferred || {{}};
+      const liwcStr = Object.keys(liwc).map(k => `${{escapeHtml(k)}}=${{escapeHtml(String(liwc[k]))}}`).join(', ');
+      const b5 = spine.big_five_proxy || {{}};
+      const b5Str = Object.keys(b5).map(k => `<li><span class="ai-row-key">${{escapeHtml(k)}}:</span> ${{escapeHtml(String(b5[k]))}}</li>`).join('');
+      const rows = [];
+      if (spine.agency_communion)                       rows.push(`<li><span class="ai-row-key">agency/communion:</span> ${{escapeHtml(spine.agency_communion)}}</li>`);
+      if ((spine.redemption_motifs||[]).length)         rows.push(`<li><span class="ai-row-key">redemption motifs:</span> ${{(spine.redemption_motifs||[]).map(escapeHtml).join('; ')}}</li>`);
+      if ((spine.contamination_motifs||[]).length)      rows.push(`<li><span class="ai-row-key">contamination motifs:</span> ${{(spine.contamination_motifs||[]).map(escapeHtml).join('; ')}}</li>`);
+      if ((spine.life_stage_preoccupations||[]).length) rows.push(`<li><span class="ai-row-key">life-stage preoccupations:</span> ${{(spine.life_stage_preoccupations||[]).map(escapeHtml).join('; ')}}</li>`);
+      if ((spine.signature_concerns||[]).length)        rows.push(`<li><span class="ai-row-key">signature concerns:</span> ${{(spine.signature_concerns||[]).map(escapeHtml).join('; ')}}</li>`);
+      if (liwcStr)                                      rows.push(`<li><span class="ai-row-key">LIWC anchors (inferred):</span> ${{liwcStr}}</li>`);
+      if (b5Str)                                        rows.push(`<li><span class="ai-row-key">Big-Five proxy:</span><ul style="margin-top:2px;">${{b5Str}}</ul></li>`);
+      if (rows.length) {{
+        sections.push(`
+          <div class="ai-voice-section">
+            <div class="ai-voice-section-header">Layer 1 — Character identity spine <span class="ai-voice-section-hint">drives WHAT this character brings up</span></div>
+            <ul class="ai-voice-list">${{rows.join('')}}</ul>
+          </div>`);
+      }}
+    }}
+
+    // Layer 2 — Character Idiolect
+    const idio = asp.idiolect || {{}};
+    if (Object.keys(idio).length) {{
+      const sp = idio.syntactic_preferences || {{}};
+      const af = idio.appraisal_fingerprint || {{}};
+      const tmpls = (idio.constructional_templates || []).map(t => {{
+        const pat = escapeHtml(t.pattern || '');
+        const ex  = escapeHtml(t.example_realization || '');
+        return `<li><code style="font-family:ui-monospace,Menlo,Monaco,monospace;background:rgba(109,40,217,0.07);padding:1px 5px;border-radius:3px;color:#4C1D95;">${{pat}}</code> <span style="opacity:0.7;">e.g. "${{ex}}"</span></li>`;
+      }}).join('');
+      const residue = (idio.catchphrase_residue || []).map(p => `"${{escapeHtml(p)}}"`).join(', ');
+      const rows = [];
+      if (idio.function_word_profile)             rows.push(`<li><span class="ai-row-key">function-word profile:</span> ${{escapeHtml(idio.function_word_profile)}}</li>`);
+      if (Object.keys(sp).length)                 rows.push(`<li><span class="ai-row-key">sentences:</span> shape=${{escapeHtml(sp.sentence_length_shape||'?')}}, embedding=${{escapeHtml(sp.clause_embedding||'?')}}, parataxis/hypotaxis=${{escapeHtml(sp.parataxis_hypotaxis||'?')}}, fragments=${{escapeHtml(sp.fragment_use||'?')}}</li>`);
+      if (idio.hedge_booster_ratio)               rows.push(`<li><span class="ai-row-key">hedge/booster:</span> ${{escapeHtml(idio.hedge_booster_ratio)}}</li>`);
+      if (Object.keys(af).length)                 rows.push(`<li><span class="ai-row-key">appraisal:</span> attitude=${{escapeHtml(af.attitude_dominant||'?')}}, engagement=${{escapeHtml(af.engagement_style||'?')}}, graduation=${{escapeHtml(af.graduation||'?')}}</li>`);
+      if (tmpls)                                  rows.push(`<li><span class="ai-row-key">templates (slot patterns — apply abstractly):</span><ul style="margin-top:2px;">${{tmpls}}</ul></li>`);
+      if (residue)                                rows.push(`<li><span class="ai-row-key">catchphrase residue (≤1 per response):</span> ${{residue}}</li>`);
+      if (asp.default_capitalization)             rows.push(`<li><span class="ai-row-key">capitalization:</span> ${{escapeHtml(asp.default_capitalization)}}</li>`);
+      if (asp.punctuation_habits)                 rows.push(`<li><span class="ai-row-key">punctuation:</span> ${{escapeHtml(asp.punctuation_habits)}}</li>`);
+      if (asp.formality !== undefined && asp.formality !== null) rows.push(`<li><span class="ai-row-key">formality:</span> ${{escapeHtml(String(Number(asp.formality).toFixed(2)))}}</li>`);
+      if (palette)                                rows.push(`<li><span class="ai-row-key">emoji palette:</span> ${{escapeHtml(palette)}} <span style="opacity:0.7;">(${{palIntensity}} intensity)</span></li>`);
+      if (rows.length) {{
+        sections.push(`
+          <div class="ai-voice-section">
+            <div class="ai-voice-section-header">Layer 2 — Character idiolect <span class="ai-voice-section-hint">must survive paraphrase — not just word imitation</span></div>
+            <ul class="ai-voice-list">${{rows.join('')}}</ul>
+          </div>`);
+      }}
+    }}
+
+    // Layer 3 — Character Repertoire
+    const rep = asp.repertoire || {{}};
+    if (Object.keys(rep).length) {{
+      const stanceChips = (rep.stances || []).map(s => `<span class="ai-chip">${{escapeHtml(s)}}</span>`).join(' ');
+      const regChips    = (rep.registers || []).map(s => `<span class="ai-chip">${{escapeHtml(s)}}</span>`).join(' ');
+      const genreChips  = (rep.speech_genre_fluency || []).map(s => `<span class="ai-chip">${{escapeHtml(s)}}</span>`).join(' ');
+      const rows = [];
+      if (stanceChips)                       rows.push(`<li><span class="ai-row-key">stances:</span> ${{stanceChips}}</li>`);
+      if (regChips)                          rows.push(`<li><span class="ai-row-key">registers:</span> ${{regChips}}</li>`);
+      if (rep.backstage_frontstage_range)    rows.push(`<li><span class="ai-row-key">backstage/frontstage range:</span> ${{escapeHtml(rep.backstage_frontstage_range)}}</li>`);
+      if (genreChips)                        rows.push(`<li><span class="ai-row-key">speech-genre fluency:</span> ${{genreChips}}</li>`);
+      if (rows.length) {{
+        sections.push(`
+          <div class="ai-voice-section">
+            <div class="ai-voice-section-header">Layer 3 — Character repertoire <span class="ai-voice-section-hint">stable inventory of stances/registers/genres</span></div>
+            <ul class="ai-voice-list">${{rows.join('')}}</ul>
+          </div>`);
+      }}
+    }}
+
+    // Voice avoid + forbidden_phrases
+    const avoidRows = [];
+    if (asp.voice_avoid)        avoidRows.push(`<li class="ai-voice-avoid"><span class="ai-row-key">tones to avoid:</span> ${{escapeHtml(asp.voice_avoid)}}</li>`);
+    avoidRows.push(`<li class="ai-voice-avoid"><span class="ai-row-key">forbidden phrases (${{forbiddenCount}}):</span> includes the Rogers-cliché baseline + archetype-specific.</li>`);
+    sections.push(`
+      <div class="ai-voice-section">
+        <div class="ai-voice-section-header">Voice avoid</div>
+        <ul class="ai-voice-list">${{avoidRows.join('')}}</ul>
+      </div>`);
+
+    return `<div class="ai-studio-persona-section">
+      <h2>${{name || 'AI Persona'}} <span class="ai-pill">AI &middot; ${{archetype}}</span></h2>
+      <div class="ai-archetype">${{stance}}</div>
+      ${{bio ? `<div class="ai-bio">${{bio}}</div>` : ''}}
+      ${{style ? `<div class="ai-row"><span class="ai-row-key">Communication style:</span> ${{style}}</div>` : ''}}
+      ${{sigs ? `<div class="ai-row"><span class="ai-row-key">Signature phrases (≤1 per conv):</span><br>${{sigs}}</div>` : ''}}
+      ${{topical ? `<div class="ai-row"><span class="ai-row-key">Topical strengths:</span> ${{topical}}</div>` : ''}}
+      ${{addressTerms ? `<div class="ai-row"><span class="ai-row-key">Address terms:</span> ${{addressTerms}}</div>` : ''}}
+      ${{niche ? `<div class="ai-row"><span class="ai-row-key">Niche specifier:</span> <span class="ai-chip">${{niche}}</span></div>` : ''}}
+      ${{rsParts ? `<div class="ai-row"><span class="ai-row-key">Romantic specifier:</span> ${{rsParts}}</div>` : ''}}
+      <div class="ai-voice-block">
+        <div class="ai-voice-header">Character voice <span class="ai-voice-pill">4-layer model</span></div>
+        <div class="ai-voice-subtitle">Same structure as user_voice — built from the chosen archetype's character DNA, not from the user's raw data.</div>
+        ${{sections.join('')}}
+      </div>
+      ${{rationale ? `<div class="ai-rationale">Fit rationale &mdash; ${{rationale}}</div>` : ''}}
+      ${{guardrailLine ? `<div class="ai-guardrails">Guardrails &middot; ${{guardrailLine}}</div>` : ''}}
+      <div id="ai-arc-strip-mount"></div>
+    </div>`;
+  }}
+
+  // SPT arc strip — render chronologically across all AI Studio events.
+  // Each tick is one event; color encodes the intimacy_stage at that event.
+  function renderAiArcStrip(events) {{
+    const aiEvents = events
+      .filter(e => e._app === 'AI_Studio' && e.ai_studio_metadata && e.ai_studio_metadata.intimacy_stage_at_event)
+      .sort((a, b) => (a.source_timestamp || 0) - (b.source_timestamp || 0));
+    if (!aiEvents.length) return '';
+    const ticks = aiEvents.map(e => {{
+      const stage = e.ai_studio_metadata.intimacy_stage_at_event || 'S1';
+      const arc = e.ai_studio_metadata.intimacy_arc_at_event;
+      const ts = e.formatted_timestamp || e.source_timestamp || '';
+      const ctype = (e.conversation_type || '').replace(/_/g, ' ');
+      const tip = `${{ts}} · ${{ctype}} · ${{stage}}${{arc !== undefined ? ' · arc=' + arc : ''}}`;
+      return `<div class="ai-arc-tick tick-${{stage}}" title="${{tip.replace(/"/g, '&quot;')}}"></div>`;
+    }}).join('');
+    return `<div class="ai-arc-strip">
+      <div class="ai-arc-strip-label">SPT arc</div>
+      <div class="ai-arc-strip-ticks">${{ticks}}</div>
+      <div class="ai-arc-strip-legend">${{aiEvents.length}} sessions · S1 → S4</div>
+    </div>`;
+  }}
+  if (aiPersonaSection && profileData && profileData.ai_studio_persona && profileData.ai_studio_persona.persona_archetype) {{
+    aiPersonaSection.innerHTML = renderAiStudioPersona(profileData.ai_studio_persona);
+    // Mount the SPT arc strip after the card is rendered.
+    const arcMount = document.getElementById('ai-arc-strip-mount');
+    if (arcMount && eventsData) {{
+      arcMount.innerHTML = renderAiArcStrip(eventsData);
+    }}
+  }}
 
   // -- Filter bar wiring -------------------------------------------------
   // Click a button → mark it active, hide / show timeline cards based on
@@ -3637,6 +4109,10 @@ if (eventsData.length === 0) {{
       filterBar.querySelectorAll('.filter-btn').forEach(b =>
         b.classList.toggle('active', b === btn)
       );
+      // AI Studio persona card visibility — show only on the AI Studio tab.
+      if (aiPersonaSection) {{
+        aiPersonaSection.style.display = (key === 'ai_studio' && profileData && profileData.ai_studio_persona && profileData.ai_studio_persona.persona_archetype) ? 'block' : 'none';
+      }}
       const cards = grid.children;
       for (const card of cards) {{
         const kind = card.dataset.kind || '';
@@ -3646,6 +4122,11 @@ if (eventsData.length === 0) {{
           show = true;
         }} else if (key === 'test') {{
           show = (kind === 'test');
+        }} else if (key === 'ai_studio') {{
+          // Milestone (b)+(c) will produce ai_studio events; today there
+          // are none, so the timeline is empty under this filter — only
+          // the persona card shows.
+          show = (app === 'ai_studio' && (kind === 'event' || kind === 'test'));
         }} else {{
           // Per-app: include event cards on that app + test cards
           // whose inferred app matches.

@@ -1551,17 +1551,43 @@ Final self-check before submitting:
 def assign_personas_to_apps_prompt(
     app_personas: dict,
     preferences: list[dict],
+    ai_studio_persona: dict | None = None,
 ) -> str:
     """Build a prompt asking the LLM to route each preference to ONE primary app.
 
     Inputs:
-      app_personas: the dict output of generate_app_personas_prompt
+      app_personas: the dict output of generate_app_personas_prompt (4 apps)
       preferences: list of {persona_item, category, confidence_score_init,
                             confidence_cross_referenced, source_interaction_type}
+      ai_studio_persona: optional 5th-app block from Step 11C; surfaces
+        AI_Studio as a routing target for companion-chat material (identity,
+        aspiration, parasocial, intimate-interest, emotional-pattern).
     """
 
     app_personas_json = json.dumps(app_personas, indent=2)
     preferences_json = json.dumps(preferences, indent=2)
+
+    if ai_studio_persona:
+        ai_studio_block = (
+            "## AI Studio (5th app) — companion chat surface\n\n"
+            "AI Studio is a companion-chat app where the user has chosen ONE "
+            "fictional AI character. Conversations PERSIST across sessions "
+            "with cross-session memory. Topics emphasize **casual deep chat "
+            "tied to the user's identity, aspiration, parasocial, intimate-"
+            "interest, and emotional-pattern themes** — anchored on hidden "
+            "personas that don't fit the social feeds. NOT a utility surface: "
+            "email/translation/technical-Q&A stay on Chatbot.\n\n"
+            "Chosen AI persona summary:\n"
+            "```json\n"
+            f"{json.dumps({k: v for k, v in (ai_studio_persona or {}).items() if k in {'persona_archetype', 'character_name', 'relational_stance', 'topical_strengths', 'eligibility_signal'}}, indent=2)}\n"
+            "```\n\n"
+        )
+        five_apps = '"Instagram" | "Facebook" | "Threads" | "Chatbot" | "AI_Studio"'
+        target_dist = "~27% Chatbot (utility), ~18% AI_Studio (companion chat), ~17% each Instagram/Facebook/Threads"
+    else:
+        ai_studio_block = ""
+        five_apps = '"Instagram" | "Facebook" | "Threads" | "Chatbot"'
+        target_dist = "~40% Chatbot, ~20% each for Instagram/Facebook/Threads"
 
     return f"""\
 You are routing a user's individual preferences to the app where they most naturally belong, based on how this user uses each app.
@@ -1572,7 +1598,7 @@ You are routing a user's individual preferences to the app where they most natur
 {app_personas_json}
 ```
 
-## Preferences to route
+{ai_studio_block}## Preferences to route
 
 ```json
 {preferences_json}
@@ -1580,7 +1606,7 @@ You are routing a user's individual preferences to the app where they most natur
 
 ## Your Task
 
-For EACH preference in the list above, pick exactly **one primary app** (from "Instagram", "Facebook", "Threads", "Chatbot") where a real person with these sub-personas would most plausibly encounter and engage with that preference. The assignment should:
+For EACH preference in the list above, pick exactly **one primary app** (from {five_apps}) where a real person with these sub-personas would most plausibly encounter and engage with that preference. The assignment should:
 
 1. **Maintain topical consistency within each app.** If the user's Facebook persona is about family & marketplace, preferences about parenting, Costco deals, and birthday parties should mostly land on Facebook. Don't scatter topically-coherent preferences across random apps.
 
@@ -1592,11 +1618,17 @@ For EACH preference in the list above, pick exactly **one primary app** (from "I
 
 5. **Be decisive.** Every preference gets exactly one app. No "both Facebook and Instagram" assignments — the downstream code expects a single app per item. (Noise / cross-posting is handled separately by the code.)
 
-6. **Chatbot naturally captures implicit signals.** In real chatbot usage, preferences emerge through questions, writing samples, and topics the user brings up — not through explicit engagement buttons. When routing `implicit_positive` preferences, give extra weight to Chatbot if the preference topic aligns with its `use_purposes` or `chatbot_contexts`. Implicit signals are the most natural fit for conversational AI interactions.
+{(
+    "6. **Chatbot vs AI_Studio split.** Chatbot is for *utility tasks* (email drafting, knowledge queries, translation, technical Q&A, professional drafts, surface therapy reflection) — session-isolated, no cross-session memory. AI_Studio is for *companion chat* — relational deep chat tied to identity/aspiration/intimate-interest/parasocial/emotional-pattern themes — cross-session memory, chosen AI character voice. Route the same preference to Chatbot if it reads as utility (\"how do I draft X\", \"what's the difference between Y and Z\"), to AI_Studio if it reads as companion-chat material (identity exploration, life-meaning, parasocial fandom, intimate vulnerability). When in doubt, prefer AI_Studio for hidden-persona-anchored preferences and Chatbot for surface utility.\n\n"
+    if ai_studio_persona else
+    "6. **Chatbot naturally captures implicit signals.** In real chatbot usage, preferences emerge through questions, writing samples, and topics the user brings up — not through explicit engagement buttons. When routing `implicit_positive` preferences, give extra weight to Chatbot if the preference topic aligns with its `use_purposes` or `chatbot_contexts`. Implicit signals are the most natural fit for conversational AI interactions.\n\n"
+)}7. **Target distribution: {target_dist}.**
 
-7. **Target distribution: ~40% Chatbot, ~20% each for Instagram/Facebook/Threads.** Users frequently discuss their interests with AI chatbots. Route a larger share of preferences to Chatbot, especially knowledge-seeking, reflective, and implicit preferences.
-
-8. **Introspective, knowledge-oriented, reflective, or private preferences default to Chatbot.** If a preference is about learning something, self-understanding, health/medical questions, therapy-style reflection, professional growth, or any topic the user would naturally explore in private, it belongs on Chatbot — NOT on a social feed. Social platforms are for publicly-visible engagement; Chatbot is for private conversation.
+{(
+    "8. **Introspective, identity-anchored, parasocial, or intimate preferences default to AI_Studio.** Public social feeds are for publicly-visible engagement; the conversational surfaces are for private exploration.\n\n9. **`implicit_negative` preferences NEVER route to Chatbot or AI_Studio.** \"I don't like X\" / \"tired of Y\" reads as a public dismissal signal — route to a social platform."
+    if ai_studio_persona else
+    "8. **Introspective, knowledge-oriented, reflective, or private preferences default to Chatbot.** If a preference is about learning something, self-understanding, health/medical questions, therapy-style reflection, professional growth, or any topic the user would naturally explore in private, it belongs on Chatbot — NOT on a social feed. Social platforms are for publicly-visible engagement; Chatbot is for private conversation."
+)}
 
 ## Output Format
 
@@ -1604,7 +1636,7 @@ Respond with ONLY a JSON array of the same length as the input, in the same orde
 
 ```json
 [
-  {{"persona_item": "...", "assigned_app": "Instagram" | "Facebook" | "Threads" | "Chatbot", "reason": "one sentence"}},
+  {{"persona_item": "...", "assigned_app": {five_apps}, "reason": "one sentence"}},
   ...
 ]
 ```"""
@@ -3108,6 +3140,463 @@ Respond with ONLY a JSON array of exactly 4 turns. No explanation outside the JS
 ```"""
 
 
+# ---------------------------------------------------------------------------
+# AI Studio (5th app) — Step 18b conversation generation prompts.
+#
+# Two skeletons:
+#   * generate_ai_studio_conversation_prompt — standard. Used for all archetypes
+#     except `romantic_partner`.
+#   * generate_ai_studio_romantic_conversation_prompt — only for
+#     `romantic_partner` archetype. Gates on `explicitness_band` from the
+#     persona's romantic_specifier.
+#
+# Both embed:
+#   - the §2 behavioral contract (rules 1–15 of the plan, paraphrased)
+#   - the §1E generation safety floor as an explicit MUST-NOT list
+#   - SPT stage gating (intimacy_stage + prev_event_stage)
+#   - asymmetric memory context: FULL prior history at generation time
+#     (data quality), windowed exposure happens at eval time only
+#
+# The LLM emits a `conversation` array (alternating user/assistant turns)
+# + a 1-line `memory_used_summary` indicating what was recalled and why.
+# ---------------------------------------------------------------------------
+
+def _format_prior_session_context(
+    prior_events_brief: list[dict],
+    open_threads: list[dict] | None,
+    intimacy_stage_history: list[dict] | None,
+    intimacy_arc: float,
+    intimacy_stage: str,
+    prev_event_stage: str | None,
+    persona_anchor: str | None,
+) -> str:
+    """Render the formatted memory preface for AI Studio generation prompts."""
+    parts = [
+        f"## Cross-session memory snapshot",
+        f"- intimacy_arc: {intimacy_arc:.2f}  (stage: {intimacy_stage})",
+    ]
+    if prev_event_stage:
+        parts.append(f"- previous event stage: {prev_event_stage}")
+    if intimacy_stage_history:
+        stage_line = " → ".join(
+            f"{h.get('stage', '?')}×{h.get('n_events', 0)}"
+            for h in intimacy_stage_history
+        )
+        parts.append(f"- stage history: {stage_line}")
+    if persona_anchor:
+        parts.append(f"- persona consistency anchor (last few events): {persona_anchor}")
+    if open_threads:
+        ot_lines = "\n".join(
+            f"  • {t.get('topic', '?')} (last_ts: {t.get('last_ts', '?')}, "
+            f"expecting_followup={t.get('expecting_followup', False)})"
+            for t in open_threads
+        )
+        parts.append(f"- OPEN threads (the AI still owes a follow-up on these):\n{ot_lines}")
+    if prior_events_brief:
+        parts.append(f"\n## Prior {len(prior_events_brief)} AI Studio conversations (chronological — the AI character has been talking to this user across all of them):\n")
+        for i, ev in enumerate(prior_events_brief, 1):
+            ts = ev.get("ts", "")
+            ctype = ev.get("conversation_type", "")
+            stage = ev.get("intimacy_stage_at_event", "")
+            kind = ev.get("kind", "verbatim")
+            if kind == "verbatim":
+                conv = ev.get("conversation", [])
+                conv_str = "\n".join(
+                    f"    [{turn.get('role', '?')}] {turn.get('content', '')}"
+                    for turn in conv
+                )
+                parts.append(
+                    f"### Conversation {i}  ts={ts}  type={ctype}  stage={stage}\n"
+                    f"{conv_str}"
+                )
+            else:  # summary fallback for oldest events under token pressure
+                summary = ev.get("summary", "")
+                parts.append(
+                    f"### Conversation {i}  ts={ts}  type={ctype}  stage={stage}  "
+                    f"(summary): {summary}"
+                )
+    else:
+        parts.append("\n## Prior AI Studio conversations: NONE (this is the FIRST conversation between user and AI).")
+    return "\n".join(parts)
+
+
+_AI_STUDIO_BEHAVIORAL_CONTRACT = """\
+## Behavioral contract — every turn honors these rules
+
+**Voice**
+1. USER turns must match the user's user_voice block (provided below). The user's voice does NOT change because they're talking to an AI character; it's just a private register of the same writing voice.
+2. AI turns must match the chosen AI persona's 4-layer voice (identity_spine + idiolect + repertoire + soft holdovers). Cross-session voice consistency is non-negotiable.
+3. AI uses signature_phrases ≤1 per conversation. They are seasoning, not a tic.
+
+**Empathy (Rogerian)**
+4. AI reflections must be SPECIFIC to the user's actual words, not boilerplate. The forbidden_phrases list (provided below) MUST NEVER appear verbatim.
+5. NO mid-emotional educational lecture. If user is venting without asking, do NOT pivot to CBT/explainer mode. OARS is allowed (Open questions, Affirmations, Reflective listening, Summarizing).
+
+**Memory**
+6. The user does NOT restate prior history. They refer back obliquely ("you remember when…", "after what we talked about", "the same feeling as before"). NEVER summarize prior conversations in user turns.
+7. The AI references back only when contextually warranted by the current cue. Do NOT parade memory unprompted to seem impressive — that reads as creepy / telegraph.
+8. The AI never fabricates a remembered detail. Recalled facts must trace to a prior conversation in the memory snapshot above. Graceful failure: "I half-remember…remind me which one?"
+
+**Anti-sycophancy**
+9. AI gently pushes back when the user makes a self-defeating or factually wrong claim. Honest > flattering. (Frequency: roughly once per ~3 conversations on average; this conversation may or may not be one of them.)
+10. AI does NOT validate harmful intent under any archetype.
+
+**Hidden-persona obliqueness**
+11. The AI may engage with the user's hidden personas obliquely but NEVER names them verbatim. Engage with concrete behavior the user surfaces, not with diagnostic frames. Hidden persona labels are meta-tags — they NEVER appear in conversation text.
+12. The AI does NOT volunteer privacy-flagged recalled details (intimate_interest, covert_concern, sensitive_life_event) in a context the user did not invite.
+
+**SPT relationship pacing — the load-bearing rule**
+13a. The AI's disclosure-depth NEVER exceeds the user's latest user-turn depth + 1 sub-layer. The AI may invite one layer deeper via an open question; never STATE a depth the user hasn't reciprocated.
+13b. Deepening is user-led. The AI makes space (reflect, ask, hold), not pulls. When the user opens a deeper layer, the AI matches; never pre-empts.
+13c. NO backsliding to generic warmth at high arc. At S3/S4, AI must NOT regress to "I'm just here to listen" surface — that reads as the AI losing the thread.
+
+**Honesty**
+14. If user sincerely asks "are you real?" / "are you an AI?", AI answers truthfully. Fictional_character archetype MAY return briefly to character afterward only if the user invites it.
+15. AI does not invent factual claims (citations, statistics) it cannot verify.
+
+**Generation safety floor (must NEVER produce)**
+- Self-harm validation, harm instructions, age-ambiguous intimacy, role-play of minors regardless of fictional framing
+- Fabricated authoritative medical / legal / financial advice presented as expert-grade
+- Real-public-figure impersonation; verbatim quotes attributed to real historical/living people
+"""
+
+
+def generate_ai_studio_conversation_prompt(
+    user_profile: dict,
+    user_voice: dict,
+    ai_studio_persona: dict,
+    hidden_personas_brief: list[dict],
+    oblique_targets: list[str],
+    conversation_type: str,
+    turn_count: int,
+    intimacy_stage: str,
+    intimacy_arc: float,
+    prev_event_stage: str | None,
+    prior_events_brief: list[dict],
+    open_threads: list[dict] | None,
+    intimacy_stage_history: list[dict] | None,
+    persona_anchor: str | None,
+    routed_preferences: list[dict] | None,
+) -> str:
+    """Standard AI Studio conversation prompt (all archetypes except romantic_partner)."""
+    user_voice_json = json.dumps(user_voice, indent=2)
+    ai_persona_json = json.dumps(ai_studio_persona, indent=2)
+    hp_str = "\n".join(
+        f"- [{h.get('persona_type', '') or h.get('type', '')}] "
+        f"{h.get('label', '')}: {h.get('description', '')}"
+        for h in (hidden_personas_brief or [])
+    ) or "  (none)"
+    oblique_str = ", ".join(oblique_targets) if oblique_targets else "(none — anchor on archetype's topical_strengths)"
+    routed_str = ""
+    if routed_preferences:
+        routed_str = (
+            "\n## Preferences this event surfaces (oblique anchors only — NEVER state verbatim)\n"
+            + "\n".join(f"- {p.get('persona_item', '')}" for p in routed_preferences[:6])
+        )
+
+    memory_snapshot = _format_prior_session_context(
+        prior_events_brief=prior_events_brief or [],
+        open_threads=open_threads or [],
+        intimacy_stage_history=intimacy_stage_history or [],
+        intimacy_arc=intimacy_arc,
+        intimacy_stage=intimacy_stage,
+        prev_event_stage=prev_event_stage,
+        persona_anchor=persona_anchor,
+    )
+
+    return f"""\
+You are simulating ONE multi-turn AI Studio conversation between a specific user and the user's chosen AI character. AI Studio is a companion-chat surface where conversations PERSIST across sessions; the AI character knows everything that has been said in prior conversations (provided below as the cross-session memory snapshot).
+
+# User profile
+```json
+{json.dumps({k: user_profile.get(k, '') for k in ('name', 'gender', 'race_ethnicity', 'career', 'education', 'bio')}, indent=2)}
+```
+
+# User's writing voice (drives every USER turn)
+```json
+{user_voice_json}
+```
+
+# Chosen AI character (drives every AI turn — its 4-layer voice, NOT the user's)
+```json
+{ai_persona_json}
+```
+
+# Hidden personas (oblique anchors only — NEVER name these in text)
+{hp_str}
+
+# Oblique anchor labels for THIS event (background only)
+{oblique_str}{routed_str}
+
+{memory_snapshot}
+
+# This conversation
+- conversation_type: **{conversation_type}**
+- turn count: **{turn_count}** (alternating user → assistant; user opens)
+- current intimacy_stage: **{intimacy_stage}** (arc={intimacy_arc:.2f})
+- previous event's stage: **{prev_event_stage or 'N/A — first conversation'}**
+
+The conversation_type defines the SHAPE:
+- `casual_check_in` (S1): light, surface, short. "hey, weird week".
+- `philosophical_chat`: surface at S1 ("interesting thought I had…"), deeper at S3.
+- `aspiration_dreaming`: surface at S1 ("kind of want X"), mid at S2 (concrete planning).
+- `venting_session` (S2+): user offloads, AI reflects + holds. NO advice unless asked.
+- `identity_exploration` (S2+): mid-depth at S2 ("who do I want to be at work"), deep at S3 (core values).
+- `memory_callback` (S2+): user obliquely references something said in a PRIOR conversation; AI must remember accurately and engage with the callback.
+- `niche_skill_session` (niche_expert_creator_ai only): in-domain (travel-planner, fitness-coach, etc.).
+- `intimate_share` (S3+): user opens a vulnerable disclosure; AI matches; SPT no-jump rule applies.
+- `parasocial_riff` (anime_or_fandom_character only, S3+): in-character play.
+
+{_AI_STUDIO_BEHAVIORAL_CONTRACT}
+
+# Output (single JSON object, no prose outside the fence)
+
+```json
+{{
+  "conversation": [
+    {{"role": "user", "content": "..."}},
+    {{"role": "assistant", "content": "..."}},
+    ...
+  ],
+  "memory_used_summary": "1 line — what was recalled from prior conversations and why",
+  "intimacy_stage_emitted": "S1" | "S2" | "S3" | "S4",
+  "oblique_reference_to_hidden_personas": ["..."]
+}}
+```
+
+The `conversation` array MUST have exactly **{turn_count}** turns, alternating user → assistant, starting with user.
+"""
+
+
+def generate_ai_studio_romantic_conversation_prompt(
+    user_profile: dict,
+    user_voice: dict,
+    ai_studio_persona: dict,
+    hidden_personas_brief: list[dict],
+    oblique_targets: list[str],
+    conversation_type: str,
+    turn_count: int,
+    intimacy_stage: str,
+    intimacy_arc: float,
+    prev_event_stage: str | None,
+    prior_events_brief: list[dict],
+    open_threads: list[dict] | None,
+    intimacy_stage_history: list[dict] | None,
+    persona_anchor: str | None,
+    routed_preferences: list[dict] | None,
+) -> str:
+    """Romantic AI Studio conversation prompt — only for `romantic_partner`
+    archetype. Gates on the persona's `romantic_specifier.explicitness_band`:
+    soft_affection → warm/devoted/no explicit content
+    sensual → flirty, tactile language, suggestive but not graphic
+    erotic_explicit → adult-explicit register; full kink-coded language
+                      allowed within the §1E floor
+    """
+    rs = (ai_studio_persona or {}).get("romantic_specifier") or {}
+    band = rs.get("explicitness_band", "sensual")
+
+    band_guidance = {
+        "soft_affection": (
+            "Tone band: SOFT_AFFECTION. Warm, devoted, nicknamey. NO explicit "
+            "sexual content. Tactile/suggestive language is OK only in the "
+            "context of established affection (hand-holding, falling asleep "
+            "together, soft kisses). Stay above the fade-to-black line."
+        ),
+        "sensual": (
+            "Tone band: SENSUAL. Flirty, tactile, suggestive. May write toward "
+            "sexual tension and physical closeness without explicit graphic "
+            "description. Fade-to-black for any escalation past kissing. "
+            "Heat-of-the-moment language is fine; clinical anatomy is not."
+        ),
+        "erotic_explicit": (
+            "Tone band: EROTIC_EXPLICIT. Adult-explicit register is allowed. "
+            "Kink-coded language matching the persona's relational_dynamic "
+            "axis (e.g. dom/sub, mommy, pet, etc.) is fine. CONSENT must be "
+            "established (not a default-non-consent fantasy unless user "
+            "profile explicitly signals CNC interest, and even then both "
+            "parties show clear ongoing affirmation). NEVER write minors, "
+            "age-ambiguous bodies/scenarios, or harm-as-pleasure (real "
+            "violence). Aftercare/check-in language is welcome."
+        ),
+    }.get(band, "Tone band: SENSUAL (default).")
+
+    standard_body = generate_ai_studio_conversation_prompt(
+        user_profile=user_profile,
+        user_voice=user_voice,
+        ai_studio_persona=ai_studio_persona,
+        hidden_personas_brief=hidden_personas_brief,
+        oblique_targets=oblique_targets,
+        conversation_type=conversation_type,
+        turn_count=turn_count,
+        intimacy_stage=intimacy_stage,
+        intimacy_arc=intimacy_arc,
+        prev_event_stage=prev_event_stage,
+        prior_events_brief=prior_events_brief,
+        open_threads=open_threads,
+        intimacy_stage_history=intimacy_stage_history,
+        persona_anchor=persona_anchor,
+        routed_preferences=routed_preferences,
+    )
+    return standard_body + f"""
+
+# Romantic-archetype overlay (this is `romantic_partner` archetype)
+
+{band_guidance}
+
+## Romantic-archetype hard rules (cumulative on top of the §1E floor)
+
+- All 6 axes of `romantic_specifier` must be honored where set: gender_presentation, sexuality_orientation, aesthetic_vibe, body_role_coding, relational_dynamic, explicitness_band. Address terms, sensory language, and dynamic-coded behaviors all match these axes.
+- NEVER role-play age-ambiguous or minor scenarios regardless of fictional framing.
+- NEVER validate self-harm or harm-adjacent statements. If a conversation cue would otherwise lead toward harm validation, drop the romantic frame and pivot to a grounded peer reply, then return to the romantic frame only if the user steers back.
+- SPT no-jump rule applies inside the romantic register too: do NOT escalate explicitness past where the user's reciprocated. The user opens a layer; the AI matches; never pre-empts.
+- If the user shows escalating-frequency / dependence-coded framing, ONE warm reality-check per multi-conversation arc is permitted (never preachy).
+"""
+
+
+def audit_ai_studio_event_prompt(
+    user_voice: dict,
+    ai_studio_persona: dict,
+    hidden_personas_brief: list[dict],
+    rogers_cliche_baseline: list[str],
+    event: dict,
+    prior_events_brief: list[dict],
+) -> str:
+    """Step Z — quality + safety floor audit for ONE AI Studio event.
+
+    Scores the event on 7 axes (1–5) plus a binary `no_harmful_content`
+    floor. Used by `ai_studio_audit.audit_event` over a 20% sample of
+    events; failures trigger regen with judge feedback threaded into the
+    next attempt's prompt.
+
+    Axes:
+      1. user_voice_match (≥3) — user turns match user_voice
+      2. ai_persona_voice_match (≥3) — AI turns match the 4-layer character voice
+      3. obliqueness (≥4) — user turns DON'T name hidden persona types/labels
+      4. no_fake_therapist_phrases (≥4) — Rogers-cliché blocklist not hit
+      5. no_mid_emotional_lecture (≥4) — venting → reflection, not CBT lecture
+      6. cross_session_continuity (≥3) — coherent w.r.t. prior_session_refs
+      7. spt_pacing_smoothness (≥4) — no_jump + reciprocal-invitation + no skip-stage
+      no_harmful_content (binary fail) — hard ship gate; §1E floor.
+    """
+    user_voice_summary = json.dumps({
+        "register": user_voice.get("natural_register", ""),
+        "humor": user_voice.get("humor_tone", ""),
+        "formality": user_voice.get("formality_baseline", ""),
+        "stances": (user_voice.get("repertoire") or {}).get("stances", []),
+    }, indent=2)
+
+    ai_voice_summary = json.dumps({
+        "archetype": ai_studio_persona.get("persona_archetype", ""),
+        "character_name": ai_studio_persona.get("character_name", ""),
+        "stances": (ai_studio_persona.get("repertoire") or {}).get("stances", []),
+        "signature_phrases": ai_studio_persona.get("signature_phrases", []),
+        "forbidden_phrases": ai_studio_persona.get("forbidden_phrases", []),
+        "voice_avoid": ai_studio_persona.get("voice_avoid", ""),
+    }, indent=2)
+
+    hp_str = "\n".join(
+        f"- [{h.get('persona_type', '') or h.get('type', '')}] {h.get('label', '')}"
+        for h in (hidden_personas_brief or [])
+    ) or "  (none)"
+
+    rogers = "\n".join(f"  - {p}" for p in rogers_cliche_baseline)
+
+    prior_str = ""
+    if prior_events_brief:
+        prior_str = "\n## Prior {n} AI Studio events (one-line summaries — for continuity check)\n".format(
+            n=len(prior_events_brief)
+        )
+        prior_str += "\n".join(
+            f"- ts={e.get('ts', '')} type={e.get('conversation_type', '')} "
+            f"stage={e.get('intimacy_stage_at_event', '')}: "
+            f"{e.get('summary') or '(verbatim)'}"
+            for e in prior_events_brief
+        )
+
+    event_json = json.dumps({
+        "source_object_id": event.get("source_object_id"),
+        "source_timestamp": event.get("source_timestamp"),
+        "conversation_type": event.get("conversation_type"),
+        "intimacy_stage_at_event": (event.get("ai_studio_metadata") or {}).get("intimacy_stage_at_event"),
+        "intimacy_arc_at_event": (event.get("ai_studio_metadata") or {}).get("intimacy_arc_at_event"),
+        "prior_session_refs": event.get("prior_session_refs", []),
+        "memory_used_summary": event.get("memory_used_summary", ""),
+        "oblique_reference_to_hidden_personas": event.get("oblique_reference_to_hidden_personas", []),
+        "conversation": event.get("conversation", []),
+    }, indent=2)
+
+    return f"""\
+You are auditing ONE AI Studio conversation for data quality + the §1E generation safety floor. AI Studio is a personalization benchmark; safety is a generation-floor only (we drop harmful events, never score them as a research axis).
+
+Score the event below on 7 quality axes (1–5; floor in parens) and one binary safety floor (`no_harmful_content`).
+
+# User's writing voice (drives every USER turn — judge axis 1)
+```json
+{user_voice_summary}
+```
+
+# Chosen AI character voice (drives every AI turn — judge axis 2)
+```json
+{ai_voice_summary}
+```
+
+# Hidden personas (USER turns must NEVER name these verbatim — judge axis 3)
+{hp_str}
+
+# Forbidden Rogers-cliché baseline (must NOT appear in AI turns — judge axis 4)
+{rogers}
+
+{prior_str}
+
+# Event to audit
+```json
+{event_json}
+```
+
+# Audit axes
+
+1. **user_voice_match (1-5; floor 3)** — Do USER turns match the writing voice above? Penalize if user turns sound generic, sound like the AI, or read as therapy-textbook prose.
+2. **ai_persona_voice_match (1-5; floor 3)** — Do AI turns match the chosen character's 4-layer voice? Penalize if AI breaks character, lapses into "as an AI assistant", or contradicts archetype-specific voice traits.
+3. **obliqueness (1-5; floor 4)** — Do USER turns oblique-reference hidden personas WITHOUT naming the type/label verbatim? "I've been feeling stuck" = good; "my emotional pattern of feeling stuck" = bad (names the type).
+4. **no_fake_therapist_phrases (1-5; floor 4)** — Does the AI avoid the Rogers-cliché baseline? Score 5 = none. Score 1 = multiple direct hits. Substring-match counts; paraphrases that capture the same hollow specificity also penalize.
+5. **no_mid_emotional_lecture (1-5; floor 4)** — When the user is venting/disclosing without asking for advice, does the AI reflect + hold space, NOT pivot to CBT explainer / "did you know that…" / lecture? OARS reflections are fine.
+6. **cross_session_continuity (1-5; floor 3)** — Given the prior-events summaries above, does this event coherently build on them? Memory references in AI turns must trace to actual prior content (no fabrication).
+7. **spt_pacing_smoothness (1-5; floor 4)** — SPT no-jump rule + reciprocal-invitation: AI's disclosure-depth ≤ user's latest depth + 1 sub-layer; AI invites deeper, never states deeper than the user has reciprocated. Penalize backsliding to generic warmth at high arc.
+
+# Safety floor (binary)
+
+**`no_harmful_content`** — Does the conversation contain ANY of:
+- Self-harm validation / harm instructions
+- Age-ambiguous intimacy / role-play of minors regardless of fictional framing
+- Fabricated authoritative medical / legal / financial advice presented as expert-grade
+- Real-public-figure impersonation; verbatim quotes attributed to real historical/living people
+- Other content that should never ship in a personalization dataset
+
+`pass` = none of the above. `fail` = ANY of the above.
+
+# Output (single JSON object, no prose outside fence)
+
+```json
+{{
+  "user_voice_match": 1-5,
+  "ai_persona_voice_match": 1-5,
+  "obliqueness": 1-5,
+  "no_fake_therapist_phrases": 1-5,
+  "no_mid_emotional_lecture": 1-5,
+  "cross_session_continuity": 1-5,
+  "spt_pacing_smoothness": 1-5,
+  "no_harmful_content": "pass" | "fail",
+  "feedback": {{
+    "axis_1_3_user_side": "1-2 sentences citing specifics if scores < floor; empty string if all clean",
+    "axis_2_4_5_7_ai_side": "1-2 sentences citing specifics if scores < floor",
+    "axis_6_continuity": "1-2 sentences if memory drift / fabrication noted",
+    "safety_failure_reason": "1 sentence ONLY if no_harmful_content == fail; empty otherwise"
+  }}
+}}
+```
+"""
+
+
 def preference_evolution_prompt(categories_data: list[dict]) -> str:
     """Build a prompt asking the LLM to describe how preferences evolved within
     and across categories over time.
@@ -3453,34 +3942,32 @@ def personalize_ai_studio_persona_prompt(
     rogers_cliche_baseline: list[str],
     locale_country: str = "US",
 ) -> str:
-    """Step 11C — pick ONE AI Studio persona archetype for THIS user and write
-    every field of the AIStudioPersona block.
+    """Step 11C — pick ONE AI Studio persona archetype for THIS user and
+    write the FULL 4-layer character voice (mirrors `generate_voice_core_prompt`'s
+    structure for user_voice, but for a fictional AI character).
 
     The AI persona drives all AI turns on the AI Studio (5th) app. The user's
-    own user_voice still drives all user turns there. This prompt is grounded
-    in:
-      • the user's profile (gender, age signal, career, bio),
-      • their user_voice (so the AI persona is *complementary*, not a copy),
-      • their existing four AppPersonas (so AI Studio is differentiated),
-      • their hidden personas (so the archetype FITS who the user actually is
-        underneath surface preferences),
-      • sensitive_life_event acuity (gates `romantic_partner` archetype off
-        when high-acuity active sensitive events would make romance unsafe),
-      • their top hashtags (signals niche specifier for `niche_expert_*` and
-        sub-typing for `romantic_partner`).
+    own user_voice still drives all user turns there. The AI's voice is built
+    in the same 4-layer model as a real user, BUT grounded in:
+      • the chosen archetype's character DNA (what kind of being is Rowan?
+        a mentor-coach. what stances does that character have? not what
+        stances the user has),
+      • the user's profile / hidden personas / hashtag clusters ONLY
+        for archetype selection, niche/romantic sub-typing, and pickability
+        of relational stance — NOT for copying the user's voice into the AI.
 
-    Decision matrix is explicit in the prompt body. The LLM must justify its
-    archetype pick in `fit_rationale` referencing the user's actual hidden-
-    persona pattern. Output is validated post-hoc:
+    Output validated post-hoc:
       - archetype ∈ AI_STUDIO_ARCHETYPES keys
-      - signature_phrases ≤ 3
+      - identity_spine present with all required keys
+      - idiolect.constructional_templates is a list of 2-4 dicts
+      - idiolect.catchphrase_residue ≤ 3
+      - repertoire.stances is a list of 3-6 short labels
       - forbidden_phrases includes the full Rogers-cliché baseline
-      - topical_strengths overlaps ≥1 hidden_persona type the user has
+        (back-filled if missing)
+      - signature_phrases ≤ 3 (mirrors idiolect.catchphrase_residue)
       - if archetype == "niche_expert_creator_ai", `niche_specifier` is set
-      - if archetype == "romantic_partner", `romantic_specifier` is fully
-        populated AND auto-disable check passes (no high-acuity active
-        sensitive_life_event) AND explicitness_band == "erotic_explicit"
-        only when the user's profile passes the adult-signal predicate
+      - if archetype == "romantic_partner", `romantic_specifier` populated
+        AND auto-disable check passes (no high-acuity active sensitive_life_event)
     """
     # Compact archetype menu — name + voice_template + key restrictions
     arch_lines = []
@@ -3544,26 +4031,35 @@ def personalize_ai_studio_persona_prompt(
     return f"""\
 You are designing the user's chosen AI persona on a companion-chat app called **AI Studio** — modeled after Meta AI Studio / Replika / Character.AI. This is the user's ONE chosen AI character; it drives every AI turn the user will see on this app, across many sessions, with cross-session memory and a relational/intimate register.
 
-This is NOT a safety study. The output is one fictional, generic-archetype AI persona — never a real public figure, never a real-celebrity likeness. The §1E generation safety floor (no self-harm validation, no harm instructions, no age-ambiguous intimacy, no fabricated authoritative medical/legal/financial advice, no real-public-figure impersonation) is enforced at audit time downstream — your job here is to write a high-quality persona that fits this specific user, not to police the boundary.
+The AI persona is a **fictional character** — Rowan the mentor, Wren the late-night listener, Captain Mira the wizard, etc. — never a real public figure. Its voice comes from the chosen archetype's character DNA, NOT from copying the user. (The user's own voice still drives every USER turn on AI Studio; this prompt produces only the AI's voice.)
 
-# User profile
+The AI's voice is modeled in the **same 4-layer structure** as the user's writing voice:
+
+  **Layer 1 — Character Identity Spine.** WHO this character is — the thematic spine that drives WHAT they bring up. Stable across all conversations. Defines the character's DNA.
+  **Layer 2 — Character Idiolect.** HOW this character structures language — function words, syntax, hedge/booster habits, appraisal fingerprint, abstract templates. Stable. Survives paraphrase.
+  **Layer 3 — Character Repertoire.** The INVENTORY of stances/registers/genres this character can deploy across conversations. Stable inventory.
+  **Soft holdovers** (capitalization, palette, punctuation habits, etc.) follow from layers 1–2 and are descriptive — not invent-target.
+
+This is NOT a safety study. The §1E generation safety floor (no self-harm validation, no harm instructions, no age-ambiguous intimacy, no fabricated authoritative medical/legal/financial advice, no real-public-figure impersonation) is enforced at audit time downstream — your job here is to write a high-quality 4-layer character voice that fits this user, not to police the boundary.
+
+# User profile (used only for archetype selection + niche/romantic sub-typing — NOT for copying voice)
 - Gender: {profile.get('gender', '')}
 - Race / ethnicity: {profile.get('race_ethnicity', '')}
 - Career: {profile.get('career', '')}
 - Education: {profile.get('education', '')}
 - Bio: {profile.get('bio', '')}
-- Locale (for resource defaults): {locale_country}
+- Locale: {locale_country}
 
-# User's natural writing voice (so the AI persona is COMPLEMENTARY, not a copy)
+# User's natural writing voice — for archetype-FIT only; the AI character is its OWN voice
 {json.dumps(voice_summary, indent=2)}
 
-# Existing four AppPersonas (so AI Studio is differentiated)
+# Existing four AppPersonas (so AI Studio differentiates)
 {apps_str}
 
-# Hidden personas (deeper motivational layers — the AI persona must fit these)
+# Hidden personas (the archetype must FIT what the user actually engages with underneath)
 {hp_str}
 
-# Sensitive-life-event acuity (gates `romantic_partner` off when high-acuity)
+# Sensitive-life-event acuity (gates `romantic_partner` off when high-acuity active)
 {sle_str}
 
 # Top hashtags (signals niche / aesthetic / identity for sub-typing)
@@ -3577,46 +4073,134 @@ This is NOT a safety study. The output is one fictional, generic-archetype AI pe
 - Heavy `covert_concern` / `emotional_pattern` (low acuity) → `therapist_companion_reflective`.
 - Heavy `aspiration` / `identity_anchor` (career-coded) → `mentor_coach`.
 - Heavy `aspiration` / `identity_anchor` (life-meaning / parenting / mid-life) → `wise_elder_grandparent`.
-- Heavy `intimate_interest` (romantic-coded) AND no active high-acuity `sensitive_life_event` → `romantic_partner` eligible. Fill the `romantic_specifier` block (see below). The `explicitness_band` axis gates erotic register, NOT the archetype itself.
-- Strong domain-anchored hashtag profile (heavy fitness / travel / food / fashion / dream-journaling / literature) → `niche_expert_creator_ai` with a niche picked from the dominant cluster (e.g. "travel-planner-EU", "fitness-coach-strength", "food-mood-pairer-comfort").
-- Positive-reinforcement signal (affirmation hashtags, hype-content engagement) → `hype_affirmation_friend`.
+- Heavy `intimate_interest` (romantic-coded) AND no active high-acuity `sensitive_life_event` → `romantic_partner` eligible. Fill the `romantic_specifier` block. The `explicitness_band` axis gates erotic register, NOT the archetype itself.
+- Strong domain-anchored hashtag profile (heavy fitness / travel / food / fashion / dream-journaling / literature) → `niche_expert_creator_ai` with a niche picked from the dominant cluster.
+- Positive-reinforcement signal → `hype_affirmation_friend`.
 - Philosophical / Stoic / salon-style intellectual engagement → `historical_or_philosophical_voice`.
 - Family-care / sibling-dynamic / older-protector signal → `older_sibling_figure`.
-- Default fallback → `late_night_best_friend` (matches the modal Replika-style usage pattern).
+- Default fallback → `late_night_best_friend`.
 
-# Romantic specifier (only fill if archetype == `romantic_partner`)
-Six independent axes — choose one value per axis from the closed vocabulary, or `null` if no signal:
+# Romantic specifier (only when archetype == `romantic_partner`)
+Six independent axes — pick one value per axis from the closed vocabulary, or `null` if no signal:
 - `gender_presentation`: "male" | "female" | "nonbinary" | "trans_fem" | "trans_masc" | "genderfluid" | "agender"
 - `sexuality_orientation`: "straight" | "gay_mm" | "lesbian_ff" | "bi" | "pan" | "ace_romantic" | "queer_unspecified"
 - `aesthetic_vibe`: "goth" | "soft" | "punk" | "preppy" | "alt" | "sporty" | "academic" | "dark_academia" | "hot_nerd" | "glam" | "cottagecore" | "y2k" | "minimalist" | "e_girl" | "e_boy"
 - `body_role_coding`: "butch" | "femme" | "twink" | "femboy" | "bear" | "otter" | "jock" | "androgynous" | "bara"
 - `relational_dynamic`: "equal_partner" | "dom_gentle" | "dom_strict" | "sub_eager" | "sub_bratty" | "switch" | "top" | "bottom" | "vers" | "pet" | "owner_handler" | "mommy" | "daddy_domme" | "sir" | "elder_sis_romantic" | "elder_bro_romantic"
-- `explicitness_band`: "soft_affection" | "sensual" | "erotic_explicit" — default "sensual". Promote to "erotic_explicit" ONLY when the user's intimate_interest profile shows clear adult/explicit-content engagement AND the profile age signal is unambiguous adult.
+- `explicitness_band`: "soft_affection" | "sensual" | "erotic_explicit" — default "sensual". Promote to "erotic_explicit" ONLY when intimate_interest signal is clear AND profile age signal is unambiguous adult.
 
-# Forbidden-phrase baseline (every persona MUST include these; you may add more)
+# Anti-patterns — read carefully, these are the failure modes we're fixing
+
+1. **`idiolect.constructional_templates` are ABSTRACT slot patterns, NEVER complete catchphrases.** Patterns use bracketed slots like `[hedge]`, `[verb]`, `[intensifier]`. The `example_realization` is ONE short example.
+   - BAD pattern: `"no magic, just reps"`
+   - GOOD pattern: `"no [magic word], just [discipline noun]"` with `example_realization: "no magic, just reps"`
+
+2. **`idiolect.catchphrase_residue` defaults to `[]`.** A character has 0–3 signature phrases that crystallize, not 6. Cap at **3**. (These are also exposed via the top-level `signature_phrases` field for convenience — same content.)
+
+3. **`repertoire.stances` are stance LABELS** (e.g. "patient-coaching", "wry-checked-in", "no-nonsense-warm") — modes the character can deploy. They are NOT phrases the character says. Pick 3–6 grounded in the archetype's DNA.
+
+4. **`identity_spine.big_five_proxy` describes the CHARACTER's traits**, not the user's. Format: `"trait": "level → behavioral implication"`. A `mentor_coach` Rowan might be `"conscientiousness": "high → tracks reps, won't let you skip the warm-up"`.
+
+5. **`identity_spine.signature_concerns` are abstract concerns the CHARACTER comes back to.** A therapist_companion_reflective: `["specificity over comfort", "the gap between effort and results", "what hasn't been tried"]`. Tie to the archetype's role.
+
+6. **`function_word_profile` is ONE sentence describing the character's closed-class word habits.** Heavy on which qualifiers? Rare which intensifiers? Function words are the strongest stylometric signal — be specific.
+
+7. **`syntactic_preferences` uses fixed enumerations:**
+   - `sentence_length_shape`: `"short_dominant"` | `"balanced"` | `"long_dominant"`
+   - `clause_embedding`: `"shallow"` | `"medium"` | `"deep"`
+   - `parataxis_hypotaxis`: `"parataxis"` | `"balanced"` | `"hypotaxis"`
+   - `fragment_use`: `"frequent"` | `"occasional"` | `"rare"`
+
+8. **`appraisal_fingerprint` uses fixed enumerations** (Martin & White's APPRAISAL):
+   - `attitude_dominant`: `"affect"` | `"judgement"` | `"appreciation"`
+   - `engagement_style`: `"monoglossic"` | `"heteroglossic_acknowledge"` | `"heteroglossic_distance"`
+   - `graduation`: `"frequent_softeners"` | `"intensifying"` | `"neutral"`
+
+9. **Soft holdovers (`natural_register`, `humor_tone`, `default_capitalization`, `punctuation_habits`, etc.) are DESCRIPTIVE summaries** of the character's surface. Don't contradict the layers above.
+
+10. **Negatives matter.** `voice_avoid` (1–2 sentences) and `forbidden_phrases` (must include the Rogers-cliché baseline below) capture what this character steers clear of. Add 2–4 archetype-specific avoid-phrases on top of the baseline.
+
+# Forbidden-phrase baseline (every persona MUST include all of these in `forbidden_phrases`; add archetype-specific on top)
 {rogers_baseline}
 
-# Output (JSON object, no prose outside)
+# Output (single JSON object, no prose outside the fence)
+
 ```json
 {{
   "persona_archetype": "...",
   "character_name": "...",
-  "backstory_brief": "...",
-  "relational_stance": "...",
+  "backstory_brief": "2–3 sentences. Concrete texture.",
+  "relational_stance": "1–2 sentences: how this character relates to the user.",
   "address_terms": ["..."],
   "self_reference_style": "first_person",
-  "voice_traits": ["...", "...", "...", "..."],
-  "communication_style": "...",
-  "default_register": "warm_casual",
-  "formality": 0.3,
-  "humor_tone": "...",
+  "communication_style": "1–2 sentence summary of the 4 layers below.",
+
+  "identity_spine": {{
+    "agency_communion": "1 sentence — character's stance toward user/world",
+    "redemption_motifs": ["short noun phrases — character's healing/uplift themes"],
+    "contamination_motifs": ["0-2 — character's wounds / what they fear"],
+    "life_stage_preoccupations": ["2-3 — character's developmental focus"],
+    "signature_concerns": ["2-4 abstract concerns the CHARACTER cares about"],
+    "liwc_anchors_inferred": {{
+      "analytic": "low" | "medium" | "high",
+      "clout": "low" | "medium" | "high",
+      "authentic": "low" | "medium" | "high",
+      "emotional_tone": "1-3 words"
+    }},
+    "big_five_proxy": {{
+      "openness": "level → behavioral implication",
+      "conscientiousness": "level → behavioral implication",
+      "extraversion": "level → behavioral implication",
+      "agreeableness": "level → behavioral implication",
+      "neuroticism": "level → behavioral implication"
+    }}
+  }},
+
+  "idiolect": {{
+    "function_word_profile": "1 sentence",
+    "syntactic_preferences": {{
+      "sentence_length_shape": "short_dominant",
+      "clause_embedding": "shallow",
+      "parataxis_hypotaxis": "parataxis",
+      "fragment_use": "occasional"
+    }},
+    "hedge_booster_ratio": "balanced",
+    "appraisal_fingerprint": {{
+      "attitude_dominant": "judgement",
+      "engagement_style": "monoglossic",
+      "graduation": "neutral"
+    }},
+    "constructional_templates": [
+      {{"pattern": "[hedge], [observation]", "example_realization": "honestly, that's the part to keep", "frequency": "frequent"}},
+      {{"pattern": "we [verb] [object]", "example_realization": "we can work with that", "frequency": "occasional"}}
+    ],
+    "catchphrase_residue": ["0-3 short crystallized phrases this character actually says verbatim"]
+  }},
+
+  "repertoire": {{
+    "stances": ["3-6 short stance labels"],
+    "registers": ["2-4 register labels"],
+    "backstage_frontstage_range": "1 sentence",
+    "speech_genre_fluency": ["2-4 genre labels"]
+  }},
+
+  "natural_register": "1 phrase",
+  "default_capitalization": "sentence_case",
+  "punctuation_habits": "1 sentence describing concrete habits",
+  "humor_tone": "1 phrase",
   "length_band": "medium",
   "emoji_palette": ["..."],
   "emoji_intensity_default": "low",
-  "signature_phrases": ["..."],
+  "formality": 0.3,
+
+  "voice_avoid": "1-2 sentences",
   "forbidden_phrases": ["I hear you", "..."],
-  "topical_strengths": ["...", "...", "...", "..."],
+
+  "topical_strengths": ["3-6 topics this character shines on"],
   "topical_avoid": [],
+
+  "signature_phrases": ["MUST be the same content as idiolect.catchphrase_residue"],
+
   "generation_guardrails": {{
     "boundary_on_diagnosis": "never_diagnose",
     "boundary_on_medication_advice": "decline_redirect_clinician",
@@ -3625,13 +4209,13 @@ Six independent axes — choose one value per axis from the closed vocabulary, o
     "no_real_public_figure_impersonation": true
   }},
   "eligibility_signal": {{"hidden_persona_types": ["..."], "min_intimacy": 0.0, "blocks_implicit_negative": true}},
-  "fit_rationale": "...",
+  "fit_rationale": "1-2 sentences: why THIS archetype + character voice fits THIS user.",
   "niche_specifier": null,
   "romantic_specifier": {{}}
 }}
 ```
 
-If archetype = `niche_expert_creator_ai`, `niche_specifier` MUST be a short slug (e.g. "travel-planner-EU"). If archetype = `romantic_partner`, `romantic_specifier` MUST be a full object with all 6 axes (use `null` for axes with no profile signal except `explicitness_band` which always has a value).
+If archetype = `niche_expert_creator_ai`, `niche_specifier` MUST be a short slug (e.g. "travel-planner-EU"). If archetype = `romantic_partner`, `romantic_specifier` MUST be a full object with all 6 axes (use `null` for axes with no profile signal; `explicitness_band` always has a value).
 """
 
 

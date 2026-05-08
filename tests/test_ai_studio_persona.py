@@ -165,19 +165,37 @@ def test_gender_and_sexuality_vocab_inclusive():
 def test_aistudiopersona_default_construction():
     p = AIStudioPersona()
     d = asdict(p)
-    # Has every advertised key
+    # 4-layer voice structure (mirrors UserVoice) + character DNA fields
     expected_keys = {
+        # Archetype + character DNA
         "persona_archetype", "character_name", "backstory_brief",
         "relational_stance", "address_terms", "self_reference_style",
-        "voice_traits", "communication_style", "default_register",
-        "formality", "humor_tone", "length_band",
-        "emoji_palette", "emoji_intensity_default",
-        "signature_phrases", "forbidden_phrases",
+        "communication_style",
+        # Layer 1 — Character Identity Spine
+        "identity_spine",
+        # Layer 2 — Character Idiolect
+        "idiolect",
+        # Layer 3 — Character Repertoire
+        "repertoire",
+        # Soft holdovers
+        "natural_register", "default_capitalization", "punctuation_habits",
+        "humor_tone", "length_band",
+        "emoji_palette", "emoji_intensity_default", "formality",
+        # Negatives
+        "voice_avoid", "forbidden_phrases",
+        # Topical
         "topical_strengths", "topical_avoid",
+        # Signature phrases (mirrors idiolect.catchphrase_residue)
+        "signature_phrases",
+        # Guardrails + routing + fit
         "generation_guardrails", "eligibility_signal", "fit_rationale",
         "niche_specifier", "romantic_specifier",
     }
     assert set(d.keys()) == expected_keys
+    # Layer dicts default to {}
+    assert p.identity_spine == {}
+    assert p.idiolect == {}
+    assert p.repertoire == {}
 
 
 def test_romanticspecifier_default_explicitness_is_sensual():
@@ -246,6 +264,21 @@ def test_prompt_includes_user_specific_grounding():
     assert "unique_test_hashtag_xyz" in out
 
 
+def test_prompt_includes_4_layer_voice_structure():
+    """The AI persona prompt must instruct on the same 4-layer voice
+    model used for user_voice — identity spine, idiolect, repertoire,
+    plus soft holdovers + negatives."""
+    out = _build_test_prompt()
+    # Layer headers in the body
+    for needle in ("Layer 1", "Layer 2", "Layer 3",
+                   "identity_spine", "idiolect", "repertoire",
+                   "big_five_proxy", "liwc_anchors_inferred",
+                   "function_word_profile", "constructional_templates",
+                   "catchphrase_residue", "appraisal_fingerprint",
+                   "syntactic_preferences", "voice_avoid"):
+        assert needle in out, f"{needle!r} missing from prompt"
+
+
 # ---------------------------------------------------------------------------
 # generate_ai_studio_persona — stubbed-LLM end-to-end tests
 # ---------------------------------------------------------------------------
@@ -287,43 +320,112 @@ def _canned(persona_dict: dict) -> str:
     return f"```json\n{json.dumps(persona_dict)}\n```"
 
 
-def test_generate_persona_happy_path_late_night_best_friend():
-    canned = _canned({
-        "persona_archetype": "late_night_best_friend",
+def _full_layered_canned(archetype: str = "late_night_best_friend", **overrides) -> str:
+    """Build a full 4-layer canned LLM response for a given archetype."""
+    base = {
+        "persona_archetype": archetype,
         "character_name": "Jules",
-        "backstory_brief": "Jules is your unflappable midnight friend.",
-        "relational_stance": "warm-confidant",
+        "backstory_brief": "Jules is your unflappable midnight friend who keeps it real.",
+        "relational_stance": "Warm-confidant; a tired best friend who gets the joke.",
         "address_terms": ["you"],
         "self_reference_style": "first_person",
-        "voice_traits": ["dry", "warm", "patient", "real"],
-        "communication_style": "Talks like a tired best friend on a porch.",
-        "default_register": "warm_casual",
-        "formality": 0.2,
-        "humor_tone": "deadpan-affectionate",
+        "communication_style": "Casual, fragment-friendly; observation first, advice last.",
+        # Layer 1 — Identity Spine
+        "identity_spine": {
+            "agency_communion": "Mostly communion: presence over fixing.",
+            "redemption_motifs": ["showing up after midnight", "calling things by their name"],
+            "contamination_motifs": ["pretending it's fine"],
+            "life_stage_preoccupations": ["adult friendships", "weeknight tiredness"],
+            "signature_concerns": ["honesty", "weirdness", "actually-listening"],
+            "liwc_anchors_inferred": {
+                "analytic": "low", "clout": "low", "authentic": "high",
+                "emotional_tone": "warm-restrained",
+            },
+            "big_five_proxy": {
+                "openness": "medium → curious without performing",
+                "conscientiousness": "medium → reliable without lecturing",
+                "extraversion": "medium → low-key warm",
+                "agreeableness": "high → soft on the person, honest on the thing",
+                "neuroticism": "low → steady",
+            },
+        },
+        # Layer 2 — Idiolect
+        "idiolect": {
+            "function_word_profile": "Heavy on 'okay', 'kinda', 'just'; light on intensifiers.",
+            "syntactic_preferences": {
+                "sentence_length_shape": "short_dominant",
+                "clause_embedding": "shallow",
+                "parataxis_hypotaxis": "parataxis",
+                "fragment_use": "frequent",
+            },
+            "hedge_booster_ratio": "balanced",
+            "appraisal_fingerprint": {
+                "attitude_dominant": "affect",
+                "engagement_style": "heteroglossic_acknowledge",
+                "graduation": "frequent_softeners",
+            },
+            "constructional_templates": [
+                {"pattern": "okay so [observation]", "example_realization": "okay so that part's real", "frequency": "frequent"},
+                {"pattern": "[hedge], [direct read]", "example_realization": "honestly, that tracks", "frequency": "occasional"},
+            ],
+            "catchphrase_residue": ["okay so", "that tracks"],
+        },
+        # Layer 3 — Repertoire
+        "repertoire": {
+            "stances": ["wry-checked-in", "low-key-warm", "honest-on-the-thing", "soft-on-the-person"],
+            "registers": ["casual conversational", "private confessional-light"],
+            "backstage_frontstage_range": "Mostly backstage; never performs.",
+            "speech_genre_fluency": ["late-night check-in", "small-pep-talk"],
+        },
+        "natural_register": "casual conversational with dry edge",
+        "default_capitalization": "all_lowercase",
+        "punctuation_habits": "minimal commas, no exclamation points; periods only when ending a real point.",
+        "humor_tone": "wry, deadpan-affectionate",
         "length_band": "medium",
         "emoji_palette": [],
         "emoji_intensity_default": "low",
-        "signature_phrases": ["okay so"],
+        "formality": 0.2,
+        "voice_avoid": "Won't reach for therapy clichés or bullet-point advice.",
         "forbidden_phrases": ["I hear you"],   # only 1 — must be back-filled
-        "topical_strengths": ["aspiration", "venting"],
+        "topical_strengths": ["aspiration", "venting", "weeknight life"],
         "topical_avoid": [],
+        "signature_phrases": ["okay so"],
         "generation_guardrails": {},
         "eligibility_signal": {},
-        "fit_rationale": "Default for unspecified profile.",
+        "fit_rationale": "Default fit for unspecified profile.",
         "niche_specifier": None,
         "romantic_specifier": {},
-    })
-    agent = _StubAgent(canned_response=canned, verbose=False)
+    }
+    base.update(overrides)
+    return _canned(base)
+
+
+def test_generate_persona_happy_path_late_night_best_friend():
+    agent = _StubAgent(canned_response=_full_layered_canned(), verbose=False)
     agent.generate_ai_studio_persona()
 
     p = agent.user_profile.ai_studio_persona
     assert p["persona_archetype"] == "late_night_best_friend"
     assert p["character_name"] == "Jules"
-    # Forbidden phrases back-filled with the full Rogers baseline + archetype-specific
+    # 4-layer voice structure persisted
+    assert p["identity_spine"]["agency_communion"]
+    assert p["identity_spine"]["liwc_anchors_inferred"]["authentic"] == "high"
+    assert p["idiolect"]["function_word_profile"]
+    assert p["idiolect"]["syntactic_preferences"]["sentence_length_shape"] == "short_dominant"
+    assert len(p["idiolect"]["constructional_templates"]) == 2
+    assert p["idiolect"]["constructional_templates"][0]["pattern"]
+    assert p["idiolect"]["catchphrase_residue"] == ["okay so", "that tracks"]
+    assert p["repertoire"]["stances"] == ["wry-checked-in", "low-key-warm", "honest-on-the-thing", "soft-on-the-person"]
+    # Soft holdovers
+    assert p["default_capitalization"] == "all_lowercase"
+    assert p["punctuation_habits"]
+    assert p["natural_register"]
+    # Negatives — voice_avoid + back-filled forbidden_phrases
+    assert p["voice_avoid"]
     fp = " | ".join(p["forbidden_phrases"]).lower()
     for phrase in ROGERS_CLICHE_BLOCKLIST:
         assert phrase.lower() in fp, f"{phrase!r} not back-filled"
-    # The archetype-specific forbidden_phrases for late_night_best_friend
+    # Archetype-specific forbidden phrase for late_night_best_friend
     assert any("as your friend, i think" in s.lower() for s in p["forbidden_phrases"])
 
 
@@ -347,6 +449,49 @@ def test_generate_persona_signature_phrases_capped_at_three():
     agent = _StubAgent(canned_response=canned)
     agent.generate_ai_studio_persona()
     assert len(agent.user_profile.ai_studio_persona["signature_phrases"]) == 3
+
+
+def test_generate_persona_catchphrase_residue_capped_at_three():
+    """idiolect.catchphrase_residue defense-in-depth — prompt says ≤3,
+    method also enforces it."""
+    canned = _canned({
+        "persona_archetype": "mentor_coach",
+        "fit_rationale": "test",
+        "idiolect": {
+            "function_word_profile": "test",
+            "catchphrase_residue": ["one", "two", "three", "four", "five"],
+            "constructional_templates": [],
+        },
+    })
+    agent = _StubAgent(canned_response=canned)
+    agent.generate_ai_studio_persona()
+    p = agent.user_profile.ai_studio_persona
+    assert len(p["idiolect"]["catchphrase_residue"]) == 3
+
+
+def test_generate_persona_constructional_templates_drops_malformed():
+    """LLM may return string entries instead of dicts — silently drop those
+    and keep only well-formed dicts."""
+    canned = _canned({
+        "persona_archetype": "mentor_coach",
+        "fit_rationale": "test",
+        "idiolect": {
+            "function_word_profile": "test",
+            "constructional_templates": [
+                {"pattern": "p1", "example_realization": "e1", "frequency": "frequent"},
+                "this is not a dict — should be dropped",
+                {"pattern": ""},  # empty pattern — should be dropped
+                {"pattern": "p2", "example_realization": "e2", "frequency": "rare"},
+            ],
+            "catchphrase_residue": [],
+        },
+    })
+    agent = _StubAgent(canned_response=canned)
+    agent.generate_ai_studio_persona()
+    cts = agent.user_profile.ai_studio_persona["idiolect"]["constructional_templates"]
+    assert len(cts) == 2
+    assert cts[0]["pattern"] == "p1"
+    assert cts[1]["pattern"] == "p2"
 
 
 def test_generate_persona_romantic_specifier_validates_vocabularies():
