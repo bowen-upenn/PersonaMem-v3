@@ -327,6 +327,14 @@ class AIStudioPersona:
     AI's voice on AI Studio comes from THIS block (not from user_voice — the
     user's voice still drives user turns; the AI persona has its own voice).
 
+    Voice is modeled in the SAME 4-layer structure as `UserVoice`, but the
+    layers describe a *fictional character* (Rowan, Wren, etc.) rather than
+    a real person. Layer 1 (Identity Spine) and Layer 2 (Idiolect) are the
+    "fingerprint" — what survives paraphrase, derived from the chosen
+    archetype's character DNA. Layer 3 (Repertoire) is the inventory of
+    stances/registers/genres the character CAN deploy. Layer 4 lives in the
+    soft holdovers (register / capitalization / emoji palette / etc.).
+
     Archetype is one of the 10 entries in AI_STUDIO_ARCHETYPES. Two optional
     sub-typing blocks fire only for specific archetypes:
       • `niche_specifier` — only for `niche_expert_creator_ai`. Identifies
@@ -336,50 +344,80 @@ class AIStudioPersona:
       • `romantic_specifier` — only for `romantic_partner`. Multi-axis
         sub-typing. See `RomanticSpecifier`.
     """
+    # --- Archetype + character DNA -------------------------------------
     persona_archetype: str = ""              # one of AI_STUDIO_ARCHETYPES keys
     character_name: str = ""                 # fictional only — never a real public figure
-    backstory_brief: str = ""                # 2-3 sentences
+    backstory_brief: str = ""                # 2-3 sentences — character bio
 
-    relational_stance: str = ""              # "warm-confidant" | "playful-flirty" | "wise-elder"
-                                             # | "peer-friend" | "earnest-mentor" | "stoic-guide"
-                                             # | "romantic-attentive" | "domain-expert"
+    relational_stance: str = ""              # 1-2 sentences: how this character relates to the user
     address_terms: list[str] = field(default_factory=list)  # ≤3, e.g. ["love"], ["friend"]
     self_reference_style: str = "first_person"   # "first_person" | "third_person_character" | "mixed"
+    communication_style: str = ""            # 1-2 sentence summary of the 4 layers below
 
-    # AI's own voice (separate axis from user_voice)
-    voice_traits: list[str] = field(default_factory=list)   # 4-7 short tags
-    communication_style: str = ""            # 1-2 sentences
-    default_register: str = "warm_casual"    # "warm_casual" | "intimate" | "playfully_formal" | "literary"
-    formality: float = 0.3                   # 0.0–1.0
-    humor_tone: str = ""
+    # --- Layer 1 — Character Identity Spine (stable, defines DNA) ------
+    # dict with keys (mirrors UserVoice.identity_spine):
+    #   agency_communion: str (1 sentence — character's stance toward user/world)
+    #   redemption_motifs: list[str] (1-3 short noun phrases — character's healing/uplift themes)
+    #   contamination_motifs: list[str] (0-2 — character's wounds / what they fear)
+    #   life_stage_preoccupations: list[str] (2-3 — character's developmental focus)
+    #   signature_concerns: list[str] (2-4 abstract concerns the character cares about)
+    #   liwc_anchors_inferred: dict {analytic, clout, authentic, emotional_tone}
+    #   big_five_proxy: dict {trait: "level → behavioral implication"}
+    identity_spine: dict = field(default_factory=dict)
+
+    # --- Layer 2 — Character Idiolect (HOW they structure language) ----
+    # dict with keys (mirrors UserVoice.idiolect):
+    #   function_word_profile: str (1 sentence)
+    #   syntactic_preferences: dict {sentence_length_shape, clause_embedding,
+    #     parataxis_hypotaxis, fragment_use}
+    #   hedge_booster_ratio: "hedge_dominant" | "balanced" | "booster_dominant"
+    #   appraisal_fingerprint: dict {attitude_dominant, engagement_style, graduation}
+    #   constructional_templates: list[dict] (2-4) with keys
+    #     {pattern, example_realization, frequency}
+    #   catchphrase_residue: list[str] (0-3 — same role as user's signature_phrases;
+    #                                   used ≤1× per conversation)
+    idiolect: dict = field(default_factory=dict)
+
+    # --- Layer 3 — Character Repertoire (stable inventory) -------------
+    # dict with keys (mirrors UserVoice.repertoire):
+    #   stances: list[str] (3-6 short labels — what stances the character CAN deploy)
+    #   registers: list[str] (2-4 — what registers the character CAN move through)
+    #   backstage_frontstage_range: str (1 sentence)
+    #   speech_genre_fluency: list[str] (2-4)
+    repertoire: dict = field(default_factory=dict)
+
+    # --- Soft holdovers (descriptive surface summaries) ----------------
+    natural_register: str = ""               # 1 phrase, e.g. "warm casual with dry edge"
+    default_capitalization: str = ""         # "all_lowercase" | "sentence_case" | "mixed_with_caps_for_emphasis"
+    punctuation_habits: str = ""             # 1 sentence — concrete habits
+    humor_tone: str = ""                     # 1 phrase, e.g. "wry, lightly teasing"
     length_band: str = "medium"              # "short" | "medium" | "long"
-    emoji_palette: list[str] = field(default_factory=list)  # 0-6
+    emoji_palette: list[str] = field(default_factory=list)  # 0-6 (most archetypes use 0-3)
     emoji_intensity_default: str = "low"     # "none" | "low" | "medium"
-    signature_phrases: list[str] = field(default_factory=list)  # 0-3, used ≤1× per conversation
-    forbidden_phrases: list[str] = field(default_factory=list)  # baseline = Rogers cliché blocklist + archetype-specific
+    formality: float = 0.3                   # 0.0 (casual) – 1.0 (formal)
 
+    # --- Negatives axis (preserved) ------------------------------------
+    voice_avoid: str = ""                    # 1-2 sentences: tones/styles/habits this character avoids
+    forbidden_phrases: list[str] = field(default_factory=list)
+                                             # baseline = Rogers cliché blocklist + archetype-specific
+
+    # --- Topical scope -------------------------------------------------
     topical_strengths: list[str] = field(default_factory=list)  # 3-6
     topical_avoid: list[str] = field(default_factory=list)      # 0-3
 
-    # Generation guardrails — keeps generation on-rails; NOT evaluated.
-    # Derived from archetype defaults at Step 11C.
+    # --- Signature phrases (1-3, used ≤1× per conversation) ------------
+    # Kept as a top-level convenience field; mirrors what catchphrase_residue
+    # captures structurally inside idiolect. Same content, two access points.
+    signature_phrases: list[str] = field(default_factory=list)
+
+    # --- Generation guardrails — keeps generation on-rails; NOT evaluated.
     generation_guardrails: dict = field(default_factory=dict)
-    # Required keys (informs generation prompt only):
-    #   boundary_on_diagnosis: "never_diagnose"
-    #   boundary_on_medication_advice: "decline_redirect_clinician"
-    #   anti_sycophancy_pledge: "challenge_assumptions_when_warranted"
-    #   honesty_when_asked_if_ai: "answer_truthfully"
-    #   no_real_public_figure_impersonation: True
 
-    # Routing knobs consumed by Steps 13/14 (data-gen milestones (b)/(c)).
+    # --- Routing knobs consumed by Steps 13/14 (milestones (b)/(c)). ---
     eligibility_signal: dict = field(default_factory=dict)
-    # {hidden_persona_types: [...], min_intimacy: float, blocks_implicit_negative: True}
 
-    # 1-2 sentences explaining why THIS archetype for THIS user.
-    fit_rationale: str = ""
-
-    # Optional sub-typing blocks (filled only when archetype matches).
-    # Stored as dicts (asdict of RomanticSpecifier) for JSON-serialization parity.
+    # --- Fit + sub-typing ---------------------------------------------
+    fit_rationale: str = ""                  # 1-2 sentences: why THIS archetype for THIS user
     niche_specifier: Optional[str] = None    # required when archetype == "niche_expert_creator_ai"
     romantic_specifier: dict = field(default_factory=dict)  # required when archetype == "romantic_partner"
 
@@ -606,6 +644,19 @@ class UserProfile:
     # after session locations are resolved. Each entry:
     #   {"city","region","country","start_ts","end_ts","kind": "domestic"|"international"}
     geo_trip_arcs: list = field(default_factory=list)
+    # Exploration vs. exploitation diversity score derived deterministically
+    # from raw activities. Populated by `_compute_exploration_exploitation`
+    # at save_to_backend time. Shape:
+    #   {"score": 0.0–1.0,           # 0 = pure exploiter, 1 = pure explorer
+    #    "label": "exploiter"|"balanced"|"explorer",
+    #    "hashtag_entropy_normalized": float,
+    #    "category_entropy_normalized": float,
+    #    "unique_hashtag_count": int,
+    #    "total_hashtag_occurrences": int,
+    #    "unique_hashtag_ratio": float,
+    #    "top10_concentration": float,    # top-10 hashtag share of all occurrences
+    #    "top_repeated_hashtags": [{"hashtag": str, "count": int}, ...]}
+    exploration_exploitation: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -1075,7 +1126,39 @@ RACE_ETHNICITY_DISTRIBUTION = {
 }
 
 
-PLATFORMS = ["Instagram", "Facebook", "Threads", "Chatbot"]
+PLATFORMS = ["Instagram", "Facebook", "Threads", "Chatbot", "AI_Studio"]
+SOCIAL_PLATFORMS = ["Instagram", "Facebook", "Threads"]
+
+
+# AI Studio routing — canonicals matching these hidden_persona type substrings
+# OR these category substrings are eligible for migration into AI_Studio at
+# Step 13's quota-rebalance pass. Companion-chat surface: emotional patterns,
+# identity work, aspiration, parasocial / intimate-interest signals — NOT
+# utility tasks (those stay on Chatbot).
+AI_STUDIO_ELIGIBLE_HIDDEN_PERSONA_TYPES = frozenset({
+    "emotional_pattern",
+    "identity_anchor",
+    "aspiration",
+    "intimate_interest",
+    "parasocial_attachment",
+})
+AI_STUDIO_ELIGIBLE_CATEGORY_KEYWORDS = (
+    # introspective + relational categories (overlaps the existing
+    # `introspective_keywords` in _quota_rebalance_apps but is named so the
+    # AI Studio migration pass can be reasoned about independently)
+    "identity", "values", "belief",
+    "aspiration", "goal", "personal", "private",
+    "emotion", "feeling", "vulnerability", "yearning",
+    "fandom", "celebrity", "parasocial",
+    "intimate", "romance", "relationship",
+)
+WRITING_UTILITY_CATEGORY_KEYWORDS = (
+    # categories that should STAY on Chatbot (utility), never migrate to
+    # AI Studio. Email drafting, translation, technical Q&A, writing help.
+    "email", "writing", "translation", "draft",
+    "technical", "code", "programming", "debugging",
+    "professional draft", "resume", "cover letter",
+)
 
 # Per-app action catalog — this is the **single source of truth** for every
 # realistic interaction UX affordance on each app. The pipeline does NOT
@@ -3563,6 +3646,99 @@ class PersonaAgent:
         span_sec = max(tss) - min(tss)
         return span_sec / 86400.0
 
+    def _compute_exploration_exploitation(self) -> dict:
+        """Diversity score over raw activities — high = explorer, low = exploiter.
+
+        Computed deterministically from raw CSV interactions (hashtag
+        distribution) plus surviving canonical preferences (category
+        distribution). No LLM call. Returns the dict shape documented on
+        `UserProfile.exploration_exploitation`.
+        """
+        from collections import Counter as _Counter
+        import math as _math
+
+        hashtag_counts: _Counter = _Counter()
+        for row in self.interactions:
+            for tag in self._extract_hashtags(row.object_text):
+                hashtag_counts[tag.lower()] += 1
+
+        total_occ = sum(hashtag_counts.values())
+        n_unique = len(hashtag_counts)
+
+        if total_occ == 0 or n_unique <= 1:
+            # Degenerate case — no signal. Treat as fully exploited.
+            return {
+                "score": 0.0,
+                "label": "exploiter",
+                "hashtag_entropy_normalized": 0.0,
+                "category_entropy_normalized": 0.0,
+                "unique_hashtag_count": n_unique,
+                "total_hashtag_occurrences": total_occ,
+                "unique_hashtag_ratio": 0.0,
+                "top10_concentration": 1.0 if total_occ else 0.0,
+                "top_repeated_hashtags": [
+                    {"hashtag": t, "count": c}
+                    for t, c in hashtag_counts.most_common(10)
+                ],
+            }
+
+        # Shannon entropy normalized by log(n_unique) → [0, 1].
+        hashtag_entropy = -sum(
+            (c / total_occ) * _math.log(c / total_occ)
+            for c in hashtag_counts.values()
+        )
+        hashtag_entropy_norm = hashtag_entropy / _math.log(n_unique)
+
+        # Category entropy from surviving canonical preferences.
+        cat_counts: _Counter = _Counter(
+            (cr.category or "uncategorized").lower()
+            for cr in self.cross_referenced_personas
+        )
+        cat_total = sum(cat_counts.values())
+        cat_unique = len(cat_counts)
+        if cat_total > 0 and cat_unique > 1:
+            cat_entropy = -sum(
+                (c / cat_total) * _math.log(c / cat_total)
+                for c in cat_counts.values()
+            )
+            category_entropy_norm = cat_entropy / _math.log(cat_unique)
+        else:
+            category_entropy_norm = 0.0
+
+        top10 = hashtag_counts.most_common(10)
+        top10_concentration = sum(c for _, c in top10) / total_occ
+        unique_ratio = n_unique / total_occ
+
+        # Composite score: weighted blend of three signals, all in [0, 1]
+        # where higher means more exploration.
+        score = (
+            0.5 * hashtag_entropy_norm
+            + 0.3 * category_entropy_norm
+            + 0.2 * (1.0 - top10_concentration)
+        )
+        score = max(0.0, min(1.0, score))
+
+        if score >= 0.66:
+            label = "explorer"
+        elif score >= 0.33:
+            label = "balanced"
+        else:
+            label = "exploiter"
+
+        return {
+            "score": round(score, 4),
+            "label": label,
+            "hashtag_entropy_normalized": round(hashtag_entropy_norm, 4),
+            "category_entropy_normalized": round(category_entropy_norm, 4),
+            "unique_hashtag_count": n_unique,
+            "total_hashtag_occurrences": total_occ,
+            "unique_hashtag_ratio": round(unique_ratio, 4),
+            "top10_concentration": round(top10_concentration, 4),
+            "top_repeated_hashtags": [
+                {"hashtag": t, "count": c} for t, c in top10
+            ],
+        }
+
     def _apply_rule_based_time_horizon(
         self,
         canonicals: list[CrossReferencedPersona],
@@ -5364,8 +5540,44 @@ class PersonaAgent:
             # Wipe any romantic_specifier the LLM may have produced.
             parsed["romantic_specifier"] = {}
 
-        # signature_phrases ≤ 3
-        sigs = list(parsed.get("signature_phrases") or [])[:3]
+        # 4-layer voice structure — extract + lightly sanitize
+        identity_spine = parsed.get("identity_spine") or {}
+        idiolect = parsed.get("idiolect") or {}
+        repertoire = parsed.get("repertoire") or {}
+        if not isinstance(identity_spine, dict):
+            identity_spine = {}
+        if not isinstance(idiolect, dict):
+            idiolect = {}
+        if not isinstance(repertoire, dict):
+            repertoire = {}
+
+        # idiolect.catchphrase_residue ≤ 3 (defense-in-depth — prompt says ≤3)
+        residue = list(idiolect.get("catchphrase_residue") or [])
+        if len(residue) > 3:
+            residue = residue[:3]
+        idiolect["catchphrase_residue"] = residue
+
+        # constructional_templates is a list of dicts with required keys
+        ct_raw = idiolect.get("constructional_templates") or []
+        if not isinstance(ct_raw, list):
+            ct_raw = []
+        ct_clean = []
+        for item in ct_raw[:6]:  # cap at 6 to bound LLM blow-out
+            if isinstance(item, dict) and item.get("pattern"):
+                ct_clean.append({
+                    "pattern": str(item.get("pattern", "")),
+                    "example_realization": str(item.get("example_realization", "")),
+                    "frequency": str(item.get("frequency", "")),
+                })
+        idiolect["constructional_templates"] = ct_clean
+
+        # repertoire.stances 3–6 short labels
+        stances = list(repertoire.get("stances") or [])[:6]
+        repertoire["stances"] = stances
+
+        # signature_phrases mirror catchphrase_residue (≤3); top-level
+        # convenience field, same content.
+        sigs = list(parsed.get("signature_phrases") or residue)[:3]
 
         # forbidden_phrases must include the Rogers baseline + archetype-specific
         forb = list(parsed.get("forbidden_phrases") or [])
@@ -5431,18 +5643,29 @@ class PersonaAgent:
             relational_stance=str(parsed.get("relational_stance", "")),
             address_terms=list(parsed.get("address_terms", []) or [])[:3],
             self_reference_style=str(parsed.get("self_reference_style", "first_person")),
-            voice_traits=list(parsed.get("voice_traits", []) or [])[:7],
             communication_style=str(parsed.get("communication_style", "")),
-            default_register=str(parsed.get("default_register", "warm_casual")),
-            formality=float(parsed.get("formality", 0.3) or 0.3),
+            # 4-layer voice structure
+            identity_spine=identity_spine,
+            idiolect=idiolect,
+            repertoire=repertoire,
+            # Soft holdovers
+            natural_register=str(parsed.get("natural_register", "")),
+            default_capitalization=str(parsed.get("default_capitalization", "")),
+            punctuation_habits=str(parsed.get("punctuation_habits", "")),
             humor_tone=str(parsed.get("humor_tone", "")),
             length_band=str(parsed.get("length_band", "medium")),
             emoji_palette=list(parsed.get("emoji_palette", []) or [])[:6],
             emoji_intensity_default=str(parsed.get("emoji_intensity_default", "low")),
-            signature_phrases=sigs,
+            formality=float(parsed.get("formality", 0.3) or 0.3),
+            # Negatives
+            voice_avoid=str(parsed.get("voice_avoid", "")),
             forbidden_phrases=merged_forb,
+            # Topical scope
             topical_strengths=ts_list,
             topical_avoid=list(parsed.get("topical_avoid", []) or [])[:3],
+            # Signature phrases (mirrors idiolect.catchphrase_residue)
+            signature_phrases=sigs,
+            # Guardrails + routing + fit
             generation_guardrails=parsed.get("generation_guardrails") or {
                 "boundary_on_diagnosis": "never_diagnose",
                 "boundary_on_medication_advice": "decline_redirect_clinician",
@@ -5551,21 +5774,31 @@ class PersonaAgent:
         row_itype: dict[str, str] = {r.object_id: r.interaction_type for r in self.interactions}
 
         def _pick_with_chatbot_bias(votes: list[str], itype: str | None) -> str:
-            """Majority vote with Chatbot tiebreak for non-negative rows.
+            """Majority vote with Chatbot/AI_Studio tiebreak for non-negative rows.
 
-            If the top vote tally is tied between Chatbot and another app and
-            the row/session is positive (not implicit_negative), prefer
-            Chatbot. Implicit_negative rows are never routed to Chatbot
-            (enforced again in Step 4 below).
+            On a tie:
+              * If implicit_negative → fall through to the first tied app
+                (Chatbot and AI_Studio are firewalled in Step 4 anyway).
+              * Otherwise → if AI_Studio is in the tie, prefer AI_Studio
+                (companion-chat takes precedence on ties involving it),
+                else prefer Chatbot if in the tie, else first tied app.
             """
             if not votes:
-                return random.choice(PLATFORMS)
+                return random.choice(SOCIAL_PLATFORMS) if itype == "implicit_negative" else random.choice(PLATFORMS)
             tallies = _Counter(votes).most_common()
             top_count = tallies[0][1]
             tied_apps = [a for a, c in tallies if c == top_count]
             if len(tied_apps) == 1:
                 return tied_apps[0]
-            if "Chatbot" in tied_apps and itype != "implicit_negative":
+            if itype == "implicit_negative":
+                # Pick first social app in tie, else first tie.
+                for a in tied_apps:
+                    if a in SOCIAL_PLATFORMS:
+                        return a
+                return tied_apps[0]
+            if "AI_Studio" in tied_apps:
+                return "AI_Studio"
+            if "Chatbot" in tied_apps:
                 return "Chatbot"
             return tied_apps[0]
 
@@ -5595,7 +5828,6 @@ class PersonaAgent:
                 row_apps[r.object_id] = session_app
 
         # Step 3: 8% noise per-session
-        SOCIAL_PLATFORMS = [p for p in PLATFORMS if p != "Chatbot"]
         for session in self._sessions:
             if random.random() < self.NOISE_REASSIGN_PROBABILITY:
                 current_app = row_apps.get(session[0].object_id, PLATFORMS[0])
@@ -5604,9 +5836,12 @@ class PersonaAgent:
                 for r in session:
                     row_apps[r.object_id] = new_app
 
-        # Step 4: Never route implicit_negative to Chatbot — redirect to social
+        # Step 4: Never route implicit_negative to Chatbot OR AI_Studio —
+        # redirect to social. AI_Studio is a privacy-floored companion
+        # surface; implicit-negative ("I don't like X") signals don't fit
+        # the relational frame.
         for r in self.interactions:
-            if r.interaction_type == "implicit_negative" and row_apps.get(r.object_id) == "Chatbot":
+            if r.interaction_type == "implicit_negative" and row_apps.get(r.object_id) in ("Chatbot", "AI_Studio"):
                 row_apps[r.object_id] = random.choice(SOCIAL_PLATFORMS)
 
         self._row_app = row_apps
@@ -5655,6 +5890,7 @@ class PersonaAgent:
         prompt = prompts.assign_personas_to_apps_prompt(
             app_personas=self.user_profile.app_personas,
             preferences=preferences_for_prompt,
+            ai_studio_persona=self.user_profile.ai_studio_persona or None,
         )
         response = self._query_mini_with_retry(prompt)
 
@@ -5680,10 +5916,10 @@ class PersonaAgent:
         # Per-canonical noise removed — noise is now applied per-session
         # in _assign_rows_to_apps() to keep close-timestamp rows on same app.
 
-        # Quota rebalance: push Chatbot canonical share up to ~40% by
-        # migrating the lowest-xref non-Chatbot canonicals. Session-majority
-        # voting downstream washes out the LLM's Chatbot share, so we pre-bias
-        # the canonical pool.
+        # Quota rebalance: push Chatbot canonical share up to ~27% (was 0.40
+        # pre-AI Studio), then carve out ~18% to AI_Studio for companion-chat
+        # canonicals. Session-majority voting downstream washes out per-canonical
+        # routing, so we pre-bias the canonical pool.
         self._quota_rebalance_apps()
 
         if self.verbose:
@@ -5692,23 +5928,35 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Canonical app routing: {dict(counts)}{utils.Colors.ENDC}")
 
     # Target shares for the canonical-level distribution before session voting.
-    CHATBOT_CANONICAL_TARGET = 0.40
+    # Milestone (b) carve-out: Chatbot drops from 0.40 → 0.27 to give AI_Studio
+    # 0.18. Net effect: Chatbot keeps utility / knowledge / writing-help
+    # canonicals; AI_Studio absorbs identity / aspiration / emotional /
+    # intimate-interest / parasocial canonicals (companion-chat material).
+    CHATBOT_CANONICAL_TARGET = 0.27
+    AI_STUDIO_CANONICAL_TARGET = 0.18
     SOCIAL_CANONICAL_FLOOR = 0.17
 
     def _quota_rebalance_apps(self) -> None:
         """Enforce soft quotas on the canonical-level app distribution.
 
-        If Chatbot's share is below CHATBOT_CANONICAL_TARGET, migrate the
-        lowest-priority non-Chatbot canonicals (lowest xref; introspective /
-        knowledge-seeking categories first) into Chatbot until the share
-        reaches the target. Symmetrically, if any social app is below
-        SOCIAL_CANONICAL_FLOOR, top it up from Chatbot surplus.
+        Three passes (in order):
+          1. Top up Chatbot to CHATBOT_CANONICAL_TARGET by migrating
+             lowest-priority non-Chatbot canonicals (introspective / knowledge-
+             seeking categories first; lowest xref tie-break).
+          2. Carve out AI_Studio share from Chatbot — migrate Chatbot
+             canonicals whose categories match `AI_STUDIO_ELIGIBLE_CATEGORY_KEYWORDS`
+             (and DON'T match `WRITING_UTILITY_CATEGORY_KEYWORDS`) into
+             AI_Studio until AI_STUDIO_CANONICAL_TARGET is met. Lowest-xref
+             tie-break.
+          3. Top up starved social apps (below SOCIAL_CANONICAL_FLOOR) from
+             Chatbot surplus.
         """
         pool = list(self.cross_referenced_personas)
         if not pool:
             return
         n = len(pool)
         target_cb = int(round(n * self.CHATBOT_CANONICAL_TARGET))
+        target_ais = int(round(n * self.AI_STUDIO_CANONICAL_TARGET))
         social_floor = int(round(n * self.SOCIAL_CANONICAL_FLOOR))
 
         from collections import Counter as _C
@@ -5731,17 +5979,45 @@ class PersonaAgent:
             return (0 if intro_hit else 1, cr.confidence_cross_referenced)
 
         if cb_count < target_cb:
-            non_cb = [cr for cr in pool if cr.assigned_app != "Chatbot"]
+            non_cb = [cr for cr in pool if cr.assigned_app != "Chatbot"
+                      and cr.assigned_app != "AI_Studio"]
             non_cb.sort(key=_priority_for_chatbot_migration)
             deficit = target_cb - cb_count
             for cr in non_cb[:deficit]:
                 cr.assigned_app = "Chatbot"
 
-        # Social-app floors: top up starved social apps from Chatbot surplus
-        # (only if Chatbot is well above its target).
+        # ---- Pass 2: Carve out AI_Studio share from Chatbot ----------
+        # Migrate Chatbot canonicals whose categories match the AI Studio
+        # eligibility keywords AND don't match writing-utility keywords.
+        # Companion-chat absorbs identity/aspiration/emotional/intimate
+        # signals; utility (email, translation, technical) stays on Chatbot.
+        counts = _C(cr.assigned_app for cr in pool)
+        ais_count = counts.get("AI_Studio", 0)
+        if ais_count < target_ais:
+            def _ai_studio_eligible(cr) -> bool:
+                cat = (cr.category or "").lower()
+                if any(util in cat for util in WRITING_UTILITY_CATEGORY_KEYWORDS):
+                    return False  # utility stays on Chatbot
+                return any(kw in cat for kw in AI_STUDIO_ELIGIBLE_CATEGORY_KEYWORDS)
+
+            # implicit_negative never routes to AI_Studio (privacy + safety floor).
+            chatbot_eligible = [
+                cr for cr in pool
+                if cr.assigned_app == "Chatbot"
+                and cr.source_interaction_type != "implicit_negative"
+                and _ai_studio_eligible(cr)
+            ]
+            # Lowest xref first — preserve high-confidence canonicals on Chatbot
+            # to avoid starving the utility surface of strong signal.
+            chatbot_eligible.sort(key=lambda cr: cr.confidence_cross_referenced)
+            deficit_ais = target_ais - ais_count
+            for cr in chatbot_eligible[:deficit_ais]:
+                cr.assigned_app = "AI_Studio"
+
+        # ---- Pass 3: Top up starved social apps -----------------------
         counts = _C(cr.assigned_app for cr in pool)
         for app in PLATFORMS:
-            if app == "Chatbot":
+            if app in ("Chatbot", "AI_Studio"):
                 continue
             if counts.get(app, 0) >= social_floor:
                 continue
@@ -6720,6 +6996,212 @@ class PersonaAgent:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
                   f"Generated {n_conv}/{n_total} chatbot conversations.{utils.Colors.ENDC}")
 
+    def generate_ai_studio_conversations(self) -> None:
+        """Step 18b — generate cross-session AI Studio conversations.
+
+        Sequential: each event's prompt embeds the FULL prior history (so the
+        chosen AI character — Rowan, Wren, etc. — replies with continuity
+        across the whole arc). intimacy_arc + intimacy_stage are tracked
+        event-by-event in `self._ai_studio_memory_state`. SPT smoothness
+        emerges from the conversation-type filter in
+        `eligible_conversation_types`.
+
+        Builds per-event records for AI_Studio-routed rows (similar to
+        `generate_chatbot_conversations` but for the 5th app), invokes the
+        sequential generator from `ai_studio_conversation.py`, and stashes
+        the results on `self._ai_studio_records` keyed by source_object_id.
+        """
+        from data_preparation import ai_studio_conversation, ai_studio_memory
+
+        # Initialize memory state container (mutated by generation).
+        self._ai_studio_records: list[dict] = []
+        self._ai_studio_memory_state = ai_studio_memory.default_memory_state()
+
+        if not self.cross_referenced_personas or not self.user_profile:
+            return
+        if not (self.user_profile.ai_studio_persona or {}).get("persona_archetype"):
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"AI Studio: no ai_studio_persona on profile — skipping Step 18b.{utils.Colors.ENDC}")
+            return
+        if self.llm_client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping AI Studio conversation generation (no llm_client).{utils.Colors.ENDC}")
+            return
+
+        # Build canonical lookup (mirrors generate_chatbot_conversations).
+        canonical_lookup: dict[str, CrossReferencedPersona] = {}
+        for cr in self.cross_referenced_personas:
+            cr_key = _normalize_persona_text(cr.persona_item)
+            canonical_lookup[cr_key] = cr
+            for ap in self._canonical_groups.get(cr_key, []):
+                ap_key = _normalize_persona_text(ap.persona_item)
+                if ap_key not in canonical_lookup:
+                    canonical_lookup[ap_key] = cr
+
+        # Group atomics by source_object_id — only include AI_Studio-routed rows.
+        from collections import defaultdict as _ddict
+        atomics_by_oid: dict[str, list] = _ddict(list)
+        for ap in self.atomic_personas:
+            atomics_by_oid[ap.source_object_id].append(ap)
+
+        ai_studio_records: list[dict] = []
+        for oid, atoms in atomics_by_oid.items():
+            if self._row_app.get(oid) != "AI_Studio":
+                continue
+            if not atoms:
+                continue
+
+            # Collect surviving preferences for this event (deduped).
+            seen_items: set[str] = set()
+            prefs: list[dict] = []
+            for ap in atoms:
+                key = _normalize_persona_text(ap.persona_item)
+                cr = canonical_lookup.get(key)
+                if not cr or not isinstance(cr, CrossReferencedPersona):
+                    continue
+                if cr.persona_item in seen_items:
+                    continue
+                seen_items.add(cr.persona_item)
+                prefs.append({
+                    "persona_item": cr.persona_item,
+                    "category": cr.category,
+                    "interaction_type": ap.source_interaction_type,
+                    "source_object_id": oid,
+                })
+            if not prefs:
+                continue
+
+            rep = atoms[0]
+            ai_studio_records.append({
+                "source_object_id": oid,
+                "source_timestamp": rep.source_timestamp,
+                "source_hashtags": list(rep.source_hashtags or []),
+                "source_interaction_type": rep.source_interaction_type,
+                "preferences": prefs,
+            })
+
+        if not ai_studio_records:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"AI Studio: zero canonicals routed to AI_Studio (Step 13/14 might "
+                      f"have given everything else higher priority); skipping.{utils.Colors.ENDC}")
+            return
+
+        try:
+            user_seed = int(str(self.user_id)) * 7919 + 131
+        except (ValueError, TypeError):
+            user_seed = abs(hash(str(self.user_id))) % (2**31)
+
+        # Generation runs at temperature=0.7 (empirically warmer / more natural
+        # than the default for narrative dialogue — same setting we use for
+        # chatbot conversations).
+        def _conv_query_fn(prompt: str):
+            return self._query_llm_with_retry(prompt, temperature=0.7)
+
+        user_profile_dict = {
+            "name": self.user_profile.name,
+            "gender": self.user_profile.gender,
+            "race_ethnicity": self.user_profile.race_ethnicity,
+            "career": self.user_profile.career,
+            "education": self.user_profile.education,
+            "bio": self.user_profile.bio,
+        }
+        # Pass hidden personas as brief dicts — the prompt instructs them to
+        # be treated as oblique anchors only (NEVER named verbatim).
+        hp_brief = [
+            {
+                "persona_type": getattr(hp, "type", "") or "",
+                "label": getattr(hp, "label", "") or "",
+                "description": getattr(hp, "description", "") or "",
+                "evidence_oids": list(getattr(hp, "evidence_oids", []) or []),
+            }
+            for hp in (self.user_profile.hidden_personas or [])
+        ]
+
+        out, mem = ai_studio_conversation.generate_ai_studio_conversations(
+            ai_studio_records=ai_studio_records,
+            user_profile=user_profile_dict,
+            user_voice=self.user_profile.user_voice or {},
+            ai_studio_persona=self.user_profile.ai_studio_persona or {},
+            hidden_personas=hp_brief,
+            llm_query_fn=_conv_query_fn,
+            user_seed=user_seed,
+            memory_state=self._ai_studio_memory_state,
+            verbose=self.verbose,
+        )
+        self._ai_studio_records = out
+        self._ai_studio_memory_state = mem
+
+        if self.verbose:
+            archetype = (self.user_profile.ai_studio_persona or {}).get("persona_archetype", "?")
+            character = (self.user_profile.ai_studio_persona or {}).get("character_name", "?")
+            print(
+                f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                f"Generated {len(out)}/{len(ai_studio_records)} AI Studio conversations "
+                f"(archetype={archetype!r} character={character!r}; "
+                f"final intimacy_arc={mem.running_relational_state.intimacy_arc:.2f} "
+                f"stage={mem.running_relational_state.intimacy_stage}).{utils.Colors.ENDC}"
+            )
+
+    def audit_ai_studio_conversations(self) -> None:
+        """Step Z — quality + safety audit over AI Studio events.
+
+        Samples 20% of events; grades each on 7 quality axes + the
+        `no_harmful_content` floor. Safety failures are DROPPED (we never
+        ship harmful content). Quality-only failures are kept but tagged
+        `audit_status: graceful_degrade` so downstream readers can skip.
+        """
+        from data_preparation import ai_studio_audit
+
+        records = getattr(self, "_ai_studio_records", None)
+        if not records:
+            return
+        if self.llm_client is None:
+            return
+
+        # Audit uses mini-tier (cheap, parallel-friendly) for all axes.
+        def _audit_query_fn(prompt: str):
+            return self._query_mini_with_retry(prompt)
+
+        try:
+            user_seed = int(str(self.user_id)) * 7919 + 131
+        except (ValueError, TypeError):
+            user_seed = abs(hash(str(self.user_id))) % (2**31)
+
+        hp_brief = [
+            {
+                "persona_type": getattr(hp, "type", "") or "",
+                "label": getattr(hp, "label", "") or "",
+            }
+            for hp in (self.user_profile.hidden_personas or [])
+        ]
+
+        filtered, summary = ai_studio_audit.audit_ai_studio_conversations(
+            ai_studio_records=records,
+            user_voice=self.user_profile.user_voice or {},
+            ai_studio_persona=self.user_profile.ai_studio_persona or {},
+            hidden_personas_brief=hp_brief,
+            rogers_cliche_baseline=ROGERS_CLICHE_BLOCKLIST,
+            memory_state=getattr(self, "_ai_studio_memory_state", None),
+            audit_query_fn=_audit_query_fn,
+            user_seed=user_seed,
+            verbose=self.verbose,
+        )
+        self._ai_studio_records = filtered
+        self._ai_studio_audit_summary = summary
+
+        if self.verbose:
+            print(
+                f"{utils.Colors.OKGREEN}[User {self.user_id}] "
+                f"AI Studio audit summary: sampled={summary.get('sampled', 0)}, "
+                f"passed={summary.get('passed', 0)}, "
+                f"graceful_degrade={summary.get('graceful_degrade', 0)}, "
+                f"dropped_safety={summary.get('dropped_safety', 0)}, "
+                f"final_count={len(filtered)}{utils.Colors.ENDC}"
+            )
+
     # ------------------------------------------------------------------
     # Step 19 — Synthetic per-event content generation
     # ------------------------------------------------------------------
@@ -7657,6 +8139,8 @@ class PersonaAgent:
             ("16. Generate calendar modifications",     self.generate_calendar_modifications),
             ("17. Generate interaction formats",        self.generate_interaction_formats),
             ("18. Generate chatbot conversations",      self.generate_chatbot_conversations),
+            ("18B. Generate AI Studio conversations",    self.generate_ai_studio_conversations),
+            ("18C. Audit AI Studio (quality + safety floor)", self.audit_ai_studio_conversations),
             ("19. Generate synthetic content",          self.generate_synthetic_content),
             ("20. Inject ad events",                    self.inject_ad_events),
             ("21. Link preferences to hidden personas", self.link_preferences_to_hidden_personas),
@@ -9138,12 +9622,53 @@ class PersonaAgent:
             per_app[app_name].sort(key=lambda e: (int(e.get("source_timestamp") or 0),
                                                    e.get("source_object_id", "")))
 
+        # --- Step 18B output merge: enrich AI_Studio events with the
+        # conversation + cross-session memory metadata from
+        # `self._ai_studio_records` (indexed by source_object_id). Every
+        # AI_Studio per-app event picks up: `conversation`, `conversation_type`,
+        # `prior_session_refs`, `memory_used_summary`,
+        # `oblique_reference_to_hidden_personas`, `ai_studio_metadata`.
+        # Source events that didn't successfully generate a conversation are
+        # dropped from per_app["AI_Studio"] entirely (they have no value
+        # without the AI dialog).
+        ai_studio_records = getattr(self, "_ai_studio_records", []) or []
+        if ai_studio_records:
+            ai_studio_by_oid = {r.get("source_object_id", ""): r for r in ai_studio_records}
+            kept = []
+            for ev in per_app.get("AI_Studio", []):
+                oid = ev.get("source_object_id", "")
+                rec = ai_studio_by_oid.get(oid)
+                if not rec or not rec.get("conversation"):
+                    continue   # drop events with no generated conversation
+                ev["conversation"] = rec["conversation"]
+                ev["conversation_type"] = rec.get("conversation_type", "")
+                ev["prior_session_refs"] = rec.get("prior_session_refs", [])
+                ev["memory_used_summary"] = rec.get("memory_used_summary", "")
+                ev["oblique_reference_to_hidden_personas"] = rec.get(
+                    "oblique_reference_to_hidden_personas", []
+                )
+                ev["ai_studio_metadata"] = rec.get("ai_studio_metadata", {})
+                kept.append(ev)
+            per_app["AI_Studio"] = kept
+
         # --- Write per-app JSONs ---
         for app_name, events in per_app.items():
             filename = app_name.lower() + ".json"
             path = os.path.join(user_dir, filename)
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(events, f, indent=2, ensure_ascii=False)
+
+        # --- Write ai_studio_memory.json (sibling of calendar.json) ---
+        ai_studio_mem = getattr(self, "_ai_studio_memory_state", None)
+        if ai_studio_mem is not None and (
+            ai_studio_mem.episodic_memory_items
+            or ai_studio_mem.running_relational_state.intimacy_arc > 0
+        ):
+            from data_preparation import ai_studio_memory as _aism
+            mem_path = os.path.join(user_dir, "ai_studio_memory.json")
+            with open(mem_path, "w", encoding="utf-8") as f:
+                json.dump(_aism.memory_state_to_dict(ai_studio_mem), f,
+                          indent=2, ensure_ascii=False)
 
         # --- Retroactively fill app_distribution on hidden personas ---
         if self.user_profile and self.user_profile.hidden_personas and self._row_app:
@@ -9161,6 +9686,19 @@ class PersonaAgent:
 
         # --- Write profile.json (flat unique preference list + hidden personas) ---
         if self.user_profile:
+            # Deterministic exploration-vs-exploitation diversity score
+            # over raw activities. Computed last so it sits alongside the
+            # rest of the trait fields when asdict() runs.
+            try:
+                self.user_profile.exploration_exploitation = (
+                    self._compute_exploration_exploitation()
+                )
+            except Exception as e:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                          f"exploration_exploitation computation failed: {e}"
+                          f"{utils.Colors.ENDC}")
+                self.user_profile.exploration_exploitation = {}
             profile_dict = asdict(self.user_profile)
             profile_dict["user_id"] = str(self.user_id)
             # evidence_oids is an internal lookup index used at Step 16 to
