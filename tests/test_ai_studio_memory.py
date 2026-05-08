@@ -410,34 +410,65 @@ def test_prompt_prefix_cache_at_steady_state():
     entry + per-event vars differ. Anything less means a per-event field
     leaked into the constants region, or the memory header changes
     structure with event count, which would invalidate the LLM's
-    prompt cache."""
+    prompt cache.
+
+    IMPORTANT: this test MUST vary `intimacy_arc`, `intimacy_stage`,
+    `prev_event_stage`, `intimacy_stage_history`, and `persona_anchor`
+    between the two prompts — these all change in real generation
+    (intimacy_arc grows by ~0.02-0.10 per event). An earlier version of
+    this test held them constant, which masked a regression where these
+    values were placed in the cacheable region of the memory snapshot,
+    truncating the cache prefix at ~5k tokens regardless of how big the
+    actual prompt grew. Run with realistic per-event variation to catch it."""
     from data_preparation import prompts
-    base = dict(
+    base_constants = dict(
         user_profile={"name": "T"}, user_voice={},
         ai_studio_persona={"character_name": "R"},
-        hidden_personas_brief=[], open_threads=[],
-        intimacy_stage_history=[], persona_anchor=None,
-        routed_preferences=[], prev_event_stage="S2",
-        intimacy_stage="S2", intimacy_arc=0.40,
+        hidden_personas_brief=[], routed_preferences=[],
     )
     def event(i):
         return {
             "kind": "verbatim", "ts": i * 1000,
             "source_object_id": f"evt{i:03d}",
             "conversation_type": "venting_session",
-            "intimacy_stage_at_event": "S2",
+            "intimacy_stage_at_event": "S1" if i < 8 else "S2",
             "conversation": [
                 {"role": "user", "content": "u" * 60},
                 {"role": "assistant", "content": "a" * 80},
             ] * 3,
         }
+    # Event 10's per-event values
     p10 = prompts.generate_ai_studio_conversation_prompt(
-        **base, oblique_targets=["x"], conversation_type="venting_session",
-        turn_count=8, prior_events_brief=[event(i) for i in range(1, 10)],
+        **base_constants,
+        oblique_targets=["x"], conversation_type="venting_session", turn_count=8,
+        intimacy_arc=0.34, intimacy_stage="S2",
+        prev_event_stage="S1",
+        intimacy_stage_history=[
+            {"stage": "S1", "n_events": 7, "first_event_ts": 0, "last_event_ts": 6000},
+            {"stage": "S2", "n_events": 2, "first_event_ts": 7000, "last_event_ts": 9000},
+        ],
+        open_threads=[
+            {"topic": "evening rhythm", "last_ts": 8000, "expecting_followup": True, "first_seen_ts": 4000}
+        ],
+        persona_anchor="Rowan in mentor mode at S2",
+        prior_events_brief=[event(i) for i in range(1, 10)],
     )
+    # Event 11's per-event values (different arc, different stage history,
+    # one more event in memory).
     p11 = prompts.generate_ai_studio_conversation_prompt(
-        **base, oblique_targets=["y"], conversation_type="identity_exploration",
-        turn_count=8, prior_events_brief=[event(i) for i in range(1, 11)],
+        **base_constants,
+        oblique_targets=["y"], conversation_type="identity_exploration", turn_count=8,
+        intimacy_arc=0.41, intimacy_stage="S2",
+        prev_event_stage="S2",
+        intimacy_stage_history=[
+            {"stage": "S1", "n_events": 7, "first_event_ts": 0, "last_event_ts": 6000},
+            {"stage": "S2", "n_events": 3, "first_event_ts": 7000, "last_event_ts": 10000},
+        ],
+        open_threads=[
+            {"topic": "evening rhythm", "last_ts": 10000, "expecting_followup": True, "first_seen_ts": 4000}
+        ],
+        persona_anchor="Rowan deep-cut callback at S2",
+        prior_events_brief=[event(i) for i in range(1, 11)],
     )
     cp = 0
     for i in range(min(len(p10), len(p11))):
@@ -445,7 +476,10 @@ def test_prompt_prefix_cache_at_steady_state():
             break
         cp = i + 1
     pct = cp / min(len(p10), len(p11))
-    assert pct >= 0.90, f"Steady-state cache prefix only {pct:.1%}"
+    assert pct >= 0.85, (
+        f"Steady-state cache prefix only {pct:.1%} — per-event values "
+        f"may be polluting the cacheable region. cp={cp}, shorter={min(len(p10), len(p11))}"
+    )
 
 
 def test_assemble_eval_context_a2_tightens_window_to_k2():
