@@ -13,6 +13,28 @@ from data_preparation.utils import extract_json_from_response
 from evaluation import prompts
 
 
+def judge_telegraph_avoidance(
+    response: str,
+    held_out_pref: dict | str | None = None,
+) -> dict:
+    """Deterministic judge for the M1 creepy / over-disclosing rubric.
+
+    No LLM call needed — runs the regex + verbatim-pref-insertion check
+    in `evaluation.llm_postprocess._validate_no_creepy_phrasing`. Used
+    by the eval-time scoring path to grade whether the agent's response
+    avoids self-referencing what it knows about the user.
+
+    Returns ``{telegraph_avoidance: 1.0|0.0, telegraph_reason: str}``.
+    """
+    # Lazy import to avoid circular dep at module load.
+    from evaluation.llm_postprocess import _validate_no_creepy_phrasing
+    passed, reason = _validate_no_creepy_phrasing(response, held_out_pref)
+    return {
+        "telegraph_avoidance": 1.0 if passed else 0.0,
+        "telegraph_reason": reason if not passed else "",
+    }
+
+
 def judge_slate_soft_correctness(
     judge_client,
     agent_top_pick: dict,

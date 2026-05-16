@@ -38,6 +38,7 @@ from data_preparation.ai_studio_memory import (
     EpisodicMemoryItem,
     append_episodic_item,
     assemble_generation_context,
+    compute_delta_scale,
     compute_intimacy_stage,
     eligible_conversation_types,
     increment_intimacy_arc,
@@ -154,6 +155,7 @@ def _generate_one_event(
     prior_records: list[dict],
     llm_query_fn: Callable[[str], Optional[str]],
     rng: random.Random,
+    delta_scale: float = 1.0,
     verbose: bool = False,
 ) -> Optional[dict]:
     """Generate ONE AI Studio conversation. Mutates `record` in place and
@@ -282,7 +284,12 @@ def _generate_one_event(
         memory_state,
         ctx.get("newly_demoted_event_ids", []),
     )
-    increment_intimacy_arc(memory_state, conv_type, record.get("source_timestamp", 0))
+    increment_intimacy_arc(
+        memory_state,
+        conv_type,
+        record.get("source_timestamp", 0),
+        delta_scale=delta_scale,
+    )
     # Append a thin summary now (the audit pass may overwrite with a richer one later).
     append_episodic_item(memory_state, EpisodicMemoryItem(
         ts=record.get("source_timestamp", 0),
@@ -359,6 +366,17 @@ def generate_ai_studio_conversations(
         key=lambda r: r.get("source_timestamp", 0),
     )
 
+    # Per-user delta scaling. Heavy users (>~16 routed events) had their
+    # intimacy_arc saturate at 1.0 within ~20 events with the raw deltas;
+    # this shrinks per-event deltas so the S1→S4 progression actually
+    # spans the user's full AI Studio history.
+    delta_scale = compute_delta_scale(len(sorted_records))
+    if verbose and delta_scale < 1.0:
+        print(
+            f"  AI Studio: scaling intimacy deltas by {delta_scale:.4f} "
+            f"to spread {len(sorted_records)} events across S1→S4."
+        )
+
     output: list[dict] = []
     for rec in sorted_records:
         result = _generate_one_event(
@@ -371,6 +389,7 @@ def generate_ai_studio_conversations(
             prior_records=output,   # everything generated so far
             llm_query_fn=llm_query_fn,
             rng=rng,
+            delta_scale=delta_scale,
             verbose=verbose,
         )
         if result is None:

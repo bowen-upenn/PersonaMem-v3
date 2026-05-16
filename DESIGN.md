@@ -792,7 +792,7 @@ The opener (turn 1) anchors on exactly ONE preference; subsequent user turns may
 
 ## Step 19 — Synthetic Per-Event Content
 
-Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `short_video`) plus a `content` payload describing the post the user actually saw. Chatbot events skip this step (their `conversation` already serves as the content). Implicit-negative stub events stay content-less and continue rendering as greyscale timeline markers.
+Every non-Chatbot, non-AI-Studio, non-stub event gets a `content_type` (`text` / `image` / `short_video`) plus a `content` payload describing the post the user actually saw. Chatbot and AI Studio events skip this step (their `conversation` already serves as the content — both are conversation-only surfaces with no media engagement). Implicit-negative stub events stay content-less and continue rendering as greyscale timeline markers.
 
 **Per-user content mix derivation** — three layers, computed per-app:
 
@@ -810,7 +810,32 @@ Every non-Chatbot, non-stub event gets a `content_type` (`text` / `image` / `sho
 - `image` → `{ caption, overall_description, parts[], metadata{camera, lens, filter, aspect_ratio, dimensions, iso, shutter, aperture, color_profile, location, time_of_day, filename} }`.
 - `short_video` → `{ title, caption, overall_description, key_frames[], audio_transcript, metadata{duration_s, resolution, fps, aspect_ratio, music_track, sound_design, codec, bitrate_kbps, creator_handle} }`.
 
-**Cost:** one LLM call per event (parallelized via ThreadPoolExecutor), ~1,760 calls per persona (IG ~600 + FB ~560 + Threads ~600; Chatbot and stubs skipped). Routed to the mini-tier client when `llm_client_mini` is provided (falls back to flagship otherwise). Retries use the shared 3-attempt exponential-backoff wrapper; total-failure events get a minimal placeholder content dict so downstream consumers never see missing fields.
+**Cost:** one LLM call per event (parallelized via ThreadPoolExecutor), ~1,760 calls per persona (IG ~600 + FB ~560 + Threads ~600; Chatbot and AI Studio and stubs skipped). Routed to the mini-tier client when `llm_client_mini` is provided (falls back to flagship otherwise). Retries use the shared 3-attempt exponential-backoff wrapper; total-failure events get a minimal placeholder content dict so downstream consumers never see missing fields.
+
+---
+
+## Step 18b — AI Studio Companion Chat (SPT-paced)
+
+AI Studio is the fifth app — a Character.AI / Replika / Meta-AI-Studio-style companion-chat surface. Like Chatbot, events are pure conversation: no `content_type`, no `content` body, `interaction_format.action = "unknown"`. Unlike Chatbot, the AI side has a persistent character (chosen archetype + voice) and the user–AI relationship deepens across sessions.
+
+### SPT (Social Penetration Theory; Altman & Taylor, 1973)
+
+A four-stage model of how a relationship deepens through progressive self-disclosure — early conversations stay on the surface, deeper layers unlock as trust grows. Used here to pace what topics the AI companion is allowed to engage with as the user keeps returning.
+
+- **S1 — orientation.** Public scripts, casual preferences, weather-level small talk. What a stranger safely shares.
+- **S2 — exploratory affective.** Early opinions, mild personal anecdotes. Still hedged.
+- **S3 — affective exchange.** Genuine views, vulnerabilities, mild fears.
+- **S4 — stable exchange.** Core beliefs, intimate values, deep fears. Reserved for trusted relationships.
+
+In the pipeline:
+- `intimacy_arc ∈ [0, 1]` — continuous counter tracking how deep the user↔AI relationship is right now. Starts at 0; each event increments it by a per-conversation-type delta (`casual_check_in` +0.02 … `intimate_romantic_session` +0.12). Lives on `running_relational_state.intimacy_arc` in `backend/{uid}/ai_studio_memory.json`.
+- `intimacy_stage ∈ {S1, S2, S3, S4}` — discrete bucket derived from `intimacy_arc` at thresholds 0.0 / 0.25 / 0.50 / 0.75 (see `compute_intimacy_stage` in `data_preparation/ai_studio_memory.py`). Stamped on every event as `ai_studio_metadata.intimacy_stage_at_event`.
+- **Per-user delta scaling** — raw deltas saturate the arc in ~20 events. `compute_delta_scale(n_total_events)` rescales them so a heavy user (200+ AI-Studio-routed events) climbs S1→S4 gradually across their whole history (target final arc ≈ 0.85) instead of pinning at S4 after the first day. Light users (≤~16 events) bypass the rescale (scale = 1.0).
+- **Stage gating** — at conversation-type selection time, `eligible_conversation_types` filters the 11-type catalog by `min_stage` (e.g. `intimate_share` requires ≥ S3), archetype allowlist/blocklist, and required prior-event count. The no-whiplash rule prevents single-event jumps of more than one stage.
+
+### Memory + cross-session continuity
+
+The conversation generator (Step 18b) walks AI-Studio-routed events chronologically. Each prompt embeds the FULL prior history (asymmetric memory — generation gets everything, eval gets a windowed slice). Episodic summaries + an `open_threads` list + a rolling persona-consistency anchor are persisted per event so Rowan (the AI) actually remembers Wednesday's session when picking up Friday's. Verbatim conversations stay verbatim until budget pressure forces demotion to summary form; demotions are sticky (permanently_demoted_event_ids) to keep the prompt-prefix stable for cache hits.
 
 ---
 
@@ -876,6 +901,7 @@ Eval tasks now select test moments by task-specific criteria (e.g., @ai directiv
 **Step 26 (formerly Step 23 / 22):**
 - `profile.json` preferences are rendered as `"{latest_timestamp} : {persona_item}"` strings, sorted by latest timestamp descending (most recent first).
 - `profile.json` now also carries `mobility_class` and `geo_trip_arcs` (see Step 6 / Step 15).
+- `profile.json` also carries `exploration_exploitation` — a deterministic diversity score derived from raw activities (no LLM call). Hashtag-frequency Shannon entropy over `self.interactions` (normalized to `[0, 1]` via `entropy / log(n_unique)`), plus category Shannon entropy over surviving canonicals, plus top-10 hashtag concentration. Composite `score = 0.5*hashtag_entropy_norm + 0.3*category_entropy_norm + 0.2*(1 - top10_concentration)`, clamped to `[0, 1]`. Bucketed into `label ∈ {exploiter (<0.33), balanced (0.33–0.66), explorer (≥0.66)}`. Breakdown carries `hashtag_entropy_normalized`, `category_entropy_normalized`, `unique_hashtag_count`, `total_hashtag_occurrences`, `unique_hashtag_ratio`, `top10_concentration`, `top_repeated_hashtags`. Computed in `_compute_exploration_exploitation` and assigned in `save_to_backend` immediately before the profile dict is built.
 - `similar` / `contradicted` entries in per-event `update_history` are attached only if the related preference's first-occurrence timestamp is `<=` the event's timestamp (strict causality).
 - `hidden_persona_labels` are produced by Step 21 (backward lookup row → cluster via `evidence_oids`, causality guaranteed by construction), then re-judged by Step 22 (motivation audit) which may downgrade to `SURFACE_ENGAGEMENT` / `SHORT_TERM_EPISODIC` / `REMOVE` or `REASSIGN` to a different existing cluster. The audit-final value lives on `hidden_persona_labels`; the original is preserved in the per-preference `motivation_audit.original_label`. Each preference also carries `link_provenance: "hashtag_overlap_v1"` so post-audit links remain distinguishable from raw hashtag overlap. Cluster-level rollup with `confirm_rate`, `deep_latent_rate`, `surface_share`, `cluster_status` lives on each entry in `profile.json::hidden_personas[*].motivation_audit`. Profile-level `over_attribution_warning` lands at `profile.json::motivation_audit` when the user's mean cluster surface_share is high.
 
@@ -1108,4 +1134,121 @@ Tasks pinned to `disliked_recent` flaw kind (`evaluation/llm_postprocess.py::_TA
 
 ≈ 5 mini-tier calls per applicable query × ~140 queries per user ≈ ~700 calls per user. Cheap; safe to re-run on every benchmark build.
 
+## 20. Silent Geo-Shift Local Recommendation (eval-only — `local_recommendation_geo_shift`)
+
+A Task E probe that tests whether the chatbot can detect a geo shift in the user's history *without* the user mentioning it in the query. The agent should ground recommendations in the user's *current* city (the most recent `event_location.city` in its time-masked history) while still aligning with the user's general persona profile. Inferior response = anchoring on the prior/home city — *under*-personalization, not over-personalization. Lives in the same family as E5 `e5_horizon_lifecycle` (cross-cutting context-grounding probes that ask the agent to read an out-of-band signal — geo, expiry timestamp, calendar — without being prompted).
+
+**No pipeline-side data-gen changes are required.** The per-session geolocation work in Step 15 already populates `event_location.{city,region,country,...}` on every event and `geo_trip_arcs` on `profile.json`; this task only consumes that signal at build / score time.
+
+### Eligibility (build-time)
+
+`mobility_class != "homebody"` AND multi-shift evidence:
+
+- `>= 2` visible city transitions in the user's chronologically-sorted event stream across all four apps, OR
+- `>= 1` visible transition AND `>= 1` entry in `profile.geo_trip_arcs` (the trip arc covers cases where the home→trip leg lands outside the observation window — common when a user is already mid-trip on day 1).
+
+A single visible transition with NO trip arc is treated as a permanent relocation and excluded — it doesn't fit the "shifts again/back" pattern the eval is designed for.
+
+### Build (`evaluation/tasks/local_recommendation_geo_shift.py`)
+
+1. Walk all four apps' events with non-empty `event_location.city`, sort by `source_timestamp`.
+2. Detect transitions: emit one whenever the running city changes.
+3. Cap at 3 transitions per user (heavy-traveler fairness).
+4. For each visible transition `tr`:
+   - `t_test = tr.first_ts_in_new_city + 6 h` — far enough past the shift that the agent's history at `t_test` shows at least one cluster of in-new-city events, but not so far that the user's session pattern is "they live here now."
+   - Pick 3 categories deterministically (seed `f"{rng_seed}:geo_shift_cats:{user_id}:{transition_idx}"`) from a 9-item bank: restaurant, coffee, activity, sports, entertainment, bar, market, coworking, gas.
+   - For each `(transition, category)` cell, pick one query deterministically from a 2–3-template city-agnostic bank.
+5. Cap by `task_distribution.TASK_TARGETS["local_recommendation_geo_shift"]` (`{min: 4, max: 9, data_dependent: True}`).
+
+### Query-bank invariant
+
+NO template names a city, region, or country. NO template signals "I just arrived" / "in the new city" / "since I'm here." Phrases like "tonight" / "this weekend" / "around here" / "right now" are fine — they don't reveal *which* place. The whole point is the agent has to infer the geo shift from history, not from the query text.
+
+### Scoring
+
+The runner reuses the standard `prompts.chatbot_response_prompt` (no special framing — the agent must decide on its own that geo grounding is the right move) and computes:
+
+- `current_city_grounded` (binary): response names the current city or its region.
+- `stale_geo_anchor` (binary, hard fail): response names the prior city.
+- `geo_neutral_response` (binary): neither named.
+- **Headline `geo_shift_correctness ∈ {0.0, 0.5, 1.0}`**: 1.0 = current grounded and not stale; 0.5 = neutral and not stale; 0.0 = stale anchor leaked.
+
+Persona-profile alignment is scored by plugging into the universal personalization rubric (`evaluation/personalization_rubric.APPLICABILITY["local_recommendation_geo_shift"]`) — `preference_alignment` (judge), plus hard-rule `avoid_leak`, `privacy_leak`, `stale_preference_use`, `telegraph_avoidance`.
+
+### Verification
+
+- User 115 (homebody, 0 trip arcs): 0 instances — eligibility correctly excludes.
+- User 755 (international, London↔Dubai with 1 trip arc + 1 visible transition): 3 instances generated, all carrying `current_city="London"`, `prior_city="Dubai"`, with city-agnostic queries across the sports / bar / market categories.
+
 > Thresholds (especially high-confidence predicate values) are tentative and will be tuned empirically.
+
+## 21. Creepy / Over-Disclosing Negative Rubric (eval-side, all personalized-response tasks)
+
+A pure-deterministic hard-rule rubric dim, `telegraph_avoidance`, that fires on every personalized-response task. Catches two failure modes a user perceives as creepy even when the answer is otherwise correct:
+
+1. **Telegraph phrases** — the agent saying *"I know you...", "since you like X", "I remember when you...", "I recall (you|your)", "knowing your...", "based on your..."*. Single source of truth: `_TELEGRAPH_PHRASE_RE` in `evaluation/llm_postprocess.py`.
+2. **Verbatim preference insertion** — pasting the GT preference string (or any 5-word n-gram of it, after tokenization) into the response. Implementation: 5-word sliding window over a tokenized form of the response, drops punctuation; catches partial pastes that broken substring matching missed.
+
+Combined helper: `_validate_no_creepy_phrasing(response, held_out_pref) -> (passed, reason)`. No LLM call.
+
+**Four-layer enforcement** (defense in depth):
+- **Build-time post-validator** — `_generate_example_response` HARD-rejects after 2 retries (returns `None` so the caller drops the instance / falls back to placeholder). No example_response that violates the rubric ships.
+- **Eval-time judge** — `judge_telegraph_avoidance(response, held_out_pref)` (in `evaluation/judges.py`) returns `{telegraph_avoidance: 1.0|0.0, telegraph_reason}`. Wired into `personalization_rubric.score()` for every task whose `APPLICABILITY[telegraph_avoidance] = True`.
+- **Audit dim** — `_dim_telegraph_avoidance` in `evaluation/audit_query_quality.py` scans every shipped `example_response`; pass-rate surfaces in `audit_queries_summary.md`.
+- **Visualizer rubric tag** — `TELEGRAPH_AVOIDANCE_TAG` is appended to the GT-card rubric for every personalized-response task in `data_preparation/visualize.py` so reviewers see the rule.
+
+**Rubric-dim membership** — added to both `JUDGE_DIMS` and `HARD_RULE_DIMS` in `evaluation/personalization_rubric.py`. Hard-fail behavior matches `privacy_leak` / `avoid_leak` / `stale_preference_use`: zeros the task score regardless of other dims.
+
+**Applicability** — every personalized-response task carries `telegraph_avoidance: True` in APPLICABILITY: `chatbot_proactive_personalization`, all `agentic_*` compose tasks, `daily_personalized_briefing`, `personalized_recommendation`, `over_personalization_*` (every variant), `preference_removal_regen`, `proactive_unfulfilled_stated_need`, `proactive_close_friend_update`, the new `new_suggestions_*` tasks (§ 22).
+
+## 22. New Suggestions — Explorative, Persona-Grounded Recommendation (`new_suggestions_recsys` / `new_suggestions_chatbot`)
+
+Sibling to the `over_personalization_repetition_*` family but **positive**: instead of testing whether the agent backs off after fatigue, this tests whether the agent can pivot to something **genuinely NEW** that the user has never engaged with — anchored on hidden-persona reasoning rather than recent hashtags. Builder lives in `evaluation/build_benchmark.py::build_c1e_new_suggestions`. Runner: `evaluation/tasks/new_suggestions.py`.
+
+### Trigger patterns
+
+Each instance carries `trigger_kind ∈ {post_fatigue, chatbot_ask, at_ai_directive}` so reviewers see WHY the probe fires here:
+
+- **`post_fatigue`** (implicit) — reuse `_c1c_pref_signatures` to find the user's strongest hashtag-clusters; reuse `_c1c_anchor_timestamps` to require a 3 h dense-engagement window. Probe fires at `t_test = anchor_ts[-1] + 30 min`. Simulates *"I've been seeing a lot of X — now what?"*. No explicit user ask.
+- **`chatbot_ask`** (explicit) — pick chatbot interaction events at well-spaced timestamps and pair each with a synthetic ask drawn from a small bank: *"anything new I'd be into?"*, *"show me something different — bored of the usual"*, *"surprise me with a new topic"*, *"what's outside my bubble that I'd actually like?"*.
+- **`at_ai_directive`** (explicit) — reuses the existing `at_ai_directive_followup` infrastructure. Pick a social-app event whose `interaction_format.action ∈ {at_ai_focus_topic, at_ai_recommend_more, at_ai_feels_off, at_ai_not_interested, at_ai_stop_recommending}`; the directive's `user_message` IS the explicit ask.
+
+### Two flavors of GOLD per instance
+
+- **A — LLM-generated**. `discovery_llm` proposes a fresh suggestion grounded in `profile.hidden_personas` + `motivation_audit.dominant_frame`. Foils are off-persona items + saturated/repetitive items.
+- **B — future-truth**. Look forward in raw event data: scan for the user's first engagement (`explicit_positive` / `implicit_positive`) with a hashtag NOT in their prior 7 d history. That actual future engagement is the gold — no LLM speculation needed. Implementation: `_find_first_new_topic_after`.
+
+Flavor B is preferred when feasible (uses real data, no speculation); A is the fallback when no clean future event exists.
+
+### Hard build-time constraints
+
+- **Leak-set zero overlap** — gold's hashtags ∩ user's `[t_test - 24 h, t_test + 24 h]` engagement set = ∅. Implementation: `_user_engaged_hashtag_window`. The leak set is exposed on every instance as `leak_set_hashtags` for visualizer + judge transparency.
+- **Persona-grounded answerability gate** (`_persona_grounded_answerability_check`) — a flagship LLM with the FULL persona (demographics + flat prefs + `hidden_personas` + `motivation_audit.dominant_frame` + `user_voice` + recent topical history) must derive the gold:
+  - **Recsys variant**: pick `gold_idx` as top-1.
+  - **Chatbot variant**: produce a recommendation whose hashtags overlap the gold (Jaccard ≥ 0.4 OR a yes/no semantic-overlap follow-up judge).
+
+  Otherwise the instance is dropped (`n_dropped_persona` counter logged). This is the **symmetric inverse** of the existing `blind_check_llm` (which proves gold ISN'T derivable text-alone): both gates together prove gold is **needed-persona AND sufficient-persona**.
+
+### Slate composition (recsys variant, 16 items)
+
+1. 1 gold (the fresh persona-grounded suggestion).
+2. ≥ 2 saturated-cluster items (real user events sharing a fatigued hashtag) — these LEGITIMATELY overlap a visible/hidden persona; they're foils because the user is tired of them, not because they don't align.
+3. ≥ 2 known-disliked items (negative-engagement events).
+4. Remaining: **truly off-persona** random events — events whose hashtags overlap **neither the gold's hashtags NOR the union of every hidden-persona evidence_hashtag set**. Items overlapping a hidden persona but not in the saturated/disliked tiers are dropped from the foil pool entirely. This guarantees the gold is the *only* slate item anchored on a dormant persona.
+
+### Hidden-persona anchor on the gold
+
+Every emitted instance carries `gold_anchor_personas` — up to 2 hidden personas whose `evidence_hashtags` overlap the gold's hashtags, sorted by overlap size desc. Each entry: `{label, type, dominant_frame, matched_hashtags}`. The visualizer renders these as **purple `.badge.hidden-persona` chips** (same style as on event preference rows) under the GT preference text, so a reviewer can see WHICH dormant interest motivates the gold pick. If `profile.hidden_personas` is non-empty but the gold matches none, the candidate is **dropped** (counter `n_dropped_no_anchor`) — a "fresh suggestion" that isn't tied back to *any* deeper persona signal isn't a personalization test, it's noise.
+
+### Surfaces & metrics
+
+- **`new_suggestions_recsys`** — slate ranking, headline metric `passed = recall@1` against `gold_idx`.
+- **`new_suggestions_chatbot`** — free-form recommendation, headline metric `passed = (no leak/fatigue overlap) AND (judge alignment_score ≥ 2)`. Judge prompt: `prompts.judge_new_suggestions_chatbot_prompt` returns `{alignment_score: 0|1|2|3, hard_fail, reasoning}`.
+
+### Cost
+
+- 1 flagship call per instance for the persona-grounded answerability gate (~4 instances per user × 1 call ≈ ~4 calls/user/regen).
+- 1 flagship call per flavor-A gold proposal (only when flavor B is unavailable).
+- 1 mini-tier judge call per chatbot test instance at eval time.
+
+Negligible at the per-user level.

@@ -46,11 +46,21 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
     "active_mistake_prevention":              {"min": 5,  "max": 6},
     "preference_removal_regen":               {"min": 6,  "max": 8},
+    # Silent geo-shift local recommendation — only fires for users with
+    # mobility_class != "homebody" AND >= 2 city transitions in their event
+    # stream. Homebodies generate 0 instances (the eval doesn't apply).
+    "local_recommendation_geo_shift":         {"min": 4,  "max": 9, "data_dependent": True},
 
     # Restraint sub-types
     "over_personalization_repetition_recsys":  {"min": 2,  "max": 3},
     "over_personalization_repetition_chatbot": {"min": 1,  "max": 2},
     "over_personalization_context_shift":      {"min": 5,  "max": 6},
+
+    # New-suggestions (sibling to repetition family but POSITIVE — agent
+    # must propose a fresh topic). Data-dependent: some triggers (esp.
+    # at_ai_directive) are absent for users with no @ai history.
+    "new_suggestions_recsys":                  {"min": 1, "max": 2, "data_dependent": True},
+    "new_suggestions_chatbot":                 {"min": 1, "max": 2, "data_dependent": True},
 
     # Agentic — uniform target across 14 tasks
     "agentic_user_tone_post":                {"min": 5,  "max": 5},

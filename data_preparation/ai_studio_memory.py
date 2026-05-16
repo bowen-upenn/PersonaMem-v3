@@ -102,6 +102,32 @@ INTIMACY_DELTA_PER_TYPE = {
 }
 
 
+# Per-user delta scaling. The raw deltas above sum-of-means to ~0.052; with
+# 222 AI-Studio-routed events for a heavy user (like #115) the unscaled arc
+# would saturate at 1.0 by event ~20 and pin there for the remaining 200,
+# collapsing SPT pacing to "always-S4." compute_delta_scale shrinks the per-
+# event delta so cumulative arc lands near _TARGET_FINAL_ARC at the last
+# event, giving S1→S4 a realistic spread across the user's full history.
+_MEAN_DELTA_BASE = 0.052
+_TARGET_FINAL_ARC = 0.85
+
+
+def compute_delta_scale(n_total_events: int) -> float:
+    """Return the per-event delta-scaling factor for a user with
+    ``n_total_events`` AI-Studio-routed events.
+
+    For small histories (<= ~16 events at base mean) returns 1.0 — the raw
+    deltas already pace nicely. For larger histories, returns a fractional
+    multiplier so the expected cumulative arc lands near _TARGET_FINAL_ARC
+    by the final event."""
+    if n_total_events <= 0:
+        return 1.0
+    expected_unscaled = n_total_events * _MEAN_DELTA_BASE
+    if expected_unscaled <= _TARGET_FINAL_ARC:
+        return 1.0
+    return _TARGET_FINAL_ARC / expected_unscaled
+
+
 # ---------------------------------------------------------------------------
 # Conversation-type catalog with SPT stage gates + archetype gates +
 # turn-count ranges. Single source of truth for both
@@ -168,14 +194,12 @@ CONVERSATION_TYPES: dict[str, dict] = {
         "weight": 8,
         "min_stage": "S3",
         "archetype_gate_allowlist": {"romantic_partner"},
-        "min_arc": 0.6,
         "min_turns": 4, "max_turns": 6,
     },
     "intimate_romantic_session": {
         "weight": 8,
         "min_stage": "S3",
         "archetype_gate_allowlist": {"romantic_partner"},
-        "min_arc": 0.65,
         "explicitness_band_required": True,   # gated by romantic_specifier.explicitness_band
         "min_turns": 5, "max_turns": 9,
     },
@@ -507,12 +531,14 @@ def increment_intimacy_arc(
     memory_state: AIStudioMemoryState,
     conversation_type: str,
     event_ts: int,
+    delta_scale: float = 1.0,
 ) -> None:
-    """Bump the intimacy_arc by the per-type delta and update stage_history.
-    Called once per audit-passing event, AFTER the conversation is generated.
-    """
+    """Bump the intimacy_arc by the per-type delta (after applying the
+    per-user ``delta_scale`` from :func:`compute_delta_scale`) and update
+    stage_history. Called once per audit-passing event, AFTER the
+    conversation is generated."""
     state = memory_state.running_relational_state
-    delta = INTIMACY_DELTA_PER_TYPE.get(conversation_type, 0.02)
+    delta = INTIMACY_DELTA_PER_TYPE.get(conversation_type, 0.02) * delta_scale
     new_arc = min(1.0, state.intimacy_arc + delta)
     new_stage = compute_intimacy_stage(new_arc)
 

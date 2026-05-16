@@ -35,6 +35,10 @@ OVER_PERS_TASKS = {
     "over_personalization_sensitive_event",
     "over_personalization_repetition_recsys",
     "over_personalization_repetition_chatbot",
+    # new_suggestions: same rubric family — restraint-against-recycling
+    # checks apply, even though the task is "PROPOSE something new".
+    "new_suggestions_recsys",
+    "new_suggestions_chatbot",
 }
 RANKING_TASKS = {
     "personalized_recommendation",
@@ -56,6 +60,7 @@ USER_MESSAGE_TASKS = {
     "over_personalization_context_shift",
     "over_personalization_sensitive_event",
     "active_mistake_prevention",
+    "local_recommendation_geo_shift",
 }
 
 # Tasks where `gt_alignment` is meaningful — the example_response is
@@ -67,6 +72,12 @@ USER_MESSAGE_TASKS = {
 # response. Skip both.
 GT_ALIGNMENT_APPLICABLE = {
     "chatbot_proactive_personalization",
+    # Silent geo-shift: example_response is anchored on the inferred
+    # current city + persona profile alignment — gt_alignment audits that
+    # the example matches that ground truth (would mis-flag the inferior
+    # otherwise). Not in OVER_PERS_TASKS / context_restraint set — this
+    # task asks for MORE personalization, not less.
+    "local_recommendation_geo_shift",
 }
 
 # Tasks the `frame_consistency` dimension applies to — user-voiced
@@ -995,9 +1006,68 @@ def _dim_frame_consistency(inst: dict, llm, *, bq=None) -> DimensionResult:
     )
 
 
+def _dim_telegraph_avoidance(inst: dict, llm) -> DimensionResult:
+    """M1 hard rule (deterministic, no LLM call): the example_response
+    we ship MUST NOT (a) telegraph that the AI knows the user via any
+    phrase in `_TELEGRAPH_PHRASE_RE`, NOR (b) paste the held-out
+    preference text verbatim into the response. Defense in depth — the
+    gen-time post-validator in `_generate_example_response` already
+    hard-rejects on a hit, but if any example slips through (legacy
+    snapshots, manual overrides), this audit catches it.
+    """
+    task_type = inst.get("task_type") or inst.get("task_id") or ""
+    # Tasks that emit personalized free-form text. Slate-only ranking
+    # tasks technically can have reasoning text but skip them — the
+    # primary response is a list of indices.
+    _APPLICABLE = {
+        "chatbot_proactive_personalization",
+        "agentic_user_tone_post", "agentic_composed_post",
+        "agentic_send_post", "agentic_cross_app_repost",
+        "agentic_auto_reply", "agentic_dm_digest",
+        "agentic_proactive_daily_catchup", "agentic_trending_alert",
+        "agentic_vague_refind", "agentic_group_dm_summary",
+        "agentic_wrong_recipient_check",
+        "daily_personalized_briefing",
+        "over_personalization_chatbot_text",
+        "over_personalization_repetition_chatbot",
+        "proactive_unfulfilled_stated_need",
+        "proactive_close_friend_update",
+        "new_suggestions_chatbot",
+    }
+    if task_type not in _APPLICABLE:
+        return DimensionResult(
+            name="telegraph_avoidance", passed=True, skipped=True,
+            skip_reason=f"{task_type} is not a free-form personalized response",
+        )
+    example = inst.get("example_response") or ""
+    if isinstance(example, dict):
+        example = example.get("response") or example.get("text") \
+            or json.dumps(example, ensure_ascii=False)[:600]
+    example = str(example or "").strip()
+    if not example:
+        return DimensionResult(
+            name="telegraph_avoidance", passed=True, skipped=True,
+            skip_reason="empty example_response",
+        )
+    held_out = (inst.get("held_out_preference") or inst.get("held_out_pref")
+                or inst.get("groundtruth_preference") or inst.get("target_pref"))
+    from evaluation.llm_postprocess import _validate_no_creepy_phrasing
+    passed, reason = _validate_no_creepy_phrasing(example, held_out)
+    if passed:
+        return DimensionResult(
+            name="telegraph_avoidance", passed=True, score=1.0,
+            reason="no telegraph or verbatim-pref insertion detected",
+        )
+    return DimensionResult(
+        name="telegraph_avoidance", passed=False, score=0.0,
+        reason=f"hard rule violated: {reason}"[:240],
+    )
+
+
 _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_schema_sanity,           # deterministic, run first
     _dim_sensitive_probe_placement,  # deterministic
+    _dim_telegraph_avoidance,     # deterministic (regex + substring)
     _dim_naturalness,
     _dim_context_required,
     _dim_context_restraint,
@@ -1005,7 +1075,7 @@ _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_gt_alignment,
     _dim_privacy_leak,
     _dim_tool_call_validity,      # agentic + E3/E6 tool-call layer
-    _dim_frame_consistency,       # NEW: user-voiced response × motivational frame
+    _dim_frame_consistency,       # user-voiced response × motivational frame
 ]
 
 

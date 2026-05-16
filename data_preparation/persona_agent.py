@@ -7483,7 +7483,10 @@ class PersonaAgent:
         events_to_generate: list[dict] = []
         for oid, meta in self._action_by_oid.items():
             app = self._row_app.get(oid) or PLATFORMS[0]
-            if app == "Chatbot":
+            if app in ("Chatbot", "AI_Studio"):
+                # Chatbot and AI Studio are conversation-only surfaces — there
+                # is no media post the user is engaging with, so no synthetic
+                # content body is generated for them.
                 continue
             if meta["itype"] == "implicit_negative":
                 continue  # stubs stay content-less
@@ -9503,8 +9506,9 @@ class PersonaAgent:
                 if loc:
                     event["event_location"] = loc
 
-            # Attach synthetic content (Step 19). Chatbot and stubs are never
-            # in self._content_by_oid, so those events render unchanged.
+            # Attach synthetic content (Step 19). Chatbot, AI Studio, and
+            # stubs are never in self._content_by_oid, so those events render
+            # unchanged (both are conversation-only surfaces with no media body).
             content_entry = self._content_by_oid.get(oid)
             if content_entry:
                 event["content_type"] = content_entry["content_type"]
