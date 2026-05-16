@@ -62,6 +62,10 @@ _RANKING_TASKS = {
 _DIVERSIFICATION_TASKS = {
     "over_personalization_repetition_recsys",
     "over_personalization_repetition_chatbot",
+    # new_suggestions tests diversification too — the agent must propose
+    # a topic OUTSIDE the user's recently-saturated cluster.
+    "new_suggestions_recsys",
+    "new_suggestions_chatbot",
 }
 
 # Tasks that are intentionally hollow at build time: the agent is
@@ -87,6 +91,8 @@ _RESTRAINT_TASKS = {
     "over_personalization_context_shift",
     "over_personalization_repetition_recsys",
     "over_personalization_repetition_chatbot",
+    "new_suggestions_recsys",
+    "new_suggestions_chatbot",
 }
 
 _AGENTIC_PRECONDITION_HINTS = {

@@ -1330,3 +1330,184 @@ Reason step-by-step: walk through the ground-truth slice and the agent output, t
 Output:
 {output_block}
 """
+
+
+# ----------------------------------------------------------------------
+# new_suggestions — explorative / persona-grounded recommendation prompts
+# ----------------------------------------------------------------------
+
+def _new_suggestions_trigger_framing(
+    trigger_kind: str,
+    trigger_blurb: str,
+    user_query: str,
+    directive_action: str,
+    directive_user_message: str,
+    fatigued_pref: str,
+) -> str:
+    """Shared framing block for both surfaces. Branches on trigger_kind."""
+    if trigger_kind == "post_fatigue":
+        return (
+            f"The user has been hit with REPEATED personalization on the topic "
+            f"{fatigued_pref!r} in the past few hours. They are saturated. "
+            f"They have NOT made an explicit request — read the recent history "
+            f"and infer the fatigue. Pivot to something genuinely new for this user."
+        )
+    if trigger_kind == "chatbot_ask":
+        return (
+            f"The user just typed in chatbot: {user_query!r}. Take this as an "
+            f"explicit ask for a new direction — recommend something the user "
+            f"has NOT recently engaged with but would actually enjoy."
+        )
+    if trigger_kind == "at_ai_directive":
+        return (
+            f"The user posted an in-feed @ai directive on a recent post: "
+            f"action={directive_action!r}, message={directive_user_message!r}. "
+            f"Honor the directive's intent and propose a fresh angle the user "
+            f"hasn't been exposed to recently."
+        )
+    return trigger_blurb or "Recommend something new for this user."
+
+
+def new_suggestions_recsys_prompt(
+    instance: dict,
+    history_block: str | None = None,
+) -> str:
+    """Slate ranking prompt for the recsys variant of new_suggestions.
+
+    The agent receives 16 candidates: ONE genuine fresh recommendation
+    grounded in the user's hidden personas + several foils drawn from
+    the user's recently-saturated cluster, known dislikes, and random
+    off-persona content. Top-1 must be the gold (recall@1).
+    """
+    framing = _new_suggestions_trigger_framing(
+        trigger_kind=instance.get("trigger_kind", ""),
+        trigger_blurb=instance.get("trigger_blurb", ""),
+        user_query=instance.get("user_query", ""),
+        directive_action=instance.get("directive_action", ""),
+        directive_user_message=instance.get("directive_user_message", ""),
+        fatigued_pref=instance.get("fatigued_pref", ""),
+    )
+    cands = instance.get("candidates") or []
+    cand_lines = "\n".join(
+        f"  [{i}] title={c.get('title','')!r} hashtags={c.get('hashtags', [])}"
+        for i, c in enumerate(cands)
+    )
+    history = f"\n## User history (time-masked)\n{history_block}\n" if history_block else ""
+    return f"""# Task: explorative recommendation — pick what's NEW for this user
+
+{framing}
+
+## Candidate slate
+{cand_lines}
+{history}
+## Your job
+Rank the {len(cands)} candidates from most to least appropriate as a NEW direction
+this user would enjoy right now. Top-1 must be the candidate that:
+  - represents a topic the user has NOT engaged with in the last 24 hours,
+  - aligns with the user's deeper interests / hidden motivations (inferred from history),
+  - is NOT a recycle of recently-saturated topics, NOT a known dislike, NOT generic noise.
+
+## Output
+Respond with ONE fenced ```json block:
+```json
+{{
+  "ranked_indexes": [<idx>, <idx>, ...],
+  "reasoning": "<=2 sentences"
+}}
+```
+"""
+
+
+def new_suggestions_chatbot_prompt(
+    instance: dict,
+    history_block: str | None = None,
+) -> str:
+    """Free-form chatbot / @ai-comment-response prompt for new_suggestions.
+
+    The agent must produce a SHORT recommendation (a topic, an item, an
+    activity) the user has not engaged with recently but would enjoy.
+    Scored by: leak-set hashtag overlap (deterministic) + LLM judge for
+    semantic alignment with the persona-grounded gold.
+    """
+    framing = _new_suggestions_trigger_framing(
+        trigger_kind=instance.get("trigger_kind", ""),
+        trigger_blurb=instance.get("trigger_blurb", ""),
+        user_query=instance.get("user_query", ""),
+        directive_action=instance.get("directive_action", ""),
+        directive_user_message=instance.get("directive_user_message", ""),
+        fatigued_pref=instance.get("fatigued_pref", ""),
+    )
+    history = f"\n## User history (time-masked)\n{history_block}\n" if history_block else ""
+    return f"""# Task: propose ONE new thing for this user
+
+{framing}
+{history}
+## Constraints
+- Recommend ONE concrete topic / object / activity (not a list).
+- It MUST be something the user has NOT engaged with in the last 24 hours.
+- It must read as a genuine pivot, not a rephrasing of what they just saw.
+- DO NOT telegraph what you know about the user ("I know you...", "since you like X",
+  "I remember when you...", "based on your..."). Let the recommendation itself be
+  the personalization signal.
+- Be brief: 1-3 sentences.
+
+## Output
+Respond with ONE fenced ```json block:
+```json
+{{
+  "recommendation": "<one concrete suggestion, 1-3 sentences>",
+  "hashtags": ["<3-6 hashtags representing the suggestion, no # prefix>"],
+  "reasoning": "<=1 sentence on why this fits the user>"
+}}
+```
+"""
+
+
+def judge_new_suggestions_chatbot_prompt(
+    agent_response: str,
+    gold_topic: str,
+    gold_hashtags: list[str],
+    fatigued_hashtags: list[str],
+    leak_set_hashtags: list[str],
+    trigger_kind: str,
+) -> str:
+    """LLM-judge prompt for the chatbot variant. Scores semantic alignment
+    between agent recommendation and the persona-grounded gold, while
+    enforcing the no-fatigued / no-leak hard constraints."""
+    return f"""You are grading an AI assistant's NEW-TOPIC recommendation.
+
+## Trigger
+{trigger_kind}
+
+## Hard rules (mark `hard_fail: true` if any apply)
+- The recommendation overlaps a `fatigued_hashtag` → recycling saturated topics.
+- The recommendation overlaps a `leak_set_hashtag` → user already engaged with it ±24h.
+
+## Gold (a persona-grounded reference for "what good looks like")
+- gold_topic: {gold_topic!r}
+- gold_hashtags: {gold_hashtags}
+- fatigued_hashtags (must NOT appear): {fatigued_hashtags}
+- leak_set_hashtags (must NOT appear): {leak_set_hashtags}
+
+## Agent response
+{agent_response}
+
+## Scoring
+Score on a 0-3 scale how well the agent's recommendation aligns with the
+SPIRIT of the gold (not necessarily the exact same topic — different
+plausible new directions for this user are fine):
+  3 = obviously a fresh, persona-grounded pivot the user would love
+  2 = plausible new direction, somewhat aligned with hidden interests
+  1 = generic / barely persona-aware
+  0 = recycled, off-target, or violates a hard rule
+
+## Output
+Respond with ONE fenced ```json block:
+```json
+{{
+  "alignment_score": <0|1|2|3>,
+  "hard_fail": <true|false>,
+  "reasoning": "<=2 sentences"
+}}
+```
+"""

@@ -48,6 +48,8 @@ OLD_TO_NEW: dict[str, str] = {
     "chatbot_response_sensitive_event": "over_personalization_sensitive_event",
     "c1c_same_preference_cluster":   "over_personalization_repetition_recsys",
     "c1d_chatbot_same_pref_cluster": "over_personalization_repetition_chatbot",
+    "c1e_new_suggestions_recsys":    "new_suggestions_recsys",
+    "c1f_new_suggestions_chatbot":   "new_suggestions_chatbot",
     "c2_scenarios":                  "over_personalization_context_shift",
     # Workstream cleanup: context_shift_scenarios was always part of the
     # over_personalization family; renamed so the membership is obvious
@@ -232,6 +234,29 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "freeform",
         "rubric_tags": ["avoid_overpersonalization"],
+    },
+    # ------------------------------------------------------------------
+    # New suggestions — explorative recommendation anchored on hidden
+    # personas. Sibling to the over-personalization repetition family
+    # but POSITIVE: agent must propose a fresh topic / item, not just
+    # restrain. Three trigger patterns (post_fatigue / chatbot_ask /
+    # at_ai_directive) and two flavors of gold (LLM-generated /
+    # future-truth). Recsys = 16-item slate + recall@1; chatbot =
+    # free-form recommendation + leak-set + LLM-judge alignment.
+    # ------------------------------------------------------------------
+    "new_suggestions_recsys": {
+        "task_family": "new_suggestions",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "ranking",
+        "rubric_tags": list(_RUBRIC_RANKING) + ["avoid_overpersonalization"],
+    },
+    "new_suggestions_chatbot": {
+        "task_family": "new_suggestions",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text",
+        "rubric_tags": ["preference_alignment", "avoid_overpersonalization"],
     },
     "over_personalization_context_shift": {
         "task_family": "over_personalization",
@@ -433,6 +458,20 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": list(_RUBRIC_E6) + ["negative_leakage"],
     },
+    # Silent geo-shift local recommendation. The agent must infer the user's
+    # current city from the most-recent `event_location.city` in their
+    # time-masked history (no city named in the user's query) and produce a
+    # local recommendation that's grounded in the *current* city while still
+    # aligning with the user's general persona profile. Inferior response
+    # = anchoring on the prior/home city. Sits in `e_followup` because it's a
+    # cross-cutting context-grounding probe, not a restraint test.
+    "local_recommendation_geo_shift": {
+        "task_family": "e_followup",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text",
+        "rubric_tags": ["preference_alignment", "stale_preference_use"],
+    },
 
     # ------------------------------------------------------------------
     # Proactive Actions (Phase 1) — agent decides whether to initiate
@@ -503,6 +542,12 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_chatbot_text":       "user_query",
     "over_personalization_repetition_recsys":  "user_query",
     "over_personalization_repetition_chatbot": "user_query",
+    # new_suggestions: post_fatigue trigger has no explicit user query (the
+    # framing is "user is saturated, recsys must pivot"); chatbot_ask /
+    # at_ai_directive triggers carry an explicit user message. Classify the
+    # tasks by their default surface — both are user-facing.
+    "new_suggestions_recsys":                  "proactive_recommendation",
+    "new_suggestions_chatbot":                 "user_query",
     "over_personalization_context_shift":                "user_query",
     "over_personalization_distractor_reject": "user_query",
     "over_personalization_sensitive_event":   "user_query",
@@ -515,6 +560,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "personalized_recommendation":            "proactive_recommendation",
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
+    "local_recommendation_geo_shift":         "user_query",
     "agentic_user_tone_post":                "agentic_task",
     # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                      "agentic_task",
@@ -541,6 +587,8 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_chatbot_text":       "avoid_overpersonalization",
     "over_personalization_repetition_recsys":  "avoid_overpersonalization",
     "over_personalization_repetition_chatbot": "avoid_overpersonalization",
+    "new_suggestions_recsys":                  "proactive_recommend",
+    "new_suggestions_chatbot":                 "proactive_recommend",
     "over_personalization_context_shift":                "avoid_overpersonalization",
     "over_personalization_distractor_reject": "avoid_overpersonalization",
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
@@ -550,6 +598,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "personalized_recommendation":            "proactive_recommend",
     "short_vs_long_term_lifecycle":           "proactive_recommend",
     "active_mistake_prevention":              "proactive_assist",
+    "local_recommendation_geo_shift":         "personalize",
     "agentic_user_tone_post":                "agentic_action",
     # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                      "agentic_action",
@@ -603,8 +652,16 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # absent ground-truth (no scorer existed; metric was never populated).
     "personalized_search_ranking":       ("top3_alignment_rate", "fraction"),
     "short_vs_long_term_lifecycle":      ("recall@1", "fraction"),
+    # Silent geo-shift probe — composite headline that combines the
+    # current-city / prior-city / neutral branches into a 0/0.5/1 score.
+    "local_recommendation_geo_shift":    ("geo_shift_correctness", "fraction"),
     "over_personalization_repetition_recsys":  ("tail_passed", "boolean"),
     "over_personalization_repetition_chatbot": ("tail_passed", "boolean"),
+    # new_suggestions — recsys uses recall@1 (renamed `passed` so the
+    # aggregator reads a uniform headline column); chatbot uses the
+    # leak-set + judge composite `passed` flag emitted by the runner.
+    "new_suggestions_recsys":                  ("passed", "fraction"),
+    "new_suggestions_chatbot":                 ("passed", "fraction"),
     # Chatbot response — held-out preference alignment for proactive arm,
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
     "chatbot_proactive_personalization":           ("held_out_score", "fraction"),

@@ -109,11 +109,20 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     elif task_type == "active_mistake_prevention":
         from evaluation.tasks import e6_active_mistake_prevention as _e6
         rows = _e6.run_e6_active_mistake_prevention(**common)
+    elif task_type == "local_recommendation_geo_shift":
+        from evaluation.tasks import local_recommendation_geo_shift as _geo
+        rows = _geo.run_local_recommendation_geo_shift(**common)
     elif task_type in ("proactive_unfulfilled_stated_need",
                        "proactive_close_friend_update",
                        "restraint_sensitive_event_silence"):
         from evaluation.tasks import proactive_actions as _proactive
         rows = _proactive.run_proactive_task(**common)
+    elif task_type == "new_suggestions_recsys":
+        from evaluation.tasks import new_suggestions as _ns
+        rows = _ns.run_task_c1e_new_suggestions_recsys(**common)
+    elif task_type == "new_suggestions_chatbot":
+        from evaluation.tasks import new_suggestions as _ns
+        rows = _ns.run_task_c1f_new_suggestions_chatbot(**common)
     elif task_type in AGENTIC_TASK_IDS:
         rows = agentic_tasks.run_task(task_id=task_type, **common)
     else:

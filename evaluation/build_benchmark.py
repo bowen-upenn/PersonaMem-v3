@@ -2270,6 +2270,973 @@ def build_c1d_chatbot_diverse_clusters(
     return out
 
 
+# --- Task C1e: new_suggestions (post-fatigue / chatbot-ask / @ai-directive) ---
+# After a user has been fatigued by repetitive personalization (or asks
+# directly), the agent should propose something genuinely NEW — anchored on
+# hidden persona reasoning, not on hashtags the user just engaged with.
+#
+# Two flavors of GOLD:
+#   A — LLM-generated:    discovery_llm picks a fresh suggestion grounded in
+#                         profile.hidden_personas, foils are saturated/disliked
+#                         items.
+#   B — future-truth:     scan raw events; gold = the user's first engagement
+#                         with a hashtag NOT in their prior 7-day history. No
+#                         LLM speculation needed.
+#
+# Three trigger patterns (each carried as `trigger_kind` on every instance):
+#   post_fatigue      — implicit; t_test = end of a saturated cluster window
+#   chatbot_ask       — explicit chatbot moment with a synthetic "show me
+#                       something new"-style user query
+#   at_ai_directive   — explicit @ai comment in a social-app post; reuses the
+#                       e2 directive infrastructure
+#
+# Two surfaces (drives final dispatch + scoring):
+#   new_suggestions_recsys    — 16-item slate, recall@1 metric
+#   new_suggestions_chatbot   — free-form chatbot/comment response, judge metric
+#
+# Hard constraint (all triggers, both flavors): the gold's hashtags must have
+# ZERO overlap with the user's engagement window [t_test - 24h, t_test + 24h].
+# The leak-set check is applied at build time; the persona-grounded
+# answerability gate (LLM with full profile must derive the gold) is a second
+# build-time filter that proves the gold is NEEDED-PERSONA-AND-SUFFICIENT.
+
+_C1E_LEAK_LOOKBACK_DAYS = 1
+_C1E_LEAK_LOOKAHEAD_HOURS = 24
+_C1E_FUTURE_TRUTH_LOOKBACK_DAYS = 7
+_C1E_FUTURE_TRUTH_LOOKAHEAD_HOURS = 72
+_C1E_FATIGUE_WINDOW_SECONDS = 3 * 3600
+_C1E_FATIGUE_MIN_ENGAGEMENTS = 5
+_C1E_TARGET_INSTANCES_PER_SURFACE = 2
+_C1E_SLATE_SIZE = 16
+
+_C1E_CHATBOT_QUERY_BANK = (
+    "anything new I'd be into?",
+    "show me something different — bored of the usual",
+    "surprise me with a new topic",
+    "what's outside my bubble that I'd actually like?",
+)
+
+_C1E_AT_AI_PRIORITY_ACTIONS = (
+    "at_ai_focus_topic",
+    "at_ai_recommend_more",
+    "at_ai_feels_off",
+    "at_ai_not_interested",
+    "at_ai_stop_recommending",
+)
+
+_C1E_POSITIVE_TYPES = ("explicit_positive", "implicit_positive")
+
+
+def _user_engaged_hashtag_window(
+    bq: BackendQuery,
+    user_id: str,
+    t_test: int,
+    lookback_days: int = _C1E_LEAK_LOOKBACK_DAYS,
+    lookahead_hours: int = _C1E_LEAK_LOOKAHEAD_HOURS,
+) -> set[str]:
+    """Leak-set: every hashtag the user actually engaged with inside the
+    [t_test - lookback_days*86400, t_test + lookahead_hours*3600] window
+    across all social apps. Used to enforce the hard zero-overlap rule
+    on every new_suggestions gold candidate."""
+    lo = int(t_test) - int(lookback_days) * 86400
+    hi = int(t_test) + int(lookahead_hours) * 3600
+    base = Path(bq.base) / user_id
+    out: set[str] = set()
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts < lo or ts > hi:
+                continue
+            for h in (e.get("source_hashtags") or []):
+                if isinstance(h, str) and h.strip():
+                    out.add(h.lstrip("#").lower())
+    return out
+
+
+def _user_prior_hashtag_history(
+    bq: BackendQuery,
+    user_id: str,
+    t_test: int,
+    lookback_days: int = _C1E_FUTURE_TRUTH_LOOKBACK_DAYS,
+    polarity_filter: tuple[str, ...] = _C1E_POSITIVE_TYPES,
+) -> set[str]:
+    """Hashtags the user engaged with in [t_test - lookback_days*86400, t_test).
+    For flavor B's "first new topic" check — anything in this set is by
+    definition NOT new."""
+    lo = int(t_test) - int(lookback_days) * 86400
+    base = Path(bq.base) / user_id
+    out: set[str] = set()
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts < lo or ts >= int(t_test):
+                continue
+            it = e.get("source_interaction_type") or ""
+            if polarity_filter and it not in polarity_filter:
+                continue
+            for h in (e.get("source_hashtags") or []):
+                if isinstance(h, str) and h.strip():
+                    out.add(h.lstrip("#").lower())
+    return out
+
+
+def _find_first_new_topic_after(
+    bq: BackendQuery,
+    user_id: str,
+    t_test: int,
+    lookback_days: int = _C1E_FUTURE_TRUTH_LOOKBACK_DAYS,
+    lookahead_hours: int = _C1E_FUTURE_TRUTH_LOOKAHEAD_HOURS,
+    polarity_filter: tuple[str, ...] = _C1E_POSITIVE_TYPES,
+) -> dict | None:
+    """Flavor B gold finder: scan raw events for the FIRST event after
+    t_test whose hashtags have ZERO intersection with the user's prior
+    `lookback_days` history. Returns the event dict (with `_app` tag)
+    or None when no qualifying future event exists.
+    """
+    prior = _user_prior_hashtag_history(
+        bq, user_id, t_test,
+        lookback_days=lookback_days,
+        polarity_filter=polarity_filter,
+    )
+    leak = _user_engaged_hashtag_window(
+        bq, user_id, t_test,
+        lookback_days=_C1E_LEAK_LOOKBACK_DAYS,
+        lookahead_hours=_C1E_LEAK_LOOKAHEAD_HOURS,
+    )
+    excluded = prior | leak
+    hi = int(t_test) + int(lookahead_hours) * 3600
+    base = Path(bq.base) / user_id
+    candidates: list[tuple[int, str, dict]] = []
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts <= int(t_test) or ts > hi:
+                continue
+            it = e.get("source_interaction_type") or ""
+            if polarity_filter and it not in polarity_filter:
+                continue
+            tags = {h.lstrip("#").lower() for h in (e.get("source_hashtags") or []) if isinstance(h, str) and h.strip()}
+            if not tags:
+                continue
+            if tags & excluded:
+                continue
+            candidates.append((ts, app, e))
+    if not candidates:
+        return None
+    candidates.sort(key=lambda x: x[0])
+    ts, app, ev = candidates[0]
+    out = dict(ev)
+    out["_app"] = app
+    return out
+
+
+def _persona_grounded_answerability_check(
+    bq: BackendQuery,
+    user_id: str,
+    t_test: int,
+    surface: str,
+    instance_payload: dict,
+    discovery_llm,
+) -> tuple[bool, str]:
+    """Build-time gate: with the FULL persona (demographics + flat prefs +
+    hidden_personas + user_voice + recent topical history), can a flagship
+    LLM derive the gold?
+
+    For surface == "recsys":
+      - instance_payload carries `slate` (16 items) and `gold_idx`. Pass:
+        the LLM picks `gold_idx` as its top-1.
+    For surface == "chatbot":
+      - instance_payload carries `gold_hashtags` (list[str]) and
+        `gold_topic` (short summary). Pass: LLM proposal hashtags overlap
+        gold_hashtags with Jaccard >= 0.4, OR a follow-up yes/no judge
+        confirms semantic overlap.
+
+    Returns (passed: bool, reason: str). On any LLM failure, returns
+    (False, "<reason>") so the caller drops the instance — the gate is
+    a quality bar, not an availability heuristic.
+    """
+    if discovery_llm is None:
+        return False, "no_discovery_llm"
+
+    profile = bq.get_full_profile(user_id) or {}
+    demographics = {
+        k: profile.get(k) for k in (
+            "name", "age", "gender", "career", "city", "region",
+            "ethnicity", "education", "bio",
+        ) if profile.get(k)
+    }
+    preferences = profile.get("preferences") or []
+    hidden_personas = profile.get("hidden_personas") or []
+    user_voice = profile.get("user_voice") or {}
+
+    # Recent (≤7d) topical history summary (hashtag counts).
+    prior = _user_prior_hashtag_history(bq, user_id, t_test, lookback_days=7)
+    recent_history = sorted(prior)[:30]
+
+    persona_block = {
+        "demographics": demographics,
+        "preferences_flat": preferences[:60],
+        "hidden_personas": [
+            {
+                "type": (h.get("type") or h.get("persona_type") or ""),
+                "label_fragment": h.get("label_fragment") or "",
+                "evidence_hashtags": (h.get("evidence_hashtags") or [])[:10],
+                "motivation_audit": (h.get("motivation_audit") or {}).get("dominant_frame") if isinstance(h.get("motivation_audit"), dict) else None,
+            }
+            for h in hidden_personas if isinstance(h, dict)
+        ],
+        "user_voice": {
+            k: user_voice.get(k) for k in (
+                "identity_spine", "idiolect", "repertoire",
+            ) if user_voice.get(k)
+        },
+        "recent_engaged_hashtags_last_7d": recent_history,
+    }
+
+    trigger_kind = instance_payload.get("trigger_kind", "post_fatigue")
+    trigger_blurb = instance_payload.get("trigger_blurb") or ""
+
+    if surface == "recsys":
+        slate = instance_payload.get("slate") or []
+        gold_idx = instance_payload.get("gold_idx", 0)
+        cand_lines = "\n".join(
+            f"  [{i}] title={c.get('title','')!r} hashtags={c.get('hashtags', [])}"
+            for i, c in enumerate(slate)
+        )
+        prompt = (
+            "You are an oracle persona scientist with access to the FULL user persona. "
+            "Your job is to ratify a benchmark gold answer.\n\n"
+            f"Trigger kind: {trigger_kind}\n"
+            f"Trigger context: {trigger_blurb}\n\n"
+            "## Full persona (eval-side only — agent does NOT see this)\n"
+            f"```json\n{json.dumps(persona_block, ensure_ascii=False, indent=2)}\n```\n\n"
+            "## Candidate slate\n"
+            f"{cand_lines}\n\n"
+            "Based on the user's hidden personas + motivational frame, pick the ONE "
+            "candidate index that best represents a NEW direction the user has not "
+            "engaged with recently but would genuinely enjoy.\n\n"
+            "Respond with ONE fenced ```json block:\n"
+            "```json\n"
+            "{\"top_idx\": <int>, \"reasoning\": \"<=2 sentences\"}\n"
+            "```"
+        )
+        try:
+            raw = discovery_llm.query_llm(prompt)
+        except Exception as exc:
+            return False, f"llm_call_failed: {exc}"
+        parsed = utils.extract_json_from_response(raw) or {}
+        try:
+            top = int(parsed.get("top_idx", -1))
+        except (TypeError, ValueError):
+            top = -1
+        if top != gold_idx:
+            return False, f"persona_oracle_picked_{top}_not_{gold_idx}"
+        return True, ""
+
+    # surface == "chatbot"
+    gold_hashtags = [h.lstrip("#").lower() for h in (instance_payload.get("gold_hashtags") or [])]
+    gold_topic = instance_payload.get("gold_topic") or ""
+    user_query = instance_payload.get("user_query") or ""
+
+    prompt = (
+        "You are an oracle persona scientist with access to the FULL user persona. "
+        "Predict what NEW thing this user would want to be shown right now.\n\n"
+        f"Trigger kind: {trigger_kind}\n"
+        f"Trigger context: {trigger_blurb}\n"
+        f"User-side ask: {user_query!r}\n\n"
+        "## Full persona (eval-side only — agent does NOT see this)\n"
+        f"```json\n{json.dumps(persona_block, ensure_ascii=False, indent=2)}\n```\n\n"
+        "Propose ONE concrete recommendation (a topic / object / activity) the user "
+        "has NOT engaged with in the last 7 days. Avoid anything they engaged with "
+        "in the last 24 hours. Keep it specific.\n\n"
+        "Respond with ONE fenced ```json block:\n"
+        "```json\n"
+        "{\"hashtags\": [\"<tag>\", ...], \"summary\": \"<one short sentence>\"}\n"
+        "```"
+    )
+    try:
+        raw = discovery_llm.query_llm(prompt)
+    except Exception as exc:
+        return False, f"llm_call_failed: {exc}"
+    parsed = utils.extract_json_from_response(raw) or {}
+    proposed = [str(h).lstrip("#").lower() for h in (parsed.get("hashtags") or []) if isinstance(h, str)]
+    if not proposed and not parsed.get("summary"):
+        return False, "empty_oracle_proposal"
+    sa, sb = set(proposed), set(gold_hashtags)
+    if sa and sb:
+        jacc = len(sa & sb) / max(1, len(sa | sb))
+        if jacc >= 0.4:
+            return True, ""
+    # Fallback: yes/no semantic-overlap mini-judge.
+    judge_prompt = (
+        "Two AI assistants made recommendations to the same user. "
+        f"Are they essentially the same kind of recommendation?\n\n"
+        f"Recommendation A (oracle): hashtags={proposed} summary={parsed.get('summary','')!r}\n"
+        f"Recommendation B (gold): hashtags={gold_hashtags} topic={gold_topic!r}\n\n"
+        "Respond with ONE fenced ```json block: {\"same_kind\": true|false}"
+    )
+    try:
+        raw2 = discovery_llm.query_llm(judge_prompt)
+    except Exception as exc:
+        return False, f"semantic_judge_failed: {exc}"
+    p2 = utils.extract_json_from_response(raw2) or {}
+    if bool(p2.get("same_kind")):
+        return True, ""
+    return False, f"oracle_proposal_diverged_jaccard_low"
+
+
+# --- Trigger-finders for c1e -----------------------------------------------
+
+def _c1e_post_fatigue_anchors(
+    bq: BackendQuery,
+    user_id: str,
+    test_items: list[TestItem],
+    n_anchors: int,
+) -> list[dict]:
+    """Re-use c1c clustering: find each user's top hashtag-clusters where a
+    3h dense window exists, then fire t_test = end_of_window + 30min.
+    Returns a list of {trigger_kind: "post_fatigue", t_test, fatigued_hashtags,
+    fatigued_pref, trigger_blurb} candidates, sorted by cluster strength.
+    """
+    if not test_items:
+        return []
+    t_anchor = max(t.source_timestamp for t in test_items)
+    base = Path(bq.base) / user_id
+    rich_prefs: list[dict] = []
+    seen_pi: set[str] = set()
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for e in events:
+            ts = int(e.get("source_timestamp") or 0)
+            if ts >= t_anchor:
+                continue
+            for pref in (e.get("preferences") or []):
+                if not isinstance(pref, dict):
+                    continue
+                pi = pref.get("persona_item") or ""
+                if not pi or pi in seen_pi:
+                    continue
+                tags = pref.get("source_hashtags") or e.get("source_hashtags") or []
+                if not tags:
+                    continue
+                seen_pi.add(pi)
+                rich_prefs.append({
+                    "persona_item": pi,
+                    "category": pref.get("category", ""),
+                    "source_hashtags": list(tags),
+                    "confidence_cross_referenced": float(pref.get("confidence_cross_referenced") or 0.0),
+                })
+    clusters = _c1c_pref_signatures(rich_prefs)
+    out: list[dict] = []
+    for cluster in clusters:
+        if len(out) >= n_anchors:
+            break
+        ts_seq = _c1c_anchor_timestamps(
+            bq, user_id, set(cluster["hashtags"]),
+            t_floor=t_anchor,
+            n_anchors=_C1E_FATIGUE_MIN_ENGAGEMENTS,
+            window_seconds=_C1E_FATIGUE_WINDOW_SECONDS,
+        )
+        if not ts_seq:
+            continue
+        t_test = ts_seq[-1] + 30 * 60
+        target_pref = cluster["persona_items"][0] if cluster["persona_items"] else ""
+        out.append({
+            "trigger_kind": "post_fatigue",
+            "t_test": t_test,
+            "fatigued_hashtags": cluster["hashtags"],
+            "fatigued_pref": target_pref,
+            "trigger_blurb": (
+                f"User has just been hit with {_C1E_FATIGUE_MIN_ENGAGEMENTS}+ "
+                f"engagements on the {target_pref!r} cluster within 3h. They "
+                "are saturated and the recsys should pivot."
+            ),
+        })
+    return out
+
+
+def _c1e_chatbot_ask_anchors(
+    bq: BackendQuery,
+    user_id: str,
+    n_anchors: int,
+    rng: random.Random,
+) -> list[dict]:
+    """Pick chatbot interaction events at well-spaced timestamps and pair
+    each with a synthetic 'show me something new' user query."""
+    base = Path(bq.base) / user_id
+    p = base / "chatbot.json"
+    if not p.exists():
+        return []
+    try:
+        events = json.loads(p.read_text())
+    except Exception:
+        return []
+    cb_events = [e for e in events if isinstance(e, dict) and int(e.get("source_timestamp") or 0) > 0]
+    if not cb_events:
+        return []
+    cb_events.sort(key=lambda e: int(e.get("source_timestamp") or 0))
+    if len(cb_events) <= n_anchors:
+        picks = list(cb_events)
+    else:
+        idxs = sorted(rng.sample(range(len(cb_events)), n_anchors))
+        picks = [cb_events[i] for i in idxs]
+    out: list[dict] = []
+    for ev in picks:
+        t_test = int(ev.get("source_timestamp") or 0)
+        query = _C1E_CHATBOT_QUERY_BANK[len(out) % len(_C1E_CHATBOT_QUERY_BANK)]
+        out.append({
+            "trigger_kind": "chatbot_ask",
+            "t_test": t_test,
+            "user_query": query,
+            "trigger_blurb": f"User just typed in chatbot: {query!r}",
+        })
+    return out
+
+
+def _c1e_at_ai_directive_anchors(
+    bq: BackendQuery,
+    user_id: str,
+    n_anchors: int,
+) -> list[dict]:
+    """Find @ai directive events (priority on focus_topic / feels_off) and
+    fire t_test at each directive's source_timestamp."""
+    base = Path(bq.base) / user_id
+    out: list[dict] = []
+    for app in ("instagram", "facebook", "threads"):
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for ev in events:
+            if not isinstance(ev, dict):
+                continue
+            fmt = ev.get("interaction_format") or {}
+            action = fmt.get("action", "")
+            if action not in _C1E_AT_AI_PRIORITY_ACTIONS:
+                continue
+            t_test = int(ev.get("source_timestamp") or 0)
+            if t_test <= 0:
+                continue
+            user_msg = fmt.get("user_message") or ""
+            out.append({
+                "trigger_kind": "at_ai_directive",
+                "t_test": t_test,
+                "directive_app": app,
+                "directive_action": action,
+                "directive_user_message": user_msg,
+                "directive_hashtags": list(ev.get("source_hashtags") or []),
+                "trigger_blurb": (
+                    f"User posted '@ai {action}' on {app} with message {user_msg!r}. "
+                    "Treat as an explicit ask for a fresh angle."
+                ),
+            })
+    out.sort(key=lambda d: d["t_test"])
+    if len(out) > n_anchors:
+        # Spread evenly across the directive list rather than picking the
+        # first N (avoids clumping near the start of history).
+        step = max(1, len(out) // n_anchors)
+        out = out[::step][:n_anchors]
+    return out
+
+
+# --- Slate / chatbot-gold construction -------------------------------------
+
+_C1E_GENERIC_FALLBACK_TAGS = (
+    "asmr", "studyspo", "cottagecore", "knitting", "sourdough",
+    "minimalism", "watercolor", "antiquing", "boardgames",
+)
+
+
+def _c1e_pick_flavor_b_event(
+    bq: BackendQuery, user_id: str, t_test: int,
+) -> dict | None:
+    """Try flavor B (future-truth) — return the raw event or None."""
+    return _find_first_new_topic_after(bq, user_id, t_test)
+
+
+def _c1e_propose_flavor_a_gold(
+    bq: BackendQuery,
+    user_id: str,
+    t_test: int,
+    discovery_llm,
+    leak_set: set[str],
+    prior_set: set[str],
+) -> dict | None:
+    """Flavor A — ask discovery_llm to propose a fresh recommendation
+    grounded in the user's hidden personas. Returns
+    {gold_topic, gold_hashtags, gold_caption} or None if no LLM available
+    / proposal violates the leak set after retry."""
+    if discovery_llm is None:
+        return None
+    profile = bq.get_full_profile(user_id) or {}
+    hidden = profile.get("hidden_personas") or []
+    user_voice = profile.get("user_voice") or {}
+    persona_block = {
+        "hidden_personas": [
+            {
+                "type": (h.get("type") or h.get("persona_type") or ""),
+                "label_fragment": h.get("label_fragment") or "",
+                "motivation_audit": (h.get("motivation_audit") or {}).get("dominant_frame")
+                if isinstance(h.get("motivation_audit"), dict) else None,
+                "evidence_hashtags": (h.get("evidence_hashtags") or [])[:8],
+            }
+            for h in hidden if isinstance(h, dict)
+        ],
+        "user_voice_identity_spine": (user_voice.get("identity_spine") or {}),
+    }
+    prompt = (
+        "You are designing a NEW-TOPIC recommendation for a user who has been "
+        "fatigued by repetitive personalization on hashtags they recently engaged "
+        "with. Read the hidden personas below and propose ONE topic the user "
+        "would genuinely enjoy that they have NOT engaged with recently.\n\n"
+        f"## Hashtags to AVOID (engaged with in last 24h ± 24h): {sorted(leak_set)}\n"
+        f"## Hashtags to AVOID (engaged with in last 7d): {sorted(prior_set)}\n\n"
+        "## Hidden personas (eval-side only)\n"
+        f"```json\n{json.dumps(persona_block, ensure_ascii=False, indent=2)}\n```\n\n"
+        "Respond with ONE fenced ```json block:\n"
+        "```json\n"
+        "{\"gold_topic\": \"<one-sentence topic the user would love but hasn't tried>\", "
+        "\"gold_hashtags\": [\"<3-6 fresh hashtags, no # prefix>\"], "
+        "\"gold_caption\": \"<a 1-2 sentence content caption representing the gold>\"}\n"
+        "```"
+    )
+    for attempt in range(2):
+        try:
+            raw = discovery_llm.query_llm(prompt)
+        except Exception:
+            return None
+        parsed = utils.extract_json_from_response(raw) or {}
+        tags = [str(h).lstrip("#").lower() for h in (parsed.get("gold_hashtags") or []) if isinstance(h, str)]
+        if not tags or not parsed.get("gold_topic"):
+            continue
+        if set(tags) & (leak_set | prior_set):
+            # Violation — re-prompt with a stricter follow-up.
+            prompt += (
+                f"\n\nNOTE: your prior proposal {tags} overlapped a forbidden "
+                "hashtag. Pick something completely different."
+            )
+            continue
+        return {
+            "gold_topic": parsed.get("gold_topic"),
+            "gold_hashtags": tags,
+            "gold_caption": parsed.get("gold_caption") or "",
+        }
+    return None
+
+
+def _c1e_load_hidden_personas(bq: BackendQuery, user_id: str) -> list[dict]:
+    """Return organic (non-synthetic) hidden personas with their evidence
+    hashtags lowercased + # stripped. Skips synthetic sensitive_life_event
+    clusters since those are gated by their own active window and should
+    not act as a "deep persona" anchor for the new_suggestions task.
+    """
+    profile = bq.get_full_profile(user_id) or {}
+    raw = profile.get("hidden_personas") or []
+    out: list[dict] = []
+    for h in raw:
+        if not isinstance(h, dict):
+            continue
+        if h.get("is_synthetic"):
+            continue
+        evidence = {
+            (s or "").lstrip("#").lower()
+            for s in (h.get("evidence_hashtags") or [])
+            if isinstance(s, str) and s.strip()
+        }
+        if not evidence:
+            continue
+        ma = h.get("motivation_audit") or {}
+        out.append({
+            "label": h.get("label") or h.get("label_fragment") or h.get("type") or "",
+            "type": h.get("type") or h.get("persona_type") or "",
+            "dominant_frame": (ma.get("dominant_frame") if isinstance(ma, dict) else "") or "",
+            "evidence_hashtags": sorted(evidence),
+            "_evidence_set": evidence,
+        })
+    return out
+
+
+def _c1e_anchor_personas_for_gold(
+    gold_hashtags: list[str],
+    hidden_personas: list[dict],
+    top_k: int = 2,
+) -> list[dict]:
+    """Match gold hashtags against each hidden persona's evidence
+    hashtags and return up to `top_k` personas with overlap, sorted by
+    overlap size desc. Each entry: {label, type, dominant_frame,
+    matched_hashtags}. The visualizer renders these as purple badges
+    next to the GT preference so reviewers see WHICH hidden interest
+    motivates the gold pick.
+    """
+    gold_set = {(h or "").lstrip("#").lower() for h in (gold_hashtags or [])}
+    if not gold_set or not hidden_personas:
+        return []
+    scored: list[tuple[int, dict]] = []
+    for hp in hidden_personas:
+        ev = hp.get("_evidence_set") or set()
+        overlap = gold_set & ev
+        if overlap:
+            scored.append((len(overlap), {
+                "label": hp.get("label", ""),
+                "type": hp.get("type", ""),
+                "dominant_frame": hp.get("dominant_frame", ""),
+                "matched_hashtags": sorted(overlap),
+            }))
+    scored.sort(key=lambda x: -x[0])
+    return [s[1] for s in scored[:top_k]]
+
+
+def _c1e_build_slate(
+    bq: BackendQuery,
+    user_id: str,
+    t_test: int,
+    gold_item: dict,
+    fatigued_hashtags: list[str],
+    hp_hashtag_set: set[str],
+    rng: random.Random,
+) -> tuple[list[dict], int, list[int]]:
+    """Build a 16-item slate: 1 gold + foils. Foils:
+      - ≥2 saturated-cluster items (drawn from real user events sharing
+        a fatigued hashtag);
+      - ≥2 known-disliked items (negative-engagement events);
+      - remaining: random off-persona events — TIGHTENED to exclude
+        any item whose hashtags overlap ANY hidden-persona evidence
+        hashtag, so only the gold is persona-aligned in this tier.
+
+    The first two tiers (saturated, disliked) are designed-foils with
+    explicit semantics — they MAY overlap visible/hidden personas
+    (fatigued visible pref / known-negative engagement), but they're
+    still wrong choices for "fresh suggestion" because the user is
+    tired of them or actively dislikes them. The off-persona random
+    tier is the only tier that must be truly persona-unrelated.
+
+    Gold is shuffled into a random index. Returns (slate, gold_idx,
+    foil_origin_by_idx_kind).
+    """
+    base = Path(bq.base) / user_id
+    fatigued_set = {h.lstrip("#").lower() for h in (fatigued_hashtags or [])}
+    gold_tags = {h.lstrip("#").lower() for h in (gold_item.get("hashtags") or [])}
+
+    saturated: list[dict] = []
+    disliked: list[dict] = []
+    off_persona: list[dict] = []
+    for app in APPS:
+        p = base / f"{app}.json"
+        if not p.exists():
+            continue
+        try:
+            events = json.loads(p.read_text())
+        except Exception:
+            continue
+        for ev in events:
+            ts = int(ev.get("source_timestamp") or 0)
+            if ts >= t_test:
+                continue
+            tags = {h.lstrip("#").lower() for h in (ev.get("source_hashtags") or [])}
+            if not tags:
+                continue
+            if tags & gold_tags:
+                continue  # never put a gold-overlapping item in the foil pool
+            it = ev.get("source_interaction_type") or ""
+            content = ev.get("content") or {}
+            item = {
+                "title": (content.get("title") or content.get("caption") or "")[:120],
+                "caption": (content.get("caption") or "")[:200],
+                "hashtags": list(ev.get("source_hashtags") or []),
+                "content_type": ev.get("content_type") or content.get("content_type") or "text",
+                "source_timestamp": ts,
+                "_app": app,
+            }
+            if tags & fatigued_set:
+                saturated.append(item)
+            elif "negative" in it:
+                disliked.append(item)
+            elif tags & hp_hashtag_set:
+                # Truly off-persona tier must NOT overlap hidden personas.
+                # Drop persona-aligned-but-not-saturated items entirely.
+                continue
+            else:
+                off_persona.append(item)
+    rng.shuffle(saturated)
+    rng.shuffle(disliked)
+    rng.shuffle(off_persona)
+
+    foils: list[dict] = []
+    foils.extend(saturated[:max(2, _C1E_SLATE_SIZE // 4)])
+    foils.extend(disliked[:max(2, _C1E_SLATE_SIZE // 4)])
+    while len(foils) < _C1E_SLATE_SIZE - 1 and off_persona:
+        foils.append(off_persona.pop())
+    while len(foils) < _C1E_SLATE_SIZE - 1:
+        # Last-resort filler so the slate always reaches 16.
+        foils.append({
+            "title": "General content",
+            "caption": "Unspecified item.",
+            "hashtags": [],
+            "content_type": "text",
+            "source_timestamp": None,
+            "_app": "filler",
+        })
+
+    # gold goes in at random index
+    gold_entry = {
+        "title": (gold_item.get("title") or gold_item.get("gold_topic") or "")[:120],
+        "caption": (gold_item.get("caption") or gold_item.get("gold_caption") or ""),
+        "hashtags": list(gold_item.get("hashtags") or []),
+        "content_type": gold_item.get("content_type") or "text",
+        "source_timestamp": gold_item.get("source_timestamp"),
+        "_app": gold_item.get("_app", "synthetic"),
+    }
+    slate = list(foils[:_C1E_SLATE_SIZE - 1]) + [gold_entry]
+    rng.shuffle(slate)
+    gold_idx = next(i for i, c in enumerate(slate) if c is gold_entry)
+    # strip private fields for the agent-facing payload
+    public = [
+        {k: v for k, v in c.items() if not k.startswith("_")}
+        for c in slate
+    ]
+    return public, gold_idx, []
+
+
+def build_c1e_new_suggestions(
+    bq: BackendQuery,
+    user_id: str,
+    test_items: list[TestItem],
+    discovery_llm=None,
+    rng_seed: int = 0,
+    target_per_surface: int = _C1E_TARGET_INSTANCES_PER_SURFACE,
+) -> dict[str, list[dict]]:
+    """Build new_suggestions instances for both surfaces.
+
+    Returns ``{"new_suggestions_recsys": [...], "new_suggestions_chatbot": [...]}``.
+    Each instance carries:
+      - trigger_kind  ∈ {"post_fatigue", "chatbot_ask", "at_ai_directive"}
+      - flavor        ∈ {"A_llm", "B_future_truth"}
+      - t_test, target_pref, leak_set_hashtags
+      - For recsys: candidates (16-item slate), gold_idx, foil_breakdown
+      - For chatbot: gold_topic, gold_hashtags, gold_caption, user_query
+    """
+    rng = random.Random(f"{rng_seed}:c1e:{user_id}")
+
+    # Load the user's hidden personas ONCE (used for both anchor-persona
+    # tagging on the gold AND for tightening the off-persona foil pool).
+    hidden_personas = _c1e_load_hidden_personas(bq, user_id)
+    hp_hashtag_set: set[str] = set()
+    for hp in hidden_personas:
+        hp_hashtag_set |= (hp.get("_evidence_set") or set())
+
+    # Per-trigger anchor budget. We aim for `target_per_surface` instances
+    # per surface, so allocate roughly per-trigger and let multiplication by
+    # surfaces do the rest. Anchors come back as small lists (each yields up
+    # to 1 instance per surface).
+    n_per_trigger = max(1, target_per_surface)
+    fatigue_anchors = _c1e_post_fatigue_anchors(bq, user_id, test_items, n_anchors=n_per_trigger + 1)
+    chatbot_anchors = _c1e_chatbot_ask_anchors(bq, user_id, n_anchors=n_per_trigger + 1, rng=rng)
+    at_ai_anchors = _c1e_at_ai_directive_anchors(bq, user_id, n_anchors=n_per_trigger + 1)
+
+    all_anchors = fatigue_anchors + chatbot_anchors + at_ai_anchors
+
+    recsys_out: list[dict] = []
+    chatbot_out: list[dict] = []
+    n_dropped_persona = 0
+    n_dropped_leak = 0
+    n_dropped_no_anchor = 0
+
+    for anchor in all_anchors:
+        if len(recsys_out) >= target_per_surface and len(chatbot_out) >= target_per_surface:
+            break
+        t_test = int(anchor["t_test"])
+        leak_set = _user_engaged_hashtag_window(
+            bq, user_id, t_test,
+            lookback_days=_C1E_LEAK_LOOKBACK_DAYS,
+            lookahead_hours=_C1E_LEAK_LOOKAHEAD_HOURS,
+        )
+        prior_set = _user_prior_hashtag_history(
+            bq, user_id, t_test,
+            lookback_days=_C1E_FUTURE_TRUTH_LOOKBACK_DAYS,
+        )
+
+        # Flavor selection — try B first (real future engagement); fall
+        # back to A (LLM proposal) when no qualifying future event exists.
+        flavor = "B_future_truth"
+        gold_event = _c1e_pick_flavor_b_event(bq, user_id, t_test)
+        gold_payload: dict
+        if gold_event is not None:
+            content = gold_event.get("content") or {}
+            tags = [h.lstrip("#").lower() for h in (gold_event.get("source_hashtags") or [])]
+            if set(tags) & leak_set:
+                # Should be excluded already, but defensive.
+                gold_event = None
+            else:
+                gold_payload = {
+                    "title": content.get("title") or content.get("caption") or "",
+                    "caption": content.get("caption") or "",
+                    "hashtags": tags,
+                    "content_type": gold_event.get("content_type") or content.get("content_type") or "text",
+                    "source_timestamp": int(gold_event.get("source_timestamp") or 0),
+                    "_app": gold_event.get("_app", "synthetic"),
+                    "gold_topic": content.get("title") or content.get("caption") or "",
+                    "gold_hashtags": tags,
+                    "gold_caption": content.get("caption") or "",
+                }
+        if gold_event is None:
+            flavor = "A_llm"
+            llm_gold = _c1e_propose_flavor_a_gold(
+                bq, user_id, t_test, discovery_llm, leak_set, prior_set,
+            )
+            if llm_gold is None:
+                n_dropped_leak += 1
+                continue
+            gold_payload = {
+                "title": llm_gold["gold_topic"],
+                "caption": llm_gold["gold_caption"],
+                "hashtags": llm_gold["gold_hashtags"],
+                "content_type": "text",
+                "source_timestamp": None,
+                "_app": "synthetic",
+                "gold_topic": llm_gold["gold_topic"],
+                "gold_hashtags": llm_gold["gold_hashtags"],
+                "gold_caption": llm_gold["gold_caption"],
+            }
+
+        fatigued_tags = anchor.get("fatigued_hashtags") or []
+        if anchor["trigger_kind"] == "at_ai_directive":
+            fatigued_tags = list(anchor.get("directive_hashtags") or [])
+
+        # Tag the gold with the hidden persona(s) it's anchored on. If the
+        # gold doesn't overlap ANY hidden persona's evidence_hashtags it
+        # is, by definition, not persona-anchored — drop the candidate.
+        gold_anchor_personas = _c1e_anchor_personas_for_gold(
+            gold_payload.get("gold_hashtags") or [],
+            hidden_personas,
+            top_k=2,
+        )
+        if hidden_personas and not gold_anchor_personas:
+            n_dropped_no_anchor += 1
+            continue
+
+        instance_id_base = f"{user_id}_c1e_{anchor['trigger_kind']}_{t_test}"
+
+        # --- Recsys variant -------------------------------------------------
+        if len(recsys_out) < target_per_surface:
+            slate, gold_idx, _ = _c1e_build_slate(
+                bq, user_id, t_test, gold_payload,
+                fatigued_hashtags=fatigued_tags,
+                hp_hashtag_set=hp_hashtag_set,
+                rng=rng,
+            )
+            verifier_payload = {
+                "trigger_kind": anchor["trigger_kind"],
+                "trigger_blurb": anchor.get("trigger_blurb", ""),
+                "slate": slate,
+                "gold_idx": gold_idx,
+            }
+            ok, reason = _persona_grounded_answerability_check(
+                bq, user_id, t_test, "recsys", verifier_payload, discovery_llm,
+            )
+            if not ok:
+                n_dropped_persona += 1
+            else:
+                recsys_out.append({
+                    "instance_id": f"{instance_id_base}_recsys",
+                    "task_id": "new_suggestions_recsys",
+                    "task_type": "new_suggestions_recsys",
+                    "trigger_kind": anchor["trigger_kind"],
+                    "flavor": flavor,
+                    "t_test": t_test,
+                    "trigger_blurb": anchor.get("trigger_blurb", ""),
+                    "directive_app": anchor.get("directive_app", ""),
+                    "directive_action": anchor.get("directive_action", ""),
+                    "directive_user_message": anchor.get("directive_user_message", ""),
+                    "user_query": anchor.get("user_query", ""),
+                    "fatigued_hashtags": list(fatigued_tags),
+                    "fatigued_pref": anchor.get("fatigued_pref", ""),
+                    "leak_set_hashtags": sorted(leak_set),
+                    "candidates": slate,
+                    "gold_idx": gold_idx,
+                    "gold_topic": gold_payload.get("gold_topic", ""),
+                    "gold_hashtags": list(gold_payload.get("gold_hashtags") or []),
+                    "gold_anchor_personas": gold_anchor_personas,
+                })
+
+        # --- Chatbot variant ------------------------------------------------
+        if len(chatbot_out) < target_per_surface:
+            user_query = anchor.get("user_query") or anchor.get("directive_user_message") or ""
+            if not user_query and anchor["trigger_kind"] == "post_fatigue":
+                user_query = "(implicit fatigue trigger — no explicit user ask)"
+            verifier_payload = {
+                "trigger_kind": anchor["trigger_kind"],
+                "trigger_blurb": anchor.get("trigger_blurb", ""),
+                "user_query": user_query,
+                "gold_topic": gold_payload.get("gold_topic", ""),
+                "gold_hashtags": gold_payload.get("gold_hashtags", []),
+            }
+            ok, reason = _persona_grounded_answerability_check(
+                bq, user_id, t_test, "chatbot", verifier_payload, discovery_llm,
+            )
+            if not ok:
+                n_dropped_persona += 1
+            else:
+                chatbot_out.append({
+                    "instance_id": f"{instance_id_base}_chatbot",
+                    "task_id": "new_suggestions_chatbot",
+                    "task_type": "new_suggestions_chatbot",
+                    "trigger_kind": anchor["trigger_kind"],
+                    "flavor": flavor,
+                    "t_test": t_test,
+                    "trigger_blurb": anchor.get("trigger_blurb", ""),
+                    "directive_app": anchor.get("directive_app", ""),
+                    "directive_action": anchor.get("directive_action", ""),
+                    "directive_user_message": anchor.get("directive_user_message", ""),
+                    "user_query": user_query,
+                    "fatigued_hashtags": list(fatigued_tags),
+                    "fatigued_pref": anchor.get("fatigued_pref", ""),
+                    "leak_set_hashtags": sorted(leak_set),
+                    "gold_topic": gold_payload.get("gold_topic", ""),
+                    "gold_hashtags": list(gold_payload.get("gold_hashtags") or []),
+                    "gold_caption": gold_payload.get("gold_caption", ""),
+                    "gold_anchor_personas": gold_anchor_personas,
+                })
+
+    if n_dropped_persona or n_dropped_leak or n_dropped_no_anchor:
+        print(f"[build_benchmark] c1e: dropped {n_dropped_persona} for "
+              f"persona-unanswerable, {n_dropped_leak} for leak-set / no-gold, "
+              f"{n_dropped_no_anchor} for no-hidden-persona-anchor")
+    return {
+        "new_suggestions_recsys": recsys_out,
+        "new_suggestions_chatbot": chatbot_out,
+    }
+
+
 # --- Task C4: do-not-personalize button regeneration ----------------------
 
 def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
@@ -2720,6 +3687,14 @@ def build_benchmark(
     c1d_chatbot_clusters = build_c1d_chatbot_diverse_clusters(
         bq, user_id, test_items, discovery_llm=discovery_llm,
     )
+    try:
+        c1e_buckets = build_c1e_new_suggestions(
+            bq, user_id, test_items,
+            discovery_llm=discovery_llm, rng_seed=rng_seed,
+        )
+    except Exception as exc:
+        c1e_buckets = {"new_suggestions_recsys": [], "new_suggestions_chatbot": []}
+        print(f"[build_benchmark] WARN: c1e new_suggestions builder failed: {exc}")
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
 
@@ -2808,6 +3783,20 @@ def build_benchmark(
         e6_instances = []
         print(f"[build_benchmark] WARN: e6_active_mistake_prevention builder failed: {exc}")
 
+    # Silent geo-shift local recommendation — only fires for users with
+    # mobility_class != "homebody" AND >= 2 city transitions in their event
+    # stream. Homebodies / single-trip users naturally produce 0 instances.
+    try:
+        from evaluation.tasks.local_recommendation_geo_shift import (
+            build_local_recommendation_geo_shift,
+        )
+        geo_shift_instances = build_local_recommendation_geo_shift(
+            bq, user_id, rng_seed=rng_seed,
+        )
+    except Exception as exc:
+        geo_shift_instances = []
+        print(f"[build_benchmark] WARN: local_recommendation_geo_shift builder failed: {exc}")
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
@@ -2858,6 +3847,8 @@ def build_benchmark(
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
         "over_personalization_repetition_recsys":  c1c_clusters,
         "over_personalization_repetition_chatbot": c1d_chatbot_clusters,
+        "new_suggestions_recsys":                  c1e_buckets["new_suggestions_recsys"],
+        "new_suggestions_chatbot":                 c1e_buckets["new_suggestions_chatbot"],
         "over_personalization_context_shift":     c2_instances,
         "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,
@@ -2869,6 +3860,7 @@ def build_benchmark(
         "personalized_recommendation":            e4_instances,
         "short_vs_long_term_lifecycle":           e5_instances,
         "active_mistake_prevention":              e6_instances,
+        "local_recommendation_geo_shift":         geo_shift_instances,
         **agentic_buckets,
         # Proactive Actions (Phase 1)
         "proactive_unfulfilled_stated_need":      proactive_buckets["proactive_unfulfilled_stated_need"],

@@ -51,33 +51,46 @@ DAY_SECONDS = 24 * 60 * 60
 
 APPLICABILITY: dict[str, dict[str, bool]] = {
     # Chatbot response (was: chatbot_response_proactive / _control)
-    "chatbot_proactive_personalization": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "chatbot_proactive_personalization": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     # Personalized feed ranking (was: slate_ranking)
-    "personalized_feed_ranking":         {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
+    "personalized_feed_ranking":         {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     # Restraint family — repetition fatigue tested in two surface modes
     # (recsys-loop vs varied chatbot questions on same pref).
-    "over_personalization_repetition_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "over_personalization_repetition_chatbot": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "over_personalization_context_shift": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "over_personalization_distractor_reject": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "over_personalization_sensitive_event": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
-    "preference_removal_regen":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "over_personalization_repetition_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_repetition_chatbot": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    # new_suggestions — explorative recommendation. Agent must avoid
+    # over-personalization (no recycling fatigued topics) AND avoid
+    # the M1 telegraph phrasings. No fixed preference to align against
+    # — the gold IS a fresh topic, so preference_alignment is off.
+    "new_suggestions_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "new_suggestions_chatbot": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_context_shift": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_distractor_reject": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_sensitive_event": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "preference_removal_regen":          {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     # Agentic family (was: t6..t19)
-    "agentic_user_tone_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
+    "agentic_user_tone_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
     # agentic_moment_recommendation merged into personalized_recommendation
     # (slate-based ranking, deterministic recall@k / ndcg@k / mrr metrics).
-    "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
-    "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": True, "voice_self_consistency": True},
-    "agentic_vague_refind":              {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "agentic_composed_post":             {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
-    "agentic_send_post":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True},
-    "agentic_draft_audit":               {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "agentic_group_dm_summary":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "agentic_wrong_recipient_check":     {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False},
-    "agentic_proactive_daily_catchup":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False},
-    "agentic_trending_alert":            {"preference_alignment": True, "avoid_leak": True, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False},
+    "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
+    "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
+    "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
+    "agentic_vague_refind":              {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "agentic_composed_post":             {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
+    "agentic_send_post":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
+    "agentic_draft_audit":               {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "agentic_group_dm_summary":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
+    "agentic_wrong_recipient_check":     {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
+    "agentic_proactive_daily_catchup":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "agentic_trending_alert":            {"preference_alignment": True, "avoid_leak": True, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    # Silent geo-shift local recommendation. The agent is supposed to
+    # personalize MORE (use the latest geo signal + the user's persona
+    # profile), so preference_alignment is the headline judge dimension.
+    # Hard rules still apply (no surfacing of negative prefs / privacy
+    # flags / contradicted prefs). voice_match is off — the agent is
+    # answering as the assistant, not authoring in the user's voice.
+    "local_recommendation_geo_shift":    {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
 }
 
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
@@ -88,9 +101,11 @@ SOURCE_B_APPLICABLE = {
     "agentic_proactive_daily_catchup", "agentic_trending_alert",
 }
 
-HARD_RULE_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use"}
+HARD_RULE_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use",
+                  "telegraph_avoidance"}
 JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_personalization",
-                  "relationship_aware", "voice_match", "voice_self_consistency"}
+                  "relationship_aware", "voice_match", "voice_self_consistency",
+                  "telegraph_avoidance"}
 
 
 # --- Source A: persona ground truth ----------------------------------------
@@ -554,6 +569,19 @@ def score(
         r = metrics_mod.privacy_leak_rate(agent_output, ground_truth.get("update_history_contradictions") or [], threshold)
         out["stale_preference_use_rate"] = r["leak_rate"]
         out["stale_preference_use_hard_fail"] = r["hard_fail"]
+    if applicable.get("telegraph_avoidance"):
+        # Deterministic — runs the regex + verbatim-pref-insertion check
+        # in `evaluation.llm_postprocess._validate_no_creepy_phrasing`.
+        # No LLM needed; treat hard_fail like privacy_leak.
+        from evaluation.judges import judge_telegraph_avoidance as _jta
+        held_out = (ground_truth.get("held_out_preference")
+                    or ground_truth.get("groundtruth_preference")
+                    or ground_truth.get("target_pref"))
+        ja = _jta(agent_output, held_out)
+        out["telegraph_avoidance_score"] = ja["telegraph_avoidance"]
+        out["telegraph_avoidance_hard_fail"] = 0 if ja["telegraph_avoidance"] >= 1.0 else 1
+        if ja.get("telegraph_reason"):
+            out["telegraph_avoidance_reason"] = ja["telegraph_reason"]
 
     # Judge dims — skip if no judge available.
     if judge_client:

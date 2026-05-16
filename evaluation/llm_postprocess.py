@@ -148,19 +148,108 @@ Output ONE fenced ```json block:
 ```"""
 
 
-# Telegraph phrases the example_response must avoid — case-insensitive.
-# When the LLM emits one of these the example is regenerated once; on a
-# second hit we accept it (graceful degrade).
+# Telegraph / "creepy" / over-disclosing phrases the example_response must
+# AVOID — case-insensitive. These are the signals a normal user reads as
+# "the AI is showing off that it has a profile of me." Even a perfectly
+# personalized response is read as creepy when wrapped in one of these
+# templates. Unified single-source-of-truth: the eval-time judge
+# (`judges.judge_telegraph_avoidance`), the build-time post-validator
+# (`_validate_no_creepy_phrasing`), and the audit dimension
+# (`audit_query_quality._dim_telegraph_avoidance`) all import this.
+#
+# Hard rule: ANY example_response we ship MUST NOT match this regex. The
+# generation retry loop (`_generate_example_response` below) hard-rejects
+# on a second hit — no graceful degrade — because the rubric is "always
+# hold," not "usually hold."
 _TELEGRAPH_PHRASE_RE = re.compile(
-    r"(as a fan of|since you (love|like|enjoy|prefer|are into)|"
+    r"(as a fan of|since you (love|like|enjoy|prefer|are into|don'?t (like|love|enjoy)|are|aren'?t)|"
     r"i know you('?re| are) (into|a fan of)|"
     r"i know you (love|like|enjoy)|"
+    r"i remember (you|your|when you)|"
+    r"i recall (you|your|when you)|"
     r"given your (interest|love|passion) (in|for)|"
     r"knowing how much you|"
+    r"knowing your (taste|preference|interest|love)|"
+    r"based on your (taste|preference|interest|love|history)|"
     r"as someone who (loves|likes|enjoys|is into|is a fan of)|"
     r"you'?ll appreciate this because)",
     re.IGNORECASE,
 )
+
+
+def _validate_no_creepy_phrasing(
+    response: str,
+    held_out_pref: dict | str | None = None,
+) -> tuple[bool, str]:
+    """Hard rule: a personalized response MUST NOT (a) telegraph that the
+    AI has a profile of the user via any phrase in `_TELEGRAPH_PHRASE_RE`,
+    NOR (b) paste the held-out preference text verbatim into the response.
+
+    Returns ``(passed, reason)``. ``reason`` names which sub-rule failed
+    so the regen prompt can include concrete steering on retry.
+
+    Verbatim-pref-insertion check: when ``held_out_pref`` is provided
+    (either as a dict with ``persona_item`` / ``category`` keys or a raw
+    string), the response is rejected if it contains a substring of
+    ``persona_item`` (or its full text, lowercased + whitespace-collapsed)
+    of length ≥ 70% of the persona_item. Pasting "Likes premium
+    steak-focused food content" verbatim trips the rule; paraphrasing it
+    as "you'd love a good ribeye spot" doesn't.
+    """
+    if not response:
+        return True, ""
+    text = response.strip()
+    text_low = " ".join(text.lower().split())
+
+    m = _TELEGRAPH_PHRASE_RE.search(text)
+    if m:
+        return False, f"telegraph_phrase_match: {m.group(0)!r}"
+
+    if held_out_pref is None:
+        return True, ""
+
+    # Normalize the pref text for the verbatim check.
+    if isinstance(held_out_pref, dict):
+        pref_text = (held_out_pref.get("persona_item") or "").strip()
+    else:
+        pref_text = str(held_out_pref).strip()
+    if not pref_text:
+        return True, ""
+
+    pref_low = " ".join(pref_text.lower().split())
+    if len(pref_low) < 12:
+        # Very short prefs (e.g. "boxing") would false-positive on any
+        # response that mentions the topic at all. Skip the verbatim
+        # check for short prefs; the regex catches the dangerous
+        # framings ("since you like boxing").
+        return True, ""
+
+    # Verbatim-pref insertion: detect any 5-word contiguous n-gram from
+    # the persona_item that appears unchanged in the response.
+    # Tokenize on word boundaries (drop punctuation) and compare on a
+    # punctuation-stripped projection of the response, so a comma in
+    # the pref doesn't desync a paste like "...food content, especially..."
+    # vs "...food content like...". Strip the leading verb so
+    # trailing-noun-phrase pastes are also caught.
+    def _toks(s: str) -> list[str]:
+        return re.findall(r"[a-z0-9][a-z0-9\-']*", s)
+    text_toks = " ".join(_toks(text_low))
+    pref_check_variants = [pref_low]
+    for verb in ("enjoys ", "likes ", "loves ", "interested in ",
+                 "engages with ", "follows ", "values "):
+        if pref_low.startswith(verb):
+            pref_check_variants.append(pref_low[len(verb):])
+            break
+    NGRAM = 5
+    for variant in pref_check_variants:
+        words = _toks(variant)
+        if len(words) < NGRAM:
+            continue
+        for i in range(len(words) - NGRAM + 1):
+            phrase = " ".join(words[i:i + NGRAM])
+            if phrase in text_toks:
+                return False, f"pref_verbatim_insertion: {phrase!r}"
+    return True, ""
 
 
 _COMPOSE_TASKS = {
@@ -178,16 +267,48 @@ _COMPOSE_TASKS = {
 _VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_user_tone_post"}
 
 
+# Stance / register surface markers — same lexicon used by the GT
+# annotator in `data_preparation/visualize.py::_annotate_voice_features`.
+# Duplicated here (not imported) to keep the eval-side dependency graph
+# clean (`llm_postprocess` must not pull data_preparation modules at
+# import time — circular).
+_STANCE_REGISTER_LEXICON: dict[str, list[str]] = {
+    "dry-approving":          ["yeah", "yep", "alright", "this one did", "did its job"],
+    "craft-analytic":         ["clean", "tight", "no extra", "no filler",
+                               "the part that", "the kind of"],
+    "low-key-hype":           ["low-key", "lowkey", "low key", "actually", "kind of fire"],
+    "deadpan-amused":         ["lol", "lmao", "of course", "naturally", "cute until"],
+    "skeptical-pragmatic":    ["honestly", "doesn't add up", "not really", "in practice"],
+    "protective-of-realness": ["real work", "no fake", "for real", "no extra drama",
+                               "no filler"],
+    "fan-analysis casual":    ["combo", "footwork", "matchup", "round", "spar"],
+    "plainspoken conversational": ["yeah", "okay", "just", "kinda", "got done"],
+    "backstage process talk": ["wrapped up", "got done", "the process",
+                               "behind the scenes", "grinding"],
+    "soft-confessional private talk": ["just thinking", "honestly", "guess i"],
+}
+
+
 def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
     """Heuristically extract substrings of `text` that carry the user's voice
-    signal — `idiolect.catchphrase_residue` (case-insensitive substring) +
-    palette emoji (exact char match). Used to bold spans in the rendered
-    Example Response so a reviewer can see surface anchors.
+    signal: catchphrase residue, stance/register surface markers, AND palette
+    emoji. Reordered so emoji is no longer the dominant signal — when the
+    response also lands a stance/register marker, the example/inferior pair
+    will differ on structural axes (register, stance) rather than just emoji
+    presence, fixing the prior `example_voice_evidence == inferior_voice_evidence`
+    failure mode.
 
-    NB: This is a *visual aid only*. It only catches surface (residue + emoji),
-    NOT Layer-2 idiolect templates (which are abstract slot patterns and don't
-    survive direct substring matching). The deeper voice judge
-    (`voice_self_consistency`) is what actually scores Layer-2 fidelity.
+    Used to bold spans in the rendered Example Response so a reviewer can
+    see *which* voice features actually surfaced. This is a visual aid;
+    the deeper voice judge (`voice_self_consistency`) is what actually
+    scores Layer-2 fidelity.
+
+    Detection order (so the most distinguishing signal lands first):
+      1. Catchphrase residue substrings (high-value, user-specific)
+      2. Stance / register surface markers (mid-value, app-scoped)
+      3. Idiolect template opener pattern (stance-marker-first opening)
+      4. Palette emoji (low-value on its own — both gold and foil tend
+         to keep the same emoji, so it's the LAST tiebreaker)
 
     Backward-compatible: also reads the legacy `user_voice.personal_phrases`
     field for old snapshots. Empty list when nothing matches.
@@ -199,6 +320,15 @@ def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
     spans: list[str] = []
     seen: set[str] = set()
     text_lower = text.lower()
+
+    def _add(span: str) -> None:
+        if not span:
+            return
+        key = span.lower()
+        if key in seen:
+            return
+        spans.append(span)
+        seen.add(key)
 
     # 1. Catchphrase residue — new schema (idiolect.catchphrase_residue),
     #    plus legacy `personal_phrases` fallback. Case-insensitive substring,
@@ -214,21 +344,75 @@ def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
         needle = phrase.lower()
         idx = text_lower.find(needle)
         while idx != -1:
-            span = text[idx:idx + len(needle)]
-            if span and span.lower() not in seen:
-                spans.append(span)
-                seen.add(span.lower())
+            _add(text[idx:idx + len(needle)])
             idx = text_lower.find(needle, idx + len(needle))
 
-    # 2. Palette emoji — exact char match. Each match becomes its own span
-    #    so the renderer can bold every occurrence.
+    # 2. Stance / register surface markers — pulled from the user_voice's
+    #    repertoire + idiolect blocks. We collect short keyword tokens
+    #    associated with each labeled stance / register, then case-insens
+    #    substring-match against the text. This is what makes the contrast
+    #    visible when the gold lands "yeah, this one did its job. clean
+    #    lines, no filler" and the foil shifts to "as a read on the
+    #    composition, this succeeds".
+    repertoire = user_voice.get("repertoire") or {}
+    stance_labels: list[str] = []
+    for s in (repertoire.get("active_stances") or repertoire.get("stances") or []):
+        if isinstance(s, str):
+            stance_labels.append(s)
+    for r in (repertoire.get("active_registers") or repertoire.get("registers") or []):
+        if isinstance(r, str):
+            stance_labels.append(r)
+    # Some snapshots stash labels on idiolect.stance_repertoire instead
+    if isinstance(idio, dict):
+        for s in (idio.get("stance_repertoire") or idio.get("stance_markers") or []):
+            if isinstance(s, str):
+                stance_labels.append(s)
+    for label in stance_labels:
+        kws = _STANCE_REGISTER_LEXICON.get(label.lower(), [])
+        for kw in kws:
+            needle = kw.lower()
+            idx = text_lower.find(needle)
+            while idx != -1:
+                # Require a word boundary on at least one side to avoid
+                # noise (e.g. "yeah" matching inside "yeahsayer").
+                left_ok = idx == 0 or not text_lower[idx - 1].isalnum()
+                right_idx = idx + len(needle)
+                right_ok = right_idx == len(text_lower) or not text_lower[right_idx].isalnum()
+                if left_ok and right_ok:
+                    _add(text[idx:right_idx])
+                idx = text_lower.find(needle, idx + len(needle))
+
+    # 3. Idiolect template opener pattern — if the text opens with a
+    #    canonical stance marker followed by a qualification clause
+    #    within the first ~120 chars, emit a synthetic span naming the
+    #    pattern hit. This is what the inferior typically drops.
+    t_lstrip = text.lstrip()
+    if t_lstrip:
+        first = t_lstrip[:120].lower()
+        openers = ("yeah", "lowkey", "low-key", "low key", "okay",
+                   "honestly", "real work", "clean", "motivation",
+                   "discipline", "finally")
+        for op in openers:
+            if first.startswith(op) and (" but " in first
+                                          or " though " in first
+                                          or "," in first[:len(op) + 12]):
+                # Span = the opener slice up to the first qualifier
+                end = len(op)
+                # Extend up to ~32 chars or until the qualifier
+                snippet = t_lstrip[:min(32, len(t_lstrip))]
+                _add(snippet.rstrip(".,!?;: "))
+                break
+
+    # 4. Palette emoji — exact char match, LAST so structural signals
+    #    rank higher in the bolding pass.
     for emoji in (user_voice.get("emoji_palette") or []):
         if not isinstance(emoji, str) or not emoji:
             continue
-        if emoji in text and emoji not in seen:
-            spans.append(emoji)
-            seen.add(emoji)
+        if emoji in text:
+            _add(emoji)
 
+    # Sort: longer spans first (visual bolder gets the most specific
+    # match first), but keep the detection ordering as a stable tiebreaker.
     spans.sort(key=lambda s: -len(s))
     return spans
 
@@ -431,9 +615,11 @@ def _triplet_passes_self_check(triplet: dict, held_out_preference: str) -> bool:
     uq_low = uq.lower()
     if any(uq_low.startswith(p) for p in _CHATBOT_TRIPLET_FORBIDDEN_OPENERS):
         return False
-    # Telegraph-phrase guard on the example response — same set as the
-    # generic example_response gen path.
-    if _TELEGRAPH_PHRASE_RE.search(ex):
+    # Creepy-phrasing guard on the example response — regex
+    # telegraph-phrase check PLUS verbatim pref-insertion check.
+    # Same gate as the generic example_response gen path.
+    passed, _reason = _validate_no_creepy_phrasing(ex, held_out_preference)
+    if not passed:
         return False
     # Length sanity: example and inferior should be in the same band.
     if len(ex.split()) > 140 or len(inf.split()) > 140:
@@ -502,8 +688,22 @@ def _generate_example_response(llm: Callable[[str], str],
                                grounding: str = "",
                                inst: dict | None = None,
                                app_persona: dict | None = None) -> str | None:
+    """Generate an example_response gated against creepy / over-disclosing
+    framings. Hard rule (M1): if neither attempt produces a clean
+    response, return ``None`` so the caller drops the instance instead
+    of shipping an example_response that telegraphs personalization.
+    The rubric must "always hold" — graceful degrade is the wrong
+    behavior here.
+    """
     if not llm or not query:
         return None
+    held_out_pref = (
+        inst.get("held_out_preference")
+        or inst.get("held_out_pref")
+        or inst.get("groundtruth_preference")
+        or inst.get("target_pref")
+        if inst else None
+    )
     grounding_block = (
         f"\nUse only the grounding facts below — do NOT invent posts, "
         f"friends, threads, or topics that aren't named here. Quote the "
@@ -517,29 +717,36 @@ def _generate_example_response(llm: Callable[[str], str],
         grounding_block=grounding_block,
     )
     text: str | None = None
+    last_reason = ""
     for attempt in range(2):
         prompt = base_prompt
         if attempt > 0 and text is not None:
             prompt = base_prompt + (
-                "\n\nYour previous draft contained a telegraph phrase that "
-                "advertises personalization (e.g., 'as a fan of', 'since you "
-                "love', 'I know you're into'). Rewrite the response so the "
-                "topic choice itself is the personalization signal — do not "
-                "self-reference what you know about the user.\n"
-                f"Previous draft (DO NOT REUSE): \"\"\"{text}\"\"\""
+                "\n\nYour previous draft was REJECTED by the creepy-phrasing "
+                f"validator. Reason: {last_reason}.\n"
+                "Rewrite so the topic CHOICE itself is the personalization "
+                "signal — do NOT self-reference what you know about the "
+                "user (no \"I know you...\", \"since you like X\", \"I "
+                "remember when you...\", \"based on your...\"), and do NOT "
+                "paste the persona description / preference text verbatim "
+                "into the response.\n"
+                f"Previous draft (DO NOT REUSE):\n\"\"\"{text}\"\"\""
             )
         raw = llm(prompt)
         parsed = extract_json_from_response(raw) or {}
         candidate = parsed.get("text")
-        if isinstance(candidate, str) and candidate.strip():
-            text = candidate.strip()
-            if not _TELEGRAPH_PHRASE_RE.search(text):
-                return text
-            # Telegraph phrase detected — retry once. If second attempt
-            # also trips, accept it (graceful degrade).
-        else:
+        if not (isinstance(candidate, str) and candidate.strip()):
             return None
-    return text
+        text = candidate.strip()
+        passed, reason = _validate_no_creepy_phrasing(text, held_out_pref)
+        if passed:
+            return text
+        last_reason = reason
+    # Both attempts failed the creepy-phrasing gate. Hard-reject by
+    # returning None — the caller drops this instance / falls back to
+    # a placeholder. M1 acceptance: zero shipped example_responses
+    # match the regex.
+    return None
 
 
 def _format_iso_date(ts: int) -> str:
