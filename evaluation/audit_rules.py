@@ -40,7 +40,7 @@ _USER_QUERY_KINDS = {"user_query"}
 # _RANKING_TASKS below — they encode GT inside the slate / candidates
 # rather than a single held-out preference, so different rules apply.
 _REACTIVE_PERSONALIZATION_TASKS = {
-    "chatbot_proactive_personalization",
+    "chatbot_personalized_response",
     "preference_removal_regen",
 }
 
@@ -253,13 +253,13 @@ def check_label_honesty_blind_check(record: dict) -> list[Finding]:
     """Generic queries leaking into the personalization bucket.
 
     The user's central concern: a query labeled
-    `chatbot_proactive_personalization` may not actually require
+    `chatbot_personalized_response` may not actually require
     personalization. We use the existing blind_check_score the build
     pipeline already computes (0 = highly user-specific … 3 = generic
     — the actual threshold the harness uses to split arms is 2).
     """
     out: list[Finding] = []
-    if record["task_type"] != "chatbot_proactive_personalization":
+    if record["task_type"] != "chatbot_personalized_response":
         return out
     inst = record.get("instance_full") or {}
     score = inst.get("blind_check_score")
@@ -287,7 +287,7 @@ def check_label_honesty_held_out_relevance(record: dict) -> list[Finding]:
     source_hashtags. If they don't, the held-out is unrelated to the
     query and the personalization signal is fake."""
     out: list[Finding] = []
-    if record["task_type"] != "chatbot_proactive_personalization":
+    if record["task_type"] != "chatbot_personalized_response":
         return out
     gt = record.get("groundtruth_preference_obj") or record.get("ground_truth_preference")
     inst = record.get("instance_full") or {}

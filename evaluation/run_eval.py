@@ -83,7 +83,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "claude-opus"))
     p.add_argument("--rate_limit", type=int, default=50)
     # Phase I.1: judge is ON by default — chatbot tasks need pr_held_out_score
-    # which is judge-based; without it, chatbot_proactive_personalization
+    # which is judge-based; without it, chatbot_personalized_response
     # scored 5.4% in Phase F purely because the judge wasn't running.
     # Use --no_llm_judge to opt out (e.g., for cheap dry runs).
     p.add_argument("--enable_llm_judge", action=argparse.BooleanOptionalAction, default=True,

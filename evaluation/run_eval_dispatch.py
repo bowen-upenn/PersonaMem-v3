@@ -74,7 +74,7 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
 
     if task_type == "personalized_feed_ranking":
         rows = slate_ranking.run_task_a(**common)
-    elif task_type in ("chatbot_proactive_personalization", "over_personalization_chatbot_text",
+    elif task_type in ("chatbot_personalized_response", "over_personalization_chatbot_text",
                        "over_personalization_distractor_reject",
                        "over_personalization_sensitive_event"):
         # Phase I.3: distractor-reject converted from a 4-way ranking task to

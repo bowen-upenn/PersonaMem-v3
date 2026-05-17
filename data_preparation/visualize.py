@@ -2303,7 +2303,7 @@ def _gt_new_suggestions_chatbot(inst: dict) -> dict:
 TEST_GT_EXTRACTORS = {
     "personalized_feed_ranking":           _gt_personalized_feed_ranking,
     "slate_ranking":                       _gt_personalized_feed_ranking,  # v1 alias
-    "chatbot_proactive_personalization":   _gt_chatbot_proactive,
+    "chatbot_personalized_response":   _gt_chatbot_proactive,
     "chatbot_response_proactive":          _gt_chatbot_proactive,           # v1 alias
     "over_personalization_chatbot_text":   _gt_chatbot_restraint,
     "chatbot_restraint_control":           _gt_chatbot_restraint,           # v2 alias
@@ -2568,7 +2568,7 @@ def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
 TEST_QUERY_EXTRACTORS = {
     "personalized_feed_ranking":           _q_personalized_feed_ranking,
     "slate_ranking":                       _q_personalized_feed_ranking,
-    "chatbot_proactive_personalization":   _q_chatbot,
+    "chatbot_personalized_response":   _q_chatbot,
     "chatbot_response_proactive":          _q_chatbot,
     "over_personalization_chatbot_text":   _q_chatbot,
     "chatbot_restraint_control":           _q_chatbot,

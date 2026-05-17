@@ -839,7 +839,7 @@ def chatbot_proactive_triplet_prompt(
     recent_topical_signals: list[str] | None = None,
 ) -> str:
     """Generate the (user_query, example_response, inferior_response) triplet
-    for ONE `chatbot_proactive_personalization` test card.
+    for ONE `chatbot_personalized_response` test card.
 
     Strict rules:
       - The user_query must NOT mention the held-out preference verbatim or

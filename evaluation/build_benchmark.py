@@ -1232,7 +1232,7 @@ def build_task_b_arms(
     # expected_stop_ts; agent must NOT surface them as if still active.
     stale = build_stale_vs_fresh_probes(bq, user_id)
 
-    # Funnel summary — useful when chatbot_proactive_personalization comes in
+    # Funnel summary — useful when chatbot_personalized_response comes in
     # under floor and you need to see WHERE candidates were dropped.
     print(f"[task_b] funnel: extracted={n_extracted} → "
           f"fresh_start={n_after_fresh_start} → "
@@ -1243,7 +1243,7 @@ def build_task_b_arms(
           f"final_proactive={len(proactive)}, final_control={len(control)}")
 
     return {
-        "chatbot_proactive_personalization": (
+        "chatbot_personalized_response": (
             [_finalize(c, "proactive") for c in proactive]
             + [_finalize(c, "contradiction") for c in contradictions]
         ),
@@ -1265,7 +1265,7 @@ def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: 
     about the topic. The agent should prioritize the LATER (current) stance
     over the OLD (now-flipped) one — surfacing the old stance is wrong.
 
-    Goes into the chatbot_proactive_personalization bucket since the agent
+    Goes into the chatbot_personalized_response bucket since the agent
     IS supposed to personalize, just with the correct (current) stance.
     Routed through chatbot_response.run_task_b like the other chatbot arms.
     """
@@ -1354,7 +1354,7 @@ def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str) -> list[dict]:
     where t_test > expected_stop_ts. The agent should NOT surface the now-
     expired preference (e.g., asking about a vacation that already ended).
 
-    Goes into chatbot_proactive_personalization bucket with the stale pref
+    Goes into chatbot_personalized_response bucket with the stale pref
     as the "do-not-surface" item. Graded by leak_rate against that single pref.
     """
     # Read RAW JSON to access time_horizon / stop_condition (likely stripped
@@ -3696,7 +3696,7 @@ def build_benchmark(
         c1e_buckets = {"new_suggestions_recsys": [], "new_suggestions_chatbot": []}
         print(f"[build_benchmark] WARN: c1e new_suggestions builder failed: {exc}")
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
-    c4_instances = build_c4_instances(b_arms["chatbot_proactive_personalization"])
+    c4_instances = build_c4_instances(b_arms["chatbot_personalized_response"])
 
     # Agentic tasks T6-T19.
     # - E: builders that fix t_test=t_probe get their instances scattered
@@ -3843,7 +3843,7 @@ def build_benchmark(
     # Floor enforcement is the synthesis layer's job — this only caps.
     pre_cap_buckets = {
         "personalized_feed_ranking":              slate_instances,
-        "chatbot_proactive_personalization":      b_arms["chatbot_proactive_personalization"],
+        "chatbot_personalized_response":          b_arms["chatbot_personalized_response"],
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
         "over_personalization_repetition_recsys":  c1c_clusters,
         "over_personalization_repetition_chatbot": c1d_chatbot_clusters,
@@ -3873,7 +3873,7 @@ def build_benchmark(
         # NB: most tasks have no synthesis path that fills these gaps. Only
         # over_personalization_chatbot_text and over_personalization_distractor_reject
         # have dedicated adversarial synthesis (Phase I.2). Other tasks (notably
-        # chatbot_proactive_personalization, personalized_feed_ranking,
+        # chatbot_personalized_response, personalized_feed_ranking,
         # at_ai_directive_followup) are supply-side: a persistent gap means the
         # builder isn't producing enough candidates and needs investigation.
         print(f"[build_benchmark] floor gaps (supply-side; investigate if persistent): {floor_gaps}")
