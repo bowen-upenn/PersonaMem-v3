@@ -38,7 +38,8 @@ QUERIES_CSV_VERSION: str = "2"
 # headline number was being read as "100 % restraint" when in fact the
 # tasks were testing the same capability with different surfaces.
 OLD_TO_NEW: dict[str, str] = {
-    "slate_ranking":                 "personalized_feed_ranking",
+    "slate_ranking":                 "personalized_recommendation",
+    "personalized_feed_ranking":     "personalized_recommendation",
     "chatbot_response_proactive":    "chatbot_personalized_response",
     "chatbot_response_control":      "over_personalization_chatbot_text",
     "chatbot_restraint_control":     "over_personalization_chatbot_text",
@@ -181,20 +182,6 @@ DEFAULT_META: dict = {
 
 
 TASK_TYPE_META: dict[str, dict] = {
-    # ------------------------------------------------------------------
-    # Personalized feed ranking (was: slate_ranking)
-    # ------------------------------------------------------------------
-    "personalized_feed_ranking": {
-        "task_family": "personalized_feed_ranking",
-        "mcp_tools_allowed": "none",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "ranking",
-        "rubric_tags": [
-            "preference_alignment", "avoid_overpersonalization",
-            "negative_leakage", "stale_preference_use", "behavioral_hit",
-        ],
-    },
-
     # ------------------------------------------------------------------
     # Chatbot response (two arms — was: chatbot_response_proactive / _control)
     # ------------------------------------------------------------------
@@ -537,7 +524,6 @@ def get_meta(task_type: str) -> dict:
 # ---------------------------------------------------------------------------
 
 QUERY_KIND_BY_TASK: dict[str, str] = {
-    "personalized_feed_ranking":              "proactive_recommendation",
     "chatbot_personalized_response":           "user_query",
     "over_personalization_chatbot_text":       "user_query",
     "over_personalization_repetition_recsys":  "user_query",
@@ -582,7 +568,6 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
 
 
 EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
-    "personalized_feed_ranking":              "proactive_recommend",
     "chatbot_personalized_response":          "personalize",
     "over_personalization_chatbot_text":       "avoid_overpersonalization",
     "over_personalization_repetition_recsys":  "avoid_overpersonalization",
@@ -642,8 +627,6 @@ def get_expected_behavior(task_type: str) -> str:
 # ---------------------------------------------------------------------------
 
 PRIMARY_METRIC: dict[str, tuple[str, str]] = {
-    # Ranking tasks — graded distractors, accuracy = top-1 match
-    "personalized_feed_ranking":         ("accuracy", "fraction"),
     # Phase L.B.1: blended hit@1 + judge intent-alignment. Falls back to
     # hit@1 alone when judge is disabled (directive_score key absent).
     "at_ai_directive_followup":          ("directive_score", "fraction"),

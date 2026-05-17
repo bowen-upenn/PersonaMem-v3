@@ -291,45 +291,6 @@ def _ts_delta_label(cand_ts, ref_ts) -> str:
     return f"{sign}{a // 86400}d"
 
 
-def _gt_personalized_feed_ranking(inst: dict) -> dict:
-    held = inst.get("held_out_idx")
-    slate = inst.get("slate") or []
-    origins = inst.get("origin_by_idx") or []
-    title = ""
-    held_hashtags: list[str] = []
-    if isinstance(held, int) and 0 <= held < len(slate):
-        title = slate[held].get("title") or slate[held].get("caption") or ""
-        held_hashtags = slate[held].get("hashtags") or []
-    # The test moment IS the held-out's source_timestamp; deltas are
-    # measured against that, so the held_out itself shows "0".
-    ref_ts = inst.get("source_timestamp") or (
-        slate[held].get("source_timestamp") if isinstance(held, int) and 0 <= held < len(slate) else 0
-    )
-    cands = []
-    for i, c in enumerate(slate):
-        origin = origins[i] if i < len(origins) else "?"
-        cands.append({
-            "idx": i,
-            "title": _truncate(c.get("title") or c.get("caption") or "", 90),
-            "hashtags": c.get("hashtags") or [],
-            "origin": origin,
-            "is_held_out": (i == held),
-            "ts_delta_label": _ts_delta_label(c.get("source_timestamp"), ref_ts),
-        })
-    return {
-        "example_response": f"Rank order: held-out target (idx={held}) at rank 1, then past_positive / future_positive items, then fillers, with any known-negative last.",
-        "groundtruth_preference": (
-            f"Held-out item (idx={held}): {_truncate(title, 140)}"
-            + (f"\nHashtags: {', '.join(held_hashtags[:6])}" if held_hashtags else "")
-        ),
-        "candidates": cands,
-        "rubric_tags": [
-            "(+) Rank the held-out target at #1.",
-            "(-) Avoid known-negatives in top-3; order remaining items by recency.",
-        ],
-    }
-
-
 def _gt_chatbot_proactive(inst: dict) -> dict:
     held = inst.get("held_out_preference") or {}
     held_pi = (held.get("persona_item") or "").strip()
@@ -371,7 +332,16 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
             "(+) Weave in the held-out preference when it fits.",
             "(-) Don't surface unrelated preferences.",
             "(-) Don't lecture or self-reference the user's profile.",
-            TELEGRAPH_AVOIDANCE_TAG,
+            # Inline (marker-free) variant of TELEGRAPH_AVOIDANCE_TAG —
+            # the test card for chatbot_personalized_response renders the
+            # rule itself, not the `[hard-rule:no_telegraphing]` tag handle.
+            # The judge that enforces this still lives in
+            # `evaluation/judges.py::judge_telegraph_avoidance`.
+            (
+                '(-) No "I know you…", "since you like X", "based on your…", '
+                '"knowing your…" phrasings; never paste preference text verbatim '
+                '— let topic / framing choice be the personalization signal.'
+            ),
         ],
     }
 
@@ -1669,8 +1639,9 @@ def _gt_agentic(inst: dict) -> dict:
 
         # Daily-catchup / trending-alert — need recent positive activity
         # AND recent disliked topics so the (+/-) rubric tags can be
-        # judged. User's directive: "this day + previous two days" for
-        # dislikes; positive activity uses a 3-day lookback to match.
+        # judged. Positive activity uses a 3-day lookback; dislikes are
+        # narrowed to today only — a same-day dislike is the only
+        # time-sensitive "don't surface this now" signal worth gating on.
         if task_id in ("agentic_proactive_daily_catchup",
                         "agentic_trending_alert") and inst_ts:
             recent_pos = _window_events(inst_ts, lookback_days=3.0,
@@ -1689,11 +1660,11 @@ def _gt_agentic(inst: dict) -> dict:
                             f"  • on {ev.get('app','?')}: "
                             f"{_truncate(ev['caption'], 100)}"
                         )
-            recent_neg = _window_events(inst_ts, lookback_days=3.0,
+            recent_neg = _window_events(inst_ts, lookback_days=1.0,
                                          polarity="explicit_negative", cap=8)
             if recent_neg:
                 gtp_lines.append(
-                    "Recent disliked topics (this day + previous 2 days — "
+                    "Recent disliked topics (today only — "
                     "must NOT be surfaced as catchup / trending picks):"
                 )
                 for ev in recent_neg[:6]:
@@ -1710,7 +1681,7 @@ def _gt_agentic(inst: dict) -> dict:
                         )
             elif recent_pos:
                 gtp_lines.append(
-                    "Recent disliked topics (this day + previous 2 days): "
+                    "Recent disliked topics (today only): "
                     "(none — no explicit-negative engagements in window)"
                 )
 
@@ -2301,8 +2272,7 @@ def _gt_new_suggestions_chatbot(inst: dict) -> dict:
 
 
 TEST_GT_EXTRACTORS = {
-    "personalized_feed_ranking":           _gt_personalized_feed_ranking,
-    "slate_ranking":                       _gt_personalized_feed_ranking,  # v1 alias
+    "slate_ranking":                       _gt_personalized_recommendation,  # v1 alias for personalized_recommendation
     "chatbot_personalized_response":   _gt_chatbot_proactive,
     "chatbot_response_proactive":          _gt_chatbot_proactive,           # v1 alias
     "over_personalization_chatbot_text":   _gt_chatbot_restraint,
@@ -2378,11 +2348,6 @@ def _q_default(inst: dict) -> str:
         if isinstance(first, dict):
             return str(first.get("user_query") or first.get("query") or first.get("text") or "")
     return ""
-
-
-def _q_personalized_feed_ranking(inst: dict) -> str:
-    app = inst.get("app") or "this app"
-    return f"[ranking task] What should I be shown next on {app}?"
 
 
 def _q_chatbot(inst: dict) -> str:
@@ -2566,8 +2531,7 @@ def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
 
 
 TEST_QUERY_EXTRACTORS = {
-    "personalized_feed_ranking":           _q_personalized_feed_ranking,
-    "slate_ranking":                       _q_personalized_feed_ranking,
+    "slate_ranking":                       _q_personalized_recommendation,  # v1 alias for personalized_recommendation
     "chatbot_personalized_response":   _q_chatbot,
     "chatbot_response_proactive":          _q_chatbot,
     "over_personalization_chatbot_text":   _q_chatbot,
@@ -2620,7 +2584,7 @@ def _load_test_samples(
     Per-sample fields:
       ts (int)         — the moment the user is notionally asking
       ts_iso (str)     — formatted timestamp
-      task_type        — e.g. "personalized_feed_ranking"
+      task_type        — e.g. "personalized_recommendation"
       task_family      — e.g. "agentic"
       query_id         — e.g. "115:0042:e6_115_p1_warn"
       query_text       — what the user (or the agent's prompt) effectively says
@@ -4385,7 +4349,7 @@ if (eventsData.length === 0) {{
       // prefs, Carve-out, Meta) is intentionally NOT rendered: it's either
       // redundant with Groundtruth Preference or grader-internal context.
       const isAgenticWrite = (t.task_type || '').match(/^agentic_(auto_reply|cross_app_repost|composed_post|send_post)$/);
-      const isRanking = (t.task_type || '').match(/^(personalized_feed_ranking|personalized_recommendation|at_ai_directive_followup|short_vs_long_term_lifecycle)$/);
+      const isRanking = (t.task_type || '').match(/^(personalized_recommendation|at_ai_directive_followup|short_vs_long_term_lifecycle)$/);
 
       let sections = '';
       if (t.example_response) {{

@@ -42,7 +42,6 @@ OVER_PERS_TASKS = {
 }
 RANKING_TASKS = {
     "personalized_recommendation",
-    "personalized_feed_ranking",
     "at_ai_directive_followup",
     "daily_personalized_briefing",
     "preference_removal_regen",
@@ -965,14 +964,6 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
         "kind": "ranking_inversion",
         "ranking_check": _ranking_inversion_check,
     },
-    "personalized_feed_ranking": {
-        "axis_name": "buries_held_out_in_ranking",
-        "axis_description":
-            "Feed-ranking slate: gold puts held_out_idx in top-1; foil surfaces "
-            "negatives and buries the held-out.",
-        "kind": "ranking_inversion",
-        "ranking_check": _ranking_inversion_check,
-    },
     "at_ai_directive_followup": {
         "axis_name": "buries_directive_matches_in_ranking",
         "axis_description":
@@ -1224,7 +1215,6 @@ def _dim_schema_sanity(inst: dict, llm) -> DimensionResult:
     # full pref soup) — no candidates field expected.
     SLATE_RANKING_TASKS = {
         "personalized_recommendation",
-        "personalized_feed_ranking",
         "at_ai_directive_followup",
         "daily_personalized_briefing",
         "short_vs_long_term_lifecycle",

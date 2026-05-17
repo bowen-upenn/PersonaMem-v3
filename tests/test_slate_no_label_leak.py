@@ -74,8 +74,9 @@ def _load_slate_instances(uid: str = "115") -> list[dict]:
         if not first.startswith("#"):
             f.seek(0)
         for r in csv.DictReader(f):
-            # Match both v1 and v2 task type names.
-            if r.get("task_type") not in ("slate_ranking", "personalized_feed_ranking"):
+            # Match the v1 alias (still recognized via OLD_TO_NEW) and the
+            # active task_type. personalized_feed_ranking was removed.
+            if r.get("task_type") not in ("slate_ranking", "personalized_recommendation"):
                 continue
             try:
                 inst = json.loads(r["instance_json"])
