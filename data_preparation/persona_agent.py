@@ -812,23 +812,12 @@ SHORT_TERM_MAX_ROWS: int = 8
 # legitimate and worth surfacing for personalization during their active
 # window.
 XREF_THRESHOLD_SHORT_TERM: float = 3.0
-# Allowed categories for short_term eligibility. Keep this small — each
-# entry names a class of BOUNDED intent (one trip, one event, one purchase,
-# one skill acquisition). Category names are matched case-insensitively
-# against substrings in the canonical's `category` field (so "travel_planning"
-# and "solo travel" both hit "travel").
-SHORT_TERM_ALLOWED_CATEGORIES: set[str] = {
-    "travel",
-    "event_prep",
-    "event prep",
-    "purchase_intent",
-    "purchase intent",
-    "how_to",
-    "how to",
-    "medical_consultation",
-    "medical consultation",
-    "trip",
-}
+# Short_term eligibility is now decided by a mini-tier LLM call in Step 4.
+# The deterministic pre-filter only enforces span / row guards; everything
+# that passes those is marked "candidate" and sent to the LLM for semantic
+# classification. A hardcoded category allow-list couldn't capture
+# hobby-bounded windows (e.g. boxing match week, NFL gameweek, album
+# release window) which the LLM judges from the persona_item text directly.
 
 # --------------------------------------------------------------------------
 # Cross-polarity contradiction gate (Step 7).
@@ -964,13 +953,16 @@ def canonical_xref_threshold(
     needs a larger xref. When a canonical has no distinct row evidence, the
     fallback is the explicit threshold (no penalty).
 
-    Short-term: always `XREF_THRESHOLD_SHORT_TERM` regardless of mix. Short-
-    term intents leave sparse evidence but are still legitimate; this
-    relaxed floor lets them survive without opening a loophole for weak
-    long-term signals (eligibility for short_term is gated by category +
-    span + row count in `_classify_time_horizon_rule`).
+    Short-term / candidate: always `XREF_THRESHOLD_SHORT_TERM` regardless
+    of mix. Short-term intents leave sparse evidence but are still
+    legitimate; the relaxed floor lets them survive to Step 4's LLM
+    classification. "candidate" gets the same relaxed floor because Step 4
+    may classify it as short_term. The loophole (weak long_term canonicals
+    sneaking through on the relaxed floor) is closed by re-applying the
+    strict long_term floor in `classify_horizons_and_stop_conditions`
+    after Step 4 demotes "candidate" → "long_term".
     """
-    if time_horizon == "short_term":
+    if time_horizon in ("short_term", "candidate"):
         return XREF_THRESHOLD_SHORT_TERM
     total = n_explicit_rows + n_implicit_rows
     if total <= 0:
@@ -988,30 +980,24 @@ def _classify_time_horizon_rule(
     obs_window_days: float,
     n_total_rows: int,
 ) -> str:
-    """Rule-based horizon classification. Deterministic, LLM-free.
+    """Deterministic pre-filter for time_horizon. Returns either
+    "long_term" (provably persistent — high span OR many rows) or
+    "candidate" (defer to the mini-tier LLM in Step 4).
 
-    Returns "short_term" only when ALL eligibility conditions hold. All
-    other inputs return "long_term". Called during cross-referencing BEFORE
-    the survival filter so short-term canonicals can use a relaxed xref
-    threshold.
+    The substring-matched category allow-list was removed: it couldn't
+    capture event-bounded hobbyist windows (boxing match week, NFL
+    gameweek, album release window) which the LLM judges from the
+    persona_item text directly. Span / row guards stay as a safety net
+    so genuinely-persistent canonicals never get sent to the LLM.
     """
     if not category or obs_window_days <= 0:
-        return "long_term"
-    cat_lower = category.lower()
-    # substring match against the allow-list (handles "travel_planning",
-    # "solo travel", "medical_consultation", etc.)
-    cat_hit = any(
-        allowed_lower in cat_lower
-        for allowed_lower in (s.lower() for s in SHORT_TERM_ALLOWED_CATEGORIES)
-    )
-    if not cat_hit:
         return "long_term"
     span_frac = span_days / obs_window_days if obs_window_days > 0 else 0.0
     if span_frac > SHORT_TERM_MAX_SPAN_FRAC:
         return "long_term"
     if n_total_rows >= SHORT_TERM_MAX_ROWS:
         return "long_term"
-    return "short_term"
+    return "candidate"
 
 
 def _compute_recency_cutoff(interactions) -> int:
@@ -2885,32 +2871,62 @@ class PersonaAgent:
         self._cross_reference_negatives(groups_factory=_defaultdict)
 
     def classify_horizons_and_stop_conditions(self) -> None:
-        """Step 4: LLM refinement of time-horizon labels + stop conditions.
+        """Step 4: LLM classification of time-horizon labels + stop conditions.
 
         Runs AFTER cross-reference (positive + negative) so survival filters
-        have already used the rule-based pre-labels. This step does two
-        things:
+        have already used the rule-based pre-labels. The deterministic rule
+        in `_classify_time_horizon_rule` produces two outputs: "long_term"
+        (provably persistent) or "candidate" (the LLM decides). This step:
 
-          1. For each canonical the rule pre-labeled as `short_term`, ask the
-             LLM to confirm or DEMOTE to `long_term`. The LLM cannot promote
-             `long_term` → `short_term` (guards against weak long-term
-             signals bypassing the xref floor).
-          2. For confirmed short-term canonicals, get a structured
-             `stop_condition` so eval tasks can auto-expire recommendations.
+          1. For each "candidate" canonical, ask the mini-tier LLM to
+             classify as "short_term" or "long_term" and (if short_term)
+             emit a structured `stop_condition`.
+          2. For canonicals demoted "candidate" → "long_term" by the LLM,
+             re-apply the strict long_term xref floor. Canonicals that
+             survived the survival filter on the relaxed short-term floor
+             but turn out to be long_term must clear the long_term bar.
+             Drops are recorded.
 
         Applies to both `cross_referenced_personas` and
         `cross_referenced_negatives`. One batched LLM call per ~20
-        candidates via the mini-tier client.
+        candidates via the mini-tier client. Falls back to defaulting all
+        candidates to "long_term" (and applying the strict floor) when no
+        LLM client is configured.
         """
         client = self.llm_client_mini or self.llm_client
+
+        def _resolve_candidate_to_long(cr: CrossReferencedPersona) -> bool:
+            """Demote a "candidate" canonical to "long_term" and check whether
+            it still clears the strict long_term floor. Returns True if it
+            survives, False if it should be dropped."""
+            cr.time_horizon = "long_term"
+            cr.stop_condition = {}
+            long_floor = canonical_xref_threshold(
+                cr.n_explicit_rows, cr.n_implicit_rows, "long_term",
+            )
+            # Contradictories are exempt from the floor (same exemption used
+            # in the survival filter at Step 3).
+            if cr.relationship_type == "contradictory":
+                return True
+            return cr.confidence_cross_referenced > long_floor
+
         if client is None:
             if self.verbose:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                      f"Skipping horizon classification (no llm client).{utils.Colors.ENDC}")
+                      f"No mini LLM — defaulting all 'candidate' canonicals to "
+                      f"long_term + re-applying strict floor.{utils.Colors.ENDC}")
+            self.cross_referenced_personas = [
+                cr for cr in self.cross_referenced_personas
+                if cr.time_horizon != "candidate" or _resolve_candidate_to_long(cr)
+            ]
+            self.cross_referenced_negatives = [
+                cr for cr in self.cross_referenced_negatives
+                if cr.time_horizon != "candidate" or _resolve_candidate_to_long(cr)
+            ]
             return
 
-        # Collect rule-labeled short-term candidates (positive + negative).
-        # Long-term canonicals are untouched by this step.
+        # Collect "candidate" canonicals (positive + negative). long_term
+        # canonicals are untouched.
         obs_window_days = self._obs_window_days()
 
         def _candidate_payload(cr: CrossReferencedPersona, polarity: str) -> dict:
@@ -2937,16 +2953,16 @@ class PersonaAgent:
 
         shortterm_candidates: list[dict] = []
         for cr in self.cross_referenced_personas:
-            if cr.time_horizon == "short_term":
+            if cr.time_horizon == "candidate":
                 shortterm_candidates.append(_candidate_payload(cr, "positive"))
         for cr in self.cross_referenced_negatives:
-            if cr.time_horizon == "short_term":
+            if cr.time_horizon == "candidate":
                 shortterm_candidates.append(_candidate_payload(cr, "negative"))
 
         if not shortterm_candidates:
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
-                      f"Step 4: no short-term candidates to refine.{utils.Colors.ENDC}")
+                      f"Step 4: no candidates to classify.{utils.Colors.ENDC}")
             return
 
         user_profile_dict = {}
@@ -2964,6 +2980,15 @@ class PersonaAgent:
         BATCH = 20
         n_confirmed = 0
         n_demoted = 0
+        n_demoted_dropped = 0
+        # Track canonicals that need post-LLM drop (demoted to long_term but
+        # failed the strict long_term floor). We collect ids here and apply
+        # the drop after all batches finish so the in-place list mutation
+        # doesn't fight the batch iteration.
+        to_drop_keys: set[str] = set()
+        # Track canonicals the LLM never resolved (response dropped them) —
+        # fall back to long_term + strict floor for these as well.
+        unresolved: list[CrossReferencedPersona] = []
         n_batches = (len(shortterm_candidates) + BATCH - 1) // BATCH
         pbar = tqdm(
             total=n_batches,
@@ -2985,28 +3010,20 @@ class PersonaAgent:
             )
             response = self._query_mini_with_retry(prompt)
             pbar.update(1)
-            if not response:
-                continue
-            parsed = utils.extract_json_from_response(response)
-            if not isinstance(parsed, list):
-                continue
-            # Align by id; if the LLM drops entries or returns duplicates,
-            # apply only what we can match exactly.
+            parsed = utils.extract_json_from_response(response) if response else None
             by_id = {}
-            for entry in parsed:
-                if isinstance(entry, dict) and entry.get("id"):
-                    by_id[entry["id"]] = entry
+            if isinstance(parsed, list):
+                for entry in parsed:
+                    if isinstance(entry, dict) and entry.get("id"):
+                        by_id[entry["id"]] = entry
             for c in batch:
                 cr: CrossReferencedPersona = c["_cr"]
                 result = by_id.get(c["id"])
                 if not result:
+                    unresolved.append(cr)
                     continue
-                new_horizon = result.get("time_horizon", "short_term")
-                if new_horizon == "long_term":
-                    cr.time_horizon = "long_term"
-                    cr.stop_condition = {}
-                    n_demoted += 1
-                else:
+                new_horizon = result.get("time_horizon", "long_term")
+                if new_horizon == "short_term":
                     cr.time_horizon = "short_term"
                     sc = result.get("stop_condition")
                     if isinstance(sc, dict):
@@ -3018,12 +3035,36 @@ class PersonaAgent:
                     else:
                         cr.stop_condition = {}
                     n_confirmed += 1
+                else:
+                    # Demoted → long_term. Re-apply strict floor.
+                    n_demoted += 1
+                    if not _resolve_candidate_to_long(cr):
+                        to_drop_keys.add(_normalize_persona_text(cr.persona_item))
+                        n_demoted_dropped += 1
         pbar.close()
+
+        # Unresolved → default to long_term + strict floor.
+        for cr in unresolved:
+            if not _resolve_candidate_to_long(cr):
+                to_drop_keys.add(_normalize_persona_text(cr.persona_item))
+                n_demoted_dropped += 1
+
+        if to_drop_keys:
+            self.cross_referenced_personas = [
+                cr for cr in self.cross_referenced_personas
+                if _normalize_persona_text(cr.persona_item) not in to_drop_keys
+            ]
+            self.cross_referenced_negatives = [
+                cr for cr in self.cross_referenced_negatives
+                if _normalize_persona_text(cr.persona_item) not in to_drop_keys
+            ]
 
         if self.verbose:
             print(f"{utils.Colors.OKGREEN}[User {self.user_id}] "
                   f"Horizon classification: {n_confirmed} short_term confirmed, "
-                  f"{n_demoted} demoted to long_term.{utils.Colors.ENDC}")
+                  f"{n_demoted} demoted to long_term "
+                  f"({n_demoted_dropped} of those dropped by long_term floor), "
+                  f"{len(unresolved)} unresolved.{utils.Colors.ENDC}")
 
     def resolve_cross_polarity_contradictions(self) -> None:
         """Step 7: Cross-polarity contradiction causality gate.
@@ -3747,9 +3788,9 @@ class PersonaAgent:
         """Rule-based pre-label for each canonical's `time_horizon` field.
 
         Uses `_classify_time_horizon_rule` with the canonical's category,
-        span-fraction, and row count. Sets `time_horizon` in place. The
-        LLM refinement step (`classify_horizons_and_stop_conditions`)
-        runs after cross-ref and may demote short→long.
+        span-fraction, and row count. Sets `time_horizon` in place to one
+        of "long_term" (provably persistent) or "candidate" (defer to the
+        Step 4 LLM call, which decides short_term vs long_term).
         """
         if not canonicals:
             return

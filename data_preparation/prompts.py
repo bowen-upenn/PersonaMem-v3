@@ -2318,17 +2318,14 @@ def horizon_and_stop_prompt(
     user_profile: dict,
     obs_window_days: float,
 ) -> str:
-    """Build a prompt for batched LLM confirmation of short-term candidates.
+    """Build a prompt for batched LLM classification of time_horizon.
 
-    Each input candidate was rule-labeled as `short_term` by category +
-    span + row count. The LLM may:
-      - CONFIRM short_term and return a structured stop_condition, OR
-      - DEMOTE to long_term (when the preference actually reflects an
-        enduring identity trait the window happens to sample sparsely).
-
-    The LLM CANNOT promote long_term candidates to short_term — those are
-    not in the input. This guards against weak long-term signals sneaking
-    through the relaxed short-term xref floor.
+    Each input candidate passed a deterministic pre-filter (span /
+    row-count guards that ruled out the obviously-persistent canonicals)
+    and is now sent to the LLM for semantic short_term-vs-long_term
+    classification. The LLM is the sole arbiter; there is no hardcoded
+    category allow-list. Confirmed short_term canonicals also receive a
+    structured stop_condition so eval tasks can auto-expire them.
     """
     user_profile_json = json.dumps(user_profile or {}, indent=2)
     cand_lines = []
@@ -2345,47 +2342,52 @@ def horizon_and_stop_prompt(
     cand_block = "\n".join(cand_lines)
 
     return f"""\
-You are refining time-horizon labels for a set of USER PREFERENCES.
+You are classifying time-horizon labels for a set of USER PREFERENCES.
 
 Observation window: ~{obs_window_days:.1f} days. That's short — we cannot
 observe multi-month persistence. So "long_term" here means "an enduring
 identity trait inferable from this window" (career, religion, family role,
-stable hobby), NOT literal year-scale persistence. "short_term" means a
-bounded intent that will PLAUSIBLY stop being relevant once its goal is
-met (finished the trip, attended the event, bought the car, mastered the
-skill, completed the medical visit).
+stable hobby, ongoing genre taste), NOT literal year-scale persistence.
+"short_term" means a bounded intent that will PLAUSIBLY stop being
+relevant once its goal is met (finished the trip, attended the event /
+match / show, watched the release, mastered the skill, completed the
+medical visit, returned home from travel).
 
 ## The user
 ```json
 {user_profile_json}
 ```
 
-## Candidates (all rule-labeled as short_term by category + span + row count)
+## Candidates
 {cand_block}
 
 ## Task
 For each candidate, return:
-  - `time_horizon`: either "short_term" (confirm) or "long_term" (demote).
+  - `time_horizon`: "short_term" or "long_term".
   - `stop_condition`: REQUIRED when time_horizon="short_term". Shape:
       {{
         "type": "event" | "date" | "mastery" | "relocation",
         "description": "<1 sentence explaining when/why the intent ends>",
         "expected_stop_ts": <unix seconds int OR null if unpredictable>
       }}
-  - When demoting to "long_term", set `stop_condition` to null.
+  - When time_horizon="long_term", set `stop_condition` to null.
 
-### Guidance on each type
-- "event": intent ends when a specific scheduled event occurs (wedding, concert, medical appointment, trip arrival/departure).
-- "date": intent ends at a calendar moment (end of school semester, end of tax season).
-- "mastery": intent ends once the user learns/demonstrates a skill (how-to search, new-car functions).
+### Stop-condition types
+- "event": intent ends at a specific scheduled event (wedding, concert, sports match, medical appointment, trip arrival/departure).
+- "date": intent ends at a calendar moment (end of school semester, end of tax season, end of release week).
+- "mastery": intent ends once the user learns/demonstrates a skill (how-to search, new-car functions, software setup).
 - "relocation": intent ends when the user returns home from travel (restaurant recs in Paris).
 
-### When to demote
-- When the persona_item is actually a long-standing trait the user happens to mention rarely (e.g., a foundational value like "privacy-minded" with 3 rows in an 8-day window — still long_term).
-- When the category is bounded-sounding but the specific item is not a bounded intent (e.g., "travel photography aesthetic" → long_term, not short_term).
+### Classify as short_term when
+- The persona_item describes a one-time / bounded need (hotel recon for next week's trip; how to transfer phone data; what to wear to a formal wedding; tactical prep for a specific match).
+- The persona_item is anchored to an upcoming event, release window, or scheduled appointment (boxing match week, NFL gameweek, album drop, season premiere).
+- The persona_item has a foreseeable stop point (mastery, attendance, relocation, return).
 
-### When to confirm
-- When the persona_item clearly describes a one-time or bounded need (hotel recon for next week's trip; how to transfer Apple Watch data to a new phone; what to wear to a formal wedding).
+### Classify as long_term when
+- The persona_item is an enduring identity trait, value, or stable hobby (lifelong NFL fandom, religion, family role, baseline aesthetic, ongoing genre taste).
+- The persona_item describes a recurring activity with no defined stop (weekly fitness, daily journaling, ongoing comedy-following).
+- The persona_item is a value / preference statement, not a goal (privacy-minded, eco-conscious, prefers indie music).
+- The category sounds bounded but the specific item isn't (e.g., "travel photography aesthetic" is long_term — it's a taste, not a planned trip).
 
 ## Output Format
 Respond with ONLY a single JSON array, one entry per candidate, in the SAME ORDER as input:
