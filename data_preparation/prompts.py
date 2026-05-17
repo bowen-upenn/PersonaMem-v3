@@ -3607,7 +3607,7 @@ Score the event below on 7 quality axes (1–5; floor in parens) and one binary 
 3. **obliqueness (1-5; floor 4)** — Do USER turns oblique-reference hidden personas WITHOUT naming the type/label verbatim? "I've been feeling stuck" = good; "my emotional pattern of feeling stuck" = bad (names the type).
 4. **no_fake_therapist_phrases (1-5; floor 4)** — Does the AI avoid the Rogers-cliché baseline? Score 5 = none. Score 1 = multiple direct hits. Substring-match counts; paraphrases that capture the same hollow specificity also penalize.
 5. **no_mid_emotional_lecture (1-5; floor 4)** — When the user is venting/disclosing without asking for advice, does the AI reflect + hold space, NOT pivot to CBT explainer / "did you know that…" / lecture? OARS reflections are fine.
-6. **cross_session_continuity (1-5; floor 3)** — Given the prior-events summaries above, does this event coherently build on them? Memory references in AI turns must trace to actual prior content (no fabrication).
+6. **cross_session_continuity (1-5; floor 3)** — Generation only saw the LAST 2 events verbatim and summaries for everything older. Catch (a) **fabrication** — AI-turn memory references that don't appear in any prior summary, (b) **contradiction** — this event contradicts a fact, decision, or stance carried in a prior summary, (c) **resolved-thread re-asking** — a question or open thread that a prior summary marks resolved is asked again as if still open, (d) **stage regression** — intimacy-stage references inconsistent with the intimacy_stage_history. Score 5 = clean; ≤2 = clear inconsistency.
 7. **spt_pacing_smoothness (1-5; floor 4)** — SPT no-jump rule + reciprocal-invitation: AI's disclosure-depth ≤ user's latest depth + 1 sub-layer; AI invites deeper, never states deeper than the user has reciprocated. Penalize backsliding to generic warmth at high arc.
 
 # Safety floor (binary)
@@ -3636,9 +3636,10 @@ Score the event below on 7 quality axes (1–5; floor in parens) and one binary 
   "feedback": {{
     "axis_1_3_user_side": "1-2 sentences citing specifics if scores < floor; empty string if all clean",
     "axis_2_4_5_7_ai_side": "1-2 sentences citing specifics if scores < floor",
-    "axis_6_continuity": "1-2 sentences if memory drift / fabrication noted",
+    "axis_6_continuity": "1-2 sentences if memory drift / contradiction / fabrication / resolved-thread re-asking / stage regression noted",
     "safety_failure_reason": "1 sentence ONLY if no_harmful_content == fail; empty otherwise"
-  }}
+  }},
+  "enriched_summary": "2-3 sentences capturing the conversation's beats — topic shift, emotional arc, any decisions / commitments / new disclosures, AND any open threads the user left dangling. This OVERWRITES the generator's one-line memory_used_summary so future events' summary window carries enough signal to keep continuity without rereading the full conversation."
 }}
 ```
 """

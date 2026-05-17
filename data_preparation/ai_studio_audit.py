@@ -160,6 +160,7 @@ def audit_event(
         "safety_failed": safety_failed,
         "scores": {axis: parsed.get(axis) for axis in AUDIT_FLOORS},
         "feedback": parsed.get("feedback") or {},
+        "enriched_summary": (parsed.get("enriched_summary") or "").strip(),
         "raw": parsed,
     }
 
@@ -238,6 +239,21 @@ def audit_ai_studio_conversations(
             ev["ai_studio_metadata"]["audit_status"] = result["audit_status"]
             output.append(ev)
             continue
+
+        # Overwrite the thin generator-side memory_used_summary with the
+        # audit's richer beat-by-beat summary. The generator only sees prior
+        # events as summary form (older than the K_recent=2 window), so
+        # carrying more signal in each summary is load-bearing for the
+        # next event's continuity. Mirror the rewrite into the matching
+        # episodic_memory_item so future generation prompts pick it up.
+        enriched = result.get("enriched_summary") or ""
+        if enriched and memory_state is not None:
+            ev["memory_used_summary"] = enriched
+            ev_oid = ev.get("source_object_id", "")
+            for item in memory_state.episodic_memory_items:
+                if item.source_object_id == ev_oid:
+                    item.summary = enriched
+                    break
 
         failed = result.get("failed_axes") or []
         for axis in failed:

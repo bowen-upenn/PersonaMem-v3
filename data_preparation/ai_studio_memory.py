@@ -294,13 +294,6 @@ class RunningRelationalState:
     last_persona_consistency_anchor: str = ""
     first_session_ts: int = 0
     last_event_stage: Optional[str] = None        # for SPT smoothness check
-    # Once an event gets demoted from verbatim to summary form (because
-    # budget pressure pushed it out of the verbatim window), it STAYS
-    # demoted in all future prompts. This keeps the prompt-prefix stable
-    # across consecutive events for prompt-cache hits — without this,
-    # event[K] flipping verbatim→summary as event[N+1] is generated would
-    # invalidate the cache from event[K]'s position onward.
-    permanently_demoted_event_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -352,26 +345,27 @@ def _format_event_summary(ev: dict, summary: str) -> dict:
 def assemble_generation_context(
     memory_state: AIStudioMemoryState,
     all_prior_events: list[dict],
-    token_budget: int = 32000,
+    k_recent: int = 2,
 ) -> dict:
-    """Pass the FULL prior history (data-quality side of the asymmetry).
+    """Pass a windowed slice of prior history to the generation prompt.
 
-    Algorithm:
-      1. Sort events by source_timestamp ascending.
-      2. Any event already in `memory_state.permanently_demoted_event_ids`
-         renders as summary. These were demoted in a PRIOR call; once
-         demoted, an event stays demoted forever — that's what keeps the
-         prompt prefix STABLE across consecutive events for prompt-cache
-         hits (without stable demotion, event[K] flipping verbatim→summary
-         as event[N+1] arrives would invalidate the cache from event[K]'s
-         position onward).
-      3. For events not yet demoted: pack newest-first into verbatim until
-         budget runs out; the rest become NEW demotions in `newly_demoted`.
-      4. The returned dict includes `newly_demoted` so the caller can mark
-         them as permanently demoted in `memory_state` after a successful
-         generation.
-      5. Always inject ALL open_threads with expecting_followup=True (these
-         are cheap and load-bearing for relational continuity).
+    Mirrors the eval-side `assemble_eval_context`: last `k_recent` events
+    render verbatim (so the model sees the recent tone + any cliffhanger
+    to continue from); older events render as their stored summary only.
+    Bounds the per-event prompt at ~O(k_recent + N_summary_lines) regardless
+    of how many prior events exist.
+
+    This is a behavior change from the prior "32k token verbatim budget"
+    approach. The motivation: by event 100+, the verbatim-packed prompt
+    approached 30k tokens and dominated step-18B latency. With windowing,
+    the prompt stays at a small constant size — Step 18C audit
+    (`cross_session_continuity`) is the load-bearing check that
+    later-event conversations don't contradict earlier ones, since the
+    generator only sees summaries of older events.
+
+    Open threads, intimacy_stage_history, and persona_anchor are always
+    injected — they're the running memory state, bounded in size, and
+    load-bearing for relational continuity.
     """
     sorted_events = sorted(
         all_prior_events,
@@ -381,53 +375,22 @@ def assemble_generation_context(
         item.source_object_id: item.summary
         for item in memory_state.episodic_memory_items
     }
-    permanently_demoted = set(
-        memory_state.running_relational_state.permanently_demoted_event_ids
-    )
 
-    # Pre-render permanently-demoted events as summary (no budget check).
-    # Newly-demoted events accumulate here so the caller can persist them.
-    rendered_by_oid: dict[str, dict] = {}
-    summary_cost_total = 0
-    for ev in sorted_events:
-        oid = ev.get("source_object_id", "")
-        if oid in permanently_demoted:
-            summary = summary_by_oid.get(oid, "") or (
-                f"[no summary stored — {ev.get('conversation_type', 'conversation')}]"
-            )
-            sm = _format_event_summary(ev, summary)
-            rendered_by_oid[oid] = sm
-            summary_cost_total += _approx_tokens(str(sm))
+    verbatim_events = sorted_events[-k_recent:] if k_recent > 0 else []
+    older_events = sorted_events[:-k_recent] if k_recent > 0 else sorted_events
 
-    # Budget-pack the rest newest-first as verbatim; demote the remainder.
-    remaining = max(0, token_budget - summary_cost_total)
-    newly_demoted: list[str] = []
-    for ev in reversed(sorted_events):
-        oid = ev.get("source_object_id", "")
-        if oid in permanently_demoted:
-            continue   # already rendered above
-        verb = _format_event_verbatim(ev)
-        cost = _approx_tokens(str(verb))
-        if cost <= remaining:
-            rendered_by_oid[oid] = verb
-            remaining -= cost
-        else:
-            # Newly-demoted at this call. Mark it for caller to persist.
-            summary = summary_by_oid.get(oid, "") or (
-                f"[no summary stored — {ev.get('conversation_type', 'conversation')}]"
-            )
-            sm = _format_event_summary(ev, summary)
-            rendered_by_oid[oid] = sm
-            remaining -= _approx_tokens(str(sm))
-            newly_demoted.append(oid)
-    # Reorder back to chronological (matches sorted_events order).
-    packed = [rendered_by_oid[ev.get("source_object_id", "")] for ev in sorted_events
-              if ev.get("source_object_id", "") in rendered_by_oid]
+    packed: list[dict] = []
+    for ev in older_events:
+        summary = summary_by_oid.get(ev.get("source_object_id", ""), "") or (
+            f"[no summary stored — {ev.get('conversation_type', 'conversation')}]"
+        )
+        packed.append(_format_event_summary(ev, summary))
+    for ev in verbatim_events:
+        packed.append(_format_event_verbatim(ev))
 
     state = memory_state.running_relational_state
     return {
         "events": packed,
-        "newly_demoted_event_ids": newly_demoted,   # caller persists these
         "open_threads": [
             {
                 "topic": t.topic,
@@ -452,22 +415,6 @@ def assemble_generation_context(
         "prev_event_stage": state.last_event_stage,
         "persona_anchor": state.last_persona_consistency_anchor,
     }
-
-
-def mark_events_as_permanently_demoted(
-    memory_state: AIStudioMemoryState,
-    event_ids: list[str],
-) -> None:
-    """Persist newly-demoted event ids on memory_state. Called from the
-    AI Studio generator after each successful event so that future prompts
-    render those events as summary (cache-stable). De-duplicated."""
-    if not event_ids:
-        return
-    existing = set(memory_state.running_relational_state.permanently_demoted_event_ids)
-    for oid in event_ids:
-        if oid and oid not in existing:
-            memory_state.running_relational_state.permanently_demoted_event_ids.append(oid)
-            existing.add(oid)
 
 
 def assemble_eval_context(
@@ -654,7 +601,6 @@ def memory_state_to_dict(state: AIStudioMemoryState) -> dict:
             "last_persona_consistency_anchor": rs.last_persona_consistency_anchor,
             "first_session_ts": rs.first_session_ts,
             "last_event_stage": rs.last_event_stage,
-            "permanently_demoted_event_ids": list(rs.permanently_demoted_event_ids),
         },
     }
 
@@ -703,7 +649,6 @@ def memory_state_from_dict(d: dict) -> AIStudioMemoryState:
         last_persona_consistency_anchor=rs_raw.get("last_persona_consistency_anchor", ""),
         first_session_ts=int(rs_raw.get("first_session_ts", 0) or 0),
         last_event_stage=rs_raw.get("last_event_stage"),
-        permanently_demoted_event_ids=list(rs_raw.get("permanently_demoted_event_ids", []) or []),
     )
     return AIStudioMemoryState(
         episodic_memory_items=items,
