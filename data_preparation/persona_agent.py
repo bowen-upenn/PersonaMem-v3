@@ -855,10 +855,15 @@ MIN_EARLIER_POST_FLIP_FOR_CONCURRENT: int = 5
 # and 16 so the cohort contains realistic variation (not every user travels
 # in an 8-day window). See e6 plan §"Mobility-class diversity across users".
 MOBILITY_CLASS_DISTRIBUTION: dict[str, float] = {
-    "homebody":      0.30,  # 1 city (home) for the full window; no trip arc
-    "domestic":      0.40,  # Home + 1–2 same-country cities; ≤ 3-day away
-    "international": 0.20,  # Home + ≥ 1 foreign-locale visit (trip arc)
-    "nomadic":       0.10,  # ≥ 3 cities over the window; no dominant home
+    # Shifted toward travelers so the geo-shift eval task covers more
+    # of the cohort. Homebody share kept non-zero so the population
+    # still includes the "no travel in this window" case (a legitimate
+    # minority) — local_recommendation_geo_shift stays data_dependent
+    # for them.
+    "homebody":      0.10,  # 1 city (home) for the full window; no trip arc
+    "domestic":      0.50,  # Home + 1–2 same-country cities; ≤ 3-day away
+    "international": 0.25,  # Home + ≥ 1 foreign-locale visit (trip arc)
+    "nomadic":       0.15,  # ≥ 3 cities over the window; no dominant home
 }
 
 # Per-class location caps consumed by Step 15.
