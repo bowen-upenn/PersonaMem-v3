@@ -31,7 +31,6 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # (2–4 rows per episode × 1–3 episodes) → up to ~12 instances.
     # data_dependent so the audit treats the floor as advisory.
     "over_personalization_sensitive_event":   {"min": 2,  "max": 12, "data_dependent": True},
-    "personalized_feed_ranking":              {"min": 10, "max": 14},
 
     # Secondary tasks
     "at_ai_directive_followup":               {"min": 8,  "max": 12},

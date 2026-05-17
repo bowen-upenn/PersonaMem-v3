@@ -154,16 +154,6 @@ them up.
   ≤ 0.15, 3 medium 0.15–0.40, 2 hard 0.40–0.70). Primary metric switched
   precision → **F1** (`irrelevant_rejection_f1`) so always-accept and
   always-reject both score 0.
-- **`personalized_feed_ranking`** — slate's previous `negative` tier
-  (3 known-disliked persona items, easy to reject by surface keyword
-  match) replaced with a `hard_negative` tier: 3 events the user
-  *passed over* whose hashtags overlap the held-out target by Jaccard
-  ∈ [0.30, 0.60] — adjacent enough to be confusable on the surface,
-  ranking gain stays 0. Slate still 16 items. New per-row metrics:
-  `hard_negative_in_top1`, `hard_negative_in_top3`. Backfill: when a
-  user has too few negative engagement events with matching hashtags,
-  the tier falls back to the legacy persona-level negative items so
-  the slate still hits 16.
 - **`preference_removal_regen`** — was 0/5 because `removal_success`
   required `orig_score - regen_score ≥ 0.5` (absolute) but user 115's
   orig_score ≈ 0.009. Now: (a) build-time filter drops rows where the

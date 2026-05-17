@@ -3636,37 +3636,11 @@ def build_benchmark(
     if not test_items:
         raise SystemExit(f"No test items found for user {user_id} under {backend_dir}/")
 
-    # Task A slates — per-item seeded with audit-and-regenerate retry loop.
-    from evaluation.audit_helpers import audit_instance, BuildAuditReporter, make_blind_baseline_for_ranking
+    # personalized_feed_ranking was removed (legacy alias for
+    # personalized_recommendation). Build-audit infrastructure is still
+    # instantiated for downstream Task B / agentic auditing.
+    from evaluation.audit_helpers import BuildAuditReporter
     auditor = BuildAuditReporter(user_id=user_id)
-    # Phase I.4: when blind_check_llm is provided, run a blind-baseline LLM
-    # probe on every candidate slate. If the model can pick the held-out by
-    # text alone (no user history), the slate is contaminated → regenerate.
-    blind_check = make_blind_baseline_for_ranking(blind_check_llm) if blind_check_llm is not None else None
-    slate_instances = []
-    for t in test_items:
-        if t.app not in SOCIAL_APPS:
-            continue
-
-        def _build_with_seed_bump(_inst, bump: int):
-            # Re-roll the per-instance RNG with a different salt — re-shuffles
-            # distractor order + which past/future positives get picked.
-            rng_retry = _instance_rng(rng_seed + bump, f"slate:{t.source_object_id}")
-            return build_slate_instance(t, bq, rng_retry)
-
-        rng = _instance_rng(rng_seed, f"slate:{t.source_object_id}")
-        candidate = build_slate_instance(t, bq, rng)
-        kept, audit_report = audit_instance(
-            candidate, "personalized_feed_ranking",
-            rebuild_fn=_build_with_seed_bump, max_attempts=3,
-            blind_baseline=blind_check,
-        )
-        auditor.record("personalized_feed_ranking", audit_report, kept is not None)
-        if kept is not None:
-            slate_instances.append(kept)
-        else:
-            print(f"[build_benchmark] WARN: dropping personalized_feed_ranking "
-                  f"instance for test_id={t.source_object_id} after 3 failed audit attempts")
 
     # Task B (v2) — proactive + control arms with build-time curation.
     b_arms = build_task_b_arms(
@@ -3842,7 +3816,6 @@ def build_benchmark(
     # Apply per-task quotas (stratified random truncation when over cap).
     # Floor enforcement is the synthesis layer's job — this only caps.
     pre_cap_buckets = {
-        "personalized_feed_ranking":              slate_instances,
         "chatbot_personalized_response":          b_arms["chatbot_personalized_response"],
         "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
         "over_personalization_repetition_recsys":  c1c_clusters,
@@ -3873,9 +3846,9 @@ def build_benchmark(
         # NB: most tasks have no synthesis path that fills these gaps. Only
         # over_personalization_chatbot_text and over_personalization_distractor_reject
         # have dedicated adversarial synthesis (Phase I.2). Other tasks (notably
-        # chatbot_personalized_response, personalized_feed_ranking,
-        # at_ai_directive_followup) are supply-side: a persistent gap means the
-        # builder isn't producing enough candidates and needs investigation.
+        # chatbot_personalized_response, at_ai_directive_followup) are
+        # supply-side: a persistent gap means the builder isn't producing
+        # enough candidates and needs investigation.
         print(f"[build_benchmark] floor gaps (supply-side; investigate if persistent): {floor_gaps}")
 
     return {

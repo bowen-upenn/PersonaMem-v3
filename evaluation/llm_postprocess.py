@@ -43,7 +43,6 @@ _PERSONALIZATION_TASKS = {
     "over_personalization_sensitive_event",
     "over_personalization_context_shift",
     "preference_removal_regen",
-    "personalized_feed_ranking",
     "personalized_recommendation",
     "at_ai_directive_followup",
     "daily_personalized_briefing",
@@ -90,7 +89,6 @@ _TASKS_ALREADY_CONCRETE: set[str] = set()
 # Ranking tasks — example_response is a deterministic ranked index list,
 # computed without LLM.
 _RANKING_TASKS = {
-    "personalized_feed_ranking",
     "personalized_recommendation",
     "at_ai_directive_followup",
     "short_vs_long_term_lifecycle",
@@ -1245,22 +1243,6 @@ def _compute_ranking_example(inst: dict, task_type: str) -> str:
     """Deterministic ranked-index 'example_response' for ranking tasks.
     Returns a compact list of ints with the held-out at rank 1, hard
     negatives last, fillers in between."""
-    if task_type == "personalized_feed_ranking":
-        slate = inst.get("slate") or []
-        held = inst.get("held_out_idx")
-        origins = inst.get("origin_by_idx") or []
-        if not isinstance(held, int) or not slate:
-            return ""
-        # Order: held-out → past_positive → future_positive → others → negative last
-        n = len(slate)
-        priority = {"held_out": 0, "past_positive": 1, "future_positive": 2,
-                    "filler": 3, "irrelevant": 3, "hard_neg": 4, "negative": 5}
-        order = sorted(
-            range(n),
-            key=lambda i: (priority.get(origins[i] if i < len(origins) else "filler", 3),
-                          0 if i == held else 1, i),
-        )
-        return f"Ranked indexes: {order}"
     if task_type == "personalized_recommendation":
         cands = inst.get("candidates") or []
         held = inst.get("held_out_idx")
@@ -1307,23 +1289,6 @@ def _compute_ranking_inferior(inst: dict, task_type: str) -> str:
 
     No LLM call. The example/inferior pair differ ONLY in index order, so
     a grader cannot win on surface features (length, tone, format)."""
-    if task_type == "personalized_feed_ranking":
-        slate = inst.get("slate") or []
-        held = inst.get("held_out_idx")
-        origins = inst.get("origin_by_idx") or []
-        if not isinstance(held, int) or not slate:
-            return ""
-        n = len(slate)
-        # Inverted: negatives first, held-out last.
-        priority = {"negative": 0, "hard_neg": 1, "irrelevant": 2,
-                    "filler": 2, "future_positive": 3, "past_positive": 4,
-                    "held_out": 5}
-        order = sorted(
-            range(n),
-            key=lambda i: (priority.get(origins[i] if i < len(origins) else "filler", 2),
-                          1 if i == held else 0, i),
-        )
-        return f"Ranked indexes: {order}"
     if task_type == "personalized_recommendation":
         cands = inst.get("candidates") or []
         held = inst.get("held_out_idx")

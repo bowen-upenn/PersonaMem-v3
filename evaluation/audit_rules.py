@@ -48,7 +48,6 @@ _REACTIVE_PERSONALIZATION_TASKS = {
 # rather than ``held_out_preference``. We check for those structures
 # separately.
 _RANKING_TASKS = {
-    "personalized_feed_ranking",
     "at_ai_directive_followup",
     "personalized_recommendation",
     "personalized_search_ranking",  # legacy alias
@@ -161,15 +160,7 @@ def check_ground_truth_presence(record: dict) -> list[Finding]:
         return out
     if tt in _RANKING_TASKS:
         inst = record.get("instance_full") or {}
-        if tt == "personalized_feed_ranking":
-            slate = inst.get("slate") or []
-            if not slate:
-                out.append(Finding(
-                    record["query_id"], tt, "high", "ranking_slate_missing",
-                    "slate-ranking task has empty slate",
-                    "regenerate",
-                ))
-        elif tt in ("at_ai_directive_followup", "short_vs_long_term_lifecycle"):
+        if tt in ("at_ai_directive_followup", "short_vs_long_term_lifecycle"):
             candidates = inst.get("candidates") or []
             if not candidates:
                 out.append(Finding(
@@ -237,15 +228,6 @@ def check_distractor_sanity(record: dict) -> list[Finding]:
                     "restraint task has no distractor / forbidden_items pool — restraint metric trivially passes",
                     "regenerate",
                 ))
-    elif tt == "personalized_feed_ranking":
-        inst = record.get("instance_full") or {}
-        slate = inst.get("slate") or []
-        if len(slate) < 5:
-            out.append(Finding(
-                record["query_id"], tt, "high", "slate_too_small",
-                f"ranking task slate has {len(slate)} candidates (need ≥5 distractors + GT)",
-                "regenerate",
-            ))
     return out
 
 

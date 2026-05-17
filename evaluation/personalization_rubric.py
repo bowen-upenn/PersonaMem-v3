@@ -53,8 +53,6 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
     # Chatbot response (was: chatbot_response_proactive / _control)
     "chatbot_personalized_response": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # Personalized feed ranking (was: slate_ranking)
-    "personalized_feed_ranking":         {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     # Restraint family — repetition fatigue tested in two surface modes
     # (recsys-loop vs varied chatbot questions on same pref).
     "over_personalization_repetition_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
@@ -95,7 +93,7 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
 
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
 SOURCE_B_APPLICABLE = {
-    "personalized_feed_ranking", "chatbot_personalized_response",
+    "chatbot_personalized_response",
     "agentic_user_tone_post", "agentic_cross_app_repost",
     "agentic_vague_refind",
     "agentic_proactive_daily_catchup", "agentic_trending_alert",

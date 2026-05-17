@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from evaluation.tasks import (  # noqa: E402
-    slate_ranking,
     chatbot_response,
     over_personalization,
     agentic_tasks,
@@ -72,9 +71,7 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     from evaluation.task_registry import normalize_task_type
     task_type = normalize_task_type(task_type)
 
-    if task_type == "personalized_feed_ranking":
-        rows = slate_ranking.run_task_a(**common)
-    elif task_type in ("chatbot_personalized_response", "over_personalization_chatbot_text",
+    if task_type in ("chatbot_personalized_response", "over_personalization_chatbot_text",
                        "over_personalization_distractor_reject",
                        "over_personalization_sensitive_event"):
         # Phase I.3: distractor-reject converted from a 4-way ranking task to
