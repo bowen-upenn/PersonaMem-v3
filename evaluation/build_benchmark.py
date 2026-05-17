@@ -3745,8 +3745,8 @@ def build_benchmark(
     # path requires a live `mcp__{app}_get_feed` backend that this repo
     # doesn't ship, so moment instances now ride the same deterministic
     # ranking metric (recall@k / ndcg@k / mrr) but carry a voiced user
-    # query (e.g. "open the feeds, it's lunch") instead of the literal
-    # `[recsys]` token used by the proactive recsys flavor.
+    # query (e.g. "open the feeds, it's lunch") instead of the empty
+    # query_text used by the proactive recsys flavor.
     try:
         from evaluation.tasks.personalized_recommendation import build_personalized_recommendation
         e4_instances = build_personalized_recommendation(bq, user_id, t_probe)

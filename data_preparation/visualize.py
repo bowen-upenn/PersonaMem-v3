@@ -2556,11 +2556,9 @@ def _q_daily_personalized_briefing(inst: dict) -> str:
 
 
 def _q_personalized_recommendation(inst: dict) -> str:
-    """Fixed `[recsys]` template — matches the convention for proactive
-    recsys-served slates with no live user message. Candidate titles
-    already render in the slate block, so the prior format duplicated
-    the candidate pool."""
-    return "[recsys]"
+    """Empty string — proactive recsys-served slate, no live user
+    message. Candidate titles already render in the slate block."""
+    return ""
 
 
 def _q_short_vs_long_term_lifecycle(inst: dict) -> str:

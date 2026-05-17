@@ -555,8 +555,8 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "at_ai_directive_followup":               "user_query",
     "daily_personalized_briefing":            "proactive_recommendation",
     # personalized_recommendation (renamed from personalized_search_ranking)
-    # carries the fixed `[recsys]` template — system-side recommendation
-    # surface, no live user message.
+    # carries an empty query_text — system-side recommendation surface, no
+    # live user message.
     "personalized_recommendation":            "proactive_recommendation",
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
