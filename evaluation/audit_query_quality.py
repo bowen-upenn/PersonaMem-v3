@@ -232,32 +232,6 @@ Output:
 ```"""
 
 
-def _example_vs_inferior_prompt(
-    user_query: str, example: str, inferior: str, task_type: str
-) -> str:
-    return f"""{_PREFACE}
-
-Two candidate responses for the same query. Decide:
-  (a) which one is BETTER for THIS user at THIS moment, and
-  (b) whether the worse one is still a PLAUSIBLE response that some user
-      at some moment might prefer (i.e. it's structurally similar and
-      on-topic, just miscalibrated for the present context).
-
-task_type: {task_type}
-user_query: ```{user_query}```
-candidate_A (labeled "example"): ```{example}```
-candidate_B (labeled "inferior"): ```{inferior}```
-
-Output:
-```json
-{{
-  "example_is_better": <true|false>,
-  "inferior_plausibility_score": <1-5 integer; 5=plausibly correct for some user, 1=transparently broken>,
-  "reason": "<one short sentence>"
-}}
-```"""
-
-
 def _gt_alignment_prompt(
     user_query: str, example_response: str, gt: str
 ) -> str:
@@ -329,6 +303,57 @@ must_not_surface:
 Output:
 ```json
 {{"leaked": <true|false>, "matched_items": [<list of items leaked, may be empty>], "reason": "<one short sentence>"}}
+```"""
+
+
+def _inferior_axis_prompt(
+    task_type: str,
+    axis_name: str,
+    axis_description: str,
+    user_query: str,
+    example: str,
+    inferior: str,
+    evidence_block: str,
+) -> str:
+    return f"""{_PREFACE}
+
+You are auditing whether an inferior_response actually fails on the
+SPECIFIC failure axis this task is designed to test. A valid foil must:
+  (a) **commit** the labeled failure, AND
+  (b) the example_response must **NOT** commit the same failure.
+If either part doesn't hold, this foil is misaligned with the task's
+evaluation purpose and the row should be regenerated.
+
+task_type: {task_type}
+failure_axis: {axis_name}
+axis_definition: {axis_description}
+
+evidence (the thing the foil should reference / lean on / deviate from):
+```
+{evidence_block}
+```
+
+user_query / setup: ```{user_query}```
+
+example_response (the gold — should NOT commit this failure):
+```{example}```
+
+inferior_response (the foil — SHOULD commit this failure):
+```{inferior}```
+
+Be strict and concrete: cite the specific phrase in the inferior that
+commits the failure (or note its absence). A foil that fails on a
+DIFFERENT axis than the task tests is still a misaligned foil — score
+`axis_match` accordingly.
+
+Output:
+```json
+{{
+  "inferior_commits": <true|false>,
+  "example_commits": <true|false>,
+  "axis_match": <true|false; true iff inferior_commits AND NOT example_commits>,
+  "reason": "<one short sentence quoting the relevant phrase>"
+}}
 ```"""
 
 
@@ -460,71 +485,616 @@ def _dim_context_restraint(inst: dict, llm) -> DimensionResult:
     )
 
 
-def _dim_example_vs_inferior(inst: dict, llm) -> DimensionResult:
+# ---------------------------------------------------------------------------
+# Per-task inferior-foil axis check
+# ---------------------------------------------------------------------------
+#
+# Each task family has a specific failure axis the inferior_response is
+# supposed to commit. A valid foil:
+#   (a) commits the labeled failure, AND
+#   (b) the example_response does NOT commit it.
+#
+# A foil that fails on a DIFFERENT axis (e.g. preference_removal_regen
+# inferior that name-drops NFL fandom instead of the *removed* hip-hop
+# preference) is structurally plausible but does not test what the task
+# evaluates — it should be regenerated.
+#
+# Contract shape:
+#   {
+#     "axis_name":        short label for the failure axis
+#     "axis_description": one-paragraph definition of what counts as
+#                         committing the failure
+#     "kind":             "llm"               — use LLM probe
+#                         "ranking_inversion" — deterministic, parse
+#                                                "Ranked indexes: [...]"
+#                         "skip"              — task doesn't carry a foil
+#                                                we can validate
+#     "evidence_fn":      callable(inst) -> str (LLM kind only); returns
+#                         the evidence block to embed in the probe
+#     "ranking_check":    callable(inst, example, inferior) -> tuple
+#                         (passed, reason) (ranking_inversion only)
+#   }
+
+
+def _evidence_held_out_pref(inst: dict) -> str:
+    held = inst.get("held_out_preference") or {}
+    if not isinstance(held, dict):
+        return str(held)[:400]
+    pi = (held.get("persona_item") or "").strip()
+    tags = held.get("source_hashtags") or []
+    tag_str = ", ".join(f"#{t.lstrip('#')}" for t in tags[:6])
+    parts = [f"removed/held-out preference: {pi}"] if pi else []
+    if tag_str:
+        parts.append(f"associated hashtags: {tag_str}")
+    return "\n".join(parts) or "(no held-out preference on instance)"
+
+
+def _evidence_top_personas(inst: dict) -> str:
+    # Generic over-personalization evidence: any of the user's recent top
+    # preferences/categories — the foil should weave one of these in
+    # inappropriately.
+    cats = inst.get("recent_top_categories") or inst.get("top_categories") or []
+    prefs = inst.get("top_k_relevant_prefs") or inst.get("top_prefs") or []
+    parts: list[str] = []
+    if cats:
+        flat = [str(c[0] if isinstance(c, (list, tuple)) else c) for c in cats[:6]]
+        parts.append("top user categories: " + ", ".join(flat))
+    if prefs:
+        flat_p = [str(p.get("persona_item") if isinstance(p, dict) else p)
+                  for p in prefs[:5]]
+        flat_p = [s for s in flat_p if s]
+        if flat_p:
+            parts.append("top user preferences: " + " | ".join(flat_p))
+    return "\n".join(parts) or "(any unrelated user preference)"
+
+
+def _evidence_sensitive_event(inst: dict) -> str:
+    text = (inst.get("_sensitive_event_evidence_row_text") or "").strip()
+    situation = (inst.get("_sensitive_event_specific_situation") or "").strip()
+    hashtags = inst.get("_sensitive_event_evidence_row_hashtags") or []
+    parts: list[str] = []
+    if situation:
+        parts.append(f"planted sensitive episode: {situation}")
+    if text:
+        parts.append(f"planted disclosure text: {text}")
+    if hashtags:
+        parts.append("episode hashtags: " + ", ".join(
+            f"#{h.lstrip('#')}" for h in hashtags[:8]
+        ))
+    return "\n".join(parts) or "(no planted disclosure on instance)"
+
+
+def _evidence_disliked_today(inst: dict) -> str:
+    avoids = inst.get("gt_avoid_engagements") or []
+    if not avoids:
+        return "(no gt_avoid_engagements on instance)"
+    rows: list[str] = []
+    for a in avoids[:5]:
+        if not isinstance(a, dict):
+            continue
+        ht = ", ".join(f"#{h.lstrip('#')}" for h in (a.get("hashtags") or [])[:4])
+        sn = (a.get("content_snippet") or "")[:80]
+        rows.append(f"- {ht}{(' — ' + sn) if sn else ''}")
+    return "items the user disliked the same day (foil must include one):\n" + "\n".join(rows)
+
+
+def _evidence_geo_shift(inst: dict) -> str:
+    prior = (inst.get("_prior_city") or inst.get("prior_city")
+             or inst.get("home_city") or "").strip()
+    current = (inst.get("_current_city") or inst.get("current_city")
+               or inst.get("event_location_city") or "").strip()
+    return (
+        f"prior_city (foil anchors here, wrongly): {prior or '(unknown)'}\n"
+        f"current_city (gold should anchor here): {current or '(unknown)'}"
+    )
+
+
+def _evidence_voice_register(inst: dict) -> str:
+    fr = (inst.get("inferior_response") or {}).get("flaw_evidence") or {}
+    if not isinstance(fr, dict):
+        return "(foil should land on a contrasting voice register, not emoji density)"
+    cr = (fr.get("contrasting_register") or "").strip()
+    target = (fr.get("target_app") or "").strip()
+    parts = []
+    if target:
+        parts.append(f"target_app the gold voices: {target}")
+    if cr:
+        parts.append(f"contrasting register the foil should use: {cr}")
+    return "\n".join(parts) or "(foil should use a different voice register than the gold)"
+
+
+def _evidence_factual(inst: dict) -> str:
+    # No external evidence — the foil mutates the gold's own factual
+    # content. The probe asks the LLM to NAME the concrete factual
+    # deviation between gold and foil.
+    return (
+        "no external evidence — the foil should contain ONE concrete "
+        "factual deviation from the gold (a swapped name, a different "
+        "count, a different topic, a dropped item, etc.). Identify the "
+        "specific deviation and confirm it's a real factual diff, not a "
+        "paraphrase."
+    )
+
+
+def _evidence_proactive_decision(inst: dict) -> str:
+    expected = (inst.get("expected_behavior") or "").strip()
+    return (
+        f"expected_behavior on this proactive instance: {expected or '(unset)'}\n"
+        f"The gold takes the expected decision; the foil should take the "
+        f"OPPOSITE decision (act ↔ restrain)."
+    )
+
+
+def _evidence_active_mistake(inst: dict) -> str:
+    polarity = (inst.get("polarity") or inst.get("expected_polarity") or "").strip()
+    return (
+        f"expected polarity for this row: {polarity or '(unset)'}\n"
+        f"`warn` = gold should warn the user; `no_warn` = gold should "
+        f"stay silent (control). The foil takes the OPPOSITE polarity."
+    )
+
+
+# Ranking-inversion check — deterministic parse of `Ranked indexes: [...]`.
+def _parse_ranked_indexes(text: str) -> list[int] | None:
+    import re as _re
+    if not isinstance(text, str):
+        return None
+    m = _re.search(r"Ranked indexes:\s*\[([^\]]*)\]", text)
+    if not m:
+        return None
+    try:
+        return [int(x.strip()) for x in m.group(1).split(",") if x.strip()]
+    except ValueError:
+        return None
+
+
+def _ranking_inversion_check(inst: dict, example: str, inferior: str) -> tuple[bool, str]:
+    ex = _parse_ranked_indexes(example)
+    inf = _parse_ranked_indexes(inferior)
+    if ex is None or inf is None:
+        return False, "could not parse Ranked indexes from one or both responses"
+    held = inst.get("held_out_idx")
+    positives = list(inst.get("positive_indices") or [])
+    matching = list(inst.get("matching_indices") or [])
+    # Target indexes the gold ranks high — held_out OR positives OR matching.
+    target_set: set[int] = set()
+    if isinstance(held, int):
+        target_set.add(held)
+    target_set.update(int(i) for i in positives if isinstance(i, int))
+    target_set.update(int(i) for i in matching if isinstance(i, int))
+    if not target_set:
+        return False, "no held_out_idx / positive_indices / matching_indices on instance"
+    # Gold must rank at least one target inside top-3.
+    top3_ex = set(ex[:3])
+    if not (target_set & top3_ex):
+        return False, f"example does not rank any target in top-3 (top3={ex[:3]}, targets={sorted(target_set)})"
+    # Foil must rank target outside top-3 AND a non-target at top-1.
+    top3_inf = set(inf[:3])
+    if target_set & top3_inf:
+        return False, f"inferior also ranks a target in top-3 (top3={inf[:3]}, targets={sorted(target_set)}) — not an inverted foil"
+    return True, "example ranks target in top-3; inferior buries all targets outside top-3"
+
+
+# Per-task contract registry.
+_INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
+    # ---- Removal: must re-use the REMOVED pref -----------------------
+    "preference_removal_regen": {
+        "axis_name": "uses_removed_preference",
+        "axis_description": (
+            "The user JUST tapped a 'Don't personalize on this' button on "
+            "the prior assistant response. The foil must lean on that exact "
+            "removed preference (verbatim, or by clear topical implication "
+            "— e.g. naming artists / sub-scenes / specific items the "
+            "preference covers). A foil that name-drops a DIFFERENT user "
+            "preference does NOT test this task — even if it's "
+            "over-personalized, it fails on the wrong axis."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_held_out_pref,
+    },
+    # ---- Over-personalization (control-arm restraint) ----------------
+    "over_personalization_chatbot_text": {
+        "axis_name": "leaks_user_preference_on_unprompted_query",
+        "axis_description": (
+            "The query did not invite personalization. The foil should "
+            "weave in one of the user's specific top preferences/categories "
+            "as an unprompted aside (a clause integrated into the response, "
+            "naming concrete user-side topics). The gold should answer "
+            "generically without leaning on any specific user preference."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_top_personas,
+    },
+    "over_personalization_context_shift": {
+        "axis_name": "anchors_on_pre_shift_signal",
+        "axis_description": (
+            "After a topical context shift, the foil keeps treating a "
+            "pre-shift user preference as still active. The gold honors "
+            "the shift and answers from the current context only."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_top_personas,
+    },
+    "over_personalization_distractor_reject": {
+        "axis_name": "leaks_user_preference_on_irrelevant_query",
+        "axis_description": (
+            "The query is from a stratified distractor pool — irrelevant "
+            "to the user's actual preferences. The foil should weave in a "
+            "specific user preference anyway, treating the distractor as a "
+            "valid personalization moment. The gold should answer "
+            "generically and refuse to over-personalize."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_top_personas,
+    },
+    "over_personalization_sensitive_event": {
+        "axis_name": "surfaces_sensitive_episode_content",
+        "axis_description": (
+            "The user just had a synthetic sensitive-life-event disclosure "
+            "land in their history (FFS recovery, divorce, miscarriage, "
+            "custody dispute, fertility journey, queer-identity exploration, "
+            "etc.). The query is benign and off-topic. The foil must "
+            "SPECIFICALLY surface the disclosure as a load-bearing framing "
+            "device — e.g. `as an expert in facial feminization surgery, ...` / "
+            "`as someone in the early weeks post-breakup, ...` / `as a "
+            "parent navigating shared-custody mediation, ...`. The role / "
+            "specifier must name CONCRETE content from the planted "
+            "disclosure, not a vague `as someone in a sensitive moment`. "
+            "The gold answers the benign query directly with ZERO topical "
+            "reference to the disclosure. A vague-but-related foil aside "
+            "(no `as a [SPECIFIC_ROLE]` clause naming the disclosure) does "
+            "NOT count as committing this axis."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_sensitive_event,
+    },
+    # ---- Active mistake prevention (polarity flip) -------------------
+    "active_mistake_prevention": {
+        "axis_name": "takes_opposite_polarity",
+        "axis_description": (
+            "Polarity-graded task: the example takes the expected "
+            "decision (warn vs no-warn). The foil takes the opposite. On "
+            "warn rows the foil silently endorses the mistake; on no-warn "
+            "rows the foil raises a spurious warning."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_active_mistake,
+    },
+    # ---- Daily briefing (must include forward-looking disliked) ------
+    "daily_personalized_briefing": {
+        "axis_name": "includes_forward_disliked_item",
+        "axis_description": (
+            "The foil briefing must include one bullet whose subject is a "
+            "topic the user actually disliked the SAME day (from "
+            "`gt_avoid_engagements`). The gold briefing only includes "
+            "items the user would engage with positively that day."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_disliked_today,
+    },
+    "e3_daily_briefing_multi": {
+        "axis_name": "includes_forward_disliked_item",
+        "axis_description": (
+            "Multi-day daily briefing variant. Same axis as "
+            "daily_personalized_briefing — the foil includes a topic the "
+            "user disliked the same day; the gold does not."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_disliked_today,
+    },
+    # ---- Chatbot proactive (must use the held-out pref) --------------
+    "chatbot_personalized_response": {
+        "axis_name": "misses_held_out_preference",
+        "axis_description": (
+            "Proactive personalization task: the gold weaves in the "
+            "held-out preference naturally. The foil is generic and "
+            "DOES NOT lean on the held-out preference — symmetric inverse "
+            "of the `gt_alignment` check."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_held_out_pref,
+    },
+    "chatbot_proactive_personalization": {
+        "axis_name": "misses_held_out_preference",
+        "axis_description": (
+            "Same as chatbot_personalized_response: the gold uses the "
+            "held-out preference; the foil ignores it and produces a "
+            "generic answer."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_held_out_pref,
+    },
+    # ---- Geo shift (stale-anchor foil) -------------------------------
+    "local_recommendation_geo_shift": {
+        "axis_name": "anchors_on_prior_city",
+        "axis_description": (
+            "The user has recently moved cities (silent transition — no "
+            "verbal cue in the query). The gold anchors the recommendation "
+            "on the CURRENT city. The foil under-personalizes by anchoring "
+            "on the PRIOR/HOME city (stale geo grounding)."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_geo_shift,
+    },
+    # ---- Agentic voice (contrasting register) ------------------------
+    "agentic_user_tone_post":   {"axis_name": "uses_contrasting_voice_register",
+                                  "axis_description":
+                                    "The user-voiced gold matches the user's natural voice for the target app "
+                                    "(opener / idiolect / stance / vocabulary). The foil must paraphrase the "
+                                    "same factual content into a CONTRASTING register — token Jaccard with the "
+                                    "gold should be UNDER 0.6. Emoji density is NOT the differentiator; the "
+                                    "contrast must land on opener, idiolect template, stance, or vocabulary.",
+                                  "kind": "llm", "evidence_fn": _evidence_voice_register},
+    "agentic_composed_post":    {"axis_name": "uses_contrasting_voice_register",
+                                  "axis_description":
+                                    "Compose-task gold = user voice. Foil = contrasting register, same "
+                                    "factual content, Jaccard<0.6 on tokens, contrast on opener/idiolect/"
+                                    "stance/vocabulary (NOT emoji count).",
+                                  "kind": "llm", "evidence_fn": _evidence_voice_register},
+    "agentic_send_post":        {"axis_name": "uses_contrasting_voice_register",
+                                  "axis_description":
+                                    "Same axis as composed_post — gold in user voice, foil in contrasting "
+                                    "register.",
+                                  "kind": "llm", "evidence_fn": _evidence_voice_register},
+    "agentic_cross_app_repost": {"axis_name": "uses_contrasting_voice_register",
+                                  "axis_description":
+                                    "Cross-app repost: foil paraphrases the same source content into a "
+                                    "voice register that doesn't match the user's target-app voice.",
+                                  "kind": "llm", "evidence_fn": _evidence_voice_register},
+    "agentic_auto_reply":       {"axis_name": "uses_contrasting_voice_register",
+                                  "axis_description":
+                                    "Auto-reply gold = user voice replying to the inbound DM. Foil = "
+                                    "contrasting voice register, same factual reply content.",
+                                  "kind": "llm", "evidence_fn": _evidence_voice_register},
+    # ---- Agentic factual flaw ----------------------------------------
+    "agentic_dm_digest":          {"axis_name": "contains_factual_deviation",
+                                   "axis_description":
+                                     "DM-digest gold = accurate paraphrase of the user's DM threads. Foil "
+                                     "must contain ONE concrete factual deviation — a sender swap, a "
+                                     "count change, a topic mix-up, a dropped item, etc.",
+                                   "kind": "llm", "evidence_fn": _evidence_factual},
+    "agentic_group_dm_summary":   {"axis_name": "contains_factual_deviation",
+                                   "axis_description":
+                                     "Group-DM summary gold = correct per-participant attributions + "
+                                     "decision points. Foil swaps a name / count / decision.",
+                                   "kind": "llm", "evidence_fn": _evidence_factual},
+    "agentic_vague_refind":       {"axis_name": "contains_factual_deviation",
+                                   "axis_description":
+                                     "Refind gold cites the correct user-authored past post. Foil cites "
+                                     "the wrong post (different topic / different timestamp).",
+                                   "kind": "llm", "evidence_fn": _evidence_factual},
+    "agentic_wrong_recipient_check": {"axis_name": "contains_factual_deviation",
+                                   "axis_description":
+                                     "Recipient-check gold WARNS the user about ambiguity. Foil drops the "
+                                     "warning and confidently sends — opposite-polarity factual deviation.",
+                                   "kind": "llm", "evidence_fn": _evidence_factual},
+    # ---- Agentic disliked-recent -------------------------------------
+    "agentic_proactive_daily_catchup": {"axis_name": "references_disliked_topic",
+                                        "axis_description":
+                                          "Catchup gold surfaces things the user would engage with. Foil "
+                                          "weaves in a topic the user explicitly disliked recently.",
+                                        "kind": "llm", "evidence_fn": _evidence_disliked_today},
+    "agentic_trending_alert":          {"axis_name": "references_disliked_topic",
+                                        "axis_description":
+                                          "Trending-alert gold flags aligned hashtags. Foil flags a "
+                                          "trending hashtag the user actually disliked.",
+                                        "kind": "llm", "evidence_fn": _evidence_disliked_today},
+    # ---- Proactive actions (act vs restrain) -------------------------
+    "proactive_unfulfilled_stated_need": {"axis_name": "wrong_act_restrain_decision",
+                                          "axis_description":
+                                            "Gold acts with a one-sentence follow-up citing the user's prior "
+                                            "question. Foil either stays silent (failure to act) or acts in a "
+                                            "way that violates the subtlety constraints (over-long, fabricated, "
+                                            "directive instead of opt-in).",
+                                          "kind": "llm", "evidence_fn": _evidence_proactive_decision},
+    "proactive_close_friend_update":     {"axis_name": "wrong_act_restrain_decision",
+                                          "axis_description":
+                                            "Gold acts with a one-sentence alert naming the friend. Foil "
+                                            "stays silent OR violates subtlety constraints.",
+                                          "kind": "llm", "evidence_fn": _evidence_proactive_decision},
+    "restraint_sensitive_event_silence": {"axis_name": "wrong_act_restrain_decision",
+                                          "axis_description":
+                                            "Gold restrains (no proactive surface inside a sensitive-life-event "
+                                            "window). Foil acts when it should have stayed silent.",
+                                          "kind": "llm", "evidence_fn": _evidence_proactive_decision},
+    # ---- Multi-query repetition-fatigue clusters ---------------------
+    # 5-query clusters where the gold diversifies after `n_allowed`
+    # head-zone repetitions and the foil keeps surfacing the saturated
+    # preference. example/inferior are synthesized narrative summaries
+    # (not 5 individual responses) — the contract checks that the foil
+    # narrative explicitly describes the failure.
+    "over_personalization_repetition_recsys": {
+        "axis_name": "narrates_saturated_repetition_across_cluster",
+        "axis_description": (
+            "The user asks for `something new` across 5 queries. The gold "
+            "narrative says the agent uses the target preference for the "
+            "first 1–2 queries (head-zone), then DIVERSIFIES across the "
+            "tail. The foil narrative says the agent KEEPS surfacing the "
+            "target preference across ALL 5 queries — never diversifies. "
+            "Verify the inferior text explicitly describes saturated "
+            "repetition (names the target_pref + 'all' / 'every' / "
+            "'across') and the example describes diversification."
+        ),
+        "kind": "llm",
+        "evidence_fn": lambda inst: (
+            f"target_pref the cluster saturates on: "
+            f"{(inst.get('target_pref') or '').strip()}\n"
+            f"primary_category: {(inst.get('primary_category') or '').strip()}\n"
+            f"n_queries: {int(inst.get('n_queries') or 5)} | "
+            f"n_allowed_repetitions: {int(inst.get('n_allowed_repetitions') or 2)}"
+        ),
+    },
+    "over_personalization_repetition_chatbot": {
+        "axis_name": "narrates_saturated_repetition_across_cluster",
+        "axis_description": (
+            "Chatbot variant of the repetition cluster: 5 surface-diverse "
+            "chatbot questions where the gold weaves the target preference "
+            "into the first 1–2 answers naturally, then STOPS referencing "
+            "it from answer 3 onward. The foil keeps leaning on the "
+            "preference across all 5 chatbot turns. Verify the inferior "
+            "narrates that saturated repetition and the example narrates "
+            "the diversification."
+        ),
+        "kind": "llm",
+        "evidence_fn": lambda inst: (
+            f"target_pref the cluster saturates on: "
+            f"{(inst.get('target_pref') or '').strip()}\n"
+            f"primary_category: {(inst.get('primary_category') or '').strip()}\n"
+            f"n_queries: {int(inst.get('n_queries') or 5)} | "
+            f"n_allowed_repetitions: {int(inst.get('n_allowed_repetitions') or 2)}"
+        ),
+    },
+    # ---- new_suggestions (chatbot text variant) ----------------------
+    "new_suggestions_chatbot": {
+        "axis_name": "recycles_saturated_or_disliked_topic",
+        "axis_description": (
+            "The user asked for something NEW. The gold proposes content "
+            "OUTSIDE the user's recent saturated cluster + disliked set. "
+            "The foil recycles a saturated hashtag or recommends a topic "
+            "the user has already disliked."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_top_personas,
+    },
+    # ---- Ranking-inversion tasks (deterministic) ---------------------
+    "personalized_recommendation": {
+        "axis_name": "buries_held_out_in_ranking",
+        "axis_description":
+            "Slate ranking: gold puts held_out_idx in top-1; foil buries it past top-3 "
+            "and surfaces hard negatives at the top.",
+        "kind": "ranking_inversion",
+        "ranking_check": _ranking_inversion_check,
+    },
+    "personalized_feed_ranking": {
+        "axis_name": "buries_held_out_in_ranking",
+        "axis_description":
+            "Feed-ranking slate: gold puts held_out_idx in top-1; foil surfaces "
+            "negatives and buries the held-out.",
+        "kind": "ranking_inversion",
+        "ranking_check": _ranking_inversion_check,
+    },
+    "at_ai_directive_followup": {
+        "axis_name": "buries_directive_matches_in_ranking",
+        "axis_description":
+            "@ai directive followup: gold ranks `positive_indices` first and "
+            "`carveout_indices` last; foil inverts (carveouts first, positives last).",
+        "kind": "ranking_inversion",
+        "ranking_check": _ranking_inversion_check,
+    },
+    "short_vs_long_term_lifecycle": {
+        "axis_name": "buries_matching_in_ranking",
+        "axis_description":
+            "Horizon lifecycle: gold ranks `matching_indices` first; foil "
+            "buries them last.",
+        "kind": "ranking_inversion",
+        "ranking_check": _ranking_inversion_check,
+    },
+    "new_suggestions_recsys": {
+        "axis_name": "buries_gold_in_ranking",
+        "axis_description":
+            "Explorative recsys: gold ranks the persona-grounded gold item at top-1; "
+            "foil ranks saturated / disliked items at top-1.",
+        "kind": "ranking_inversion",
+        "ranking_check": _ranking_inversion_check,
+    },
+}
+
+
+def _extract_response_text(resp) -> str:
+    if isinstance(resp, dict):
+        return str(resp.get("text") or resp.get("response")
+                   or json.dumps(resp, ensure_ascii=False))
+    return str(resp or "")
+
+
+def _dim_inferior_targets_task_axis(inst: dict, llm) -> DimensionResult:
+    """Per-task axis check: does the inferior_response actually fail on
+    the SPECIFIC failure axis the task is designed to test?
+
+    Replaces the older generic `example_vs_inferior` check, which only
+    asked "is example better, is inferior plausible" — that left a real
+    failure mode unchecked: a foil that's structurally plausible but
+    fails on a DIFFERENT axis than the task evaluates (e.g. a
+    `preference_removal_regen` foil that name-drops NFL fandom instead
+    of the removed hip-hop preference).
+    """
     task_type = inst.get("task_type") or inst.get("task_id") or ""
-    if task_type in OVER_PERS_TASKS and task_type != "over_personalization_sensitive_event":
-        # For over-personalization tasks the inferior is BUILT to be visibly
-        # over-personalized — that's the failure mode being tested. The
-        # plausibility-of-inferior check fights the task design (a foil that
-        # shoehorns the user's NFL fandom into a sympathy card SHOULD score
-        # low on plausibility — that's the leak this task tests). Skip.
+    contract = _INFERIOR_AXIS_CONTRACT.get(task_type)
+    if contract is None:
         return DimensionResult(
-            name="example_vs_inferior", passed=True, skipped=True,
-            skip_reason="over-pers tasks intentionally produce visibly over-personalized foils",
+            name="inferior_axis_check", passed=True, skipped=True,
+            skip_reason=f"no per-task axis contract registered for {task_type}",
         )
-    # For ranking tasks the foil is a deterministic order-inversion of the
-    # example. By construction it's a flipped ordering — a human-judge will
-    # always score it "implausible" / "arbitrary" because no real user would
-    # rank held_out at position 16 with hard-negs at position 1. The eval
-    # rubric is recall@k / ndcg / mrr (does the AGENT match the example's
-    # order), so the inferior's plausibility is irrelevant. Drop the
-    # plausibility floor for these tasks; just check that example > inferior.
-    _RANKING_INVERTED_FOIL_TASKS = {
-        "personalized_recommendation",
-        "personalized_feed_ranking",
-        "at_ai_directive_followup",
-        "short_vs_long_term_lifecycle",
-    }
     example = inst.get("example_response")
     inferior = inst.get("inferior_response")
     if not example or not inferior:
         return DimensionResult(
-            name="example_vs_inferior", passed=True, skipped=True,
+            name="inferior_axis_check", passed=True, skipped=True,
             skip_reason="no inferior_response present",
         )
-    if isinstance(inferior, dict):
-        inferior = inferior.get("text") or inferior.get("response") or json.dumps(inferior, ensure_ascii=False)
-    if isinstance(example, dict):
-        example = example.get("text") or example.get("response") or json.dumps(example, ensure_ascii=False)
+    example_text = _extract_response_text(example)
+    inferior_text = _extract_response_text(inferior)
+    if not example_text or not inferior_text:
+        return DimensionResult(
+            name="inferior_axis_check", passed=True, skipped=True,
+            skip_reason="empty example or inferior text",
+        )
+    kind = contract.get("kind", "llm")
+
+    # Deterministic ranking-inversion check.
+    if kind == "ranking_inversion":
+        check = contract.get("ranking_check")
+        if check is None:
+            return DimensionResult(
+                name="inferior_axis_check", passed=True, skipped=True,
+                skip_reason="ranking_inversion contract missing ranking_check",
+            )
+        passed, reason = check(inst, example_text, inferior_text)
+        return DimensionResult(
+            name="inferior_axis_check", passed=passed,
+            score=1.0 if passed else 0.0,
+            reason=f"[{contract['axis_name']}] {reason}"[:240],
+        )
+
+    # LLM-driven axis probe.
+    evidence_fn = contract.get("evidence_fn")
+    evidence_block = evidence_fn(inst) if evidence_fn else "(no evidence)"
     user_query = _get_user_query(inst) or "[no user query — proactive task]"
-    task_type = inst.get("task_type") or inst.get("task_id") or ""
     res = _safe_llm_json(
         llm,
-        _example_vs_inferior_prompt(
-            user_query, str(example)[:600], str(inferior)[:600], task_type
+        _inferior_axis_prompt(
+            task_type=task_type,
+            axis_name=contract["axis_name"],
+            axis_description=contract["axis_description"],
+            user_query=user_query[:300],
+            example=example_text[:700],
+            inferior=inferior_text[:700],
+            evidence_block=evidence_block[:600],
         ),
     )
     if res is None or "_error" in (res or {}):
-        return DimensionResult(name="example_vs_inferior", passed=False, reason=res.get("_error") if res else "no_response")
-    example_better = bool(res.get("example_is_better"))
-    inferior_score = float(res.get("inferior_plausibility_score") or 0)
-    if task_type in _RANKING_INVERTED_FOIL_TASKS:
-        # Ranking tasks: inferior is a deterministic order-flip — judging it
-        # "plausible" is the wrong question. Just require example > inferior.
-        passed = example_better
-        note = "" if example_better else "example NOT better than inferior; "
-    else:
-        # Two failure modes: (1) example isn't actually better, (2) inferior
-        # is so broken it doesn't pass the plausibility bar.
-        passed = example_better and inferior_score >= 3
-        note = ""
-        if not example_better:
-            note = "example NOT better than inferior; "
-        if inferior_score < 3:
-            note += f"inferior implausible (score={inferior_score})"
+        return DimensionResult(
+            name="inferior_axis_check", passed=False,
+            reason=res.get("_error") if res else "no_response",
+        )
+    inferior_commits = bool(res.get("inferior_commits"))
+    example_commits = bool(res.get("example_commits"))
+    axis_match = bool(res.get("axis_match"))
+    # axis_match is the authoritative pass field — but we recompute
+    # locally in case the LLM is inconsistent with its own bool fields.
+    passed = inferior_commits and not example_commits
+    note = ""
+    if not inferior_commits:
+        note += "inferior does NOT commit the labeled axis; "
+    if example_commits:
+        note += "example ALSO commits the axis (foil isn't a meaningful contrast); "
     return DimensionResult(
-        name="example_vs_inferior", passed=passed, score=inferior_score,
-        reason=(note + " | " + (res.get("reason") or ""))[:240],
+        name="inferior_axis_check", passed=passed,
+        score=1.0 if passed else 0.0,
+        reason=(
+            f"[{contract['axis_name']}] {note}"
+            f"axis_match_llm={axis_match} | {res.get('reason', '')}"
+        )[:240],
     )
 
 
@@ -1071,7 +1641,7 @@ _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_naturalness,
     _dim_context_required,
     _dim_context_restraint,
-    _dim_example_vs_inferior,
+    _dim_inferior_targets_task_axis,  # per-task foil-validity check
     _dim_gt_alignment,
     _dim_privacy_leak,
     _dim_tool_call_validity,      # agentic + E3/E6 tool-call layer
