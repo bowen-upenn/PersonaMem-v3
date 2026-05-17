@@ -37,12 +37,9 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "at_ai_directive_followup":               {"min": 8,  "max": 12},
     "daily_personalized_briefing":            {"min": 5,  "max": 6},
     # Renamed from personalized_search_ranking — workstream D.
-    # Bumped to 30/35 — proactive recsys slate is the headline ranking task
-    # and was severely under-supplied (5/user) under the old day-only gating.
-    # Bumped max from 35 → 40 to accommodate moment-flavored instances
-    # (formerly agentic_moment_recommendation, target ~5/user) which now
-    # land in this bucket alongside the proactive recsys instances.
-    "personalized_recommendation":            {"min": 30, "max": 40},
+    # 20/30 matches chatbot_personalized_response so the two headline
+    # personalization tasks carry equal weight in the eval.
+    "personalized_recommendation":            {"min": 20, "max": 30},
     "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
     "active_mistake_prevention":              {"min": 5,  "max": 6},
     "preference_removal_regen":               {"min": 6,  "max": 8},
