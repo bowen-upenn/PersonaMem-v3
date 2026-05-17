@@ -246,15 +246,6 @@ Each instance carries a stable `test_id` / `probe_id` / `scenario_id` plus enoug
 # 0. Build the benchmark once per user. Deterministic given --rng_seed and the
 #    backend data. Wires both LLMs (blind_check for Task B routing + E6 discovery
 #    for paired warn/foil). Use --skip_blind_check / --skip_e6 for cheap rebuilds.
-#
-#    Required env var for LLM-gated builders (active_mistake_prevention,
-#    new_suggestions_recsys, new_suggestions_chatbot):
-#       export EVAL_DISCOVERY_MODEL=gpt-5.4-mini   # or your Azure deployment
-#    or (Azure OpenAI):
-#       export AZURE_OPENAI_DEPLOYMENT_NAME=...
-#    When neither is set, the discovery LLM is None and those tasks emit
-#    zero instances (they're data_dependent, so this isn't a hard failure
-#    — just a coverage gap).
 python scripts/prepare_eval_data.py --user_id 115
 # → writes benchmark/115/queries.csv (single artifact; no JSON sidecar)
 
@@ -486,6 +477,10 @@ Ground truth is built from two strictly-separated windows:
 | `--output_dir` | auto (`benchmark/{user_id}/runs/`) | Results root |
 | `--benchmark` | auto | Path to frozen benchmark JSON (default: `benchmark/{user_id}/benchmark.json`) |
 | `--allow_stale` | off | Run even if backend_hash has drifted since the benchmark was built |
+
+**Model env vars** — two are honored across the eval + build pipeline:
+- `$EVAL_MODEL` (large, default `gpt-5-chat`) — flagship / judge / heavy-discovery calls.
+- `$EVAL_MINI_MODEL` (mini, default `gpt-5.4-mini`) — mini-tier discovery + audit calls (E6 paired warn/foil discovery, new_suggestions flavor-A gold proposal, per-query audit). Same knob used everywhere a mini call is made.
 
 Benchmark-building is its own CLI:
 
