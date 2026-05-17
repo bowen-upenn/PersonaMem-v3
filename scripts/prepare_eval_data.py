@@ -88,21 +88,26 @@ COLUMNS: list[str] = [
 
 
 def _build_llm_client() -> object | None:
-    """Best-effort LLM client for the E6 discovery step. Returns None
-    when no credentials are configured — E6 then yields zero instances.
+    """Best-effort LLM client for builder steps that need LLM discovery.
+    Returns None when no credentials are configured — affected tasks then
+    yield zero instances. Used by:
+      - active_mistake_prevention (E6) — discovery of paired warn/foil
+      - new_suggestions_recsys / new_suggestions_chatbot (C1e) —
+        flavor-A LLM-gated gold proposal
     """
     model = os.getenv("EVAL_DISCOVERY_MODEL") or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
     if not model:
         print("[prepare_eval_data] no LLM model in env "
-              "(EVAL_DISCOVERY_MODEL / AZURE_OPENAI_DEPLOYMENT_NAME) — E6 will be skipped")
+              "(EVAL_DISCOVERY_MODEL / AZURE_OPENAI_DEPLOYMENT_NAME) — "
+              "active_mistake_prevention + new_suggestions_* will be skipped")
         return None
     try:
         from query_llm import QueryLLM
         client = QueryLLM({"models": {"llm_model": model}}, rate_limit_per_min=50)
-        print(f"[prepare_eval_data] E6 discovery client ready (model={model})")
+        print(f"[prepare_eval_data] discovery LLM client ready (model={model})")
         return client
     except Exception as exc:
-        print(f"[prepare_eval_data] WARN: could not build LLM client for E6: {exc}")
+        print(f"[prepare_eval_data] WARN: could not build LLM client: {exc}")
         return None
 
 
