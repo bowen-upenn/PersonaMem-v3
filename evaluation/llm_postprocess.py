@@ -37,7 +37,7 @@ from data_preparation.utils import extract_json_from_response
 # (Restraint-arm instances also get self-checked — the rubric should
 # fire on them only if they fail to restrain.)
 _PERSONALIZATION_TASKS = {
-    "chatbot_proactive_personalization",
+    "chatbot_personalized_response",
     "over_personalization_chatbot_text",
     "over_personalization_distractor_reject",
     "over_personalization_sensitive_event",
@@ -563,7 +563,7 @@ def _parse_length_band(raw: str | None) -> tuple[int, int] | None:
 
 def _length_guidance(task_type: str, inst: dict | None = None,
                      app_persona: dict | None = None) -> str:
-    if task_type == "chatbot_proactive_personalization":
+    if task_type == "chatbot_personalized_response":
         return "Length: 2–3 sentences."
     if task_type in ("over_personalization_chatbot_text",
                      "over_personalization_distractor_reject",
@@ -637,7 +637,7 @@ def _generate_chatbot_triplet(
     max_attempts: int = 3,
 ) -> dict | None:
     """Generate a (user_query, example_response, inferior_response) triplet
-    for one chatbot_proactive_personalization test card via a single LLM call.
+    for one chatbot_personalized_response test card via a single LLM call.
 
     The prompt instructs the LLM to:
       - write an open-ended user_query that does NOT mention the preference
@@ -2273,7 +2273,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             if "tool_call" in gt_out:
                 inst["tool_call"] = gt_out["tool_call"]
 
-            # ---- chatbot_proactive_personalization triplet regen ----------
+            # ---- chatbot_personalized_response triplet regen ----------
             # For chatbot proactive instances, replace the user_query (which
             # was extracted from a multi-turn chatbot session and is often
             # a copyedit / compose request that doesn't invite personalization)
@@ -2281,7 +2281,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
             # inferior_response) triplet anchored on the held-out preference.
             # Single LLM call. Skips the rest of this loop iteration's
             # standard workstream-I/J generation paths.
-            if (task_id == "chatbot_proactive_personalization"
+            if (task_id == "chatbot_personalized_response"
                     and (inst.get("arm") or "proactive") == "proactive"
                     and self_check_llm is not None
                     and groundtruth):
@@ -2439,7 +2439,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                 # + similarity validator + 3-attempt retry loop.
                 elif inferior_llm is not None:
                     # Fall back to `source_timestamp` when `t_test` isn't on
-                    # the instance — chatbot_proactive_personalization (and
+                    # the instance — chatbot_personalized_response (and
                     # other Task B arms) store the per-instance test moment
                     # as `source_timestamp`, not `t_test`. Without this
                     # fallback, t_test=0 → ctx built at epoch → no top_prefs

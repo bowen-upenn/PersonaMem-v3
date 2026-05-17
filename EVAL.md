@@ -80,7 +80,7 @@ them up.
   `personalized_recommendation` instances inside the same ~150 budget,
   caps were trimmed: `over_personalization_chatbot_text` 14 → 10,
   `over_personalization_distractor_reject` 14 → 10,
-  `chatbot_proactive_personalization` 14 → 9, `preference_removal_regen`
+  `chatbot_personalized_response` 14 → 9, `preference_removal_regen`
   12 → 8, `agentic_composed_post` 8 → 6, `repetition_fatigue_pairs` 10 →
   6, `daily_personalized_briefing` 12 → 6, `over_personalization_context_shift`
   10 → 6, `active_mistake_prevention` 12 → 6, six agentic tasks 8 → 5.
@@ -133,12 +133,12 @@ them up.
   `accuracy_pct_macro` (mean of per-task means — each task contributes
   one data point regardless of row count) and `accuracy_pct_micro`
   (n-weighted across rows). Macro is the published headline.
-- **`chatbot_proactive_personalization` bucket purity** —
+- **`chatbot_personalized_response` bucket purity** —
   `build_task_b_arms` walks every chatbot event but only events whose
   `source_object_id` is in `test_index` (the R8 selector's per-app top-N)
   carry a held-out preference. Pre-fix, the blind-check stage routed any
   candidate scoring `>= 2` into the `proactive` arm regardless, so 49 / 64
-  (76 %) of user 115's `chatbot_proactive_personalization` instances
+  (76 %) of user 115's `chatbot_personalized_response` instances
   shipped with `held_out_preference = None` — violating the bucket's
   contract that every instance is a positive personalization test (the
   card rendered with "(no held-out preference; rubric checks restraint)"
@@ -149,7 +149,7 @@ them up.
   `_finalize` asserts `arm in {"proactive", "contradiction"}` implies a
   non-empty `held_out_preference.persona_item` so the regression cannot
   silently re-appear. Effect on user 115:
-  `chatbot_proactive_personalization` 64 → 15 (all valid) and
+  `chatbot_personalized_response` 64 → 15 (all valid) and
   `over_personalization_chatbot_text` 9 → 58; total instance count
   unchanged at 224. **Operator note**: `backend/{uid}/persona.html` is a
   rendered snapshot of `testSamples` — after rebuilding `queries.csv`

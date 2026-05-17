@@ -1100,18 +1100,18 @@ The script is idempotent and read-only against the benchmark — it writes its o
 | 2 | `context_required` | LLM (bool) | response would NOT be writable by an assistant ignorant of this user (i.e. it really does require user history to write) | over-personalization tasks; `active_mistake_prevention` (gold is a warning frame, not a personalization response); tasks without a chatbot-style user message |
 | 3 | `context_restraint` | LLM (bool) | response WOULD be writable generically — proves the over-personalization bait is benign and not actually requiring user context | non-over-personalization tasks |
 | 4 | `example_vs_inferior` | LLM (bool + 1–5) | example is rated better than inferior AND inferior plausibility ≥ 3/5 (example clearly preferred for THIS user, inferior still reads as a plausible response that some other user might like) | no `inferior_response` field; over-personalization tasks (foils ARE designed to be visibly over-personalized — that's the failure mode); ranking tasks (foil is a deterministic order-flip — judging "plausible" is the wrong question, just check example > inferior) |
-| 5 | `gt_alignment` | LLM (bool) | `example_response` actually weaves in the user's relevant prefs / GT signal (not generic content that drifts from the held-out preference) | every task except `chatbot_proactive_personalization` — agentic / ranking / mistake-prevention / over-pers tasks have task-specific GTs unrelated to user prefs |
+| 5 | `gt_alignment` | LLM (bool) | `example_response` actually weaves in the user's relevant prefs / GT signal (not generic content that drifts from the held-out preference) | every task except `chatbot_personalized_response` — agentic / ranking / mistake-prevention / over-pers tasks have task-specific GTs unrelated to user prefs |
 | 6 | `privacy_leak` | LLM (bool) | `example_response` does NOT surface any item in the must-not-surface list (verbatim, paraphrased, or by topical implication) | tasks with no must-not-surface list (every task except over-pers + `over_personalization_sensitive_event`'s per-row evidence). For `sensitive_event` the must-not-surface list includes the planted evidence row's title, caption, hashtags, and the broader episode situation |
 | 7 | `sensitive_probe_placement` | deterministic | `t_test ≥ planted_row.source_timestamp` (the disclosure must be visible in history at probe time) | non-`sensitive_event` tasks |
 | 8 | `schema_sanity` | deterministic | required fields present: `task_type`; `user_query` for chatbot-style tasks; `candidates` or `gt_positive_engagements` for slate-ranking tasks | n/a (always runs) |
 
 ### Per-task applicability (which dims actually evaluate, vs skip)
 
-`USER_MESSAGE_TASKS` = chatbot_proactive_personalization, over_personalization_chatbot_text, over_personalization_distractor_reject, over_personalization_context_shift, over_personalization_sensitive_event, active_mistake_prevention. Only these evaluate dim 1.
+`USER_MESSAGE_TASKS` = chatbot_personalized_response, over_personalization_chatbot_text, over_personalization_distractor_reject, over_personalization_context_shift, over_personalization_sensitive_event, active_mistake_prevention. Only these evaluate dim 1.
 
 `OVER_PERS_TASKS` = the five `over_personalization_*` tasks + `repetition_fatigue_pairs` + `repetition_fatigue_sequences`. These evaluate dim 3 (restraint), skip dim 2 (required), skip dim 4 (foil plausibility) except for `sensitive_event`.
 
-`GT_ALIGNMENT_APPLICABLE` = {`chatbot_proactive_personalization`} only. Every other task skips dim 5.
+`GT_ALIGNMENT_APPLICABLE` = {`chatbot_personalized_response`} only. Every other task skips dim 5.
 
 `SLATE_RANKING_TASKS` (for the dim-8 schema check on `candidates`) = personalized_recommendation, personalized_feed_ranking, at_ai_directive_followup, daily_personalized_briefing, short_vs_long_term_lifecycle. `preference_removal_regen` is technically a ranking task in `task_distribution.py` but uses a different shape (held-out + post-removal re-ranking against the user's full pref soup) and is exempt from the candidate-pool requirement.
 
@@ -1199,7 +1199,7 @@ Combined helper: `_validate_no_creepy_phrasing(response, held_out_pref) -> (pass
 
 **Rubric-dim membership** — added to both `JUDGE_DIMS` and `HARD_RULE_DIMS` in `evaluation/personalization_rubric.py`. Hard-fail behavior matches `privacy_leak` / `avoid_leak` / `stale_preference_use`: zeros the task score regardless of other dims.
 
-**Applicability** — every personalized-response task carries `telegraph_avoidance: True` in APPLICABILITY: `chatbot_proactive_personalization`, all `agentic_*` compose tasks, `daily_personalized_briefing`, `personalized_recommendation`, `over_personalization_*` (every variant), `preference_removal_regen`, `proactive_unfulfilled_stated_need`, `proactive_close_friend_update`, the new `new_suggestions_*` tasks (§ 22).
+**Applicability** — every personalized-response task carries `telegraph_avoidance: True` in APPLICABILITY: `chatbot_personalized_response`, all `agentic_*` compose tasks, `daily_personalized_briefing`, `personalized_recommendation`, `over_personalization_*` (every variant), `preference_removal_regen`, `proactive_unfulfilled_stated_need`, `proactive_close_friend_update`, the new `new_suggestions_*` tasks (§ 22).
 
 ## 22. New Suggestions — Explorative, Persona-Grounded Recommendation (`new_suggestions_recsys` / `new_suggestions_chatbot`)
 

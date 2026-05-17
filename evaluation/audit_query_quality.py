@@ -54,7 +54,7 @@ RANKING_TASKS = {
 # a structured input (a draft post, a target topic) that is NOT the user
 # talking to a chatbot.
 USER_MESSAGE_TASKS = {
-    "chatbot_proactive_personalization",
+    "chatbot_personalized_response",
     "over_personalization_chatbot_text",
     "over_personalization_distractor_reject",
     "over_personalization_context_shift",
@@ -71,7 +71,7 @@ USER_MESSAGE_TASKS = {
 # warning text driven by cross-signal evidence, not a personalization
 # response. Skip both.
 GT_ALIGNMENT_APPLICABLE = {
-    "chatbot_proactive_personalization",
+    "chatbot_personalized_response",
     # Silent geo-shift: example_response is anchored on the inferred
     # current city + persona profile alignment — gt_alignment audits that
     # the example matches that ground truth (would mis-flag the inferior
@@ -94,7 +94,7 @@ FRAME_CONSISTENCY_TASKS = {
     "agentic_cross_app_repost",
     "agentic_user_tone_post",
     "agentic_auto_reply",
-    "chatbot_proactive_personalization",
+    "chatbot_personalized_response",
 }
 
 
@@ -1020,7 +1020,7 @@ def _dim_telegraph_avoidance(inst: dict, llm) -> DimensionResult:
     # tasks technically can have reasoning text but skip them — the
     # primary response is a list of indices.
     _APPLICABLE = {
-        "chatbot_proactive_personalization",
+        "chatbot_personalized_response",
         "agentic_user_tone_post", "agentic_composed_post",
         "agentic_send_post", "agentic_cross_app_repost",
         "agentic_auto_reply", "agentic_dm_digest",

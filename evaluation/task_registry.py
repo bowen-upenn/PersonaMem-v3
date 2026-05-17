@@ -39,7 +39,7 @@ QUERIES_CSV_VERSION: str = "2"
 # tasks were testing the same capability with different surfaces.
 OLD_TO_NEW: dict[str, str] = {
     "slate_ranking":                 "personalized_feed_ranking",
-    "chatbot_response_proactive":    "chatbot_proactive_personalization",
+    "chatbot_response_proactive":    "chatbot_personalized_response",
     "chatbot_response_control":      "over_personalization_chatbot_text",
     "chatbot_restraint_control":     "over_personalization_chatbot_text",
     # Sensitive-event arm of run_task_b is graded under its own task_type so
@@ -198,7 +198,7 @@ TASK_TYPE_META: dict[str, dict] = {
     # ------------------------------------------------------------------
     # Chatbot response (two arms — was: chatbot_response_proactive / _control)
     # ------------------------------------------------------------------
-    "chatbot_proactive_personalization": {
+    "chatbot_personalized_response": {
         "task_family": "chatbot_response",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
@@ -538,7 +538,7 @@ def get_meta(task_type: str) -> dict:
 
 QUERY_KIND_BY_TASK: dict[str, str] = {
     "personalized_feed_ranking":              "proactive_recommendation",
-    "chatbot_proactive_personalization":       "user_query",
+    "chatbot_personalized_response":           "user_query",
     "over_personalization_chatbot_text":       "user_query",
     "over_personalization_repetition_recsys":  "user_query",
     "over_personalization_repetition_chatbot": "user_query",
@@ -583,7 +583,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
 
 EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "personalized_feed_ranking":              "proactive_recommend",
-    "chatbot_proactive_personalization":      "personalize",
+    "chatbot_personalized_response":          "personalize",
     "over_personalization_chatbot_text":       "avoid_overpersonalization",
     "over_personalization_repetition_recsys":  "avoid_overpersonalization",
     "over_personalization_repetition_chatbot": "avoid_overpersonalization",
@@ -664,7 +664,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "new_suggestions_chatbot":                 ("passed", "fraction"),
     # Chatbot response — held-out preference alignment for proactive arm,
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
-    "chatbot_proactive_personalization":           ("held_out_score", "fraction"),
+    "chatbot_personalized_response":               ("held_out_score", "fraction"),
     "over_personalization_chatbot_text":           ("personalization_leak_rate", "inverted_fraction"),
     "over_personalization_context_shift":                     ("pr_personalization_hard_fail_count", "inverted_fraction"),
     # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was

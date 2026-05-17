@@ -19,12 +19,12 @@ from typing import Iterable
 TASK_TARGETS: dict[str, dict[str, int]] = {
     # Core eval signals — get the most stat power
     # Bumped from {min:8, max:9} to {min:20, max:30}: this task is the
-    # core proactive-personalization signal and was severely undersupplied
+    # core personalized-response signal and was severely undersupplied
     # because (a) the held_out_preference attachment was coupled to the R8
     # selector's 15-cap (since decoupled in build_task_b_arms — see
     # _pick_held_out_for_event) and (b) the cap itself was below the count
     # needed for stat power on par with personalized_recommendation (40).
-    "chatbot_proactive_personalization":      {"min": 20, "max": 30},
+    "chatbot_personalized_response":          {"min": 20, "max": 30},
     "over_personalization_chatbot_text":      {"min": 8,  "max": 10},
     "over_personalization_distractor_reject": {"min": 8,  "max": 10},
     # Sensitive-event task — one probe per planted evidence row
