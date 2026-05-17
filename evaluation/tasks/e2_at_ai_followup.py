@@ -21,10 +21,12 @@ from data_preparation.utils import extract_json_from_response
 from evaluation import metrics, prompts
 from evaluation.backend_query import _LEAK_FIELDS_EVENT, _LEAK_FIELDS_PREF, BackendQuery
 
-# Hashtag Jaccard threshold for "matches directive". Tightened from 0.25 so a
-# candidate only counts as a "directive match" on meaningful hashtag overlap,
-# not loose surface match (e.g. one shared generic tag).
-_E2_MATCH_THRESHOLD: float = 0.15
+# Hashtag Jaccard threshold for "matches directive". 0.05 is permissive
+# enough to surface the high-overlap tail for users with broad / non-
+# overlapping hashtag clusters (e.g. user 115's max-observed Jaccard
+# between an @ai directive's tag set and a candidate event is ~0.04),
+# while still excluding rows that share zero hashtags.
+_E2_MATCH_THRESHOLD: float = 0.05
 # Minimum candidate-pool size; instance is dropped if fewer than this. Raised
 # from 6 to enforce a uniform floor across all lag buckets.
 _E2_MIN_POOL: int = 12
