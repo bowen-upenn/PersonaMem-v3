@@ -9987,8 +9987,18 @@ class PersonaAgent:
     # --- Step 28 helpers ---
 
     _PROACTIVE_TRIGGER_LAGS = (1 * 86400, 3 * 86400, 7 * 86400)
-    _PROACTIVE_RESOLUTION_WINDOW = 14 * 86400
-    _PROACTIVE_DM_REPLY_WINDOW = 86400
+    # Was 14d — too permissive for heavy hashtag-users where almost any
+    # downstream event ends up "resolving" the question. 3d narrows to
+    # genuinely-prompt follow-ups.
+    _PROACTIVE_RESOLUTION_WINDOW = 3 * 86400
+    # A single shared hashtag is too noisy when both events come from broad
+    # clusters. Require ≥ 2 shared tags between the chatbot question and
+    # the downstream event before counting as "resolved".
+    _PROACTIVE_RESOLUTION_MIN_HASHTAG_OVERLAP = 2
+    # Was 24h — close-friend cadence is typically well under 24h, so the
+    # window masked genuinely-stalled threads. 6h captures threads where
+    # the user actually let a close-friend message sit.
+    _PROACTIVE_DM_REPLY_WINDOW = 6 * 3600
     _PROACTIVE_MAX_CANDIDATES_PER_TYPE = 12
     _PROACTIVE_CHATBOT_CLOSURE_ACTIONS = frozenset(
         ("asked_to_change_topic", "corrected_assumption")
@@ -10031,16 +10041,18 @@ class PersonaAgent:
         whose conversation didn't end with an explicit closure action.
         """
         candidates: list[dict] = []
-        # Pre-compute per-hashtag list of all subsequent timestamps for fast
-        # resolution lookup. Cap with a sorted list per hashtag.
-        hashtag_to_timestamps: dict[str, list[int]] = {}
+        # Pre-compute (ts, tag_set) per event across all apps, sorted by ts.
+        # We need per-event tag-sets (not the old hashtag→ts inverted map) so
+        # the resolution check can require ≥ N shared tags between the
+        # chatbot question and a single subsequent event.
+        all_events_flat: list[tuple[int, set[str]]] = []
         for app, events in all_app_events.items():
-            for ev in events:
-                ts = int(ev.get("source_timestamp") or 0)
-                for h in (ev.get("source_hashtags") or []):
-                    hashtag_to_timestamps.setdefault(h.lower(), []).append(ts)
-        for h in hashtag_to_timestamps:
-            hashtag_to_timestamps[h].sort()
+            for ev2 in events:
+                ts = int(ev2.get("source_timestamp") or 0)
+                tag_set = {h.lower() for h in (ev2.get("source_hashtags") or []) if h}
+                if ts and tag_set:
+                    all_events_flat.append((ts, tag_set))
+        all_events_flat.sort(key=lambda x: x[0])
 
         for ev in chatbot_events:
             if ev.get("is_dm") or ev.get("is_ad"):
@@ -10063,21 +10075,21 @@ class PersonaAgent:
             tags = [h.lower() for h in (ev.get("source_hashtags") or [])]
             if not tags:
                 continue
+            tag_set = set(tags)
             q_ts = int(ev.get("source_timestamp") or 0)
-            # Resolved if ANY subsequent event in the next 14d shares a hashtag.
+            # Resolved if SOME subsequent event in the window shares ≥ N tags
+            # with the question. The N≥2 floor stops broad-cluster noise from
+            # marking nearly every question "resolved".
             resolved = False
             cutoff = q_ts + self._PROACTIVE_RESOLUTION_WINDOW
-            for h in tags:
-                arr = hashtag_to_timestamps.get(h, [])
-                # Find first ts strictly after q_ts.
-                # arr is sorted; linear scan is fine at this scale.
-                for ts in arr:
-                    if ts <= q_ts:
-                        continue
-                    if ts <= cutoff:
-                        resolved = True
-                    break
-                if resolved:
+            min_overlap = self._PROACTIVE_RESOLUTION_MIN_HASHTAG_OVERLAP
+            for ts, ev_tags in all_events_flat:
+                if ts <= q_ts:
+                    continue
+                if ts > cutoff:
+                    break  # sorted ascending — no further events in window
+                if len(tag_set & ev_tags) >= min_overlap:
+                    resolved = True
                     break
             if resolved:
                 continue
