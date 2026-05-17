@@ -129,7 +129,7 @@ def _get_user_query(inst: dict) -> str:
     if q:
         return q
     qt = (inst.get("query_text") or "").strip()
-    if qt and qt != "[recsys]":
+    if qt:
         return qt
     return ""
 
@@ -381,7 +381,7 @@ def _dim_naturalness(inst: dict, llm) -> DimensionResult:
             skip_reason=f"{task_type} does not carry a chatbot-style user message",
         )
     user_query = _get_user_query(inst)
-    if not user_query or user_query == "[recsys]":
+    if not user_query:
         return DimensionResult(
             name="naturalness", passed=True, skipped=True,
             skip_reason="empty user_query",
@@ -415,7 +415,7 @@ def _dim_context_required(inst: dict, llm) -> DimensionResult:
         )
     user_query = _get_user_query(inst)
     example = inst.get("example_response") or ""
-    if not user_query or not example or user_query == "[recsys]":
+    if not user_query or not example:
         return DimensionResult(
             name="context_required", passed=True, skipped=True,
             skip_reason="missing query or example_response",

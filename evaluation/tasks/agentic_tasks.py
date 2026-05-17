@@ -637,8 +637,8 @@ def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int
     instances with the SAME shape as
     ``personalized_recommendation`` (16-item slate, ``held_out_idx``,
     ``hard_negative_idxs``) but with a moment-flavored ``query_text`` —
-    voiced in the user's own register — instead of the literal
-    ``"[recsys]"`` token used by the proactive recsys flavor.
+    voiced in the user's own register — instead of the empty query_text
+    used by the proactive recsys flavor.
 
     Slate construction per moment that survives the `N_RECOMMENDED_POSTS`
     pool floor:

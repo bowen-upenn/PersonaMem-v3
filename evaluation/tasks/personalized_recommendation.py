@@ -4,8 +4,8 @@ Models a *proactive recsys feed push*: at each picked t_test, the agent
 is shown a slate of candidates (1 held-out + 7 hard negatives + fillers)
 and asked to rank them as if it were the recsys deciding what to surface
 next in the user's feed. There is no user-typed query — the user_query
-field is the literal token "[recsys]" so the runner knows to skip the
-chat preamble and just rank the slate.
+field is left empty so the runner knows to skip the chat preamble and
+just rank the slate.
 
 Slate construction:
   - held_out: a real positive engagement the user has AFTER t_test inside
@@ -233,10 +233,10 @@ def build_personalized_recommendation(
         held_out_idx = order.index(0)
         hard_negative_idxs = [order.index(j + 1) for j in range(len(hard_negatives))]
 
-        # User-facing query: fixed `[recsys]` token (proactive recsys feed
-        # push — there is no user-typed query, the runner skips the chat
-        # preamble and just ranks the slate).
-        query_text = "[recsys]"
+        # User-facing query: empty (proactive recsys feed push — there is
+        # no user-typed query, the runner skips the chat preamble and just
+        # ranks the slate).
+        query_text = ""
 
         instances.append({
             "instance_id": f"recsys_{day}_a{anchor_idx}",
@@ -272,7 +272,7 @@ def personalized_recommendation_prompt(instance: dict, history_block: str | None
         if history_block else ""
     )
     # Two flavors share this prompt:
-    #   1. "[recsys]" sentinel  → proactive recsys feed-push framing (no
+    #   1. Empty query_text → proactive recsys feed-push framing (no
     #      user-typed query, just a slate to rank).
     #   2. Real user query text → moment-aware curation framing (the user
     #      asked the agent for a curated feed at this moment). The merge
@@ -281,7 +281,7 @@ def personalized_recommendation_prompt(instance: dict, history_block: str | None
     #      so moment instances now ride the same deterministic ranking
     #      metric as proactive recsys but with a voiced user query.
     raw_query = (instance.get("query_text") or "").strip()
-    is_recsys = (raw_query == "[recsys]") or (not raw_query)
+    is_recsys = not raw_query
     if is_recsys:
         framing = (
             f"It's {instance['day_label']} {hour:02d}:00 UTC. The recommendation "
