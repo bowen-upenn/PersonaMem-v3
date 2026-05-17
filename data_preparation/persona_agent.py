@@ -7194,8 +7194,7 @@ class PersonaAgent:
                 f"Generated {len(out)}/{len(ai_studio_records)} AI Studio conversations "
                 f"(archetype={archetype!r} character={character!r}; "
                 f"final intimacy_arc={mem.running_relational_state.intimacy_arc:.2f} "
-                f"stage={mem.running_relational_state.intimacy_stage}; "
-                f"permanently_demoted={len(mem.running_relational_state.permanently_demoted_event_ids)})"
+                f"stage={mem.running_relational_state.intimacy_stage})"
                 f"{utils.Colors.ENDC}"
             )
 
