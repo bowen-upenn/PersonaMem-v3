@@ -504,6 +504,10 @@ class BackendQuery:
                 "is_group": bool(t.get("is_group") or t.get("is_group_dm")),
                 "latest_ts": latest_ts,
                 "last_message_preview": (msgs[-1].get("text") or "")[:80],
+                # The thread is carrying a forwarded post — its hashtags
+                # reflect the topic of the forward, even when the message
+                # text itself is just "lol" / "saw this".
+                "source_hashtags": t.get("source_hashtags") or [],
                 "unread_count": 0,
             })
         filtered.sort(key=lambda x: x["latest_ts"], reverse=True)
@@ -536,6 +540,9 @@ class BackendQuery:
             "thread_id": thread_id,
             "participants": thread.get("participants") or [],
             "is_group": bool(thread.get("is_group") or thread.get("is_group_dm")),
+            # Source hashtags from the forwarded post — useful for
+            # persona-relevance gating even when message text is brief.
+            "source_hashtags": thread.get("source_hashtags") or [],
             **page,
         }
 

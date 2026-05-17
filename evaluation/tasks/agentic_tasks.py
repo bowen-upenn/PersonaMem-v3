@@ -83,10 +83,33 @@ def _build_persona_topic_index(bq: BackendQuery, user_id: str, t_anchor: int) ->
     }
 
 
-def _text_touches_persona(text: str, idx: dict) -> bool:
-    """True if `text` mentions a top hashtag or a meaningful word from a
-    top category. Conservative — short category words (≤3 chars) are
-    ignored to avoid spurious matches on common English words."""
+def _text_touches_persona(target, idx: dict) -> bool:
+    """True if `target` is persona-relevant. Accepts either a string
+    (legacy callers) OR a dict (DM thread / event).
+
+    A dict-shaped target also checks `source_hashtags` for set-overlap
+    with the user's top hashtags. This matters for forwarded-post DMs:
+    a thread carrying an NFL clip IS NFL-relevant even when the message
+    text is just "lol" or "saw this" — the user wouldn't restate the
+    topic when forwarding, but the carried hashtags are unambiguous.
+
+    Short category words (≤3 chars) are ignored to avoid spurious matches
+    on common English words."""
+    if isinstance(target, dict):
+        # Surface 1: hashtag overlap from the carried event / forward.
+        carried = {(h or "").lstrip("#").lower() for h in (target.get("source_hashtags") or [])}
+        if carried & idx["top_hashtags"]:
+            return True
+        # Surface 2: text fields on the event / thread.
+        text_fields = (
+            target.get("last_message_preview"),
+            target.get("text"),
+            (target.get("content") or {}).get("caption") if isinstance(target.get("content"), dict) else None,
+            (target.get("content") or {}).get("title") if isinstance(target.get("content"), dict) else None,
+        )
+        text = " ".join(t for t in text_fields if t)
+    else:
+        text = target or ""
     if not text:
         return False
     t = text.lower()
@@ -777,7 +800,7 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
             continue
         n_relevant = sum(
             1 for t in threads
-            if _text_touches_persona(t.get("last_message_preview", ""), idx)
+            if _text_touches_persona(t, idx)
         )
         if n_relevant < 1:
             continue
@@ -1077,7 +1100,9 @@ def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) ->
             if not msgs:
                 continue
             joined = " ".join((m.get("text") or "") for m in msgs).lower()
-            has_persona = _text_touches_persona(joined, idx)
+            # Persona check: hashtag overlap from the carried forward
+            # (via thread_full) OR keyword hit in the joined message text.
+            has_persona = _text_touches_persona(thread_full, idx) or _text_touches_persona(joined, idx)
             has_decision = any(sig in joined for sig in DECISION_SIGNALS)
             if not (has_persona or has_decision):
                 continue
