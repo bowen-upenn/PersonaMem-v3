@@ -65,16 +65,61 @@ them up.
 
 - **Per-query LLM auto-QA script** — `scripts/audit_benchmark_queries.py`
   + `evaluation/audit_query_quality.py` provide a mini-tier per-query
-  quality audit. Eight dimensions per query (when applicable), driven by
+  quality audit. Dimensions per query (when applicable), driven by
   ~5 mini-tier LLM calls each: schema_sanity (deterministic),
-  sensitive_probe_placement (deterministic), naturalness, context_required
-  (response shouldn't be answerable generically — skipped for
-  over-personalization), context_restraint (response SHOULD be answerable
-  generically — only for over-personalization), example_vs_inferior
-  (covers both "example > inferior" and "inferior is plausible"),
-  gt_alignment, privacy_leak. Output: per-query JSONL + per-task pass-rate
-  table. Usage: `python scripts/audit_benchmark_queries.py --user_id 115
-  [--task X] [--limit N] [--dry_run]`.
+  sensitive_probe_placement (deterministic), telegraph_avoidance
+  (deterministic), naturalness, context_required (response shouldn't be
+  answerable generically — skipped for over-personalization),
+  context_restraint (response SHOULD be answerable generically — only
+  for over-personalization), **`inferior_axis_check`** (per-task foil-
+  validity check: see below), gt_alignment, privacy_leak,
+  tool_call_validity (agentic + E3/E6), frame_consistency (user-voiced
+  responses × motivational frame). Output: per-query JSONL + per-task
+  pass-rate table.
+
+  **`inferior_axis_check` (per-task foil-validity, replaces the older
+  generic `example_vs_inferior` check)** — `evaluation/audit_query_quality.py:_INFERIOR_AXIS_CONTRACT`
+  is a per-task registry mapping each `task_type` to a specific failure
+  axis the foil is supposed to commit. The check passes iff:
+    (a) the inferior_response demonstrably commits the labeled failure, AND
+    (b) the example_response does NOT commit it.
+
+  This catches the failure mode the older generic check missed: a foil
+  that's structurally plausible but fails on the WRONG axis. Example:
+  a `preference_removal_regen` row whose removed preference is "Enjoys
+  classic underground East Coast hip-hop" but whose inferior leans on
+  *NFL fandom* instead — the user's top category — is structurally
+  fine but doesn't test the removal contract. The new dim flags such
+  rows; the older `example_vs_inferior` dim accepted them.
+
+  Per-task contracts cover the full task surface: ranking-inversion
+  tasks (deterministic parse of `Ranked indexes: [...]`),
+  over-personalization tasks (LLM probe on which preference the foil
+  leaks), `preference_removal_regen` (the removed pref must appear),
+  `chatbot_personalized_response` / `chatbot_proactive_personalization`
+  (the foil must miss the held-out pref — symmetric inverse of
+  `gt_alignment`), `daily_personalized_briefing` (foil must include a
+  same-day disliked item from `gt_avoid_engagements`),
+  `local_recommendation_geo_shift` (foil anchors on prior city),
+  agentic voice / factual / disliked-recent flaws, and proactive-action
+  act/restrain decisions.
+
+  **Auto-regenerate path** — when `inferior_axis_check` fails and the
+  regen path is enabled (default; disable with `--no_regen`), the script
+  calls `evaluation/llm_postprocess.py:regenerate_inferior_for_instance`,
+  re-runs the audit on the new foil, and on success rewrites the row in
+  `queries.csv` in place. Capped at `--max_regen_calls N` (default 100)
+  to bound LLM cost. The audit JSONL records `regen_outcome ∈ {ok,
+  still_failing, no_new_foil}` per regenerated row. The
+  `preference_removal_regen` evidence picker in
+  `evaluation/llm_postprocess.py:_pick_flaw_evidence` was also fixed to
+  source the `over_personalization` aside from the held-out (removed)
+  preference instead of the user's `top_categories[0]`, so a fresh
+  benchmark build (`scripts/prepare_eval_data.py`) now produces correct
+  foils on the first pass.
+
+  Usage: `python scripts/audit_benchmark_queries.py --user_id 115
+  [--task X] [--limit N] [--dry_run] [--no_regen] [--max_regen_calls N]`.
 
 - **Task-distribution rebalance (v3.1)** — to free room for the +25
   `personalized_recommendation` instances inside the same ~150 budget,
