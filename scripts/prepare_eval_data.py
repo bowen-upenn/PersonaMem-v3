@@ -88,26 +88,26 @@ COLUMNS: list[str] = [
 
 
 def _build_llm_client() -> object | None:
-    """Best-effort LLM client for builder steps that need LLM discovery.
-    Returns None when no credentials are configured — affected tasks then
-    yield zero instances. Used by:
+    """Mini-tier LLM client for builder steps that need LLM discovery.
+
+    Defaults to ``gpt-5.4-mini``; override via ``EVAL_MINI_MODEL``. Same
+    knob the rest of the pipeline uses for mini-tier calls — no
+    discovery-specific env var.
+
+    Used by:
       - active_mistake_prevention (E6) — discovery of paired warn/foil
       - new_suggestions_recsys / new_suggestions_chatbot (C1e) —
         flavor-A LLM-gated gold proposal
     """
-    model = os.getenv("EVAL_DISCOVERY_MODEL") or os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-    if not model:
-        print("[prepare_eval_data] no LLM model in env "
-              "(EVAL_DISCOVERY_MODEL / AZURE_OPENAI_DEPLOYMENT_NAME) — "
-              "active_mistake_prevention + new_suggestions_* will be skipped")
-        return None
+    model = os.getenv("EVAL_MINI_MODEL", "gpt-5.4-mini")
     try:
         from query_llm import QueryLLM
         client = QueryLLM({"models": {"llm_model": model}}, rate_limit_per_min=50)
-        print(f"[prepare_eval_data] discovery LLM client ready (model={model})")
+        print(f"[prepare_eval_data] mini LLM client ready (model={model})")
         return client
     except Exception as exc:
-        print(f"[prepare_eval_data] WARN: could not build LLM client: {exc}")
+        print(f"[prepare_eval_data] WARN: could not build mini LLM client "
+              f"({model}): {exc}")
         return None
 
 
