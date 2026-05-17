@@ -5981,6 +5981,14 @@ class PersonaAgent:
     CHATBOT_CANONICAL_TARGET = 0.27
     AI_STUDIO_CANONICAL_TARGET = 0.18
     SOCIAL_CANONICAL_FLOOR = 0.17
+    # Hard cap on the number of AI Studio events generated per user. Heavy
+    # users (e.g. user 115's 2566 input rows) otherwise produce 200+ events
+    # at AI_STUDIO_CANONICAL_TARGET=0.18, which makes Step 18B the pipeline
+    # bottleneck. When the candidate pool exceeds the cap, the records get
+    # stratified-spread chronologically so the timeline coverage AND the
+    # SPT S1→S4 arc are preserved (the generator's delta scaling adapts
+    # to whatever event count it receives).
+    MAX_AI_STUDIO_EVENTS = 50
 
     def _quota_rebalance_apps(self) -> None:
         """Enforce soft quotas on the canonical-level app distribution.
@@ -7134,6 +7142,21 @@ class PersonaAgent:
                       f"AI Studio: zero canonicals routed to AI_Studio (Step 13/14 might "
                       f"have given everything else higher priority); skipping.{utils.Colors.ENDC}")
             return
+
+        # Cap to MAX_AI_STUDIO_EVENTS via stratified-spread sampling.
+        # Sort chronologically, then pick every Nth event so kept events
+        # cover the full timeline (preserves the SPT arc + gives eval
+        # tasks AI Studio activity at late t_test cuts).
+        ai_studio_records.sort(key=lambda r: r.get("source_timestamp", 0))
+        n_before_cap = len(ai_studio_records)
+        if n_before_cap > self.MAX_AI_STUDIO_EVENTS:
+            step = n_before_cap / self.MAX_AI_STUDIO_EVENTS
+            kept_idxs = {int(i * step) for i in range(self.MAX_AI_STUDIO_EVENTS)}
+            ai_studio_records = [r for i, r in enumerate(ai_studio_records) if i in kept_idxs]
+            if self.verbose:
+                print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                      f"AI Studio: capped {n_before_cap} → {len(ai_studio_records)} events "
+                      f"(stratified-spread; cap=MAX_AI_STUDIO_EVENTS={self.MAX_AI_STUDIO_EVENTS}).{utils.Colors.ENDC}")
 
         try:
             user_seed = int(str(self.user_id)) * 7919 + 131
