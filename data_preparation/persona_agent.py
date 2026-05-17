@@ -5984,10 +5984,13 @@ class PersonaAgent:
     # Hard cap on the number of AI Studio events generated per user. Heavy
     # users (e.g. user 115's 2566 input rows) otherwise produce 200+ events
     # at AI_STUDIO_CANONICAL_TARGET=0.18, which makes Step 18B the pipeline
-    # bottleneck. When the candidate pool exceeds the cap, the records get
-    # stratified-spread chronologically so the timeline coverage AND the
-    # SPT S1→S4 arc are preserved (the generator's delta scaling adapts
-    # to whatever event count it receives).
+    # bottleneck. When the candidate pool exceeds the cap, the kept set is
+    # chosen by content-aware time-bucketed selection (see
+    # `generate_ai_studio_conversations`): score each routed event by
+    # hidden-persona hashtag overlap + preference depth, bucket the
+    # window into MAX_AI_STUDIO_EVENTS equal time slots, pick the
+    # highest-scoring event per bucket. Result: full timeline coverage
+    # AND every kept event has a concrete persona-anchored reason.
     MAX_AI_STUDIO_EVENTS = 50
 
     def _quota_rebalance_apps(self) -> None:
@@ -7143,20 +7146,73 @@ class PersonaAgent:
                       f"have given everything else higher priority); skipping.{utils.Colors.ENDC}")
             return
 
-        # Cap to MAX_AI_STUDIO_EVENTS via stratified-spread sampling.
-        # Sort chronologically, then pick every Nth event so kept events
-        # cover the full timeline (preserves the SPT arc + gives eval
-        # tasks AI Studio activity at late t_test cuts).
+        # Cap to MAX_AI_STUDIO_EVENTS via content-aware time-bucketed selection.
+        # Score each routed event by:
+        #   (a) hashtag overlap with any hidden persona's evidence_hashtags
+        #       — higher = more relationally relevant (companion chat thrives
+        #       on identity/aspiration/intimate-interest signals, which is
+        #       exactly what hidden personas capture).
+        #   (b) preference depth (n routed preferences on the event) — proxy
+        #       for conversational substance.
+        # Then divide the observation window into MAX_AI_STUDIO_EVENTS equal
+        # time buckets and pick the highest-scoring event per bucket. Empty
+        # buckets are topped up with the highest-scoring leftover.
+        # Result: kept events have a CONCRETE reason (persona-anchored, deep)
+        # AND span the full window (eval tasks can pick t_test anywhere).
         ai_studio_records.sort(key=lambda r: r.get("source_timestamp", 0))
         n_before_cap = len(ai_studio_records)
         if n_before_cap > self.MAX_AI_STUDIO_EVENTS:
-            step = n_before_cap / self.MAX_AI_STUDIO_EVENTS
-            kept_idxs = {int(i * step) for i in range(self.MAX_AI_STUDIO_EVENTS)}
-            ai_studio_records = [r for i, r in enumerate(ai_studio_records) if i in kept_idxs]
+            hp_tag_sets: list[set] = []
+            for hp in (self.user_profile.hidden_personas or []):
+                tags = {(t or "").lower().lstrip("#")
+                        for t in (getattr(hp, "evidence_hashtags", None) or [])}
+                tags.discard("")
+                if tags:
+                    hp_tag_sets.append(tags)
+
+            def _score(rec: dict) -> float:
+                ev_tags = {(h or "").lower().lstrip("#")
+                           for h in (rec.get("source_hashtags") or [])}
+                ev_tags.discard("")
+                overlap = sum(len(ev_tags & hp_tags) for hp_tags in hp_tag_sets)
+                n_prefs = len(rec.get("preferences") or [])
+                return overlap * 1.0 + n_prefs * 0.3
+
+            t_min = ai_studio_records[0].get("source_timestamp", 0)
+            t_max = ai_studio_records[-1].get("source_timestamp", 0)
+            span = max(1, t_max - t_min)
+            n_buckets = self.MAX_AI_STUDIO_EVENTS
+            buckets: list[list[tuple[dict, float]]] = [[] for _ in range(n_buckets)]
+            for rec in ai_studio_records:
+                idx = min(
+                    int((rec.get("source_timestamp", 0) - t_min) / span * n_buckets),
+                    n_buckets - 1,
+                )
+                buckets[idx].append((rec, _score(rec)))
+
+            kept: list[dict] = []
+            for b in buckets:
+                if b:
+                    b.sort(key=lambda x: -x[1])
+                    kept.append(b[0][0])
+
+            # Top up from highest-scoring leftover if any bucket was empty.
+            kept_oids = {r.get("source_object_id") for r in kept}
+            leftover = sorted(
+                [(rec, _score(rec)) for rec in ai_studio_records
+                 if rec.get("source_object_id") not in kept_oids],
+                key=lambda x: -x[1],
+            )
+            while len(kept) < self.MAX_AI_STUDIO_EVENTS and leftover:
+                kept.append(leftover.pop(0)[0])
+
+            kept.sort(key=lambda r: r.get("source_timestamp", 0))
+            ai_studio_records = kept
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
                       f"AI Studio: capped {n_before_cap} → {len(ai_studio_records)} events "
-                      f"(stratified-spread; cap=MAX_AI_STUDIO_EVENTS={self.MAX_AI_STUDIO_EVENTS}).{utils.Colors.ENDC}")
+                      f"(time-bucketed × hp-overlap+pref-depth score; "
+                      f"cap=MAX_AI_STUDIO_EVENTS={self.MAX_AI_STUDIO_EVENTS}).{utils.Colors.ENDC}")
 
         try:
             user_seed = int(str(self.user_id)) * 7919 + 131
