@@ -2,51 +2,51 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775184600,
-      "formatted_timestamp": "09:30, 05/01/2026",
+      "ts": 1775185200,
+      "formatted_timestamp": "09:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Gym warm-up and upper-body session",
-        "start_ts": 1775184600,
-        "end_ts": 1775189700,
+        "title": "Load-in and lighting focus check",
+        "start_ts": 1775185200,
+        "end_ts": 1775192400,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
-        "type": "health",
+        "type": "work",
         "linked_preferences": [
-          "fitness"
+          "behind-the-scenes craft"
         ],
-        "is_preference_driven": true,
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775195400,
-      "formatted_timestamp": "12:30, 05/01/2026",
+      "ts": 1775206800,
+      "formatted_timestamp": "15:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "Pick up lunch ingredients and fresh ginger",
-        "start_ts": 1775195400,
-        "end_ts": 1775197200,
+        "title": "BJJ class",
+        "start_ts": 1775206800,
+        "end_ts": 1775214000,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
-        "type": "personal",
+        "type": "health",
         "linked_preferences": [
-          "home cooking"
+          "Brazilian Jiu-Jitsu training and culture"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -54,51 +54,49 @@
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775211000,
-      "formatted_timestamp": "16:50, 05/01/2026",
+      "ts": 1775275200,
+      "formatted_timestamp": "10:00, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "Museum install check-in and object prep",
-        "start_ts": 1775211000,
-        "end_ts": 1775221800,
+        "title": "Haircut and beard cleanup",
+        "start_ts": 1775275200,
+        "end_ts": 1775278800,
         "location": {
-          "city": "New York",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.7128,
-          "lon": -74.006,
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
-        "type": "work",
-        "linked_preferences": [
-          "museum/process visuals"
-        ],
+        "type": "personal",
+        "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775230200,
-      "formatted_timestamp": "22:10, 05/01/2026",
+      "ts": 1775296800,
+      "formatted_timestamp": "16:00, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Chatbot draft: honest reply to dating message",
-        "start_ts": 1775230200,
-        "end_ts": 1775232000,
+        "title": "Family dinner at home",
+        "start_ts": 1775296800,
+        "end_ts": 1775307600,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
-        "type": "personal",
+        "type": "social",
         "linked_preferences": [
-          "dating clarity"
+          "family relationships"
         ],
         "is_preference_driven": true,
         "relation_to_social": "adjacent"
@@ -106,20 +104,63 @@
     },
     {
       "mod_id": "mod_005",
-      "ts": 1775260800,
-      "formatted_timestamp": "08:00, 05/02/2026",
+      "ts": 1775300400,
+      "formatted_timestamp": "17:00, 04/04/2026",
+      "action": "updated",
+      "entry_id": "cal_004",
+      "diff": {
+        "end_ts": {
+          "from": 1775307600,
+          "to": 1775311200
+        },
+        "notes": {
+          "from": "",
+          "to": "waiting on cousin to finish traffic"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_006",
+      "ts": 1775358000,
+      "formatted_timestamp": "09:00, 04/05/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_005",
-        "title": "MTA ride to Manhattan for early site delivery",
-        "start_ts": 1775260800,
-        "end_ts": 1775263800,
+        "title": "Sunday brunch prep and mushroom taco lunch",
+        "start_ts": 1775358000,
+        "end_ts": 1775368800,
         "location": {
-          "city": "New York",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.7128,
-          "lon": -74.006,
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "home cooking"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775422800,
+      "formatted_timestamp": "08:00, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_006",
+        "title": "Train to San Diego",
+        "start_ts": 1775422800,
+        "end_ts": 1775439600,
+        "location": {
+          "city": "San Diego",
+          "region": "CA",
+          "country": "USA",
+          "lat": 32.7157,
+          "lon": -117.1611,
           "precision": "city"
         },
         "type": "travel",
@@ -129,184 +170,221 @@
       }
     },
     {
-      "mod_id": "mod_006",
-      "ts": 1775266500,
-      "formatted_timestamp": "09:35, 05/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_006",
-        "title": "Workroom meeting with Ana and installs team",
-        "start_ts": 1775266500,
-        "end_ts": 1775269200,
-        "location": {
-          "city": "New York",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.7128,
-          "lon": -74.006,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated",
-        "attendees": [
-          "self",
-          "Ana"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_007",
-      "ts": 1775285100,
-      "formatted_timestamp": "14:45, 05/02/2026",
-      "action": "updated",
-      "entry_id": "cal_003",
-      "diff": {
-        "end_ts": {
-          "from": 1775221800,
-          "to": 1775223600
-        },
-        "notes": {
-          "from": "",
-          "to": "bring backup gels and extra gloves"
-        }
-      }
-    },
-    {
       "mod_id": "mod_008",
-      "ts": 1775302800,
-      "formatted_timestamp": "19:40, 05/02/2026",
+      "ts": 1775440800,
+      "formatted_timestamp": "13:00, 04/06/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_007",
-        "title": "Home dinner: jerk chicken, rice and peas",
-        "start_ts": 1775302800,
-        "end_ts": 1775308800,
+        "title": "Hotel check-in and gear drop",
+        "start_ts": 1775440800,
+        "end_ts": 1775444400,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "San Diego",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 32.7157,
+          "lon": -117.1611,
           "precision": "city"
         },
         "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775455200,
+      "formatted_timestamp": "17:00, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Evening UFC watch party",
+        "start_ts": 1775455200,
+        "end_ts": 1775466000,
+        "location": {
+          "city": "San Diego",
+          "region": "CA",
+          "country": "USA",
+          "lat": 32.7157,
+          "lon": -117.1611,
+          "precision": "city"
+        },
+        "type": "social",
         "linked_preferences": [
-          "home cooking"
+          "mixed martial arts"
         ],
         "is_preference_driven": true,
         "relation_to_social": "adjacent"
       }
     },
     {
-      "mod_id": "mod_009",
-      "ts": 1775331000,
-      "formatted_timestamp": "03:30, 05/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Quiet lock-picking practice",
-        "start_ts": 1775331000,
-        "end_ts": 1775333700,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
       "mod_id": "mod_010",
-      "ts": 1775350200,
-      "formatted_timestamp": "09:50, 05/03/2026",
+      "ts": 1775473200,
+      "formatted_timestamp": "22:00, 04/06/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_009",
-        "title": "Barber appointment",
-        "start_ts": 1775350200,
-        "end_ts": 1775353200,
+        "title": "Late-night hotel edit: next week crew call draft",
+        "start_ts": 1775473200,
+        "end_ts": 1775476800,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "San Diego",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 32.7157,
+          "lon": -117.1611,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [],
+        "type": "work",
+        "linked_preferences": [
+          "culture and technical curiosity"
+        ],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_011",
-      "ts": 1775373000,
-      "formatted_timestamp": "16:10, 05/03/2026",
+      "ts": 1775538000,
+      "formatted_timestamp": "16:00, 04/07/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_010",
-        "title": "Threads post: boxing take and wrestling storyline rant",
-        "start_ts": 1775373000,
-        "end_ts": 1775373900,
+        "title": "Return train to Los Angeles",
+        "start_ts": 1775538000,
+        "end_ts": 1775554800,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775563200,
+      "formatted_timestamp": "23:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Boxing clips and old hip-hop interview catch-up",
+        "start_ts": 1775563200,
+        "end_ts": 1775568600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
           "boxing fandom",
-          "professional wrestling fandom"
+          "hip-hop media"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775610000,
+      "formatted_timestamp": "12:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Lunch meeting with Ana",
+        "start_ts": 1775610000,
+        "end_ts": 1775615400,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "social",
+        "attendees": [
+          "self",
+          "Ana"
+        ],
+        "linked_preferences": [
+          "romantic relationships"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_012",
-      "ts": 1775397000,
-      "formatted_timestamp": "22:50, 05/03/2026",
+      "mod_id": "mod_014",
+      "ts": 1775628000,
+      "formatted_timestamp": "17:00, 04/08/2026",
       "action": "updated",
-      "entry_id": "cal_007",
+      "entry_id": "cal_012",
       "diff": {
         "end_ts": {
-          "from": 1775308800,
-          "to": 1775310600
+          "from": 1775615400,
+          "to": 1775619000
         },
-        "notes": {
-          "from": "",
-          "to": "save leftovers for tomorrow"
+        "title": {
+          "from": "Lunch meeting with Ana",
+          "to": "Dinner with Ana"
         }
       }
     },
     {
-      "mod_id": "mod_013",
-      "ts": 1775437200,
-      "formatted_timestamp": "10:20, 05/04/2026",
+      "mod_id": "mod_015",
+      "ts": 1775649600,
+      "formatted_timestamp": "23:00, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_011",
-        "title": "Dental cleaning",
-        "start_ts": 1775437200,
-        "end_ts": 1775440800,
+        "entry_id": "cal_013",
+        "title": "Work planning: rigging checklist and supply order",
+        "start_ts": 1775649600,
+        "end_ts": 1775653200,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "behind-the-scenes craft"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775700000,
+      "formatted_timestamp": "13:00, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Dentist cleaning",
+        "start_ts": 1775700000,
+        "end_ts": 1775703600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
         "type": "health",
@@ -316,21 +394,190 @@
       }
     },
     {
-      "mod_id": "mod_014",
-      "ts": 1775459100,
-      "formatted_timestamp": "16:25, 05/04/2026",
+      "mod_id": "mod_017",
+      "ts": 1775718000,
+      "formatted_timestamp": "18:00, 04/09/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_012",
-        "title": "Dinner with family",
-        "start_ts": 1775459100,
-        "end_ts": 1775466900,
+        "entry_id": "cal_015",
+        "title": "RC truck bench session",
+        "start_ts": 1775718000,
+        "end_ts": 1775725200,
         "location": {
-          "city": "Brooklyn",
-          "region": "NY",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "RC cars and remote-control vehicle hobbies"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775782800,
+      "formatted_timestamp": "12:00, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Worksite sprint review",
+        "start_ts": 1775782800,
+        "end_ts": 1775788200,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775800800,
+      "formatted_timestamp": "17:00, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Sunday dinner check-in text drafting",
+        "start_ts": 1775800800,
+        "end_ts": 1775804400,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "family relationships"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775860800,
+      "formatted_timestamp": "10:00, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Car inspection and tire rotation",
+        "start_ts": 1775860800,
+        "end_ts": 1775868000,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775880000,
+      "formatted_timestamp": "15:20, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "UFC clips and notes for Threads",
+        "start_ts": 1775880000,
+        "end_ts": 1775883600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "mixed martial arts"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775921400,
+      "formatted_timestamp": "03:10, 04/12/2026",
+      "action": "updated",
+      "entry_id": "cal_019",
+      "diff": {
+        "notes": {
+          "from": "",
+          "to": "cut short to grab sleep before work"
+        },
+        "end_ts": {
+          "from": 1775883600,
+          "to": 1775881800
+        }
+      }
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775928000,
+      "formatted_timestamp": "05:00, 04/12/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_020",
+        "title": "Early shift setup and cable check",
+        "start_ts": 1775928000,
+        "end_ts": 1775935200,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "behind-the-scenes craft"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775931900,
+      "formatted_timestamp": "06:05, 04/12/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_021",
+        "title": "Coffee run with crew",
+        "start_ts": 1775931900,
+        "end_ts": 1775933700,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
         "type": "social",
@@ -340,301 +587,12 @@
       }
     },
     {
-      "mod_id": "mod_015",
-      "ts": 1775481300,
-      "formatted_timestamp": "22:35, 05/04/2026",
-      "action": "removed",
-      "entry_id": "cal_012",
-      "removal_reason": "canceled: family rescheduled to next weekend"
-    },
-    {
-      "mod_id": "mod_016",
-      "ts": 1775511600,
-      "formatted_timestamp": "07:00, 05/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_013",
-        "title": "Museum load-in and mount adjustments",
-        "start_ts": 1775511600,
-        "end_ts": 1775526000,
-        "location": {
-          "city": "New York",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.7128,
-          "lon": -74.006,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "museum/process visuals"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_017",
-      "ts": 1775533200,
-      "formatted_timestamp": "13:00, 05/05/2026",
-      "action": "updated",
-      "entry_id": "cal_013",
-      "diff": {
-        "end_ts": {
-          "from": 1775526000,
-          "to": 1775529600
-        },
-        "notes": {
-          "from": "",
-          "to": "museum wanted one more hour for final placement"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_018",
-      "ts": 1775558400,
-      "formatted_timestamp": "20:00, 05/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_014",
-        "title": "BMX loop around the school lot",
-        "start_ts": 1775558400,
-        "end_ts": 1775562000,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "BMX and stunt-riding action sports content"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_019",
-      "ts": 1775600100,
-      "formatted_timestamp": "07:35, 05/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_015",
-        "title": "Chatbot check: wording a direct text before sending",
-        "start_ts": 1775600100,
-        "end_ts": 1775602200,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "message drafting",
-          "dating clarity"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_020",
-      "ts": 1775628600,
-      "formatted_timestamp": "15:30, 05/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_016",
-        "title": "Workbench cleanup and tool inventory",
-        "start_ts": 1775628600,
-        "end_ts": 1775634000,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_021",
-      "ts": 1775649300,
-      "formatted_timestamp": "21:15, 05/06/2026",
-      "action": "updated",
-      "entry_id": "cal_015",
-      "diff": {
-        "end_ts": {
-          "from": 1775602200,
-          "to": 1775603100
-        },
-        "notes": {
-          "from": "",
-          "to": "keep it shorter, less apologetic"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_022",
-      "ts": 1775692800,
-      "formatted_timestamp": "09:20, 05/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_017",
-        "title": "Grocery run for Jamaican dinner ingredients",
-        "start_ts": 1775692800,
-        "end_ts": 1775695800,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "home cooking"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_023",
-      "ts": 1775721600,
-      "formatted_timestamp": "17:20, 05/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_018",
-        "title": "One-on-one with site supervisor",
-        "start_ts": 1775721600,
-        "end_ts": 1775725200,
-        "location": {
-          "city": "New York",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.7128,
-          "lon": -74.006,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_024",
-      "ts": 1775744400,
-      "formatted_timestamp": "23:40, 05/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "Late-night boxing clips and commentary scroll",
-        "start_ts": 1775744400,
-        "end_ts": 1775748600,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "boxing fandom",
-          "boxing and MMA/UFC"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
       "mod_id": "mod_025",
-      "ts": 1775781000,
-      "formatted_timestamp": "09:50, 05/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_020",
-        "title": "Bike tune-up and tire check",
-        "start_ts": 1775781000,
-        "end_ts": 1775784600,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "BMX and stunt-riding action sports content"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_026",
-      "ts": 1775815200,
-      "formatted_timestamp": "19:20, 05/08/2026",
-      "action": "updated",
-      "entry_id": "cal_018",
-      "diff": {
-        "end_ts": {
-          "from": 1775725200,
-          "to": 1775727000
-        },
-        "notes": {
-          "from": "",
-          "to": "boss added a quick cleanup checklist"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_027",
-      "ts": 1775929800,
-      "formatted_timestamp": "22:30, 05/09/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_021",
-        "title": "Prep tomorrow's museum hardware kit",
-        "start_ts": 1775929800,
-        "end_ts": 1775934000,
-        "location": {
-          "city": "Brooklyn",
-          "region": "NY",
-          "country": "USA",
-          "lat": 40.6782,
-          "lon": -73.9442,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_028",
-      "ts": 1775937000,
-      "formatted_timestamp": "00:30, 05/10/2026",
+      "ts": 1775935200,
+      "formatted_timestamp": "07:00, 04/12/2026",
       "action": "removed",
-      "entry_id": "cal_021",
-      "removal_reason": "canceled: the load-in got pushed to Monday"
+      "entry_id": "cal_011",
+      "removal_reason": "canceled: got pulled into an early call"
     }
   ]
 }
