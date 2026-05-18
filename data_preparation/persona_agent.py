@@ -6281,20 +6281,54 @@ class PersonaAgent:
             mobility_class=mobility_class,
         )
 
-        response = self._query_mini_with_retry(prompt)
-        if not response:
-            if self.verbose:
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                      f"Location segments: LLM returned nothing.{utils.Colors.ENDC}")
-            return
-        parsed = utils.extract_json_from_response(response)
-        if not isinstance(parsed, list) or not parsed:
-            if self.verbose:
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                      f"Location segments: LLM output was not a non-empty list.{utils.Colors.ENDC}")
-            return
+        # Forbidden placeholder substrings — the LLM sometimes emits
+        # "Unknown Trip City" / "Home Town" instead of a real city; reject
+        # any segment whose city name matches one of these and re-prompt
+        # with strict feedback. We need real city names downstream (the
+        # geo_shift eval task city-grounds its recommendations).
+        _CITY_PLACEHOLDERS = (
+            "unknown", "placeholder", "trip city", "home city", "home town",
+            "city a", "city b", "city 1", "city 2", "tbd", "n/a", "redacted",
+        )
 
-        # ---- 4. Parse + validate segments ----
+        def _is_placeholder_city(name: str) -> bool:
+            n = (name or "").strip().lower()
+            if not n:
+                return True
+            return any(p in n for p in _CITY_PLACEHOLDERS)
+
+        # ---- 4. Parse + validate segments — retry once with strict feedback
+        # if the LLM emitted placeholder city names ----
+        parsed = None
+        bad_names: list[str] = []
+        for attempt in range(2):
+            response = self._query_mini_with_retry(prompt)
+            if not response:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                          f"Location segments: LLM returned nothing.{utils.Colors.ENDC}")
+                return
+            parsed = utils.extract_json_from_response(response)
+            if not isinstance(parsed, list) or not parsed:
+                if self.verbose:
+                    print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                          f"Location segments: LLM output was not a non-empty list.{utils.Colors.ENDC}")
+                return
+            # Check for placeholder cities; retry once if found.
+            bad_names = [
+                str(s.get("city", "")) for s in parsed
+                if isinstance(s, dict) and _is_placeholder_city(s.get("city", ""))
+            ]
+            if not bad_names:
+                break
+            # Retry with strict feedback baked into the prompt.
+            prompt += (
+                f"\n\n## RETRY — your previous response emitted placeholder "
+                f"city names: {bad_names}. Replace them with REAL named "
+                f"cities (e.g. Brooklyn, Austin, Manchester) grounded in "
+                f"the user's profile clues. Concrete real-world names ONLY."
+            )
+
         segments: list[dict] = []
         for s in parsed:
             if not isinstance(s, dict):
@@ -6303,11 +6337,16 @@ class PersonaAgent:
                 start_ts = int(s.get("start_ts") or 0)
             except (ValueError, TypeError):
                 continue
-            if not s.get("city"):
+            city = s.get("city", "")
+            if not city or _is_placeholder_city(city):
+                # Skip placeholder segments — downstream code treats the
+                # remaining segments as the full picture; if all segments
+                # were placeholders, we end up with zero segments and the
+                # caller logs a warning (handled below).
                 continue
             segments.append({
                 "start_ts": start_ts,
-                "city": s.get("city", ""),
+                "city": city,
                 "region": s.get("region", ""),
                 "country": s.get("country", ""),
                 "lat": s.get("lat"),
