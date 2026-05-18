@@ -4893,7 +4893,15 @@ You ALSO enforce these 7 subtlety constraints — any violation forces `subtlety
 
 ## Your task
 
-Score this candidate. Return a single JITAI card. Be strict — most candidates should NOT pass; the bar is "would a thoughtful human assistant act on this moment, citing the user's own evidence, in one ambient sentence?".
+Score this candidate. Return a single JITAI card. The bar is "would a thoughtful human assistant act on this moment, citing the user's own evidence, in one ambient sentence?" — neither over-eager nor reflexively silent. Genuine proactive moments DO exist; apply the rubric honestly rather than defaulting to 0.
+
+**Type-specific defaults** when the deterministic gatherer flagged a candidate:
+
+- `unfulfilled_stated_need`: the user asked a real question that wasn't followed up by any topical engagement within 3 days AND didn't end with closure. That's already a legitimate signal — score AT LEAST 2 (defensible) unless the question is generic / chitchat / hypothetical. Score 3 if the question carries a concrete object or decision (place, product, plan, choice).
+- `close_friend_update`: the user left a close-friend inbound message unanswered for 6+ hours. That's also a legitimate signal — score AT LEAST 2 unless the message is throwaway (one-word, emoji-only) or the friend graph shows they routinely go that long. Score 3 if the friend's message is substantive (carries content, request, or invitation).
+- `sensitive_event_silence`: this is the restrain class — score MUST be 0 with `recommended_action_class = "stay_silent"`. Same hard rule when `sensitive_event_active=true` regardless of trigger_type.
+
+A score of 0 outside the restrain class should be reserved for cases where the evidence genuinely doesn't justify action — not as a default for ambiguity. Borderline cases land at 2.
 
 Output ONLY this JSON, no prose outside the fence:
 
@@ -4912,10 +4920,10 @@ Output ONLY this JSON, no prose outside the fence:
 ```
 
 **Scoring rubric** (eligibility_score):
-- **3** — clearly justified, JITAI all-pass, Horvitz cost-benefit favors acting, user's own evidence is concrete and current.
-- **2** — defensible, but borderline. Action would help, but a thoughtful human might also stay silent.
-- **1** — weak justification; user's evidence is stale, vague, or doesn't clearly imply a desire for follow-up.
-- **0** — should NOT act. Cost of intrusion exceeds value, OR sensitive-event window active, OR user's evidence does not support it.
+- **3** — clearly justified, JITAI all-pass, Horvitz cost-benefit favors acting, user's evidence is concrete and current (the gatherer's signal aligns with a specific decision / object / commitment).
+- **2** — defensible. The deterministic gatherer flagged this for a reason and the evidence supports a single ambient follow-up; a thoughtful assistant would act.
+- **1** — weak justification; evidence is generic or borderline-stale; acting MIGHT help but most assistants would let it pass.
+- **0** — reserved for cases where (a) restrain class (`sensitive_event_silence`), (b) `sensitive_event_active=true`, or (c) evidence genuinely contradicts proactive action (the question was rhetorical, the close-friend message was a one-word ping, etc.). Do NOT use 0 as a default for ambiguity.
 
 If `sensitive_event_active=true`, the score MUST be 0 and `recommended_action_class` MUST be `stay_silent` — this is the hard restraint rule.
 """
