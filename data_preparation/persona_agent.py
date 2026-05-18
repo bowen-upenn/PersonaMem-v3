@@ -2954,6 +2954,7 @@ class PersonaAgent:
                 "last_formatted_ts": utils.unix_to_formatted(last_ts) if last_ts else "",
                 "_cr": cr,
                 "_polarity": polarity,
+                "_last_ts": last_ts,   # used by stop-condition fallback below
             }
 
         shortterm_candidates: list[dict] = []
@@ -3032,13 +3033,32 @@ class PersonaAgent:
                     cr.time_horizon = "short_term"
                     sc = result.get("stop_condition")
                     if isinstance(sc, dict):
+                        # The LLM is required to provide a positive integer
+                        # expected_stop_ts (see horizon_and_stop_prompt). If
+                        # it slipped through with None / 0 / non-int, fall
+                        # back to last_seen_ts + 14 days so the downstream
+                        # eval task `short_vs_long_term_lifecycle` always
+                        # has a concrete expiry to test stale behavior at.
+                        raw_ts = sc.get("expected_stop_ts")
+                        try:
+                            stop_ts = int(raw_ts) if raw_ts is not None else 0
+                        except (TypeError, ValueError):
+                            stop_ts = 0
+                        if stop_ts <= 0:
+                            stop_ts = int(c.get("_last_ts") or 0) + 14 * 86400
                         cr.stop_condition = {
                             "type": sc.get("type", "event"),
                             "description": sc.get("description", ""),
-                            "expected_stop_ts": sc.get("expected_stop_ts"),
+                            "expected_stop_ts": stop_ts,
                         }
                     else:
-                        cr.stop_condition = {}
+                        # No stop_condition emitted → synthesize a 14-day
+                        # post-last-seen default so eval can still fire.
+                        cr.stop_condition = {
+                            "type": "event",
+                            "description": "Auto-default (LLM omitted stop_condition).",
+                            "expected_stop_ts": int(c.get("_last_ts") or 0) + 14 * 86400,
+                        }
                     n_confirmed += 1
                 else:
                     # Demoted → long_term. Re-apply strict floor.
@@ -10341,6 +10361,14 @@ class PersonaAgent:
             "friends_brief": f_brief,
         }
 
+    # Min eligibility score to accept a proactive trigger candidate.
+    # Originally 2 ("defensible / borderline"); lowered to 1 ("weak but
+    # not zero") to surface enough candidates on light-DM-traffic users
+    # like 115 whose chatbot questions all read as "soft" needs. The
+    # subtlety_check_pass + non-stay_silent gates still apply, so we're
+    # not lowering the bar on subtlety enforcement.
+    _PROACTIVE_MIN_ELIGIBILITY = 1
+
     def _proactive_candidate_passes(
         self,
         trigger_type: str,
@@ -10349,7 +10377,8 @@ class PersonaAgent:
     ) -> bool:
         """Apply the eligibility-keep rule per trigger type.
 
-        Proactive triggers (T1.A, T3.A): keep if `eligibility_score >= 2 AND
+        Proactive triggers (T1.A, T3.A): keep if
+        `eligibility_score >= _PROACTIVE_MIN_ELIGIBILITY AND
         subtlety_check_pass AND recommended_action_class != "stay_silent"`.
 
         Restraint trigger (T4.A): keep if `eligibility_score == 0 AND
@@ -10370,7 +10399,11 @@ class PersonaAgent:
         if sensitive_active:
             # Hard restraint window override — never emit a proactive instance here.
             return False
-        return score >= 2 and subtlety_ok and action_class != "stay_silent"
+        return (
+            score >= self._PROACTIVE_MIN_ELIGIBILITY
+            and subtlety_ok
+            and action_class != "stay_silent"
+        )
 
     def load_from_backend(self) -> bool:
         """Load persisted JSON data back into instance variables.

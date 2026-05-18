@@ -63,7 +63,17 @@ SOCIAL_APPS = ("instagram", "facebook", "threads")
 
 def _build_persona_topic_index(bq: BackendQuery, user_id: str, t_anchor: int) -> dict:
     """Snapshot the user's top categories + top hashtags + friends index
-    at t_anchor. Returns a dict the per-task filters consume."""
+    at t_anchor. Returns a dict the per-task filters consume.
+
+    The `top_hashtags` set unions two sources:
+      (a) the top 30 by raw event count, AND
+      (b) every hashtag listed in any hidden_persona's `evidence_hashtags`.
+    Niche hashtags that anchor on a hidden persona (e.g. `#Nems` for an
+    East-Coast-rap identity_anchor) wouldn't show up in the top-30 count
+    bucket but ARE persona-relevant by construction — including them here
+    fixes agentic_group_dm_summary / dm_digest false negatives where the
+    thread's source_hashtags were niche-but-aligned.
+    """
     cat_counts: Counter = Counter()
     hashtag_counts: Counter = Counter()
     for app in SOCIAL_APPS:
@@ -76,9 +86,16 @@ def _build_persona_topic_index(bq: BackendQuery, user_id: str, t_anchor: int) ->
                 hashtag_counts[h.lstrip("#").lower()] += 1
     profile = bq.get_full_profile(user_id) or {}
     friends_by_id = {f.get("friend_id"): f for f in (profile.get("friends") or [])}
+    top_hashtags: set[str] = {h for h, _ in hashtag_counts.most_common(30)}
+    # Union with hidden-persona evidence_hashtags.
+    for hp in (profile.get("hidden_personas") or []):
+        for h in (hp.get("evidence_hashtags") or []):
+            tag = (h or "").lstrip("#").lower()
+            if tag:
+                top_hashtags.add(tag)
     return {
         "top_cats": {c for c, _ in cat_counts.most_common(8)},
-        "top_hashtags": {h for h, _ in hashtag_counts.most_common(20)},
+        "top_hashtags": top_hashtags,
         "friends_by_id": friends_by_id,
     }
 
