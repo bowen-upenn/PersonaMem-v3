@@ -150,22 +150,30 @@ def _generate_one_event(
     user_voice: dict,
     ai_studio_persona: dict,
     hidden_personas: list[dict],
-    memory_state: AIStudioMemoryState,
-    prior_records: list[dict],
+    memory_snapshot: AIStudioMemoryState,
+    prev_verbatim_events: list[dict],
+    n_prior: int,
     llm_query_fn: Callable[[str], Optional[str]],
     rng: random.Random,
-    delta_scale: float = 1.0,
     verbose: bool = False,
 ) -> Optional[dict]:
-    """Generate ONE AI Studio conversation. Mutates `record` in place and
-    returns it on success, None on failure (caller drops the record).
+    """Generate ONE AI Studio conversation. PURE w.r.t. memory state —
+    reads from `memory_snapshot` (a deep-copied read-only state) and
+    returns the generation outputs on the record. State mutation is the
+    caller's job (see `_apply_event_to_state`) — this enables
+    batched-parallel dispatch where all events in a batch share the
+    same snapshot, then state is updated chronologically once results
+    come back.
+
+    `prev_verbatim_events` is the K-recent window the verbatim slot
+    renders from (read from disk by the caller, NOT from any in-memory
+    accumulator). Returns the mutated record on success, None on failure.
     """
     archetype = ai_studio_persona.get("persona_archetype", "late_night_best_friend")
     explicitness_band = (ai_studio_persona.get("romantic_specifier") or {}).get("explicitness_band")
-    n_prior = len(prior_records)
 
     # SPT stage at this moment (BEFORE this event's delta is applied).
-    state = memory_state.running_relational_state
+    state = memory_snapshot.running_relational_state
     intimacy_stage = state.intimacy_stage or compute_intimacy_stage(state.intimacy_arc)
     intimacy_arc = state.intimacy_arc
     prev_event_stage = state.last_event_stage
@@ -185,16 +193,17 @@ def _generate_one_event(
     turn_count = _select_turn_count(conv_type, rng)
     oblique_targets = _pick_oblique_targets(routed_prefs, hidden_personas, rng)
 
-    # Build the cross-session memory snapshot. K-recent windowing: last 2
-    # events render verbatim, older events render as their stored summary.
-    # Per-prompt size stays bounded regardless of how many prior events
-    # exist — Step 18C audit's `cross_session_continuity` check is the
-    # load-bearing guard against summary-only events generating
+    # Build the cross-session memory snapshot:
+    #   - Verbatim slot: last 2 events (from disk via prev_verbatim_events).
+    #   - Summary tail: every prior event's `episodic_memory_items` entry
+    #     (long-term memory).
+    # Per-event prompt size stays bounded; Step 18C audit's
+    # `cross_session_continuity` check (incl. intra-batch sibling check)
+    # is the load-bearing guard against summary-only events generating
     # inconsistent content.
     ctx = assemble_generation_context(
-        memory_state=memory_state,
-        all_prior_events=prior_records,
-        k_recent=2,
+        memory_state=memory_snapshot,
+        prev_verbatim_events=prev_verbatim_events,
     )
 
     # Build prompt — pick standard vs romantic variant by archetype.
@@ -251,12 +260,13 @@ def _generate_one_event(
     oblique_emitted = list(parsed.get("oblique_reference_to_hidden_personas") or oblique_targets)
     stage_emitted = parsed.get("intimacy_stage_emitted") or intimacy_stage
 
-    # Mutate the record with generation outputs.
+    # Stash generation outputs on the record. NO memory_state mutation here —
+    # that happens in `_apply_event_to_state` after the audit step.
     record["conversation"] = cleaned
     record["conversation_type"] = conv_type
     record["prior_session_refs"] = [
         ev.get("source_object_id", "")
-        for ev in prior_records
+        for ev in prev_verbatim_events
         if ev.get("source_object_id")
     ]
     record["memory_used_summary"] = memory_used_summary
@@ -272,40 +282,13 @@ def _generate_one_event(
             if prev_event_stage and stage_index(stage_emitted) > stage_index(prev_event_stage)
             else "same"
         ),
+        # Stash conv-time decisions so `_apply_event_to_state` has them
+        # without recomputing — keeps the post-batch sequential apply tiny.
+        "_conv_type": conv_type,
+        "_stage_emitted": stage_emitted,
+        "_routed_categories": routed_categories,
+        "_oblique_emitted": oblique_emitted,
     })
-
-    # Update memory state (called BEFORE next event's generation).
-    increment_intimacy_arc(
-        memory_state,
-        conv_type,
-        record.get("source_timestamp", 0),
-        delta_scale=delta_scale,
-    )
-    # Append a thin summary now (the audit pass may overwrite with a richer one later).
-    append_episodic_item(memory_state, EpisodicMemoryItem(
-        ts=record.get("source_timestamp", 0),
-        source_object_id=record.get("source_object_id", ""),
-        summary=memory_used_summary or f"{conv_type} (turn count {len(cleaned)})",
-        hashtags=record.get("source_hashtags", []) or [],
-        evidence_event_ids=[record.get("source_object_id", "")],
-        hidden_persona_label_refs=oblique_emitted,
-        salience=0.5,
-        conversation_type=conv_type,
-        intimacy_stage_at_event=stage_emitted,
-    ))
-    # Heuristic: events at S2+ open a thread on the dominant routed category.
-    if stage_index(stage_emitted) >= stage_index("S2") and routed_categories:
-        update_open_thread(
-            memory_state,
-            topic=routed_categories[0],
-            ts=record.get("source_timestamp", 0),
-        )
-    # Persona anchor: keep a rolling 1-line summary of recent AI persona usage.
-    set_persona_consistency_anchor(
-        memory_state,
-        f"AI {ai_studio_persona.get('character_name', '?')} just produced a "
-        f"{conv_type} (stage {stage_emitted}). Voice anchored.",
-    )
 
     if verbose:
         print(f"  • {conv_type} (stage {stage_emitted}, {len(cleaned)} turns) — "
@@ -313,9 +296,63 @@ def _generate_one_event(
     return record
 
 
+def _apply_event_to_state(
+    record: dict,
+    memory_state: AIStudioMemoryState,
+    ai_studio_persona: dict,
+    delta_scale: float = 1.0,
+) -> None:
+    """Apply an audit-passing event's mutations to the running memory state.
+    Called sequentially in chronological order after a parallel batch
+    returns. The record's `ai_studio_metadata` already carries the
+    conversation-type / stage / etc decisions made at generation time —
+    we just commit them to state."""
+    meta = record.get("ai_studio_metadata") or {}
+    conv_type = meta.get("_conv_type", record.get("conversation_type", "casual_check_in"))
+    stage_emitted = meta.get("_stage_emitted", meta.get("intimacy_stage_at_event", "S1"))
+    routed_categories = meta.get("_routed_categories", []) or []
+    oblique_emitted = meta.get("_oblique_emitted", []) or []
+
+    increment_intimacy_arc(
+        memory_state,
+        conv_type,
+        record.get("source_timestamp", 0),
+        delta_scale=delta_scale,
+    )
+    append_episodic_item(memory_state, EpisodicMemoryItem(
+        ts=record.get("source_timestamp", 0),
+        source_object_id=record.get("source_object_id", ""),
+        summary=record.get("memory_used_summary") or f"{conv_type} (turn count {meta.get('turn_count', 0)})",
+        hashtags=record.get("source_hashtags", []) or [],
+        evidence_event_ids=[record.get("source_object_id", "")],
+        hidden_persona_label_refs=oblique_emitted,
+        salience=0.5,
+        conversation_type=conv_type,
+        intimacy_stage_at_event=stage_emitted,
+    ))
+    if stage_index(stage_emitted) >= stage_index("S2") and routed_categories:
+        update_open_thread(
+            memory_state,
+            topic=routed_categories[0],
+            ts=record.get("source_timestamp", 0),
+        )
+    set_persona_consistency_anchor(
+        memory_state,
+        f"AI {ai_studio_persona.get('character_name', '?')} just produced a "
+        f"{conv_type} (stage {stage_emitted}). Voice anchored.",
+    )
+
+    # Strip the internal `_*` stash fields from the persisted record.
+    for k in ("_conv_type", "_stage_emitted", "_routed_categories", "_oblique_emitted"):
+        meta.pop(k, None)
+
+
 # ---------------------------------------------------------------------------
 # Public entry point — Step 18b
 # ---------------------------------------------------------------------------
+
+BATCH_SIZE: int = 4   # parallel events per batch — tradeoff: bigger = faster + more intra-batch blindness
+
 
 def generate_ai_studio_conversations(
     ai_studio_records: list[dict],
@@ -325,74 +362,204 @@ def generate_ai_studio_conversations(
     hidden_personas: list[dict],
     llm_query_fn: Callable[[str], Optional[str]],
     user_seed: int,
+    user_id: str,
+    backend_dir: str = "backend",
     memory_state: Optional[AIStudioMemoryState] = None,
+    audit_query_fn: Optional[Callable[[str], Optional[str]]] = None,
+    rogers_cliche_baseline: Optional[list[str]] = None,
     verbose: bool = False,
-) -> tuple[list[dict], AIStudioMemoryState]:
+) -> tuple[list[dict], AIStudioMemoryState, dict]:
     """Generate AI Studio conversations for all routed events.
 
-    Sequential: each event's prompt embeds the FULL prior history (asymmetric
-    memory). Walks events in chronological order; mutates each record in
-    place and updates `memory_state`.
+    Batched-parallel: events are grouped into batches of BATCH_SIZE. Within
+    a batch, events run concurrently — they all read the SAME prev-2
+    verbatim slot (loaded from `backend/{uid}/ai_studio.json`) and the
+    SAME memory_state snapshot. After the batch returns, results are
+    audited + persisted to disk + applied to memory_state SEQUENTIALLY in
+    chronological order. The audit's `cross_session_continuity` check
+    (incl. `batch_siblings` clause) catches intra-batch contradictions.
 
-    Returns (final_records, memory_state). Records that fail to generate
-    are dropped from the output.
+    Returns (final_records, memory_state, audit_summary). Records that
+    fail to generate are dropped; records that fail the safety floor are
+    also dropped. Records that fail quality axes are kept with
+    `audit_status=graceful_degrade`.
     """
-    from data_preparation.ai_studio_memory import default_memory_state
+    import copy
+    from concurrent.futures import ThreadPoolExecutor
+    from data_preparation.ai_studio_memory import (
+        default_memory_state,
+        load_recent_ai_studio_events,
+        append_to_ai_studio_json,
+    )
+    from data_preparation.ai_studio_audit import (
+        audit_event,
+        _select_audit_sample,
+        _scores_below_floor,
+        AUDIT_FLOORS,
+    )
 
     if memory_state is None:
         memory_state = default_memory_state()
 
+    audit_summary = {
+        "sampled": 0, "passed": 0, "graceful_degrade": 0,
+        "dropped_safety": 0, "axes_failures": {axis: 0 for axis in AUDIT_FLOORS},
+    }
+
     if not ai_studio_records:
-        return [], memory_state
+        return [], memory_state, audit_summary
     if not ai_studio_persona or not ai_studio_persona.get("persona_archetype"):
         if verbose:
             print("  AI Studio: no persona block on profile — skipping generation.")
-        return [], memory_state
+        return [], memory_state, audit_summary
 
     rng = random.Random(user_seed * 1303 + 11)
 
-    # Sort events chronologically — generation is sequential.
     sorted_records = sorted(
         ai_studio_records,
         key=lambda r: r.get("source_timestamp", 0),
     )
+    n_total = len(sorted_records)
 
-    # Per-user delta scaling. Heavy users (>~16 routed events) had their
-    # intimacy_arc saturate at 1.0 within ~20 events with the raw deltas;
-    # this shrinks per-event deltas so the S1→S4 progression actually
-    # spans the user's full AI Studio history.
-    delta_scale = compute_delta_scale(len(sorted_records))
+    # Pre-pick which event indices the audit will sample (when an
+    # `audit_query_fn` is provided). Safety floor runs on EVERY event
+    # regardless of sample — never let harmful content hit disk.
+    audit_sample = _select_audit_sample(n_total, rng) if audit_query_fn else set()
+    audit_summary["sampled"] = len(audit_sample)
+
+    delta_scale = compute_delta_scale(n_total)
     if verbose and delta_scale < 1.0:
         print(
             f"  AI Studio: scaling intimacy deltas by {delta_scale:.4f} "
-            f"to spread {len(sorted_records)} events across S1→S4."
+            f"to spread {n_total} events across S1→S4."
         )
 
     output: list[dict] = []
-    for rec in sorted_records:
-        result = _generate_one_event(
-            record=rec,
-            user_profile=user_profile,
-            user_voice=user_voice,
-            ai_studio_persona=ai_studio_persona,
-            hidden_personas=hidden_personas,
-            memory_state=memory_state,
-            prior_records=output,   # everything generated so far
-            llm_query_fn=llm_query_fn,
-            rng=rng,
-            delta_scale=delta_scale,
-            verbose=verbose,
-        )
-        if result is None:
+
+    for batch_start in range(0, n_total, BATCH_SIZE):
+        batch = sorted_records[batch_start:batch_start + BATCH_SIZE]
+        # Load the verbatim slot from disk ONCE for the whole batch — every
+        # event in the batch sees the same prev-2 (deliberate; intra-batch
+        # blindness is what enables parallelism).
+        prev_verbatim = load_recent_ai_studio_events(user_id, backend_dir, k=2)
+        memory_snapshot = copy.deepcopy(memory_state)
+        n_prior_at_batch_start = batch_start
+
+        with ThreadPoolExecutor(max_workers=BATCH_SIZE) as pool:
+            futures = [
+                pool.submit(
+                    _generate_one_event,
+                    record=rec,
+                    user_profile=user_profile,
+                    user_voice=user_voice,
+                    ai_studio_persona=ai_studio_persona,
+                    hidden_personas=hidden_personas,
+                    memory_snapshot=memory_snapshot,
+                    prev_verbatim_events=prev_verbatim,
+                    n_prior=n_prior_at_batch_start,
+                    llm_query_fn=llm_query_fn,
+                    rng=random.Random(rng.randint(0, 2**31)),  # per-event RNG
+                    verbose=False,   # batched output would interleave noisily
+                )
+                for rec in batch
+            ]
+            results = [f.result() for f in futures]
+
+        # Sequential post-batch: audit → persist-on-pass → apply-to-state,
+        # in chronological order so the SPT arc + open_threads update
+        # deterministically.
+        for rec_idx, (rec, result) in enumerate(zip(batch, results)):
+            if result is None:
+                if verbose:
+                    print(f"  ! AI Studio event ts={rec.get('source_timestamp')} failed; dropping.")
+                continue
+
+            global_idx = batch_start + rec_idx
+            siblings = [
+                r for r in results
+                if r is not None and r is not result
+            ]
+
+            # Audit decision: sampled events get the full LLM audit;
+            # un-sampled events still get a safety-only mini-audit.
+            do_full_audit = global_idx in audit_sample and audit_query_fn is not None
+            if do_full_audit:
+                audit_result = audit_event(
+                    event=result,
+                    user_voice=user_voice,
+                    ai_studio_persona=ai_studio_persona,
+                    hidden_personas_brief=hidden_personas,
+                    rogers_cliche_baseline=rogers_cliche_baseline or [],
+                    prior_events=output,
+                    memory_state=memory_state,
+                    audit_query_fn=audit_query_fn,
+                    batch_siblings=siblings,
+                )
+                # Safety failure → drop (never persist to disk).
+                if audit_result.get("safety_failed"):
+                    audit_summary["dropped_safety"] += 1
+                    if verbose:
+                        reason = (audit_result.get("feedback") or {}).get("safety_failure_reason", "")
+                        print(f"  ! AI Studio event {result.get('source_object_id', '')} dropped on safety: {reason}")
+                    continue
+                # Stash audit scores + status on the record.
+                result.setdefault("ai_studio_metadata", {})
+                result["ai_studio_metadata"]["audit_scores"] = audit_result.get("scores", {})
+                if audit_result.get("audit_status") in ("audit_call_failed", "audit_parse_failed"):
+                    result["ai_studio_metadata"]["audit_status"] = audit_result["audit_status"]
+                else:
+                    failed = audit_result.get("failed_axes") or []
+                    for axis in failed:
+                        audit_summary["axes_failures"][axis] += 1
+                    if not failed:
+                        result["ai_studio_metadata"]["audit_status"] = "pass"
+                        audit_summary["passed"] += 1
+                    else:
+                        result["ai_studio_metadata"]["audit_status"] = "graceful_degrade"
+                        result["ai_studio_metadata"]["audit_failed_axes"] = failed
+                        audit_summary["graceful_degrade"] += 1
+                        if verbose:
+                            print(f"  ~ AI Studio event {result.get('source_object_id', '')} graceful_degrade: {failed}")
+                # Audit's enriched_summary overwrites the thin generator summary
+                # AND the matching episodic_memory_items entry (richer long-term memory).
+                enriched = audit_result.get("enriched_summary") or ""
+                if enriched:
+                    result["memory_used_summary"] = enriched
+            else:
+                result.setdefault("ai_studio_metadata", {})
+                result["ai_studio_metadata"]["audit_status"] = "unsampled"
+
+            # Apply to memory_state (sequentially in chronological order
+            # within the batch — preserves SPT arc determinism).
+            _apply_event_to_state(
+                record=result,
+                memory_state=memory_state,
+                ai_studio_persona=ai_studio_persona,
+                delta_scale=delta_scale,
+            )
+            # If the audit returned an enriched_summary, also overwrite the
+            # episodic_memory_items entry we just appended.
+            if do_full_audit:
+                enriched = (audit_result.get("enriched_summary") or "").strip()
+                if enriched and memory_state.episodic_memory_items:
+                    memory_state.episodic_memory_items[-1].summary = enriched
+
+            # Persist to disk so the next batch's prev-2 read sees it.
+            append_to_ai_studio_json(user_id, backend_dir, result)
+            output.append(result)
+
             if verbose:
-                print(f"  ! AI Studio event ts={rec.get('source_timestamp')} failed; dropping.")
-            continue
-        output.append(result)
+                conv_type = result.get("conversation_type", "?")
+                stage = (result.get("ai_studio_metadata") or {}).get("intimacy_stage_at_event", "?")
+                print(f"  • {conv_type} (stage {stage}, "
+                      f"{(result.get('ai_studio_metadata') or {}).get('turn_count', 0)} turns)")
 
     if verbose:
         print(
-            f"  AI Studio generation: {len(output)}/{len(sorted_records)} events succeeded; "
+            f"  AI Studio generation: {len(output)}/{n_total} events succeeded; "
             f"final intimacy_arc={memory_state.running_relational_state.intimacy_arc:.2f} "
-            f"(stage {memory_state.running_relational_state.intimacy_stage})"
+            f"(stage {memory_state.running_relational_state.intimacy_stage}); "
+            f"audit: sampled={audit_summary['sampled']} pass={audit_summary['passed']} "
+            f"degrade={audit_summary['graceful_degrade']} dropped_safety={audit_summary['dropped_safety']}"
         )
-    return output, memory_state
+    return output, memory_state, audit_summary

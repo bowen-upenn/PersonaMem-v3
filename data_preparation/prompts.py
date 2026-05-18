@@ -3507,6 +3507,7 @@ def audit_ai_studio_event_prompt(
     rogers_cliche_baseline: list[str],
     event: dict,
     prior_events_brief: list[dict],
+    batch_siblings: list[dict] | None = None,
 ) -> str:
     """Step Z — quality + safety floor audit for ONE AI Studio event.
 
@@ -3560,6 +3561,20 @@ def audit_ai_studio_event_prompt(
             for e in prior_events_brief
         )
 
+    siblings_str = ""
+    if batch_siblings:
+        siblings_str = (
+            "\n## Batch siblings (THIS event was generated in parallel with the "
+            "following events; the generator did NOT see them. Flag any contradictory "
+            "facts or stance drift between this event and its siblings.)\n"
+        )
+        siblings_str += "\n".join(
+            f"- ts={s.get('source_timestamp', '')} "
+            f"type={s.get('conversation_type', '')} "
+            f"summary={(s.get('memory_used_summary') or '')[:160]}"
+            for s in batch_siblings
+        )
+
     event_json = json.dumps({
         "source_object_id": event.get("source_object_id"),
         "source_timestamp": event.get("source_timestamp"),
@@ -3594,6 +3609,7 @@ Score the event below on 7 quality axes (1–5; floor in parens) and one binary 
 {rogers}
 
 {prior_str}
+{siblings_str}
 
 # Event to audit
 ```json
@@ -3607,7 +3623,7 @@ Score the event below on 7 quality axes (1–5; floor in parens) and one binary 
 3. **obliqueness (1-5; floor 4)** — Do USER turns oblique-reference hidden personas WITHOUT naming the type/label verbatim? "I've been feeling stuck" = good; "my emotional pattern of feeling stuck" = bad (names the type).
 4. **no_fake_therapist_phrases (1-5; floor 4)** — Does the AI avoid the Rogers-cliché baseline? Score 5 = none. Score 1 = multiple direct hits. Substring-match counts; paraphrases that capture the same hollow specificity also penalize.
 5. **no_mid_emotional_lecture (1-5; floor 4)** — When the user is venting/disclosing without asking for advice, does the AI reflect + hold space, NOT pivot to CBT explainer / "did you know that…" / lecture? OARS reflections are fine.
-6. **cross_session_continuity (1-5; floor 3)** — Generation only saw the LAST 2 events verbatim and summaries for everything older. Catch (a) **fabrication** — AI-turn memory references that don't appear in any prior summary, (b) **contradiction** — this event contradicts a fact, decision, or stance carried in a prior summary, (c) **resolved-thread re-asking** — a question or open thread that a prior summary marks resolved is asked again as if still open, (d) **stage regression** — intimacy-stage references inconsistent with the intimacy_stage_history. Score 5 = clean; ≤2 = clear inconsistency.
+6. **cross_session_continuity (1-5; floor 3)** — Generation only saw the LAST 2 events verbatim and summaries for everything older. Catch (a) **fabrication** — AI-turn memory references that don't appear in any prior summary, (b) **contradiction** — this event contradicts a fact, decision, or stance carried in a prior summary, (c) **resolved-thread re-asking** — a question or open thread that a prior summary marks resolved is asked again as if still open, (d) **stage regression** — intimacy-stage references inconsistent with the intimacy_stage_history, (e) **intra-batch contradiction** — if a `Batch siblings` block is present above, this event was generated in parallel with those siblings and did NOT see them; flag contradictory facts or stance drift between this event and its siblings. Score 5 = clean; ≤2 = clear inconsistency.
 7. **spt_pacing_smoothness (1-5; floor 4)** — SPT no-jump rule + reciprocal-invitation: AI's disclosure-depth ≤ user's latest depth + 1 sub-layer; AI invites deeper, never states deeper than the user has reciprocated. Penalize backsliding to generic warmth at high arc.
 
 # Safety floor (binary)
