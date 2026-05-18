@@ -104,30 +104,50 @@ INTIMACY_DELTA_PER_TYPE = {
 }
 
 
-# Per-user delta scaling. The raw deltas above sum-of-means to ~0.052; with
-# 222 AI-Studio-routed events for a heavy user (like #115) the unscaled arc
-# would saturate at 1.0 by event ~20 and pin there for the remaining 200,
-# collapsing SPT pacing to "always-S4." compute_delta_scale shrinks the per-
-# event delta so cumulative arc lands near _TARGET_FINAL_ARC at the last
-# event, giving S1→S4 a realistic spread across the user's full history.
-_MEAN_DELTA_BASE = 0.052
-_TARGET_FINAL_ARC = 0.85
+# Per-user delta scaling — stage-aware harmonic-mean formulation.
+#
+# The eligible conversation types per SPT stage are stage-gated (S1 admits
+# only casual/philosophical/aspiration; S3+ adds intimate/flirty/parasocial).
+# This means the per-event delta mean is much smaller in S1 (~0.031) than
+# in S3+ (~0.046). The old global-mean scale (`mean = 0.052`) over-pushed
+# at S1 and the user lingered there far past 25% of events — producing
+# distributions like 24 S1 / 20 S2 / 2 S3 / 0 S4 on a 46-event user.
+#
+# New compute_delta_scale solves for the scale that gives ~uniform stage
+# coverage (each of S1-S4 gets ~n/4 events) regardless of n. Method:
+# given each stage spans a 0.25 arc budget, the events-per-stage at scale s
+# is (0.25 / (stage_mean * s)). Summing across all 4 stages must equal n,
+# so   scale = 0.25 * Σ(1/stage_mean) / n.
+#
+# Stage-mean values below are computed from INTIMACY_DELTA_PER_TYPE × the
+# CONVERSATION_TYPES weights, gated by stage eligibility. They're stable
+# across most archetypes; romantic-archetype users override implicitly via
+# different eligible-type sets but the order of magnitude holds.
+_STAGE_MEAN_DELTA = {
+    "S1": 0.031,   # casual / philosophical / aspiration / niche_skill only
+    "S2": 0.036,   # + venting / identity_exploration / memory_callback
+    "S3": 0.046,   # + intimate_share / parasocial_riff / flirty
+    "S4": 0.046,
+}
+_STAGE_BUDGET = 0.25   # each stage spans 0.25 of the [0,1] arc
 
 
 def compute_delta_scale(n_total_events: int) -> float:
     """Return the per-event delta-scaling factor for a user with
     ``n_total_events`` AI-Studio-routed events.
 
-    For small histories (<= ~16 events at base mean) returns 1.0 — the raw
-    deltas already pace nicely. For larger histories, returns a fractional
-    multiplier so the expected cumulative arc lands near _TARGET_FINAL_ARC
-    by the final event."""
+    Targets ~uniform SPT-stage distribution (n/4 events per S1/S2/S3/S4).
+    The scale floats with n: small-history users get scale > 1.0 (deltas
+    amplified so the arc still crosses all four stages in a short span),
+    large-history users get scale << 1.0 (deltas damped so the arc paces
+    realistically across many events). NO cap on either end — the
+    constraint is "every user spans S1→S4 across their AI Studio
+    history, regardless of how many events they have."
+    """
     if n_total_events <= 0:
         return 1.0
-    expected_unscaled = n_total_events * _MEAN_DELTA_BASE
-    if expected_unscaled <= _TARGET_FINAL_ARC:
-        return 1.0
-    return _TARGET_FINAL_ARC / expected_unscaled
+    sum_inv = sum(1.0 / _STAGE_MEAN_DELTA[s] for s in STAGE_ORDER)
+    return _STAGE_BUDGET * sum_inv / n_total_events
 
 
 # ---------------------------------------------------------------------------
