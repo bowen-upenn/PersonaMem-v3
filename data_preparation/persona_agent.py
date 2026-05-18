@@ -5981,17 +5981,35 @@ class PersonaAgent:
     CHATBOT_CANONICAL_TARGET = 0.27
     AI_STUDIO_CANONICAL_TARGET = 0.18
     SOCIAL_CANONICAL_FLOOR = 0.17
-    # Hard cap on the number of AI Studio events generated per user. Heavy
-    # users (e.g. user 115's 2566 input rows) otherwise produce 200+ events
-    # at AI_STUDIO_CANONICAL_TARGET=0.18, which makes Step 18B the pipeline
-    # bottleneck. When the candidate pool exceeds the cap, the kept set is
-    # chosen by content-aware time-bucketed selection (see
-    # `generate_ai_studio_conversations`): score each routed event by
-    # hidden-persona hashtag overlap + preference depth, bucket the
-    # window into MAX_AI_STUDIO_EVENTS equal time slots, pick the
+    # Hard upper bound on the number of AI Studio events generated per user.
+    # The actual per-user target is sampled randomly in [MIN, MAX] using a
+    # deterministic per-user seed — so cohort distribution varies naturally
+    # (some users have 20 sessions, some 50) instead of every user hitting
+    # the cap. Variation matters for the cross-session memory eval task:
+    # heavy AI Studio users vs. light ones is a real-world distribution
+    # signal the benchmark should preserve.
+    #
+    # Heavy users (e.g. user 115's 2566 input rows) otherwise produce 200+
+    # events at AI_STUDIO_CANONICAL_TARGET=0.18, which makes Step 18B the
+    # pipeline bottleneck. When the candidate pool exceeds the per-user
+    # target, the kept set is chosen by content-aware time-bucketed
+    # selection (see `generate_ai_studio_conversations`): score each routed
+    # event by hidden-persona hashtag overlap + preference depth, bucket
+    # the window into target-many equal time slots, pick the
     # highest-scoring event per bucket. Result: full timeline coverage
     # AND every kept event has a concrete persona-anchored reason.
     MAX_AI_STUDIO_EVENTS = 50
+    MIN_AI_STUDIO_EVENTS = 15   # floor: enough for cross-session memory tests
+
+    def _ai_studio_target_count(self) -> int:
+        """Pick this user's AI Studio target count — random in
+        [MIN_AI_STUDIO_EVENTS, MAX_AI_STUDIO_EVENTS], deterministic
+        per user_id so reruns produce the same count."""
+        import hashlib
+        h = hashlib.md5(str(self.user_id).encode("utf-8")).hexdigest()
+        frac = int(h[8:16], 16) / float(1 << 32)
+        span = self.MAX_AI_STUDIO_EVENTS - self.MIN_AI_STUDIO_EVENTS
+        return self.MIN_AI_STUDIO_EVENTS + int(frac * (span + 1))
 
     def _quota_rebalance_apps(self) -> None:
         """Enforce soft quotas on the canonical-level app distribution.
@@ -7161,7 +7179,8 @@ class PersonaAgent:
         # AND span the full window (eval tasks can pick t_test anywhere).
         ai_studio_records.sort(key=lambda r: r.get("source_timestamp", 0))
         n_before_cap = len(ai_studio_records)
-        if n_before_cap > self.MAX_AI_STUDIO_EVENTS:
+        target_count = self._ai_studio_target_count()
+        if n_before_cap > target_count:
             hp_tag_sets: list[set] = []
             for hp in (self.user_profile.hidden_personas or []):
                 tags = {(t or "").lower().lstrip("#")
@@ -7181,7 +7200,7 @@ class PersonaAgent:
             t_min = ai_studio_records[0].get("source_timestamp", 0)
             t_max = ai_studio_records[-1].get("source_timestamp", 0)
             span = max(1, t_max - t_min)
-            n_buckets = self.MAX_AI_STUDIO_EVENTS
+            n_buckets = target_count
             buckets: list[list[tuple[dict, float]]] = [[] for _ in range(n_buckets)]
             for rec in ai_studio_records:
                 idx = min(
@@ -7203,7 +7222,7 @@ class PersonaAgent:
                  if rec.get("source_object_id") not in kept_oids],
                 key=lambda x: -x[1],
             )
-            while len(kept) < self.MAX_AI_STUDIO_EVENTS and leftover:
+            while len(kept) < target_count and leftover:
                 kept.append(leftover.pop(0)[0])
 
             kept.sort(key=lambda r: r.get("source_timestamp", 0))
@@ -7211,8 +7230,9 @@ class PersonaAgent:
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
                       f"AI Studio: capped {n_before_cap} → {len(ai_studio_records)} events "
-                      f"(time-bucketed × hp-overlap+pref-depth score; "
-                      f"cap=MAX_AI_STUDIO_EVENTS={self.MAX_AI_STUDIO_EVENTS}).{utils.Colors.ENDC}")
+                      f"(per-user target={target_count}, range "
+                      f"[{self.MIN_AI_STUDIO_EVENTS},{self.MAX_AI_STUDIO_EVENTS}]; "
+                      f"time-bucketed × hp-overlap+pref-depth score).{utils.Colors.ENDC}")
 
         try:
             user_seed = int(str(self.user_id)) * 7919 + 131
@@ -7224,6 +7244,12 @@ class PersonaAgent:
         # chatbot conversations).
         def _conv_query_fn(prompt: str):
             return self._query_llm_with_retry(prompt, temperature=0.7)
+
+        # Audit (Step 18C) runs INLINE per event inside Step 18B now — so
+        # the audit query fn must be wired here. Mini-tier is fine — audit
+        # is cheap. Safety failure → event dropped before disk-persist.
+        def _audit_query_fn(prompt: str):
+            return self._query_mini_with_retry(prompt)
 
         user_profile_dict = {
             "name": self.user_profile.name,
@@ -7245,13 +7271,22 @@ class PersonaAgent:
             for hp in (self.user_profile.hidden_personas or [])
         ]
 
+        # Clear any prior backend/{uid}/ai_studio.json — Step 18B is the
+        # SINGLE writer of that file, and the new run starts fresh. Without
+        # this, a partial prior run would leak its events into the new
+        # run's prev-2 verbatim slot read from disk.
+        from pathlib import Path
+        ai_studio_disk_path = Path(self.backend_dir) / str(self.user_id) / "ai_studio.json"
+        if ai_studio_disk_path.exists():
+            ai_studio_disk_path.unlink()
+
         # Snapshot LLM usage BEFORE Step 18B so we can report the cache
         # hit-rate over just this step. Sequential AI Studio generation
         # reuses ~80% of each prior prompt verbatim — caching is the single
         # biggest cost+latency lever once enabled.
         usage_before = self.llm_client.get_usage_totals() if self.llm_client else {}
 
-        out, mem = ai_studio_conversation.generate_ai_studio_conversations(
+        out, mem, audit_summary = ai_studio_conversation.generate_ai_studio_conversations(
             ai_studio_records=ai_studio_records,
             user_profile=user_profile_dict,
             user_voice=self.user_profile.user_voice or {},
@@ -7259,11 +7294,16 @@ class PersonaAgent:
             hidden_personas=hp_brief,
             llm_query_fn=_conv_query_fn,
             user_seed=user_seed,
+            user_id=str(self.user_id),
+            backend_dir=self.backend_dir,
             memory_state=self._ai_studio_memory_state,
+            audit_query_fn=_audit_query_fn,
+            rogers_cliche_baseline=ROGERS_CLICHE_BLOCKLIST,
             verbose=self.verbose,
         )
         self._ai_studio_records = out
         self._ai_studio_memory_state = mem
+        self._ai_studio_audit_summary = audit_summary
 
         if self.verbose:
             archetype = (self.user_profile.ai_studio_persona or {}).get("persona_archetype", "?")
@@ -7294,58 +7334,26 @@ class PersonaAgent:
     def audit_ai_studio_conversations(self) -> None:
         """Step Z — quality + safety audit over AI Studio events.
 
-        Samples 20% of events; grades each on 7 quality axes + the
-        `no_harmful_content` floor. Safety failures are DROPPED (we never
-        ship harmful content). Quality-only failures are kept but tagged
-        `audit_status: graceful_degrade` so downstream readers can skip.
+        Audit now runs INLINE in Step 18B (per-event, with batch_siblings
+        visibility) so safety-failed events never hit disk. This step is
+        a thin pass-through reporter that re-emits the summary already
+        attached to `self._ai_studio_audit_summary` by Step 18B.
         """
-        from data_preparation import ai_studio_audit
-
         records = getattr(self, "_ai_studio_records", None)
         if not records:
             return
-        if self.llm_client is None:
-            return
-
-        # Audit uses mini-tier (cheap, parallel-friendly) for all axes.
-        def _audit_query_fn(prompt: str):
-            return self._query_mini_with_retry(prompt)
-
-        try:
-            user_seed = int(str(self.user_id)) * 7919 + 131
-        except (ValueError, TypeError):
-            user_seed = abs(hash(str(self.user_id))) % (2**31)
-
-        hp_brief = [
-            {
-                "persona_type": getattr(hp, "type", "") or "",
-                "label": getattr(hp, "label", "") or "",
-            }
-            for hp in (self.user_profile.hidden_personas or [])
-        ]
-
-        filtered, summary = ai_studio_audit.audit_ai_studio_conversations(
-            ai_studio_records=records,
-            user_voice=self.user_profile.user_voice or {},
-            ai_studio_persona=self.user_profile.ai_studio_persona or {},
-            hidden_personas_brief=hp_brief,
-            rogers_cliche_baseline=ROGERS_CLICHE_BLOCKLIST,
-            memory_state=getattr(self, "_ai_studio_memory_state", None),
-            audit_query_fn=_audit_query_fn,
-            user_seed=user_seed,
-            verbose=self.verbose,
-        )
-        self._ai_studio_records = filtered
-        self._ai_studio_audit_summary = summary
-
+        summary = getattr(self, "_ai_studio_audit_summary", None) or {
+            "sampled": 0, "passed": 0, "graceful_degrade": 0, "dropped_safety": 0,
+        }
         if self.verbose:
             print(
                 f"{utils.Colors.OKGREEN}[User {self.user_id}] "
-                f"AI Studio audit summary: sampled={summary.get('sampled', 0)}, "
+                f"AI Studio audit summary (inline in Step 18B): "
+                f"sampled={summary.get('sampled', 0)}, "
                 f"passed={summary.get('passed', 0)}, "
                 f"graceful_degrade={summary.get('graceful_degrade', 0)}, "
                 f"dropped_safety={summary.get('dropped_safety', 0)}, "
-                f"final_count={len(filtered)}{utils.Colors.ENDC}"
+                f"final_count={len(records)}{utils.Colors.ENDC}"
             )
 
     # ------------------------------------------------------------------

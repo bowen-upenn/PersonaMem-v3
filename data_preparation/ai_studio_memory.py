@@ -31,8 +31,10 @@ import these helpers + the constants below.
 
 from __future__ import annotations
 
+import json
 import math
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 
@@ -344,48 +346,63 @@ def _format_event_summary(ev: dict, summary: str) -> dict:
 
 def assemble_generation_context(
     memory_state: AIStudioMemoryState,
-    all_prior_events: list[dict],
-    k_recent: int = 2,
+    prev_verbatim_events: list[dict],
+    older_summary_events: list[dict] | None = None,
 ) -> dict:
     """Pass a windowed slice of prior history to the generation prompt.
 
-    Mirrors the eval-side `assemble_eval_context`: last `k_recent` events
-    render verbatim (so the model sees the recent tone + any cliffhanger
-    to continue from); older events render as their stored summary only.
-    Bounds the per-event prompt at ~O(k_recent + N_summary_lines) regardless
-    of how many prior events exist.
-
-    This is a behavior change from the prior "32k token verbatim budget"
-    approach. The motivation: by event 100+, the verbatim-packed prompt
-    approached 30k tokens and dominated step-18B latency. With windowing,
-    the prompt stays at a small constant size — Step 18C audit
-    (`cross_session_continuity`) is the load-bearing check that
-    later-event conversations don't contradict earlier ones, since the
-    generator only sees summaries of older events.
+    Two layers:
+      - `prev_verbatim_events`: the K most recent events sourced from disk
+        (`load_recent_ai_studio_events`). Rendered verbatim so the
+        generator sees recent tone + any cliffhanger to continue from.
+      - `older_summary_events`: every older event, rendered as its stored
+        `episodic_memory_items` summary. This is the long-term-memory layer.
+        When None, the older slice is inferred from the memory state itself
+        (using `episodic_memory_items` minus the verbatim slot oids).
 
     Open threads, intimacy_stage_history, and persona_anchor are always
     injected — they're the running memory state, bounded in size, and
     load-bearing for relational continuity.
     """
-    sorted_events = sorted(
-        all_prior_events,
-        key=lambda e: e.get("source_timestamp", e.get("ts", 0)),
-    )
     summary_by_oid: dict[str, str] = {
         item.source_object_id: item.summary
         for item in memory_state.episodic_memory_items
     }
-
-    verbatim_events = sorted_events[-k_recent:] if k_recent > 0 else []
-    older_events = sorted_events[:-k_recent] if k_recent > 0 else sorted_events
+    verbatim_oids = {ev.get("source_object_id", "") for ev in prev_verbatim_events}
 
     packed: list[dict] = []
-    for ev in older_events:
-        summary = summary_by_oid.get(ev.get("source_object_id", ""), "") or (
-            f"[no summary stored — {ev.get('conversation_type', 'conversation')}]"
+
+    # Long-term memory: render every episodic_memory_item NOT covered by
+    # the verbatim slot as its summary line. Sort chronologically.
+    if older_summary_events is None:
+        # Synthesize summary-event stubs from episodic_memory_items so
+        # callers don't have to re-collect them.
+        items = sorted(
+            (item for item in memory_state.episodic_memory_items
+             if item.source_object_id not in verbatim_oids),
+            key=lambda i: i.ts,
         )
-        packed.append(_format_event_summary(ev, summary))
-    for ev in verbatim_events:
+        for item in items:
+            stub = {
+                "source_object_id": item.source_object_id,
+                "source_timestamp": item.ts,
+                "conversation_type": item.conversation_type or "",
+            }
+            packed.append(_format_event_summary(stub, item.summary))
+    else:
+        for ev in sorted(older_summary_events,
+                          key=lambda e: e.get("source_timestamp", e.get("ts", 0))):
+            oid = ev.get("source_object_id", "")
+            if oid in verbatim_oids:
+                continue
+            summary = summary_by_oid.get(oid, "") or (
+                f"[no summary stored — {ev.get('conversation_type', 'conversation')}]"
+            )
+            packed.append(_format_event_summary(ev, summary))
+
+    # Verbatim slot: the most recent K events from disk, in chronological order.
+    for ev in sorted(prev_verbatim_events,
+                      key=lambda e: e.get("source_timestamp", e.get("ts", 0))):
         packed.append(_format_event_verbatim(ev))
 
     state = memory_state.running_relational_state
@@ -654,3 +671,58 @@ def memory_state_from_dict(d: dict) -> AIStudioMemoryState:
         episodic_memory_items=items,
         running_relational_state=rs,
     )
+
+
+# ---------------------------------------------------------------------------
+# Disk IO — backend/{uid}/ai_studio.json is the source of truth for prev
+# verbatim sessions. Step 18B reads the last K and appends each new
+# audit-passing event to this file.
+# ---------------------------------------------------------------------------
+
+def _ai_studio_json_path(uid: str, backend_dir: str) -> Path:
+    return Path(backend_dir) / str(uid) / "ai_studio.json"
+
+
+def load_recent_ai_studio_events(uid: str, backend_dir: str = "backend", k: int = 2) -> list[dict]:
+    """Return the K most-recent events from `backend/{uid}/ai_studio.json`,
+    sorted ascending by `source_timestamp`. Returns [] if the file is
+    missing or empty (first event of the run)."""
+    path = _ai_studio_json_path(uid, backend_dir)
+    if not path.exists():
+        return []
+    try:
+        with path.open() as f:
+            events = json.load(f)
+    except (OSError, ValueError):
+        return []
+    if not isinstance(events, list) or not events:
+        return []
+    sorted_events = sorted(events, key=lambda e: int(e.get("source_timestamp", 0) or 0))
+    if k <= 0:
+        return []
+    return sorted_events[-k:]
+
+
+def append_to_ai_studio_json(uid: str, backend_dir: str, event: dict) -> None:
+    """Append an audit-passing event to `backend/{uid}/ai_studio.json`.
+
+    Reads → appends → writes (atomic via temp+rename). Maintains
+    chronological order on write. Step 18B calls this once per event
+    after the inline audit passes the safety floor."""
+    path = _ai_studio_json_path(uid, backend_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    existing: list[dict] = []
+    if path.exists():
+        try:
+            with path.open() as f:
+                existing = json.load(f) or []
+            if not isinstance(existing, list):
+                existing = []
+        except (OSError, ValueError):
+            existing = []
+    existing.append(event)
+    existing.sort(key=lambda e: int(e.get("source_timestamp", 0) or 0))
+    tmp = path.with_suffix(".json.tmp")
+    with tmp.open("w") as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+    tmp.replace(path)
