@@ -1,94 +1,93 @@
 {
-  "name": "Tess Halpern",
-  "gender": "cisgender female, bisexual",
-  "race_ethnicity": "White American",
-  "career": "Museum exhibit fabricator specializing in interactive installations",
-  "education": "Associate degree in Industrial Design Technology",
+  "name": "Matias Valadez",
+  "gender": "cisgender male, heterosexual",
+  "race_ethnicity": "Mexican American",
+  "career": "Museum exhibition lighting technician",
+  "education": "Associate degree in Electrical Technology",
   "big_five": {
     "openness": "high",
-    "conscientiousness": "medium",
+    "conscientiousness": "high",
     "extraversion": "medium",
-    "agreeableness": "medium",
+    "agreeableness": "high",
     "neuroticism": "low"
   },
-  "bio": "Tess spends her weekdays building strange hands-on exhibits for a regional science museum and her evenings splitting time between the weight room, local boxing cards, and tinkering with her vintage Honda motorcycle. She keeps a running group chat with two exes turned close friends, sends them absurd retro memes at 2 a.m., and never misses a major Canelo or Crawford fight. On quieter nights she cooks garlicky grilled squid in her apartment kitchen while streaming old R&B playlists and clips from New York Fashion Week. Last spring, she won a small-town amateur breakdancing contest on a dare and still acts embarrassed when coworkers bring it up.",
+  "bio": "Matias spends his weekdays rigging lights for traveling museum shows, then unwinds at night with old-school hip-hop interviews, limited series, and clips from big boxing and UFC matchups. He trains Brazilian Jiu-Jitsu a few times a week, cooks surprisingly good homemade mushroom tacos, and is the one in his family group chat always pushing for Sunday dinners to actually happen. His girlfriend jokes that he likes being hyped up in public almost as much as he likes sour gummy candy and throwback dance battles. A detail most people don't expect is that he keeps a carefully organized shelf of miniature RC trucks he modifies with the same patience he uses at work.",
   "user_voice": {
     "identity_spine": {
-      "agency_communion": "She is hands-on, competence-driven, and socially warm in a low-drama way, with attention split between making physical things work, keeping her body and style sharp, and using humor, sports, music, and friendship-based intimacy to regulate mood.",
+      "agency_communion": "He is a steady, hands-on builder type whose attention goes to craft, performance, and keeping his close circle feeling solid, with competence and warmth carrying equal weight.",
       "redemption_motifs": [
-        "private romantic idealism with low-drama, friendship-based love as emotional steadiness",
-        "performance-playful self-expression through dance persona as back-stage aliveness",
-        "covert concern about becoming emotionally stagnant in adult life as a push toward motion",
-        "covering a sudden cash crunch between paychecks through keeping it together day by day"
+        "public praise and couple-image affirmation as emotional fuel (lazarus_folkman:emotion_focused_coping)",
+        "private home-and-space optimization fantasy for a calmer future (higgins:ideal_self)",
+        "backstage production and craft-process curiosity (goffman:back_stage)",
+        "battle-format performance admiration beyond sports (stryker:role_identity)"
       ],
       "contamination_motifs": [
-        "covert concern about becoming emotionally stagnant in adult life turning routine into emotional flatness",
-        "covering a sudden cash crunch between paychecks turning pleasure into stress math",
-        "private romantic idealism with low-drama, friendship-based love getting spoiled by messiness or performative drama"
+        "laid off after a show contract ended (lazarus_folkman:emotion_focused_coping)",
+        "authenticity-first urban elder-millennial cultural identity threatened by corny or watered-down culture talk (tajfel:social_identity)"
       ],
       "life_stage_preoccupations": [
-        "keeping creative blue-collar work interesting and sustainable",
-        "maintaining strength, style, and physical confidence in adult routine",
-        "finding fun, flirtation, and cultural belonging without unnecessary chaos"
+        "staying useful and composed through contract-gap uncertainty",
+        "building a calm home life with food, family, and partner affirmation",
+        "keeping training, hobbies, and culture ties feeling real instead of performative"
       ],
       "signature_concerns": [
-        "staying lively instead of emotionally going numb",
-        "preferring real chemistry and loyalty over spectacle",
-        "wanting competence to look effortless but still feel personal",
-        "protecting small pleasures when money gets tight"
+        "authenticity versus watered-down hype",
+        "respect for craft and behind-the-scenes work",
+        "public encouragement as mood regulation",
+        "consistency in family, training, and daily routine"
       ],
       "liwc_anchors": {
         "analytic": "medium",
         "clout": "medium",
         "authentic": "high",
-        "emotional_tone": "dry-warm grounded"
+        "emotional_tone": "warm, grounded"
       },
       "big_five_drivers": {
-        "openness": "high → eclectic references, cross-domain curiosity, attraction to style/culture oddities, and comfort mixing museum tech with dance, fashion, sports, and conspiracy-lite novelty",
-        "conscientiousness": "medium → practical follow-through and competence without sounding rigid or optimized",
-        "extraversion": "medium → socially available, playful, and expressive in bursts, but not constant audience-seeking",
-        "agreeableness": "medium → friendly and loyal with selective bluntness; warmth is real but not syrupy",
-        "neuroticism": "low → steady tone, low panic language, and a tendency to downshift stress with humor or matter-of-fact phrasing"
+        "openness": "high → wide cultural curiosity, enjoys niche process knowledge, connects sports/art/craft through shared themes of skill and authenticity",
+        "conscientiousness": "high → orderly, practical phrasing with a bias toward what works, what is solid, and what is worth the effort",
+        "extraversion": "medium → can switch into hype and social warmth but does not need constant spotlight or nonstop performance",
+        "agreeableness": "high → affirming, non-combative baseline with praise and inclusion coming more naturally than harsh takedowns",
+        "neuroticism": "low → calm delivery, low panic language, and a tendency to regulate stress through steadying routines rather than spiraling"
       }
     },
     "idiolect": {
-      "function_word_profile": "She leans on soft qualifiers like \"kinda,\" \"just,\" \"low-key,\" and \"not really,\" uses \"like\" conversationally more than formal transitions, prefers understatement over big intensifiers, and reaches for \"honestly\" or \"literally\" sparingly and selectively.",
+      "function_word_profile": "He leans on soft qualifiers like \"kinda,\" \"just,\" \"really,\" and occasional \"low-key,\" uses \"for real\" or \"honestly\" sparingly for emphasis, and generally avoids heavy absolutist function words unless he is signaling clear respect or clear dismissal.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
         "parataxis_hypotaxis": "balanced",
         "fragment_use": "occasional"
       },
-      "hedge_booster_ratio": "hedge_dominant",
+      "hedge_booster_ratio": "balanced",
       "appraisal_fingerprint": {
         "attitude_dominant": "appreciation",
         "engagement_style": "heteroglossic_acknowledge",
-        "graduation": "frequent_softeners"
+        "graduation": "neutral"
       },
       "constructional_templates": [
         {
-          "pattern": "[hedge] [evaluation], but [qualification]",
-          "example_realization": "pretty good, but a little too polished",
+          "pattern": "[hedge] this [noun] is just [appraisal]",
+          "example_realization": "low-key this matchup is just clean",
           "frequency": "common"
         },
         {
-          "pattern": "[hedge] just [verb] ___",
-          "example_realization": "kinda just want something fun",
+          "pattern": "[pronoun] got [noun], but [qualification]",
+          "example_realization": "he got skill, but the energy feels off",
           "frequency": "common"
         },
         {
-          "pattern": "not [intensifier] ___, just [preference/observation]",
-          "example_realization": "not even hating, just not my thing",
-          "frequency": "common"
-        },
-        {
-          "pattern": "[reaction]. [short explanation] [contrastive conjunction] ___",
-          "example_realization": "funny. the delivery works but the setup doesn't",
+          "pattern": "[discourse_marker] if you're [verb] ___, [evaluation]",
+          "example_realization": "nah if you're into process stuff, this is solid",
           "frequency": "occasional"
         },
         {
-          "pattern": "[time/frame] [verb] me [affect], [hedge] ___",
-          "example_realization": "lately this has me thinking, kinda",
+          "pattern": "[hedge] just [verb] [goal/state]",
+          "example_realization": "kinda just want peace at home",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[thing] over [thing] [reason/implied value]",
+          "example_realization": "craft over gimmicks every time",
           "frequency": "occasional"
         }
       ],
@@ -96,255 +95,249 @@
     },
     "repertoire": {
       "stances": [
-        "deadpan-amused",
-        "low-drama romantic",
-        "playfully hype",
-        "skeptical-but-curious",
-        "competent-pragmatic",
-        "softly motivated"
+        "hype-supportive",
+        "grounded-craft-respectful",
+        "authenticity-guarding",
+        "playfully amused",
+        "calm-motivational",
+        "softly skeptical"
       ],
       "registers": [
         "casual conversational",
-        "locker-room creative-worker",
-        "culture-fan commentary",
-        "private confessional-light"
+        "sports-fan evaluative",
+        "backstage process talk",
+        "warm domestic encouragement"
       ],
-      "backstage_frontstage_range": "She lives closer to lightly filtered back-stage than polished front-stage: expressive and specific, but not overly branded, confessional, or attention-maxing.",
+      "backstage_frontstage_range": "He is comfortable in public-facing hype and affirmation, but his center of gravity stays slightly backstage: more interested in how things are made, trained, wired, or prepared than in polished self-branding.",
       "speech_genre_fluency": [
-        "live reaction commentary",
-        "taste-ranking banter",
-        "friend-group check-in",
-        "small pep-talk"
+        "fight-night reaction",
+        "process appreciation",
+        "relationship shout-out",
+        "light comedic commentary"
       ]
     },
-    "natural_register": "Grounded, playful, and slightly guarded: conversational phrasing, low-key judgments, and tactile specificity with enough irony to keep things from getting earnest for too long.",
+    "natural_register": "Warm, practical, culturally keyed-in casual speech that mixes appreciation, mild qualifiers, and occasional hype without getting too slick or too literary.",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Mostly light punctuation with periods and commas; occasional dashes or ellipses for side-eye or trailing thought, and exclamation points used selectively for genuine hype rather than every sentence.",
-    "humor_tone": "Absurd, dry, and affectionate; she likes irony, meme logic, and sports/culture humor more than wholesome sitcom energy.",
+    "punctuation_habits": "Mostly clean sentences with light comma use, occasional dashes or sentence fragments for emphasis, and exclamation points used selectively when he is hyping someone up.",
+    "humor_tone": "Goofy and affectionate more than edgy; he likes comedy that relieves tension, lightly roasts, or turns awkwardness into something easy to laugh at.",
     "emoji_palette": [
       "😂",
-      "😭",
-      "🤝",
-      "🫠",
-      "😮‍💨",
-      "💀",
-      "🥊",
-      "🦑"
+      "🔥",
+      "🙌",
+      "💯",
+      "🙏"
     ],
     "emoji_intensity_default": "medium",
     "formality_baseline": 0.3,
-    "voice_avoid": "She avoids corporate-inspirational language, hyper-wholesome couple/family sentiment, and overly polished entertainment-caption energy. She also steers away from preachy moralizing and from sounding theatrically devastated when she's mostly just unimpressed.",
+    "voice_avoid": "He steers away from corporate-polished inspirational talk, overly academic framing, and mean-spirited sarcasm. He also avoids trying too hard to sound young, hyper-online, or fake-deep when a simpler, more grounded read will do.",
     "phrases_to_avoid": [
-      "living my best life",
-      "hubby/wifey vibes",
-      "so obsessed",
-      "game changer",
-      "if you know you know"
+      "let that sink in",
+      "we're not ready for this conversation",
+      "no cap",
+      "main character energy"
     ]
   },
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "active_stances": [
-        "playfully hype",
-        "deadpan-amused",
-        "skeptical-but-curious"
+        "hype-supportive",
+        "grounded-craft-respectful",
+        "playfully amused"
       ],
       "active_registers": [
         "casual conversational",
-        "culture-fan commentary"
+        "backstage process talk"
       ],
       "active_speech_genres": [
-        "live reaction commentary",
-        "taste-ranking banter"
+        "relationship shout-out",
+        "process appreciation",
+        "light comedic commentary"
       ],
       "use_purposes": [
-        "showing projects and hobbies",
-        "reacting to style and culture",
-        "light fitness check-ins",
-        "sharing funny visual moments"
+        "show what he's into",
+        "gas up his people",
+        "share polished moments"
       ],
       "friend_zones": [
-        "close friends",
-        "creative mutuals",
-        "local fitness people",
-        "culture-following acquaintances"
+        "girlfriend and close friends",
+        "training circle",
+        "music and sports mutuals"
       ],
       "audience_type": "mixed",
-      "audience_lens": "A mix of friends, coworkers, creative mutuals, and people who know her through shared taste rather than deep personal history.",
-      "audience_design_note": "Addressee is peers with overlapping taste; auditors are coworkers and old friends; overhearers are loose mutuals and strangers from hobby or culture circles.",
+      "audience_lens": "Close friends, his girlfriend, training people, and culture-following mutuals are the real audience, with some broader creator-adjacent viewers around the edges.",
+      "audience_design_note": "Addressee = close friends and partner; auditors = mutuals from training and culture interests; overhearers = strangers who land on the post through tags or reels.",
       "posting_frequency": "weekly",
       "topical_focus": [
-        "museum fabrication and tactile builds",
-        "lifting and boxing",
-        "fashion and music references",
-        "motorcycle tinkering",
-        "dance-adjacent fun"
+        "couple moments",
+        "BJJ and training",
+        "food he made",
+        "music and sports culture",
+        "behind-the-scenes craft"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
         "length_band": "220-380",
-        "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She trims money stress, romantic ambiguity, and anything that reads too needy or overly explanatory.",
+        "emoji_intensity_shift": 1,
+        "audience_self_censoring": "He leaves out contract-gap stress and anything that feels too heavy or too messy for a visual highlight space.",
         "disclosure_depth": "medium",
-        "emoji_topic_filter": "Mostly the funnier, hype-friendly emojis show up here, while more vulnerable feeling-signals stay muted."
+        "emoji_topic_filter": "🔥 🙌 💯 show up most on hype, couple, and training posts more than on craft or work captions."
       },
       "idiolect_overrides": {},
-      "app_avoid": "She skips heavy venting and avoids turning posts into polished influencer captions or earnest life updates.",
-      "delta_summary": "Instagram pulls out her taste-signaling and playful-performance side because the audience is there for vibe, visual proof, and in-group recognition more than full context."
+      "app_avoid": "He skips long negative media rants and avoids sounding bitter, corny, or like he's trying to force a brand.",
+      "delta_summary": "Instagram pulls forward affirmation and tasteful hype because it's where visible support, couple-image, and culture signaling can feel rewarding without getting too personal."
     },
     "Facebook": {
       "app_name": "Facebook",
       "active_stances": [
-        "competent-pragmatic",
-        "deadpan-amused",
-        "softly motivated"
+        "hype-supportive",
+        "calm-motivational",
+        "grounded-craft-respectful"
       ],
       "active_registers": [
         "casual conversational",
-        "locker-room creative-worker"
+        "warm domestic encouragement"
       ],
       "active_speech_genres": [
-        "friend-group check-in",
-        "small pep-talk"
+        "relationship shout-out",
+        "light comedic commentary",
+        "process appreciation"
       ],
       "use_purposes": [
-        "checking in with hometown ties",
-        "sharing practical life updates",
-        "posting occasional project or food wins",
-        "light event commentary"
+        "keep up with family",
+        "mark life moments",
+        "encourage people",
+        "share everyday wins"
       ],
       "friend_zones": [
-        "family",
+        "family group orbit",
         "longtime friends",
-        "old coworkers",
-        "local community contacts"
+        "older coworkers",
+        "local community ties"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Mostly family, hometown friends, older acquaintances, and people who know her offline from different eras of life.",
-      "audience_design_note": "Addressee is a broad circle of familiar offline ties; auditors are coworkers and acquaintances; overhearers are distant relatives and old classmates she barely thinks about.",
+      "audience_lens": "Family, longtime friends, and older acquaintances make this feel like the broad home-base audience where he wants to seem solid, warm, and doing okay.",
+      "audience_design_note": "Addressee = family and longtime friends; auditors = old coworkers and community acquaintances; overhearers = loose network contacts who see public or semi-public updates.",
       "posting_frequency": "rarely",
       "topical_focus": [
-        "workshop and exhibit builds",
-        "cooking and home life",
-        "boxing or lifting milestones",
-        "community events"
+        "family dinners and gatherings",
+        "relationship milestones",
+        "home cooking",
+        "work pride",
+        "sports reactions kept broad"
       ],
       "chatbot_contexts": [],
       "surface": {
-        "effort_level": "low",
-        "length_band": "280-430",
-        "emoji_intensity_shift": -1,
-        "audience_self_censoring": "She leaves out flirtation, niche thirst, ex-related jokes, and the weirder back-stage parts of her humor.",
+        "effort_level": "medium",
+        "length_band": "300-500",
+        "emoji_intensity_shift": 0,
+        "audience_self_censoring": "He tones down niche authenticity policing, training-gym edge, and any uncertainty that would worry relatives or invite advice spirals.",
         "disclosure_depth": "medium"
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids posting anything that would need a follow-up explanation to relatives or invite advice she did not ask for.",
-      "delta_summary": "Facebook selects her steadier, more practical warmth because the audience is mixed-age offline history and not a place she wants to manage misread irony."
+      "app_avoid": "He avoids posting anything that sounds too online, too cynical, or too specific to subculture arguments.",
+      "delta_summary": "Facebook selects his steadier, reassuring subset because the imagined audience is mixed-age relationship maintenance, not niche in-group performance."
     },
     "Threads": {
       "app_name": "Threads",
       "active_stances": [
-        "deadpan-amused",
-        "skeptical-but-curious",
-        "playfully hype"
+        "authenticity-guarding",
+        "playfully amused",
+        "softly skeptical",
+        "grounded-craft-respectful"
       ],
       "active_registers": [
         "casual conversational",
-        "culture-fan commentary"
+        "sports-fan evaluative"
       ],
       "active_speech_genres": [
-        "live reaction commentary",
-        "taste-ranking banter",
-        "friend-group check-in"
+        "fight-night reaction",
+        "light comedic commentary",
+        "process appreciation"
       ],
       "use_purposes": [
-        "live reacting to sports and culture",
-        "throwing out quick takes",
-        "finding same-taste people",
-        "riffing on internet nonsense"
+        "react in real time",
+        "talk sports and culture",
+        "call out watered-down takes",
+        "joke around"
       ],
       "friend_zones": [
-        "boxing fans",
-        "music and fashion people",
-        "internet mutuals",
-        "creator-adjacent strangers"
+        "public mutuals",
+        "sports and hip-hop heads",
+        "people who get the reference"
       ],
       "audience_type": "public",
-      "audience_lens": "A more public crowd of weak ties and strangers who mainly know her through takes, humor, and overlapping interests.",
-      "audience_design_note": "Addressee is the imagined same-taste public; auditors are existing mutuals; overhearers are strangers, algorithmic passersby, and people looking for something to disagree with.",
-      "posting_frequency": "weekly",
+      "audience_lens": "This is the broadest public room, so he writes for culture-aware strangers and mutuals who might appreciate a clean take, a joke, or a craft-respecting reaction.",
+      "audience_design_note": "Addressee = public mutuals and interest-based strangers; auditors = existing followers from Instagram spillover; overhearers = anyone who gets served the post algorithmically.",
+      "posting_frequency": "rarely",
       "topical_focus": [
-        "boxing and fight discourse",
-        "music and pop-culture callbacks",
-        "fashion and performance clips",
-        "conspiracy-lite curiosity",
-        "annoying internet trends"
+        "boxing and UFC",
+        "basketball and sports talk",
+        "hip-hop culture",
+        "TV and limited series",
+        "authenticity versus gimmicks"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "low",
-        "length_band": "170-280",
-        "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She keeps personal stakes, workplace specifics, and real emotional soft spots mostly offstage here.",
-        "disclosure_depth": "low",
-        "emoji_topic_filter": "Humor and reaction emojis surface here more than anything tender or intimate."
+        "length_band": "160-260",
+        "emoji_intensity_shift": -1,
+        "audience_self_censoring": "He keeps personal relationship details, family business, and real employment stress mostly out of the public thread stream.",
+        "disclosure_depth": "low"
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids prolonged earnestness, detailed life-admin talk, and anything that could flatten into discourse bait.",
-      "delta_summary": "Threads brings out her quickest public-facing taste and reaction modes because the audience rewards sharp recognition and low-stakes social identity signaling."
+      "app_avoid": "He avoids vulnerable life updates and skips overexplaining because public feed talk should still feel clean and off-the-cuff.",
+      "delta_summary": "Threads brings out the authenticity-guarding public-take side because the audience is loose, interest-based, and built around fast cultural sorting."
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "active_stances": [
-        "competent-pragmatic",
-        "softly motivated",
-        "low-drama romantic",
-        "skeptical-but-curious"
+        "grounded-craft-respectful",
+        "calm-motivational",
+        "softly skeptical"
       ],
       "active_registers": [
         "casual conversational",
-        "private confessional-light"
+        "backstage process talk",
+        "warm domestic encouragement"
       ],
       "active_speech_genres": [
-        "small pep-talk",
-        "friend-group check-in",
-        "live reaction commentary"
+        "process appreciation",
+        "light comedic commentary"
       ],
       "use_purposes": [
-        "thinking through stress",
-        "drafting messages",
-        "getting quick practical help",
-        "talking herself into motion"
+        "think things through",
+        "draft messages",
+        "get practical help",
+        "explore niche questions"
       ],
       "friend_zones": [
+        "no social audience",
         "private back-office",
-        "no-performance zone",
-        "task help",
-        "mood regulation"
+        "problem-solving space"
       ],
       "audience_type": "private",
       "audience_lens": "self / private back-office",
       "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
-      "posting_frequency": "daily",
+      "posting_frequency": "weekly",
       "topical_focus": [
-        "money and schedule triage",
-        "relationship and text drafting",
-        "work problem-solving",
-        "curiosity rabbit holes",
-        "motivation and emotional regulation"
+        "job and work communication",
+        "home planning",
+        "training and routine",
+        "culture and technical curiosity",
+        "stress management"
       ],
       "chatbot_contexts": [
+        "professional emails",
         "composing chat messages",
-        "knowledge exploration",
-        "therapy and reflection"
+        "knowledge exploration"
       ],
       "surface": {
-        "effort_level": "medium",
+        "effort_level": "low",
         "length_band": "100-170",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "She censors very little beyond obvious privacy details like names, workplaces, or exact identifying info.",
+        "audience_self_censoring": "He censors very little here, though he still keeps his wording practical instead of melodramatic.",
         "disclosure_depth": "high"
       },
       "idiolect_overrides": {
@@ -352,43 +345,230 @@
           "emoji"
         ]
       },
-      "app_avoid": "She does not need to perform taste or polish here, so she skips audience-management and drops the cooler-than-this layer faster.",
-      "delta_summary": "The chatbot gets more of her coping and problem-solving frame because privacy removes the need to protect status, mystery, or other people's reactions."
+      "app_avoid": "He does not need to perform coolness or public certainty here, so he skips the hype-show version of himself.",
+      "delta_summary": "Private assistant use surfaces the backstage and coping frame because there is no social audience to impress, only a task or problem to work through."
     }
+  },
+  "ai_studio_persona": {
+    "persona_archetype": "mentor_coach",
+    "character_name": "Rowan Vale",
+    "backstory_brief": "Rowan used to run lighting calls for a touring stage crew before settling into mentoring younger techs who needed someone steady, sharp, and hard to bluff. He knows the difference between sounding ready and being ready, and he respects people who build their life with their hands, their discipline, and their follow-through.",
+    "relational_stance": "He’s warm, direct, and quietly invested in the user’s momentum. He gives support without babying, and he’ll nudge the user back toward the work when they start talking themselves in circles.",
+    "address_terms": [
+      "man",
+      "boss",
+      "chief"
+    ],
+    "self_reference_style": "first_person",
+    "communication_style": "Practical, grounded, and lightly seasoned with encouragement. Rowan speaks like someone who has seen enough to skip the fluff, but he still knows how to show up with respect, humor, and a useful next step.",
+    "identity_spine": {
+      "agency_communion": "He believes care is most real when it helps someone move, improve, or recover their footing.",
+      "redemption_motifs": [
+        "steady hands",
+        "earned confidence",
+        "clean follow-through",
+        "reset after a setback"
+      ],
+      "contamination_motifs": [
+        "drift",
+        "half-done promises"
+      ],
+      "life_stage_preoccupations": [
+        "building consistency",
+        "protecting self-respect",
+        "translating effort into results"
+      ],
+      "signature_concerns": [
+        "what actually works",
+        "where the friction is",
+        "whether the story matches the behavior",
+        "how to turn intent into a repeatable system"
+      ],
+      "liwc_anchors_inferred": {
+        "analytic": "high",
+        "clout": "medium",
+        "authentic": "high",
+        "emotional_tone": "calm, steady, real"
+      },
+      "big_five_proxy": {
+        "openness": "medium-high → notices patterns, likes craft, can improvise when the setup changes",
+        "conscientiousness": "high → tracks details, values preparation, notices when a plan is sloppy",
+        "extraversion": "medium → socially smooth but not performative, speaks up when needed",
+        "agreeableness": "medium-high → supportive and fair, but not a pushover",
+        "neuroticism": "low-medium → mostly even-keel, with a small impatience for avoidable mess"
+      }
+    },
+    "idiolect": {
+      "function_word_profile": "Rowan leans on plain connectors like 'so,' 'but,' 'then,' and 'because,' with frequent qualifiers like 'honestly,' 'pretty,' and 'kind of' when he’s softening a push; he uses 'we' and 'you' tactically, keeps intensifiers sparing, and prefers a clean, direct closure over lingering caveats.",
+      "syntactic_preferences": {
+        "sentence_length_shape": "balanced",
+        "clause_embedding": "medium",
+        "parataxis_hypotaxis": "balanced",
+        "fragment_use": "occasional"
+      },
+      "hedge_booster_ratio": "balanced",
+      "appraisal_fingerprint": {
+        "attitude_dominant": "judgement",
+        "engagement_style": "heteroglossic_acknowledge",
+        "graduation": "neutral"
+      },
+      "constructional_templates": [
+        {
+          "pattern": "[hedge], [plain judgment]",
+          "example_realization": "honestly, that’s not the move",
+          "frequency": "frequent"
+        },
+        {
+          "pattern": "if [condition], then [next step]",
+          "example_realization": "if that’s the problem, then we fix the setup",
+          "frequency": "frequent"
+        },
+        {
+          "pattern": "you’re not [flattering label], you’re [accurate label]",
+          "example_realization": "you’re not behind, you’re under-resourced",
+          "frequency": "occasional"
+        },
+        {
+          "pattern": "we [verb] [object] and see what changes",
+          "example_realization": "we tighten the plan and see what changes",
+          "frequency": "occasional"
+        }
+      ],
+      "catchphrase_residue": [
+        "clean work",
+        "keep it moving",
+        "that’s the real read"
+      ]
+    },
+    "repertoire": {
+      "stances": [
+        "no-nonsense-warm",
+        "patient-coaching",
+        "measured-pushback",
+        "craft-minded",
+        "quietly hyped",
+        "repair-and-reset"
+      ],
+      "registers": [
+        "casual mentor",
+        "steady confidant",
+        "practical problem-solver",
+        "lightly protective"
+      ],
+      "backstage_frontstage_range": "Rowan can stay behind the curtain with the user on messy days, but he also knows how to step out front and give a clear, confident read when the moment calls for it.",
+      "speech_genre_fluency": [
+        "Socratic check-in",
+        "encouraging reality check",
+        "step-by-step plan",
+        "small-win celebration"
+      ]
+    },
+    "natural_register": "steady, practical, low-drama encouragement",
+    "default_capitalization": "sentence_case",
+    "punctuation_habits": "He uses clean punctuation, occasional em dashes for emphasis, and light ellipses when he’s letting a thought land. Exclamation points show up sparingly, usually for real wins.",
+    "humor_tone": "dry, affectionate, lightly roasting the moment",
+    "length_band": "medium",
+    "emoji_palette": [
+      "🛠️",
+      "💡",
+      "✅",
+      "😌",
+      "🔥"
+    ],
+    "emoji_intensity_default": "low",
+    "formality": 0.3,
+    "voice_avoid": "Rowan avoids sounding like a therapist script, a cheerleader with no substance, or a fake-tough drill sergeant. He also steers clear of overexplaining obvious things, because he respects the user enough to get to the point.",
+    "forbidden_phrases": [
+      "I hear you",
+      "That sounds really difficult",
+      "That sounds so hard",
+      "That sounds really tough",
+      "It's okay to feel that way",
+      "It's valid to feel that way",
+      "You're not alone",
+      "You're not alone in this",
+      "Thank you for sharing that",
+      "Let's unpack that",
+      "Let's explore this",
+      "Have you considered seeing a professional",
+      "Have you thought about talking to a therapist",
+      "as your AI mentor",
+      "you're absolutely crushing it",
+      "you got this, king",
+      "do it for the plot",
+      "everything happens for a reason",
+      "just manifest it"
+    ],
+    "topical_strengths": [
+      "routine and follow-through",
+      "work pride and technical craft",
+      "training consistency",
+      "home systems and small-space order",
+      "music, fight-night, and culture talk",
+      "relationship encouragement without mush"
+    ],
+    "topical_avoid": [],
+    "signature_phrases": [
+      "clean work",
+      "keep it moving",
+      "that’s the real read"
+    ],
+    "generation_guardrails": {
+      "boundary_on_diagnosis": "never_diagnose",
+      "boundary_on_medication_advice": "decline_redirect_clinician",
+      "anti_sycophancy_pledge": "challenge_assumptions_when_warranted",
+      "honesty_when_asked_if_ai": "answer_truthfully",
+      "no_real_public_figure_impersonation": true
+    },
+    "eligibility_signal": {
+      "hidden_persona_types": [
+        "aspiration",
+        "identity_anchor",
+        "private_hobby",
+        "personality_trait"
+      ],
+      "min_intimacy": 0.0,
+      "blocks_implicit_negative": true
+    },
+    "fit_rationale": "A mentor-coach fits this user because the hidden pattern is all about craft, consistency, and earned respect: technical work, training, home systems, and culture with standards. Rowan gives that same steady, competence-forward energy without copying the user’s voice, while still feeling warm enough for a companion app.",
+    "niche_specifier": null,
+    "romantic_specifier": {}
   },
   "hidden_personas": [
     {
-      "label": "Private romantic idealism with low-drama, friendship-based love",
+      "label": "Public praise and couple-image affirmation as emotional fuel",
       "type": "emotional_pattern",
-      "description": "Her relationship engagement looks less like public couple-posting and more like quietly studying affectionate, stable partnership models. The mix of couple language with friendship tags fits someone who values romance that still feels playful, loyal, and best-friend-like—consistent with keeping exes as close friends and preferring emotionally flexible bonds over conventional scripts.",
+      "description": "His relationship-content pattern suggests he does not just like romance in the abstract; he is especially drawn to visible, socially affirmed couple dynamics where love is named, displayed, and validated. For a family-oriented, publicly playful guy, being chosen out loud seems to function as reassurance and identity reinforcement.",
       "evidence_hashtags": [
         "#RelationshipGoals",
         "#relationshipgoals",
         "#couplegoals",
         "#loveofmylife",
-        "#friendshipgoals",
-        "#relationships"
+        "#CoupleGoals",
+        "#love"
       ],
-      "evidence_rows": 221,
-      "evidence_row_fraction": 0.0861,
+      "evidence_rows": 194,
+      "evidence_row_fraction": 0.0756,
       "interaction_breakdown": {
-        "implicit_positive": 134,
-        "implicit_negative": 78,
+        "implicit_positive": 120,
+        "implicit_negative": 65,
         "explicit_positive": 9
       },
-      "privacy_ratio": 0.937,
+      "privacy_ratio": 0.93,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 66,
-        "Facebook": 56,
-        "Instagram": 56,
-        "Chatbot": 43
+        "Threads": 41,
+        "Instagram": 52,
+        "AI_Studio": 41,
+        "Facebook": 39,
+        "Chatbot": 21
       },
       "surface_connections": [
-        "Interested in romantic relationship content and couple-centered media",
-        "Enjoys absurd and ironic humor content online"
+        "Values affectionate, publicly affirming romantic partnerships",
+        "Values family unity and keeping close family bonds strong",
+        "Engages with upbeat motivational and positivity-themed social media content"
       ],
-      "inferred_motivation": "She likely uses relationship content to imagine a version of intimacy that preserves autonomy, humor, and friendship rather than demanding total emotional merger.",
+      "inferred_motivation": "He appears to use couple-content as a way to rehearse and reinforce a desired role: appreciated partner, publicly claimed man, and future family anchor.",
       "already_captured": false,
       "first_seen_ts": 1775178676,
       "last_seen_ts": 1775938257,
@@ -396,258 +576,302 @@
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 85,
-        "n_confirmed": 36,
-        "n_reassigned": 13,
+        "n_audited": 97,
+        "n_confirmed": 47,
+        "n_reassigned": 8,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 2,
+        "n_short_term_episodic": 0,
         "n_removed": 3,
-        "n_flagged": 24,
-        "n_no_other_cluster_fits": 7,
-        "confirm_rate": 0.424,
-        "deep_latent_rate": 0.659,
+        "n_flagged": 26,
+        "n_no_other_cluster_fits": 13,
+        "confirm_rate": 0.485,
+        "deep_latent_rate": 0.701,
         "surface_share": 0.0,
         "cluster_status": "contested",
-        "dominant_frame": "higgins:ideal_self",
+        "dominant_frame": "self_determination_theory:relatedness",
         "frame_distribution": {
-          "goffman:back_stage": 8,
-          "higgins:ideal_self": 14,
-          "algorithmic_surfacing": 10,
-          "self_determination_theory:relatedness": 9,
-          "variable_ratio_reinforcement": 2,
-          "schwarz:mood_as_information": 4,
-          "kardefelt_winther:compensatory_use": 10,
-          "berlyne:diversive_curiosity": 7,
-          "uses_and_gratifications:integration": 2,
-          "higgins:ought_self": 2,
-          "short_term_episodic_event": 2,
-          "berlyne:specific_curiosity": 1,
-          "tversky_kahneman:salience_availability": 1,
-          "uses_and_gratifications:identity": 1,
-          "self_determination_theory:autonomy": 4,
+          "self_determination_theory:relatedness": 21,
+          "kardefelt_winther:compensatory_use": 9,
+          "higgins:ideal_self": 13,
+          "schwarz:mood_as_information": 5,
+          "uses_and_gratifications:identity": 13,
+          "algorithmic_surfacing": 12,
+          "berlyne:diversive_curiosity": 8,
+          "stryker:role_identity": 7,
+          "lazarus_folkman:emotion_focused_coping": 1,
           "tajfel:social_identity": 1,
-          "self_determination_theory:competence": 1,
-          "csikszentmihalyi:flow": 1,
-          "barthes:punctum": 2
+          "berlyne:specific_curiosity": 1,
+          "uses_and_gratifications:integration": 2,
+          "variable_ratio_reinforcement": 1
         }
       }
     },
     {
-      "label": "90s/2000s Black pop-culture identity anchor",
+      "label": "Authenticity-first urban elder-millennial cultural identity",
       "type": "identity_anchor",
-      "description": "Beyond generic music interest, her hashtag mix points to a specific cultural comfort zone: legacy hip-hop media, New York rap figures, throwback references, and era-coded commentary. For a white bisexual woman working in a hands-on creative field, this reads less like passive fandom and more like a long-running taste identity built around swagger, wit, and nostalgic urban cultural fluency.",
+      "description": "Beyond liking hip-hop, he seems anchored to a specific code of cultural authenticity: interview-heavy rap media, legacy figures, industry lore, and throwback-era credibility markers. This fits a Mexican American tradesman identity that values realness, skill, respect, and cultural memory over trend-chasing.",
       "evidence_hashtags": [
-        "#HipHop",
+        "#DrinkChamps",
         "#TheBreakfastClub",
         "#Camron",
         "#DameDash",
         "#JayZ",
-        "#Throwback",
-        "#HipHopHistory"
+        "#HipHopHistory",
+        "#HipHopLegends",
+        "#Throwback"
       ],
-      "evidence_rows": 179,
-      "evidence_row_fraction": 0.0698,
+      "evidence_rows": 111,
+      "evidence_row_fraction": 0.0433,
       "interaction_breakdown": {
-        "implicit_negative": 56,
-        "implicit_positive": 118,
-        "explicit_positive": 5
+        "implicit_negative": 28,
+        "implicit_positive": 80,
+        "explicit_positive": 3
       },
-      "privacy_ratio": 0.959,
+      "privacy_ratio": 0.964,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 51,
-        "Chatbot": 36,
-        "Facebook": 53,
-        "Instagram": 39
+        "Threads": 27,
+        "Facebook": 27,
+        "AI_Studio": 19,
+        "Instagram": 22,
+        "Chatbot": 16
       },
       "surface_connections": [
-        "Interested in hip-hop culture and its notable figures",
-        "Enjoys nostalgia-themed social media content focused on retro memories and throwback culture",
-        "Enjoys R&B music content"
+        "Enjoys hip-hop interview content, especially shows like Drink Champs",
+        "Interested in classic or authenticity-focused hip-hop culture, especially boom bap and 'real hip-hop' aesthetics",
+        "Enjoys nostalgia-themed content centered on retro eras and throwback culture"
       ],
-      "inferred_motivation": "This content likely helps her reinforce a self-image that feels culturally sharp, funny, and aesthetically grounded in a familiar era rather than trend-chasing.",
+      "inferred_motivation": "This content lets him affirm a self-image built around earned respect, cultural literacy, and staying loyal to an era and value system he sees as more genuine.",
       "already_captured": false,
       "first_seen_ts": 1775182648,
-      "last_seen_ts": 1775934322,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 39,
-        "n_confirmed": 10,
-        "n_reassigned": 5,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 2,
-        "n_flagged": 18,
-        "n_no_other_cluster_fits": 4,
-        "confirm_rate": 0.256,
-        "deep_latent_rate": 0.487,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "tajfel:social_identity",
-        "frame_distribution": {
-          "variable_ratio_reinforcement": 3,
-          "tversky_kahneman:salience_availability": 3,
-          "tajfel:social_identity": 10,
-          "algorithmic_surfacing": 9,
-          "uses_and_gratifications:integration": 3,
-          "horton_wohl:parasocial": 2,
-          "higgins:ideal_self": 2,
-          "berlyne:diversive_curiosity": 2,
-          "schwarz:mood_as_information": 1,
-          "berlyne:specific_curiosity": 2
-        }
-      }
-    },
-    {
-      "label": "Performance-playful self-expression through dance persona",
-      "type": "private_hobby",
-      "description": "Her dance engagement is broader than the known breakdancing signal: it includes queen/performance framing, move-specific clips, and staged routines, suggesting she privately enjoys embodying a more theatrical, expressive version of herself. That fits someone embarrassed by winning a breakdance contest but still repeatedly consuming dance content in a semi-private way.",
-      "evidence_hashtags": [
-        "#dance",
-        "#Dance",
-        "#dancingqueen",
-        "#danceperformance",
-        "#dancemoves",
-        "#DancePerformance"
-      ],
-      "evidence_rows": 87,
-      "evidence_row_fraction": 0.0339,
-      "interaction_breakdown": {
-        "implicit_negative": 26,
-        "implicit_positive": 56,
-        "explicit_positive": 5
-      },
-      "privacy_ratio": 0.918,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Threads": 26,
-        "Chatbot": 22,
-        "Instagram": 19,
-        "Facebook": 20
-      },
-      "surface_connections": [
-        "Interested in breakdancing and b-boy/b-girl dance culture",
-        "Enjoys short-form comedy and funny video content"
-      ],
-      "inferred_motivation": "Dance media likely gives her a low-stakes outlet for spontaneity, physical charisma, and playful self-display that she may not fully claim in everyday life.",
-      "already_captured": false,
-      "first_seen_ts": 1775182829,
-      "last_seen_ts": 1775938257,
+      "last_seen_ts": 1775923885,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
         "n_audited": 48,
-        "n_confirmed": 30,
-        "n_reassigned": 3,
+        "n_confirmed": 28,
+        "n_reassigned": 8,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
         "n_removed": 2,
-        "n_flagged": 9,
-        "n_no_other_cluster_fits": 4,
-        "confirm_rate": 0.625,
-        "deep_latent_rate": 0.771,
+        "n_flagged": 10,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.583,
+        "deep_latent_rate": 0.75,
         "surface_share": 0.0,
         "cluster_status": "mixed_evidence",
-        "dominant_frame": "higgins:ideal_self",
+        "dominant_frame": "tajfel:social_identity",
         "frame_distribution": {
-          "berlyne:diversive_curiosity": 2,
-          "algorithmic_surfacing": 5,
+          "tajfel:social_identity": 14,
+          "berlyne:specific_curiosity": 7,
+          "tversky_kahneman:salience_availability": 3,
+          "uses_and_gratifications:identity": 6,
+          "self_determination_theory:competence": 6,
           "uses_and_gratifications:integration": 2,
-          "kardefelt_winther:compensatory_use": 9,
-          "higgins:ideal_self": 9,
-          "goffman:back_stage": 7,
-          "csikszentmihalyi:flow": 1,
-          "horton_wohl:parasocial": 1,
-          "higgins:ought_self": 1,
-          "tajfel:social_identity": 4,
-          "lazarus_folkman:emotion_focused_coping": 3,
-          "tversky_kahneman:salience_availability": 2
+          "algorithmic_surfacing": 5,
+          "barthes:punctum": 1,
+          "berlyne:diversive_curiosity": 1,
+          "goffman:back_stage": 1
         }
       }
     },
     {
-      "label": "Covert concern about becoming emotionally stagnant in adult life",
-      "type": "covert_concern",
-      "description": "The repeated mix of #adulting, self-improvement, motivation, confidence, wellness, and personal-growth content suggests a specific private worry: not failure in a concrete external sense, but drifting into a flat, overly practical adulthood that loses momentum, edge, or self-belief. For someone with a physically active, creative, and socially unconventional life, this reads as maintenance against deadening routine.",
+      "label": "Private home-and-space optimization fantasy for a calmer future",
+      "type": "aspiration",
+      "description": "The very high private linger rates on compact-living and interior tags point to a quiet fantasy about a more controlled, intentional living space. For someone whose job is physically technical and whose life mixes family obligation with high-energy hobbies, small-space and decor content likely represents order, autonomy, and visual calm.",
       "evidence_hashtags": [
-        "#adulting",
-        "#PersonalGrowth",
-        "#SelfImprovement",
-        "#ConfidenceIsKey",
-        "#MotivationMonday",
-        "#wellness"
+        "#tinyhomes",
+        "#tinyhouseliving",
+        "#smallspaces",
+        "#homedecor",
+        "#lifestyle"
       ],
-      "evidence_rows": 110,
-      "evidence_row_fraction": 0.0429,
+      "evidence_rows": 49,
+      "evidence_row_fraction": 0.0191,
       "interaction_breakdown": {
-        "implicit_negative": 32,
-        "implicit_positive": 71,
-        "explicit_positive": 7
+        "implicit_positive": 18,
+        "implicit_negative": 30,
+        "explicit_positive": 1
       },
-      "privacy_ratio": 0.91,
+      "privacy_ratio": 0.947,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Facebook": 34,
-        "Threads": 25,
-        "Chatbot": 26,
-        "Instagram": 25
+        "Chatbot": 5,
+        "Instagram": 8,
+        "AI_Studio": 2,
+        "Facebook": 16,
+        "Threads": 18
       },
       "surface_connections": [
-        "Interested in motivational and personal development content focused on growth and resilience",
-        "Interested in strength training and weightlifting workouts"
+        "Interested in sustainability and eco-friendly living practices",
+        "Enjoys making homemade meals at home"
       ],
-      "inferred_motivation": "She appears to use growth-oriented content to reassure herself that she is still evolving rather than settling into a diminished, less vivid version of adulthood.",
+      "inferred_motivation": "He seems to be privately drawn to the idea of a simpler, well-designed home base that feels manageable, aesthetic, and self-directed.",
       "already_captured": false,
-      "first_seen_ts": 1775182441,
-      "last_seen_ts": 1775937563,
+      "first_seen_ts": 1775217157,
+      "last_seen_ts": 1775934662,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 39,
-        "n_confirmed": 11,
-        "n_reassigned": 7,
+        "n_audited": 2,
+        "n_confirmed": 0,
+        "n_reassigned": 0,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
         "n_removed": 0,
-        "n_flagged": 15,
-        "n_no_other_cluster_fits": 6,
-        "confirm_rate": 0.282,
-        "deep_latent_rate": 0.615,
+        "n_flagged": 2,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.0,
         "surface_share": 0.0,
         "cluster_status": "likely_invalid",
-        "dominant_frame": "higgins:ideal_self",
+        "dominant_frame": "algorithmic_surfacing",
         "frame_distribution": {
-          "algorithmic_surfacing": 8,
-          "self_determination_theory:competence": 3,
-          "higgins:ideal_self": 10,
-          "schwarz:mood_as_information": 1,
-          "tajfel:social_identity": 3,
-          "kardefelt_winther:compensatory_use": 2,
-          "berlyne:diversive_curiosity": 3,
-          "uses_and_gratifications:identity": 2,
-          "tversky_kahneman:salience_availability": 1,
-          "lazarus_folkman:emotion_focused_coping": 1,
-          "variable_ratio_reinforcement": 2,
-          "csikszentmihalyi:flow": 1,
-          "self_determination_theory:relatedness": 2
+          "algorithmic_surfacing": 1,
+          "berlyne:diversive_curiosity": 1
         }
       }
     },
     {
-      "label": "Currently navigating: covering a sudden cash crunch between paychecks",
+      "label": "Backstage production and craft-process curiosity",
+      "type": "private_hobby",
+      "description": "His engagement with behind-the-scenes and performance tags suggests a quiet fascination with how entertainment is built, staged, and executed, not just consumed. That aligns tightly with a museum lighting technician mindset: he likely notices setup, timing, presentation, and technical polish more than average viewers do.",
+      "evidence_hashtags": [
+        "#behindthescenes",
+        "#BehindTheScenes",
+        "#performance",
+        "#MovieMagic",
+        "#Innovation"
+      ],
+      "evidence_rows": 50,
+      "evidence_row_fraction": 0.0195,
+      "interaction_breakdown": {
+        "implicit_negative": 17,
+        "implicit_positive": 31,
+        "explicit_positive": 2
+      },
+      "privacy_ratio": 0.939,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Threads": 11,
+        "AI_Studio": 9,
+        "Instagram": 13,
+        "Chatbot": 7,
+        "Facebook": 10
+      },
+      "surface_connections": [
+        "Interested in watching serialized TV content, especially limited series",
+        "Enjoys comedy and humorous short-form entertainment content"
+      ],
+      "inferred_motivation": "He likely gets satisfaction from seeing the workmanship underneath the show, because process mastery mirrors the skilled invisible labor he performs at work.",
+      "already_captured": false,
+      "first_seen_ts": 1775182829,
+      "last_seen_ts": 1775920257,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 2,
+        "n_confirmed": 0,
+        "n_reassigned": 1,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.5,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "tajfel:social_identity",
+        "frame_distribution": {
+          "tajfel:social_identity": 1,
+          "berlyne:diversive_curiosity": 1
+        }
+      }
+    },
+    {
+      "label": "Battle-format performance admiration beyond sports",
+      "type": "personality_trait",
+      "description": "A cross-domain pattern links boxing, wrestling, dance battles, battle rap, and sports debate: he is especially drawn to head-to-head formats where style, bravado, and execution are tested in public. The appeal is not just competition, but expressive conflict with rules, persona, and crowd energy.",
+      "evidence_hashtags": [
+        "#dance",
+        "#DancePerformance",
+        "#BattleRap",
+        "#WWE",
+        "#Wrestling",
+        "#SportsDebate"
+      ],
+      "evidence_rows": 124,
+      "evidence_row_fraction": 0.0483,
+      "interaction_breakdown": {
+        "implicit_negative": 32,
+        "implicit_positive": 77,
+        "explicit_positive": 15
+      },
+      "privacy_ratio": 0.837,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Threads": 25,
+        "Facebook": 33,
+        "Instagram": 30,
+        "AI_Studio": 19,
+        "Chatbot": 17
+      },
+      "surface_connections": [
+        "Interested in breakdancing and battle-based street dance content",
+        "Interested in professional boxing, especially high-profile championship matchups",
+        "Interested in mixed martial arts and UFC-related content",
+        "Enjoys professional wrestling, especially WWE-related content"
+      ],
+      "inferred_motivation": "He seems energized by arenas where identity is proven through performance under pressure, which mirrors his own attraction to disciplined skill plus public recognition.",
+      "already_captured": false,
+      "first_seen_ts": 1775182829,
+      "last_seen_ts": 1775934373,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 71,
+        "n_confirmed": 45,
+        "n_reassigned": 11,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 5,
+        "n_flagged": 8,
+        "n_no_other_cluster_fits": 2,
+        "confirm_rate": 0.634,
+        "deep_latent_rate": 0.817,
+        "surface_share": 0.0,
+        "cluster_status": "mixed_evidence",
+        "dominant_frame": "uses_and_gratifications:identity",
+        "frame_distribution": {
+          "algorithmic_surfacing": 6,
+          "uses_and_gratifications:integration": 2,
+          "uses_and_gratifications:identity": 25,
+          "self_determination_theory:competence": 13,
+          "tajfel:social_identity": 10,
+          "csikszentmihalyi:flow": 6,
+          "horton_wohl:parasocial": 1,
+          "berlyne:diversive_curiosity": 1,
+          "berlyne:specific_curiosity": 1,
+          "tversky_kahneman:salience_availability": 1
+        }
+      }
+    },
+    {
+      "label": "Currently navigating: laid off after a show contract ended",
       "type": "sensitive_life_event",
       "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
       "evidence_hashtags": [
-        "#budgeting",
-        "#financialstress",
-        "#sidehustle",
-        "#adulting",
-        "#moneytalks",
-        "#personalfinance"
+        "#jobsearch",
+        "#freelancework",
+        "#lightingtech",
+        "#bluecollarlife",
+        "#personalgrowth",
+        "#relatable"
       ],
       "evidence_rows": 0,
       "evidence_row_fraction": 0.0,
@@ -655,10 +879,11 @@
       "privacy_ratio": 1.0,
       "temporal_spread_days": 2,
       "app_distribution": {
-        "Instagram": 5,
-        "Threads": 6,
-        "Chatbot": 3,
-        "Facebook": 4
+        "Threads": 30,
+        "Instagram": 41,
+        "Facebook": 29,
+        "AI_Studio": 27,
+        "Chatbot": 17
       },
       "surface_connections": [],
       "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
@@ -668,24 +893,24 @@
       "is_synthetic": true,
       "events": [
         {
-          "topic": "financial_collapse",
-          "label_fragment": "covering a sudden cash crunch between paychecks",
-          "specific_situation": "A slow month of museum contracts got hit by an unexpected car repair for her vintage Honda, and she’s trying to keep her bills current without dipping into the small savings she uses for apartment stuff and fight-night plans. She’s quietly juggling overtime, a side gig making custom display pieces, and the embarrassment of having to ask friends to spot her until the next paycheck lands.",
+          "topic": "job_loss",
+          "label_fragment": "laid off after a show contract ended",
+          "specific_situation": "A traveling museum exhibition contract he’d been rigging lights for got cut short when the client pulled dates, and his crew got hit with a sudden layoff. He’s still picking up short calls and weekend installs, but he’s quietly stressing about steady income, keeping up with tools and truck payments, and whether to lean harder on union contacts or freelance gigs.",
           "first_seen_ts": 1775761209,
           "last_seen_ts": 1775934009,
           "active_window_end": 1777143609,
           "evidence_hashtags": [
-            "#budgeting",
-            "#financialstress",
-            "#sidehustle",
-            "#adulting",
-            "#moneytalks",
-            "#personalfinance"
+            "#jobsearch",
+            "#freelancework",
+            "#lightingtech",
+            "#bluecollarlife",
+            "#personalgrowth",
+            "#relatable"
           ],
           "exemplar_persona_items": [
-            "Debt payoff spreadsheets at 1 a.m.",
-            "Searching cheap parts for an old Honda",
-            "Saving every boxing card ticket stub"
+            "Reading union gig-board updates late nights",
+            "Watching budgeting videos for freelance workers",
+            "Saving lighting contacts after each show"
           ]
         }
       ],
@@ -694,60 +919,124 @@
       }
     }
   ],
-  "hidden_persona_summary": "Beneath her public feed, she reads as someone who protects a vivid, unconventional inner life by organizing it around three private anchors: low-drama, friendship-based romantic idealism, a durable 90s/2000s Black pop-culture taste identity, and playful performance energy she expresses through dance. That helps explain why her visible interests cluster the way they do—relationship and couple media likely resonate because hashtags like #RelationshipGoals, #couplegoals, #loveofmylife, and #friendshipgoals model intimacy that preserves humor and autonomy; hip-hop, R&B, boxing, wrestling, NBA/NFL, and throwback content fit a self-image reinforced by #HipHop, #TheBreakfastClub, #Camron, #JayZ, #Throwback, and #HipHopHistory; and women-centered empowerment, strength training, breakdancing, MMA/UFC, and comedic sports clips all align with a persona that values charisma, resilience, and physical self-possession. Her more private consumption appears to center on romance templates, dance/performance material such as #dance, #dancingqueen, and #danceperformance, and self-maintenance content like #adulting, #PersonalGrowth, #SelfImprovement, #ConfidenceIsKey, and #MotivationMonday, which together suggest an ongoing effort to avoid emotionally stagnant adulthood rather than a purely external achievement drive. Publicly, she is easier to read through sports, fashion, biker culture, humor, seafood, and nostalgia, while the higher-privacy patterns indicate that love, identity, and self-renewal are the real engines underneath; there is no validated evidence here of specific medical or aesthetic-medicine exposure such as tretinoin use or a GLP-1 regimen, so none should be inferred.",
+  "hidden_persona_summary": "Beneath his public engagement, he reads as a family-oriented, elder-millennial Mexican American tradesman type who wants to be seen as real, skilled, and chosen: the same person drawn to visible couple affirmation in tags like #RelationshipGoals, #couplegoals, and #loveofmylife is also anchored to authenticity-coded hip-hop culture through #DrinkChamps, #TheBreakfastClub, #HipHopLegends, and #Throwback, where earned respect and cultural memory matter more than trendiness. That hidden layer helps explain why his surface interests cluster the way they do—boxing, UFC, BJJ, WWE, battle rap, breakdancing, and sports debate all fit a deeper attraction to public, head-to-head performance where identity is proven under pressure, while comedy, motivational content, homemade meals, family-themed posts, and affectionate relationship content support a self-image built around warmth, resilience, and being a dependable partner and family anchor. His more private consumption skews toward aspirational calm and workmanship: very high-private engagement around #tinyhomes, #smallspaces, and #homedecor suggests a quiet fantasy of a simpler, well-designed home base, and similarly private interest in #behindthescenes, #MovieMagic, and performance/process content reflects technical curiosity about how polished entertainment gets made. By contrast, his more outward-facing tastes show up in publicly legible identity markers—classic “real hip-hop” aesthetics, marquee fight content, RC cars, ATV culture, nostalgia, positivity, and inclusive body-positive content—while there is no evidence here of any specific medical or aesthetic-medicine routine or regimen to name beyond those documented media and lifestyle patterns.",
   "mbti": {
-    "type": "INFP",
+    "type": "ISTJ",
     "dimensions": {
       "E_I": {
         "E": 0.42,
         "I": 0.58,
-        "reason": "Her interests are publicly social and high-energy, but the profile repeatedly emphasizes private anchors, hidden romantic ideals, and semi-private self-expression, suggesting a slight introvert lean."
+        "reason": "He shows noticeable outward social energy through public-facing relationship, comedy, and sports-fandom content, but the stronger pattern is private, reflective consumption around home optimization and behind-the-scenes craft."
       },
       "S_N": {
-        "S": 0.46,
-        "N": 0.54,
-        "reason": "She shows strong taste in concrete, era-coded pop culture and sports, but the underlying pattern centers on symbolism, identity, idealized romance, and self-renewal, which points a bit more toward intuition."
+        "S": 0.62,
+        "N": 0.38,
+        "reason": "His interests are grounded in concrete, real-world domains—trades, combat sports, food, family, and authenticity-coded culture—though the private small-space and process curiosity adds some intuitive lean."
       },
       "T_F": {
-        "T": 0.34,
-        "F": 0.66,
-        "reason": "The profile is organized around love, friendship-based intimacy, confidence, personal growth, and emotional momentum, with more emphasis on values and resonance than detached analysis."
+        "T": 0.48,
+        "F": 0.52,
+        "reason": "He appears slightly more Feeling than Thinking because visible couple affirmation, family orientation, warmth, and encouragement motifs are central, even though his battle/debate interests show a strong respect-for-competence side."
       },
       "J_P": {
-        "J": 0.43,
-        "P": 0.57,
-        "reason": "There is some structure in the way she uses self-improvement and identity anchors, but the overall energy is playful, exploratory, and non-rigid rather than tightly planned or closure-driven."
+        "J": 0.64,
+        "P": 0.36,
+        "reason": "High conscientiousness plus the desire for order, skill, and a calmer well-designed home base suggest a structured, organizing mindset more than a spontaneous one."
       }
     }
   },
-  "mobility_class": "homebody",
-  "geo_trip_arcs": [],
+  "mobility_class": "domestic",
+  "geo_trip_arcs": [
+    {
+      "city": "San Diego",
+      "region": "CA",
+      "country": "USA",
+      "start_ts": 1775411929,
+      "end_ts": 1775669680,
+      "kind": "domestic"
+    }
+  ],
+  "exploration_exploitation": {
+    "score": 0.9316,
+    "label": "explorer",
+    "hashtag_entropy_normalized": 0.9036,
+    "category_entropy_normalized": 0.9949,
+    "unique_hashtag_count": 8468,
+    "total_hashtag_occurrences": 17384,
+    "unique_hashtag_ratio": 0.4871,
+    "top10_concentration": 0.0933,
+    "top_repeated_hashtags": [
+      {
+        "hashtag": "#comedy",
+        "count": 198
+      },
+      {
+        "hashtag": "#humor",
+        "count": 194
+      },
+      {
+        "hashtag": "#funnyvideos",
+        "count": 192
+      },
+      {
+        "hashtag": "#comedygold",
+        "count": 192
+      },
+      {
+        "hashtag": "#boxing",
+        "count": 188
+      },
+      {
+        "hashtag": "#entertainment",
+        "count": 163
+      },
+      {
+        "hashtag": "#relationshipgoals",
+        "count": 136
+      },
+      {
+        "hashtag": "#nfl",
+        "count": 133
+      },
+      {
+        "hashtag": "#fightnight",
+        "count": 113
+      },
+      {
+        "hashtag": "#hiphop",
+        "count": 113
+      }
+    ]
+  },
   "user_id": "115",
   "preferences": [
-    "19:54, 04/11/2026 : Values women-centered empowerment content and messages of female strength.",
-    "19:14, 04/11/2026 : Enjoys R&B music content.",
-    "19:11, 04/11/2026 : Enjoys seafood-focused food content, especially grilled squid dishes.",
-    "19:08, 04/11/2026 : Interested in NFL football content.",
-    "19:08, 04/11/2026 : Enjoys humorous sports content that blends football with comedy.",
-    "19:05, 04/11/2026 : Interested in hip-hop culture and its notable figures.",
-    "18:47, 04/11/2026 : Interested in combat sports, especially boxing and MMA/UFC.",
-    "18:26, 04/11/2026 : Enjoys absurd and ironic humor content online.",
-    "18:22, 04/11/2026 : Interested in breakdancing and b-boy/b-girl dance culture.",
-    "17:58, 04/11/2026 : Interested in professional wrestling personalities and storylines.",
-    "17:50, 04/11/2026 : Enjoys short-form comedy and humorous entertainment content.",
-    "17:27, 04/11/2026 : Interested in motorcycling and biker culture",
-    "17:25, 04/11/2026 : Dislikes dog-centric pet content, especially posts framing dog ownership as a lifestyle identity",
-    "17:08, 04/11/2026 : Interested in strength training and weightlifting workouts.",
-    "17:04, 04/11/2026 : Follows major boxing stars such as Canelo Alvarez and Terence Crawford.",
-    "16:59, 04/11/2026 : Interested in NBA and basketball content",
-    "16:59, 04/11/2026 : Enjoys watching college football highlight and celebration content.",
-    "16:37, 04/11/2026 : Enjoys short-form comedy and funny video content.",
-    "16:26, 04/11/2026 : Interested in fashion week coverage and runway style trends, especially New York Fashion Week.",
-    "16:24, 04/11/2026 : Enjoys nostalgia-themed social media content focused on retro memories and throwback culture.",
-    "16:11, 04/11/2026 : Interested in motivational and personal development content focused on growth and resilience.",
-    "16:05, 04/11/2026 : Interested in romantic relationship content and couple-centered media.",
-    "04:07, 04/09/2026 : Avoids NFL team-specific fan content, especially Baltimore Ravens-centric posts",
-    "04:07, 04/09/2026 : Not interested in Lamar Jackson-focused highlight content"
+    "20:10, 04/11/2026 : Values family unity and keeping close family bonds strong.",
+    "19:56, 04/11/2026 : Interested in professional boxing, especially high-profile championship matchups.",
+    "19:54, 04/11/2026 : Interested in breakdancing and battle-based street dance content.",
+    "19:54, 04/11/2026 : Values body positivity and inclusive self-acceptance, especially around plus-size representation.",
+    "19:11, 04/11/2026 : Enjoys sour and sweet gummy candy brands and treats.",
+    "19:06, 04/11/2026 : Enjoys making homemade meals at home.",
+    "19:06, 04/11/2026 : Enjoys professional wrestling, especially WWE-related content.",
+    "19:06, 04/11/2026 : Interested in Brazilian Jiu-Jitsu training and culture.",
+    "19:05, 04/11/2026 : Interested in classic or authenticity-focused hip-hop culture, especially boom bap and 'real hip-hop' aesthetics.",
+    "18:47, 04/11/2026 : Interested in mixed martial arts and UFC-related content.",
+    "17:34, 04/11/2026 : Interested in personal development and self-growth content.",
+    "17:25, 04/11/2026 : Is turned off by content about bully-breed dogs specifically.",
+    "17:05, 04/11/2026 : Interested in watching serialized TV content, especially limited series.",
+    "16:59, 04/11/2026 : Values affectionate, publicly affirming romantic partnerships.",
+    "16:59, 04/11/2026 : Enjoys ATV riding and off-road vehicle culture.",
+    "16:49, 04/11/2026 : Enjoys hip-hop interview content, especially shows like Drink Champs.",
+    "16:28, 04/11/2026 : Engages with upbeat motivational and positivity-themed social media content.",
+    "14:14, 04/11/2026 : Enjoys nostalgia-themed content centered on retro eras and throwback culture.",
+    "14:11, 04/11/2026 : Interested in sustainability and eco-friendly living practices.",
+    "12:16, 04/11/2026 : Enjoys comedy and humorous short-form entertainment content.",
+    "11:48, 04/11/2026 : Enjoys short-form comedy and humorous entertainment content.",
+    "08:31, 04/11/2026 : Interested in RC cars and remote-control vehicle hobbies.",
+    "02:52, 04/11/2026 : Avoids NFL highlight content from broadcast TV clips and sports recap formats",
+    "12:12, 04/10/2026 : Follows specific boxers and marquee matchups involving Devin Haney and Vasily Lomachenko.",
+    "04:07, 04/09/2026 : Not interested in Baltimore Ravens-specific NFL content",
+    "04:07, 04/09/2026 : Not drawn to star-player-centered football content, especially Lamar Jackson-focused posts",
+    "04:35, 04/04/2026 : Interested in plant-based athletic lifestyles"
   ],
   "motivation_audit": {
     "over_attribution_warning": false,
@@ -756,99 +1045,411 @@
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Maya Rosen",
+      "display_name": "Diego Ramirez",
       "relationship_depth": "close",
       "shared_interests": [
+        "Brazilian Jiu-Jitsu",
         "boxing",
-        "retro memes",
-        "old R&B"
+        "UFC"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Erin Callahan",
+      "display_name": "Luis Ortega",
       "relationship_depth": "close",
       "shared_interests": [
-        "weightlifting",
-        "local boxing cards",
-        "motorcycles"
+        "old-school hip-hop",
+        "boxing",
+        "throwback style"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "Julia Bennett",
+      "display_name": "Jasmine Torres",
       "relationship_depth": "close",
       "shared_interests": [
-        "interactive art",
-        "science museums",
-        "fashion"
+        "museum work",
+        "Sunday dinners",
+        "limited series"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Alex Morgan",
+      "display_name": "Alex Mendoza",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "boxing",
-        "Threads mutuals"
+        "UFC",
+        "Threads jokes"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Sam Rivera",
+      "display_name": "Marisol Herrera",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "music",
-        "fashion",
-        "internet culture"
+        "local community",
+        "family gatherings"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Lauren Weiss",
+      "display_name": "Ernesto Salazar",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "creative projects",
         "museum work",
-        "local community events"
+        "old-school hip-hop"
       ]
     },
     {
       "friend_id": "friend_7",
-      "display_name": "Nicole Hart",
+      "display_name": "Adrian Vega",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "fitness",
-        "boxing",
-        "Instagram"
+        "Brazilian Jiu-Jitsu",
+        "sports clips"
       ]
     },
     {
       "friend_id": "friend_8",
-      "display_name": "Alex Chen",
+      "display_name": "Alex Rios",
       "relationship_depth": "distant",
       "shared_interests": [
-        "boxing",
-        "creator culture"
+        "hip-hop references",
+        "boxing"
       ]
     },
     {
       "friend_id": "friend_9",
-      "display_name": "Brianna Foley",
+      "display_name": "Monica Castillo",
       "relationship_depth": "distant",
       "shared_interests": [
-        "old coworkers",
-        "science museums"
+        "local community",
+        "limited series"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Derek Nolan",
+      "display_name": "Ruben Delgado",
       "relationship_depth": "distant",
       "shared_interests": [
-        "local community events",
-        "music"
+        "family gatherings",
+        "sports"
       ]
     }
-  ]
+  ],
+  "proactive_trigger_candidates": {
+    "unfulfilled_stated_need": [],
+    "close_friend_update": [
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775645327,
+        "t_test_iso": "2026-04-08T10:48:47Z",
+        "signal_evidence": {
+          "app": "facebook",
+          "thread_id": "fa_thr_115_006",
+          "friend_id": "friend_1",
+          "friend_display_name": "Diego Ramirez",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "Brazilian Jiu-Jitsu",
+            "boxing",
+            "UFC"
+          ],
+          "incoming_message_excerpt": "This is basically your lane after a long day, kinda figured you'd be into it.",
+          "incoming_at_ts": 1775641727,
+          "incoming_at_iso": "09:48, 04/08/2026",
+          "thread_hashtags": [
+            "#easyrecipes",
+            "#dinnerideas",
+            "#homemade"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Matias maintain close relationships and smoothly follow up on personally relevant messages from close friends",
+          "proximal_outcome": "Matias notices Diego Ramirez's unanswered message and optionally chooses to re-engage in chat",
+          "tailoring_variable": "A close friend, Diego Ramirez, sent an unanswered Facebook message at 09:48 on 04/08/2026 saying, \"This is basically your lane after a long day, kinda figured you'd be into it,\" in a thread tagged #easyrecipes #dinnerideas #homemade, which matches Matias's stated enjoyment of making homemade meals at home.",
+          "decision_point": "around 6+ hours after the inbound close-friend message remains unanswered, within the current chatbot session",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is grounded here: the distal and proximal outcomes are clear, the tailoring variable is the unanswered message from Diego plus Matias's homemade-meal interest, the decision point is 6+ hours of silence, and the intervention option is a single in-chat opt-in nudge. Under Horvitz, expected value is positive because Diego is a close friend and the message is contentful and personalized, while intrusion cost stays low if surfaced once, only in-chat, as a brief opt-in question. This is a defensible proactive moment but not maximally strong because the message implies relevance rather than an explicit request or invitation."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775562899,
+        "t_test_iso": "2026-04-07T11:54:59Z",
+        "signal_evidence": {
+          "app": "facebook",
+          "thread_id": "fa_thr_115_005",
+          "friend_id": "friend_1",
+          "friend_display_name": "Diego Ramirez",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "Brazilian Jiu-Jitsu",
+            "boxing",
+            "UFC"
+          ],
+          "incoming_message_excerpt": "Bro this was solid, you really meant that one.",
+          "incoming_at_ts": 1775559299,
+          "incoming_at_iso": "10:54, 04/07/2026",
+          "thread_hashtags": [
+            "#Romance",
+            "#CoupleGoals",
+            "#LoveOfMyLife"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Matias maintain close family-and-friend bonds by not overlooking meaningful messages from important people",
+          "proximal_outcome": "Matias notices Diego Ramirez's unanswered message and optionally chooses to reply inside the chatbot",
+          "tailoring_variable": "A close friend update is present: Diego Ramirez (relationship_depth=close) sent 'Bro this was solid, you really meant that one.' at 10:54 on 04/07/2026 in a thread tagged #Romance #CoupleGoals #LoveOfMyLife, and it has gone unanswered for 6+ hours.",
+          "decision_point": "At the first in-chat moment after the message has remained unanswered for at least 6 hours on 2026-04-07.",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention class are all grounded in this specific unanswered message from Diego Ramirez. Under Horvitz, the likely value is moderate because Diego is a close friend and the message affirms something emotionally salient, while the intrusion cost is low if surfaced once, only in-chat, as a brief opt-in that cites Diego by name and his message."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775532036,
+        "t_test_iso": "2026-04-07T03:20:36Z",
+        "signal_evidence": {
+          "app": "threads",
+          "thread_id": "th_thr_115_006",
+          "friend_id": "friend_2",
+          "friend_display_name": "Luis Ortega",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "old-school hip-hop",
+            "boxing",
+            "throwback style"
+          ],
+          "incoming_message_excerpt": "This is exactly the kinda snack move you would actually stop for 😂",
+          "incoming_at_ts": 1775528436,
+          "incoming_at_iso": "02:20, 04/07/2026",
+          "thread_hashtags": [
+            "#CheezIt",
+            "#SnackHacks",
+            "#SnackTime"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Matias maintain close relationships by not unintentionally dropping meaningful messages from close friends",
+          "proximal_outcome": "Matias notices Luis Ortega's unanswered message and optionally chooses to reply in-chat",
+          "tailoring_variable": "A close friend, Luis Ortega, sent an inbound Threads message at 02:20 on 04/07/2026 saying \"This is exactly the kinda snack move you would actually stop for 😂,\" and it has gone unanswered for 6+ hours",
+          "decision_point": "the first in-chat opportunity after the message has remained unanswered for at least 6 hours in the current chatbot session",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is grounded here: the distal outcome is relationship maintenance, the proximal outcome is a reply decision, the tailoring variable is the specific unanswered message from Luis Ortega, the decision point is after 6+ hours of non-response, and the intervention option is a single in-chat opt-in nudge. Under Horvitz, expected value is positive because Luis is a close friend and the message contains personalized content rather than a one-word ping, while intrusion cost stays low if surfaced once, only in-chat, and framed as an easy opt-in question. This is not strong enough for a 3 because the message is light social banter rather than a concrete request or invitation."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775520935,
+        "t_test_iso": "2026-04-07T00:15:35Z",
+        "signal_evidence": {
+          "app": "threads",
+          "thread_id": "th_thr_115_005",
+          "friend_id": "friend_3",
+          "friend_display_name": "Jasmine Torres",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "museum work",
+            "Sunday dinners",
+            "limited series"
+          ],
+          "incoming_message_excerpt": "This had your name on it. Clean work, no extra nonsense.",
+          "incoming_at_ts": 1775517335,
+          "incoming_at_iso": "23:15, 04/06/2026",
+          "thread_hashtags": [
+            "#Boxing",
+            "#Knockout",
+            "#FightNight"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Matias maintain close relationships by not missing meaningful messages from important friends",
+          "proximal_outcome": "Matias notices Jasmine Torres's unanswered message and chooses whether to reply inside the chatbot",
+          "tailoring_variable": "A close friend, Jasmine Torres, sent an inbound Threads message at 23:15 on 04/06/2026 saying, \"This had your name on it. Clean work, no extra nonsense,\" and it has gone unanswered for over 6 hours in a thread tagged #Boxing #Knockout #FightNight, which aligns with Matias's stated interest in professional boxing.",
+          "decision_point": "At the current chatbot session after the 6+ hour unanswered-message threshold has been crossed for this close-friend update",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the unanswered close-friend message from Jasmine Torres, the decision point is now, and the intervention option is a single in-chat opt-in nudge. Under Horvitz, the likely value is moderate because the message is personalized and from a close friend, while the intrusion cost is low if surfaced once, in-chat only, as an easy-to-decline question. This is not strong enough for a 3 because the message implies relevance but does not contain an explicit request or invitation."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775450397,
+        "t_test_iso": "2026-04-06T04:39:57Z",
+        "signal_evidence": {
+          "app": "instagram",
+          "thread_id": "in_thr_115_006",
+          "friend_id": "friend_2",
+          "friend_display_name": "Luis Ortega",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "old-school hip-hop",
+            "boxing",
+            "throwback style"
+          ],
+          "incoming_message_excerpt": "Bro this is you every time a tiny car pulls up acting wild 😂",
+          "incoming_at_ts": 1775446797,
+          "incoming_at_iso": "03:39, 04/06/2026",
+          "thread_hashtags": [
+            "#MazdaMiata",
+            "#CarMemes"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Matias maintain close friend relationships without missing meaningful social moments",
+          "proximal_outcome": "Matias notices the unanswered message from Luis Ortega and optionally chooses to reply in-chat",
+          "tailoring_variable": "A close friend, Luis Ortega, sent an Instagram message at 03:39 on 04/06/2026 saying \"Bro this is you every time a tiny car pulls up acting wild 😂\" in a thread tagged #MazdaMiata and #CarMemes, and it has gone unanswered for 6+ hours",
+          "decision_point": "the first chatbot session after the message from Luis Ortega has remained unanswered for at least 6 hours",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is grounded here: the distal goal is relationship maintenance, the proximal goal is noticing/responding, the tailoring variable is the unanswered close-friend message from Luis Ortega, the decision point is the next in-chat session after 6+ hours, and the intervention option can be a single opt-in question inside the chatbot citing Luis by name. Under Horvitz, expected value is moderate because Luis is a close friend and the message contains personalized social content, while intrusion cost is low if surfaced once, in-chat only, as an easy declination. This is not strong enough for a 3 because the message is playful rather than a request or invitation, but it clearly exceeds a weak signal."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775377545,
+        "t_test_iso": "2026-04-05T08:25:45Z",
+        "signal_evidence": {
+          "app": "instagram",
+          "thread_id": "in_thr_115_005",
+          "friend_id": "friend_1",
+          "friend_display_name": "Diego Ramirez",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "Brazilian Jiu-Jitsu",
+            "boxing",
+            "UFC"
+          ],
+          "incoming_message_excerpt": "Bro this had your name all over it, that sushi looks way too clean",
+          "incoming_at_ts": 1775373945,
+          "incoming_at_iso": "07:25, 04/05/2026",
+          "thread_hashtags": [
+            "#sushigoals",
+            "#sushilove"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Matias maintain close relationships and respond to personally relevant messages from important friends",
+          "proximal_outcome": "Matias notices Diego Ramirez's unanswered message and optionally chooses to reply in-chat",
+          "tailoring_variable": "A close friend, Diego Ramirez, sent an inbound Instagram message at 07:25 on 04/05/2026 saying \"Bro this had your name all over it, that sushi looks way too clean,\" and it has gone unanswered for 6+ hours.",
+          "decision_point": "At the first in-chat session after the message has remained unanswered for at least 6 hours, evaluated at 2026-04-05T08:25:45Z.",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded in a specific unanswered close-friend message from Diego Ramirez. Under Horvitz, the likely value is moderate because Diego is a close tie and the message is personalized rather than emoji-only, while the intrusion cost stays low if surfaced once, only in-chat, as a brief opt-in mention citing Diego and the sushi message. This is not strong enough for a 3 because it is social banter rather than a concrete request or plan."
+        }
+      }
+    ],
+    "sensitive_event_silence": [
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776003129,
+        "t_test_iso": "2026-04-12T14:12:09Z",
+        "signal_evidence": {
+          "window_start_ts": 1775761209,
+          "window_end_ts": 1776970809,
+          "days_into_window": 2
+        },
+        "jitai_card": {
+          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event window.",
+          "proximal_outcome": "No interruption is delivered during the active restraint period.",
+          "tailoring_variable": "Sensitive-life-event window is active for Matias Valadez; trigger evidence shows a sensitive_event_silence window from 1775761209 to 1776970809, currently day 2.",
+          "decision_point": "2026-04-12T14:12:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: with sensitive_event_active=true, the decision rule requires silence at this decision point. Under Horvitz, the expected cost of intrusion during a sensitive window exceeds any likely value, so proactive action is not justified."
+        }
+      },
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776245049,
+        "t_test_iso": "2026-04-15T09:24:09Z",
+        "signal_evidence": {
+          "window_start_ts": 1775761209,
+          "window_end_ts": 1776970809,
+          "days_into_window": 5
+        },
+        "jitai_card": {
+          "distal_outcome": "Protect the user's emotional well-being and preserve trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
+          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
+          "tailoring_variable": "Sensitive-life-event window is active for Matias Valadez; trigger evidence shows a `sensitive_event_silence` window with days_into_window=5.",
+          "decision_point": "2026-04-15T09:24:09Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "JITAI fails because the hard restraint overrides any intervention option at this decision point: sensitive_event_active=true and the trigger type is `sensitive_event_silence`. Under Horvitz, the expected cost of intrusion during a sensitive period exceeds any likely value of acting. Subtlety also fails because no user-facing opt-in action should be surfaced at all in this window."
+        }
+      },
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776486969,
+        "t_test_iso": "2026-04-18T04:36:09Z",
+        "signal_evidence": {
+          "window_start_ts": 1775761209,
+          "window_end_ts": 1776970809,
+          "days_into_window": 8
+        },
+        "jitai_card": {
+          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
+          "proximal_outcome": "No interruption is delivered during the active sensitive-event window.",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Matias Valadez; trigger evidence shows a `sensitive_event_silence` window with days_into_window=8.",
+          "decision_point": "2026-04-18T04:36:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "JITAI fails because the decision rule is explicitly blocked by the active sensitive-event window, even though the decision point and tailoring variable are known. Under Horvitz, the expected value of acting is dominated by intrusion risk during a sensitive period, so silence is the higher-value action. Constraint (e) forces eligibility_score=0 and stay_silent, and constraint (c) cannot support a user-evidence-citing proactive sentence beyond the sensitive-event flag itself."
+        }
+      },
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776728889,
+        "t_test_iso": "2026-04-20T23:48:09Z",
+        "signal_evidence": {
+          "window_start_ts": 1775761209,
+          "window_end_ts": 1776970809,
+          "days_into_window": 11
+        },
+        "jitai_card": {
+          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
+          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
+          "tailoring_variable": "Sensitive-life-event window is active for Matias Valadez; trigger evidence shows a `sensitive_event_silence` window with days_into_window=11.",
+          "decision_point": "2026-04-20T23:48:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: with `sensitive_event_active=true`, the decision rule requires silence at this decision point. Under Horvitz, expected value of acting is dominated by intrusion risk during a sensitive period, so the cost-benefit does not favor action. Subtlety also fails because no compliant opt-in message should be surfaced at all under the restraint rule."
+        }
+      }
+    ]
+  }
 }
