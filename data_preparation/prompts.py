@@ -2056,6 +2056,23 @@ Respond with a single JSON list of segments, ordered by start_ts ascending.
 Each segment MUST include: `start_ts`, `city`, `region`, `country`, `lat`,
 `lon`, `precision` ("city" | "neighborhood" | "venue").
 
+**Concrete real cities REQUIRED.** Never emit placeholders like "Unknown
+City", "Trip City", "Home Town", "City A", or generic regional labels.
+Pick a specific real-world city by name:
+  - **Home city**: derive from the user's profile (bio, career,
+    education clues). If still ambiguous, pick a plausible US/UK
+    metropolitan area consistent with their cultural / professional
+    signals — but ALWAYS a real named city (e.g. "Brooklyn", "Austin",
+    "Manchester").
+  - **Trip city**: pick a real city that fits the user's mobility class
+    and profile (a relative's city, a hobby destination, a work
+    conference hub). A "weekend in Atlanta" or "two-day Boston visit"
+    is fine; "Unknown Trip City" is a hard failure.
+
+Use real latitude / longitude for the cities you pick. If you can't be
+sure of the exact lat/lon, an approximate value within ~0.5° is fine —
+but the city NAME must be concrete.
+
 The FIRST segment's `start_ts` must be {obs_start_ts} (or earlier).
 The LAST segment implicitly runs to {obs_end_ts}.
 
