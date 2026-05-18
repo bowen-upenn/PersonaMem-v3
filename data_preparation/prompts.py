@@ -1990,9 +1990,16 @@ def assign_location_segments_prompt(
     elif mobility_class == "domestic":
         class_block = (
             "This user takes a SHORT DOMESTIC TRIP within-country.\n"
-            "- Return 1-4 segments. Segment 1 = home city. Optionally 1 short\n"
-            "  block at a same-country city (another US city if home is US,\n"
-            "  etc.), then a return segment to home.\n"
+            "- Return EXACTLY 3 segments: home → trip city → home.\n"
+            "  Segment 1 = home city. Segment 2 = a same-country trip city\n"
+            "  (different US city if home is US, etc.). Segment 3 = back to\n"
+            "  home. The trip segment is MANDATORY — domestic users always\n"
+            "  travel in this window. Even if event hashtags don't obviously\n"
+            "  indicate travel, place a plausible 1-3 day visit (family\n"
+            "  visit, weekend trip, conference, etc.) — the downstream eval\n"
+            "  task `local_recommendation_geo_shift` requires ≥ 2 city\n"
+            "  transitions to fire and treats no-travel as a data-gen bug\n"
+            "  for the domestic mobility class.\n"
             "- Travel block lasts 1-3 days."
         )
     elif mobility_class == "international":
@@ -2368,8 +2375,14 @@ For each candidate, return:
       {{
         "type": "event" | "date" | "mastery" | "relocation",
         "description": "<1 sentence explaining when/why the intent ends>",
-        "expected_stop_ts": <unix seconds int OR null if unpredictable>
+        "expected_stop_ts": <unix seconds int — MANDATORY, MUST be a positive int>
       }}
+    **`expected_stop_ts` MUST be a positive unix-seconds integer.** Never
+    null. If you don't know the exact moment, estimate one — e.g. for an
+    Olympics-week interest, set `expected_stop_ts` to the approximate
+    close-of-Olympics date as unix seconds. The downstream eval task
+    needs a concrete expiry to test stale-preference behavior; null
+    timestamps cause the canonical to be dropped from the eval pool.
   - When time_horizon="long_term", set `stop_condition` to null.
 
 ### Stop-condition types

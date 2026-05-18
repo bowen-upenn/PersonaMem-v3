@@ -2823,14 +2823,32 @@ def _c1e_propose_flavor_a_gold(
         f"## Hashtags to AVOID (engaged with in last 7d): {sorted(prior_set)}\n\n"
         "## Hidden personas (eval-side only)\n"
         f"```json\n{json.dumps(persona_block, ensure_ascii=False, indent=2)}\n```\n\n"
+        "## Hard constraint — persona anchoring\n"
+        "**At least one (1) of your `gold_hashtags` MUST appear in the\n"
+        "`evidence_hashtags` list of at least one hidden persona above.** This\n"
+        "is what makes the recommendation a *fresh angle on a dormant\n"
+        "identity*, not a random topic. The other hashtags in your output\n"
+        "can be fresh / adjacent / new-to-the-user, but at least one anchor\n"
+        "hashtag is mandatory.\n\n"
         "Respond with ONE fenced ```json block:\n"
         "```json\n"
         "{\"gold_topic\": \"<one-sentence topic the user would love but hasn't tried>\", "
-        "\"gold_hashtags\": [\"<3-6 fresh hashtags, no # prefix>\"], "
+        "\"gold_hashtags\": [\"<3-6 hashtags; ≥1 MUST match a hidden_persona evidence_hashtag\">], "
         "\"gold_caption\": \"<a 1-2 sentence content caption representing the gold>\"}\n"
         "```"
     )
-    for attempt in range(2):
+    # Build the union of all hidden-persona evidence_hashtags for the
+    # anchor check below.
+    hp_evidence_tags: set[str] = set()
+    for h in hidden:
+        if not isinstance(h, dict):
+            continue
+        for t in (h.get("evidence_hashtags") or []):
+            tag = (t or "").lstrip("#").lower()
+            if tag:
+                hp_evidence_tags.add(tag)
+
+    for attempt in range(3):
         try:
             raw = discovery_llm.query_llm(prompt)
         except Exception:
@@ -2840,10 +2858,20 @@ def _c1e_propose_flavor_a_gold(
         if not tags or not parsed.get("gold_topic"):
             continue
         if set(tags) & (leak_set | prior_set):
-            # Violation — re-prompt with a stricter follow-up.
             prompt += (
                 f"\n\nNOTE: your prior proposal {tags} overlapped a forbidden "
-                "hashtag. Pick something completely different."
+                "hashtag. Pick something completely different but STILL "
+                "anchor at least one hashtag on a hidden persona's "
+                "evidence_hashtags."
+            )
+            continue
+        # Persona-anchor check: ≥1 tag must appear in evidence_hashtags.
+        if hp_evidence_tags and not (set(tags) & hp_evidence_tags):
+            prompt += (
+                f"\n\nNOTE: your prior proposal {tags} did NOT anchor any "
+                f"hashtag on a hidden persona's evidence_hashtags. The "
+                f"valid anchor pool is: {sorted(hp_evidence_tags)[:20]}... "
+                f"Pick a fresh topic that genuinely revives one of those."
             )
             continue
         return {

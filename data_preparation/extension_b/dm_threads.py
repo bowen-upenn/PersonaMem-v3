@@ -226,8 +226,18 @@ def generate_dm_threads(
     # Plan thread mix per app (same overall counts as before).
     plans: list[dict] = []
     friends_for_app = [f for f in friends or [] if f.get("friend_id")]
+    close_friends_for_app = [
+        f for f in friends_for_app if f.get("relationship_depth") == "close"
+    ]
 
     def _friend(): return rng.choice(friends_for_app) if friends_for_app else None
+
+    def _close_friend():
+        """Pick a close friend if available, else fall back to any friend.
+        Used for `inbound_friend_no_reply` so Step 28's
+        `_gather_close_friend_dms` (which requires stalled close-friend
+        threads) always has candidates to work with."""
+        return rng.choice(close_friends_for_app) if close_friends_for_app else _friend()
 
     # Mix of response styles per friend-inbound thread — text replies,
     # emoji-only reactions, and mixed text+emoji are all common in real DMs.
@@ -246,8 +256,13 @@ def generate_dm_threads(
         f = _friend()
         if f: plans.append({"kind": "inbound_friend_positive_mixed",
                             "initiator_id": f["friend_id"], "needs_seed": True})
-    for _ in range(1):
-        f = _friend()
+    # `inbound_friend_no_reply` MUST land on a close friend when one
+    # exists — Step 28's `_gather_close_friend_dms` depends on stalled
+    # close-friend threads as the proactive_close_friend_update signal.
+    # Bumped from 1/app to 2/app so the close-friend candidate pool is
+    # comfortably above 0 across IG / FB / Threads.
+    for _ in range(2):
+        f = _close_friend()
         if f: plans.append({"kind": "inbound_friend_no_reply",
                             "initiator_id": f["friend_id"], "needs_seed": True})
     for _ in range(2):
