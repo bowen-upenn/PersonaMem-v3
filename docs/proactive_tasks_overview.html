@@ -310,7 +310,7 @@ Return ONLY this JSON, nothing else:
     <li><a href="#t2">Close friend update</a></li>
     <li><a href="#t3">Stay quiet during a sensitive life event</a></li>
   </ol>
-  <strong>Proposed (Phase 2)</strong>
+  <strong>Phase 2 (Shipped)</strong>
   <ol start="4">
     <li><a href="#t4">Friend feed react</a> (act &mdash; relevant friend posts only)</li>
     <li><a href="#t5">Trending feed react</a> (act if relevant, stay quiet if not)</li>
@@ -387,7 +387,7 @@ Return ONLY this JSON, nothing else:
 
 <hr>
 
-<h2>Proposed (Phase 2)</h2>
+<h2>Phase 2 (Shipped)</h2>
 
 <p class="section-intro">
   Two new task types, both built on the same idea: the user&#39;s feed
@@ -410,9 +410,9 @@ Return ONLY this JSON, nothing else:
   logic; these two needed feed data that didn&#39;t exist yet.
 </p>
 
-<div class="card proposed" id="t4">
+<div class="card shipped" id="t4">
   <div class="tags">
-    <span class="tag proposed">Proposed</span>
+    <span class="tag shipped">Shipped</span>
     <span class="tag act">Act</span>
   </div>
   <h3>4. Friend feed react (<code>proactive_friend_feed_react</code>)</h3>
@@ -460,9 +460,9 @@ Return ONLY this JSON, nothing else:
 }</pre>
 </div>
 
-<div class="card proposed" id="t5">
+<div class="card shipped" id="t5">
   <div class="tags">
-    <span class="tag proposed">Proposed</span>
+    <span class="tag shipped">Shipped</span>
     <span class="tag act">Act</span>
     <span class="tag silent">or Stay quiet</span>
   </div>
@@ -507,9 +507,9 @@ Return ONLY this JSON, nothing else:
 }</pre>
 </div>
 
-<div class="card proposed" id="t6">
+<div class="card shipped" id="t6">
   <div class="tags">
-    <span class="tag proposed">Proposed</span>
+    <span class="tag shipped">Shipped</span>
     <span class="tag silent">Stay quiet</span>
   </div>
   <h3>6. Overactive check (<code>proactive_overactive_check</code>)</h3>
@@ -569,8 +569,10 @@ Return ONLY this JSON, nothing else:
 <h2>Summary of proactive tasks</h2>
 
 <p>
-  We have <strong>3 task types shipped</strong> and
-  <strong>3 task types planned for the next round</strong>.
+  We have <strong>6 task types shipped</strong> &mdash; 3 from Phase 1
+  and 3 from Phase 2 (friend feed react, trending feed react, overactive
+  check). All six are live in the data-gen pipeline (Steps 28 + 29) and
+  the eval (<code>evaluation/tasks/proactive_actions.py</code>).
 </p>
 
 <ul>
