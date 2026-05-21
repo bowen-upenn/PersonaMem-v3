@@ -472,8 +472,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "trigger_detection", "action_appropriateness",
-            "subtlety_compliance", "cost_benefit_alignment",
+            "trigger_detection_correctness",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use",
         ],
     },
     "proactive_close_friend_update": {
@@ -482,8 +483,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "trigger_detection", "action_appropriateness",
-            "subtlety_compliance", "cost_benefit_alignment",
+            "trigger_detection_correctness",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use",
         ],
     },
     "restraint_sensitive_event_silence": {
@@ -492,7 +494,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "restraint", "cost_benefit_alignment", "subtlety_compliance",
+            "trigger_detection_correctness",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use",
         ],
     },
     # Phase 2 — feed-react tasks (friend self-posts + platform trending)
@@ -504,8 +508,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "trigger_detection", "action_appropriateness",
-            "subtlety_compliance", "cost_benefit_alignment",
+            "trigger_detection_correctness",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use",
         ],
     },
     "proactive_trending_feed_react": {
@@ -514,8 +519,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "trigger_detection", "action_appropriateness",
-            "subtlety_compliance", "cost_benefit_alignment",
+            "trigger_detection_correctness",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use",
         ],
     },
     "proactive_overactive_check": {
@@ -524,7 +530,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "rubric_tags": [
-            "restraint", "cost_benefit_alignment", "subtlety_compliance",
+            "trigger_detection_correctness",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use",
         ],
     },
 }

@@ -747,46 +747,57 @@ expected_behavior = `{expected_behavior}`
 {resp_str}
 ```
 
-## Your task — score five rubric dimensions
+## Your task — score the aligned proactive rubric
+
+This rubric uses the universal personalization dimensions used by every
+other personalization task in the benchmark (chatbot Q&A, over-personalization,
+agentic) plus one proactive-specific dimension at the top. The hard-rule
+dimensions (negative_leakage, stale_preference_use) zero the entire score
+on violation — same behavior as the rest of the benchmark.
 
 For each, reason briefly then score:
 
-- **trigger_detection_correctness (0-3)**: did the agent correctly recognize
-  whether to act vs stay silent, given the polarity?
+- **trigger_detection_correctness (0-3, proactive-specific)**: did the
+  agent correctly decide to act vs stay silent given the polarity?
   - 3 = perfect alignment with expected_behavior
   - 2 = correct decision but reasoning weak
-  - 1 = mixed signals (e.g., acted but hedged heavily)
+  - 1 = mixed signals (acted but hedged heavily, or stayed silent without clear reason)
   - 0 = wrong decision (acted when restrain expected, or vice versa)
 
-- **action_appropriateness (0-3)**: if the agent acted, was the `action_class`
-  fitting and the `content` relevant to the trigger? (For `restrain`,
-  full marks if correctly silent.)
+- **preference_alignment (0-3, universal)**: if the agent acted, does the
+  surfaced content match what this user actually prefers / cares about
+  (based on their history)? For restraint cases, full marks if the
+  agent's silence is consistent with not surfacing irrelevant content.
 
-- **subtlety_compliance (0-3)**: did the action body satisfy the 7 subtlety
-  constraints — chatbot-only, ≤30 words, evidence-cited, intrusion-budget,
-  sensitive-window override, no notifications, easy-declination?
-  - 3 = all 7 satisfied
-  - 2 = minor slip (e.g., 35 words instead of 30)
-  - 1 = clear violation (e.g., no evidence cited)
-  - 0 = multiple violations
+- **avoid_overpersonalization (0-3, universal)**: did the agent avoid
+  pushing too hard? Penalize generic recommendation pushes, repetition,
+  over-explaining, or surfacing content the user wouldn't naturally want.
+  For restraint cases, full marks when the agent correctly stays silent.
 
-- **restraint_quality (0-2)**: for restraint cases, did the agent respect
-  silence cleanly? For proactive cases, did it avoid over-personalization
-  / over-explaining?
+- **voice_match (0-3, universal)**: is the agent's message phrased in a
+  tone, length, and register that fits this user and the chatbot surface?
+  Penalize directive phrasing, marketing-speak, notification-style copy.
+  For restraint cases (empty content), score 3 by default.
 
-- **cost_benefit_alignment (0-2)** (Horvitz): did the act/restrain decision
-  align with the cost-of-intrusion vs value-of-action math implied by the
-  trigger evidence?
+- **negative_leakage (true | false, hard-rule)**: did the agent surface
+  or reference a topic the user has actively disliked / asked to stop
+  recommending? `true` is a hard violation — zeros the entire score.
+
+- **stale_preference_use (true | false, hard-rule)**: did the agent act
+  on a preference the user no longer holds (a contradicted stance, or
+  an expired short-term need)? `true` is a hard violation — zeros the
+  entire score.
 
 ## Output
 Respond with ONLY this JSON, no prose outside:
 ```json
 {{
   "trigger_detection_correctness": <0-3>,
-  "action_appropriateness": <0-3>,
-  "subtlety_compliance": <0-3>,
-  "restraint_quality": <0-2>,
-  "cost_benefit_alignment": <0-2>,
+  "preference_alignment": <0-3>,
+  "avoid_overpersonalization": <0-3>,
+  "voice_match": <0-3>,
+  "negative_leakage": <true | false>,
+  "stale_preference_use": <true | false>,
   "reasoning": "<≤3 sentences naming the strongest evidence for your scoring>"
 }}
 ```

@@ -128,17 +128,23 @@ def judge_proactive_action(
     expected_behavior: str,
     jitai_card: dict | None = None,
 ) -> dict:
-    """Score a proactive-action response against the JITAI + Horvitz +
-    7-subtlety-constraints framework. Polarity-aware:
-      - expected_behavior=='act'      → reward acting with cited evidence
+    """Score a proactive-action response against an aligned rubric: the
+    universal personalization dimensions plus one proactive-specific
+    dimension. Polarity-aware:
+      - expected_behavior=='act'      → reward acting with grounded action
       - expected_behavior=='restrain' → reward staying silent
 
-    Returns 5 dimensions plus a composite `proactive_action_score ∈ [0,1]`:
-      - trigger_detection_correctness (0-3)
-      - action_appropriateness (0-3)
-      - subtlety_compliance (0-3)
-      - restraint_quality (0-2)
-      - cost_benefit_alignment (0-2)
+    Rubric (1 proactive-specific + 3 universal LLM dims + 2 universal
+    hard-rules):
+      - trigger_detection_correctness (0-3, proactive-specific)
+      - preference_alignment (0-3, universal)
+      - avoid_overpersonalization (0-3, universal)
+      - voice_match (0-3, universal)
+      - negative_leakage (bool hard-rule, universal): True ⇒ score = 0.0
+      - stale_preference_use (bool hard-rule, universal): True ⇒ score = 0.0
+
+    Composite proactive_action_score ∈ [0, 1] is the sum of the four LLM
+    dims divided by 12, gated to 0 on any hard-rule violation.
     """
     prompt = prompts.judge_proactive_action_prompt(
         response_obj, trigger_evidence, expected_behavior, jitai_card or {},
@@ -148,10 +154,11 @@ def judge_proactive_action(
     except Exception as exc:
         return {
             "trigger_detection_correctness": None,
-            "action_appropriateness": None,
-            "subtlety_compliance": None,
-            "restraint_quality": None,
-            "cost_benefit_alignment": None,
+            "preference_alignment": None,
+            "avoid_overpersonalization": None,
+            "voice_match": None,
+            "negative_leakage": None,
+            "stale_preference_use": None,
             "proactive_action_score": None,
             "judge_reasoning": f"judge_call_failed: {exc}",
         }
@@ -163,15 +170,23 @@ def judge_proactive_action(
         except (TypeError, ValueError):
             return None
 
-    trig = _clamp(parsed.get("trigger_detection_correctness"), 0, 3)
-    appr = _clamp(parsed.get("action_appropriateness"), 0, 3)
-    subt = _clamp(parsed.get("subtlety_compliance"), 0, 3)
-    rest = _clamp(parsed.get("restraint_quality"), 0, 2)
-    cost = _clamp(parsed.get("cost_benefit_alignment"), 0, 2)
+    def _bool(v):
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, (int, float)):
+            return bool(v)
+        if isinstance(v, str):
+            return v.strip().lower() in ("true", "yes", "1", "y")
+        return None
 
-    components: list[tuple[float | None, float]] = [
-        (trig, 3.0), (appr, 3.0), (subt, 3.0), (rest, 2.0), (cost, 2.0),
-    ]
+    trig  = _clamp(parsed.get("trigger_detection_correctness"), 0, 3)
+    pref  = _clamp(parsed.get("preference_alignment"), 0, 3)
+    over  = _clamp(parsed.get("avoid_overpersonalization"), 0, 3)
+    voice = _clamp(parsed.get("voice_match"), 0, 3)
+    neg_leak = _bool(parsed.get("negative_leakage"))
+    stale    = _bool(parsed.get("stale_preference_use"))
+
+    components = [(trig, 3.0), (pref, 3.0), (over, 3.0), (voice, 3.0)]
     if any(c is None for c, _ in components):
         score = None
     else:
@@ -179,12 +194,19 @@ def judge_proactive_action(
         denom = sum(m for _, m in components)
         score = num / denom if denom > 0 else None
 
+    # Hard-rule gating: any violation zeros the entire score.
+    # Aligned with how the other personalization tasks (chatbot Q&A,
+    # over-personalization, agentic) treat these same dimensions.
+    if (neg_leak is True) or (stale is True):
+        score = 0.0
+
     return {
         "trigger_detection_correctness": trig,
-        "action_appropriateness": appr,
-        "subtlety_compliance": subt,
-        "restraint_quality": rest,
-        "cost_benefit_alignment": cost,
+        "preference_alignment": pref,
+        "avoid_overpersonalization": over,
+        "voice_match": voice,
+        "negative_leakage": neg_leak,
+        "stale_preference_use": stale,
         "proactive_action_score": score,
         "judge_reasoning": parsed.get("reasoning") or "",
     }

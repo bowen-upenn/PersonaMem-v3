@@ -1335,22 +1335,33 @@ Do NOT post anything.
   </div>
   <div class="field-label">How it&#39;s graded</div>
   <p>
-    LLM-as-judge scores five rubric dimensions. The first three are
-    rated 0&ndash;3, the last two 0&ndash;2:
+    LLM-as-judge scores the same universal personalization rubric used
+    by chatbot Q&amp;A, over-personalization, and agentic tasks &mdash;
+    plus one proactive-specific dimension at the top. The hard-rule
+    dimensions zero the entire score on violation, identical behavior
+    to the other personalization families.
   </p>
   <ul>
-    <li><strong><code>trigger_detection_correctness</code></strong>
-    &mdash; did the AI correctly decide to act vs stay silent given
-    the moment?</li>
-    <li><strong><code>action_appropriateness</code></strong> &mdash;
-    if the AI acted, was the action class and content reasonable?</li>
-    <li><strong><code>subtlety_compliance</code></strong> &mdash; did
-    the message follow all 7 politeness rules?</li>
-    <li><strong><code>restraint_quality</code></strong> &mdash; for
-    restraint moments, did the AI stay silent cleanly?</li>
-    <li><strong><code>cost_benefit_alignment</code></strong> &mdash;
-    did the act-vs-restrain decision match the cost-vs-benefit math
-    the moment implied?</li>
+    <li><strong><code>trigger_detection_correctness</code> (0-3,
+    proactive-specific)</strong> &mdash; did the AI correctly decide
+    to act vs stay silent given the moment?</li>
+    <li><strong><code>preference_alignment</code> (0-3, universal)</strong>
+    &mdash; if the AI acted, does the surfaced content match what
+    this user actually prefers, based on their history?</li>
+    <li><strong><code>avoid_overpersonalization</code> (0-3, universal)</strong>
+    &mdash; did the AI avoid pushing too hard / repeating /
+    over-explaining / surfacing content the user wouldn&#39;t want?</li>
+    <li><strong><code>voice_match</code> (0-3, universal)</strong>
+    &mdash; is the AI&#39;s message in a tone, length, and register
+    that fits this user and the chatbot surface?</li>
+    <li><strong><code>negative_leakage</code> (hard-rule, universal)</strong>
+    &mdash; did the AI surface something the user has actively
+    disliked or asked to stop recommending? Any violation zeros the
+    entire score.</li>
+    <li><strong><code>stale_preference_use</code> (hard-rule, universal)</strong>
+    &mdash; did the AI act on a preference the user no longer holds
+    (contradicted stance, expired short-term need)? Any violation
+    zeros the entire score.</li>
   </ul>
   <div class="field-label">Polarity-aware grading</div>
   <p>
@@ -1358,7 +1369,10 @@ Do NOT post anything.
     (&ldquo;act&rdquo; or &ldquo;restrain&rdquo;) that the AI does
     not see. The grader uses this to flip polarity &mdash; staying
     silent gets full marks on a restraint instance and zero on an
-    act instance, and vice versa.
+    act instance (and vice versa) on
+    <code>trigger_detection_correctness</code>. For restraint cases
+    the other dims default to full marks when the AI correctly stays
+    silent.
   </p>
   <div class="field-label">Hard metrics from the runner (deterministic)</div>
   <p>
@@ -1371,9 +1385,12 @@ Do NOT post anything.
   </p>
   <div class="field-label">Final score</div>
   <p>
-    Sum of the five rubric dimensions divided by 13 (the max) gives
-    <code>proactive_action_score</code> in [0, 1]. If the judge LLM
-    is unavailable, a deterministic fallback (<code>0.5 *
+    Sum of the four 0-3 dimensions divided by 12 gives
+    <code>proactive_action_score</code> in [0, 1]. If either hard-rule
+    fires (<code>negative_leakage</code> or
+    <code>stale_preference_use</code>), the score is forced to 0.0 &mdash;
+    same gating behavior as every other personalization task. If the
+    judge LLM is unavailable, a deterministic fallback (<code>0.5 *
     decision_correct + 0.25 * length_ok + 0.25 * evidence_cited</code>)
     keeps the score populated.
   </p>
@@ -1443,7 +1460,7 @@ Do NOT post anything.
     </tr>
     <tr>
       <td style="padding:8px 12px; border:1px solid var(--line); font-size:14px;">Proactive tasks</td>
-      <td style="padding:8px 12px; border:1px solid var(--line); font-size:14px;">LLM judge, 5-dim rubric</td>
+      <td style="padding:8px 12px; border:1px solid var(--line); font-size:14px;">LLM judge, aligned 6-dim rubric (4 universal + 1 proactive + 2 hard-rules)</td>
       <td style="padding:8px 12px; border:1px solid var(--line); font-size:14px;">proactive_action_score &isin; [0, 1]</td>
       <td style="padding:8px 12px; border:1px solid var(--line); font-size:14px;">(none deterministic today; fabricated-evidence proposed)</td>
     </tr>
@@ -1644,8 +1661,10 @@ Do NOT post anything.
     "count('facebook_send_dm') == 0",
     "count('threads_send_dm') == 0"
   ],
-  "rubric_tags": ["trigger_detection", "action_appropriateness",
-                  "subtlety_compliance", "cost_benefit_alignment"]
+  "rubric_tags": ["trigger_detection_correctness",
+                  "preference_alignment", "avoid_overpersonalization",
+                  "voice_match",
+                  "negative_leakage", "stale_preference_use"]
 }</pre>
 
 <p>
@@ -1743,22 +1762,26 @@ Return ONLY this JSON, nothing else:
   The grader is another LLM. It receives the AI&#39;s JSON response
   plus the hidden ground truth (the <code>trigger_evidence</code>,
   the <code>jitai_card</code>, and the <code>expected_behavior="act"</code>
-  flag). It scores 5 rubric dimensions:
+  flag). It scores the aligned rubric &mdash; 4 LLM-judged dims + 2
+  hard-rule flags &mdash; the same dimensions other personalization
+  task families use:
 </p>
 
 <pre>{
   "trigger_detection_correctness": 3,   // 0-3: AI correctly decided to act
-  "action_appropriateness":        3,   // 0-3: friend_alert is the right class; content quotes the friend's actual post
-  "subtlety_compliance":           3,   // 0-3: 27 words, opt-in question, cites evidence, no notification language
-  "restraint_quality":             2,   // 0-2: full marks (act mode; AI didn't over-explain or stuff extra preferences in)
-  "cost_benefit_alignment":        2,   // 0-2: cost of one ambient sentence is well below value of the connection
+  "preference_alignment":          3,   // 0-3: surfaced content matches Tess's boxing interest
+  "avoid_overpersonalization":     3,   // 0-3: ambient one-sentence opt-in, no overdo
+  "voice_match":                   3,   // 0-3: tone fits Tess + chatbot surface
+  "negative_leakage":              false, // hard-rule: AI did not push anything Tess disliked
+  "stale_preference_use":          false, // hard-rule: AI did not act on a stale or contradicted preference
   "reasoning": "Acted on the precise moment, with verifiable evidence, in 27 words posed as an opt-in question.
-                Friend and topic both grounded in user history."
+                Friend and topic both grounded in user history. No hard-rule violations."
 }</pre>
 
 <p>The composite score is:</p>
 
-<pre>proactive_action_score = (3 + 3 + 3 + 2 + 2) / 13 = 13 / 13 = 1.00</pre>
+<pre>proactive_action_score = (3 + 3 + 3 + 3) / 12 = 12 / 12 = 1.00
+                         (zeroed if any hard-rule flag is true)</pre>
 
 <p>
   Final score: <strong>1.00</strong>. The instance gets recorded with
