@@ -1036,7 +1036,7 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 
 ## 18. Extension B — Agentic Interaction Augmentation
 
-The 16-step pipeline produces a passive-consumption view of each user (they engage with content others created). Extension B is a **post-processing pass** that adds the agentic / social-graph layer needed for Task T6–T19:
+The base pipeline (Steps 1–26) produces a passive-consumption view of each user (they engage with content others created). Extension B (Step 27) is a **post-processing pass** that adds the agentic / social-graph layer needed for Task T6–T19, and Step 28 then catalogues proactive-agent trigger candidates on top of the completed backend:
 
 ### Event-authorship taxonomy (new fields)
 

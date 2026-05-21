@@ -495,6 +495,38 @@ TASK_TYPE_META: dict[str, dict] = {
             "restraint", "cost_benefit_alignment", "subtlety_compliance",
         ],
     },
+    # Phase 2 — feed-react tasks (friend self-posts + platform trending)
+    # plus the overactive-check negative control. Same prompt + grader as
+    # the Phase 1 proactive entries; only the data source differs.
+    "proactive_friend_feed_react": {
+        "task_family": "proactive_actions",
+        "mcp_tools_allowed": "chatbot",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text_with_tool_calls",
+        "rubric_tags": [
+            "trigger_detection", "action_appropriateness",
+            "subtlety_compliance", "cost_benefit_alignment",
+        ],
+    },
+    "proactive_trending_feed_react": {
+        "task_family": "proactive_actions",
+        "mcp_tools_allowed": "chatbot",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text_with_tool_calls",
+        "rubric_tags": [
+            "trigger_detection", "action_appropriateness",
+            "subtlety_compliance", "cost_benefit_alignment",
+        ],
+    },
+    "proactive_overactive_check": {
+        "task_family": "proactive_actions",
+        "mcp_tools_allowed": "chatbot",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text_with_tool_calls",
+        "rubric_tags": [
+            "restraint", "cost_benefit_alignment", "subtlety_compliance",
+        ],
+    },
 }
 
 

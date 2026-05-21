@@ -33,6 +33,9 @@ _QUOTAS: dict[str, tuple[int, int]] = {
     "proactive_unfulfilled_stated_need": (2, 4),
     "proactive_close_friend_update":     (2, 3),
     "restraint_sensitive_event_silence": (1, 3),
+    "proactive_friend_feed_react":       (2, 4),
+    "proactive_trending_feed_react":     (2, 4),
+    "proactive_overactive_check":        (2, 3),
 }
 
 
@@ -81,9 +84,30 @@ def _candidate_to_instance(
     }
 
 
+_PROACTIVE_MISSING_WARNED: set[str] = set()
+
+
 def _load_proactive_catalog(bq: BackendQuery, user_id: str) -> dict[str, list[dict]]:
-    """Read `profile.proactive_trigger_candidates` for the given user."""
+    """Read `profile.proactive_trigger_candidates` for the given user.
+
+    Distinguishes two cases:
+      - Key missing entirely → Step 28 of the persona pipeline never ran on
+        this user. Warn once so a silent zero-instance build is noticed.
+      - Key present but empty / lists empty → Step 28 ran but no candidates
+        survived. Silent (legitimate outcome).
+    """
     profile = bq.get_full_profile(user_id) or {}
+    if "proactive_trigger_candidates" not in profile:
+        if user_id not in _PROACTIVE_MISSING_WARNED:
+            print(
+                f"[proactive_actions] WARN: user {user_id} profile.json has no "
+                f"'proactive_trigger_candidates' field. Step 28 of the persona "
+                f"pipeline likely never ran for this user; all three proactive "
+                f"task types will produce zero instances. Re-run the pipeline "
+                f"or invoke infer_proactive_trigger_candidates."
+            )
+            _PROACTIVE_MISSING_WARNED.add(user_id)
+        return {}
     return profile.get("proactive_trigger_candidates") or {}
 
 
@@ -135,12 +159,82 @@ def build_restraint_sensitive_event_silence(
     return out
 
 
+def _polarity_for_relevance(relevance: str) -> str:
+    """Map the hashtag-intersection relevance label to expected_behavior.
+
+    Relevant feed items → act (AI should consider surfacing them).
+    Irrelevant feed items → restrain (AI should NOT push off-topic content).
+    """
+    return "act" if (relevance or "").lower() == "relevant" else "restrain"
+
+
+def build_proactive_friend_feed_react(
+    bq: BackendQuery,
+    user_id: str,
+    t_probe: int,
+) -> list[dict]:
+    """T2.D — close friend posted to feed; user hasn't engaged within 24h.
+
+    Each candidate carries a `relevance` label (relevant/irrelevant) set at
+    persona-generation time from hashtag intersection. Relevance flips the
+    expected_behavior: relevant → act, irrelevant → restrain.
+    """
+    cat = _load_proactive_catalog(bq, user_id)
+    cands = cat.get("friend_feed_react") or []
+    out: list[dict] = []
+    for i, c in enumerate(_trim_to_quota(cands, "proactive_friend_feed_react")):
+        expected = _polarity_for_relevance(c.get("relevance", "relevant"))
+        out.append(_candidate_to_instance(
+            c, "proactive_friend_feed_react", expected, user_id, i,
+        ))
+    return out
+
+
+def build_proactive_trending_feed_react(
+    bq: BackendQuery,
+    user_id: str,
+    t_probe: int,
+) -> list[dict]:
+    """T2.E — platform trending content visible in feed; user hasn't engaged.
+
+    Relevance handling identical to friend_feed_react.
+    """
+    cat = _load_proactive_catalog(bq, user_id)
+    cands = cat.get("trending_feed_react") or []
+    out: list[dict] = []
+    for i, c in enumerate(_trim_to_quota(cands, "proactive_trending_feed_react")):
+        expected = _polarity_for_relevance(c.get("relevance", "relevant"))
+        out.append(_candidate_to_instance(
+            c, "proactive_trending_feed_react", expected, user_id, i,
+        ))
+    return out
+
+
+def build_proactive_overactive_check(
+    bq: BackendQuery,
+    user_id: str,
+    t_probe: int,
+) -> list[dict]:
+    """Negative-control task: at idle moments where nothing else fires, the
+    AI is asked the same proactive question. Right answer is always
+    `restrain`. Tests over-proactivity.
+    """
+    cat = _load_proactive_catalog(bq, user_id)
+    cands = cat.get("overactive_check") or []
+    out: list[dict] = []
+    for i, c in enumerate(_trim_to_quota(cands, "proactive_overactive_check")):
+        out.append(_candidate_to_instance(
+            c, "proactive_overactive_check", "restrain", user_id, i,
+        ))
+    return out
+
+
 def build_all_proactive_instances(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
 ) -> dict[str, list[dict]]:
-    """Convenience: build all three task types in one call."""
+    """Convenience: build all six proactive task types in one call."""
     return {
         "proactive_unfulfilled_stated_need":
             build_proactive_unfulfilled_stated_need(bq, user_id, t_probe),
@@ -148,6 +242,12 @@ def build_all_proactive_instances(
             build_proactive_close_friend_update(bq, user_id, t_probe),
         "restraint_sensitive_event_silence":
             build_restraint_sensitive_event_silence(bq, user_id, t_probe),
+        "proactive_friend_feed_react":
+            build_proactive_friend_feed_react(bq, user_id, t_probe),
+        "proactive_trending_feed_react":
+            build_proactive_trending_feed_react(bq, user_id, t_probe),
+        "proactive_overactive_check":
+            build_proactive_overactive_check(bq, user_id, t_probe),
     }
 
 
@@ -217,11 +317,14 @@ def run_proactive_task(
             )
             history_tokens = stats.get("total_tokens", 0)
 
+        # Note: trigger_evidence and jitai_card are NOT passed to the AI
+        # under test. They are hidden ground truth used only by the judge.
+        # The AI must discover proactive moments by reading the user's
+        # history (via tools in mcp_agent/agent_tools, via history_block
+        # in agent_longctx/llm_longctx).
         prompt = prompts_agentic.proactive_action_prompt(
-            trigger_evidence=trigger_evidence,
             user_state_summary=user_state_summary,
             history_block=history_block,
-            ground_truth_block=None,
             text_only=(mode == "llm_longctx"),
         )
 
