@@ -1138,7 +1138,353 @@
     }
   ],
   "proactive_trigger_candidates": {
-    "unfulfilled_stated_need": [],
+    "unfulfilled_stated_need": [
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775760598,
+        "t_test_iso": "2026-04-09T18:49:58Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "199653",
+          "user_question": "Phone keeps making my shelf pics look cheap. Tiny trucks, belts, a couple title replicas in frame. What should I change with lighting and angle at home?",
+          "asked_at_ts": 1775674198,
+          "asked_at_iso": "18:49, 04/08/2026",
+          "question_hashtags": [
+            "#wrestling",
+            "#wrestlingmatch",
+            "#smackdown",
+            "#wrestlinglife"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his home lighting and angle adjustments to improve shelf photography quality for his wrestling memorabilia.",
+          "proximal_outcome": "Matias engages with a follow-up suggestion or resource to address his unresolved lighting and angle question.",
+          "tailoring_variable": "Unfulfilled stated need from Matias' question on 18:49, 04/08/2026: 'Phone keeps making my shelf pics look cheap. Tiny trucks, belts, a couple title replicas in frame. What should I change with lighting and angle at home?'",
+          "decision_point": "2026-04-09T18:49:58Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is improving his home photography, proximal outcome is engaging with a follow-up, tailoring variable is his specific unresolved question, decision point is the flagged moment, decision rule favors acting due to concrete object and decision, and intervention option is a subtle in-chat opt-in follow-up. Horvitz cost-benefit favors acting because the value of resolving his specific need outweighs minimal intrusion, especially with a single ambient sentence citing his own question."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775749122,
+        "t_test_iso": "2026-04-09T15:38:42Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "625144",
+          "user_question": "My routine keeps falling apart on contract gaps. Sleep slides, training gets random, then the whole week feels off. What's a solid reset that actually sticks?",
+          "asked_at_ts": 1775662722,
+          "asked_at_iso": "15:38, 04/08/2026",
+          "question_hashtags": [
+            "#humility",
+            "#gratitude"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Support Matias in establishing and maintaining a stable daily routine that aligns with his training and wellness goals.",
+          "proximal_outcome": "Matias engages with a tailored follow-up suggestion to reset his routine after contract gaps.",
+          "tailoring_variable": "Unresolved question from 15:38, 04/08/2026: 'My routine keeps falling apart on contract gaps. Sleep slides, training gets random, then the whole week feels off. What's a solid reset that actually sticks?'",
+          "decision_point": "2026-04-09T15:38:42Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is routine stability, proximal outcome is engagement with a reset suggestion, tailoring variable is the specific unresolved question, decision point is the flagged moment, decision rule favors acting due to concrete user need, and intervention option is a brief in-chat opt-in follow-up. Horvitz cost-benefit favors action because the value of offering a tailored reset outweighs minimal intrusion, especially citing the user's own question. Constraints are met: action can be a single ambient sentence in-chat, citing the question, with easy opt-in."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775740416,
+        "t_test_iso": "2026-04-09T13:13:36Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "590770",
+          "user_question": "Clean this up: \"Appreciate you checking in. Your morning posts always hit at the right time, kinda just enough push to keep it moving. Hope your week stays solid.\"",
+          "asked_at_ts": 1775654016,
+          "asked_at_iso": "13:13, 04/08/2026",
+          "question_hashtags": [
+            "#positivevibesonly",
+            "#motivationmonday",
+            "#choosejoy"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his unresolved request for wording assistance, strengthening his communication and maintaining positive social connections.",
+          "proximal_outcome": "Matias engages with a concise follow-up offer to refine the message he drafted.",
+          "tailoring_variable": "Unfulfilled stated need from Matias' question on 13:13, 04/08/2026: \"Clean this up: 'Appreciate you checking in. Your morning posts always hit at the right time, kinda just enough push to keep it moving. Hope your week stays solid.'\"",
+          "decision_point": "2026-04-09T13:13:36Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is improved follow-through, proximal outcome is engagement with a refinement offer, tailoring variable is the specific unresolved wording request, decision point is the flagged moment, decision rule favors acting given the concrete evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of resolving the request outweighs minimal intrusion, and the action can cite the user's own question while staying within the subtlety constraints."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775740394,
+        "t_test_iso": "2026-04-09T13:13:14Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "860803",
+          "user_question": "Need something for tonight. Brain's kinda fried. Give me 3 solid picks that actually finish strong, not some dragged-out mess.",
+          "asked_at_ts": 1775653994,
+          "asked_at_iso": "13:13, 04/08/2026",
+          "question_hashtags": [
+            "#movienight",
+            "#tvshowfrenzy"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his stated entertainment needs to support relaxation and mental recharge.",
+          "proximal_outcome": "Matias engages with a concise follow-up offering curated movie or TV picks that match his request.",
+          "tailoring_variable": "Unfulfilled stated need from Matias's question on 13:13, 04/08/2026: \"Need something for tonight. Brain's kinda fried. Give me 3 solid picks that actually finish strong, not some dragged-out mess.\"",
+          "decision_point": "2026-04-09T13:13:14Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting Matias's relaxation through timely entertainment suggestions, and the proximal outcome is his engagement with curated picks. The tailoring variable is his explicit, unresolved request for specific movie/TV recommendations, which is concrete and recent. Horvitz cost-benefit favors acting because the value of resolving his request outweighs minimal intrusion, and all JITAI components are satisfied."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775740035,
+        "t_test_iso": "2026-04-09T13:07:15Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "977421",
+          "user_question": "Mushrooms keep dumping water in the pan and the tortillas go cold by the time everything's ready. What's the cleanest order so taco night doesn't get sloppy?",
+          "asked_at_ts": 1775653635,
+          "asked_at_iso": "13:07, 04/08/2026",
+          "question_hashtags": [
+            "#onionrings",
+            "#recipe",
+            "#cooking",
+            "#homemade",
+            "#crispy"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his cooking question to improve taco night workflow and meal quality.",
+          "proximal_outcome": "Matias engages with a concise follow-up suggestion or option to resolve his cooking process issue.",
+          "tailoring_variable": "Unresolved question from 13:07, 04/08/2026: 'Mushrooms keep dumping water in the pan and the tortillas go cold by the time everything's ready. What's the cleanest order so taco night doesn't get sloppy?'",
+          "decision_point": "2026-04-09T13:07:15Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting Matias in achieving smoother cooking sessions, while the proximal outcome is prompting him to act on his unresolved taco night question. The tailoring variable is his specific, concrete cooking query with no closure after three days. JITAI components are satisfied and Horvitz's framework favors acting because the value of resolving his stated need outweighs the minimal cost of a single in-chat opt-in follow-up."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775740033,
+        "t_test_iso": "2026-04-09T13:07:13Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "353014",
+          "user_question": "What should I watch tonight. Kinda want something with real craft, maybe fight-adjacent energy, and not too heavy. I've got a road-trip stash sitting here already.",
+          "asked_at_ts": 1775653633,
+          "asked_at_iso": "13:07, 04/08/2026",
+          "question_hashtags": [
+            "#meatlover",
+            "#steaklover"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help user follow through on their stated questions to discover enjoyable, craft-focused fight-adjacent entertainment",
+          "proximal_outcome": "user engages with a tailored viewing suggestion that matches their expressed criteria",
+          "tailoring_variable": "unfulfilled stated need from user question on 13:07, 04/08/2026: 'What should I watch tonight. Kinda want something with real craft, maybe fight-adjacent energy, and not too heavy. I've got a road-trip stash sitting here already.'",
+          "decision_point": "2026-04-09T13:07:13Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's question is concrete, specifying desired qualities in entertainment, and remains unresolved after three days, satisfying all JITAI components. Horvitz cost-benefit favors acting because a tailored suggestion offers clear value with minimal intrusion, citing the user's own words. Constraints are met: action can be a single ambient sentence in-chat, opt-in, and within session limits."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775714872,
+        "t_test_iso": "2026-04-09T06:07:52Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "359980",
+          "user_question": "Need a text cleaned up. \"Yo bro, good seeing you. That reel you sent with the dude yelling monday doesn't get me was actually perfect timing. Appreciate you checking in.\"",
+          "asked_at_ts": 1775628472,
+          "asked_at_iso": "06:07, 04/08/2026",
+          "question_hashtags": [
+            "#motivationalstories",
+            "#upliftingcontent",
+            "#inspirationalfilms"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his stated request for text cleanup to strengthen communication with friends.",
+          "proximal_outcome": "Matias engages with a concise follow-up offer to refine the message he drafted.",
+          "tailoring_variable": "Unfulfilled stated need from Matias' question on 06:07, 04/08/2026: \"Need a text cleaned up. 'Yo bro, good seeing you... Appreciate you checking in.'\"",
+          "decision_point": "2026-04-09T06:07:52Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is improved follow-through, proximal outcome is engagement with a cleanup offer, tailoring variable is the specific unfulfilled text request, decision point is the flagged moment, decision rule favors acting due to concrete and current evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of resolving the request outweighs minimal intrusion, and the action can cite the user's own question while staying within the subtlety constraints."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775714113,
+        "t_test_iso": "2026-04-09T05:55:13Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "331019",
+          "user_question": "Sunday dinner keeps drifting later, and my mushroom tacos go soggy by the time everybody lands. what's the move so they still eat right?",
+          "asked_at_ts": 1775627713,
+          "asked_at_iso": "05:55, 04/08/2026",
+          "question_hashtags": [
+            "#familydining",
+            "#familytime"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his stated family dining question to improve meal quality and maintain strong family bonds.",
+          "proximal_outcome": "Matias engages with a follow-up suggestion to keep mushroom tacos fresh until dinner starts.",
+          "tailoring_variable": "Unfulfilled stated need from Matias' question: 'Sunday dinner keeps drifting later, and my mushroom tacos go soggy by the time everybody lands. what's the move so they still eat right?' asked on 04/08/2026.",
+          "decision_point": "2026-04-09T05:55:13Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting family unity through better meal timing, and the proximal outcome is prompting engagement with a practical solution. The tailoring variable is a concrete, unresolved cooking question from Matias, making the decision point timely. Horvitz cost-benefit favors acting because the value of resolving his specific meal issue outweighs the minimal intrusion of a single in-chat opt-in follow-up."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775673074,
+        "t_test_iso": "2026-04-08T18:31:14Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "510011",
+          "user_question": "Need a lunch setup that cuts down trash at work. Museum days run long. What's actually worth buying once so I'm not burning money on flimsy stuff?",
+          "asked_at_ts": 1775586674,
+          "asked_at_iso": "18:31, 04/07/2026",
+          "question_hashtags": [
+            "#properwastedisposal",
+            "#cleanenvironment"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help user follow through on their stated questions about sustainable lunch setups to reduce waste and save money",
+          "proximal_outcome": "user engages with a concise follow-up suggestion or offer related to durable, low-waste lunch gear",
+          "tailoring_variable": "unfulfilled stated need from user question on 18:31, 04/07/2026: 'Need a lunch setup that cuts down trash at work. Museum days run long. What's actually worth buying once so I'm not burning money on flimsy stuff?'",
+          "decision_point": "2026-04-08T18:31:14Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting Matias in acting on his concrete request for a durable lunch setup, with the proximal outcome being his engagement with a relevant suggestion. The tailoring variable is his specific, unresolved question about reducing waste at work. Horvitz cost-benefit favors acting because the value of timely, evidence-cited follow-up outweighs minimal intrusion, and all JITAI components are satisfied."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775672268,
+        "t_test_iso": "2026-04-08T18:17:48Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "934775",
+          "user_question": "Need a short text for my girl about that refill shop and compost class, plus maybe tie in the ATV cleanup ride this weekend. Brain mushy today.",
+          "asked_at_ts": 1775585868,
+          "asked_at_iso": "18:17, 04/07/2026",
+          "question_hashtags": [
+            "#birdwatching",
+            "#wildlifeeducation",
+            "#birdsofinstagram"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his stated request to craft a short text for his partner that combines refill shop, compost class, and ATV cleanup ride details.",
+          "proximal_outcome": "Matias engages with a concise follow-up offer to draft the message he requested.",
+          "tailoring_variable": "Unfulfilled stated need from Matias' question on 18:17, 04/07/2026: 'Need a short text for my girl about that refill shop and compost class, plus maybe tie in the ATV cleanup ride this weekend. Brain mushy today.'",
+          "decision_point": "2026-04-08T18:17:48Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is supporting follow-through, proximal outcome is immediate engagement, tailoring variable is the specific unfulfilled request, decision point is the flagged moment, decision rule favors acting due to concrete and current evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of resolving the request outweighs minimal intrusion, especially with easy declination and in-channel delivery. The evidence is specific and tied to a real plan, making proactive follow-up clearly justified."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775646234,
+        "t_test_iso": "2026-04-08T11:03:54Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "702874",
+          "user_question": "Long week. Got tonight free and I'm blanking, what should I get into that'd actually hit right for me and my girl?",
+          "asked_at_ts": 1775559834,
+          "asked_at_iso": "11:03, 04/07/2026",
+          "question_hashtags": [
+            "#loveovermoney",
+            "#relationships"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help user follow through on their stated questions to strengthen shared experiences with their partner",
+          "proximal_outcome": "user engages with a tailored suggestion for an activity that fits their interests and relationship context",
+          "tailoring_variable": "unfulfilled stated need from user question: \"Long week. Got tonight free and I'm blanking, what should I get into that'd actually hit right for me and my girl?\" asked on 04/07/2026",
+          "decision_point": "2026-04-08T11:03:54Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is fostering meaningful couple time, and the proximal outcome is prompting engagement with a relevant idea. The tailoring variable is the explicit, unresolved request for a shared activity, which is concrete and recent. Horvitz cost-benefit favors acting because the value of offering a personalized option based on their interests outweighs the minimal intrusion of a single in-chat opt-in follow-up."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775638674,
+        "t_test_iso": "2026-04-08T08:57:54Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "716677",
+          "user_question": "Need a text for my girl. Missed dinner again because I got locked into a Canelo fight replay and lost track of time.",
+          "asked_at_ts": 1775552274,
+          "asked_at_iso": "08:57, 04/07/2026",
+          "question_hashtags": [
+            "#boxing",
+            "#fight",
+            "#undefeated"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Matias follow through on his stated need to communicate with his partner after missing dinner, strengthening relationship trust and emotional connection.",
+          "proximal_outcome": "Matias engages with a follow-up offer to craft a thoughtful message for his partner.",
+          "tailoring_variable": "User's unresolved question from 08:57, 04/07/2026: 'Need a text for my girl. Missed dinner again because I got locked into a Canelo fight replay and lost track of time.'",
+          "decision_point": "2026-04-08T08:57:54Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is maintaining close relationship bonds, and the proximal outcome is resolving an unfulfilled request for help composing a message. The tailoring variable is the specific, concrete question about texting his partner after missing dinner due to a boxing replay. Horvitz cost-benefit favors acting because the value of timely assistance outweighs minimal intrusion, and all JITAI components are satisfied."
+        }
+      }
+    ],
     "close_friend_update": [
       {
         "trigger_type": "close_friend_update",
@@ -1166,15 +1512,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Matias maintain close relationships and smoothly follow up on personally relevant messages from close friends",
-          "proximal_outcome": "Matias notices Diego Ramirez's unanswered message and optionally chooses to re-engage in chat",
-          "tailoring_variable": "A close friend, Diego Ramirez, sent an unanswered Facebook message at 09:48 on 04/08/2026 saying, \"This is basically your lane after a long day, kinda figured you'd be into it,\" in a thread tagged #easyrecipes #dinnerideas #homemade, which matches Matias's stated enjoyment of making homemade meals at home.",
-          "decision_point": "around 6+ hours after the inbound close-friend message remains unanswered, within the current chatbot session",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with shared-interest conversations.",
+          "proximal_outcome": "User replies to Diego Ramirez's substantive message about homemade dinner ideas.",
+          "tailoring_variable": "Close friend Diego Ramirez sent a message referencing Matias's interest in homemade meals and Brazilian Jiu-Jitsu, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-08T10:48:47Z",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is grounded here: the distal and proximal outcomes are clear, the tailoring variable is the unanswered message from Diego plus Matias's homemade-meal interest, the decision point is 6+ hours of silence, and the intervention option is a single in-chat opt-in nudge. Under Horvitz, expected value is positive because Diego is a close friend and the message is contentful and personalized, while intrusion cost stays low if surfaced once, only in-chat, as a brief opt-in question. This is a defensible proactive moment but not maximally strong because the message implies relevance rather than an explicit request or invitation."
+          "reasoning": "The JITAI components are satisfied: distal outcome is sustaining close bonds, proximal outcome is prompting a reply, tailoring variable is Diego's message tied to Matias's interests, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting outweighs minimal intrusion, especially with concrete shared-interest evidence. All subtlety constraints are met, including citing Diego by name and keeping the action ambient and opt-in."
         }
       },
       {
@@ -1203,15 +1549,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Matias maintain close family-and-friend bonds by not overlooking meaningful messages from important people",
-          "proximal_outcome": "Matias notices Diego Ramirez's unanswered message and optionally chooses to reply inside the chatbot",
-          "tailoring_variable": "A close friend update is present: Diego Ramirez (relationship_depth=close) sent 'Bro this was solid, you really meant that one.' at 10:54 on 04/07/2026 in a thread tagged #Romance #CoupleGoals #LoveOfMyLife, and it has gone unanswered for 6+ hours.",
-          "decision_point": "At the first in-chat moment after the message has remained unanswered for at least 6 hours on 2026-04-07.",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely responses to meaningful messages from close friends.",
+          "proximal_outcome": "User replies to Diego Ramirez's substantive message within the chatbot session.",
+          "tailoring_variable": "Close friend Diego Ramirez sent a substantive message ('Bro this was solid, you really meant that one.') on 04/07/2026 at 10:54, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-07T11:54:59Z",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention class are all grounded in this specific unanswered message from Diego Ramirez. Under Horvitz, the likely value is moderate because Diego is a close friend and the message affirms something emotionally salient, while the intrusion cost is low if surfaced once, only in-chat, as a brief opt-in that cites Diego by name and his message."
+          "reasoning": "All JITAI components are satisfied: distal outcome is stronger bonds, proximal outcome is immediate reply, tailoring variable is Diego's message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the message is substantive and from a close friend, with low intrusion cost given in-chat delivery and opt-in framing. Evidence is concrete and current, making this a clear proactive moment."
         }
       },
       {
@@ -1240,15 +1586,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Matias maintain close relationships by not unintentionally dropping meaningful messages from close friends",
-          "proximal_outcome": "Matias notices Luis Ortega's unanswered message and optionally chooses to reply in-chat",
-          "tailoring_variable": "A close friend, Luis Ortega, sent an inbound Threads message at 02:20 on 04/07/2026 saying \"This is exactly the kinda snack move you would actually stop for 😂,\" and it has gone unanswered for 6+ hours",
-          "decision_point": "the first in-chat opportunity after the message has remained unanswered for at least 6 hours in the current chatbot session",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with messages from close friends.",
+          "proximal_outcome": "User replies to Luis Ortega’s message in the Threads app within the chatbot session.",
+          "tailoring_variable": "Close-friend inbound message from Luis Ortega, referencing a snack-related inside joke and shared interests (boxing, throwback style), left unanswered for over 6 hours.",
+          "decision_point": "2026-04-07T03:20:36Z",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is grounded here: the distal outcome is relationship maintenance, the proximal outcome is a reply decision, the tailoring variable is the specific unanswered message from Luis Ortega, the decision point is after 6+ hours of non-response, and the intervention option is a single in-chat opt-in nudge. Under Horvitz, expected value is positive because Luis is a close friend and the message contains personalized content rather than a one-word ping, while intrusion cost stays low if surfaced once, only in-chat, and framed as an easy opt-in question. This is not strong enough for a 3 because the message is light social banter rather than a concrete request or invitation."
+          "reasoning": "All JITAI components are satisfied: distal outcome is stronger bonds, proximal outcome is immediate reply, tailoring variable is Luis Ortega’s substantive message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the message is personal and content-rich, and intrusion is minimal within the chatbot. The action can cite Luis by name and pose an opt-in question, meeting all subtlety constraints."
         }
       },
       {
@@ -1277,15 +1623,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Matias maintain close relationships by not missing meaningful messages from important friends",
-          "proximal_outcome": "Matias notices Jasmine Torres's unanswered message and chooses whether to reply inside the chatbot",
-          "tailoring_variable": "A close friend, Jasmine Torres, sent an inbound Threads message at 23:15 on 04/06/2026 saying, \"This had your name on it. Clean work, no extra nonsense,\" and it has gone unanswered for over 6 hours in a thread tagged #Boxing #Knockout #FightNight, which aligns with Matias's stated interest in professional boxing.",
-          "decision_point": "At the current chatbot session after the 6+ hour unanswered-message threshold has been crossed for this close-friend update",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely responses to substantive messages from close friends.",
+          "proximal_outcome": "User replies to Jasmine Torres' message or engages with the conversation about boxing.",
+          "tailoring_variable": "Close-friend inbound message from Jasmine Torres containing substantive praise and boxing-related hashtags, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-07T00:15:35Z",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the unanswered close-friend message from Jasmine Torres, the decision point is now, and the intervention option is a single in-chat opt-in nudge. Under Horvitz, the likely value is moderate because the message is personalized and from a close friend, while the intrusion cost is low if surfaced once, in-chat only, as an easy-to-decline question. This is not strong enough for a 3 because the message implies relevance but does not contain an explicit request or invitation."
+          "reasoning": "The JITAI components are satisfied: distal outcome is friendship maintenance, proximal outcome is message engagement, tailoring variable is Jasmine's substantive message, decision point is the flagged time, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting with a close friend outweighs minimal intrusion, and the message content is concrete and personal."
         }
       },
       {
@@ -1313,15 +1659,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Matias maintain close friend relationships without missing meaningful social moments",
-          "proximal_outcome": "Matias notices the unanswered message from Luis Ortega and optionally chooses to reply in-chat",
-          "tailoring_variable": "A close friend, Luis Ortega, sent an Instagram message at 03:39 on 04/06/2026 saying \"Bro this is you every time a tiny car pulls up acting wild 😂\" in a thread tagged #MazdaMiata and #CarMemes, and it has gone unanswered for 6+ hours",
-          "decision_point": "the first chatbot session after the message from Luis Ortega has remained unanswered for at least 6 hours",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with friends' messages.",
+          "proximal_outcome": "User replies to Luis Ortega's message or engages in conversation about the shared humorous content.",
+          "tailoring_variable": "Close-friend inbound Instagram message from Luis Ortega, referencing a humorous car meme and shared interests in boxing and throwback style, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-06T04:39:57Z",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is grounded here: the distal goal is relationship maintenance, the proximal goal is noticing/responding, the tailoring variable is the unanswered close-friend message from Luis Ortega, the decision point is the next in-chat session after 6+ hours, and the intervention option can be a single opt-in question inside the chatbot citing Luis by name. Under Horvitz, expected value is moderate because Luis is a close friend and the message contains personalized social content, while intrusion cost is low if surfaced once, in-chat only, as an easy declination. This is not strong enough for a 3 because the message is playful rather than a request or invitation, but it clearly exceeds a weak signal."
+          "reasoning": "The JITAI components are satisfied: distal outcome is friendship maintenance, proximal outcome is message engagement, tailoring variable is the unanswered close-friend message, decision point is the flagged timestamp, decision rule favors acting due to shared interests and humor, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action as the value of reconnecting outweighs minimal intrusion, especially with clear user-specific evidence."
         }
       },
       {
@@ -1349,15 +1695,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Matias maintain close relationships and respond to personally relevant messages from important friends",
-          "proximal_outcome": "Matias notices Diego Ramirez's unanswered message and optionally chooses to reply in-chat",
-          "tailoring_variable": "A close friend, Diego Ramirez, sent an inbound Instagram message at 07:25 on 04/05/2026 saying \"Bro this had your name all over it, that sushi looks way too clean,\" and it has gone unanswered for 6+ hours.",
-          "decision_point": "At the first in-chat session after the message has remained unanswered for at least 6 hours, evaluated at 2026-04-05T08:25:45Z.",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with messages from close friends.",
+          "proximal_outcome": "User replies to Diego Ramirez's substantive message about sushi.",
+          "tailoring_variable": "Close-friend inbound Instagram message from Diego Ramirez mentioning sushi and implying it suits Matias's tastes, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-05T08:25:45Z",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded in a specific unanswered close-friend message from Diego Ramirez. Under Horvitz, the likely value is moderate because Diego is a close tie and the message is personalized rather than emoji-only, while the intrusion cost stays low if surfaced once, only in-chat, as a brief opt-in mention citing Diego and the sushi message. This is not strong enough for a 3 because it is social banter rather than a concrete request or plan."
+          "reasoning": "The JITAI components are satisfied: distal outcome is sustaining close bonds, proximal outcome is prompting a reply, tailoring variable is Diego's sushi message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat opt-in. Horvitz cost-benefit favors action because the message is substantive and timely, with low intrusion cost when surfaced in-chat citing Diego by name."
         }
       }
     ],
@@ -1373,15 +1719,15 @@
           "days_into_window": 2
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event window.",
-          "proximal_outcome": "No interruption is delivered during the active restraint period.",
-          "tailoring_variable": "Sensitive-life-event window is active for Matias Valadez; trigger evidence shows a sensitive_event_silence window from 1775761209 to 1776970809, currently day 2.",
-          "decision_point": "2026-04-12T14:12:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive event window",
+          "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=2",
+          "decision_point": "2026-04-12T14:12:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: with sensitive_event_active=true, the decision rule requires silence at this decision point. Under Horvitz, the expected cost of intrusion during a sensitive window exceeds any likely value, so proactive action is not justified."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and hard restraint rules, no proactive action is permitted. Horvitz cost-benefit analysis favors silence to avoid intrusion during this period. All proactive criteria are overridden by the hard restraint window."
         }
       },
       {
@@ -1395,15 +1741,15 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and preserve trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
-          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
-          "tailoring_variable": "Sensitive-life-event window is active for Matias Valadez; trigger evidence shows a `sensitive_event_silence` window with days_into_window=5.",
+          "distal_outcome": "Support the user's wellbeing by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
+          "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=5",
           "decision_point": "2026-04-15T09:24:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because the hard restraint overrides any intervention option at this decision point: sensitive_event_active=true and the trigger type is `sensitive_event_silence`. Under Horvitz, the expected cost of intrusion during a sensitive period exceeds any likely value of acting. Subtlety also fails because no user-facing opt-in action should be surfaced at all in this window."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz frameworks, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
         }
       },
       {
@@ -1417,15 +1763,15 @@
           "days_into_window": 8
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
-          "proximal_outcome": "No interruption is delivered during the active sensitive-event window.",
-          "tailoring_variable": "Sensitive-life-event window is currently active for Matias Valadez; trigger evidence shows a `sensitive_event_silence` window with days_into_window=8.",
-          "decision_point": "2026-04-18T04:36:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
+          "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=8",
+          "decision_point": "2026-04-18T04:36:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because the decision rule is explicitly blocked by the active sensitive-event window, even though the decision point and tailoring variable are known. Under Horvitz, the expected value of acting is dominated by intrusion risk during a sensitive period, so silence is the higher-value action. Constraint (e) forces eligibility_score=0 and stay_silent, and constraint (c) cannot support a user-evidence-citing proactive sentence beyond the sensitive-event flag itself."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz cost-benefit, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, so the assistant should remain silent."
         }
       },
       {
@@ -1439,15 +1785,61 @@
           "days_into_window": 11
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
-          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
-          "tailoring_variable": "Sensitive-life-event window is active for Matias Valadez; trigger evidence shows a `sensitive_event_silence` window with days_into_window=11.",
-          "decision_point": "2026-04-20T23:48:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive event window",
+          "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=11",
+          "decision_point": "2026-04-20T23:48:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: with `sensitive_event_active=true`, the decision rule requires silence at this decision point. Under Horvitz, expected value of acting is dominated by intrusion risk during a sensitive period, so the cost-benefit does not favor action. Subtlety also fails because no compliant opt-in message should be surfaced at all under the restraint rule."
+          "reasoning": "The tailoring variable shows an active sensitive-life-event window, triggering the hard restraint rule. Under JITAI, the decision rule fails because acting would violate the user's intrusion budget and emotional safety. Horvitz cost-benefit analysis favors silence, as any proactive action would carry high intrusion cost with no net value."
+        }
+      }
+    ],
+    "friend_feed_react": [],
+    "trending_feed_react": [],
+    "overactive_check": [
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775203826,
+        "t_test_iso": "2026-04-03T08:10:26Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-03T08:10:26Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
+        }
+      },
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775291100,
+        "t_test_iso": "2026-04-04T08:25:00Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-04T08:25:00Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
         }
       }
     ]
