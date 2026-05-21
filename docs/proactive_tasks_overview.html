@@ -1333,13 +1333,21 @@ Do NOT post anything.
   <div class="tags">
     <span class="tag shipped">Proactive</span>
   </div>
-  <div class="field-label">How it&#39;s graded</div>
   <p>
-    LLM-as-judge scores the same universal personalization rubric used
-    by chatbot Q&amp;A, over-personalization, and agentic tasks &mdash;
-    plus one proactive-specific dimension at the top. The hard-rule
-    dimensions zero the entire score on violation, identical behavior
-    to the other personalization families.
+    Proactive-task scoring has three layers running together at eval
+    time, plus several pre-eval filters that shape which instances
+    even exist. Each layer is independent &mdash; an instance can pass
+    one and fail another. The HTML below documents all of them so the
+    full grading story is in one place.
+  </p>
+
+  <div class="field-label">Layer 1: LLM-as-judge rubric (the main score)</div>
+  <p>
+    Same universal personalization rubric used by chatbot Q&amp;A,
+    over-personalization, and agentic tasks &mdash; plus one
+    proactive-specific dimension at the top. The hard-rule dimensions
+    zero the entire score on violation, identical behavior to the other
+    personalization families.
   </p>
   <ul>
     <li><strong><code>trigger_detection_correctness</code> (0-3,
@@ -1363,6 +1371,57 @@ Do NOT post anything.
     (contradicted stance, expired short-term need)? Any violation
     zeros the entire score.</li>
   </ul>
+
+  <div class="field-label">Layer 2: Deterministic hard metrics from the runner</div>
+  <p>
+    Before the LLM judge runs, the runner inspects the AI&#39;s
+    structured JSON response and emits three side signals straight
+    into the results file:
+  </p>
+  <ul>
+    <li><strong><code>decision_correct</code></strong> &mdash; did
+    <code>should_act</code> match the hidden <code>expected_behavior</code>?
+    Boolean 1/0.</li>
+    <li><strong><code>content_length_ok</code></strong> &mdash; is
+    <code>content</code> &le; 30 words? Boolean 1/0.</li>
+    <li><strong><code>evidence_cited</code></strong> &mdash; is the
+    <code>evidence_cited</code> string non-empty? Boolean 1/0.</li>
+  </ul>
+  <p>
+    These don&#39;t feed into <code>proactive_action_score</code>
+    directly when the judge is available (the LLM rubric is the
+    primary score). They flow into results.csv as separate columns so
+    you can spot patterns post-hoc (e.g., &ldquo;model X passes
+    decision_correct 90% but fails content_length_ok 40%&rdquo; tells
+    you it makes the right call but rambles).
+  </p>
+
+  <div class="field-label">Layer 3: Tool-call rules (enforced against writes.jsonl)</div>
+  <p>
+    Every proactive test instance ships with a list of forbidden tool
+    calls:
+  </p>
+  <pre>tool_call_rules = [
+    "count('instagram_create_post') == 0",
+    "count('facebook_create_post') == 0",
+    "count('threads_create_post') == 0",
+    "count('instagram_send_dm') == 0",
+    "count('facebook_send_dm') == 0",
+    "count('threads_send_dm') == 0",
+]</pre>
+  <p>
+    Proactive design intent is &ldquo;send a chat message OR stay
+    silent &mdash; never take social-app actions on the user&#39;s
+    behalf.&rdquo; The runner reads <code>writes.jsonl</code> (the
+    overlay file recording every MCP write call the AI made during
+    the run) and asserts these counts. Any violation is recorded as
+    a tool-call-rules failure in results.csv. The dispatcher also
+    enforces <code>mcp_tools_allowed: &quot;chatbot&quot;</code> in
+    <code>mcp_agent</code> mode, so the AI physically can&#39;t
+    invoke social-app write tools &mdash; only the chatbot read
+    surface is mounted.
+  </p>
+
   <div class="field-label">Polarity-aware grading</div>
   <p>
     Each instance has a hidden <code>expected_behavior</code> field
@@ -1372,28 +1431,82 @@ Do NOT post anything.
     act instance (and vice versa) on
     <code>trigger_detection_correctness</code>. For restraint cases
     the other dims default to full marks when the AI correctly stays
-    silent.
+    silent (empty content, empty evidence cited).
   </p>
-  <div class="field-label">Hard metrics from the runner (deterministic)</div>
+
+  <div class="field-label">State-write policy</div>
   <p>
-    Before the LLM judge runs, the runner emits three side signals:
-    <code>decision_correct</code> (did <code>should_act</code> match
-    <code>expected_behavior</code>?), <code>content_length_ok</code>
-    (&le; 30 words?), and <code>evidence_cited</code> (is the
-    <code>evidence_cited</code> string non-empty?). These flow into
-    the results file alongside the LLM rubric scores for analysis.
+    Set to <code>read_only</code>. Proactive tasks are advisory &mdash;
+    the AI&#39;s &ldquo;action&rdquo; is a JSON declaring intent, not
+    a side effect. There is no <code>final_state_diff</code> check
+    (that mechanism is for agentic write tasks like
+    <code>agentic_send_post</code> / <code>agentic_auto_reply</code>
+    which actually mutate state).
   </p>
-  <div class="field-label">Final score</div>
+
+  <div class="field-label">Final score formula</div>
   <p>
-    Sum of the four 0-3 dimensions divided by 12 gives
+    Sum of the four 0-3 LLM dimensions divided by 12 gives
     <code>proactive_action_score</code> in [0, 1]. If either hard-rule
     fires (<code>negative_leakage</code> or
-    <code>stale_preference_use</code>), the score is forced to 0.0 &mdash;
-    same gating behavior as every other personalization task. If the
-    judge LLM is unavailable, a deterministic fallback (<code>0.5 *
-    decision_correct + 0.25 * length_ok + 0.25 * evidence_cited</code>)
-    keeps the score populated.
+    <code>stale_preference_use</code>), the score is forced to 0.0
+    &mdash; same gating behavior as every other personalization task.
+    If the judge LLM is unavailable, a deterministic fallback
+    (<code>0.5 * decision_correct + 0.25 * length_ok + 0.25 *
+    evidence_cited</code>) keeps the score populated using only Layer
+    2 signals.
   </p>
+
+  <div class="field-label">What shapes WHICH instances exist (pre-eval filters)</div>
+  <p>
+    These don&#39;t affect how the AI&#39;s response is scored, but
+    they determine which test cases the AI faces. Worth knowing
+    because they help explain why a given user has more or fewer
+    instances of each proactive task type:
+  </p>
+  <ul>
+    <li><strong>Sensitive-window filter</strong> (Step 29 gather time) &mdash;
+    every &ldquo;act&rdquo;-style candidate whose <code>t_test</code>
+    falls inside an active sensitive-life-event window gets dropped at
+    gather time. Prevents the eval from generating act-expected tests
+    at moments where the AI is supposed to stay silent.</li>
+    <li><strong>JITAI eligibility check</strong> (Step 29 Stage 2, for
+    the original 3 task types) &mdash; an LLM call per candidate
+    against the JITAI 6-component checklist. Only candidates with
+    <code>eligibility_score &ge; 2</code> AND
+    <code>subtlety_check_pass: true</code> survive.</li>
+    <li><strong>Content-relevance verification</strong> (Step 29 Stage
+    2, for the 2 feed-react types) &mdash; a different LLM call
+    comparing the post&#39;s actual caption to the user&#39;s
+    engagement patterns. Result overrides the gen-time hashtag-based
+    label and sets <code>expected_behavior</code>:
+    <code>relevant&rarr;act</code>, <code>irrelevant&rarr;restrain</code>,
+    <code>ambiguous&rarr;drop</code>.</li>
+    <li><strong>Per-type quotas</strong>
+    (<code>evaluation/task_distribution.py</code>) &mdash; cap each
+    task type to its <code>max</code> instances per user (typically
+    3-4 for proactive types). Caps preserve stratification across
+    apps and arms when over-supply happens.</li>
+  </ul>
+
+  <div class="field-label">Known gaps (proposed, not yet shipped)</div>
+  <ul>
+    <li><strong>Fabricated-evidence hard-failure check</strong> &mdash; a
+    deterministic check that compares the AI&#39;s
+    <code>evidence_cited</code> string against the actual user history
+    and forces score = 0 if the cited evidence doesn&#39;t exist (e.g.,
+    AI claims &ldquo;you asked about X 3 days ago&rdquo; when no such
+    question is in the chatbot history). The
+    <code>preference_alignment</code> dim&#39;s LLM judge should catch
+    obvious fabrications today, but a deterministic gate would make it
+    a hard zero rather than a degraded score.</li>
+    <li><strong>Per-day intrusion budget enforcement</strong> &mdash;
+    the politeness rule &ldquo;at most one proactive nudge per chatbot
+    session&rdquo; is told to the AI in the prompt and judged by the
+    LLM via <code>avoid_overpersonalization</code>, but there&#39;s no
+    deterministic counter that catches multi-day over-nudging across
+    instances.</li>
+  </ul>
 </div>
 
 <h3>Common patterns across all families</h3>
