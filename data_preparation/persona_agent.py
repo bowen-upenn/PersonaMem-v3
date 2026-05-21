@@ -10124,18 +10124,22 @@ class PersonaAgent:
         candidates_by_type = {
             "unfulfilled_stated_need": self._gather_unfulfilled_stated_needs(
                 app_events.get("chatbot", []), app_events,
+                sensitive_periods=sensitive_periods,
             ),
             "close_friend_update": self._gather_close_friend_dms(
                 app_events, profile,
+                sensitive_periods=sensitive_periods,
             ),
             "sensitive_event_silence": self._gather_sensitive_event_moments(
                 sensitive_periods,
             ),
             "friend_feed_react": self._gather_friend_feed_react_candidates(
                 app_events, profile,
+                sensitive_periods=sensitive_periods,
             ),
             "trending_feed_react": self._gather_trending_feed_react_candidates(
                 app_events, profile,
+                sensitive_periods=sensitive_periods,
             ),
         }
         # Idle moments must be gathered LAST so they can avoid every other
@@ -10310,6 +10314,7 @@ class PersonaAgent:
         self,
         chatbot_events: list[dict],
         all_app_events: dict[str, list[dict]],
+        sensitive_periods: list[tuple[int, int]] | None = None,
     ) -> list[dict]:
         """T1.A — chatbot questions whose hashtags weren't covered by any
         subsequent event within `_PROACTIVE_RESOLUTION_WINDOW` days, AND
@@ -10385,6 +10390,10 @@ class PersonaAgent:
                         "question_hashtags": tags,
                     },
                 })
+        # Drop candidates whose t_test falls inside any sensitive-life-event
+        # window — the hard restraint rule would kill them at Stage 2
+        # regardless, so produce them at gather time is wasted LLM cost.
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
         # Cap to a manageable number; prefer the most recent unresolved questions
         # since they are most actionable.
         candidates.sort(key=lambda c: c["signal_evidence"]["asked_at_ts"], reverse=True)
@@ -10394,6 +10403,7 @@ class PersonaAgent:
         self,
         all_app_events: dict[str, list[dict]],
         profile: dict,
+        sensitive_periods: list[tuple[int, int]] | None = None,
     ) -> list[dict]:
         """T3.A — incoming DM from a close friend with no reply within
         `_PROACTIVE_DM_REPLY_WINDOW` (24h). Uses friend graph from Extension B.
@@ -10465,8 +10475,29 @@ class PersonaAgent:
                             "thread_hashtags": ev.get("source_hashtags", []),
                         },
                     })
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
         candidates.sort(key=lambda c: c["signal_evidence"]["incoming_at_ts"], reverse=True)
         return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _drop_inside_sensitive(
+        self,
+        candidates: list[dict],
+        sensitive_periods: list[tuple[int, int]] | None,
+    ) -> list[dict]:
+        """Drop candidates whose `t_test` falls inside any sensitive
+        life-event window. Used by the four 'act'-style gather helpers
+        (unfulfilled, close_friend, friend_feed, trending_feed) to avoid
+        emitting candidates that would be killed by the hard restraint
+        rule at Stage 2 anyway — and, more importantly, to avoid
+        producing act-expected eval instances at moments where the AI
+        is supposed to stay silent.
+        """
+        if not sensitive_periods:
+            return candidates
+        return [
+            c for c in candidates
+            if not self._is_in_sensitive_window(c["t_test"], sensitive_periods)
+        ]
 
     def _gather_sensitive_event_moments(
         self,
@@ -10500,6 +10531,7 @@ class PersonaAgent:
         self,
         all_app_events: dict[str, list[dict]],
         profile: dict,
+        sensitive_periods: list[tuple[int, int]] | None = None,
     ) -> list[dict]:
         """T2.D — feed_visible events authored by a close friend.
 
@@ -10548,6 +10580,7 @@ class PersonaAgent:
                         "relevance": relevance,
                     },
                 })
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
         candidates.sort(key=lambda c: c["signal_evidence"]["post_ts"], reverse=True)
         return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
 
@@ -10555,6 +10588,7 @@ class PersonaAgent:
         self,
         all_app_events: dict[str, list[dict]],
         profile: dict,
+        sensitive_periods: list[tuple[int, int]] | None = None,
     ) -> list[dict]:
         """T2.E — feed_visible events from public_creator with a
         trending_topic label.
@@ -10594,6 +10628,7 @@ class PersonaAgent:
                         "relevance": relevance,
                     },
                 })
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
         candidates.sort(key=lambda c: c["signal_evidence"]["post_ts"], reverse=True)
         return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
 
