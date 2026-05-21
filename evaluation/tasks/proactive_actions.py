@@ -75,12 +75,18 @@ def _candidate_to_instance(
             "count('facebook_send_dm') == 0",
             "count('threads_send_dm') == 0",
         ],
+        # Aligned with the universal personalization rubric used by other
+        # task families (chatbot Q&A, over-personalization, agentic).
+        # Same dimensions regardless of expected_behavior — polarity is
+        # carried by the hidden `expected_behavior` field, not by the tags.
         "rubric_tags": [
-            "trigger_detection",
-            "action_appropriateness",
-            "subtlety_compliance",
-            "cost_benefit_alignment",
-        ] + (["restraint"] if expected_behavior == "restrain" else []),
+            "trigger_detection_correctness",   # proactive-specific
+            "preference_alignment",            # universal
+            "avoid_overpersonalization",       # universal
+            "voice_match",                     # universal
+            "negative_leakage",                # universal hard-rule
+            "stale_preference_use",            # universal hard-rule
+        ],
     }
 
 
