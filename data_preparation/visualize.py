@@ -4587,6 +4587,34 @@ if (eventsData.length === 0) {{
       // Render User Query as a regular ts-section (label INSIDE the
       // section block) so it visually matches every other section.
       const queryBlock = `<div class="ts-section"><div class="ts-label">User Query</div><div class="ts-body">${{escapeHtml(t.query_text || '')}}</div></div>`;
+
+      // Proactive-task-family question-type badge. Numbered Q1-Q6 to
+      // match the cards in docs/proactive_tasks_overview.html so the
+      // reviewer can cross-check at a glance. Polarity colour-coded:
+      // green = act-expected, purple = restrain-expected.
+      const PROACTIVE_LABELS = {{
+        'proactive_unfulfilled_stated_need': {{n: 'Q1', name: 'Unfulfilled question follow-up', polarity: 'act'}},
+        'proactive_close_friend_update':     {{n: 'Q2', name: 'Close friend update',           polarity: 'act'}},
+        'restraint_sensitive_event_silence': {{n: 'Q3', name: 'Sensitive event silence',       polarity: 'restrain'}},
+        'proactive_friend_feed_react':       {{n: 'Q4', name: 'Friend feed react',             polarity: 'act'}},
+        'proactive_trending_feed_react':     {{n: 'Q5', name: 'Trending feed react',           polarity: 'mixed'}},
+        'proactive_overactive_check':        {{n: 'Q6', name: 'Overactive check (negative control)', polarity: 'restrain'}},
+      }};
+      let questionTypeBadge = '';
+      const pl = PROACTIVE_LABELS[t.task_type];
+      if (pl) {{
+        const eb = (t.expected_behavior || '').toLowerCase();
+        const polarityLabel = eb === 'act' ? 'expected: act' : (eb === 'restrain' ? 'expected: stay quiet' : '');
+        const polarityColor = eb === 'act' ? '#1f5a36' : (eb === 'restrain' ? '#4a3a6e' : '#5f5f5f');
+        const polarityBg    = eb === 'act' ? '#d4e8d8' : (eb === 'restrain' ? '#e0d8ee' : '#eee');
+        questionTypeBadge = `
+          <div style="margin:8px 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="background:#FFE9A8;color:#7B5C00;padding:3px 9px;border-radius:11px;font-weight:700;font-size:12px;letter-spacing:0.04em;">${{pl.n}} &middot; ${{escapeHtml(pl.name)}}</span>
+            ${{polarityLabel ? `<span style="background:${{polarityBg}};color:${{polarityColor}};padding:3px 9px;border-radius:11px;font-weight:600;font-size:12px;">${{polarityLabel}}</span>` : ''}}
+          </div>
+        `;
+      }}
+
       card.innerHTML = `
         <div class="event-header">
           <div class="event-meta">
@@ -4596,6 +4624,7 @@ if (eventsData.length === 0) {{
             <code>${{escapeHtml(t.task_type || '')}}</code>
           </div>
         </div>
+        ${{questionTypeBadge}}
         ${{priorBlock}}
         ${{queryBlock}}
         ${{sections}}
