@@ -3830,6 +3830,9 @@ def build_benchmark(
             "proactive_unfulfilled_stated_need": [],
             "proactive_close_friend_update": [],
             "restraint_sensitive_event_silence": [],
+            "proactive_friend_feed_react": [],
+            "proactive_trending_feed_react": [],
+            "proactive_overactive_check": [],
         }
         print(f"[build_benchmark] WARN: proactive_actions builder failed: {exc}")
 
@@ -3867,6 +3870,10 @@ def build_benchmark(
         "proactive_unfulfilled_stated_need":      proactive_buckets["proactive_unfulfilled_stated_need"],
         "proactive_close_friend_update":          proactive_buckets["proactive_close_friend_update"],
         "restraint_sensitive_event_silence":      proactive_buckets["restraint_sensitive_event_silence"],
+        # Proactive Actions (Phase 2) — feed-react + overactive-check.
+        "proactive_friend_feed_react":            proactive_buckets.get("proactive_friend_feed_react", []),
+        "proactive_trending_feed_react":          proactive_buckets.get("proactive_trending_feed_react", []),
+        "proactive_overactive_check":             proactive_buckets.get("proactive_overactive_check", []),
     }
     capped_buckets = _task_dist.apply_caps(dict(pre_cap_buckets), rng_seed=rng_seed)
     floor_gaps = _task_dist.report_floor_gaps(capped_buckets)

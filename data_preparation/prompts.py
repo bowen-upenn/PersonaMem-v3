@@ -4945,3 +4945,220 @@ Output ONLY this JSON, no prose outside the fence:
 If `sensitive_event_active=true`, the score MUST be 0 and `recommended_action_class` MUST be `stay_silent` — this is the hard restraint rule.
 """
 
+
+# ---------------------------------------------------------------------------
+# Feed-react: friend self-post + trending feed post generation
+# ---------------------------------------------------------------------------
+
+def friend_feed_post_prompt(
+    friend_display_name: str,
+    friend_shared_interests: list[str],
+    hashtag: str,
+    polarity: str,
+    platform: str,
+    user_name: str,
+) -> str:
+    """Generate one synthetic post authored by a close friend, visible in the
+    user's feed.
+
+    polarity:
+      "relevant"   — on a hashtag the user is positive about; this post
+                     would be worth the AI mentioning if it noticed.
+      "irrelevant" — on a hashtag the user does not engage with; the AI
+                     should NOT think this is worth surfacing.
+
+    The post is short, natural, in the friend's voice (friend is a separate
+    person from the user). We do NOT use the user's voice block; this is
+    the friend writing, not the user.
+    """
+    interests_str = ", ".join(friend_shared_interests[:5]) or "(no recorded shared interests)"
+    return f"""You are writing one short social-media post that a friend of the user has authored, visible in the user's {platform} feed.
+
+The friend's name is **{friend_display_name}**. Their recorded shared interests with the user **{user_name}** are: {interests_str}.
+
+This post is in the FRIEND's voice — they are a separate person from the user. Write naturally as a real person posting to {platform}. Do NOT mimic the user's voice.
+
+The post must be on or strongly relate to the hashtag `{hashtag}`. The relevance to the user is `{polarity}` — meaning {('the user is into this kind of content' if polarity == 'relevant' else 'the user does not engage with this kind of content and would not naturally want it pushed at them')}.
+
+Post requirements:
+1. One short caption (10-50 words). Natural human voice. No marketing fluff.
+2. 1-4 hashtags including `{hashtag}`.
+3. {('Image' if platform == 'Instagram' else 'Text')} format is fine; for Instagram add a short overall_description of the imagined photo.
+4. Plausibly something the friend would actually post — a moment, a small win, an opinion, a recommendation, a slice of life.
+
+Return ONLY this JSON:
+```json
+{{
+  "caption": "the post text",
+  "hashtags": ["#tag1", "#tag2"],
+  "content_type": "image" | "short_video" | "text",
+  "title": "(optional short title, may be empty)",
+  "overall_description": "(for image/video — one short sentence describing the visual; empty for text posts)"
+}}
+```
+"""
+
+
+def trending_topic_extract_prompt(
+    platform: str,
+    month: str,
+    year: str,
+    search_results: str,
+    n_trends: int,
+) -> str:
+    """Extract concrete trend topics from web-search results for a specific
+    platform + month + year. The LLM acts as a parser: read the search
+    blob, identify {n_trends} distinct trend topics, return them as a
+    list with short labels and one-line descriptions.
+
+    Designed to be resilient to noisy search content — the LLM is asked
+    to ignore generic year-end roundups and marketing blogs, prioritizing
+    concrete topic/aesthetic/meme labels.
+    """
+    return f"""You are extracting concrete trending topics on {platform} for {month} {year} from raw web-search results.
+
+## Search results (raw)
+
+{search_results}
+
+## Your task
+
+From these results, identify the {n_trends} most concrete, distinct topics, aesthetics, memes, or content trends that were actually trending on {platform} during {month} {year}. Skip generic year-end roundups, marketing copy, and tools/platforms themselves. Each trend should be something a user might actually see and engage with — a specific aesthetic, a meme format, a viral topic, a movement.
+
+For each trend:
+- **label**: 2-6 word noun phrase naming the trend (e.g. "orange cat aesthetic", "commuter coffee meme", "1990s neo-grunge revival").
+- **description**: one sentence describing what the trend looks like in posts.
+
+Return ONLY this JSON (a list of {n_trends} trends):
+```json
+[
+  {{"label": "...", "description": "..."}},
+  ...
+]
+```
+"""
+
+
+def verify_feed_react_relevance_prompt(
+    user_state: dict,
+    candidate: dict,
+    related_user_engagement: list[str],
+) -> str:
+    """LLM verification that a generated feed_visible event is GENUINELY
+    relevant (or genuinely irrelevant) to the user, based on the post's
+    actual content — not just hashtag intersection.
+
+    Returns a verification card with a final relevance label. Used by
+    Step 29 to override the generation-time hashtag-based label so the
+    eval doesn't ride on a loose criterion.
+    """
+    name = user_state.get("name", "(user)")
+    hp_brief = user_state.get("hidden_persona_brief", "(none)")
+    top_prefs = user_state.get("top_preferences_brief", "(none)")
+    friends_brief = user_state.get("friends_brief", "(none)")
+
+    sig = candidate.get("signal_evidence", {}) or {}
+    kind = candidate.get("trigger_type", "")
+    is_friend = kind == "friend_feed_react"
+    author_label = (
+        f"friend {sig.get('friend_display_name', sig.get('friend_id', '?'))} "
+        f"(close friend; shared interests: {sig.get('post_hashtags', [])})"
+        if is_friend
+        else f"public creator (trending topic: '{sig.get('trending_topic', '?')}' — "
+             f"{sig.get('trend_description', '')})"
+    )
+    caption = (sig.get("post_caption_excerpt") or "").strip()
+    hashtags = sig.get("post_hashtags") or []
+    primary_tag = sig.get("primary_hashtag", "")
+
+    engagement_block = ""
+    if related_user_engagement:
+        engagement_lines = "\n".join(f"  - {e}" for e in related_user_engagement[:8])
+        engagement_block = (
+            f"\n\n## What this user has actually engaged with on related topics\n"
+            f"{engagement_lines}\n"
+        )
+
+    return f"""\
+You are verifying whether a specific feed post would be GENUINELY worth surfacing to a user, based on the post's actual content — not just hashtag overlap.
+
+The generation pipeline picked this hashtag (`{primary_tag}`) based on hashtag-intersection heuristics. Your job is to look at the actual caption + content + user profile and judge: would a thoughtful human assistant who knows this user actually want to mention this specific post to them?
+
+## User snapshot
+- Name: {name}
+- Top hidden personas: {hp_brief}
+- Top preferences: {top_prefs}
+- Friend graph (brief): {friends_brief}
+{engagement_block}
+## The feed post under review
+- Author: {author_label}
+- Hashtags: {hashtags}
+- Caption: {caption!r}
+
+## How to judge
+
+Relevant means: this specific post is about something the user demonstrably cares about (matching their top preferences, recent engagement, identity anchors, or active aspirations) — NOT just sharing a hashtag with their history. A boxing fan who watches local cards is "relevant" to a friend's actual fight-night reaction; they are NOT "relevant" to a generic boxing-equipment-pricing rant just because both mention #boxing.
+
+Irrelevant means: this specific post is clearly off-topic for the user even if the hashtag happens to match. A user who engages with the FIGHTS dimension of #boxing is NOT into the EQUIPMENT or CELEBRITY-DRAMA dimensions of #boxing.
+
+Ambiguous means: you can argue both ways; the content is on-topic loosely but not strongly aligned. Use this sparingly — when in doubt, prefer relevant vs irrelevant. Ambiguous candidates will be dropped from the eval entirely so we don't muddy the signal.
+
+## Output
+
+Return ONLY this JSON, nothing outside:
+```json
+{{
+  "relevance": "<relevant | irrelevant | ambiguous>",
+  "content_relevance_score": <0-3, where 3 = strong match to user's actual interests, 0 = clearly off-topic, 1 = ambiguous/loose, 2 = solid relevant>,
+  "user_interest_match": "<one sentence naming the SPECIFIC sub-dimension of the user's interests that the post does or does not align with — be concrete>",
+  "reasoning": "<≤ 2 sentences justifying the call, citing specifics from the caption and the user's profile>"
+}}
+```
+"""
+
+
+def trending_feed_post_prompt(
+    platform: str,
+    trend_label: str,
+    trend_description: str,
+    primary_hashtag: str,
+    polarity: str,
+) -> str:
+    """Generate one synthetic post participating in a platform trend.
+
+    polarity:
+      "relevant"   — primary_hashtag matches the user's positive interests;
+                     this trending post would be worth the AI mentioning.
+      "irrelevant" — primary_hashtag is off-topic for the user; the AI
+                     should NOT push this just because it's trending.
+    """
+    return f"""You are writing one short {platform} post that participates in a current trend.
+
+## The trend
+
+- **label**: {trend_label}
+- **description**: {trend_description}
+- **primary hashtag** (must include): `{primary_hashtag}`
+
+## Your task
+
+Write one realistic post that participates in this trend. The author is a generic public creator on {platform} — not the user, not the user's friend, just someone whose content might appear in a trending feed. Make it feel like a real participant in the trend (a moment, observation, take, or aesthetic capture), not a marketing blurb.
+
+Post requirements:
+1. One short caption (10-50 words). Natural voice.
+2. 2-5 hashtags including `{primary_hashtag}` and the trend's natural hashtags.
+3. {('Image' if platform == 'Instagram' else 'Text')} format. For image platforms, include an overall_description of the imagined visual.
+4. Plausibly something an actual person riding the trend would post — not a brand, not a parody.
+
+Return ONLY this JSON:
+```json
+{{
+  "caption": "the post text",
+  "hashtags": ["#tag1", "#tag2", "#tag3"],
+  "content_type": "image" | "short_video" | "text",
+  "title": "(optional short title, may be empty)",
+  "overall_description": "(for image/video — one short sentence describing the visual; empty for text posts)"
+}}
+```
+"""
+

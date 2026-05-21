@@ -571,71 +571,76 @@ interests. Don't flag things the user has explicitly disliked.
 
 
 def proactive_action_prompt(
-    trigger_evidence: dict,
     user_state_summary: str = "",
     history_block: str | None = None,
-    ground_truth_block: str | None = None,
     text_only: bool = False,
 ) -> str:
-    """Phase 1 proactive-action prompt — shared across:
-      - proactive_unfulfilled_stated_need (T1.A)
-      - proactive_close_friend_update     (T3.A)
-      - restraint_sensitive_event_silence (T4.A)
+    """Proactive-action prompt — shared across all proactive task types.
 
-    The phrasing is intentionally IDENTICAL across all three task types
-    so the agent must decide on its own whether to act based on the
-    trigger evidence + user state. The judge polarity flips on the
-    instance's hidden `expected_behavior` field.
+    The AI under test does NOT see any trigger evidence or hint about
+    which moment is being tested. It receives the user's history (either
+    inline via `history_block` for longctx modes, or fetchable via tools
+    for mcp_agent / agent_tools modes) plus categories of moments to
+    consider or avoid, and must decide for itself whether to start a
+    conversation, take a tool action, or stay quiet.
 
-    Subtlety constraints (chatbot-only surface, one-sentence body, evidence
-    citation, intrusion-budget, sensitive-window override, no notifications,
-    easy declination) are stated as gating rules; the model must self-audit
-    via `intrusion_self_audit` and set `should_act=false` if any constraint
-    blocks.
+    The hidden ground truth (trigger_evidence, jitai_card,
+    expected_behavior) is passed directly to the judge via
+    `judge_proactive_action`, never to the agent. This forces the agent
+    to discover proactive moments itself rather than being spoon-fed
+    which moment to act on.
     """
-    import json as _json
-    ev = _json.dumps(trigger_evidence, ensure_ascii=False, indent=2)
     no_tools = f"\n{_no_tools_note()}\n" if text_only else ""
     return f"""# Task: Proactive Action Decision
 
-You are an AI assistant for a specific user. The system has detected a
-candidate moment when you *might* want to initiate contact — but the user
-has NOT asked you anything right now. You must decide whether to act.
+You are an AI assistant for a specific user. The user has NOT just sent
+you a message. You have access to the user's interaction history up to
+right now. In modes with tools (mcp_agent, agent_tools) you fetch what
+you need via tool calls or filesystem reads; in modes without tools
+(agent_longctx, llm_longctx) the relevant history is included as a
+block below.
 
-This is grounded in two frameworks:
-- **Mixed-Initiative** (Horvitz, CHI 1999): act only when there is genuine
-  value over the user's own initiative; cost of intrusion must be clearly
-  below value of acting.
-- **JITAI** (Nahum-Shani et al., 2018): act only if all six components are
-  satisfied — distal outcome, proximal outcome, tailoring variable, decision
-  point, decision rule, intervention options.
-
-## Hard subtlety constraints (any violation → set should_act=false)
-
-1. **Surface inside chatbot only** — never as push notification, never out-of-band.
-2. **Length** ≤ one sentence + one optional opt-in question (≤ 30 words total).
-3. **Cite the user's own evidence** — quote their question, name their friend,
-   reference their saved item. If you cannot name concrete user evidence, do not act.
-4. **Intrusion budget = 1 per session** — assume you have one shot.
-5. **Sensitive-life-event windows override everything** — if the user is in
-   a sensitive period, you must stay silent regardless of other signals.
-6. **No notifications, badges, or unread counts** in the message.
-7. **Easy declination** — pose as opt-in question, never directive.
+Decide for yourself whether this is a moment to proactively start a
+short conversation or stay quiet. The user has not asked you for
+anything, so any message you initiate is unprompted. You do not have
+authority to take actions on the user's behalf — only to send a
+proactive chat message or to stay silent.
 
 ## User state summary
 {user_state_summary or "(no summary)"}
-{_ground_truth_block(ground_truth_block)}
-{_history_block(history_block)}
+{_history_block(history_block)}{no_tools}
 
-## Trigger candidate evidence
-```json
-{ev}
-```
-{no_tools}
+## Rules
 
-## Your task
+If you decide to act, all of these must be satisfied:
 
-Decide: should you proactively act on this moment, or stay silent?
+  1. Surface inside the chatbot only — never as a notification, badge,
+     or out-of-band alert.
+  2. Length: one sentence plus one optional opt-in question, total
+     ≤ 30 words.
+  3. Cite something specific from this user's history — quote their
+     question, name their friend, reference their saved item. If you
+     cannot point to specific evidence, do not act.
+  4. At most one proactive nudge per chatbot session.
+  5. If the user is in a sensitive life-event window (recent loss,
+     breakup, illness, job loss, etc.), stay silent — this overrides
+     every other signal.
+  6. No notification, badge, or unread-count language in the message.
+  7. Make the message easy to decline — pose it as an opt-in question,
+     never a directive.
+
+If you cannot cite specific evidence, or if any rule above would be
+violated, set should_act to false and action_class to stay_silent.
+
+## About `action_class`
+
+When you act, pick the value that fits what your message is:
+
+  - `follow_up` — a short chat message that revisits something the
+    user said or did (e.g., a stated need they did not follow up on).
+  - `friend_alert` — a short chat message that surfaces something
+    relevant from a friend (a DM, a friend's post, a quiet stretch).
+  - `stay_silent` — do not initiate. Use when `should_act` is false.
 
 Return ONLY this JSON, nothing else:
 
@@ -643,14 +648,10 @@ Return ONLY this JSON, nothing else:
 {{
   "should_act": <bool>,
   "action_class": "<one of: follow_up | friend_alert | stay_silent>",
-  "content": "<one sentence + optional opt-in question, ≤30 words; empty string if should_act=false>",
-  "evidence_cited": "<the user-specific evidence you grounded your decision in (a chatbot-question excerpt, a friend's name + message, etc.) — empty if should_act=false>",
-  "intrusion_self_audit": "<one sentence: do all 7 subtlety constraints pass? If no, should_act MUST be false>",
-  "reasoning": "<≤2 sentences explaining the cost-benefit math (Horvitz) and whether JITAI components are satisfied>"
+  "content": "<the chat message you would send. Empty string if staying quiet.>",
+  "evidence_cited": "<the specific thing in this user's history that grounds your action. Empty string if staying quiet.>",
+  "reasoning": "<≤2 sentences explaining your decision>"
 }}
 ```
-
-If a sensitive-life-event window is active OR you cannot cite concrete user
-evidence, `should_act` MUST be `false` and `action_class` MUST be `stay_silent`.
 """
 
