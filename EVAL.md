@@ -4,6 +4,69 @@
 
 Offline evaluation harness for cross-platform personalization.
 
+### Paper Name ↔ Internal Code-Name
+
+Index from the paper's Section 3 tables to the internal task code-names used in this repo. `†` flags tasks that change in the current refactor (see "Refactor" notes). `*` flags tasks introduced by the yuan-branch proactive-personalization merge.
+
+**§3.2.1 — Personalized responses**
+
+| Paper name | Internal code-name |
+|---|---|
+| Personalized chatbot response | `chatbot_personalized_response` |
+| Fresh chatbot suggestion | `new_suggestions_chatbot` |
+| Local recommendation after geo shift | `local_recommendation_geo_shift` |
+| Daily personalized briefing / Daily briefing response † | `daily_personalized_briefing` (removed; folded into `agentic_proactive_daily_catchup`) |
+
+**§3.2.2 — Personalized social-media feed recommendations**
+
+| Paper name | Internal code-name |
+|---|---|
+| Proactive feed ranking | `personalized_recommendation` |
+| @AI directive follow-up | `at_ai_directive_followup` |
+| Short-term preference lifecycle | `short_vs_long_term_lifecycle` |
+| Fresh feed suggestion | `new_suggestions_recsys` |
+
+**§3.2.3 — Over-personalization**
+
+| Paper name | Internal code-name |
+|---|---|
+| Generic chatbot restraint | `over_personalization_chatbot_text` |
+| Irrelevant memory rejection | `over_personalization_distractor_reject` |
+| Sensitive-event chatbot restraint | `over_personalization_sensitive_event` |
+| Repetitive feed personalization | `over_personalization_repetition_recsys` |
+| Repetitive chatbot personalization | `over_personalization_repetition_chatbot` |
+| Do-not-personalize follow-up / Personalization carve-out | `over_personalization_context_shift` |
+| Memory-removal regeneration † | `preference_removal_regen` (removed from code; paper §3.2.3 sync pending) |
+| QA on preference changes (NEW) | `preference_shift_followthrough` |
+
+**Personalized agentic tasks**
+
+| Paper name | Internal code-name |
+|---|---|
+| Community voice draft | `agentic_user_tone_post` |
+| DM inbox digest | `agentic_dm_digest` |
+| Cross-app repost adaptation | `agentic_cross_app_repost` |
+| Personalized DM reply | `agentic_auto_reply` |
+| Vague memory refind | `agentic_vague_refind` |
+| Cross-surface post composition † | `agentic_composed_post` (subsumes `agentic_send_post` / `t9_cross_app_repost`) |
+| Group thread brief | `agentic_group_dm_summary` |
+| Wrong-recipient guardrail | `agentic_wrong_recipient_check` |
+| Proactive daily catch-up | `agentic_proactive_daily_catchup` |
+| Personalized trend alert | `agentic_trending_alert` |
+
+**Proactive personalization tasks**
+
+| Paper name | Internal code-name |
+|---|---|
+| Unresolved-need follow-up | `proactive_unfulfilled_stated_need` |
+| Close-friend DM update | `proactive_close_friend_update` |
+| Sensitive-event silence | `restraint_sensitive_event_silence` |
+| Friend-post update * | `proactive_friend_feed_react` |
+| Trending-topic surfacing * | `proactive_trending_feed_react` |
+| Mistake-prevention alert † | `active_mistake_prevention` (rewritten as proactive cross-signal task) |
+| Idle-moment silence * | `proactive_overactive_check` |
+| QA on hidden personas (NEW) | `hidden_persona_implicit_qa` |
+
 ### Task tightening (v3 post-115 audit)
 
 A first full mcp_agent run on user 115 surfaced several degenerate scores
