@@ -96,19 +96,19 @@ The LLM must fill the field; the field persists in `profile.json` (or `user_voic
 | Theorem | Schema field & owning prompt | Where it gets re-used |
 |---|---|---|
 | Big Five | `profile.big_five` ← `generate_user_profile_prompt` (`prompts.py:523`) | Re-fed into Step 11 voice prompt (`persona_agent.py:4621`) and self-posts (`extension_b/self_posts.py:145`) — the same trait labels drive voice + content |
-| MBTI | `profile.mbti` ← `infer_mbti_prompt` (`prompts.py:3698`) | Read by self-posts as a profile-side narrative anchor (no clinical claim) |
-| McAdams (redemption / contamination motifs) | `user_voice.identity_spine.{redemption_motifs, contamination_motifs}` ← `generate_voice_core_prompt` (`prompts.py:1165`). Instruction "must cite a hidden-persona label, no generic 'comeback'" | Surfaces in every user-voiced prompt via `_render_user_voice_block` (`prompts.py:775`) |
-| Bell audience design | `app_personas[*].audience_design_note` ← `generate_app_personas_prompt` (`prompts.py:1455`). Instruction "1 sentence in Bell's terms — addressee/auditor/overhearer" | Read by `extension_b/dm_threads.py` — drives why DMs sound different per recipient |
+| MBTI | `profile.mbti` ← `infer_mbti_prompt` (`prompts.py:4571`) | Read by self-posts as a profile-side narrative anchor (no clinical claim) |
+| McAdams (redemption / contamination motifs) | `user_voice.identity_spine.{redemption_motifs, contamination_motifs}` ← `generate_voice_core_prompt` (`prompts.py:1162`). Instruction "must cite a hidden-persona label, no generic 'comeback'" | Surfaces in every user-voiced prompt via `_render_user_voice_block` (`prompts.py:775`) |
+| Bell audience design | `app_personas[*].audience_design_note` ← `generate_app_personas_prompt` (`prompts.py:1452`). Instruction "1 sentence in Bell's terms — addressee/auditor/overhearer" | Read by `extension_b/dm_threads.py` — drives why DMs sound different per recipient |
 | LIWC | `user_voice.identity_spine.liwc_anchors` ← `generate_voice_core_prompt`. Sets qualitative low/med/high on `analytic`, `clout`, `authentic`, `emotional_tone` | Rendered into every downstream prompt that voices the user |
 | Martin & White APPRAISAL | `user_voice.idiolect.appraisal_fingerprint` ← `generate_voice_core_prompt`. Sub-fields `attitude_dominant`, `engagement_style` (monoglossic / heteroglossic) | Same render path |
-| Construction Grammar | `user_voice.idiolect.constructional_templates` ← `generate_voice_core_prompt`. Instruction "abstract slot patterns, NEVER complete catchphrases" | DM prompt instructs "apply ABSTRACTLY, never verbatim" (`extension_b/dm_threads.py:38`) |
+| Construction Grammar | `user_voice.idiolect.constructional_templates` ← `generate_voice_core_prompt`. Instruction "abstract slot patterns, NEVER complete catchphrases" | DM prompt instructs "apply ABSTRACTLY, never verbatim" (`extension_b/dm_threads.py:44`) |
 | Bakhtin speech-genre | `user_voice.repertoire.speech_genre_fluency` + per-app `active_speech_genres` ← Step 11 + `generate_app_personas_prompt` | Validated as `active_speech_genres ⊆ speech_genre_fluency` |
 
 #### Bucket 2 — Theorems that become enum entries in the motivation-audit closed list
 
 These theorems never appear in a generation prompt as a field name. They are choices the audit LLM is allowed to pick *as a label* on every preference→cluster link. The audit prompt pastes the closed list verbatim and forbids inventing new ones.
 
-The single source of truth is `FRAME_DESCRIPTIONS` (`prompts.py:111-164`) — 17 deep-latent frames (eligible for `CONFIRMED`) plus 8 surface frames (eligible for `SURFACE_ENGAGEMENT`). The closed list is pasted into the audit prompt at `prompts.py:3543-3572`; the frozen Python sets at `persona_agent.py:339-367` reject any out-of-enum LLM output.
+The single source of truth is `FRAME_DESCRIPTIONS` (`prompts.py:111-164`) — 17 deep-latent frames (eligible for `CONFIRMED`) plus 8 surface frames (eligible for `SURFACE_ENGAGEMENT`). The closed list is pasted into the audit prompt at `prompts.py:4316` (`audit_hidden_persona_motivations_prompt`); the frozen Python sets at `persona_agent.py:513-541` reject any out-of-enum LLM output.
 
 After the audit picks a frame per preference (saved as `frame_invoked` on the preference), Step 23 (`persona_agent.py:7842`) rolls them up into each cluster's `motivation_audit.dominant_frame`. **That dominant frame is then re-injected into the user-voiced generation prompts** (Step 11 voice + self_posts + DMs + chatbot) via `render_hidden_personas_frames_block` (`prompts.py:70-108`), with concrete steering instructions — e.g. *"a `lazarus_folkman:emotion_focused_coping` cluster's motif should center mood-regulation language, NOT aspirational growth"* (`prompts.py:1222-1227`). That single sentence is how "Lazarus & Folkman, 1984" turns into a constraint on how the user types in their DMs.
 
@@ -136,6 +136,9 @@ After the audit picks a frame per preference (saved as `frame_invoked` on the pr
 | Berlyne (shallow) | `berlyne:diversive_curiosity` | one-off novelty click |
 | Schwarz | `schwarz:mood_as_information` | mood drove the click |
 | Skinner | `variable_ratio_reinforcement` | compulsive scrolling — the act IS the engagement |
+| (situational — algorithmic surfacing) | `algorithmic_surfacing` | the recommender pushed it — user just glanced |
+| (situational — short-term episodic) | `short_term_episodic_event` | active life episode (travel, event prep, medical consultation) |
+| (sentinel) | `none` | no frame meaningfully applies |
 
 #### Bucket 3 — Theorems that become hardcoded validation gates
 
@@ -143,12 +146,12 @@ A few theorems are enforced as numeric or substring checks in Python. These don'
 
 | Theorem | The gate | Where |
 |---|---|---|
-| Goffman back-stage | `compensatory_need` CONFIRM rejected unless `privacy_ratio > 0.7` | `persona_agent.py:7313`; audit prompt at `prompts.py:3596` |
-| Horton-Wohl parasocial | `parasocial_attachment` CONFIRM requires a proper-noun figure name | `persona_agent.py:7292`; audit prompt at `prompts.py:3592` |
-| Barthes punctum | `intimate_interest` CONFIRM requires NAMING a specific object/aesthetic | Audit prompt at `prompts.py:3593` |
-| Health Belief Model | `medical_aesthetic_concern` CONFIRM requires substring markers ("takes / using / on a regimen / prescribed") | `persona_agent.py:379-381`; audit prompt at `prompts.py:3594` |
-| Ockham parsimony | Audit prompt has a `## CRITICAL: parsimony bias` block telling the LLM to default to `SURFACE_ENGAGEMENT` under ambiguity | `prompts.py:3574-3589` |
-| Closed-enum frame discipline | Frozen sets `MOTIVATION_AUDIT_DEEP_FRAMES` / `MOTIVATION_AUDIT_SURFACE_FRAMES` reject any LLM frame outside the list | `persona_agent.py:339-367` |
+| Goffman back-stage | `compensatory_need` CONFIRM rejected unless `privacy_ratio > 0.7` | `persona_agent.py:8708`; audit prompt at `prompts.py:4470` |
+| Horton-Wohl parasocial | `parasocial_attachment` CONFIRM requires a proper-noun figure name | `persona_agent.py:8688`; audit prompt at `prompts.py:4466` |
+| Barthes punctum | `intimate_interest` CONFIRM requires NAMING a specific object/aesthetic | Audit prompt at `prompts.py:4467` |
+| Health Belief Model | `medical_aesthetic_concern` CONFIRM requires substring markers ("takes / using / on a regimen / prescribed") | `persona_agent.py:553-556` (markers) + `persona_agent.py:8699` (gate); audit prompt at `prompts.py:4468` |
+| Ockham parsimony | Audit prompt has a `## CRITICAL: parsimony bias` block telling the LLM to default to `SURFACE_ENGAGEMENT` under ambiguity | `prompts.py:4448-4462` |
+| Closed-enum frame discipline | Frozen sets `MOTIVATION_AUDIT_DEEP_FRAMES` / `MOTIVATION_AUDIT_SURFACE_FRAMES` reject any LLM frame outside the list | `persona_agent.py:513-541` |
 
 ## What's in this release (R1, R5–R10)
 
