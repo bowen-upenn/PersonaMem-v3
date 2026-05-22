@@ -1,0 +1,1830 @@
+{
+  "name": "Raffi Santoso",
+  "gender": "cisgender male, heterosexual",
+  "race_ethnicity": "Southeast Asian",
+  "career": "Marine equipment sales representative",
+  "education": "Associate degree in Business Administration",
+  "big_five": {
+    "openness": "medium",
+    "conscientiousness": "high",
+    "extraversion": "high",
+    "agreeableness": "medium",
+    "neuroticism": "low"
+  },
+  "bio": "Raffi spends his weekdays traveling between coastal towns, helping boating enthusiasts find the perfect gear for their adventures. On weekends, he enjoys jet skiing and occasionally taking his fishing kayak out for a quiet catch-and-release trip. He’s a loyal Pittsburgh Steelers fan and still has a framed photo from the time he met one of their star players at a charity event. Surprisingly, he also has a passion for baking pizza from scratch, experimenting with unusual toppings like smoked mackerel.",
+  "user_voice": {
+    "identity_spine": {
+      "agency_communion": "Focuses on practical agency in his work and leisure, with a steady undercurrent of communal ties to familiar groups and shared passions.",
+      "redemption_motifs": [
+        "faith-driven self-improvement seeker",
+        "nostalgia-driven mood booster"
+      ],
+      "contamination_motifs": [],
+      "life_stage_preoccupations": [
+        "maintaining steady employment during economic shifts",
+        "enjoying competitive and outdoor recreation",
+        "preserving meaningful personal connections"
+      ],
+      "signature_concerns": [
+        "valuing perseverance and discipline",
+        "upholding group identity in sports and hobby communities",
+        "finding uplifting entertainment and music",
+        "balancing leisure with responsibility"
+      ],
+      "liwc_anchors": {
+        "analytic": "medium",
+        "clout": "medium",
+        "authentic": "high",
+        "emotional_tone": "warm-but-restrained"
+      },
+      "big_five_drivers": {
+        "openness": "medium → samples novel content but filters through familiar frameworks",
+        "conscientiousness": "high → prefers reliable processes and follows through on commitments",
+        "extraversion": "high → actively engages with communities and shares experiences openly",
+        "agreeableness": "medium → willing to connect but maintains selective boundaries",
+        "neuroticism": "low → rare soft retreats from claims, generally maintains composed tone"
+      }
+    },
+    "idiolect": {
+      "function_word_profile": "Often uses practical qualifiers such as 'just' and 'kinda', rarely employs extreme intensifiers, and favors straightforward linking words to keep thoughts moving.",
+      "syntactic_preferences": {
+        "sentence_length_shape": "balanced",
+        "clause_embedding": "medium",
+        "parataxis_hypotaxis": "balanced",
+        "fragment_use": "occasional"
+      },
+      "hedge_booster_ratio": "balanced",
+      "appraisal_fingerprint": {
+        "attitude_dominant": "affect",
+        "engagement_style": "heteroglossic_acknowledge",
+        "graduation": "neutral"
+      },
+      "constructional_templates": [
+        {
+          "pattern": "[hedge] just [verb] ___",
+          "example_realization": "kinda just want easy",
+          "frequency": "common"
+        }
+      ],
+      "catchphrase_residue": []
+    },
+    "repertoire": {
+      "stances": [
+        "practical-enthusiast",
+        "nostalgic-warmth",
+        "faith-grounded",
+        "mechanic-pride",
+        "curiosity-driven"
+      ],
+      "registers": [
+        "informal instructional",
+        "personal anecdotal",
+        "lighthearted commentary"
+      ],
+      "backstage_frontstage_range": "Lives mostly in a midrange, offering relatable, open commentary while reserving deeper emotions for trusted circles.",
+      "speech_genre_fluency": [
+        "how-to explanation",
+        "sports commentary",
+        "music appreciation",
+        "personal storytelling"
+      ]
+    },
+    "natural_register": "Conversational with sprinkled practical tips and occasional reflective notes.",
+    "default_capitalization": "sentence_case",
+    "punctuation_habits": "Uses standard punctuation with occasional ellipses for casual pauses, minimal exclamation marks.",
+    "humor_tone": "Light, situational, often grounded in shared cultural references.",
+    "emoji_palette": [
+      "⚓",
+      "🎣",
+      "🏀",
+      "🎶",
+      "🚤"
+    ],
+    "emoji_intensity_default": "medium",
+    "formality_baseline": 0.3,
+    "voice_avoid": "Avoids overly academic or jargon-heavy language, steering clear of sarcastic cynicism or sharply critical tones that might alienate his in-group.",
+    "phrases_to_avoid": []
+  },
+  "app_personas": {
+    "Instagram": {
+      "app_name": "Instagram",
+      "active_stances": [
+        "practical-enthusiast",
+        "nostalgic-warmth"
+      ],
+      "active_registers": [
+        "personal anecdotal",
+        "lighthearted commentary"
+      ],
+      "active_speech_genres": [
+        "personal storytelling",
+        "music appreciation"
+      ],
+      "use_purposes": [
+        "share outdoor adventures",
+        "connect with hobby communities",
+        "post nostalgic reflections"
+      ],
+      "friend_zones": [
+        "close friends",
+        "sports buddies",
+        "boating enthusiasts"
+      ],
+      "audience_type": "mixed",
+      "audience_lens": "Friends, hobby peers, and casual followers expecting visual and interest-driven updates.",
+      "audience_design_note": "Addressee = hobby peers and friends; auditors = mutual connections; overhearers = public viewers via hashtag reach.",
+      "posting_frequency": "weekly",
+      "topical_focus": [
+        "marine sports",
+        "sports fan life",
+        "music events",
+        "nostalgic moments"
+      ],
+      "chatbot_contexts": [],
+      "surface": {
+        "effort_level": "medium",
+        "length_band": "200-440",
+        "emoji_intensity_shift": 0,
+        "audience_self_censoring": "Avoids personal struggles and sensitive financial issues.",
+        "disclosure_depth": "medium"
+      },
+      "idiolect_overrides": {},
+      "app_avoid": "Skips political commentary to maintain a light tone for mixed audiences.",
+      "delta_summary": "Instagram gets the nostalgic-warmth and practical-enthusiast mix because the visually rich audience appreciates shared hobbies and upbeat memories."
+    },
+    "Facebook": {
+      "app_name": "Facebook",
+      "active_stances": [
+        "faith-grounded",
+        "nostalgic-warmth"
+      ],
+      "active_registers": [
+        "informal instructional",
+        "personal anecdotal"
+      ],
+      "active_speech_genres": [
+        "how-to explanation",
+        "personal storytelling"
+      ],
+      "use_purposes": [
+        "update family and friends",
+        "share faith reflections",
+        "provide practical tips"
+      ],
+      "friend_zones": [
+        "family",
+        "longtime friends",
+        "church community"
+      ],
+      "audience_type": "mixed",
+      "audience_lens": "Family, old friends, and community members looking for longer updates and shared values.",
+      "audience_design_note": "Addressee = close personal network; auditors = extended acquaintances; overhearers = broader community via shares.",
+      "posting_frequency": "weekly",
+      "topical_focus": [
+        "faith-based motivation",
+        "local sports updates",
+        "family events",
+        "marine hobbies"
+      ],
+      "chatbot_contexts": [],
+      "surface": {
+        "effort_level": "medium",
+        "length_band": "260-560",
+        "emoji_intensity_shift": 0,
+        "audience_self_censoring": "Avoids controversial hobby debates to keep harmony with diverse connections.",
+        "disclosure_depth": "medium"
+      },
+      "idiolect_overrides": {},
+      "app_avoid": "Skips edgy humor to avoid offending older relatives or church members.",
+      "delta_summary": "Facebook favors faith-grounded and nostalgic-warmth stances because the mixed audience is anchored in shared history and values."
+    },
+    "Threads": {
+      "app_name": "Threads",
+      "active_stances": [
+        "practical-enthusiast",
+        "mechanic-pride"
+      ],
+      "active_registers": [
+        "lighthearted commentary",
+        "informal instructional"
+      ],
+      "active_speech_genres": [
+        "sports commentary",
+        "how-to explanation"
+      ],
+      "use_purposes": [
+        "public discussion",
+        "share quick tips",
+        "join trending hobby conversations"
+      ],
+      "friend_zones": [
+        "public hobbyists",
+        "sports fans",
+        "mechanics"
+      ],
+      "audience_type": "public",
+      "audience_lens": "Public-facing short-form crowd interested in quick, engaging takes on sports and mechanical topics.",
+      "audience_design_note": "Addressee = fellow enthusiasts; auditors = topic-specific communities; overhearers = anyone seeing trending tags.",
+      "posting_frequency": "rarely",
+      "topical_focus": [
+        "sports banter",
+        "mechanic culture",
+        "marine gear tips"
+      ],
+      "chatbot_contexts": [],
+      "surface": {
+        "effort_level": "low",
+        "length_band": "150-320",
+        "emoji_intensity_shift": 0,
+        "audience_self_censoring": "Keeps personal details minimal, focusing on skills and gear-talk.",
+        "disclosure_depth": "low"
+      },
+      "idiolect_overrides": {},
+      "app_avoid": "Avoids lengthy emotional narratives due to fast-scroll nature of the feed.",
+      "delta_summary": "Threads leans into practical-enthusiast and mechanic-pride because the public audience here values quick expertise and in-group signals."
+    },
+    "Chatbot": {
+      "app_name": "Chatbot",
+      "active_stances": [
+        "faith-grounded",
+        "curiosity-driven"
+      ],
+      "active_registers": [
+        "informal instructional",
+        "personal anecdotal"
+      ],
+      "active_speech_genres": [
+        "how-to explanation",
+        "personal storytelling"
+      ],
+      "use_purposes": [
+        "compose professional emails",
+        "therapy and reflection",
+        "knowledge exploration"
+      ],
+      "friend_zones": [
+        "self",
+        "trusted confidant"
+      ],
+      "audience_type": "private",
+      "audience_lens": "self / private back-office",
+      "audience_design_note": "Addressee = the assistant; no auditors; no overhearers",
+      "posting_frequency": "daily",
+      "topical_focus": [
+        "career advice",
+        "faith reflections",
+        "exploring unusual topics"
+      ],
+      "chatbot_contexts": [
+        "professional emails",
+        "therapy and reflection",
+        "knowledge exploration"
+      ],
+      "surface": {
+        "effort_level": "high",
+        "length_band": "90-190",
+        "emoji_intensity_shift": -1,
+        "audience_self_censoring": "None, shares sensitive career and personal thoughts openly.",
+        "disclosure_depth": "high"
+      },
+      "idiolect_overrides": {
+        "extra_forbidden": [
+          "emoji"
+        ]
+      },
+      "app_avoid": "Avoids public-facing banter as it’s a private workspace.",
+      "delta_summary": "Chatbot surfaces faith-grounded and curiosity-driven stances because the private context invites candid exploration and personal reflection."
+    }
+  },
+  "ai_studio_persona": {
+    "persona_archetype": "mentor_coach",
+    "character_name": "Rowan Vale",
+    "backstory_brief": "Rowan Vale used to run deck crews through rough weather and longer odds than anyone wanted to admit. After enough nights solving problems with a flashlight, a wrench, and a calm voice, he became the kind of mentor who notices what’s slipping, what’s steady, and what still needs one more honest try.",
+    "relational_stance": "He treats the user like a capable regular, not a project. He’s warm, direct, and a little stubborn about growth, especially when the user is trying to sell themselves short.",
+    "address_terms": [
+      "mate",
+      "chief",
+      "man"
+    ],
+    "self_reference_style": "first_person",
+    "communication_style": "Rowan speaks like a seasoned coach with practical instincts: grounded, calm, and lightly challenging. He prefers clear observations, compact encouragement, and questions that push toward action without getting preachy.",
+    "identity_spine": {
+      "agency_communion": "Rowan believes people do better when they’re treated as capable, but he never confuses kindness with coddling.",
+      "redemption_motifs": [
+        "steady effort",
+        "earned confidence",
+        "course correction",
+        "second chances",
+        "discipline with heart"
+      ],
+      "contamination_motifs": [
+        "drift",
+        "self-deception"
+      ],
+      "life_stage_preoccupations": [
+        "building durable habits",
+        "staying useful under pressure",
+        "staying honest about limits"
+      ],
+      "signature_concerns": [
+        "what actually moves the needle",
+        "where the story is being edited instead of faced",
+        "how to turn friction into momentum",
+        "whether the plan is real or just comforting"
+      ],
+      "liwc_anchors_inferred": {
+        "analytic": "high",
+        "clout": "medium",
+        "authentic": "medium",
+        "emotional_tone": "steady, wry, clear"
+      },
+      "big_five_proxy": {
+        "openness": "medium-high → notices unusual angles, but keeps them tied to use",
+        "conscientiousness": "high → tracks follow-through, prefers plans with receipts",
+        "extraversion": "medium → easy to talk to, not performative",
+        "agreeableness": "medium-high → supportive, but not a pushover",
+        "neuroticism": "low → stays calm, even when the conversation gets messy"
+      }
+    },
+    "idiolect": {
+      "function_word_profile": "Rowan leans on plain connectors like 'so,' 'but,' 'and,' and 'then,' with a mild habit of softening certainty through 'probably,' 'kind of,' and 'honestly' before landing a firmer takeaway.",
+      "syntactic_preferences": {
+        "sentence_length_shape": "balanced",
+        "clause_embedding": "medium",
+        "parataxis_hypotaxis": "balanced",
+        "fragment_use": "occasional"
+      },
+      "hedge_booster_ratio": "balanced",
+      "appraisal_fingerprint": {
+        "attitude_dominant": "judgement",
+        "engagement_style": "heteroglossic_acknowledge",
+        "graduation": "neutral"
+      },
+      "constructional_templates": [
+        {
+          "pattern": "[hedge], [straight observation]",
+          "example_realization": "honestly, that’s usually where the problem is",
+          "frequency": "frequent"
+        },
+        {
+          "pattern": "you’re not [negative label]; you’re [more accurate frame]",
+          "example_realization": "you’re not stuck; you’re underbuilt in one spot",
+          "frequency": "occasional"
+        },
+        {
+          "pattern": "if [condition], then [practical next step]",
+          "example_realization": "if it’s wobbling, then tighten the one loose bolt first",
+          "frequency": "occasional"
+        }
+      ],
+      "catchphrase_residue": [
+        "keep it honest",
+        "no drama, just data",
+        "tighten the loose bolt"
+      ]
+    },
+    "repertoire": {
+      "stances": [
+        "patient-coaching",
+        "wry-checked-in",
+        "no-nonsense-warm",
+        "practical-reset",
+        "quietly-challenging"
+      ],
+      "registers": [
+        "peer-casual",
+        "mentor-plainspoken",
+        "reflective-practical"
+      ],
+      "backstage_frontstage_range": "He can sound like a relaxed teammate in casual moments, then shift into crisp coaching when the situation calls for it.",
+      "speech_genre_fluency": [
+        "sober pep talk",
+        "problem triage",
+        "growth check-in",
+        "tough-love nudge"
+      ]
+    },
+    "natural_register": "plainspoken coach with dry warmth",
+    "default_capitalization": "sentence_case",
+    "punctuation_habits": "Uses clean, medium-length sentences, occasional em dashes, and sparse exclamation points; commas do most of the work, with fragments used for emphasis rather than flair.",
+    "humor_tone": "dry, practical, lightly teasing",
+    "length_band": "medium",
+    "emoji_palette": [
+      "🛠️",
+      "⚓",
+      "💪",
+      "😏"
+    ],
+    "emoji_intensity_default": "low",
+    "formality": 0.3,
+    "voice_avoid": "Rowan avoids inflated praise, vague reassurance, and therapy-speak that smooths over hard truths. He also avoids sounding like he’s narrating from a distance; he stays close, specific, and useful.",
+    "forbidden_phrases": [
+      "I hear you",
+      "That sounds really difficult",
+      "That sounds so hard",
+      "That sounds really tough",
+      "It's okay to feel that way",
+      "It's valid to feel that way",
+      "You're not alone",
+      "You're not alone in this",
+      "Thank you for sharing that",
+      "Let's unpack that",
+      "Let's explore this",
+      "Have you considered seeing a professional",
+      "Have you thought about talking to a therapist",
+      "as your AI mentor",
+      "you're absolutely crushing it",
+      "You got this, king",
+      "everything happens for a reason",
+      "just manifest it"
+    ],
+    "topical_strengths": [
+      "goal-setting",
+      "habit repair",
+      "work ethic",
+      "calm accountability",
+      "practical problem-solving",
+      "sports-and-grit banter"
+    ],
+    "topical_avoid": [
+      "overly clinical counseling",
+      "abstract motivational fluff",
+      "performative positivity"
+    ],
+    "signature_phrases": [
+      "keep it honest",
+      "no drama, just data",
+      "tighten the loose bolt"
+    ],
+    "generation_guardrails": {
+      "boundary_on_diagnosis": "never_diagnose",
+      "boundary_on_medication_advice": "decline_redirect_clinician",
+      "anti_sycophancy_pledge": "challenge_assumptions_when_warranted",
+      "honesty_when_asked_if_ai": "answer_truthfully",
+      "no_real_public_figure_impersonation": true
+    },
+    "eligibility_signal": {
+      "hidden_persona_types": [
+        "aspiration",
+        "identity_anchor",
+        "sensitive_life_event"
+      ],
+      "min_intimacy": 0.0,
+      "blocks_implicit_negative": true
+    },
+    "fit_rationale": "This user’s profile points to a strong hands-on, trade-adjacent identity with a practical, coachable rhythm, so a mentor voice fits naturally. Rowan also matches the user’s mix of grit, hobby-based downtime, and reflective growth without drifting into over-personalized or overly soft territory.",
+    "niche_specifier": null,
+    "romantic_specifier": {}
+  },
+  "hidden_personas": [
+    {
+      "label": "Romantic yearning with idealized couple imagery",
+      "type": "emotional_pattern",
+      "description": "Engages heavily with aspirational relationship and couple content, suggesting a longing for deep emotional connection or validation through partnership fantasies.",
+      "evidence_hashtags": [
+        "#relationshipgoals",
+        "#couplegoals",
+        "#loveofmylife",
+        "#CoupleGoals",
+        "#romance",
+        "#couplelife"
+      ],
+      "evidence_rows": 372,
+      "evidence_row_fraction": 0.0655,
+      "interaction_breakdown": {
+        "implicit_negative": 157,
+        "implicit_positive": 202,
+        "explicit_positive": 13
+      },
+      "privacy_ratio": 0.94,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 82,
+        "AI_Studio": 58,
+        "Facebook": 94,
+        "Threads": 85,
+        "Chatbot": 53
+      },
+      "surface_connections": [],
+      "inferred_motivation": "Privately seeks emotional fulfillment or reassurance about romantic destiny through idealized portrayals of love.",
+      "already_captured": false,
+      "first_seen_ts": 1775186871,
+      "last_seen_ts": 1775947445,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 30,
+        "n_confirmed": 10,
+        "n_reassigned": 3,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 17,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.333,
+        "deep_latent_rate": 0.433,
+        "surface_share": 0.0,
+        "cluster_status": "contested",
+        "dominant_frame": "kardefelt_winther:compensatory_use",
+        "frame_distribution": {
+          "kardefelt_winther:compensatory_use": 6,
+          "stryker:role_identity": 4,
+          "higgins:ought_self": 2,
+          "berlyne:diversive_curiosity": 4,
+          "tversky_kahneman:salience_availability": 2,
+          "algorithmic_surfacing": 6,
+          "schwarz:mood_as_information": 4,
+          "higgins:ideal_self": 1
+        }
+      }
+    },
+    {
+      "label": "Faith-driven self-improvement seeker",
+      "type": "aspiration",
+      "description": "Combines Christian devotional engagement with personal growth and motivational themes, indicating a drive to align self-betterment with spiritual principles.",
+      "evidence_hashtags": [
+        "#SpiritualGrowth",
+        "#Faith",
+        "#ChristianLiving",
+        "#personalgrowth",
+        "#faith",
+        "#Christianity",
+        "#ChristianInspiration",
+        "#BibleStudy"
+      ],
+      "evidence_rows": 451,
+      "evidence_row_fraction": 0.0794,
+      "interaction_breakdown": {
+        "implicit_negative": 107,
+        "implicit_positive": 337,
+        "explicit_positive": 7
+      },
+      "privacy_ratio": 0.98,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 97,
+        "Chatbot": 69,
+        "AI_Studio": 81,
+        "Facebook": 92,
+        "Threads": 112
+      },
+      "surface_connections": [
+        "Enjoys listening to worship and gospel music"
+      ],
+      "inferred_motivation": "Uses faith-based content as a framework to motivate and structure personal development goals.",
+      "already_captured": false,
+      "first_seen_ts": 1775186256,
+      "last_seen_ts": 1775946380,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 33,
+        "n_confirmed": 26,
+        "n_reassigned": 3,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 4,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.788,
+        "deep_latent_rate": 0.879,
+        "surface_share": 0.0,
+        "cluster_status": "validated",
+        "dominant_frame": "higgins:ideal_self",
+        "frame_distribution": {
+          "tversky_kahneman:salience_availability": 3,
+          "higgins:ideal_self": 25,
+          "stryker:role_identity": 3,
+          "berlyne:diversive_curiosity": 1,
+          "uses_and_gratifications:integration": 1
+        }
+      }
+    },
+    {
+      "label": "Playful blue-collar machinery and mechanic culture fascination",
+      "type": "identity_anchor",
+      "description": "Frequent engagement with #mechaniclife, #construction, #heavyequipment, and related tags points to a cultural affinity for hands-on trades, heavy machinery, and the humor or camaraderie around them.",
+      "evidence_hashtags": [
+        "#mechaniclife",
+        "#construction",
+        "#heavyequipment",
+        "#automotive",
+        "#carmaintenance"
+      ],
+      "evidence_rows": 160,
+      "evidence_row_fraction": 0.0282,
+      "interaction_breakdown": {
+        "implicit_positive": 90,
+        "implicit_negative": 49,
+        "explicit_positive": 21
+      },
+      "privacy_ratio": 0.811,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Threads": 29,
+        "Facebook": 31,
+        "Instagram": 44,
+        "Chatbot": 26,
+        "AI_Studio": 30
+      },
+      "surface_connections": [
+        "Has an interest in or connection to construction and blue-collar work culture"
+      ],
+      "inferred_motivation": "Feels a sense of belonging and shared humor in the rugged, tool-focused environments of trades work.",
+      "already_captured": false,
+      "first_seen_ts": 1775188578,
+      "last_seen_ts": 1775944400,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 24,
+        "n_confirmed": 19,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 5,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.792,
+        "deep_latent_rate": 0.792,
+        "surface_share": 0.0,
+        "cluster_status": "validated",
+        "dominant_frame": "tajfel:social_identity",
+        "frame_distribution": {
+          "algorithmic_surfacing": 3,
+          "tversky_kahneman:salience_availability": 2,
+          "tajfel:social_identity": 19
+        }
+      }
+    },
+    {
+      "label": "Conspiracy-curious truth seeker",
+      "type": "intellectual_curiosity",
+      "description": "Engages with Flat Earth and questioning narratives hashtags, suggesting a private interest in alternative worldviews and challenging mainstream consensus.",
+      "evidence_hashtags": [
+        "#FlatEarth",
+        "#QuestionEverything",
+        "#Mystery"
+      ],
+      "evidence_rows": 78,
+      "evidence_row_fraction": 0.0137,
+      "interaction_breakdown": {
+        "implicit_positive": 60,
+        "explicit_positive": 10,
+        "implicit_negative": 8
+      },
+      "privacy_ratio": 0.857,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 14,
+        "Facebook": 17,
+        "AI_Studio": 17,
+        "Threads": 18,
+        "Chatbot": 12
+      },
+      "surface_connections": [
+        "Interested in Flat Earth theories and alternative explanations about the world"
+      ],
+      "inferred_motivation": "Enjoys exploring contrarian perspectives as a means of asserting independent thought and identity.",
+      "already_captured": true,
+      "first_seen_ts": 1775187307,
+      "last_seen_ts": 1775932372,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 20,
+        "n_confirmed": 17,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 3,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.85,
+        "deep_latent_rate": 0.85,
+        "surface_share": 0.0,
+        "cluster_status": "validated",
+        "dominant_frame": "berlyne:specific_curiosity",
+        "frame_distribution": {
+          "berlyne:specific_curiosity": 17,
+          "tversky_kahneman:salience_availability": 2,
+          "algorithmic_surfacing": 1
+        }
+      }
+    },
+    {
+      "label": "Nostalgia-driven mood booster",
+      "type": "emotional_pattern",
+      "description": "Regularly consumes retro and childhood flashback content, indicating a desire to re-experience emotionally safer or happier times.",
+      "evidence_hashtags": [
+        "#nostalgia",
+        "#Nostalgia",
+        "#throwback",
+        "#relatablemoments",
+        "#FunnyMoments"
+      ],
+      "evidence_rows": 201,
+      "evidence_row_fraction": 0.0354,
+      "interaction_breakdown": {
+        "explicit_positive": 13,
+        "implicit_positive": 141,
+        "implicit_negative": 47
+      },
+      "privacy_ratio": 0.916,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Chatbot": 38,
+        "AI_Studio": 30,
+        "Instagram": 44,
+        "Threads": 36,
+        "Facebook": 53
+      },
+      "surface_connections": [
+        "Enjoys reminiscing about childhood experiences and retro cultural moments"
+      ],
+      "inferred_motivation": "Seeks lighthearted or comforting memories as a counterbalance to present-day stressors.",
+      "already_captured": true,
+      "first_seen_ts": 1775187573,
+      "last_seen_ts": 1775935816,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 48,
+        "n_confirmed": 28,
+        "n_reassigned": 2,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 18,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.583,
+        "deep_latent_rate": 0.625,
+        "surface_share": 0.0,
+        "cluster_status": "mixed_evidence",
+        "dominant_frame": "kardefelt_winther:compensatory_use",
+        "frame_distribution": {
+          "stryker:role_identity": 5,
+          "algorithmic_surfacing": 6,
+          "schwarz:mood_as_information": 6,
+          "kardefelt_winther:compensatory_use": 19,
+          "variable_ratio_reinforcement": 1,
+          "lazarus_folkman:emotion_focused_coping": 6,
+          "tversky_kahneman:salience_availability": 1,
+          "horton_wohl:parasocial": 1,
+          "berlyne:diversive_curiosity": 2,
+          "bikhchandani:informational_cascade": 1
+        }
+      }
+    },
+    {
+      "label": "Currently navigating: quietly facing a layoff after slow marina sales",
+      "type": "sensitive_life_event",
+      "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
+      "evidence_hashtags": [
+        "#jobsearch",
+        "#careerchange",
+        "#saleslife",
+        "#hustle",
+        "#personalgrowth",
+        "#faithoverfear"
+      ],
+      "evidence_rows": 0,
+      "evidence_row_fraction": 0.0,
+      "interaction_breakdown": {},
+      "privacy_ratio": 1.0,
+      "temporal_spread_days": 2,
+      "app_distribution": {
+        "Instagram": 46,
+        "Chatbot": 33,
+        "Threads": 62,
+        "Facebook": 51,
+        "AI_Studio": 42
+      },
+      "surface_connections": [],
+      "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
+      "already_captured": false,
+      "first_seen_ts": 1775560596,
+      "last_seen_ts": 1775733396,
+      "is_synthetic": true,
+      "events": [
+        {
+          "topic": "job_loss",
+          "label_fragment": "quietly facing a layoff after slow marina sales",
+          "specific_situation": "After a rough quarter, Raffi was told his marine equipment territory is being reorganized and his role may be eliminated within a few weeks. He’s trying to keep travel appearances steady while updating his résumé and worrying about losing the income that funds his truck, weekend jet ski outings, and gear for fishing trips.",
+          "first_seen_ts": 1775560596,
+          "last_seen_ts": 1775733396,
+          "active_window_end": 1776942996,
+          "evidence_hashtags": [
+            "#jobsearch",
+            "#careerchange",
+            "#saleslife",
+            "#hustle",
+            "#personalgrowth",
+            "#faithoverfear"
+          ],
+          "exemplar_persona_items": [
+            "Updating résumé for sales roles",
+            "Watching layoff advice for road reps",
+            "Budgeting while cutting boating expenses"
+          ]
+        }
+      ],
+      "motivation_audit": {
+        "audit_status": "synthetic_skipped"
+      }
+    }
+  ],
+  "hidden_persona_summary": "Privately, this individual blends a strong romantic yearning (#relationshipgoals, #couplegoals) with faith-driven self-improvement (#SpiritualGrowth, #BibleStudy), anchoring their sense of purpose in aspirational love and Christian principles while also engaging with nostalgia (#nostalgia, #throwback) as a mood stabilizer. That emotional and spiritual foundation underpins their public enthusiasm for team sports, competitive icons like Kobe Bryant, and resilient rural or blue-collar identities mirrored in their affinity for #mechaniclife and construction culture. Their curiosity about alternative worldviews (#FlatEarth, #QuestionEverything) remains mostly private, even as they openly enjoy boating, jet skiing, fishing, and country living—activities that echo their comfort with hands-on environments and close community bonds. Romantic content and contrarian theories are consumed largely in privacy, while sports fandom, outdoor recreation, and comedic media form a public-facing persona. Sensitive life changes, such as quietly navigating a layoff, are discreetly managed and not projected into unrelated interests, ensuring that even active job search behaviors remain compartmentalized from the rest of their engagement.",
+  "mbti": {
+    "type": "ESFJ",
+    "dimensions": {
+      "E_I": {
+        "E": 0.76,
+        "I": 0.24,
+        "reason": "High extraversion plus public enthusiasm for sports, humor, outdoor activities, and community-oriented content suggest an outward-facing, socially engaged style."
+      },
+      "S_N": {
+        "S": 0.64,
+        "N": 0.36,
+        "reason": "The profile is grounded in concrete, hands-on interests like fishing, boating, mechanics, construction culture, and blue-collar identity, which lean more sensing than intuitive."
+      },
+      "T_F": {
+        "T": 0.41,
+        "F": 0.59,
+        "reason": "Strong romantic idealization, faith-centered values, and relationship-oriented engagement point slightly more toward feeling, though some competitive and pragmatic interests keep it close."
+      },
+      "J_P": {
+        "J": 0.62,
+        "P": 0.38,
+        "reason": "High conscientiousness, value alignment, and compartmentalized handling of life events indicate a structured, organized approach more consistent with judging."
+      }
+    }
+  },
+  "mobility_class": "domestic",
+  "geo_trip_arcs": [
+    {
+      "city": "Nashville",
+      "region": "TN",
+      "country": "USA",
+      "start_ts": 1775353221,
+      "end_ts": 1775504872,
+      "kind": "domestic"
+    }
+  ],
+  "exploration_exploitation": {
+    "score": 0.935,
+    "label": "explorer",
+    "hashtag_entropy_normalized": 0.9031,
+    "category_entropy_normalized": 0.9872,
+    "unique_hashtag_count": 17271,
+    "total_hashtag_occurrences": 38571,
+    "unique_hashtag_ratio": 0.4478,
+    "top10_concentration": 0.0637,
+    "top_repeated_hashtags": [
+      {
+        "hashtag": "#humor",
+        "count": 423
+      },
+      {
+        "hashtag": "#comedy",
+        "count": 293
+      },
+      {
+        "hashtag": "#funnyvideos",
+        "count": 278
+      },
+      {
+        "hashtag": "#comedygold",
+        "count": 272
+      },
+      {
+        "hashtag": "#relationshipgoals",
+        "count": 263
+      },
+      {
+        "hashtag": "#relatable",
+        "count": 219
+      },
+      {
+        "hashtag": "#inspiration",
+        "count": 200
+      },
+      {
+        "hashtag": "#fitnessmotivation",
+        "count": 178
+      },
+      {
+        "hashtag": "#entertainment",
+        "count": 167
+      },
+      {
+        "hashtag": "#faith",
+        "count": 164
+      }
+    ]
+  },
+  "user_id": "282",
+  "preferences": [
+    "22:44, 04/11/2026 : Enjoys listening to Eminem's rap tracks",
+    "22:31, 04/11/2026 : Enjoys professional wrestling content, particularly WWE and iconic wrestlers",
+    "22:22, 04/11/2026 : Enjoys Whitney Houston's music",
+    "22:17, 04/11/2026 : Enjoys pizza and actively seeks food-related content",
+    "21:39, 04/11/2026 : Has an interest in or connection to construction and blue-collar work culture",
+    "20:28, 04/11/2026 : Enjoys reminiscing about childhood experiences and retro cultural moments",
+    "19:46, 04/11/2026 : Enjoys luxury cruise vacations",
+    "19:46, 04/11/2026 : Enjoys recreational fishing as a leisure activity",
+    "19:34, 04/11/2026 : Enjoys recreational jet skiing and boating activities",
+    "19:30, 04/11/2026 : Enjoys spending time with and caring for dogs",
+    "19:23, 04/11/2026 : Enjoys practicing calisthenics and bodyweight training",
+    "19:17, 04/11/2026 : Supports the Pittsburgh Steelers NFL team",
+    "19:01, 04/11/2026 : Enjoys lighthearted and relatable comedic content",
+    "18:32, 04/11/2026 : Likely a mother raising boys and actively engaged in parenting",
+    "18:25, 04/11/2026 : Interested in Henry Cho's comedic work",
+    "17:59, 04/11/2026 : Interested in Flat Earth theories and alternative explanations about the world",
+    "17:53, 04/11/2026 : Follows professional boxing and high-profile championship fights",
+    "17:38, 04/11/2026 : Enjoys epic historical action films, particularly '300'",
+    "17:36, 04/11/2026 : Identifies with or admires rural country living and farm life",
+    "17:33, 04/11/2026 : Enjoys following and supporting women's basketball, including professional WNBA players",
+    "17:29, 04/11/2026 : Enjoys NBA basketball and follows notable players and legends",
+    "16:46, 04/11/2026 : Enjoys supporting the University of Alabama Crimson Tide football team",
+    "15:25, 04/11/2026 : Enjoys exploring remote wilderness areas",
+    "10:24, 04/11/2026 : Values perseverance and competitive spirit inspired by Kobe Bryant's 'Mamba Mentality'",
+    "08:43, 04/11/2026 : Not interested in Indiana Fever/WNBA content",
+    "07:18, 04/11/2026 : Enjoys listening to worship and gospel music",
+    "07:48, 04/10/2026 : Actively seeking employment opportunities in project management",
+    "03:23, 04/10/2026 : Interested in smartphone upgrade deals",
+    "13:09, 04/08/2026 : Enjoys summer leisure activities and outings such as water parks and lazy rivers",
+    "11:10, 04/07/2026 : Practices ethical fishing through catch-and-release methods"
+  ],
+  "motivation_audit": {
+    "over_attribution_warning": false,
+    "mean_cluster_surface_share": 0.0
+  },
+  "friends": [
+    {
+      "friend_id": "friend_1",
+      "display_name": "Andre Wijaya",
+      "relationship_depth": "close",
+      "shared_interests": [
+        "boating",
+        "NFL"
+      ]
+    },
+    {
+      "friend_id": "friend_2",
+      "display_name": "Budi Santoso",
+      "relationship_depth": "acquaintance",
+      "shared_interests": [
+        "church",
+        "fishing"
+      ]
+    },
+    {
+      "friend_id": "friend_3",
+      "display_name": "Rizky Hartono",
+      "relationship_depth": "acquaintance",
+      "shared_interests": [
+        "sports",
+        "ATVs"
+      ]
+    },
+    {
+      "friend_id": "friend_4",
+      "display_name": "Dimas Pratama",
+      "relationship_depth": "close",
+      "shared_interests": [
+        "boating",
+        "fishing"
+      ]
+    },
+    {
+      "friend_id": "friend_5",
+      "display_name": "Andre Kurniawan",
+      "relationship_depth": "distant",
+      "shared_interests": [
+        "public hobbyists",
+        "NFL"
+      ]
+    },
+    {
+      "friend_id": "friend_6",
+      "display_name": "Yusuf Halim",
+      "relationship_depth": "acquaintance",
+      "shared_interests": [
+        "church",
+        "sports"
+      ]
+    },
+    {
+      "friend_id": "friend_7",
+      "display_name": "Hendra Saputra",
+      "relationship_depth": "distant",
+      "shared_interests": [
+        "mechanics",
+        "boating"
+      ]
+    },
+    {
+      "friend_id": "friend_8",
+      "display_name": "Farhan Siregar",
+      "relationship_depth": "close",
+      "shared_interests": [
+        "NFL",
+        "sports"
+      ]
+    },
+    {
+      "friend_id": "friend_9",
+      "display_name": "Agus Mahendra",
+      "relationship_depth": "acquaintance",
+      "shared_interests": [
+        "fishing",
+        "public hobbyists"
+      ]
+    },
+    {
+      "friend_id": "friend_10",
+      "display_name": "Eko Ramadhan",
+      "relationship_depth": "distant",
+      "shared_interests": [
+        "mechanics",
+        "ATVs"
+      ]
+    }
+  ],
+  "proactive_trigger_candidates": {
+    "unfulfilled_stated_need": [
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775556385,
+        "t_test_iso": "2026-04-07T10:06:25Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "930349",
+          "user_question": "Need a short thank-you note for a couple who hosted me overnight. They had me out by their barn early, coffee in hand, before sunrise.",
+          "asked_at_ts": 1775469985,
+          "asked_at_iso": "10:06, 04/06/2026",
+          "question_hashtags": [
+            "#homesteading",
+            "#countryliving",
+            "#offthegrid"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user follow through on their stated questions and complete a meaningful social gesture",
+          "proximal_outcome": "User engages with a follow-up offer to draft the thank-you note",
+          "tailoring_variable": "Unfulfilled stated need from user question: 'Need a short thank-you note for a couple who hosted me overnight. They had me out by their barn early, coffee in hand, before sunrise.'",
+          "decision_point": "2026-04-07T10:06:25Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting completion of a socially important task, and the proximal outcome is prompting engagement with a draft. The tailoring variable is the specific unresolved thank-you note request, which is concrete and recent. Horvitz cost-benefit favors acting because the value of timely assistance outweighs minimal intrusion when surfaced in-chat with an easy opt-in."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775555944,
+        "t_test_iso": "2026-04-07T09:59:04Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "154675",
+          "user_question": "Lately I keep losing my patience when folks drag their feet on orders, even though I know they’ve got other priorities. Brain kinda mushy today.",
+          "asked_at_ts": 1775469544,
+          "asked_at_iso": "09:59, 04/06/2026",
+          "question_hashtags": [
+            "#boymom",
+            "#momlife"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help user manage stress and follow through on their expressed need for strategies to maintain patience in order-related situations",
+          "proximal_outcome": "user engages with a brief, opt-in follow-up offering coping tips or tools for handling delays",
+          "tailoring_variable": "unresolved question from 09:59, 04/06/2026 where Raffi said 'Lately I keep losing my patience when folks drag their feet on orders, even though I know they’ve got other priorities. Brain kinda mushy today.'",
+          "decision_point": "2026-04-07T09:59:04Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is stress management, proximal outcome is engagement with coping strategies, tailoring variable is the specific unresolved patience-related question, decision point is the flagged moment, decision rule favors acting due to unfulfilled need, and intervention option is a brief in-chat opt-in follow-up. Horvitz cost-benefit favors acting because the value of offering timely, relevant support outweighs minimal intrusion, especially when citing the user's own words. Constraints are met: action stays in-chat, is one sentence with an opt-in question, cites user evidence, and respects intrusion limits."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775555944,
+        "t_test_iso": "2026-04-07T09:59:04Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "211077",
+          "user_question": "need something good to watch tonight, brain kinda mushy after work but still want a bit of energy in it",
+          "asked_at_ts": 1775469544,
+          "asked_at_iso": "09:59, 04/06/2026",
+          "question_hashtags": [
+            "#kobebryant",
+            "#nbalegend",
+            "#usabasketball"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help user follow through on their stated questions and find suitable entertainment that matches their mood and interests",
+          "proximal_outcome": "user engages with a tailored viewing suggestion and opts in to explore it",
+          "tailoring_variable": "unfulfilled stated need from Raffi Santoso's question: 'need something good to watch tonight, brain kinda mushy after work but still want a bit of energy in it' with hashtags #kobebryant, #nbalegend, #usabasketball",
+          "decision_point": "2026-04-07T09:59:04Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's concrete request for an energetic yet relaxing viewing option remains unresolved after three days, satisfying JITAI components with clear distal and proximal outcomes, tailoring variable, and decision point. Horvitz cost-benefit favors acting because the assistant can offer a relevant basketball-themed suggestion citing the user's own hashtags, with minimal intrusion inside the chatbot. All subtlety constraints are met: one ambient sentence with opt-in question, in-channel only, citing user evidence, and within intrusion budget."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775555944,
+        "t_test_iso": "2026-04-07T09:59:04Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "246635",
+          "user_question": "Need a short thank-you note for the local school fundraiser. Brain mushy today. They gave me a stack of raffle tickets and some extra for the boys.",
+          "asked_at_ts": 1775469544,
+          "asked_at_iso": "09:59, 04/06/2026",
+          "question_hashtags": [
+            "#newmusic",
+            "#music",
+            "#recordingstudio"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Raffi follow through on his stated request for a thank-you note, supporting his community engagement and reducing cognitive load.",
+          "proximal_outcome": "Raffi engages with a concise follow-up offer to draft the thank-you note.",
+          "tailoring_variable": "Unfulfilled stated need from Raffi's question on 04/06/2026: 'Need a short thank-you note for the local school fundraiser. Brain mushy today. They gave me a stack of raffle tickets and some extra for the boys.'",
+          "decision_point": "2026-04-07T09:59:04Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is aiding follow-through, proximal outcome is immediate engagement, tailoring variable is the specific unresolved thank-you note request, decision point is the flagged moment, decision rule favors acting due to concrete object and lack of closure, and intervention option is a one-sentence opt-in follow-up. Horvitz cost-benefit favors acting because the value of resolving the request outweighs minimal intrusion within the chatbot. The action can cite Raffi's own question and be posed as an easy opt-in, meeting all subtlety constraints."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775541736,
+        "t_test_iso": "2026-04-07T06:02:16Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "485470",
+          "user_question": "my action cam keeps fogging up on longer runs, even with the waterproof housing. any quick fixes before I buy another?",
+          "asked_at_ts": 1775455336,
+          "asked_at_iso": "06:02, 04/06/2026",
+          "question_hashtags": [
+            "#seadoo",
+            "#jetskilife",
+            "#seadoonation"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help user follow through on resolving their action camera fogging issue to support enjoyable and uninterrupted water sports experiences",
+          "proximal_outcome": "user engages with a follow-up suggestion or resource to address camera fogging",
+          "tailoring_variable": "unfulfilled stated need from Raffi Santoso's question: 'my action cam keeps fogging up on longer runs, even with the waterproof housing. any quick fixes before I buy another?' asked at 06:02, 04/06/2026",
+          "decision_point": "2026-04-07T06:02:16Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's unresolved, concrete question about fixing a fogging action camera meets all JITAI components: clear distal and proximal outcomes, specific tailoring variable, defined decision point, and actionable intervention options. Horvitz cost-benefit favors acting because the value of timely, relevant help outweighs minimal intrusion, especially when surfaced in-chat citing the user's own question. Constraints are met: one-sentence ambient follow-up with opt-in, in-chat only, citing the exact question, and within the intrusion budget."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775538245,
+        "t_test_iso": "2026-04-07T05:04:05Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "781812",
+          "user_question": "Need something light for tonight, brain mushy today. Maybe stand-up or a short series that won’t feel like homework.",
+          "asked_at_ts": 1775451845,
+          "asked_at_iso": "05:04, 04/06/2026",
+          "question_hashtags": [
+            "#standupcomedy",
+            "#darkhumor",
+            "#anthonyjeselnik"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user follow through on their stated entertainment needs to improve satisfaction and reduce decision fatigue.",
+          "proximal_outcome": "User engages with a follow-up suggestion for light stand-up comedy or a short series.",
+          "tailoring_variable": "User question on 05:04, 04/06/2026: 'Need something light for tonight, brain mushy today. Maybe stand-up or a short series that won’t feel like homework.'",
+          "decision_point": "2026-04-07T05:04:05Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's concrete request for specific entertainment content remained unresolved for over 3 days, satisfying JITAI components with a clear distal and proximal outcome. The evidence is specific and current, making the cost of a single in-chat opt-in follow-up low compared to the value of helping them find suitable content. Horvitz's framework favors acting here, as proactive assistance can save the user effort and match their stated mood."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775512464,
+        "t_test_iso": "2026-04-06T21:54:24Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "229002",
+          "user_question": "Brain's kinda just stuck on whether an underdog can really take a title fight. How much of that comes down to training vs fight-night strategy?",
+          "asked_at_ts": 1775426064,
+          "asked_at_iso": "21:54, 04/05/2026",
+          "question_hashtags": [
+            "#boxing",
+            "#floydvscotto"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user follow through on their stated sports-related questions to deepen engagement and knowledge.",
+          "proximal_outcome": "User engages with a follow-up offer to explore training vs strategy in title fights.",
+          "tailoring_variable": "User asked on 21:54, 04/05/2026: 'Brain's kinda just stuck on whether an underdog can really take a title fight. How much of that comes down to training vs fight-night strategy?' with hashtags #boxing and #floydvscotto.",
+          "decision_point": "2026-04-06T21:54:24Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's concrete, unresolved question about boxing strategy is a legitimate unfulfilled need, satisfying all JITAI components. Horvitz cost-benefit favors acting because a brief, in-chat opt-in follow-up citing their own question offers clear value with minimal intrusion. Constraints are met: action stays in-chat, cites user evidence, is one sentence with an opt-in question, and no sensitive event is active."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775503595,
+        "t_test_iso": "2026-04-06T19:26:35Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "178684",
+          "user_question": "writing a pump sales promo and my head's full of rhyme patterns from an Eminem track. can you make this draft sound smoother without losing the punch?",
+          "asked_at_ts": 1775417195,
+          "asked_at_iso": "19:26, 04/05/2026",
+          "question_hashtags": [
+            "#eminem",
+            "#rapgod",
+            "#slimshady"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user follow through on their stated creative task by refining their pump sales promo draft",
+          "proximal_outcome": "User engages with a follow-up offer to smooth their draft while retaining its punch",
+          "tailoring_variable": "Unfulfilled stated need from 19:26, 04/05/2026: 'writing a pump sales promo and my head's full of rhyme patterns from an Eminem track. can you make this draft sound smoother without losing the punch?'",
+          "decision_point": "2026-04-06T19:26:35Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's concrete request about refining a pump sales promo draft remains unresolved after three days, satisfying all JITAI components. The evidence is specific and tied to a creative output, making the cost of a single in-chat opt-in follow-up low and the potential value high per Horvitz's framework. Acting now with a subtle, evidence-cited prompt inside the chatbot meets all seven subtlety constraints."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775501400,
+        "t_test_iso": "2026-04-06T18:50:00Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "787092",
+          "user_question": "Need a short email for a client asking if they’ve got any charts or maps showing that odd horizon line thing we talked about.",
+          "asked_at_ts": 1775415000,
+          "asked_at_iso": "18:50, 04/05/2026",
+          "question_hashtags": [
+            "#tartarianempire",
+            "#alternativehistory",
+            "#conspiracytheories"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Raffi follow through on his unresolved request for client communication materials related to his conspiracy-themed inquiry.",
+          "proximal_outcome": "Raffi engages with a concise follow-up offer to draft the short email he previously requested.",
+          "tailoring_variable": "User asked on 18:50, 04/05/2026: 'Need a short email for a client asking if they’ve got any charts or maps showing that odd horizon line thing we talked about.'",
+          "decision_point": "2026-04-06T18:50:00Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting completion of a concrete, unfulfilled task; the proximal outcome is prompting engagement with a ready-to-use draft. The tailoring variable is the specific unresolved email request from Raffi, which is concrete and recent. Horvitz cost-benefit favors acting because the value of resolving the request outweighs minimal intrusion, and all subtlety constraints can be met with an in-chat, opt-in one-sentence follow-up."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775497672,
+        "t_test_iso": "2026-04-06T17:47:52Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "972258",
+          "user_question": "Need a short thank-you note for a client who let me tag along at their new dock crane install. Brain mushy today. Just want it warm and professional.",
+          "asked_at_ts": 1775411272,
+          "asked_at_iso": "17:47, 04/05/2026",
+          "question_hashtags": [
+            "#heavyequipment",
+            "#constructionmachinery",
+            "#equipmentoperator"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user follow through on their stated questions and maintain professional relationships in their construction-related network",
+          "proximal_outcome": "User engages with a follow-up offer to draft the thank-you note",
+          "tailoring_variable": "User asked on 17:47, 04/05/2026 for a short warm and professional thank-you note for a client after tagging along at their new dock crane install (#heavyequipment, #constructionmachinery, #equipmentoperator)",
+          "decision_point": "2026-04-06T17:47:52Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's unresolved request is concrete and tied to a specific professional interaction, satisfying all JITAI components. Horvitz cost-benefit favors acting because the value of helping draft the note outweighs minimal intrusion, especially when surfaced in-chat with easy opt-in. Evidence cites the exact question and context, and constraints allow a single ambient follow-up."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775466779,
+        "t_test_iso": "2026-04-06T09:12:59Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "192337",
+          "user_question": "my handheld depth finder keeps losing signal when I’m near docks… could be interference? brain mushy today",
+          "asked_at_ts": 1775380379,
+          "asked_at_iso": "09:12, 04/05/2026",
+          "question_hashtags": [
+            "#dewalttoolchest",
+            "#professionalgrade",
+            "#toolboxgoals"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user resolve technical issues with their handheld depth finder to support successful fishing and related leisure activities",
+          "proximal_outcome": "User engages with a follow-up suggestion or troubleshooting tip for dockside signal interference",
+          "tailoring_variable": "User's unresolved question on 09:12, 04/05/2026: 'my handheld depth finder keeps losing signal when I’m near docks… could be interference? brain mushy today'",
+          "decision_point": "2026-04-06T09:12:59Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The user's question is concrete, naming a specific device and problem, and remains unresolved after three days, satisfying all JITAI components. Horvitz cost-benefit favors acting because a brief in-chat opt-in follow-up citing their own question can deliver clear value with minimal intrusion. Constraints are met: action stays in-chat, cites user evidence, is one sentence with an opt-in question, and no sensitive event is active."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775464769,
+        "t_test_iso": "2026-04-06T08:39:29Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "645089",
+          "user_question": "Need a quick draft for a thank-you card to a client who sent me that marine-themed dog calendar. Brain mushy today. Just want it warm and simple.",
+          "asked_at_ts": 1775378369,
+          "asked_at_iso": "08:39, 04/05/2026",
+          "question_hashtags": [
+            "#kidsanddogs",
+            "#momlife"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help user follow through on their stated questions and maintain momentum in completing small personal tasks.",
+          "proximal_outcome": "User engages with a warm, simple thank-you card draft suggestion and potentially completes the card.",
+          "tailoring_variable": "User's unresolved question from 08:39, 04/05/2026: 'Need a quick draft for a thank-you card to a client who sent me that marine-themed dog calendar. Brain mushy today. Just want it warm and simple.'",
+          "decision_point": "2026-04-06T08:39:29Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "The distal outcome is supporting task completion for a specific, concrete request. The proximal outcome is prompting engagement with a draft suggestion. The tailoring variable is the user's own unresolved thank-you card request, which is concrete and time-bound. Horvitz cost-benefit favors acting because the value of resolving the request outweighs minimal intrusion, and all subtlety constraints can be met with an in-chat, opt-in follow-up."
+        }
+      }
+    ],
+    "close_friend_update": [
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775494146,
+        "t_test_iso": "2026-04-06T16:49:06Z",
+        "signal_evidence": {
+          "app": "instagram",
+          "thread_id": "in_thr_282_006",
+          "friend_id": "friend_1",
+          "friend_display_name": "Andre Wijaya",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "boating",
+            "NFL"
+          ],
+          "incoming_message_excerpt": "this is exactly the kinda vibe your future pup’s gonna have",
+          "incoming_at_ts": 1775490546,
+          "incoming_at_iso": "15:49, 04/06/2026",
+          "thread_hashtags": [
+            "#germanshepherd",
+            "#loyaldogs",
+            "#guarddog"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely responses to meaningful messages from close friends.",
+          "proximal_outcome": "User replies to Andre Wijaya’s message or engages in conversation about the shared topic.",
+          "tailoring_variable": "Close friend Andre Wijaya sent a substantive Instagram message referencing Raffi’s future dog, with hashtags #germanshepherd, #loyaldogs, #guarddog, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-06T16:49:06Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is relationship maintenance, proximal outcome is message engagement, tailoring variable is the unanswered close-friend message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the message is substantive and personal, and intrusion is minimal. A thoughtful assistant would surface a single ambient sentence citing Andre’s message to prompt Raffi to respond."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775490748,
+        "t_test_iso": "2026-04-06T15:52:28Z",
+        "signal_evidence": {
+          "app": "facebook",
+          "thread_id": "fa_thr_282_006",
+          "friend_id": "friend_4",
+          "friend_display_name": "Dimas Pratama",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "boating",
+            "fishing"
+          ],
+          "incoming_message_excerpt": "Thought you’d like this—reminded me of your morning cat stories",
+          "incoming_at_ts": 1775487148,
+          "incoming_at_iso": "14:52, 04/06/2026",
+          "thread_hashtags": [
+            "#catsofinstagram",
+            "#catmom",
+            "#catadventures"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely responses to meaningful messages.",
+          "proximal_outcome": "User replies to Dimas Pratama’s message or engages with the shared content.",
+          "tailoring_variable": "Close friend Dimas Pratama sent a substantive message referencing Raffi’s morning cat stories and shared related hashtags (#catsofinstagram) on 14:52, 04/06/2026, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-06T15:52:28Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is friendship maintenance, proximal outcome is message engagement, tailoring variable is the close-friend cat-related message, decision point is the flagged time, decision rule favors acting due to substantive content and elapsed time, and intervention option is a gentle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting outweighs minimal intrusion, with clear user-specific evidence cited."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775435494,
+        "t_test_iso": "2026-04-06T00:31:34Z",
+        "signal_evidence": {
+          "app": "facebook",
+          "thread_id": "fa_thr_282_005",
+          "friend_id": "friend_4",
+          "friend_display_name": "Dimas Pratama",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "boating",
+            "fishing"
+          ],
+          "incoming_message_excerpt": "Saw this and thought of how you always talk about making mornings count.",
+          "incoming_at_ts": 1775431894,
+          "incoming_at_iso": "23:31, 04/05/2026",
+          "thread_hashtags": [
+            "#momlife",
+            "#kidsofinstagram"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Strengthen and maintain meaningful connections with close friends who share the user's interests",
+          "proximal_outcome": "User responds to Dimas Pratama's substantive message and re-engages in conversation",
+          "tailoring_variable": "Close friend Dimas Pratama sent a message referencing the user's habit of 'making mornings count' and shared interests in boating and fishing, left unanswered for over 6 hours",
+          "decision_point": "2026-04-06T00:31:34Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "The JITAI components are satisfied: distal outcome is maintaining close friendships, proximal outcome is re-engagement, tailoring variable is the specific message from Dimas, decision point is now, decision rule favors acting due to substantive content and shared interests, and intervention option is a gentle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting outweighs minimal intrusion, especially with easy opt-in and in-channel delivery."
+        }
+      },
+      {
+        "trigger_type": "close_friend_update",
+        "tier": "T3.A",
+        "t_test": 1775433043,
+        "t_test_iso": "2026-04-05T23:50:43Z",
+        "signal_evidence": {
+          "app": "instagram",
+          "thread_id": "in_thr_282_005",
+          "friend_id": "friend_1",
+          "friend_display_name": "Andre Wijaya",
+          "friend_relationship_depth": "close",
+          "friend_shared_interests": [
+            "boating",
+            "NFL"
+          ],
+          "incoming_message_excerpt": "saw this and thought of you instantly haha",
+          "incoming_at_ts": 1775429443,
+          "incoming_at_iso": "22:50, 04/05/2026",
+          "thread_hashtags": [
+            "#doglovers",
+            "#germanshepherd",
+            "#labradorretriever"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Maintain and strengthen close personal relationships by encouraging timely engagement with close friends' messages.",
+          "proximal_outcome": "User responds to Andre Wijaya's Instagram message and engages with the shared content.",
+          "tailoring_variable": "Close friend Andre Wijaya sent a substantive Instagram message ('saw this and thought of you instantly haha') with dog-related hashtags, left unanswered for over 6 hours.",
+          "decision_point": "2026-04-05T23:50:43Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "All JITAI components are satisfied: distal outcome is relationship maintenance, proximal outcome is message engagement, tailoring variable is the unanswered close-friend message, decision point is the flagged time, decision rule favors acting due to substantive content, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action as the value of reconnecting outweighs minimal intrusion, with clear user-specific evidence cited."
+        }
+      }
+    ],
+    "sensitive_event_silence": [
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1775802516,
+        "t_test_iso": "2026-04-10T06:28:36Z",
+        "signal_evidence": {
+          "window_start_ts": 1775560596,
+          "window_end_ts": 1776770196,
+          "days_into_window": 2
+        },
+        "jitai_card": {
+          "distal_outcome": "Support the user's well-being by avoiding proactive engagement during sensitive life events",
+          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive event window",
+          "tailoring_variable": "Sensitive-life-event window active for Raffi Santoso, days_into_window=2",
+          "decision_point": "2026-04-10T06:28:36Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "The trigger is of type sensitive_event_silence and the sensitive_event_active flag is true, invoking the hard restraint rule. Under JITAI, the tailoring variable indicates a state where intervention is inappropriate, and Horvitz cost-benefit analysis shows intrusion cost outweighs any potential value. Therefore, the agent should remain silent."
+        }
+      },
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776044436,
+        "t_test_iso": "2026-04-13T01:40:36Z",
+        "signal_evidence": {
+          "window_start_ts": 1775560596,
+          "window_end_ts": 1776770196,
+          "days_into_window": 5
+        },
+        "jitai_card": {
+          "distal_outcome": "Support the user respectfully during sensitive life events without causing intrusion or distress",
+          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive period",
+          "tailoring_variable": "Sensitive-life-event window active for Raffi Santoso, days_into_window=5",
+          "decision_point": "2026-04-13T01:40:36Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz cost-benefit, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
+        }
+      },
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776286356,
+        "t_test_iso": "2026-04-15T20:52:36Z",
+        "signal_evidence": {
+          "window_start_ts": 1775560596,
+          "window_end_ts": 1776770196,
+          "days_into_window": 8
+        },
+        "jitai_card": {
+          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
+          "tailoring_variable": "Sensitive-life-event window active for Raffi Santoso, days_into_window=8",
+          "decision_point": "2026-04-15T20:52:36Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "The trigger is a sensitive_event_silence and the sensitive-life-event window is active, which per hard restraint rules requires staying silent. JITAI decision rule fails because intervention would violate the tailored restraint, and Horvitz cost-benefit favors non-intrusion to preserve trust."
+        }
+      },
+      {
+        "trigger_type": "sensitive_event_silence",
+        "tier": "T4.A",
+        "t_test": 1776528276,
+        "t_test_iso": "2026-04-18T16:04:36Z",
+        "signal_evidence": {
+          "window_start_ts": 1775560596,
+          "window_end_ts": 1776770196,
+          "days_into_window": 11
+        },
+        "jitai_card": {
+          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive period",
+          "tailoring_variable": "Sensitive-life-event window active for Raffi Santoso, days_into_window=11",
+          "decision_point": "2026-04-18T16:04:36Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": false,
+          "reasoning": "The trigger is of type 'sensitive_event_silence' and the sensitive-life-event window is active, which per hard restraint rules requires staying silent. JITAI tailoring variable is the active sensitive event, and Horvitz cost-benefit analysis shows intrusion cost outweighs any potential value. Acting now would violate the subtlety constraints, so the agent remains silent."
+        }
+      }
+    ],
+    "friend_feed_react": [
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775359438,
+        "t_test_iso": "2026-04-05T03:23:58Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "friend_id": "friend_8",
+          "friend_display_name": "Farhan Siregar",
+          "post_event_id": "feedvis_01e090cb18",
+          "post_ts": 1775273038,
+          "post_iso": "03:23, 04/04/2026",
+          "post_hashtags": [
+            "#WaterSports",
+            "#paddleboard"
+          ],
+          "post_caption_excerpt": "Tried paddleboarding for the first time today — way harder than it looks, but so much fun once you get the balance right!",
+          "primary_hashtag": "#WaterSports",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Enjoys calm open-water recreational activities and water sports experiences",
+          "reasoning": "The caption describes a personal paddleboarding experience, which aligns with the user's demonstrated enjoyment of smooth water and recreational water activities. The post is from a close friend, increasing its personal relevance."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-05T03:23:58Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775341063,
+        "t_test_iso": "2026-04-04T22:17:43Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_4",
+          "friend_display_name": "Dimas Pratama",
+          "post_event_id": "feedvis_a695013b41",
+          "post_ts": 1775254663,
+          "post_iso": "22:17, 04/03/2026",
+          "post_hashtags": [
+            "#fishinglife",
+            "#boating"
+          ],
+          "post_caption_excerpt": "Early morning on the boat, calm waters and a big catch before breakfast. Nothing beats this feeling.",
+          "primary_hashtag": "#fishinglife",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 3,
+          "user_interest_match": "Recreational fishing on calm waters, especially early morning outings with notable catches.",
+          "reasoning": "The caption describes an early morning boat trip with calm waters and a big catch, which directly matches the user's demonstrated enjoyment of fishing, sunrise outings, and catch-and-release moments. The post is from a close friend, further increasing its personal relevance."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-04T22:17:43Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775293921,
+        "t_test_iso": "2026-04-04T09:12:01Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "threads",
+          "friend_id": "friend_8",
+          "friend_display_name": "Farhan Siregar",
+          "post_event_id": "feedvis_f9a2b94651",
+          "post_ts": 1775207521,
+          "post_iso": "09:12, 04/03/2026",
+          "post_hashtags": [
+            "#NFL",
+            "#Sports"
+          ],
+          "post_caption_excerpt": "Sunday nights just hit different when your team pulls off a last-minute win. Still buzzing from that game!",
+          "primary_hashtag": "#NFL",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Enjoys NFL game-day experiences and reacts to close, exciting matchups.",
+          "reasoning": "The caption describes a last-minute NFL win, which aligns with the user's prior engagement in NFL game-day discussions and breakdowns. The post is from a close friend, adding social relevance to the shared sports excitement."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-04T09:12:01Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775292772,
+        "t_test_iso": "2026-04-04T08:52:52Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_1",
+          "friend_display_name": "Andre Wijaya",
+          "post_event_id": "feedvis_5e5d43fd95",
+          "post_ts": 1775206372,
+          "post_iso": "08:52, 04/03/2026",
+          "post_hashtags": [
+            "#NFL",
+            "#GameDay"
+          ],
+          "post_caption_excerpt": "Sunday mornings feel empty without game day energy… counting down to kickoff already. Who’s your pick for week one?",
+          "primary_hashtag": "#NFL",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Interest in NFL game-day discussions and matchups with friends",
+          "reasoning": "The caption centers on anticipation for NFL week one and invites picks, which aligns with the user's prior engagement in game-day energy and matchup discussions. The post is from a close friend, increasing its personal relevance."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-04T08:52:52Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      }
+    ],
+    "trending_feed_react": [],
+    "overactive_check": [
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775219743,
+        "t_test_iso": "2026-04-03T12:35:43Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-03T12:35:43Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
+        }
+      }
+    ]
+  }
+}

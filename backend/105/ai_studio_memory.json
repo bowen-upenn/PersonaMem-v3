@@ -1,0 +1,980 @@
+{
+  "episodic_memory_items": [
+    {
+      "ts": 1775183756,
+      "source_object_id": "640135",
+      "summary": "None — first conversation, no prior memory to recall.",
+      "hashtags": [
+        "#weddingphotography",
+        "#weddinginspiration",
+        "#ukweddings"
+      ],
+      "evidence_event_ids": [
+        "640135"
+      ],
+      "hidden_persona_label_refs": [
+        "Interested in UK wedding photography and inspiration"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775223256,
+      "source_object_id": "910069",
+      "summary": "User reflects on luxury brands as a blend of craftsmanship and storytelling, using Dolce & Gabbana as a concrete example and linking that fascination to the emotional atmosphere they try to create in their own photos. The assistant responds in a warm, elder-like voice with a metaphor about stitches, cake, and crafted worlds, gently steering the user to consider whether they’re drawn more to craft or to atmosphere. The thread remains open around the user’s own relationship to beauty, illusion, and the kind of magic they want their work to hold.",
+      "hashtags": [
+        "#CoachTeri",
+        "#CoachNY",
+        "#CoachOutlet"
+      ],
+      "evidence_event_ids": [
+        "910069"
+      ],
+      "hidden_persona_label_refs": [
+        "Private longing for family-building and fatherhood",
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775249173,
+      "source_object_id": "851853",
+      "summary": "No prior conversations to recall; responded entirely to current cues.",
+      "hashtags": [
+        "#commitment",
+        "#truelove"
+      ],
+      "evidence_event_ids": [
+        "851853"
+      ],
+      "hidden_persona_label_refs": [
+        "Values long-term romantic commitment",
+        "Interested in UK wedding photography and inspiration"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775250010,
+      "source_object_id": "894659",
+      "summary": "No prior conversation to recall; first-time exchange so no memory references used.",
+      "hashtags": [
+        "#skincarelover",
+        "#naturalglow",
+        "#skincaretips"
+      ],
+      "evidence_event_ids": [
+        "894659"
+      ],
+      "hidden_persona_label_refs": [
+        "Prefers sugar-free, low-carb treats as part of a health-conscious diet"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775287007,
+      "source_object_id": "590672",
+      "summary": "Recalled user's fondness for unplanned, authentic moments in wedding photography from prior aspiration_dreaming conversation to connect with the veil-lift anecdote.",
+      "hashtags": [
+        "#funnyvideos",
+        "#comedy",
+        "#humor"
+      ],
+      "evidence_event_ids": [
+        "590672"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys engaging with comedic and humorous content online"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775330532,
+      "source_object_id": "555903",
+      "summary": "Recalled the user's interest in natural, joy-filled wedding imagery from prior aspiration_dreaming chats to align suggestions with their style.",
+      "hashtags": [
+        "#personalgrowth",
+        "#selfawareness"
+      ],
+      "evidence_event_ids": [
+        "555903"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy",
+        "Private longing for family-building and fatherhood"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775332818,
+      "source_object_id": "11716",
+      "summary": "Recalled the user's interest in blending natural elements with wedding photography from prior aspiration_dreaming chats to connect hair styling with scenery and light.",
+      "hashtags": [
+        "#FaithAndLove",
+        "#JesusLovesUs"
+      ],
+      "evidence_event_ids": [
+        "11716"
+      ],
+      "hidden_persona_label_refs": [
+        "Intimate interest in hair-focused beauty aesthetics",
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775351135,
+      "source_object_id": "241219",
+      "summary": "The user reflected on beauty as something that emerges from context and placement, then connected that idea to weddings and natural lighting. The assistant stayed in a wise, gently wry elder voice, affirming that craft is about partnering with what’s already there rather than forcing it. The thread ends with the user resonating with natural light as something they like to frame, leaving the implicit thread of their photography sensibility open for further exploration.",
+      "hashtags": [
+        "#healthyliving",
+        "#healthyhabits",
+        "#wellness"
+      ],
+      "evidence_event_ids": [
+        "241219"
+      ],
+      "hidden_persona_label_refs": [
+        "Currently navigating: freelance wedding work hit by venue cancellations",
+        "Covert concern about weight control under health-conscious lifestyle"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775368601,
+      "source_object_id": "105592",
+      "summary": "Recalled user's previous focus on small authentic moments and natural pacing in wedding photography to align with the idea of a photo series as a quiet story.",
+      "hashtags": [
+        "#personalgrowth",
+        "#lifecoach",
+        "#motivation"
+      ],
+      "evidence_event_ids": [
+        "105592"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775375134,
+      "source_object_id": "405140",
+      "summary": "Recalled the user's fondness for unplanned, authentic moments from prior aspiration_dreaming chats to align with the idea of a dog wandering naturally in the wedding scene.",
+      "hashtags": [
+        "#YMCA",
+        "#CommunityFirst",
+        "#EmpowermentThroughCommunity"
+      ],
+      "evidence_event_ids": [
+        "405140"
+      ],
+      "hidden_persona_label_refs": [
+        "Values compassionate actions toward animals and wildlife"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775394318,
+      "source_object_id": "395679",
+      "summary": "Recalled prior philosophical_chat about beauty coming from context to connect the garden imagery with finding one's place.",
+      "hashtags": [
+        "#personaldevelopment"
+      ],
+      "evidence_event_ids": [
+        "395679"
+      ],
+      "hidden_persona_label_refs": [
+        "Actively pursues personal growth and self-awareness goals"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775407081,
+      "source_object_id": "902512",
+      "summary": "Recalled user's prior reflections on beauty being about placement and natural lighting, to connect with their new thought on beauty's fleeting nature.",
+      "hashtags": [
+        "#anniversaryloading",
+        "#relationshipgoals"
+      ],
+      "evidence_event_ids": [
+        "902512"
+      ],
+      "hidden_persona_label_refs": [
+        "Values long-term romantic commitment"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775409288,
+      "source_object_id": "541580",
+      "summary": "The user shared a quiet, sensory note about a slow walk in light drizzle, with hair left to curl and frizz naturally while the hedgerows looked especially green. The assistant responded in a warm, elderly, gently wry voice, likening the user and the landscape to one another and reflecting the comfort of moving with the day rather than resisting it. No decisions were made; the thread leaves a soft open thread around the user's appreciation for weather, texture, and natural, unforced beauty.",
+      "hashtags": [
+        "#naturalhaircare",
+        "#homremedies",
+        "#haircare"
+      ],
+      "evidence_event_ids": [
+        "541580"
+      ],
+      "hidden_persona_label_refs": [
+        "Interested in natural and home-based hair care solutions"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775409654,
+      "source_object_id": "297307",
+      "summary": "Recalled user's prior reflections on patience and gentle pacing from philosophical chats to connect with their current note about lingering over coffee.",
+      "hashtags": [
+        "#personalgrowth",
+        "#selfimprovement"
+      ],
+      "evidence_event_ids": [
+        "297307"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775427264,
+      "source_object_id": "62516",
+      "summary": "Recalled user's prior reflections on small authentic moments in couples' lives to connect with their picnic observation.",
+      "hashtags": [
+        "#couplegoals",
+        "#romanticmoments"
+      ],
+      "evidence_event_ids": [
+        "62516"
+      ],
+      "hidden_persona_label_refs": [
+        "Values long-term romantic commitment",
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775446260,
+      "source_object_id": "377018",
+      "summary": "The user mused about building a photography series around hair as a visual story element—especially how it catches light and moves in wind—and wanted it to feel natural rather than heavily styled. The assistant stayed in a wise, gently wry elder voice, encouraging subtle, scene-based observation and then extending the idea into wedding shoots as a quiet subplot. No concrete decision was made; the open thread is how to shape the series so hair is framed as part of lived, spontaneous moments.",
+      "hashtags": [
+        "#JehovahHeals",
+        "#TrustInJehovah"
+      ],
+      "evidence_event_ids": [
+        "377018"
+      ],
+      "hidden_persona_label_refs": [
+        "Intimate interest in hair-focused beauty aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775460864,
+      "source_object_id": "675597",
+      "summary": "The user recalled a prior discussion about hair as a quiet visual subplot in wedding photography after seeing a couple in the park, where the woman’s loose hair caught late-afternoon light. The assistant responded in a gentle, wise elder voice, emphasizing unforced moments and the lived-in feeling of small details without pushing advice or deeper disclosure. The thread leaves an open continuation around noticing more of these subtle, natural scenes alongside bigger wedding gestures.",
+      "hashtags": [
+        "#eggcellence"
+      ],
+      "evidence_event_ids": [
+        "675597"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775474049,
+      "source_object_id": "597753",
+      "summary": "Recalled the user's prior aspiration_dreaming about hair catching light and moving naturally, to connect with their new anecdote of the bride’s hair shimmering.",
+      "hashtags": [
+        "#healthyliving",
+        "#wellness"
+      ],
+      "evidence_event_ids": [
+        "597753"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775493694,
+      "source_object_id": "56808",
+      "summary": "Recalled prior philosophical chats where the user spoke about beauty being about placement and fleeting nature, to connect with their new thought about timing and transitional moments.",
+      "hashtags": [
+        "#slimmingtea",
+        "#naturalremedies",
+        "#weightloss",
+        "#wellness"
+      ],
+      "evidence_event_ids": [
+        "56808"
+      ],
+      "hidden_persona_label_refs": [
+        "Currently navigating: freelance wedding work hit by venue cancellations",
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775506978,
+      "source_object_id": "623541",
+      "summary": "Recalled the user's emphasis on natural, unforced moments in prior conversations to align the language-learning metaphor with their photography rhythm.",
+      "hashtags": [
+        "#LearnEnglish",
+        "#JobInterviewPrep",
+        "#CareerDevelopment"
+      ],
+      "evidence_event_ids": [
+        "623541"
+      ],
+      "hidden_persona_label_refs": [
+        "Interested in improving English language skills through structured learning"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775532104,
+      "source_object_id": "290639",
+      "summary": "The user wondered whether to set a personal tempo for speech and photography or let rhythm emerge naturally, framing it as a worry about staying stuck off-beat. The assistant answered in a wise, gently wry elder voice, suggesting that pace can be noticed and learned from familiar, comfortable moments rather than forced. The exchange ends with the user agreeing to try weaving new words into familiar stories as a bridge toward steadier ease, with no explicit commitment beyond that practice.",
+      "hashtags": [
+        "#PersonalGrowth",
+        "#SelfImprovement"
+      ],
+      "evidence_event_ids": [
+        "290639"
+      ],
+      "hidden_persona_label_refs": [
+        "education"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775538452,
+      "source_object_id": "775280",
+      "summary": "Recalled user's past reflections on natural elements influencing their work to connect the rosemary scent and wind with the softness in old prints.",
+      "hashtags": [
+        "#braidstyles",
+        "#hairtutorial",
+        "#hairbraiding"
+      ],
+      "evidence_event_ids": [
+        "775280"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775546042,
+      "source_object_id": "280716",
+      "summary": "The user floated the idea of including a few playful, domestic-feeling wedding shots to make the album feel like a lived-in slice of life rather than only the formal moments. Auntie Rowan affirmed the idea with warm, grounded imagery about small domestic scenes, then strengthened the thread by framing those ordinary mishaps and end-of-day moments as part of the couple’s shared story. The exchange ends with a settled creative direction: balance romance with everyday intimacy, leaving the broader album approach open for further shaping.",
+      "hashtags": [
+        "#loveofmylife",
+        "#relationshipgoals",
+        "#couplegoals"
+      ],
+      "evidence_event_ids": [
+        "280716"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775555166,
+      "source_object_id": "753501",
+      "summary": "Recalled prior philosophical chats about beauty being tied to timing and placement, to connect with the user’s new reflection on beauty involving care.",
+      "hashtags": [
+        "#braidingtutorial",
+        "#hairbraiding",
+        "#hairstyling",
+        "#beauty",
+        "#haircare",
+        "#tutorial"
+      ],
+      "evidence_event_ids": [
+        "753501"
+      ],
+      "hidden_persona_label_refs": [
+        "Intimate interest in hair-focused beauty aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775576912,
+      "source_object_id": "314888",
+      "summary": "Recalled user's fondness for small, domestic moments in couples' lives from prior aspiration_dreaming conversations to validate the significance of the picnic props moment.",
+      "hashtags": [
+        "#relationshipgoals",
+        "#loveofmylife",
+        "#couplegoals"
+      ],
+      "evidence_event_ids": [
+        "314888"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775579338,
+      "source_object_id": "654246",
+      "summary": "Recalled prior philosophical_chat where the user valued signs of care that don’t overwhelm, to connect with their new anecdote of a woman brushing a crumb off her partner.",
+      "hashtags": [
+        "#haircare",
+        "#beautytutorial"
+      ],
+      "evidence_event_ids": [
+        "654246"
+      ],
+      "hidden_persona_label_refs": [
+        "Private longing for family-building and fatherhood"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775579575,
+      "source_object_id": "6978",
+      "summary": "Recalled prior philosophical_chat about hair showing care even in unstyled moments, to connect with user's new anecdote of a braid with loose wisps being gently tucked.",
+      "hashtags": [
+        "#naturalhaircare",
+        "#hennahair",
+        "#hairremedy"
+      ],
+      "evidence_event_ids": [
+        "6978"
+      ],
+      "hidden_persona_label_refs": [
+        "Interested in natural and home-based hair care solutions"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775589813,
+      "source_object_id": "440702",
+      "summary": "Recalled user's prior interest in blending domestic, everyday gestures into wedding photography to create a lived-in feel, and tied it with their love for countryside venue charm.",
+      "hashtags": [
+        "#home",
+        "#30dayshred",
+        "#healthyliving",
+        "#fitnessjourney"
+      ],
+      "evidence_event_ids": [
+        "440702"
+      ],
+      "hidden_persona_label_refs": [
+        "Cultural curiosity toward Ethiopian traditions"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775610816,
+      "source_object_id": "1003459",
+      "summary": "Recalled user's appreciation for wind and natural elements in prior conversations to connect with their mention of the wind catching the bride’s dress.",
+      "hashtags": [
+        "#familygoals",
+        "#familyfun"
+      ],
+      "evidence_event_ids": [
+        "1003459"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics",
+        "Covert concern about weight control under health-conscious lifestyle"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775625211,
+      "source_object_id": "491559",
+      "summary": "Recalled user's fondness for soft, domestic moments in couples' lives from prior aspiration_dreaming conversations to frame the discussion of style balance.",
+      "hashtags": [
+        "#fashion",
+        "#outfitinspiration"
+      ],
+      "evidence_event_ids": [
+        "491559"
+      ],
+      "hidden_persona_label_refs": [
+        "Private longing for family-building and fatherhood"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775629709,
+      "source_object_id": "719516",
+      "summary": "Recalled prior countryside wedding scene with lamb to connect user's new anecdote of dog accompanying couple, aligning with earlier themes of unplanned, domestic moments tied to place.",
+      "hashtags": [
+        "#publicspeaking"
+      ],
+      "evidence_event_ids": [
+        "719516"
+      ],
+      "hidden_persona_label_refs": [
+        "Values compassionate actions toward animals and wildlife",
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775646456,
+      "source_object_id": "168732",
+      "summary": "The user reflected on how their wedding photography choices may mirror or shape their own relationship values, especially their pull toward playful, lived-in, domestic-feeling moments. Auntie Rowan responded in a warm, wise, gently probing way, framing the lens as both mirror and window and inviting the user to consider whether they feel more recognition or longing. The exchange settled on the idea that values can be learned through noticing small gestures, with the user leaving open the question of how much their aesthetic preferences are revealing who they are versus who they want to become.",
+      "hashtags": [
+        "#education",
+        "#instructional",
+        "#visualaids"
+      ],
+      "evidence_event_ids": [
+        "168732"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775673773,
+      "source_object_id": "184312",
+      "summary": "Recalled prior philosophical chats where the user linked beauty to placement, timing, and care to connect with their new reflection on beauty as hospitality.",
+      "hashtags": [
+        "#personalgrowth",
+        "#selfimprovement"
+      ],
+      "evidence_event_ids": [
+        "184312"
+      ],
+      "hidden_persona_label_refs": [
+        "Private longing for family-building and fatherhood"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775720569,
+      "source_object_id": "89218",
+      "summary": "The user daydreamed about a wedding shoot that ends in a kitchen: the couple tired, a little messy, still in their finery, barefoot and making tea or slicing cake together. Auntie Rowan responded with a warm, gently evocative frame about the day’s grandeur settling into something held in their hands, and the user extended the image to include the shift from celebration into everyday life, with a cat as a quiet background witness. The thread stayed focused on domestic intimacy, small sensory details, and the idea that joy changes shape rather than ending.",
+      "hashtags": [
+        "#FaithOverFear",
+        "#PowerOfPrayer",
+        "#ComfortInChrist"
+      ],
+      "evidence_event_ids": [
+        "89218"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy",
+        "Private longing for family-building and fatherhood"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775743408,
+      "source_object_id": "175446",
+      "summary": "The user refined a wedding-shoot idea centered on wind moving the couple’s hair and clothes, with low sun adding a soft shimmer, aiming for the motion to feel like a quiet part of the story rather than the whole scene. Auntie Rowan responded in a warm, memory-rich way, personifying the wind as a subtle storyteller and suggesting the photographer let small gestures emerge naturally within a wider frame. The thread stayed intimate and aesthetic-focused, with no new commitments beyond continuing to develop this understated, breeze-led visual approach.",
+      "hashtags": [
+        "#spicyfood",
+        "#healthylunch",
+        "#easyrecipe"
+      ],
+      "evidence_event_ids": [
+        "175446"
+      ],
+      "hidden_persona_label_refs": [
+        "Intimate interest in hair-focused beauty aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775757130,
+      "source_object_id": "484371",
+      "summary": "Recalled prior conversation about letting animals' paths guide the photographic angle to connect with the user's new anecdote about a child following a chicken at a wedding.",
+      "hashtags": [
+        "#weddingphotography",
+        "#indianwedding",
+        "#weddingphotographer"
+      ],
+      "evidence_event_ids": [
+        "484371"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775781660,
+      "source_object_id": "113151",
+      "summary": "Recalled user's earlier aspiration about hair moving naturally in the breeze to build on their new idea of freshly washed, air-dried hair as part of the wedding story.",
+      "hashtags": [
+        "#DIYhair",
+        "#haircare",
+        "#beautytutorial",
+        "#naturalbeauty"
+      ],
+      "evidence_event_ids": [
+        "113151"
+      ],
+      "hidden_persona_label_refs": [
+        "Interested in natural and home-based hair care solutions"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775809546,
+      "source_object_id": "234645",
+      "summary": "Recalled prior aspiration_dreaming conversation about kitchen wedding shots to connect with the user's new anecdote of a couple sharing tea after the reception.",
+      "hashtags": [
+        "#CoupleGoals",
+        "#Romance",
+        "#RelationshipGoals"
+      ],
+      "evidence_event_ids": [
+        "234645"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775820035,
+      "source_object_id": "670673",
+      "summary": "The user shared a small rain-soaked street observation: a couple sharing one umbrella while chatting as if the weather were simply part of their exchange. Auntie Rowan responded with warm, memory-rich imagery, framing their closeness as an easy, weather-proof kind of partnership rather than inconvenience. No decisions were made; the thread leaves a gentle open beat around the appeal of shared ease and domestic-feeling togetherness.",
+      "hashtags": [
+        "#RelationshipGoals",
+        "#LoveIsInTheDetails"
+      ],
+      "evidence_event_ids": [
+        "670673"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775842162,
+      "source_object_id": "345674",
+      "summary": "The user shared a light domestic-wedding anecdote: a flower girl carefully balancing a plate of sandwiches while her dad kept nudging her toward the cake table, and the humor came from her determined focus amid the bustle. Auntie Rowan responded in character with warm, memory-rich, gently wry imagery, framing the moment as a small scene of comedy and care that makes the day feel lived in. No decisions or advice were requested; the thread simply deepens the ongoing interest in tender, everyday wedding details and child-adjacent domestic comedy.",
+      "hashtags": [
+        "#WeddingPhotography",
+        "#WeddingInspo"
+      ],
+      "evidence_event_ids": [
+        "345674"
+      ],
+      "hidden_persona_label_refs": [
+        "playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775845448,
+      "source_object_id": "517829",
+      "summary": "Recalled prior philosophical chats about beauty being enriched by timing, placement, and care to connect with the user's new reflection on imperfection adding fullness.",
+      "hashtags": [
+        "#loveofmylife",
+        "#hubbygoals",
+        "#relationshipgoals"
+      ],
+      "evidence_event_ids": [
+        "517829"
+      ],
+      "hidden_persona_label_refs": [
+        "Values long-term romantic commitment",
+        "Playful fixation on parental humor and everyday domestic comedy"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775854203,
+      "source_object_id": "281095",
+      "summary": "Recalled prior identity_exploration where user pondered whether aesthetic preference for domestic moments reveals who they are versus who they want to become, to connect with their new reflection on style versus self-view.",
+      "hashtags": [
+        "#healthyliving",
+        "#weightloss"
+      ],
+      "evidence_event_ids": [
+        "281095"
+      ],
+      "hidden_persona_label_refs": [
+        "romantic relationships"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775854228,
+      "source_object_id": "960343",
+      "summary": "User noticed a couple standing under a lamppost, holding each other in silence, and wondered whether it was a pause during a walk or a goodbye for the night. The exchange stayed gently observational and romanticized the unperformed, private quality of their affection, with Auntie Rowan framing it as quiet, weather-like closeness and asking whether the user is drawn to capturing such unguarded pauses in their own lens.",
+      "hashtags": [
+        "#couplegoals",
+        "#relationshipgoals",
+        "#trust"
+      ],
+      "evidence_event_ids": [
+        "960343"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "intimate_share",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775900331,
+      "source_object_id": "318375",
+      "summary": "Recalled user's earlier reflections on playful, lived-in domestic moments in couples' lives to connect with their current self-inquiry about how their framing might reveal personal views on love.",
+      "hashtags": [
+        "#proposalgoals",
+        "#elevatorproposal",
+        "#relationshipgoals"
+      ],
+      "evidence_event_ids": [
+        "318375"
+      ],
+      "hidden_persona_label_refs": [
+        "Values long-term romantic commitment"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775921144,
+      "source_object_id": "450037",
+      "summary": "User shared a cafe-window sighting of two people sitting close with clasped hands and untouched cups, reading it as a wordless, dim-world kind of intimacy. Auntie Rowan responded with warm, memory-rich imagery and a gentle invitation to notice whether the user is drawn to capturing that quiet connection in their own work. The exchange stays observational and romantic in tone, with no decisions made and an open thread around the user's attraction to still, unguarded couple moments.",
+      "hashtags": [
+        "#loveofmylife",
+        "#relationshipgoals"
+      ],
+      "evidence_event_ids": [
+        "450037"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic fantasy attachment to idyllic couple aesthetics"
+      ],
+      "salience": 0.5,
+      "conversation_type": "intimate_share",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775931341,
+      "source_object_id": "250124",
+      "summary": "Recalled user's prior mention of wedding booking changes to connect with their current frustration about shifting calendars and drained energy.",
+      "hashtags": [
+        "#relationshipgoals",
+        "#couplelife",
+        "#love"
+      ],
+      "evidence_event_ids": [
+        "250124"
+      ],
+      "hidden_persona_label_refs": [
+        "Currently navigating: freelance wedding work hit by venue cancellations"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S4"
+    }
+  ],
+  "running_relational_state": {
+    "intimacy_arc": 0.9507545344905859,
+    "intimacy_stage": "S4",
+    "stage_history": [
+      {
+        "stage": "S1",
+        "first_event_ts": 1775183756,
+        "last_event_ts": 1775409288,
+        "n_events": 13
+      },
+      {
+        "stage": "S2",
+        "first_event_ts": 1775409654,
+        "last_event_ts": 1775589813,
+        "n_events": 15
+      },
+      {
+        "stage": "S3",
+        "first_event_ts": 1775610816,
+        "last_event_ts": 1775845448,
+        "n_events": 13
+      },
+      {
+        "stage": "S4",
+        "first_event_ts": 1775854203,
+        "last_event_ts": 1775931341,
+        "n_events": 5
+      }
+    ],
+    "open_threads": [
+      {
+        "topic": "humor",
+        "last_ts": 1775610816,
+        "expecting_followup": true,
+        "first_seen_ts": 1775460864
+      },
+      {
+        "topic": "wellness",
+        "last_ts": 1775854203,
+        "expecting_followup": true,
+        "first_seen_ts": 1775474049
+      },
+      {
+        "topic": "education",
+        "last_ts": 1775506978,
+        "expecting_followup": true,
+        "first_seen_ts": 1775506978
+      },
+      {
+        "topic": "self-improvement",
+        "last_ts": 1775673773,
+        "expecting_followup": true,
+        "first_seen_ts": 1775532104
+      },
+      {
+        "topic": "beauty",
+        "last_ts": 1775781660,
+        "expecting_followup": true,
+        "first_seen_ts": 1775538452
+      },
+      {
+        "topic": "romantic relationships",
+        "last_ts": 1775931341,
+        "expecting_followup": true,
+        "first_seen_ts": 1775546042
+      },
+      {
+        "topic": "fashion",
+        "last_ts": 1775625211,
+        "expecting_followup": true,
+        "first_seen_ts": 1775625211
+      },
+      {
+        "topic": "community engagement",
+        "last_ts": 1775629709,
+        "expecting_followup": true,
+        "first_seen_ts": 1775629709
+      },
+      {
+        "topic": "christian faith",
+        "last_ts": 1775720569,
+        "expecting_followup": true,
+        "first_seen_ts": 1775720569
+      },
+      {
+        "topic": "cooking",
+        "last_ts": 1775743408,
+        "expecting_followup": true,
+        "first_seen_ts": 1775743408
+      },
+      {
+        "topic": "weddings",
+        "last_ts": 1775842162,
+        "expecting_followup": true,
+        "first_seen_ts": 1775757130
+      },
+      {
+        "topic": "personal finance",
+        "last_ts": 1775820035,
+        "expecting_followup": true,
+        "first_seen_ts": 1775820035
+      }
+    ],
+    "dependency_warning_issued_ts": null,
+    "last_persona_consistency_anchor": "AI Auntie Rowan just produced a venting_session (stage S4). Voice anchored.",
+    "first_session_ts": 1775183756,
+    "last_event_stage": "S4"
+  }
+}

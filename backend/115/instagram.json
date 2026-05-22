@@ -4807,6 +4807,46 @@
     "is_dm": false
   },
   {
+    "source_object_id": "feedvis_8deaa51116",
+    "source_timestamp": 1775314369,
+    "formatted_timestamp": "14:52, 04/04/2026",
+    "source_hashtags": [
+      "#dance",
+      "#universe",
+      "#sign",
+      "#serendipity"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "public_creator",
+    "recipient_id": "",
+    "relationship": "public",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "short_video",
+    "content": {
+      "title": "",
+      "caption": "I asked the universe to give me a sign… then the street dancer started mirroring my moves perfectly. Chills.",
+      "overall_description": "Clip of a person freestyling in a plaza when a stranger joins in, matching the rhythm and movements in sync.",
+      "trending_topic": "I asked the universe sign"
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "trending_feed",
+      "trending_topic": "I asked the universe sign",
+      "trend_description": "Short reel that opens with the line 'I asked the universe to give me a sign' followed by a coincidence or visual reveal.",
+      "primary_hashtag": "#dance",
+      "relevance": "relevant",
+      "search_query": "top Instagram trending topics April 2026"
+    }
+  },
+  {
     "source_object_id": "779012",
     "source_timestamp": 1775314716,
     "formatted_timestamp": "14:58, 04/04/2026",
@@ -5285,6 +5325,45 @@
     "relationship": "public",
     "is_self_authored": false,
     "is_dm": false
+  },
+  {
+    "source_object_id": "feedvis_7448020b19",
+    "source_timestamp": 1775335523,
+    "formatted_timestamp": "20:45, 04/04/2026",
+    "source_hashtags": [
+      "#comedygold",
+      "#walkandsing",
+      "#bffvibes"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "public_creator",
+    "recipient_id": "",
+    "relationship": "public",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "short_video",
+    "content": {
+      "title": "",
+      "caption": "When you and your bestie lock eyes mid-walk and forget the world exists. Slow-mo level: cinematic drama.",
+      "overall_description": "Two friends striding toward the camera in slow-motion, lip-syncing dramatically to each other with wind blowing through their hair.",
+      "trending_topic": "two-person walk lip-sync"
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "trending_feed",
+      "trending_topic": "two-person walk lip-sync",
+      "trend_description": "Two people stride toward the camera lip-syncing the verses of a dramatic song to each other in slow-motion.",
+      "primary_hashtag": "#comedygold",
+      "relevance": "irrelevant",
+      "search_query": "top Instagram trending topics April 2026"
+    }
   },
   {
     "source_object_id": "791433",
@@ -5952,6 +6031,46 @@
       "lat": 34.0522,
       "lon": -118.2437,
       "precision": "city"
+    }
+  },
+  {
+    "source_object_id": "feedvis_82a2ec3f15",
+    "source_timestamp": 1775360731,
+    "formatted_timestamp": "03:45, 04/05/2026",
+    "source_hashtags": [
+      "#RelationshipGoals",
+      "#HeadphoneSwap",
+      "#MusicReaction",
+      "#CoupleVibes"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "public_creator",
+    "recipient_id": "",
+    "relationship": "public",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "short_video",
+    "content": {
+      "title": "",
+      "caption": "Swapped playlists with him and… wow. I did NOT see that drop coming 😂",
+      "overall_description": "Close-up shots of two people trading headphones, cutting to their surprised and amused expressions as each listens to the other’s music.",
+      "trending_topic": "headphone swap reel"
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "trending_feed",
+      "trending_topic": "headphone swap reel",
+      "trend_description": "Two people exchange headphones and react in real-time to each other's music tastes; close-up reaction faces and short clips of the swapped track.",
+      "primary_hashtag": "#RelationshipGoals",
+      "relevance": "relevant",
+      "search_query": "top Instagram trending topics April 2026"
     }
   },
   {
@@ -9637,6 +9756,42 @@
     "is_dm": false
   },
   {
+    "source_object_id": "feedvis_a6071e6f23",
+    "source_timestamp": 1775440108,
+    "formatted_timestamp": "01:48, 04/06/2026",
+    "source_hashtags": [
+      "#Boxing",
+      "#ThrowbackStyle"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "friend_2",
+    "recipient_id": "",
+    "relationship": "close_friend",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Nothing like the sound of gloves hitting the bag to clear your head. Old-school grit, every round counts.",
+      "overall_description": "Luis standing in a vintage-style boxing gym, mid-punch on a heavy bag, wearing classic leather gloves and a retro gym tee."
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "friend_feed",
+      "friend_id": "friend_2",
+      "friend_display_name": "Luis Ortega",
+      "primary_hashtag": "#Boxing",
+      "relevance": "relevant"
+    }
+  },
+  {
     "source_object_id": "in_thr_115_006",
     "source_timestamp": 1775446797,
     "formatted_timestamp": "03:39, 04/06/2026",
@@ -10262,6 +10417,42 @@
     "relationship": "public",
     "is_self_authored": false,
     "is_dm": false
+  },
+  {
+    "source_object_id": "feedvis_99da9b3d29",
+    "source_timestamp": 1775475924,
+    "formatted_timestamp": "11:45, 04/06/2026",
+    "source_hashtags": [
+      "#boxing",
+      "#UFC"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "friend_1",
+    "recipient_id": "",
+    "relationship": "close_friend",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Hands feel like bricks after today’s pad work. Nothing like a good sweat to clear the mind.",
+      "overall_description": "Close-up of gloved fists resting on the ropes after an intense training session."
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "friend_feed",
+      "friend_id": "friend_1",
+      "friend_display_name": "Diego Ramirez",
+      "primary_hashtag": "#boxing",
+      "relevance": "relevant"
+    }
   },
   {
     "source_object_id": "self_instagram_115_004",
@@ -18656,6 +18847,42 @@
     "relationship": "public",
     "is_self_authored": false,
     "is_dm": false
+  },
+  {
+    "source_object_id": "feedvis_036bef896b",
+    "source_timestamp": 1775729098,
+    "formatted_timestamp": "10:04, 04/09/2026",
+    "source_hashtags": [
+      "#Boxing",
+      "#SundayVibes"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "friend_3",
+    "recipient_id": "",
+    "relationship": "close_friend",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Instagram",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Tried my first boxing class today — surprisingly cathartic after a long week at the museum. Might be my new Sunday tradition before dinner.",
+      "overall_description": "Sweaty selfie of Jasmine in gym clothes, boxing gloves still on, with the gym ring in the background."
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "friend_feed",
+      "friend_id": "friend_3",
+      "friend_display_name": "Jasmine Torres",
+      "primary_hashtag": "#Boxing",
+      "relevance": "relevant"
+    }
   },
   {
     "source_object_id": "216498",

@@ -1158,15 +1158,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Matias follow through on his home lighting and angle adjustments to improve shelf photography quality for his wrestling memorabilia.",
-          "proximal_outcome": "Matias engages with a follow-up suggestion or resource to address his unresolved lighting and angle question.",
+          "distal_outcome": "Help Matias follow through on his home lighting and angle adjustments to improve shelf photo quality for his wrestling memorabilia.",
+          "proximal_outcome": "Matias engages with a concise follow-up suggestion or resource to address his unresolved lighting and angle question.",
           "tailoring_variable": "Unfulfilled stated need from Matias' question on 18:49, 04/08/2026: 'Phone keeps making my shelf pics look cheap. Tiny trucks, belts, a couple title replicas in frame. What should I change with lighting and angle at home?'",
           "decision_point": "2026-04-09T18:49:58Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is improving his home photography, proximal outcome is engaging with a follow-up, tailoring variable is his specific unresolved question, decision point is the flagged moment, decision rule favors acting due to concrete object and decision, and intervention option is a subtle in-chat opt-in follow-up. Horvitz cost-benefit favors acting because the value of resolving his specific need outweighs minimal intrusion, especially with a single ambient sentence citing his own question."
+          "reasoning": "The JITAI components are satisfied: distal outcome is improving photo quality, proximal outcome is engaging with a follow-up, tailoring variable is the specific unresolved question, decision point is the flagged moment, decision rule favors acting due to concrete object and decision, and intervention option is a brief opt-in follow-up. Horvitz cost-benefit favors acting because the value of resolving a specific, recent, and concrete need outweighs minimal intrusion within the chatbot. The action can cite the user's own question and be posed as a single ambient opt-in sentence."
         }
       },
       {
@@ -1186,15 +1186,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Support Matias in establishing and maintaining a stable daily routine that aligns with his training and wellness goals.",
-          "proximal_outcome": "Matias engages with a tailored follow-up suggestion to reset his routine after contract gaps.",
-          "tailoring_variable": "Unresolved question from 15:38, 04/08/2026: 'My routine keeps falling apart on contract gaps. Sleep slides, training gets random, then the whole week feels off. What's a solid reset that actually sticks?'",
+          "distal_outcome": "help user establish and maintain a stable daily routine during contract gaps",
+          "proximal_outcome": "user engages with a tailored reset plan suggestion in the chatbot",
+          "tailoring_variable": "unfulfilled stated need from user question: 'My routine keeps falling apart on contract gaps. Sleep slides, training gets random, then the whole week feels off. What's a solid reset that actually sticks?' asked on 15:38, 04/08/2026",
           "decision_point": "2026-04-09T15:38:42Z",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is routine stability, proximal outcome is engagement with a reset suggestion, tailoring variable is the specific unresolved question, decision point is the flagged moment, decision rule favors acting due to concrete user need, and intervention option is a brief in-chat opt-in follow-up. Horvitz cost-benefit favors action because the value of offering a tailored reset outweighs minimal intrusion, especially citing the user's own question. Constraints are met: action can be a single ambient sentence in-chat, citing the question, with easy opt-in."
+          "reasoning": "The distal outcome is supporting Matias in sustaining routines, with the proximal outcome being engagement with a follow-up suggestion. The tailoring variable is his explicit unresolved question about a routine reset. JITAI components are satisfied and Horvitz cost-benefit favors acting because the value of offering a concise, opt-in follow-up inside the chatbot outweighs minimal intrusion."
         }
       },
       {
@@ -1215,15 +1215,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Matias follow through on his unresolved request for wording assistance, strengthening his communication and maintaining positive social connections.",
-          "proximal_outcome": "Matias engages with a concise follow-up offer to refine the message he drafted.",
-          "tailoring_variable": "Unfulfilled stated need from Matias' question on 13:13, 04/08/2026: \"Clean this up: 'Appreciate you checking in. Your morning posts always hit at the right time, kinda just enough push to keep it moving. Hope your week stays solid.'\"",
+          "distal_outcome": "help user follow through on their stated questions and maintain conversational closure",
+          "proximal_outcome": "user engages with a follow-up offer to refine their drafted message",
+          "tailoring_variable": "unfulfilled_stated_need from user question on 04/08/2026: \"Clean this up: 'Appreciate you checking in. Your morning posts always hit at the right time, kinda just enough push to keep it moving. Hope your week stays solid.'\"",
           "decision_point": "2026-04-09T13:13:36Z",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is improved follow-through, proximal outcome is engagement with a refinement offer, tailoring variable is the specific unresolved wording request, decision point is the flagged moment, decision rule favors acting given the concrete evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of resolving the request outweighs minimal intrusion, and the action can cite the user's own question while staying within the subtlety constraints."
+          "reasoning": "The JITAI components are satisfied: distal outcome is message refinement, proximal outcome is user engagement, tailoring variable is the specific unfulfilled request, decision point is within the 3-day window, decision rule favors acting as the cost of a single in-chat opt-in is low and value is high. Horvitz cost-benefit passes because the user’s concrete draft and request for cleanup remain unresolved, and a proactive follow-up could save effort. Constraints are met: action can be a single ambient sentence in-chat citing the original question, with easy opt-in."
         }
       },
       {
@@ -1243,15 +1243,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Matias follow through on his stated entertainment needs to support relaxation and mental recharge.",
-          "proximal_outcome": "Matias engages with a concise follow-up offering curated movie or TV picks that match his request.",
-          "tailoring_variable": "Unfulfilled stated need from Matias's question on 13:13, 04/08/2026: \"Need something for tonight. Brain's kinda fried. Give me 3 solid picks that actually finish strong, not some dragged-out mess.\"",
+          "distal_outcome": "help user follow through on their stated entertainment needs to maintain engagement and satisfaction",
+          "proximal_outcome": "user engages with a curated set of movie or TV recommendations that match their request",
+          "tailoring_variable": "unfulfilled stated need from user question: 'Need something for tonight. Brain's kinda fried. Give me 3 solid picks that actually finish strong, not some dragged-out mess.'",
           "decision_point": "2026-04-09T13:13:14Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Matias's relaxation through timely entertainment suggestions, and the proximal outcome is his engagement with curated picks. The tailoring variable is his explicit, unresolved request for specific movie/TV recommendations, which is concrete and recent. Horvitz cost-benefit favors acting because the value of resolving his request outweighs minimal intrusion, and all JITAI components are satisfied."
+          "reasoning": "The user's concrete request for specific entertainment options remains unresolved after three days, satisfying all JITAI components. The evidence is explicit and current, and a brief in-chat follow-up offers clear value with minimal intrusion per Horvitz's framework. Constraints are met: action is in-chat, cites the user's own words, is opt-in, and within session limits."
         }
       },
       {
@@ -1282,7 +1282,7 @@
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Matias in achieving smoother cooking sessions, while the proximal outcome is prompting him to act on his unresolved taco night question. The tailoring variable is his specific, concrete cooking query with no closure after three days. JITAI components are satisfied and Horvitz's framework favors acting because the value of resolving his stated need outweighs the minimal cost of a single in-chat opt-in follow-up."
+          "reasoning": "The distal outcome is supporting Matias in achieving smoother taco night preparation, and the proximal outcome is prompting him to act on a specific cooking workflow issue. The tailoring variable is his concrete, unresolved cooking question, making the decision point timely. Horvitz cost-benefit favors acting because the value of resolving his stated need outweighs minimal intrusion, and all JITAI components are satisfied."
         }
       },
       {
@@ -1303,14 +1303,14 @@
         },
         "jitai_card": {
           "distal_outcome": "help user follow through on their stated questions to discover enjoyable, craft-focused fight-adjacent entertainment",
-          "proximal_outcome": "user engages with a tailored viewing suggestion that matches their expressed criteria",
-          "tailoring_variable": "unfulfilled stated need from user question on 13:07, 04/08/2026: 'What should I watch tonight. Kinda want something with real craft, maybe fight-adjacent energy, and not too heavy. I've got a road-trip stash sitting here already.'",
+          "proximal_outcome": "user engages with a curated viewing suggestion matching their expressed criteria",
+          "tailoring_variable": "unfulfilled stated need from 13:07, 04/08/2026: 'What should I watch tonight. Kinda want something with real craft, maybe fight-adjacent energy, and not too heavy. I've got a road-trip stash sitting here already.'",
           "decision_point": "2026-04-09T13:07:13Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The user's question is concrete, specifying desired qualities in entertainment, and remains unresolved after three days, satisfying all JITAI components. Horvitz cost-benefit favors acting because a tailored suggestion offers clear value with minimal intrusion, citing the user's own words. Constraints are met: action can be a single ambient sentence in-chat, opt-in, and within session limits."
+          "reasoning": "The user's question is concrete, specifying desired qualities in entertainment, and remains unresolved after three days, satisfying all JITAI components. Horvitz cost-benefit favors acting because a tailored suggestion based on their stated preferences offers clear value with minimal intrusion. The action can be surfaced in-chat, cite the original question, and be posed as an opt-in, meeting all subtlety constraints."
         }
       },
       {
@@ -1333,13 +1333,13 @@
         "jitai_card": {
           "distal_outcome": "Help Matias follow through on his stated request for text cleanup to strengthen communication with friends.",
           "proximal_outcome": "Matias engages with a concise follow-up offer to refine the message he drafted.",
-          "tailoring_variable": "Unfulfilled stated need from Matias' question on 06:07, 04/08/2026: \"Need a text cleaned up. 'Yo bro, good seeing you... Appreciate you checking in.'\"",
+          "tailoring_variable": "Unfulfilled stated need from 06:07, 04/08/2026: user asked 'Need a text cleaned up...' referencing a reel sent by a friend.",
           "decision_point": "2026-04-09T06:07:52Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is improved follow-through, proximal outcome is engagement with a cleanup offer, tailoring variable is the specific unfulfilled text request, decision point is the flagged moment, decision rule favors acting due to concrete and current evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of resolving the request outweighs minimal intrusion, and the action can cite the user's own question while staying within the subtlety constraints."
+          "reasoning": "The distal outcome is supporting completion of a specific communication task, and the proximal outcome is prompting engagement with a cleanup offer. The tailoring variable is the unresolved text-cleanup request tied to a friend's reel, which is concrete and recent. Horvitz cost-benefit favors acting because the value of helping refine the message outweighs minimal intrusion when surfaced in-chat with an easy opt-in."
         }
       },
       {
@@ -1359,15 +1359,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Matias follow through on his stated family dining question to improve meal quality and maintain strong family bonds.",
-          "proximal_outcome": "Matias engages with a follow-up suggestion to keep mushroom tacos fresh until dinner starts.",
-          "tailoring_variable": "Unfulfilled stated need from Matias' question: 'Sunday dinner keeps drifting later, and my mushroom tacos go soggy by the time everybody lands. what's the move so they still eat right?' asked on 04/08/2026.",
+          "distal_outcome": "help user follow through on their stated questions to improve family mealtime experience",
+          "proximal_outcome": "user engages with a follow-up suggestion to keep mushroom tacos fresh until dinner",
+          "tailoring_variable": "unfulfilled_stated_need from user question: 'Sunday dinner keeps drifting later, and my mushroom tacos go soggy by the time everybody lands. what's the move so they still eat right?'",
           "decision_point": "2026-04-09T05:55:13Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting family unity through better meal timing, and the proximal outcome is prompting engagement with a practical solution. The tailoring variable is a concrete, unresolved cooking question from Matias, making the decision point timely. Horvitz cost-benefit favors acting because the value of resolving his specific meal issue outweighs the minimal intrusion of a single in-chat opt-in follow-up."
+          "reasoning": "The distal outcome is supporting Matias in resolving a concrete cooking timing issue for family dinners, and the proximal outcome is prompting him to consider a practical solution. The tailoring variable is his specific unresolved question about soggy mushroom tacos, which is a clear, concrete object and decision. Horvitz cost-benefit favors acting because the value of timely, ambient follow-up inside the chatbot outweighs minimal intrusion, and all JITAI components are satisfied."
         }
       },
       {
@@ -1388,14 +1388,14 @@
         },
         "jitai_card": {
           "distal_outcome": "help user follow through on their stated questions about sustainable lunch setups to reduce waste and save money",
-          "proximal_outcome": "user engages with a concise follow-up suggestion or offer related to durable, low-waste lunch gear",
+          "proximal_outcome": "user engages with a follow-up suggestion or resource for durable, low-waste lunch containers",
           "tailoring_variable": "unfulfilled stated need from user question on 18:31, 04/07/2026: 'Need a lunch setup that cuts down trash at work. Museum days run long. What's actually worth buying once so I'm not burning money on flimsy stuff?'",
           "decision_point": "2026-04-08T18:31:14Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Matias in acting on his concrete request for a durable lunch setup, with the proximal outcome being his engagement with a relevant suggestion. The tailoring variable is his specific, unresolved question about reducing waste at work. Horvitz cost-benefit favors acting because the value of timely, evidence-cited follow-up outweighs minimal intrusion, and all JITAI components are satisfied."
+          "reasoning": "The distal outcome is supporting Matias in acting on his concrete request for a durable, low-waste lunch setup. The proximal outcome is prompting him to explore a specific option, with the tailoring variable being his unresolved question from April 7. All JITAI components are satisfied and Horvitz cost-benefit favors acting, as the value of timely, evidence-cited follow-up outweighs minimal intrusion within the chatbot."
         }
       },
       {
@@ -1416,15 +1416,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Matias follow through on his stated request to craft a short text for his partner that combines refill shop, compost class, and ATV cleanup ride details.",
-          "proximal_outcome": "Matias engages with a concise follow-up offer to draft the message he requested.",
-          "tailoring_variable": "Unfulfilled stated need from Matias' question on 18:17, 04/07/2026: 'Need a short text for my girl about that refill shop and compost class, plus maybe tie in the ATV cleanup ride this weekend. Brain mushy today.'",
+          "distal_outcome": "Help Matias follow through on his stated request to craft a short text for his partner that includes specific event and location details.",
+          "proximal_outcome": "Matias engages with a concise follow-up offer to draft the message he described.",
+          "tailoring_variable": "Unfulfilled stated need from Matias' question: \"Need a short text for my girl about that refill shop and compost class, plus maybe tie in the ATV cleanup ride this weekend.\"",
           "decision_point": "2026-04-08T18:17:48Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is supporting follow-through, proximal outcome is immediate engagement, tailoring variable is the specific unfulfilled request, decision point is the flagged moment, decision rule favors acting due to concrete and current evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of resolving the request outweighs minimal intrusion, especially with easy declination and in-channel delivery. The evidence is specific and tied to a real plan, making proactive follow-up clearly justified."
+          "reasoning": "The JITAI components are satisfied: distal outcome is supporting follow-through on a concrete communication task, proximal outcome is prompting engagement with a draft, tailoring variable is the specific unfulfilled request, decision point is the flagged moment, decision rule favors acting due to clear value and low intrusion, and intervention option is a one-sentence opt-in inside the chatbot. Horvitz cost-benefit favors action because the user’s evidence is concrete and current, and the intrusion is minimal. All subtlety constraints are met, including citing the user's own request and keeping the follow-up ambient and opt-in."
         }
       },
       {
@@ -1446,13 +1446,13 @@
         "jitai_card": {
           "distal_outcome": "help user follow through on their stated questions to strengthen shared experiences with their partner",
           "proximal_outcome": "user engages with a tailored suggestion for an activity that fits their interests and relationship context",
-          "tailoring_variable": "unfulfilled stated need from user question: \"Long week. Got tonight free and I'm blanking, what should I get into that'd actually hit right for me and my girl?\" asked on 04/07/2026",
+          "tailoring_variable": "unfulfilled stated need from user question: 'Long week. Got tonight free and I'm blanking, what should I get into that'd actually hit right for me and my girl?' asked on 04/07/2026",
           "decision_point": "2026-04-08T11:03:54Z",
           "decision_rule_pass": true,
-          "eligibility_score": 3,
+          "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is fostering meaningful couple time, and the proximal outcome is prompting engagement with a relevant idea. The tailoring variable is the explicit, unresolved request for a shared activity, which is concrete and recent. Horvitz cost-benefit favors acting because the value of offering a personalized option based on their interests outweighs the minimal intrusion of a single in-chat opt-in follow-up."
+          "reasoning": "The JITAI components are satisfied: distal outcome is fostering meaningful couple time, proximal outcome is prompting engagement with a suggestion, tailoring variable is the specific unresolved question, decision point is the flagged moment, decision rule favors acting due to clear unfulfilled need, and intervention option is a one-sentence opt-in follow-up. Horvitz cost-benefit favors acting because the value of resolving the blank evening plan outweighs minimal intrusion within the chatbot. Evidence is concrete and current, but lacks a specific object or decision, so eligibility is defensible at 2 rather than 3."
         }
       },
       {
@@ -1473,15 +1473,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Matias follow through on his stated need to communicate with his partner after missing dinner, strengthening relationship trust and emotional connection.",
-          "proximal_outcome": "Matias engages with a follow-up offer to craft a thoughtful message for his partner.",
-          "tailoring_variable": "User's unresolved question from 08:57, 04/07/2026: 'Need a text for my girl. Missed dinner again because I got locked into a Canelo fight replay and lost track of time.'",
+          "distal_outcome": "Help Matias follow through on his stated need to communicate with his partner after missing dinner due to watching a boxing match, thereby supporting relationship harmony.",
+          "proximal_outcome": "Matias engages with a follow-up offer to craft a thoughtful text for his partner.",
+          "tailoring_variable": "User's unresolved question on 08:57, 04/07/2026: 'Need a text for my girl. Missed dinner again because I got locked into a Canelo fight replay and lost track of time.'",
           "decision_point": "2026-04-08T08:57:54Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is maintaining close relationship bonds, and the proximal outcome is resolving an unfulfilled request for help composing a message. The tailoring variable is the specific, concrete question about texting his partner after missing dinner due to a boxing replay. Horvitz cost-benefit favors acting because the value of timely assistance outweighs minimal intrusion, and all JITAI components are satisfied."
+          "reasoning": "The distal outcome is maintaining close family bonds, and the proximal outcome is resolving an unfulfilled request for help composing a message. The tailoring variable is the specific, concrete question about texting his partner after missing dinner, which remains unresolved after three days. Horvitz cost-benefit favors acting because the value of timely assistance outweighs minimal intrusion, and all JITAI components are satisfied."
         }
       }
     ],
@@ -1512,15 +1512,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with shared-interest conversations.",
-          "proximal_outcome": "User replies to Diego Ramirez's substantive message about homemade dinner ideas.",
-          "tailoring_variable": "Close friend Diego Ramirez sent a message referencing Matias's interest in homemade meals and Brazilian Jiu-Jitsu, left unanswered for over 6 hours.",
+          "distal_outcome": "Strengthen close friendships and shared interest engagement to maintain strong social bonds.",
+          "proximal_outcome": "User responds to Diego Ramirez's substantive message and engages around shared hobbies.",
+          "tailoring_variable": "Close friend Diego Ramirez sent a substantive message referencing Matias's interests in Brazilian Jiu-Jitsu and homemade meals, left unanswered for over 6 hours.",
           "decision_point": "2026-04-08T10:48:47Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is sustaining close bonds, proximal outcome is prompting a reply, tailoring variable is Diego's message tied to Matias's interests, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting outweighs minimal intrusion, especially with concrete shared-interest evidence. All subtlety constraints are met, including citing Diego by name and keeping the action ambient and opt-in."
+          "reasoning": "All JITAI components are satisfied: distal outcome is maintaining close bonds, proximal outcome is immediate reply, tailoring variable is Diego's message tied to Matias's interests, decision point is the flagged time, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting with a close friend on shared topics outweighs minimal intrusion, especially within the chatbot channel and with opt-in phrasing."
         }
       },
       {
@@ -1549,15 +1549,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely responses to meaningful messages from close friends.",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with important messages from close friends.",
           "proximal_outcome": "User replies to Diego Ramirez's substantive message within the chatbot session.",
-          "tailoring_variable": "Close friend Diego Ramirez sent a substantive message ('Bro this was solid, you really meant that one.') on 04/07/2026 at 10:54, left unanswered for over 6 hours.",
+          "tailoring_variable": "Close-friend inbound message from Diego Ramirez, shared interests in Brazilian Jiu-Jitsu and boxing, message content: 'Bro this was solid, you really meant that one.', unanswered for over 6 hours.",
           "decision_point": "2026-04-07T11:54:59Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "All JITAI components are satisfied: distal outcome is stronger bonds, proximal outcome is immediate reply, tailoring variable is Diego's message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the message is substantive and from a close friend, with low intrusion cost given in-chat delivery and opt-in framing. Evidence is concrete and current, making this a clear proactive moment."
+          "reasoning": "All JITAI components are satisfied: distal outcome is stronger bonds, proximal outcome is immediate reply, tailoring variable is Diego's message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat opt-in. Horvitz cost-benefit favors action because the message is substantive and from a close friend, with low intrusion cost when surfaced in-chat. Evidence is concrete and user-specific, meeting all subtlety constraints."
         }
       },
       {
@@ -1586,15 +1586,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with messages from close friends.",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with messages from important contacts.",
           "proximal_outcome": "User replies to Luis Ortega’s message in the Threads app within the chatbot session.",
-          "tailoring_variable": "Close-friend inbound message from Luis Ortega, referencing a snack-related inside joke and shared interests (boxing, throwback style), left unanswered for over 6 hours.",
+          "tailoring_variable": "Close-friend inbound message from Luis Ortega, sharing a playful snack-related comment tied to shared interests (#SnackHacks) and left unanswered for over 6 hours.",
           "decision_point": "2026-04-07T03:20:36Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "All JITAI components are satisfied: distal outcome is stronger bonds, proximal outcome is immediate reply, tailoring variable is Luis Ortega’s substantive message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the message is personal and content-rich, and intrusion is minimal within the chatbot. The action can cite Luis by name and pose an opt-in question, meeting all subtlety constraints."
+          "reasoning": "All JITAI components are satisfied: distal outcome is stronger bonds, proximal outcome is immediate reply, tailoring variable is Luis Ortega’s substantive message, decision point is the flagged timestamp, decision rule favors acting, and intervention option is a subtle in-chat opt-in. Horvitz cost-benefit favors action because the value of reconnecting with a close friend outweighs minimal intrusion, especially with evidence from the user’s own friend graph and interests."
         }
       },
       {
@@ -1625,13 +1625,13 @@
         "jitai_card": {
           "distal_outcome": "Maintain and strengthen close friendships by encouraging timely responses to substantive messages from close friends.",
           "proximal_outcome": "User replies to Jasmine Torres' message or engages with the conversation about boxing.",
-          "tailoring_variable": "Close-friend inbound message from Jasmine Torres containing substantive praise and boxing-related hashtags, left unanswered for over 6 hours.",
+          "tailoring_variable": "Close-friend inbound message from Jasmine Torres containing a personal remark ('This had your name on it. Clean work, no extra nonsense.') and boxing-related hashtags, left unanswered for over 6 hours.",
           "decision_point": "2026-04-07T00:15:35Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is friendship maintenance, proximal outcome is message engagement, tailoring variable is Jasmine's substantive message, decision point is the flagged time, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting with a close friend outweighs minimal intrusion, and the message content is concrete and personal."
+          "reasoning": "The JITAI components are satisfied: distal outcome is friendship maintenance, proximal outcome is message engagement, tailoring variable is the unanswered close-friend message, decision point is the flagged time, decision rule favors acting due to substantive content, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting outweighs minimal intrusion, especially with clear user-specific evidence from Jasmine's message."
         }
       },
       {
@@ -1659,15 +1659,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with friends' messages.",
-          "proximal_outcome": "User replies to Luis Ortega's message or engages in conversation about the shared humorous content.",
-          "tailoring_variable": "Close-friend inbound Instagram message from Luis Ortega, referencing a humorous car meme and shared interests in boxing and throwback style, left unanswered for over 6 hours.",
+          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with messages from important contacts.",
+          "proximal_outcome": "User replies to Luis Ortega’s message or re-engages in the conversation thread.",
+          "tailoring_variable": "Close-friend inbound message from Luis Ortega on Instagram left unanswered for over 6 hours, containing humorous content referencing shared interest in boxing and throwback style.",
           "decision_point": "2026-04-06T04:39:57Z",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is friendship maintenance, proximal outcome is message engagement, tailoring variable is the unanswered close-friend message, decision point is the flagged timestamp, decision rule favors acting due to shared interests and humor, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action as the value of reconnecting outweighs minimal intrusion, especially with clear user-specific evidence."
+          "reasoning": "All JITAI components are satisfied: the distal outcome is sustaining close bonds, the proximal outcome is message engagement, the tailoring variable is the specific unanswered message from Luis Ortega, the decision point is the flagged timestamp, the decision rule favors acting due to shared interests and relationship depth, and the intervention option is a subtle in-chat opt-in prompt. Horvitz cost-benefit favors action because the value of reconnecting outweighs minimal intrusion, especially within the chatbot channel. The message is substantive enough to warrant a gentle nudge without violating any subtlety constraints."
         }
       },
       {
@@ -1695,15 +1695,15 @@
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Maintain and strengthen close friendships by encouraging timely engagement with messages from close friends.",
-          "proximal_outcome": "User replies to Diego Ramirez's substantive message about sushi.",
-          "tailoring_variable": "Close-friend inbound Instagram message from Diego Ramirez mentioning sushi and implying it suits Matias's tastes, left unanswered for over 6 hours.",
+          "distal_outcome": "Strengthen close friendships and shared interest engagement to maintain strong social bonds.",
+          "proximal_outcome": "User responds to Diego Ramirez's message and potentially engages around shared interests or the sushi content.",
+          "tailoring_variable": "Close friend Diego Ramirez sent a substantive Instagram message referencing sushi and shared interests (Brazilian Jiu-Jitsu, boxing, UFC) that has been unanswered for over 6 hours.",
           "decision_point": "2026-04-05T08:25:45Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is sustaining close bonds, proximal outcome is prompting a reply, tailoring variable is Diego's sushi message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat opt-in. Horvitz cost-benefit favors action because the message is substantive and timely, with low intrusion cost when surfaced in-chat citing Diego by name."
+          "reasoning": "All JITAI components are satisfied: distal outcome is maintaining close bonds, proximal outcome is message engagement, tailoring variable is Diego's specific sushi message, decision point is now, decision rule favors acting, and intervention option is a subtle in-chat prompt. Horvitz cost-benefit favors action because the value of reconnecting with a close friend outweighs minimal intrusion, especially with concrete evidence from the user's own friend graph and interests."
         }
       }
     ],
@@ -1719,7 +1719,7 @@
           "days_into_window": 2
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
+          "distal_outcome": "Support the user’s wellbeing by avoiding intrusive actions during sensitive life events",
           "proximal_outcome": "User experiences no unsolicited prompts during the sensitive event window",
           "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=2",
           "decision_point": "2026-04-12T14:12:09Z",
@@ -1727,7 +1727,7 @@
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and hard restraint rules, no proactive action is permitted. Horvitz cost-benefit analysis favors silence to avoid intrusion during this period. All proactive criteria are overridden by the hard restraint window."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz frameworks, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
         }
       },
       {
@@ -1741,7 +1741,7 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's wellbeing by avoiding intrusive actions during sensitive life events",
+          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
           "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
           "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=5",
           "decision_point": "2026-04-15T09:24:09Z",
@@ -1749,7 +1749,7 @@
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz frameworks, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive-life-event window is active, so JITAI and Horvitz frameworks both dictate no proactive action. Acting now would violate the hard restraint rule and subtlety constraints, making silence the only appropriate choice."
         }
       },
       {
@@ -1763,15 +1763,15 @@
           "days_into_window": 8
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
+          "distal_outcome": "Support the user’s wellbeing by avoiding intrusive actions during sensitive life events",
+          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive event window",
           "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=8",
           "decision_point": "2026-04-18T04:36:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz cost-benefit, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, so the assistant should remain silent."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz frameworks, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
         }
       },
       {
@@ -1786,19 +1786,592 @@
         },
         "jitai_card": {
           "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive event window",
+          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
           "tailoring_variable": "Sensitive-life-event window active for Matias Valadez, days_into_window=11",
           "decision_point": "2026-04-20T23:48:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The tailoring variable shows an active sensitive-life-event window, triggering the hard restraint rule. Under JITAI, the decision rule fails because acting would violate the user's intrusion budget and emotional safety. Horvitz cost-benefit analysis favors silence, as any proactive action would carry high intrusion cost with no net value."
+          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive-life-event window is active, so per JITAI and Horvitz frameworks, proactive action is not justified. The hard restraint rule mandates staying silent to minimize intrusion cost. Acting now would violate the subtlety constraints and the cost-benefit balance."
         }
       }
     ],
-    "friend_feed_react": [],
-    "trending_feed_react": [],
+    "friend_feed_react": [
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775647065,
+        "t_test_iso": "2026-04-08T11:17:45Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_2",
+          "friend_display_name": "Luis Ortega",
+          "post_event_id": "feedvis_32215458df",
+          "post_ts": 1775560665,
+          "post_iso": "11:17, 04/07/2026",
+          "post_hashtags": [
+            "#boxing",
+            "#throwbackstyle"
+          ],
+          "post_caption_excerpt": "Hit the bag today and felt like I was back in the golden era — channeling those old-school champs. Sweat, rhythm, and grit. 🥊",
+          "primary_hashtag": "#boxing",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Appreciation for boxing content with a nostalgic, performance-focused angle.",
+          "reasoning": "The caption describes hitting the bag while channeling old-school champions, which ties into the user's interest in professional boxing and admiration for battle-format performance. While it’s training rather than a live fight, the golden era reference and close friend connection make it a solid match to their boxing enthusiasm."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-08T11:17:45Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775562324,
+        "t_test_iso": "2026-04-07T11:45:24Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "friend_id": "friend_1",
+          "friend_display_name": "Diego Ramirez",
+          "post_event_id": "feedvis_99da9b3d29",
+          "post_ts": 1775475924,
+          "post_iso": "11:45, 04/06/2026",
+          "post_hashtags": [
+            "#boxing",
+            "#UFC"
+          ],
+          "post_caption_excerpt": "Hands feel like bricks after today’s pad work. Nothing like a good sweat to clear the mind.",
+          "primary_hashtag": "#boxing",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Personal boxing training and performance process shared by a close friend.",
+          "reasoning": "The caption describes pad work and the physical intensity of boxing training, which aligns with the user's interest in professional boxing and battle-format performance. Since it’s from a close friend, the personal connection adds relevance even though it’s about training rather than a high-profile match."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-07T11:45:24Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775516826,
+        "t_test_iso": "2026-04-06T23:07:06Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "threads",
+          "friend_id": "friend_2",
+          "friend_display_name": "Luis Ortega",
+          "post_event_id": "feedvis_095a68597b",
+          "post_ts": 1775430426,
+          "post_iso": "23:07, 04/05/2026",
+          "post_hashtags": [
+            "#BoxingFans",
+            "#ThrowbackStyle"
+          ],
+          "post_caption_excerpt": "Nothing like watching two fighters go toe-to-toe, reminds me why I fell in love with the sport in the first place.",
+          "primary_hashtag": "#BoxingFans",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 3,
+          "user_interest_match": "High-profile boxing match appreciation and fight-night excitement",
+          "reasoning": "The caption expresses enthusiasm for watching fighters go toe-to-toe, which directly aligns with the user's strong interest in professional boxing and enjoyment of the energy and tension of live fights. It is also from a close friend, making it even more personally relevant."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-06T23:07:06Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775347479,
+        "t_test_iso": "2026-04-05T00:04:39Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_1",
+          "friend_display_name": "Diego Ramirez",
+          "post_event_id": "feedvis_73f97873b9",
+          "post_ts": 1775261079,
+          "post_iso": "00:04, 04/04/2026",
+          "post_hashtags": [
+            "#BoxingNews",
+            "#UFC"
+          ],
+          "post_caption_excerpt": "Man, that knockout last night was brutal. Reminds me why boxers train so hard — one punch can end it all. Respect to both fighters. #BoxingNews #UFC",
+          "primary_hashtag": "#BoxingNews",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "High-profile boxing fight outcome and appreciation of fighters' skill and dedication.",
+          "reasoning": "The post is a reaction to a recent boxing knockout, expressing respect for both fighters, which aligns with the user's interest in professional boxing and appreciation for fight performance. It's from a close friend, making it more personally relevant, though it lacks the in-depth tactical breakdowns the user often engages with."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-05T00:04:39Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775304154,
+        "t_test_iso": "2026-04-04T12:02:34Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_3",
+          "friend_display_name": "Jasmine Torres",
+          "post_event_id": "feedvis_67f95c9b8d",
+          "post_ts": 1775217754,
+          "post_iso": "12:02, 04/03/2026",
+          "post_hashtags": [
+            "#MMA",
+            "#trainingday"
+          ],
+          "post_caption_excerpt": "Finally made it to the local MMA gym today—watched a sparring session that was pure art. Can’t wait to go back!",
+          "primary_hashtag": "#MMA",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Interest in Brazilian Jiu-Jitsu training and culture, and admiration for battle-format performance in combat sports.",
+          "reasoning": "The post describes attending a local MMA gym and watching a sparring session, which aligns with the user's interest in combat sports and Brazilian Jiu-Jitsu culture. The close friend connection further increases relevance, as the user values fight performance and training experiences."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-04T12:02:34Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      }
+    ],
+    "trending_feed_react": [
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775447131,
+        "t_test_iso": "2026-04-06T03:45:31Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "trending_topic": "headphone swap reel",
+          "trend_description": "Two people exchange headphones and react in real-time to each other's music tastes; close-up reaction faces and short clips of the swapped track.",
+          "post_event_id": "feedvis_82a2ec3f15",
+          "post_ts": 1775360731,
+          "post_iso": "03:45, 04/05/2026",
+          "post_hashtags": [
+            "#RelationshipGoals",
+            "#HeadphoneSwap",
+            "#MusicReaction",
+            "#CoupleVibes"
+          ],
+          "post_caption_excerpt": "Swapped playlists with him and… wow. I did NOT see that drop coming 😂",
+          "primary_hashtag": "#RelationshipGoals",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Couple playlist swap and music reaction content does not align with the user's focus on emotional couple affirmation or battle-format performance interests.",
+          "reasoning": "While the post uses #RelationshipGoals, its core is a lighthearted music taste swap and reaction, which is unrelated to the user's demonstrated engagement with couple affirmation moments or their interests in performance battles, sports, or home-life optimization. There is no clear tie to the emotional reset or unity themes the user values."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T03:45:31Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775445460,
+        "t_test_iso": "2026-04-06T03:17:40Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "niche micro-community threads",
+          "trend_description": "Very specific interest communities forming on Threads — beekeeping, vintage typewriters, indie wrestling — bonded by inside jokes.",
+          "post_event_id": "feedvis_072a8cfe91",
+          "post_ts": 1775359060,
+          "post_iso": "03:17, 04/05/2026",
+          "post_hashtags": [
+            "#relatable",
+            "#beekeepinglife",
+            "#honeyhustle"
+          ],
+          "post_caption_excerpt": "That thrill when your hive’s queen finally accepts the new frame like it’s her royal penthouse. Small wins, big buzz.",
+          "primary_hashtag": "#relatable",
+          "relevance": "irrelevant"
+        },
+        "hashtag_label_at_generation": "irrelevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "No alignment with user's interests in combat sports, dance battles, home cooking, or family unity; beekeeping is outside their known preferences.",
+          "reasoning": "The post focuses on a beekeeping moment involving a hive’s queen and new frame, which does not connect to any of Matias's documented hobbies, passions, or identity anchors. There is no overlap with his interests in performance battles, sports, or home optimization themes."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T03:17:40Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775438847,
+        "t_test_iso": "2026-04-06T01:27:27Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "tag a friend challenges",
+          "trend_description": "Interactive prompts asking people to tag the friend who matches a vibe — 'tag the friend who is always late', etc.",
+          "post_event_id": "feedvis_06138069b0",
+          "post_ts": 1775352447,
+          "post_iso": "01:27, 04/05/2026",
+          "post_hashtags": [
+            "#homemade",
+            "#tagafriendchallenge",
+            "#freshfromtheoven"
+          ],
+          "post_caption_excerpt": "Tag the friend who would eat this entire loaf in one sitting 😏",
+          "primary_hashtag": "#homemade",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Enjoys making homemade meals at home",
+          "reasoning": "While the hashtag #homemade appears, the post is primarily a lighthearted 'tag a friend' meme rather than genuine cooking or meal-prep content. The user engages with authentic homemade meal posts focused on the food and process, not generic social challenges."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T01:27:27Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775421923,
+        "t_test_iso": "2026-04-05T20:45:23Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "trending_topic": "two-person walk lip-sync",
+          "trend_description": "Two people stride toward the camera lip-syncing the verses of a dramatic song to each other in slow-motion.",
+          "post_event_id": "feedvis_7448020b19",
+          "post_ts": 1775335523,
+          "post_iso": "20:45, 04/04/2026",
+          "post_hashtags": [
+            "#comedygold",
+            "#walkandsing",
+            "#bffvibes"
+          ],
+          "post_caption_excerpt": "When you and your bestie lock eyes mid-walk and forget the world exists. Slow-mo level: cinematic drama.",
+          "primary_hashtag": "#comedygold",
+          "relevance": "irrelevant"
+        },
+        "hashtag_label_at_generation": "irrelevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "No clear alignment with user's interest in structured comedic setups or battle-format performance content.",
+          "reasoning": "The post is a slow-motion lip-sync walk with a best friend, framed as cinematic drama, which does not match the user's preference for crafted comedic timing or competitive performance formats. It lacks the structured joke delivery or battle-style energy the user has engaged with in past comedy content."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T20:45:23Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775420100,
+        "t_test_iso": "2026-04-05T20:15:00Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "expectation vs reality fails",
+          "trend_description": "Side-by-side posts comparing the polished plan with the messy reality — DIY mishaps, recipe disasters, parenting moments.",
+          "post_event_id": "feedvis_017bc2d2a4",
+          "post_ts": 1775333700,
+          "post_iso": "20:15, 04/04/2026",
+          "post_hashtags": [
+            "#BoxingNews",
+            "#ExpectationVsReality",
+            "#WorkoutFail"
+          ],
+          "post_caption_excerpt": "Expectation: smooth combos and perfect footwork. Reality: tripping over my own jump rope before round one even starts 😂",
+          "primary_hashtag": "#BoxingNews",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Focuses on a lighthearted personal workout fail rather than the high-level professional boxing match analysis the user engages with.",
+          "reasoning": "While it uses a boxing-related hashtag, the post is about a humorous training mishap, not the competitive, strategic fight content the user consistently interacts with. The user's boxing interest centers on professional bouts and tactical breakdowns, not casual gym humor."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T20:15:00Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775410711,
+        "t_test_iso": "2026-04-05T17:38:31Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "NBA playoffs hot takes",
+          "trend_description": "Threads with bracket predictions, in-game reactions, and post-game shade about NBA playoff series.",
+          "post_event_id": "feedvis_8ab3986967",
+          "post_ts": 1775324311,
+          "post_iso": "17:38, 04/04/2026",
+          "post_hashtags": [
+            "#FightNight",
+            "#NBAPlayoffs",
+            "#Game7"
+          ],
+          "post_caption_excerpt": "If this game goes to OT, I’m putting my phone on airplane mode… too much stress tonight.",
+          "primary_hashtag": "#FightNight",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "The post is about NBA playoffs stress, which does not align with the user's interest in professional boxing and other battle-format sports.",
+          "reasoning": "Despite the #FightNight hashtag, the caption is focused on an NBA Game 7 scenario and overtime tension, which is unrelated to the user's demonstrated engagement with boxing, wrestling, and martial arts fight nights. There is no connection to the combat sports dimension the user cares about."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T17:38:31Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775400769,
+        "t_test_iso": "2026-04-05T14:52:49Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "trending_topic": "I asked the universe sign",
+          "trend_description": "Short reel that opens with the line 'I asked the universe to give me a sign' followed by a coincidence or visual reveal.",
+          "post_event_id": "feedvis_8deaa51116",
+          "post_ts": 1775314369,
+          "post_iso": "14:52, 04/04/2026",
+          "post_hashtags": [
+            "#dance",
+            "#universe",
+            "#sign",
+            "#serendipity"
+          ],
+          "post_caption_excerpt": "I asked the universe to give me a sign… then the street dancer started mirroring my moves perfectly. Chills.",
+          "primary_hashtag": "#dance",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Breakdancing and battle-based street dance content",
+          "reasoning": "The post describes a street dancer mirroring the author's moves, which aligns with the user's interest in breakdancing and performance-based street dance. While the 'universe sign' framing is more about serendipity, the core content involves live dance interaction that matches the user's engagement history with footwork and battle-style performances."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Trending content on a user-positive hashtag",
+          "decision_point": "2026-04-05T14:52:49Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775398136,
+        "t_test_iso": "2026-04-05T14:08:56Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "dear algo posts",
+          "trend_description": "Posts written as letters to the Threads algorithm asking it to surface or stop surfacing specific kinds of content.",
+          "post_event_id": "feedvis_c1039f0ffa",
+          "post_ts": 1775311736,
+          "post_iso": "14:08, 04/04/2026",
+          "post_hashtags": [
+            "#dearAlgo",
+            "#Boxing",
+            "#ringside"
+          ],
+          "post_caption_excerpt": "Dear algo, please stop showing me slow-mo knockouts right before bed. I’m trying to sleep, not relive every uppercut in my dreams.",
+          "primary_hashtag": "#Boxing",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Professional boxing fight-night moments, specifically knockout highlights.",
+          "reasoning": "The caption humorously references slow-motion knockout clips, which ties directly to the user's strong engagement with high-profile boxing match moments and fight highlights. While framed as a complaint to the algorithm, it still centers on the kind of content the user actively enjoys and comments on."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Trending content on a user-positive hashtag",
+          "decision_point": "2026-04-05T14:08:56Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775385995,
+        "t_test_iso": "2026-04-05T10:46:35Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "nostalgia milestone posts",
+          "trend_description": "Throwbacks marking life milestones — graduations, anniversaries, kids growing up — paired with old photos.",
+          "post_event_id": "feedvis_37c2d524c8",
+          "post_ts": 1775299595,
+          "post_iso": "10:46, 04/04/2026",
+          "post_hashtags": [
+            "#comedygold",
+            "#throwback",
+            "#milestone"
+          ],
+          "post_caption_excerpt": "10 years ago I thought I was ready to conquer the world… now I just hope my plants survive the week.",
+          "primary_hashtag": "#comedygold",
+          "relevance": "irrelevant"
+        },
+        "hashtag_label_at_generation": "irrelevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with user's interest in performance-based comedy or battle-format entertainment.",
+          "reasoning": "The post is a nostalgic milestone reflection with a light humorous twist about plants, which is unrelated to the user's demonstrated engagement with structured comedic setups, performance battles, or their other specific hobbies and preferences. The humor here is incidental and tied to personal life change rather than the performance-driven comedy the user enjoys."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T10:46:35Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      }
+    ],
     "overactive_check": [
       {
         "trigger_type": "overactive_check",
@@ -1814,27 +2387,6 @@
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Negative-control idle moment",
           "decision_point": "2026-04-03T08:10:26Z",
-          "decision_rule_pass": false,
-          "eligibility_score": 0,
-          "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": true,
-          "reasoning": "Negative control — staying silent is the right move."
-        }
-      },
-      {
-        "trigger_type": "overactive_check",
-        "tier": "negative_control",
-        "t_test": 1775291100,
-        "t_test_iso": "2026-04-04T08:25:00Z",
-        "relevance": "irrelevant",
-        "signal_evidence": {
-          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
-        },
-        "jitai_card": {
-          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
-          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
-          "tailoring_variable": "Negative-control idle moment",
-          "decision_point": "2026-04-04T08:25:00Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",

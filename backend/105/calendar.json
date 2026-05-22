@@ -1,0 +1,598 @@
+{
+  "modifications": [
+    {
+      "mod_id": "mod_001",
+      "ts": 1775175600,
+      "formatted_timestamp": "09:00, 04/01/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_001",
+        "title": "Morning admin sprint and inbox cleanup",
+        "start_ts": 1775175600,
+        "end_ts": 1775179200,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_002",
+      "ts": 1775192400,
+      "formatted_timestamp": "13:40, 04/01/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_002",
+        "title": "English idioms practice and note review",
+        "start_ts": 1775192400,
+        "end_ts": 1775196000,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "education"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_003",
+      "ts": 1775257200,
+      "formatted_timestamp": "07:40, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_003",
+        "title": "Train to Bath for venue scouting",
+        "start_ts": 1775257200,
+        "end_ts": 1775270400,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [
+          "weddings"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_004",
+      "ts": 1775278800,
+      "formatted_timestamp": "14:00, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_004",
+        "title": "Countryside venue walkthrough at Prior Park",
+        "start_ts": 1775278800,
+        "end_ts": 1775289600,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "weddings"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_005",
+      "ts": 1775293200,
+      "formatted_timestamp": "18:00, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_005",
+        "title": "Call with Ana about spring shoot mood board",
+        "start_ts": 1775293200,
+        "end_ts": 1775296800,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "weddings"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related",
+        "attendees": [
+          "self",
+          "Ana"
+        ]
+      }
+    },
+    {
+      "mod_id": "mod_006",
+      "ts": 1775318400,
+      "formatted_timestamp": "00:00, 04/03/2026",
+      "action": "updated",
+      "entry_id": "cal_004",
+      "diff": {
+        "end_ts": {
+          "from": 1775289600,
+          "to": 1775293200
+        },
+        "notes": {
+          "from": "",
+          "to": "Extended to cover golden-hour shots"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775350800,
+      "formatted_timestamp": "09:00, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_006",
+        "title": "Client gallery edit block",
+        "start_ts": 1775350800,
+        "end_ts": 1775365200,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "weddings"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775376000,
+      "formatted_timestamp": "16:00, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Gym class: mobility and core",
+        "start_ts": 1775376000,
+        "end_ts": 1775381400,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [
+          "wellness"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775432400,
+      "formatted_timestamp": "08:40, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Wildlife rescue photo session",
+        "start_ts": 1775432400,
+        "end_ts": 1775443200,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "community engagement"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775455200,
+      "formatted_timestamp": "15:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Haircut and beard tidy-up",
+        "start_ts": 1775455200,
+        "end_ts": 1775459400,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775520000,
+      "formatted_timestamp": "09:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Church group sugar-free dessert tasting",
+        "start_ts": 1775520000,
+        "end_ts": 1775527200,
+        "location": {
+          "city": "Bath",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.3811,
+          "lon": -2.359,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "wellness"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775538000,
+      "formatted_timestamp": "14:20, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_010",
+      "diff": {
+        "end_ts": {
+          "from": 1775527200,
+          "to": 1775530800
+        },
+        "notes": {
+          "from": "",
+          "to": "Added extra cleanup time after tasting"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775602800,
+      "formatted_timestamp": "08:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Return train to London",
+        "start_ts": 1775602800,
+        "end_ts": 1775616000,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775628000,
+      "formatted_timestamp": "15:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Client contract review and pricing notes",
+        "start_ts": 1775628000,
+        "end_ts": 1775635200,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "personal finance"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775694000,
+      "formatted_timestamp": "10:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Dentist cleaning",
+        "start_ts": 1775694000,
+        "end_ts": 1775697600,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775710800,
+      "formatted_timestamp": "14:40, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Video call with church volunteer team",
+        "start_ts": 1775710800,
+        "end_ts": 1775716200,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "community engagement",
+          "christian faith"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775779200,
+      "formatted_timestamp": "10:40, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Location scouting walk in Hampstead",
+        "start_ts": 1775779200,
+        "end_ts": 1775787000,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "weddings"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775803200,
+      "formatted_timestamp": "17:20, 04/08/2026",
+      "action": "updated",
+      "entry_id": "cal_015",
+      "diff": {
+        "end_ts": {
+          "from": 1775787000,
+          "to": 1775783400
+        },
+        "notes": {
+          "from": "",
+          "to": "Shortened after rain moved in"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775851200,
+      "formatted_timestamp": "07:20, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Morning Bible study and reflections",
+        "start_ts": 1775851200,
+        "end_ts": 1775856600,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "christian faith",
+          "self-improvement"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775872800,
+      "formatted_timestamp": "13:20, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Facebook post draft: wildlife rescue adoption campaign",
+        "start_ts": 1775872800,
+        "end_ts": 1775878200,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "community engagement"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775894400,
+      "formatted_timestamp": "19:20, 04/09/2026",
+      "action": "removed",
+      "entry_id": "cal_017",
+      "removal_reason": "canceled: rescue team changed the campaign timing"
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775923200,
+      "formatted_timestamp": "03:20, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Sugar-free dessert experiment",
+        "start_ts": 1775923200,
+        "end_ts": 1775928600,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "wellness",
+          "cooking"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775928600,
+      "formatted_timestamp": "04:50, 04/10/2026",
+      "action": "updated",
+      "entry_id": "cal_018",
+      "diff": {
+        "end_ts": {
+          "from": 1775928600,
+          "to": 1775930400
+        },
+        "notes": {
+          "from": "",
+          "to": "Added cooling time for the ganache"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775935800,
+      "formatted_timestamp": "06:50, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "One-on-one with editor about album layout",
+        "start_ts": 1775935800,
+        "end_ts": 1775941200,
+        "location": {
+          "city": "London",
+          "region": "England",
+          "country": "UK",
+          "lat": 51.5074,
+          "lon": -0.1278,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "weddings"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_025",
+      "ts": 1775944800,
+      "formatted_timestamp": "09:20, 04/10/2026",
+      "action": "updated",
+      "entry_id": "cal_019",
+      "diff": {
+        "end_ts": {
+          "from": 1775941200,
+          "to": 1775943000
+        },
+        "notes": {
+          "from": "",
+          "to": "Extended to confirm print specs"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_rep_026",
+      "ts": 1775946438,
+      "formatted_timestamp": "22:27, 04/11/2026",
+      "action": "removed",
+      "entry_id": "cal_018",
+      "removal_reason": "Rescheduled at last minute"
+    }
+  ]
+}
