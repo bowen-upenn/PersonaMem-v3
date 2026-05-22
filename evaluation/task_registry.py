@@ -78,7 +78,13 @@ OLD_TO_NEW: dict[str, str] = {
     "t10_auto_reply":                "agentic_auto_reply",
     "t11_vague_refind":              "agentic_vague_refind",
     "t12_agent_composed_post":       "agentic_composed_post",
-    "t13_chatbot_dispatch":          "agentic_send_post",
+    # `agentic_send_post` (formerly `t13_chatbot_dispatch`) merged into
+    # `agentic_composed_post` — same write-a-post intent, only the
+    # entry-point differs (app-native compose vs chatbot-dispatched
+    # compose). The merged task keeps both flavors; instances tag which
+    # one via the `flavor` field in the instance JSON.
+    "t13_chatbot_dispatch":          "agentic_composed_post",
+    "agentic_send_post":             "agentic_composed_post",
     # agentic_draft_audit dropped — old strings still resolve so historical
     # CSVs parse, but the task type is no longer in TASK_TYPE_META.
     "t14_draft_audit":               "agentic_draft_audit",
@@ -340,8 +346,12 @@ TASK_TYPE_META: dict[str, dict] = {
     },
     "agentic_composed_post": {
         "task_family": "agentic",
-        "mcp_tools_allowed": "social",
-        "state_write_policy": "writes_ok",        # exactly 1 create_post per app
+        # `all` covers both flavors: app-native compose (social tools only)
+        # and chatbot-dispatched compose (chatbot routes a write to a target
+        # social app). Pre-merge the dispatched flavor lived under
+        # `agentic_send_post` with `mcp_tools_allowed: all`.
+        "mcp_tools_allowed": "all",
+        "state_write_policy": "writes_ok",        # exactly 1 create_post per instance
         "expected_response_kind": "agentic_writes",
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
@@ -349,16 +359,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_match",
         ],
     },
-    "agentic_send_post": {
-        "task_family": "agentic",
-        "mcp_tools_allowed": "all",                # chatbot + target social app
-        "state_write_policy": "writes_ok",         # 1 create_post on target
-        "expected_response_kind": "agentic_writes",
-        "rubric_tags": [
-            "preference_alignment", "avoid_overpersonalization",
-            "voice_match", "tool_call_match",
-        ],
-    },
+    # agentic_send_post merged into agentic_composed_post (see OLD_TO_NEW).
     # agentic_draft_audit removed — too subjective for benchmark grading
     "agentic_group_dm_summary": {
         "task_family": "agentic",
@@ -605,7 +606,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "agentic_auto_reply":                     "agentic_task",
     "agentic_vague_refind":                   "user_query",
     "agentic_composed_post":                  "agentic_task",
-    "agentic_send_post":                      "user_query",
+    # agentic_send_post merged into agentic_composed_post; alias only.
     # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":               "agentic_task",
     "agentic_wrong_recipient_check":          "proactive_assistance",
@@ -642,7 +643,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "agentic_auto_reply":                     "agentic_action",
     "agentic_vague_refind":                   "agentic_action",
     "agentic_composed_post":                  "agentic_action",
-    "agentic_send_post":                      "agentic_action",
+    # agentic_send_post merged into agentic_composed_post; alias only.
     "agentic_group_dm_summary":               "agentic_action",
     "agentic_wrong_recipient_check":          "proactive_assist",
     "agentic_proactive_daily_catchup":        "proactive_recommend",
@@ -724,7 +725,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "agentic_auto_reply":                ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_vague_refind":              ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_composed_post":             ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_send_post":                 ("agentic_pass_rate", "agentic_pass_rate"),
+    # agentic_send_post merged into agentic_composed_post; alias only.
     "agentic_draft_audit":               ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_group_dm_summary":          ("agentic_pass_rate", "agentic_pass_rate"),
     "agentic_wrong_recipient_check":     ("agentic_pass_rate", "agentic_pass_rate"),

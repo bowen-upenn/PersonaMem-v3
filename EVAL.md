@@ -48,7 +48,7 @@ Index from the paper's Section 3 tables to the internal task code-names used in 
 | Cross-app repost adaptation | `agentic_cross_app_repost` |
 | Personalized DM reply | `agentic_auto_reply` |
 | Vague memory refind | `agentic_vague_refind` |
-| Cross-surface post composition † | `agentic_composed_post` (subsumes `agentic_send_post` / `t9_cross_app_repost`) |
+| Cross-surface post composition † | `agentic_composed_post` (subsumes `agentic_send_post` / `t13_chatbot_dispatch`) |
 | Group thread brief | `agentic_group_dm_summary` |
 | Wrong-recipient guardrail | `agentic_wrong_recipient_check` |
 | Proactive daily catch-up | `agentic_proactive_daily_catchup` |
@@ -499,8 +499,7 @@ Real users delegate write-enabled, multi-step work to their agents. T6–T19 cov
 | **T9** cross-app repost | Instagram post → Threads | content: style-adapted + source-fidelity; tool: exactly 1 threads_create_post, 0 IG creates | chatbot_routed |
 | **T10** auto-reply on behalf | inbound DM | content: voice-match + recipient-appropriate; tool: exactly 1 send_dm | app_native |
 | **T11** vague refind | user's own past post on a topic | content: correct post cited; tool: reads only, no writes | chatbot_routed |
-| **T12** agent-composed post | free-form user update | content: voice-match + length-norm for app; tool: exactly 1 create_post | app_native |
-| **T13** chatbot→app dispatch | chat context + target app | same as T9 + correct routing to named app | chatbot_routed |
+| **T12 / T13** agent-composed post (merged) | free-form user update OR chat context targeting an app | content: voice-match + length-norm for app; tool: exactly 1 create_post on target. Two flavors live under `agentic_composed_post`: `composed` (app-native compose-from-scratch) and `dispatched` (chatbot routes the write to a named app). Old `agentic_send_post` / `t13_chatbot_dispatch` resolve via the task registry. | app_native, chatbot_routed |
 | **T14** draft-audit privacy | benign / privacy-leak / tone-mismatch draft | content: flags real issues; tool: ZERO create_post (audit only) | app_native |
 | **T15** saved-collection curation | user's likes on an app | content: themes match hashtag clusters; tool: reads only | chatbot_routed |
 | **T16** group-DM summary | a group thread | content: per-participant summary + decision points; tool: get_dm_thread reads only | chatbot_routed |
@@ -508,7 +507,7 @@ Real users delegate write-enabled, multi-step work to their agents. T6–T19 cov
 | **T18** proactive daily | zero-prompt daily briefing | content: 3–5 diverse-topic suggestions; tool: reads only | chatbot_routed |
 | **T19** trending alert | trending hashtags + user prefs | content: aligned hashtags flagged, disliked ones omitted | chatbot_routed |
 
-All 14 tasks are stored in the frozen benchmark file under keys `t6_community_digest`, …, `t19_trending_alert`. Run them with `--task agentic` (all 14), `--task t10` (just T10), or `--task t9,t10,t12` (comma-separated). Entry-point variants (`app_native` / `chatbot_routed`) are tagged on each instance; MCP mode wires different MCP configs per variant.
+All 13 tasks (T12 and T13 merged into one row above) are stored in the frozen benchmark file under keys `t6_community_digest`, …, `t19_trending_alert`. Run them with `--task agentic`, `--task t10` (just T10), or `--task t9,t10,t12` (comma-separated). Entry-point variants (`app_native` / `chatbot_routed`) are tagged on each instance; MCP mode wires different MCP configs per variant.
 
 ### Personalization rubric (applied to every task T1–T19)
 
