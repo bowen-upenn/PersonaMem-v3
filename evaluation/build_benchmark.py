@@ -3700,6 +3700,21 @@ def build_benchmark(
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
     # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
 
+    # Step 4.5 — preference_shift_followthrough (chatbot + recsys flavors).
+    # Scaffolded builder; emits instances only when the user has shift
+    # candidates in their canonicals. Discovery-LLM wiring lands later;
+    # for now the audit step drops empty-user_query rows automatically.
+    try:
+        from evaluation.tasks.preference_shift_followthrough import (
+            build_preference_shift_followthrough,
+        )
+        preference_shift_instances = build_preference_shift_followthrough(
+            bq, user_id, t_probe, discovery_llm=None, rng_seed=rng_seed,
+        )
+    except Exception as exc:
+        preference_shift_instances = []
+        print(f"[build_benchmark] WARN: preference_shift_followthrough builder failed: {exc}")
+
     # Agentic tasks T6-T19.
     # - E: builders that fix t_test=t_probe get their instances scattered
     #   across the observation window.
@@ -3853,6 +3868,7 @@ def build_benchmark(
         "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,
         # preference_removal_regen removed in Step 4.4.
+        "preference_shift_followthrough":         preference_shift_instances,
         "at_ai_directive_followup":               e2_instances,
         # daily_personalized_briefing removed in Step 4.3 (e3_instances empty).
         # workstream D: e4 builder now emits the personalized_recommendation

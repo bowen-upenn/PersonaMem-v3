@@ -293,6 +293,25 @@ TASK_TYPE_META: dict[str, dict] = {
         "rubric_tags": ["avoid_overpersonalization"],
     },
     # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
+    # New in Step 4.5 — preference_shift_followthrough (chatbot + recsys
+    # flavors). Tests whether the agent uses the post-shift stance instead
+    # of the outdated one. Inferior leans on the old preference.
+    "preference_shift_followthrough": {
+        "task_family": "over_personalization",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text",
+        # Task-specific axis (preference_shift_consistency) plus universal
+        # personalization dimensions. stale_preference_use is the hard
+        # rule that fires when the response leans on `old_preference.text`.
+        "rubric_tags": [
+            "preference_shift_consistency",
+            "preference_alignment",
+            "stale_preference_use",
+            "telegraph_avoidance",
+            "privacy_leak",
+        ],
+    },
 
     # ------------------------------------------------------------------
     # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
@@ -587,6 +606,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_distractor_reject": "user_query",
     "over_personalization_sensitive_event":   "user_query",
     # preference_removal_regen removed in Step 4.4.
+    "preference_shift_followthrough":         "user_query",
     "at_ai_directive_followup":               "user_query",
     # daily_personalized_briefing removed in Step 4.3.
     # personalized_recommendation (renamed from personalized_search_ranking)
@@ -627,6 +647,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_distractor_reject": "avoid_overpersonalization",
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
     # preference_removal_regen removed in Step 4.4.
+    "preference_shift_followthrough":         "avoid_overpersonalization",
     "at_ai_directive_followup":               "proactive_recommend",
     # daily_personalized_briefing removed in Step 4.3.
     "personalized_recommendation":            "proactive_recommend",
@@ -708,6 +729,10 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # = better restraint around the user's private/sensitive episode.
     "over_personalization_sensitive_event":        ("personalization_leak_rate", "inverted_fraction"),
     # preference_removal_regen removed in Step 4.4.
+    # Step 4.5 — headline is `preference_shift_consistency` (0-3 LLM judge);
+    # `stale_preference_use` hard rule fires when the response leans on
+    # `groundtruth_preference.old_preference.text`.
+    "preference_shift_followthrough":              ("preference_shift_consistency", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
     # JSON), which any non-empty response trivially passed.

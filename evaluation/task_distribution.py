@@ -45,6 +45,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
     "active_mistake_prevention":              {"min": 5,  "max": 6},
     # preference_removal_regen removed in Step 4.4. See DROPPED_TASK_TYPES.
+    # New in Step 4.5 — QA on preference changes (chatbot + recsys flavors).
+    # data_dependent: requires shift candidates from update_history or
+    # short_term stop_conditions; users with neither emit 0 instances.
+    "preference_shift_followthrough":         {"min": 2, "max": 4, "data_dependent": True},
     # Silent geo-shift local recommendation — only fires for users with
     # mobility_class != "homebody" AND >= 2 city transitions in their event
     # stream. Homebodies generate 0 instances (the eval doesn't apply).
