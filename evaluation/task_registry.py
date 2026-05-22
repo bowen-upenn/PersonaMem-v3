@@ -312,6 +312,27 @@ TASK_TYPE_META: dict[str, dict] = {
             "privacy_leak",
         ],
     },
+    # New in Step 4.6 — hidden_persona_implicit_qa. Implicit surface query;
+    # the right answer requires the agent to have inferred a hidden persona.
+    # Example serves the deeper need WITHOUT naming the persona; inferior
+    # takes the surface query at face value.
+    "hidden_persona_implicit_qa": {
+        "task_family": "personalization",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "text",
+        # deep_motivation_alignment (0-3 LLM judge, headline) + surface
+        # query satisfaction + universal hard-rules (telegraph_avoidance
+        # bans naming the persona type; privacy_leak bans direct mention
+        # of sensitive-topic personas).
+        "rubric_tags": [
+            "deep_motivation_alignment",
+            "surface_query_satisfaction",
+            "preference_alignment",
+            "telegraph_avoidance",
+            "privacy_leak",
+        ],
+    },
 
     # ------------------------------------------------------------------
     # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
@@ -607,6 +628,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_sensitive_event":   "user_query",
     # preference_removal_regen removed in Step 4.4.
     "preference_shift_followthrough":         "user_query",
+    "hidden_persona_implicit_qa":             "user_query",
     "at_ai_directive_followup":               "user_query",
     # daily_personalized_briefing removed in Step 4.3.
     # personalized_recommendation (renamed from personalized_search_ranking)
@@ -648,6 +670,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
     # preference_removal_regen removed in Step 4.4.
     "preference_shift_followthrough":         "avoid_overpersonalization",
+    "hidden_persona_implicit_qa":             "personalize",
     "at_ai_directive_followup":               "proactive_recommend",
     # daily_personalized_briefing removed in Step 4.3.
     "personalized_recommendation":            "proactive_recommend",
@@ -733,6 +756,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # `stale_preference_use` hard rule fires when the response leans on
     # `groundtruth_preference.old_preference.text`.
     "preference_shift_followthrough":              ("preference_shift_consistency", "fraction"),
+    # Step 4.6 — headline is `deep_motivation_alignment` (0-3 LLM judge).
+    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
     # JSON), which any non-empty response trivially passed.

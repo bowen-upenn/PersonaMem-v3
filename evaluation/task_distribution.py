@@ -49,6 +49,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # data_dependent: requires shift candidates from update_history or
     # short_term stop_conditions; users with neither emit 0 instances.
     "preference_shift_followthrough":         {"min": 2, "max": 4, "data_dependent": True},
+    # New in Step 4.6 — QA on hidden personas. Implicit query whose right
+    # answer requires deep inference. data_dependent: needs hidden_personas
+    # meeting evidence floors (≥25 rows, ≥3% row fraction, last seen ≤30d).
+    "hidden_persona_implicit_qa":             {"min": 2, "max": 4, "data_dependent": True},
     # Silent geo-shift local recommendation — only fires for users with
     # mobility_class != "homebody" AND >= 2 city transitions in their event
     # stream. Homebodies generate 0 instances (the eval doesn't apply).

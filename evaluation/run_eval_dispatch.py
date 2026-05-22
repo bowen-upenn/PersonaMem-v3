@@ -93,6 +93,9 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     elif task_type == "preference_shift_followthrough":
         from evaluation.tasks import preference_shift_followthrough as _psf
         rows = _psf.run_preference_shift_followthrough(**common)
+    elif task_type == "hidden_persona_implicit_qa":
+        from evaluation.tasks import hidden_persona_implicit_qa as _hp
+        rows = _hp.run_hidden_persona_implicit_qa(**common)
     elif task_type == "at_ai_directive_followup":
         from evaluation.tasks import e2_at_ai_followup as _e2
         rows = _e2.run_e2_at_ai_followup(**common)
