@@ -640,7 +640,7 @@ Duplicate render helpers in `extension_b/self_posts.py::_render_user_voice_for_s
 - `identity_coherence` — Layer-1 detectable (signature concerns, redemption motifs, life-stage preoccupations).
 - `idiolect_fidelity` — Layer-2 detectable (syntactic patterns, hedge/booster, templates applied abstractly).
 - `audience_appropriateness` — Layer-3/4 fit (active stances, disclosure depth, length band).
-- `voice_match` = mean. Polarity `+`. Same 5 voice-graded agentic tasks (`agentic_user_tone_post`, `agentic_cross_app_repost`, `agentic_auto_reply`, `agentic_composed_post`, `agentic_send_post`).
+- `voice_match` = mean. Polarity `+`. Voice-graded agentic tasks: `agentic_user_tone_post`, `agentic_cross_app_repost`, `agentic_auto_reply`, `agentic_composed_post` (the latter subsumes the former `agentic_send_post` after Step 4.2 of the eval refactor; legacy strings resolve via `task_registry.OLD_TO_NEW`).
 
 **`voice_self_consistency` (NEW audit)** — wires through the same judge driver. Pulls 4 of the synthetic user's pre-`T_test` pipeline-generated samples (Ext B self-posts + DMs + chatbot user-turns; `_style_refs` now spans all three consumers) plus the candidate. Judge sees `identity_spine` as context but NOT `idiolect` — Layer 2 must be detected from the prior samples alone, which tests whether voice mechanics are visible in *generated output* not just declared in the block.
 
@@ -1107,15 +1107,15 @@ The script is idempotent and read-only against the benchmark — it writes its o
 
 ### Per-task applicability (which dims actually evaluate, vs skip)
 
-`USER_MESSAGE_TASKS` = chatbot_personalized_response, over_personalization_chatbot_text, over_personalization_distractor_reject, over_personalization_context_shift, over_personalization_sensitive_event, active_mistake_prevention. Only these evaluate dim 1.
+`USER_MESSAGE_TASKS` = chatbot_personalized_response, over_personalization_chatbot_text (subsumes the former over_personalization_distractor_reject as a 4th arm after Step 4.7), over_personalization_context_shift, over_personalization_sensitive_event, active_mistake_prevention. Only these evaluate dim 1.
 
-`OVER_PERS_TASKS` = the five `over_personalization_*` tasks + `repetition_fatigue_pairs` + `repetition_fatigue_sequences`. These evaluate dim 3 (restraint), skip dim 2 (required), skip dim 4 (foil plausibility) except for `sensitive_event`.
+`OVER_PERS_TASKS` = the four surviving `over_personalization_*` tasks + `repetition_fatigue_pairs` + `repetition_fatigue_sequences`. These evaluate dim 3 (restraint), skip dim 2 (required), skip dim 4 (foil plausibility) except for `sensitive_event`.
 
 `GT_ALIGNMENT_APPLICABLE` = {`chatbot_personalized_response`} only. Every other task skips dim 5.
 
-`SLATE_RANKING_TASKS` (for the dim-8 schema check on `candidates`) = personalized_recommendation, at_ai_directive_followup, daily_personalized_briefing, short_vs_long_term_lifecycle. `preference_removal_regen` is technically a ranking task in `task_distribution.py` but uses a different shape (held-out + post-removal re-ranking against the user's full pref soup) and is exempt from the candidate-pool requirement.
+`SLATE_RANKING_TASKS` (for the dim-8 schema check on `candidates`) = personalized_recommendation, at_ai_directive_followup, short_vs_long_term_lifecycle. (`daily_personalized_briefing` and `preference_removal_regen` were removed in Steps 4.3 and 4.4 respectively; old benchmark rows resolve via `task_registry.DROPPED_TASK_TYPES`.)
 
-Tasks pinned to `disliked_recent` flaw kind (`evaluation/llm_postprocess.py::_TASK_FLAW_KINDS`) — for these the inferior is built by injecting a freshly-disliked topic so the diff is **visible to a human reader, subtle + natural (the foil is plausible for some other user just not for this one at this moment), and not structural**: `daily_personalized_briefing`, `agentic_proactive_daily_catchup`, `agentic_trending_alert`. Compose tasks (`agentic_user_tone_post`, `agentic_composed_post`, `agentic_send_post`, `agentic_cross_app_repost`, `agentic_auto_reply`) use `voice_mismatch` (right content, wrong tone register). Pure-summarization tasks (`agentic_dm_digest`, `agentic_group_dm_summary`, `agentic_vague_refind`) use `factual_error` (wrong sender / count / item). Slate-ranking tasks use a deterministic order-inversion via `_compute_ranking_inferior` (no LLM call).
+Tasks pinned to `disliked_recent` flaw kind (`evaluation/llm_postprocess.py::_TASK_FLAW_KINDS`) — for these the inferior is built by injecting a freshly-disliked topic so the diff is **visible to a human reader, subtle + natural (the foil is plausible for some other user just not for this one at this moment), and not structural**: `agentic_proactive_daily_catchup`, `agentic_trending_alert`. Compose tasks (`agentic_user_tone_post`, `agentic_composed_post`, `agentic_cross_app_repost`, `agentic_auto_reply`) use `voice_mismatch` (right content, wrong tone register). Pure-summarization tasks (`agentic_dm_digest`, `agentic_group_dm_summary`, `agentic_vague_refind`) use `factual_error` (wrong sender / count / item). Slate-ranking tasks use a deterministic order-inversion via `_compute_ranking_inferior` (no LLM call).
 
 ### Robustness
 
@@ -1199,7 +1199,7 @@ Combined helper: `_validate_no_creepy_phrasing(response, held_out_pref) -> (pass
 
 **Rubric-dim membership** — added to both `JUDGE_DIMS` and `HARD_RULE_DIMS` in `evaluation/personalization_rubric.py`. Hard-fail behavior matches `privacy_leak` / `avoid_leak` / `stale_preference_use`: zeros the task score regardless of other dims.
 
-**Applicability** — every personalized-response task carries `telegraph_avoidance: True` in APPLICABILITY: `chatbot_personalized_response`, all `agentic_*` compose tasks, `daily_personalized_briefing`, `personalized_recommendation`, `over_personalization_*` (every variant), `preference_removal_regen`, `proactive_unfulfilled_stated_need`, `proactive_close_friend_update`, the new `new_suggestions_*` tasks (§ 22).
+**Applicability** — every personalized-response task carries `telegraph_avoidance: True` in APPLICABILITY: `chatbot_personalized_response`, all `agentic_*` compose tasks, `personalized_recommendation`, every surviving `over_personalization_*` variant, `proactive_unfulfilled_stated_need`, `proactive_close_friend_update`, `new_suggestions_*` (§ 22), and the new `preference_shift_followthrough` + `hidden_persona_implicit_qa` tasks. (Earlier listings included `daily_personalized_briefing` and `preference_removal_regen`; both were removed in Steps 4.3 / 4.4.)
 
 ## 22. New Suggestions — Explorative, Persona-Grounded Recommendation (`new_suggestions_recsys` / `new_suggestions_chatbot`)
 
