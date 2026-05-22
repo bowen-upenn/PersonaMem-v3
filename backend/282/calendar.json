@@ -1,0 +1,658 @@
+{
+  "modifications": [
+    {
+      "mod_id": "mod_001",
+      "ts": 1775189800,
+      "formatted_timestamp": "11:36, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_001",
+        "title": "Supplier call: marina dock lines and fenders",
+        "start_ts": 1775190600,
+        "end_ts": 1775194200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "construction & blue-collar work culture"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_002",
+      "ts": 1775217400,
+      "formatted_timestamp": "19:16, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_002",
+        "title": "Pizza dough prep with smoked mackerel topping test",
+        "start_ts": 1775220000,
+        "end_ts": 1775225400,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "pizza",
+          "food enthusiasm"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_003",
+      "ts": 1775253300,
+      "formatted_timestamp": "05:15, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_003",
+        "title": "Airport shuttle to Pittsburgh departure",
+        "start_ts": 1775255100,
+        "end_ts": 1775258700,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_004",
+      "ts": 1775260800,
+      "formatted_timestamp": "07:20, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_004",
+        "title": "Flight to Nashville for supplier meetings",
+        "start_ts": 1775264400,
+        "end_ts": 1775273400,
+        "location": {
+          "city": "Nashville",
+          "region": "TN",
+          "country": "USA",
+          "lat": 36.1627,
+          "lon": -86.7816,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_005",
+      "ts": 1775275400,
+      "formatted_timestamp": "11:23, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_005",
+        "title": "Lunch with Ana to review weekend route options",
+        "start_ts": 1775277000,
+        "end_ts": 1775282400,
+        "location": {
+          "city": "Nashville",
+          "region": "TN",
+          "country": "USA",
+          "lat": 36.1627,
+          "lon": -86.7816,
+          "precision": "city"
+        },
+        "type": "social",
+        "attendees": [
+          "self",
+          "Ana"
+        ],
+        "linked_preferences": [
+          "travel and tourism"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_006",
+      "ts": 1775302800,
+      "formatted_timestamp": "19:00, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_006",
+        "title": "Hotel gym session",
+        "start_ts": 1775304000,
+        "end_ts": 1775307600,
+        "location": {
+          "city": "Nashville",
+          "region": "TN",
+          "country": "USA",
+          "lat": 36.1627,
+          "lon": -86.7816,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775332000,
+      "formatted_timestamp": "03:46, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Return flight to Pittsburgh",
+        "start_ts": 1775334600,
+        "end_ts": 1775343600,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775359200,
+      "formatted_timestamp": "11:20, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Brake inspection at neighborhood auto shop",
+        "start_ts": 1775360400,
+        "end_ts": 1775365800,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "construction & blue-collar work culture"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775383100,
+      "formatted_timestamp": "17:58, 04/04/2026",
+      "action": "updated",
+      "entry_id": "cal_008",
+      "diff": {
+        "end_ts": {
+          "from": 1775365800,
+          "to": 1775367600
+        },
+        "notes": {
+          "from": "",
+          "to": "add tire rotation while it's on the lift"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775412400,
+      "formatted_timestamp": "02:06, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Catch-up call with warehouse rep",
+        "start_ts": 1775413800,
+        "end_ts": 1775417400,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775436000,
+      "formatted_timestamp": "08:40, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Sunday fishing kayak launch",
+        "start_ts": 1775437800,
+        "end_ts": 1775448600,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "recreational fishing",
+          "catch-and-release methods"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775461200,
+      "formatted_timestamp": "15:40, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_010",
+      "diff": {
+        "start_ts": {
+          "from": 1775437800,
+          "to": 1775441400
+        },
+        "notes": {
+          "from": "",
+          "to": "launch later after wind calms down"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775496800,
+      "formatted_timestamp": "01:33, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Monday sales pipeline sprint",
+        "start_ts": 1775498400,
+        "end_ts": 1775509200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775522200,
+      "formatted_timestamp": "08:36, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Chatbot session: draft follow-up email to marina buyer",
+        "start_ts": 1775523600,
+        "end_ts": 1775527200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "career advice"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775557800,
+      "formatted_timestamp": "18:30, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Family dinner and Steelers talk",
+        "start_ts": 1775559000,
+        "end_ts": 1775566200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "Pittsburgh Steelers NFL team"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775591200,
+      "formatted_timestamp": "03:46, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Faith reflection and prayer time",
+        "start_ts": 1775592600,
+        "end_ts": 1775596200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "worship and gospel music"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775620600,
+      "formatted_timestamp": "12:56, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Client demo at marina showroom",
+        "start_ts": 1775622600,
+        "end_ts": 1775629800,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "marine sports"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775648800,
+      "formatted_timestamp": "20:46, 04/07/2026",
+      "action": "updated",
+      "entry_id": "cal_015",
+      "diff": {
+        "notes": {
+          "from": "",
+          "to": "bring extra brochures and compare towable options"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775670400,
+      "formatted_timestamp": "02:46, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Haircut and beard trim",
+        "start_ts": 1775671800,
+        "end_ts": 1775677200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775703500,
+      "formatted_timestamp": "12:18, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "WNBA playoff highlights watch party",
+        "start_ts": 1775705400,
+        "end_ts": 1775710800,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "women's basketball fandom",
+          "NBA basketball and follows notable players and legends"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775736600,
+      "formatted_timestamp": "21:30, 04/08/2026",
+      "action": "removed",
+      "entry_id": "cal_017",
+      "removal_reason": "canceled: game night moved to next week"
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775758800,
+      "formatted_timestamp": "03:40, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Early sales review and route planning",
+        "start_ts": 1775760000,
+        "end_ts": 1775767200,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775792200,
+      "formatted_timestamp": "13:16, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "Community dinner at church hall",
+        "start_ts": 1775793600,
+        "end_ts": 1775800800,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "faith-based motivation"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775827000,
+      "formatted_timestamp": "23:16, 04/09/2026",
+      "action": "updated",
+      "entry_id": "cal_019",
+      "diff": {
+        "end_ts": {
+          "from": 1775800800,
+          "to": 1775804400
+        },
+        "notes": {
+          "from": "",
+          "to": "stay for cleanup after dessert"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_025",
+      "ts": 1775858200,
+      "formatted_timestamp": "08:03, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_020",
+        "title": "Doctor checkup and lab work",
+        "start_ts": 1775860200,
+        "end_ts": 1775865600,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_026",
+      "ts": 1775890800,
+      "formatted_timestamp": "17:00, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_021",
+        "title": "WNBA finals kickoff stream",
+        "start_ts": 1775892600,
+        "end_ts": 1775899800,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "women's basketball fandom"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_027",
+      "ts": 1775923100,
+      "formatted_timestamp": "02:18, 04/11/2026",
+      "action": "updated",
+      "entry_id": "cal_021",
+      "diff": {
+        "notes": {
+          "from": "",
+          "to": "invite Mike and keep wings on the order"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_028",
+      "ts": 1775943000,
+      "formatted_timestamp": "07:50, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_022",
+        "title": "Coffee stop before weekend boating",
+        "start_ts": 1775944200,
+        "end_ts": 1775946000,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "marine sports"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_rep_029",
+      "ts": 1775946442,
+      "formatted_timestamp": "22:27, 04/11/2026",
+      "action": "removed",
+      "entry_id": "cal_021",
+      "removal_reason": "Rescheduled at last minute"
+    }
+  ]
+}

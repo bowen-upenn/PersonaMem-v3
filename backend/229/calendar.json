@@ -1,0 +1,555 @@
+{
+  "modifications": [
+    {
+      "mod_id": "mod_001",
+      "ts": 1775180400,
+      "formatted_timestamp": "09:00, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_001",
+        "title": "Workshop blade finishing block",
+        "start_ts": 1775180400,
+        "end_ts": 1775191200,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "outdoor recreation"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_002",
+      "ts": 1775193000,
+      "formatted_timestamp": "12:30, 04/02/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_002",
+        "title": "Lunch with Ana at the ridge cafe",
+        "start_ts": 1775193000,
+        "end_ts": 1775198400,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "romantic relationships",
+          "community engagement"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related",
+        "attendees": [
+          "self",
+          "Ana"
+        ]
+      }
+    },
+    {
+      "mod_id": "mod_003",
+      "ts": 1775244000,
+      "formatted_timestamp": "02:40, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_003",
+        "title": "Late-night kombucha batch check",
+        "start_ts": 1775244000,
+        "end_ts": 1775247600,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "diy"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_004",
+      "ts": 1775257200,
+      "formatted_timestamp": "06:20, 04/03/2026",
+      "action": "updated",
+      "entry_id": "cal_003",
+      "diff": {
+        "end_ts": {
+          "from": 1775247600,
+          "to": 1775250000
+        },
+        "notes": {
+          "from": "",
+          "to": "needed extra cleanup time"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_005",
+      "ts": 1775268000,
+      "formatted_timestamp": "09:20, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_004",
+        "title": "Dentist cleaning",
+        "start_ts": 1775268000,
+        "end_ts": 1775271600,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_006",
+      "ts": 1775347200,
+      "formatted_timestamp": "07:20, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_005",
+        "title": "Amtrak to Seattle",
+        "start_ts": 1775431657,
+        "end_ts": 1775438857,
+        "location": {
+          "city": "Seattle",
+          "region": "WA",
+          "country": "USA",
+          "lat": 47.6062,
+          "lon": -122.3321,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [
+          "community engagement"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775452800,
+      "formatted_timestamp": "12:00, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_006",
+        "title": "Maker meetup at Seattle coworking space",
+        "start_ts": 1775452800,
+        "end_ts": 1775458200,
+        "location": {
+          "city": "Seattle",
+          "region": "WA",
+          "country": "USA",
+          "lat": 47.6062,
+          "lon": -122.3321,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "diy",
+          "community engagement"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775505600,
+      "formatted_timestamp": "02:40, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Hotel room planning session",
+        "start_ts": 1775505600,
+        "end_ts": 1775511000,
+        "location": {
+          "city": "Seattle",
+          "region": "WA",
+          "country": "USA",
+          "lat": 47.6062,
+          "lon": -122.3321,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "craft project planning"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775516400,
+      "formatted_timestamp": "05:40, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_007",
+      "diff": {
+        "end_ts": {
+          "from": 1775511000,
+          "to": 1775512800
+        },
+        "notes": {
+          "from": "",
+          "to": "push discussion with supplier call"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775530800,
+      "formatted_timestamp": "09:40, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Lakefront fishing with friends",
+        "start_ts": 1775530800,
+        "end_ts": 1775552400,
+        "location": {
+          "city": "Seattle",
+          "region": "WA",
+          "country": "USA",
+          "lat": 47.6062,
+          "lon": -122.3321,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "fishing"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775592000,
+      "formatted_timestamp": "02:40, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Seattle brunch and horse photos edit",
+        "start_ts": 1775592000,
+        "end_ts": 1775597400,
+        "location": {
+          "city": "Seattle",
+          "region": "WA",
+          "country": "USA",
+          "lat": 47.6062,
+          "lon": -122.3321,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "horse riding",
+          "social humor"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775602800,
+      "formatted_timestamp": "05:40, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Return train to Portland",
+        "start_ts": 1775684213,
+        "end_ts": 1775691413,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775700000,
+      "formatted_timestamp": "08:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Workshop cleanup and tool inventory",
+        "start_ts": 1775700000,
+        "end_ts": 1775709000,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "diy"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775757600,
+      "formatted_timestamp": "00:20, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Thread draft: maker humor post",
+        "start_ts": 1775757600,
+        "end_ts": 1775760000,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "social humor"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775786400,
+      "formatted_timestamp": "08:20, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Physical therapy follow-up",
+        "start_ts": 1775786400,
+        "end_ts": 1775790000,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775797200,
+      "formatted_timestamp": "11:20, 04/07/2026",
+      "action": "updated",
+      "entry_id": "cal_011",
+      "diff": {
+        "end_ts": {
+          "from": 1775709000,
+          "to": 1775710800
+        },
+        "notes": {
+          "from": "",
+          "to": "added time for sharpening kit audit"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775865600,
+      "formatted_timestamp": "06:40, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Filipino adobo recipe test",
+        "start_ts": 1775865600,
+        "end_ts": 1775876400,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "cooking"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775878200,
+      "formatted_timestamp": "10:10, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Bone broth grocery run",
+        "start_ts": 1775878200,
+        "end_ts": 1775881800,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775899200,
+      "formatted_timestamp": "16:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Outlander binge night",
+        "start_ts": 1775899200,
+        "end_ts": 1775913600,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "fantasy media"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775918400,
+      "formatted_timestamp": "21:20, 04/08/2026",
+      "action": "removed",
+      "entry_id": "cal_016",
+      "removal_reason": "canceled: too tired after dinner prep"
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775925600,
+      "formatted_timestamp": "23:20, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Evening walk and dog video catch-up",
+        "start_ts": 1775925600,
+        "end_ts": 1775929200,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "pet entertainment"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775943000,
+      "formatted_timestamp": "04:10, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Final workshop polish pass",
+        "start_ts": 1775943000,
+        "end_ts": 1775948400,
+        "location": {
+          "city": "Portland",
+          "region": "OR",
+          "country": "USA",
+          "lat": 45.5152,
+          "lon": -122.6784,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "outdoor recreation"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_rep_024",
+      "ts": 1775944770,
+      "formatted_timestamp": "21:59, 04/11/2026",
+      "action": "removed",
+      "entry_id": "cal_016",
+      "removal_reason": "Rescheduled at last minute"
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775945700,
+      "formatted_timestamp": "04:55, 04/09/2026",
+      "action": "updated",
+      "entry_id": "cal_018",
+      "diff": {
+        "end_ts": {
+          "from": 1775948400,
+          "to": 1775950200
+        },
+        "notes": {
+          "from": "",
+          "to": "extended to finish buffing handles"
+        }
+      }
+    }
+  ]
+}

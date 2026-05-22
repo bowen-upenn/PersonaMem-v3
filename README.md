@@ -34,7 +34,7 @@ columns:
 python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv
 ```
 
-Reads `data/test_interactions.csv`, runs the 16-step persona pipeline
+Reads `data/test_interactions.csv`, runs the 28-step persona pipeline
 (see [skill.md](skill.md) for the spec), writes per-user files to
 `backend/{uid}/`:
 
@@ -101,5 +101,5 @@ macro/micro headline numbers across all personas and modes.
 
 ## More
 
-- [skill.md](skill.md) — full persona-pipeline specification (16 steps).
+- [skill.md](skill.md) — full persona-pipeline specification (28 steps; final step seeds proactive-agent triggers).
 - [EVAL.md](EVAL.md) — task families, rubric dimensions, metric definitions.

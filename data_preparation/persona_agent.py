@@ -8367,7 +8367,9 @@ class PersonaAgent:
             ("26. Save to backend",                     self.save_to_backend),
             ("27. Extension B (self-posts + DMs + friends + trending)",
                                                         self.run_extension_b),
-            ("28. Infer proactive trigger candidates",  self.infer_proactive_trigger_candidates),
+            ("28. Generate feed-visible posts (friend + trending)",
+                                                        self.generate_feed_posts),
+            ("29. Infer proactive trigger candidates",  self.infer_proactive_trigger_candidates),
         ]
 
         for step_name, step_fn in steps:
@@ -10017,8 +10019,57 @@ class PersonaAgent:
                   f"Extension B raised {type(e).__name__}: {e}. "
                   f"Main pipeline output preserved.{utils.Colors.ENDC}")
 
+    def generate_feed_posts(self) -> None:
+        """Step 28: Generate feed-visible posts on each social app — friend
+        self-posts (close-friend authorship) and platform trending content
+        (real web-search-derived topics). These power the proactive
+        feed-react and overactive-check tasks.
+
+        Reads/writes backend/{uid}/{instagram,facebook,threads}.json.
+        Skipped gracefully when no LLM client is configured (subagent mode
+        handles this inline via skill.md). Web-search is also required for
+        the trending half; without it, only friend posts are generated.
+
+        Idempotent: previously-generated feed_visible events are dropped
+        before fresh ones are written.
+        """
+        if self.llm_client is None:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Skipping Step 28 (feed posts) — no llm_client; "
+                      f"subagent mode handles inline.{utils.Colors.ENDC}")
+            return
+        try:
+            from data_preparation.extension_b.feed_posts import generate_feed_posts
+        except Exception as e:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"feed_posts import failed ({type(e).__name__}: {e}) — "
+                  f"skipping.{utils.Colors.ENDC}")
+            return
+        # Web-search function: optional. If the llm_client carries a
+        # `web_search` callable, use it; otherwise trending generation
+        # is gracefully skipped (friend posts still produced).
+        web_search_fn = getattr(self.llm_client, "web_search", None)
+        try:
+            seed = int(str(self.user_id)) * 8609 + 23
+        except (ValueError, TypeError):
+            seed = abs(hash(str(self.user_id))) % (2**31)
+        try:
+            generate_feed_posts(
+                user_id=str(self.user_id),
+                backend_dir=self.backend_dir,
+                llm_client=self.llm_client,
+                web_search_fn=web_search_fn,
+                rng_seed=seed,
+                verbose=self.verbose,
+            )
+        except Exception as e:
+            print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                  f"generate_feed_posts raised {type(e).__name__}: {e}. "
+                  f"Pipeline continues.{utils.Colors.ENDC}")
+
     def infer_proactive_trigger_candidates(self) -> None:
-        """Step 28: catalog moments where the agent could legitimately
+        """Step 29: catalog moments where the agent could legitimately
         initiate contact, scored by an LLM against the JITAI 6-component
         framework (Nahum-Shani et al., 2018) and Horvitz mixed-initiative
         principles (CHI 1999).
@@ -10073,17 +10124,32 @@ class PersonaAgent:
         candidates_by_type = {
             "unfulfilled_stated_need": self._gather_unfulfilled_stated_needs(
                 app_events.get("chatbot", []), app_events,
+                sensitive_periods=sensitive_periods,
             ),
             "close_friend_update": self._gather_close_friend_dms(
                 app_events, profile,
+                sensitive_periods=sensitive_periods,
             ),
             "sensitive_event_silence": self._gather_sensitive_event_moments(
                 sensitive_periods,
             ),
+            "friend_feed_react": self._gather_friend_feed_react_candidates(
+                app_events, profile,
+                sensitive_periods=sensitive_periods,
+            ),
+            "trending_feed_react": self._gather_trending_feed_react_candidates(
+                app_events, profile,
+                sensitive_periods=sensitive_periods,
+            ),
         }
+        # Idle moments must be gathered LAST so they can avoid every other
+        # task type's timestamps + sensitive windows.
+        candidates_by_type["overactive_check"] = self._gather_idle_moments(
+            app_events, profile, candidates_by_type, sensitive_periods,
+        )
         total = sum(len(v) for v in candidates_by_type.values())
         if self.verbose:
-            print(f"[User {self.user_id}] Step 28 Stage 1: gathered "
+            print(f"[User {self.user_id}] Step 29 Stage 1: gathered "
                   f"{total} candidates "
                   f"({ {k: len(v) for k, v in candidates_by_type.items()} }).")
 
@@ -10093,10 +10159,78 @@ class PersonaAgent:
                 json.dump(profile, f, ensure_ascii=False, indent=2)
             return
 
-        # Stage 2 — LLM-judged eligibility per candidate.
+        # Three Stage-2 paths, depending on trigger type:
+        #   (1) JITAI-scored: the original three task types use the
+        #       JITAI/Horvitz-grounded judge to decide whether the moment
+        #       is worth acting on at all.
+        #   (2) Content-relevance-scored: feed-react types use a separate
+        #       content-relevance LLM check to verify the post's actual
+        #       caption — not just the hashtag — aligns with the user's
+        #       genuine interests. This replaces the generation-time
+        #       hashtag-based `relevance` label, which is too loose.
+        #   (3) Pass-through: overactive_check (negative control) needs
+        #       no LLM; by construction the user is in an idle moment.
+        JITAI_SCORED_TYPES = {
+            "unfulfilled_stated_need",
+            "close_friend_update",
+            "sensitive_event_silence",
+        }
+        CONTENT_RELEVANCE_SCORED_TYPES = {
+            "friend_feed_react",
+            "trending_feed_react",
+        }
+
         user_state_base = self._build_proactive_user_state_base(profile)
         eligible_by_type: dict[str, list[dict]] = {}
         for trigger_type, cands in candidates_by_type.items():
+
+            # --- Path 3: pass-through (overactive_check only) ---
+            if trigger_type not in JITAI_SCORED_TYPES and trigger_type not in CONTENT_RELEVANCE_SCORED_TYPES:
+                for c in cands:
+                    c["jitai_card"] = self._synthetic_jitai_card(trigger_type, c)
+                eligible_by_type[trigger_type] = cands
+                continue
+
+            # --- Path 2: content-relevance LLM verification for feed-react ---
+            if trigger_type in CONTENT_RELEVANCE_SCORED_TYPES:
+                accepted: list[dict] = []
+                for c in cands:
+                    try:
+                        related = self._extract_related_user_engagement(
+                            c, app_events,
+                        )
+                        prompt = prompts.verify_feed_react_relevance_prompt(
+                            user_state=user_state_base,
+                            candidate=c,
+                            related_user_engagement=related,
+                        )
+                        resp = self.llm_client.query_llm(
+                            prompt, verbose=False, temperature=0.0,
+                        )
+                        verdict = utils.extract_json_from_response(resp) or {}
+                    except Exception as exc:
+                        if self.verbose:
+                            print(f"  ! Step 29 {trigger_type} content check failed: "
+                                  f"{type(exc).__name__}: {exc}")
+                        continue
+                    relevance = (verdict.get("relevance") or "").lower()
+                    if relevance not in ("relevant", "irrelevant"):
+                        # ambiguous or unparseable — drop the candidate.
+                        if self.verbose:
+                            print(f"  · dropping {trigger_type} candidate (content-check "
+                                  f"verdict={relevance!r})")
+                        continue
+                    # LLM-verified relevance overrides the generation-time
+                    # hashtag-based label. Store both for traceability.
+                    c["hashtag_label_at_generation"] = c.get("relevance", "?")
+                    c["relevance"] = relevance
+                    c["content_relevance_verdict"] = verdict
+                    c["jitai_card"] = self._synthetic_jitai_card(trigger_type, c)
+                    accepted.append(c)
+                eligible_by_type[trigger_type] = accepted
+                continue
+
+            # --- Path 1: JITAI-scored (original three task types) ---
             accepted: list[dict] = []
             for c in cands:
                 user_state = dict(user_state_base)
@@ -10111,7 +10245,7 @@ class PersonaAgent:
                     card = utils.extract_json_from_response(resp) or {}
                 except Exception as exc:
                     if self.verbose:
-                        print(f"  ! Step 28 {trigger_type} candidate failed: "
+                        print(f"  ! Step 29 {trigger_type} candidate failed: "
                               f"{type(exc).__name__}: {exc}")
                     continue
                 c["jitai_card"] = card
@@ -10126,10 +10260,10 @@ class PersonaAgent:
 
         if self.verbose:
             kept = {k: len(v) for k, v in eligible_by_type.items()}
-            print(f"[User {self.user_id}] Step 28 Stage 2: kept {sum(kept.values())}/{total} "
+            print(f"[User {self.user_id}] Step 29 Stage 2: kept {sum(kept.values())}/{total} "
                   f"({kept}).")
 
-    # --- Step 28 helpers ---
+    # --- Step 29 helpers ---
 
     _PROACTIVE_TRIGGER_LAGS = (1 * 86400, 3 * 86400, 7 * 86400)
     # Was 14d — too permissive for heavy hashtag-users where almost any
@@ -10180,6 +10314,7 @@ class PersonaAgent:
         self,
         chatbot_events: list[dict],
         all_app_events: dict[str, list[dict]],
+        sensitive_periods: list[tuple[int, int]] | None = None,
     ) -> list[dict]:
         """T1.A — chatbot questions whose hashtags weren't covered by any
         subsequent event within `_PROACTIVE_RESOLUTION_WINDOW` days, AND
@@ -10255,6 +10390,10 @@ class PersonaAgent:
                         "question_hashtags": tags,
                     },
                 })
+        # Drop candidates whose t_test falls inside any sensitive-life-event
+        # window — the hard restraint rule would kill them at Stage 2
+        # regardless, so produce them at gather time is wasted LLM cost.
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
         # Cap to a manageable number; prefer the most recent unresolved questions
         # since they are most actionable.
         candidates.sort(key=lambda c: c["signal_evidence"]["asked_at_ts"], reverse=True)
@@ -10264,6 +10403,7 @@ class PersonaAgent:
         self,
         all_app_events: dict[str, list[dict]],
         profile: dict,
+        sensitive_periods: list[tuple[int, int]] | None = None,
     ) -> list[dict]:
         """T3.A — incoming DM from a close friend with no reply within
         `_PROACTIVE_DM_REPLY_WINDOW` (24h). Uses friend graph from Extension B.
@@ -10335,8 +10475,29 @@ class PersonaAgent:
                             "thread_hashtags": ev.get("source_hashtags", []),
                         },
                     })
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
         candidates.sort(key=lambda c: c["signal_evidence"]["incoming_at_ts"], reverse=True)
         return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _drop_inside_sensitive(
+        self,
+        candidates: list[dict],
+        sensitive_periods: list[tuple[int, int]] | None,
+    ) -> list[dict]:
+        """Drop candidates whose `t_test` falls inside any sensitive
+        life-event window. Used by the four 'act'-style gather helpers
+        (unfulfilled, close_friend, friend_feed, trending_feed) to avoid
+        emitting candidates that would be killed by the hard restraint
+        rule at Stage 2 anyway — and, more importantly, to avoid
+        producing act-expected eval instances at moments where the AI
+        is supposed to stay silent.
+        """
+        if not sensitive_periods:
+            return candidates
+        return [
+            c for c in candidates
+            if not self._is_in_sensitive_window(c["t_test"], sensitive_periods)
+        ]
 
     def _gather_sensitive_event_moments(
         self,
@@ -10363,6 +10524,282 @@ class PersonaAgent:
                     },
                 })
         return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    # ---- New gather helpers for feed-react + overactive-check (Phase 2) ----
+
+    def _gather_friend_feed_react_candidates(
+        self,
+        all_app_events: dict[str, list[dict]],
+        profile: dict,
+        sensitive_periods: list[tuple[int, int]] | None = None,
+    ) -> list[dict]:
+        """T2.D — feed_visible events authored by a close friend.
+
+        Each such event is a candidate. We tag relevance from the event's
+        ``_feed_react_meta`` field (set at generation time from hashtag
+        intersection). t_test = post_ts + 24h (user has had a day to see it
+        and did not engage).
+        """
+        candidates: list[dict] = []
+        friend_ids = {
+            f.get("friend_id")
+            for f in (profile.get("friends") or [])
+            if f.get("friend_id")
+        }
+        for app, events in all_app_events.items():
+            if app == "chatbot":
+                continue
+            for ev in events:
+                if ev.get("source_interaction_type") != "feed_visible":
+                    continue
+                if ev.get("author_id") not in friend_ids:
+                    continue
+                meta = ev.get("_feed_react_meta") or {}
+                if meta.get("kind") != "friend_feed":
+                    continue
+                post_ts = int(ev.get("source_timestamp") or 0)
+                t_test = post_ts + 24 * 3600
+                relevance = meta.get("relevance", "relevant")
+                content = ev.get("content") or {}
+                candidates.append({
+                    "trigger_type": "friend_feed_react",
+                    "tier": "T2.D",
+                    "t_test": t_test,
+                    "t_test_iso": _unix_to_iso(t_test),
+                    "relevance": relevance,
+                    "signal_evidence": {
+                        "app": app,
+                        "friend_id": ev.get("author_id"),
+                        "friend_display_name": meta.get("friend_display_name", ""),
+                        "post_event_id": ev.get("source_object_id"),
+                        "post_ts": post_ts,
+                        "post_iso": ev.get("formatted_timestamp", ""),
+                        "post_hashtags": ev.get("source_hashtags", []),
+                        "post_caption_excerpt": (content.get("caption") or "")[:280],
+                        "primary_hashtag": meta.get("primary_hashtag", ""),
+                        "relevance": relevance,
+                    },
+                })
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
+        candidates.sort(key=lambda c: c["signal_evidence"]["post_ts"], reverse=True)
+        return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _gather_trending_feed_react_candidates(
+        self,
+        all_app_events: dict[str, list[dict]],
+        profile: dict,
+        sensitive_periods: list[tuple[int, int]] | None = None,
+    ) -> list[dict]:
+        """T2.E — feed_visible events from public_creator with a
+        trending_topic label.
+        """
+        candidates: list[dict] = []
+        for app, events in all_app_events.items():
+            if app == "chatbot":
+                continue
+            for ev in events:
+                if ev.get("source_interaction_type") != "feed_visible":
+                    continue
+                if ev.get("author_id") != "public_creator":
+                    continue
+                meta = ev.get("_feed_react_meta") or {}
+                if meta.get("kind") != "trending_feed":
+                    continue
+                post_ts = int(ev.get("source_timestamp") or 0)
+                t_test = post_ts + 24 * 3600
+                relevance = meta.get("relevance", "relevant")
+                content = ev.get("content") or {}
+                candidates.append({
+                    "trigger_type": "trending_feed_react",
+                    "tier": "T2.E",
+                    "t_test": t_test,
+                    "t_test_iso": _unix_to_iso(t_test),
+                    "relevance": relevance,
+                    "signal_evidence": {
+                        "app": app,
+                        "trending_topic": meta.get("trending_topic", ""),
+                        "trend_description": meta.get("trend_description", ""),
+                        "post_event_id": ev.get("source_object_id"),
+                        "post_ts": post_ts,
+                        "post_iso": ev.get("formatted_timestamp", ""),
+                        "post_hashtags": ev.get("source_hashtags", []),
+                        "post_caption_excerpt": (content.get("caption") or "")[:280],
+                        "primary_hashtag": meta.get("primary_hashtag", ""),
+                        "relevance": relevance,
+                    },
+                })
+        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
+        candidates.sort(key=lambda c: c["signal_evidence"]["post_ts"], reverse=True)
+        return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
+
+    def _gather_idle_moments(
+        self,
+        all_app_events: dict[str, list[dict]],
+        profile: dict,
+        existing_candidates: dict[str, list[dict]],
+        sensitive_periods: list[tuple[int, int]],
+    ) -> list[dict]:
+        """Negative-control candidates: pick 2-3 timestamps where NO other
+        task type's candidate fires within ±12h and the user is not in a
+        sensitive window. Each picked moment becomes one overactive_check
+        instance with `expected_behavior=restrain`.
+        """
+        import random as _random
+        # Collect every other task type's t_test values to exclude near them.
+        forbidden: list[int] = []
+        for cands in existing_candidates.values():
+            for c in cands:
+                t = int(c.get("t_test") or 0)
+                if t > 0:
+                    forbidden.append(t)
+
+        # Collect "normal activity" timestamps — events the user actually
+        # engaged with (not feed_visible). Used so the picked idle moment
+        # is plausibly a time the user has the chatbot open.
+        activity_ts: list[int] = []
+        for app, events in all_app_events.items():
+            for ev in events:
+                ts = int(ev.get("source_timestamp") or 0)
+                itype = (ev.get("source_interaction_type") or "").lower()
+                if ts > 0 and itype != "feed_visible":
+                    activity_ts.append(ts)
+        if len(activity_ts) < 5:
+            return []
+        activity_ts.sort()
+
+        try:
+            seed = int(str(self.user_id)) * 8609 + 31337
+        except (ValueError, TypeError):
+            seed = abs(hash(str(self.user_id))) % (2**31)
+        rng = _random.Random(seed)
+        # Stratify across 8 buckets, pick one valid timestamp from each.
+        lo, hi = activity_ts[0], activity_ts[-1]
+        n_strata = 8
+        stratum_size = max((hi - lo) // n_strata, 1)
+        picks: list[int] = []
+        for i in range(n_strata):
+            stratum_lo = lo + i * stratum_size
+            stratum_hi = lo + (i + 1) * stratum_size
+            in_stratum = [t for t in activity_ts if stratum_lo <= t < stratum_hi]
+            if not in_stratum:
+                continue
+            cand = rng.choice(in_stratum)
+            # Reject if too close to any forbidden t_test.
+            if any(abs(cand - f) < 12 * 3600 for f in forbidden):
+                continue
+            # Reject if inside any sensitive window.
+            if self._is_in_sensitive_window(cand, sensitive_periods):
+                continue
+            picks.append(cand)
+            if len(picks) >= 3:
+                break
+
+        out: list[dict] = []
+        for t_test in picks:
+            out.append({
+                "trigger_type": "overactive_check",
+                "tier": "negative_control",
+                "t_test": t_test,
+                "t_test_iso": _unix_to_iso(t_test),
+                "relevance": "irrelevant",   # negative control: AI should stay quiet
+                "signal_evidence": {
+                    "note": ("Idle moment — no other proactive candidate "
+                             "fires within ±12h; not in a sensitive-event "
+                             "window. Used as a negative control to test "
+                             "whether the AI stays silent when nothing is "
+                             "worth surfacing."),
+                },
+            })
+        return out
+
+    @staticmethod
+    def _normalize_hashtag(h: str) -> str:
+        return (h or "").strip().lower().lstrip("#")
+
+    def _extract_related_user_engagement(
+        self,
+        candidate: dict,
+        all_app_events: dict[str, list[dict]],
+    ) -> list[str]:
+        """Pull up to 8 short snippets of the user's actual past engagement on
+        topics overlapping the candidate's hashtags. Used as grounding for
+        the content-relevance verification LLM call so it knows what KIND
+        of engagement the user has on this hashtag (e.g., boxing fights vs
+        boxing equipment).
+        """
+        norm = self._normalize_hashtag
+        sig = candidate.get("signal_evidence", {}) or {}
+        cand_tags = set(norm(h) for h in (sig.get("post_hashtags") or []))
+        primary = norm(sig.get("primary_hashtag", ""))
+        if primary:
+            cand_tags.add(primary)
+        if not cand_tags:
+            return []
+        out: list[str] = []
+        seen: set[str] = set()
+        for app, events in all_app_events.items():
+            for ev in events:
+                if ev.get("source_interaction_type") in (None, "feed_visible"):
+                    continue
+                itype = (ev.get("source_interaction_type") or "").lower()
+                if itype not in ("explicit_positive", "implicit_positive"):
+                    continue
+                evt_tags = set(norm(h) for h in (ev.get("source_hashtags") or []))
+                if not (cand_tags & evt_tags):
+                    continue
+                content = ev.get("content") or {}
+                cap = (content.get("caption") or content.get("title") or "").strip()
+                if not cap:
+                    continue
+                cap_short = cap[:160]
+                key = cap_short.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                out.append(f"[{app}] {cap_short}")
+                if len(out) >= 8:
+                    return out
+        return out
+
+    def _synthetic_jitai_card(self, trigger_type: str, candidate: dict) -> dict:
+        """Build a minimal JITAI card for trigger types whose acceptance is
+        decided at gather time (no LLM Stage 2). Lets the eval-side judge
+        prompt have something to read in the jitai_card slot without
+        spending an LLM call.
+        """
+        relevance = (candidate.get("relevance") or "relevant").lower()
+        if trigger_type == "overactive_check" or relevance == "irrelevant":
+            return {
+                "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+                "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+                "tailoring_variable": ("Negative-control idle moment"
+                                        if trigger_type == "overactive_check"
+                                        else "Off-topic feed content for this user"),
+                "decision_point": candidate.get("t_test_iso", ""),
+                "decision_rule_pass": False,
+                "eligibility_score": 0,
+                "recommended_action_class": "stay_silent",
+                "subtlety_check_pass": True,
+                "reasoning": ("Negative control — staying silent is the right move."
+                              if trigger_type == "overactive_check"
+                              else "Off-topic content — surfacing it would be over-personalization."),
+            }
+        # Relevant feed-react case.
+        action_class = "friend_alert" if trigger_type == "friend_feed_react" else "follow_up"
+        return {
+            "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+            "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+            "tailoring_variable": ("Close-friend post on a user-positive hashtag"
+                                    if trigger_type == "friend_feed_react"
+                                    else "Trending content on a user-positive hashtag"),
+            "decision_point": candidate.get("t_test_iso", ""),
+            "decision_rule_pass": True,
+            "eligibility_score": 3,
+            "recommended_action_class": action_class,
+            "subtlety_check_pass": True,
+            "reasoning": ("Hashtag-intersection labeling marked this moment as a relevant feed item "
+                          "for the user; a one-sentence opt-in offer is low-cost."),
+        }
 
     def _build_proactive_user_state_base(self, profile: dict) -> dict:
         """Compact snapshot the trigger judge sees alongside each candidate.

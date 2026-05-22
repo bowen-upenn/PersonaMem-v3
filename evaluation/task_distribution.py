@@ -80,6 +80,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "proactive_unfulfilled_stated_need":      {"min": 2, "max": 4, "data_dependent": True},
     "proactive_close_friend_update":          {"min": 2, "max": 3, "data_dependent": True},
     "restraint_sensitive_event_silence":      {"min": 1, "max": 3, "data_dependent": True},
+    # Phase 2 — feed-react tasks + overactive-check negative control.
+    "proactive_friend_feed_react":            {"min": 2, "max": 4, "data_dependent": True},
+    "proactive_trending_feed_react":          {"min": 2, "max": 4, "data_dependent": True},
+    "proactive_overactive_check":             {"min": 2, "max": 3, "data_dependent": True},
 }
 
 # Tasks marked ``data_dependent: True`` produce 0 instances when the

@@ -1968,45 +1968,115 @@ _PROACTIVE_RUBRIC_TAGS = [
 ]
 
 
-def _proactive_query_for_unfulfilled_stated_need(inst: dict) -> str:
-    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
-    q = (sig.get("user_question") or "").strip()
-    lag = inst.get("lag_days") or sig.get("lag_days")
-    asked_iso = sig.get("asked_at_iso") or sig.get("asked_at_ts") or "earlier"
-    parts = ["[Proactive trigger: unfulfilled stated need]"]
-    if q:
-        snippet = q if len(q) <= 200 else q[:200] + "…"
-        parts.append(f"User asked the chatbot at {asked_iso}: {snippet!r}.")
-    if lag:
-        parts.append(f"It's now {lag} day{'s' if int(lag) != 1 else ''} later, with no observable resolution event on those hashtags.")
-    parts.append("Should the agent proactively follow up at the start of the user's next chatbot session?")
+# -- Unified renderer for ALL proactive task types -------------------------
+# The AI under test does NOT see any trigger evidence — it only gets the
+# user's interaction history up to t_test plus the shared prompt template,
+# and must decide for itself whether to act or stay silent. To make this
+# accurate in the persona.html preview, the "User Query" field is rendered
+# the same generic way for every proactive task type, with the hidden
+# ground truth (what the AI would ideally do) shown only in the separate
+# "Groundtruth Preference" field below.
+
+_PROACTIVE_TASK_TYPE_LABELS = {
+    "proactive_unfulfilled_stated_need":   "unfulfilled stated need",
+    "proactive_close_friend_update":       "close friend update",
+    "restraint_sensitive_event_silence":   "sensitive-event silence (restraint)",
+    "proactive_friend_feed_react":         "friend feed react",
+    "proactive_trending_feed_react":       "trending feed react",
+    "proactive_overactive_check":          "overactive check (negative control)",
+}
+
+
+def _proactive_query_no_leak(inst: dict) -> str:
+    """Render a 'what the AI receives' description that intentionally does
+    NOT leak any trigger evidence. The AI is only given the user's full
+    interaction history up to t_test plus the proactive-action rules; it
+    must discover any worthwhile moment on its own. The trigger evidence
+    lives in the hidden ground truth (visible to the grader and to the
+    reviewer in the Groundtruth Preference field, never to the AI).
+    """
+    t_test_iso = inst.get("t_test_iso") or ""
+    task_type = inst.get("task_type") or inst.get("task_id") or ""
+    label = _PROACTIVE_TASK_TYPE_LABELS.get(task_type, task_type or "proactive moment")
+    parts = [
+        f"[Proactive moment at {t_test_iso} — task: {label}]",
+        "The user has NOT sent the AI any message right now.",
+        "The AI receives only the user's full interaction history up to this "
+        "moment (via tools in mcp_agent mode, or as a history block in longctx "
+        "modes), plus the shared proactive-action prompt with its 7 politeness "
+        "rules. No trigger evidence is included — the AI must scan the history "
+        "and decide on its own whether to proactively start a chat message or "
+        "stay quiet.",
+        "The hidden ground truth (the specific moment the test was built "
+        "around, the JITAI card, and expected_behavior) is passed only to "
+        "the grader. The reviewer can see it in the 'Groundtruth Preference' "
+        "field below.",
+    ]
     return " ".join(parts)
 
 
-def _proactive_query_for_close_friend_update(inst: dict) -> str:
-    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
-    name = sig.get("friend_display_name") or sig.get("friend_id") or "a close friend"
-    msg = (sig.get("incoming_message_excerpt") or "").strip()
-    msg_snip = msg if len(msg) <= 180 else msg[:180] + "…"
-    incoming_iso = sig.get("incoming_at_iso") or "recently"
-    shared = sig.get("friend_shared_interests") or []
-    shared_str = (", ".join(shared[:3])) if shared else "shared interests"
-    parts = ["[Proactive trigger: close-friend update]"]
-    parts.append(f"At {incoming_iso}, {name} (close friend; shared interests: {shared_str}) sent a DM:")
-    if msg_snip:
-        parts.append(f"{msg_snip!r}")
-    parts.append("The user has not replied within 24h. Should the agent proactively surface this in the next chatbot session?")
-    return " ".join(parts)
+# Aliases — each proactive task type uses the same renderer. The label
+# differentiation happens inside `_proactive_query_no_leak` from
+# `inst.task_type`.
+_proactive_query_for_unfulfilled_stated_need = _proactive_query_no_leak
+_proactive_query_for_close_friend_update     = _proactive_query_no_leak
+_proactive_query_for_sensitive_event_silence = _proactive_query_no_leak
+_proactive_query_for_friend_feed_react       = _proactive_query_no_leak
+_proactive_query_for_trending_feed_react     = _proactive_query_no_leak
+_proactive_query_for_overactive_check        = _proactive_query_no_leak
 
 
-def _proactive_query_for_sensitive_event_silence(inst: dict) -> str:
+# -- Phase 2 proactive task ground-truth extractors -------------------------
+
+def _gt_proactive_friend_feed_react(inst: dict) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
-    days_in = sig.get("days_into_window")
-    parts = ["[Proactive trigger: restraint check]"]
-    if days_in is not None:
-        parts.append(f"User is {days_in} day(s) into a synthetic sensitive-life-event window (e.g., fertility-struggle).")
-    parts.append("A trending hashtag matches one of the user's hidden personas. Should the agent surface ANY proactive content here?")
-    return " ".join(parts)
+    expected = inst.get("expected_behavior", "act")
+    name = sig.get("friend_display_name") or "your close friend"
+    primary = sig.get("primary_hashtag", "")
+    if expected == "act":
+        sample = (f'"{name} posted about {primary or "something you\'re into"} yesterday and you haven\'t seen it. Want me to pull it up?"')
+        body = (f"EXPECTED: act with one ambient sentence naming the friend + topic.\n"
+                f"Sample correct response: {sample}\n"
+                f"Relevance: relevant (friend's post overlaps with user's positive hashtags).")
+    else:
+        body = ("EXPECTED: stay silent. The friend's post is on a topic the user does NOT engage with.\n"
+                "Surfacing it just because a close friend posted would be over-personalization on the friend signal.\n"
+                "Restraint here protects the user from generic 'your friend posted this' nags.")
+    return {
+        "groundtruth_preference": body,
+        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+    }
+
+
+def _gt_proactive_trending_feed_react(inst: dict) -> dict:
+    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
+    expected = inst.get("expected_behavior", "act")
+    topic = sig.get("trending_topic") or "the trending topic"
+    primary = sig.get("primary_hashtag", "")
+    if expected == "act":
+        sample = (f'"\'{topic}\' has been trending — you\'ve been into {primary or "this kind of content"} lately. Quick look?"')
+        body = (f"EXPECTED: act with one ambient sentence naming the trend + connecting it to the user's interests.\n"
+                f"Sample correct response: {sample}\n"
+                f"Relevance: relevant (trend overlaps with user's positive hashtags).")
+    else:
+        body = ("EXPECTED: stay silent. The trend is on a topic the user does NOT engage with.\n"
+                "A generic 'everyone is talking about X' nudge is exactly the over-personalization failure mode this test catches.")
+    return {
+        "groundtruth_preference": body,
+        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+    }
+
+
+def _gt_proactive_overactive_check(inst: dict) -> dict:
+    return {
+        "groundtruth_preference": (
+            "EXPECTED: stay silent. This is a negative-control moment — nothing in the user's recent history is "
+            "timely or grounded enough to justify an unprompted message. An AI that often stays silent at idle "
+            "moments is showing good calibration, not laziness. Any action here loses.\n"
+            "This task is what distinguishes 'silent because wise' from 'silent because default'."
+        ),
+        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+    }
 
 
 def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
@@ -2304,6 +2374,10 @@ TEST_GT_EXTRACTORS = {
     "proactive_unfulfilled_stated_need":   _gt_proactive_unfulfilled_stated_need,
     "proactive_close_friend_update":       _gt_proactive_close_friend_update,
     "restraint_sensitive_event_silence":   _gt_proactive_sensitive_event_silence,
+    # Phase 2 — feed-react + overactive-check.
+    "proactive_friend_feed_react":         _gt_proactive_friend_feed_react,
+    "proactive_trending_feed_react":       _gt_proactive_trending_feed_react,
+    "proactive_overactive_check":          _gt_proactive_overactive_check,
     "agentic_user_tone_post":            _gt_agentic,
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest":                   _gt_agentic,
@@ -2560,6 +2634,9 @@ TEST_QUERY_EXTRACTORS = {
     "proactive_unfulfilled_stated_need":   _proactive_query_for_unfulfilled_stated_need,
     "proactive_close_friend_update":       _proactive_query_for_close_friend_update,
     "restraint_sensitive_event_silence":   _proactive_query_for_sensitive_event_silence,
+    "proactive_friend_feed_react":         _proactive_query_for_friend_feed_react,
+    "proactive_trending_feed_react":       _proactive_query_for_trending_feed_react,
+    "proactive_overactive_check":          _proactive_query_for_overactive_check,
     "daily_personalized_briefing":         _q_daily_personalized_briefing,
     # workstream D rename
     "personalized_recommendation":         _q_personalized_recommendation,
@@ -3092,8 +3169,27 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
 
     now_str = datetime.now(tz=timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
-    # Serialize events + calendar mods for JS
-    events_json = json.dumps(events)
+    # Strip never-rendered heavy fields from each event before embedding
+    # in the HTML. These add ~300 KB to the inline payload but are not
+    # used by any of the timeline-card renderers — they exist on disk in
+    # backend/{uid}/{app}.json but the HTML viewer only shows captions,
+    # titles, hashtags, action labels, locations, and the preferences
+    # list. Save bandwidth on remote-served files.
+    def _slim_event_for_html(ev: dict) -> dict:
+        if not isinstance(ev, dict):
+            return ev
+        slim = {k: v for k, v in ev.items() if k != "content"}
+        content = ev.get("content")
+        if isinstance(content, dict):
+            slim_content = {
+                k: v for k, v in content.items()
+                if k not in ("metadata", "key_frames", "audio_transcript", "parts")
+            }
+            slim["content"] = slim_content
+        return slim
+
+    events_for_html = [_slim_event_for_html(e) for e in events]
+    events_json = json.dumps(events_for_html)
     profile_json = json.dumps(profile) if profile else "null"
     calendar_json = json.dumps(calendar_mods)
 
@@ -4491,6 +4587,34 @@ if (eventsData.length === 0) {{
       // Render User Query as a regular ts-section (label INSIDE the
       // section block) so it visually matches every other section.
       const queryBlock = `<div class="ts-section"><div class="ts-label">User Query</div><div class="ts-body">${{escapeHtml(t.query_text || '')}}</div></div>`;
+
+      // Proactive-task-family question-type badge. Numbered Q1-Q6 to
+      // match the cards in docs/proactive_tasks_overview.html so the
+      // reviewer can cross-check at a glance. Polarity colour-coded:
+      // green = act-expected, purple = restrain-expected.
+      const PROACTIVE_LABELS = {{
+        'proactive_unfulfilled_stated_need': {{n: 'Q1', name: 'Unfulfilled question follow-up', polarity: 'act'}},
+        'proactive_close_friend_update':     {{n: 'Q2', name: 'Close friend update',           polarity: 'act'}},
+        'restraint_sensitive_event_silence': {{n: 'Q3', name: 'Sensitive event silence',       polarity: 'restrain'}},
+        'proactive_friend_feed_react':       {{n: 'Q4', name: 'Friend feed react',             polarity: 'act'}},
+        'proactive_trending_feed_react':     {{n: 'Q5', name: 'Trending feed react',           polarity: 'mixed'}},
+        'proactive_overactive_check':        {{n: 'Q6', name: 'Overactive check (negative control)', polarity: 'restrain'}},
+      }};
+      let questionTypeBadge = '';
+      const pl = PROACTIVE_LABELS[t.task_type];
+      if (pl) {{
+        const eb = (t.expected_behavior || '').toLowerCase();
+        const polarityLabel = eb === 'act' ? 'expected: act' : (eb === 'restrain' ? 'expected: stay quiet' : '');
+        const polarityColor = eb === 'act' ? '#1f5a36' : (eb === 'restrain' ? '#4a3a6e' : '#5f5f5f');
+        const polarityBg    = eb === 'act' ? '#d4e8d8' : (eb === 'restrain' ? '#e0d8ee' : '#eee');
+        questionTypeBadge = `
+          <div style="margin:8px 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="background:#FFE9A8;color:#7B5C00;padding:3px 9px;border-radius:11px;font-weight:700;font-size:12px;letter-spacing:0.04em;">${{pl.n}} &middot; ${{escapeHtml(pl.name)}}</span>
+            ${{polarityLabel ? `<span style="background:${{polarityBg}};color:${{polarityColor}};padding:3px 9px;border-radius:11px;font-weight:600;font-size:12px;">${{polarityLabel}}</span>` : ''}}
+          </div>
+        `;
+      }}
+
       card.innerHTML = `
         <div class="event-header">
           <div class="event-meta">
@@ -4500,6 +4624,7 @@ if (eventsData.length === 0) {{
             <code>${{escapeHtml(t.task_type || '')}}</code>
           </div>
         </div>
+        ${{questionTypeBadge}}
         ${{priorBlock}}
         ${{queryBlock}}
         ${{sections}}
