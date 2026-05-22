@@ -3873,13 +3873,19 @@ def build_benchmark(
     # Floor enforcement is the synthesis layer's job — this only caps.
     pre_cap_buckets = {
         "chatbot_personalized_response":          b_arms["chatbot_personalized_response"],
-        "over_personalization_chatbot_text":      b_arms["over_personalization_chatbot_text"],
+        # Step 4.7 — over_personalization_distractor_reject (c3_instances) merged
+        # into over_personalization_chatbot_text. Both tested open-ended chatbot
+        # leak rate; the distractor arm is now a 4th arm alongside
+        # control/adversarial/stale. Instances tag themselves via `arm` so
+        # downstream can still split if needed.
+        "over_personalization_chatbot_text":      (
+            b_arms["over_personalization_chatbot_text"] + c3_instances
+        ),
         "over_personalization_repetition_recsys":  c1c_clusters,
         "over_personalization_repetition_chatbot": c1d_chatbot_clusters,
         "new_suggestions_recsys":                  c1e_buckets["new_suggestions_recsys"],
         "new_suggestions_chatbot":                 c1e_buckets["new_suggestions_chatbot"],
         "over_personalization_context_shift":     c2_instances,
-        "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,
         # preference_removal_regen removed in Step 4.4.
         "preference_shift_followthrough":         preference_shift_instances,

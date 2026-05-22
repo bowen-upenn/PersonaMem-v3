@@ -56,8 +56,14 @@ OLD_TO_NEW: dict[str, str] = {
     # over_personalization family; renamed so the membership is obvious
     # from the task_type alone.
     "context_shift_scenarios":       "over_personalization_context_shift",
-    "c3_restraint":                  "over_personalization_distractor_reject",
-    "irrelevant_query_restraint":    "over_personalization_distractor_reject",
+    # over_personalization_distractor_reject merged into
+    # over_personalization_chatbot_text in Step 4.7. Both tested
+    # open-ended chatbot leak-rate; the distractor variant added a 4th
+    # arm to the existing control/adversarial/stale arm structure.
+    # Legacy strings still resolve via the merged target.
+    "c3_restraint":                  "over_personalization_chatbot_text",
+    "irrelevant_query_restraint":    "over_personalization_chatbot_text",
+    "over_personalization_distractor_reject": "over_personalization_chatbot_text",
     "c4_button_regen":               "preference_removal_regen",
     "e2_at_ai_followup":             "at_ai_directive_followup",
     "e3_daily_briefing_multi":       "daily_personalized_briefing",
@@ -272,14 +278,10 @@ TASK_TYPE_META: dict[str, dict] = {
             "avoid_overpersonalization", "negative_leakage", "voice_match",
         ],
     },
-    "over_personalization_distractor_reject": {
-        "task_family": "over_personalization",
-        "mcp_tools_allowed": "none",
-        "state_write_policy": "read_only",
-        # Phase I.3: converted from ranking to open-ended chatbot text response.
-        "expected_response_kind": "text",
-        "rubric_tags": ["avoid_overpersonalization"],
-    },
+    # over_personalization_distractor_reject merged into
+    # over_personalization_chatbot_text in Step 4.7 — both tested
+    # open-ended chatbot leak rate; the distractor arm is now a 4th arm
+    # alongside control/adversarial/stale under the merged task.
     # R10: sensitive-life-event over-personalization. Driven by the synthetic
     # sensitive_life_event hidden persona (1–3 LLM-personalized episodes per
     # user, each with an active window). The agent gets a benign chatbot
@@ -624,7 +626,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "new_suggestions_recsys":                  "proactive_recommendation",
     "new_suggestions_chatbot":                 "user_query",
     "over_personalization_context_shift":                "user_query",
-    "over_personalization_distractor_reject": "user_query",
+    # over_personalization_distractor_reject merged into chatbot_text in Step 4.7.
     "over_personalization_sensitive_event":   "user_query",
     # preference_removal_regen removed in Step 4.4.
     "preference_shift_followthrough":         "user_query",
@@ -666,7 +668,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "new_suggestions_recsys":                  "proactive_recommend",
     "new_suggestions_chatbot":                 "proactive_recommend",
     "over_personalization_context_shift":                "avoid_overpersonalization",
-    "over_personalization_distractor_reject": "avoid_overpersonalization",
+    # over_personalization_distractor_reject merged into chatbot_text in Step 4.7.
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
     # preference_removal_regen removed in Step 4.4.
     "preference_shift_followthrough":         "avoid_overpersonalization",
@@ -747,9 +749,9 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # the headline before; F1 punishes both always-accept and always-reject.
     # Phase I.3: now an open-ended chatbot task — graded by leak rate
     # (lower personalization_leak_rate = better restraint).
-    "over_personalization_distractor_reject":      ("personalization_leak_rate", "inverted_fraction"),
-    # Same headline metric as the distractor-reject task: lower leak rate
-    # = better restraint around the user's private/sensitive episode.
+    # over_personalization_distractor_reject merged into chatbot_text in Step 4.7.
+    # Same headline metric: lower leak rate = better restraint around the
+    # user's private/sensitive episode.
     "over_personalization_sensitive_event":        ("personalization_leak_rate", "inverted_fraction"),
     # preference_removal_regen removed in Step 4.4.
     # Step 4.5 — headline is `preference_shift_consistency` (0-3 LLM judge);

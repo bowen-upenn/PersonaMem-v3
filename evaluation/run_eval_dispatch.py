@@ -72,12 +72,13 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     task_type = normalize_task_type(task_type)
 
     if task_type in ("chatbot_personalized_response", "over_personalization_chatbot_text",
-                       "over_personalization_distractor_reject",
                        "over_personalization_sensitive_event"):
         # Phase I.3: distractor-reject converted from a 4-way ranking task to
         # an open-ended chatbot text task — same runner as the other chatbot
         # arms, judged by personalization_leak_rate against the irrelevant
         # persona-items (passed in via privacy_flagged_prefs).
+        # Step 4.7: distractor-reject merged into over_personalization_chatbot_text;
+        # the OLD_TO_NEW alias means historical CSV rows resolve here too.
         # R10: sensitive_event runs through the same path with arm="sensitive_event"
         # and a leak pool sourced from the synthetic sensitive_life_event persona.
         rows = chatbot_response.run_task_b(**common)
@@ -87,8 +88,7 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
         rows = over_personalization.run_task_c1d(**common)
     elif task_type == "over_personalization_context_shift":
         rows = over_personalization.run_task_c2(**common)
-    elif task_type == "over_personalization_distractor_reject":
-        rows = over_personalization.run_task_c3(**common)
+    # over_personalization_distractor_reject merged into chatbot_text in Step 4.7.
     # preference_removal_regen removed in Step 4.4 — dropped at aggregation.
     elif task_type == "preference_shift_followthrough":
         from evaluation.tasks import preference_shift_followthrough as _psf

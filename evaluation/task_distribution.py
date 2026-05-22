@@ -25,8 +25,12 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # _pick_held_out_for_event) and (b) the cap itself was below the count
     # needed for stat power on par with personalized_recommendation (40).
     "chatbot_personalized_response":          {"min": 20, "max": 30},
-    "over_personalization_chatbot_text":      {"min": 8,  "max": 10},
-    "over_personalization_distractor_reject": {"min": 8,  "max": 10},
+    # over_personalization_chatbot_text absorbs the old
+    # over_personalization_distractor_reject quotas (8/10) — merged in
+    # Step 4.7. Same open-ended chatbot leak-rate test, distractor is
+    # now a 4th arm alongside control/adversarial/stale.
+    "over_personalization_chatbot_text":      {"min": 16, "max": 20},
+    # over_personalization_distractor_reject merged into chatbot_text (see task_registry).
     # Sensitive-event task — one probe per planted evidence row
     # (2–4 rows per episode × 1–3 episodes) → up to ~12 instances.
     # data_dependent so the audit treats the floor as advisory.
