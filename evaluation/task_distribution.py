@@ -34,7 +34,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
 
     # Secondary tasks
     "at_ai_directive_followup":               {"min": 8,  "max": 12},
-    "daily_personalized_briefing":            {"min": 5,  "max": 6},
+    # daily_personalized_briefing removed in Step 4.3 — duplicate of
+    # agentic_proactive_daily_catchup (which is strictly more general:
+    # cross-app tool actions vs read-only chatbot text). See
+    # task_registry.DROPPED_TASK_TYPES.
     # Renamed from personalized_search_ranking — workstream D.
     # 20/30 matches chatbot_personalized_response so the two headline
     # personalization tasks carry equal weight in the eval.

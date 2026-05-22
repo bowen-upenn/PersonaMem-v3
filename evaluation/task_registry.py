@@ -103,6 +103,12 @@ OLD_TO_NEW: dict[str, str] = {
 # `normalize_task_type`.
 DROPPED_TASK_TYPES: set[str] = {
     "agentic_draft_audit",
+    # Removed in Step 4.3 — duplicate of agentic_proactive_daily_catchup
+    # (T18). E3 was the read-only chatbot text flavor of the same daily
+    # briefing intent that T18 covers with cross-app tools. Old CSV rows
+    # are dropped at aggregation time. e3_daily_briefing_multi still
+    # resolves via OLD_TO_NEW so historical strings parse before the drop.
+    "daily_personalized_briefing",
 }
 
 
@@ -411,16 +417,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "ranking",
         "rubric_tags": ["preference_alignment", "stale_preference_use"],
     },
-    "daily_personalized_briefing": {
-        "task_family": "e_followup",
-        "mcp_tools_allowed": "chatbot",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "text_with_tool_calls",
-        "rubric_tags": [
-            "preference_alignment", "avoid_overpersonalization",
-            "negative_leakage", "stale_preference_use", "behavioral_hit",
-        ],
-    },
+    # daily_personalized_briefing removed in Step 4.3 — see DROPPED_TASK_TYPES.
     # personalized_search_ranking renamed → personalized_recommendation
     # (workstream D). Old name still resolved via OLD_TO_NEW.
     "personalized_recommendation": {
@@ -591,7 +588,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_sensitive_event":   "user_query",
     "preference_removal_regen":               "user_query",
     "at_ai_directive_followup":               "user_query",
-    "daily_personalized_briefing":            "proactive_recommendation",
+    # daily_personalized_briefing removed in Step 4.3.
     # personalized_recommendation (renamed from personalized_search_ranking)
     # carries an empty query_text — system-side recommendation surface, no
     # live user message.
@@ -631,7 +628,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
     "preference_removal_regen":               "avoid_overpersonalization",
     "at_ai_directive_followup":               "proactive_recommend",
-    "daily_personalized_briefing":            "proactive_recommend",
+    # daily_personalized_briefing removed in Step 4.3.
     "personalized_recommendation":            "proactive_recommend",
     "short_vs_long_term_lifecycle":           "proactive_recommend",
     "active_mistake_prevention":              "proactive_assist",
@@ -714,7 +711,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
     # JSON), which any non-empty response trivially passed.
-    "daily_personalized_briefing":       ("briefing_personalization_score", "fraction"),
+    # daily_personalized_briefing removed in Step 4.3.
     # E6 — paired warn/foil; aggregator computes paired-correct
     "active_mistake_prevention":         ("paired_correct", "paired_correct"),
     # Agentic — composite pass rate over tool_call + final_state + output_quality

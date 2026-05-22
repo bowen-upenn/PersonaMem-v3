@@ -3733,13 +3733,9 @@ def build_benchmark(
         e2_instances = []
         print(f"[build_benchmark] WARN: e2_at_ai_followup builder failed: {exc}")
 
-    # Task E3 — multi-day proactive daily briefing
-    try:
-        from evaluation.tasks.e3_daily_briefing_multi import build_e3_daily_briefing_multi
-        e3_instances = build_e3_daily_briefing_multi(bq, user_id, t_probe)
-    except Exception as exc:
-        e3_instances = []
-        print(f"[build_benchmark] WARN: e3_daily_briefing_multi builder failed: {exc}")
+    # Task E3 — daily_personalized_briefing removed in Step 4.3
+    # (duplicate of agentic_proactive_daily_catchup / T18). Aggregators
+    # drop any historical rows via DROPPED_TASK_TYPES.
 
     # personalized_recommendation — proactive recsys feed-push slate ranking
     # PLUS moment-aware curation. The moment-aware flavor (formerly
@@ -3858,7 +3854,7 @@ def build_benchmark(
         "over_personalization_sensitive_event":   sensitive_event_instances,
         "preference_removal_regen":               c4_instances,
         "at_ai_directive_followup":               e2_instances,
-        "daily_personalized_briefing":            e3_instances,
+        # daily_personalized_briefing removed in Step 4.3 (e3_instances empty).
         # workstream D: e4 builder now emits the personalized_recommendation
         # task_type. Old name retained as alias via OLD_TO_NEW for legacy CSVs.
         "personalized_recommendation":            e4_instances,

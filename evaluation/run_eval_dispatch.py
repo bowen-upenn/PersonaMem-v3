@@ -94,9 +94,8 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     elif task_type == "at_ai_directive_followup":
         from evaluation.tasks import e2_at_ai_followup as _e2
         rows = _e2.run_e2_at_ai_followup(**common)
-    elif task_type == "daily_personalized_briefing":
-        from evaluation.tasks import e3_daily_briefing_multi as _e3
-        rows = _e3.run_e3_daily_briefing_multi(**common)
+    # daily_personalized_briefing removed in Step 4.3 — historical CSV
+    # rows are dropped at aggregation time via DROPPED_TASK_TYPES.
     elif task_type in ("personalized_recommendation", "personalized_search_ranking"):
         from evaluation.tasks import personalized_recommendation as _pr
         rows = _pr.run_personalized_recommendation(**common)

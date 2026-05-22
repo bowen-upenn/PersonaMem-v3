@@ -43,7 +43,7 @@ OVER_PERS_TASKS = {
 RANKING_TASKS = {
     "personalized_recommendation",
     "at_ai_directive_followup",
-    "daily_personalized_briefing",
+    # daily_personalized_briefing removed in Step 4.3.
     "preference_removal_regen",
     "short_vs_long_term_lifecycle",
 }
@@ -114,7 +114,7 @@ TOOL_CALL_VALIDITY_TASKS = {
     "agentic_proactive_daily_catchup",
     "agentic_trending_alert",
     # E-family tasks with non-"none" mcp_tools_allowed.
-    "daily_personalized_briefing",
+    # daily_personalized_briefing removed in Step 4.3.
     "active_mistake_prevention",
 }
 
@@ -759,28 +759,8 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
         "kind": "llm",
         "evidence_fn": _evidence_active_mistake,
     },
-    # ---- Daily briefing (must include forward-looking disliked) ------
-    "daily_personalized_briefing": {
-        "axis_name": "includes_forward_disliked_item",
-        "axis_description": (
-            "The foil briefing must include one bullet whose subject is a "
-            "topic the user actually disliked the SAME day (from "
-            "`gt_avoid_engagements`). The gold briefing only includes "
-            "items the user would engage with positively that day."
-        ),
-        "kind": "llm",
-        "evidence_fn": _evidence_disliked_today,
-    },
-    "e3_daily_briefing_multi": {
-        "axis_name": "includes_forward_disliked_item",
-        "axis_description": (
-            "Multi-day daily briefing variant. Same axis as "
-            "daily_personalized_briefing — the foil includes a topic the "
-            "user disliked the same day; the gold does not."
-        ),
-        "kind": "llm",
-        "evidence_fn": _evidence_disliked_today,
-    },
+    # daily_personalized_briefing + e3_daily_briefing_multi removed in
+    # Step 4.3 — duplicate of agentic_proactive_daily_catchup.
     # ---- Chatbot proactive (must use the held-out pref) --------------
     "chatbot_personalized_response": {
         "axis_name": "misses_held_out_preference",
@@ -1216,7 +1196,7 @@ def _dim_schema_sanity(inst: dict, llm) -> DimensionResult:
     SLATE_RANKING_TASKS = {
         "personalized_recommendation",
         "at_ai_directive_followup",
-        "daily_personalized_briefing",
+        # daily_personalized_briefing removed in Step 4.3.
         "short_vs_long_term_lifecycle",
     }
     if task_type in SLATE_RANKING_TASKS and not (inst.get("candidates") or inst.get("gt_positive_engagements")):
@@ -1427,8 +1407,7 @@ def _setup_text_for(inst: dict, task_type: str) -> str:
         return "proactive daily catch-up"
     if task_type == "agentic_trending_alert":
         return "trending-alert summary"
-    if task_type == "daily_personalized_briefing":
-        return "daily personalized briefing"
+    # daily_personalized_briefing removed in Step 4.3.
     if task_type == "active_mistake_prevention":
         return "warn the user about a likely mistake"
     return ""
@@ -1587,7 +1566,7 @@ def _dim_telegraph_avoidance(inst: dict, llm) -> DimensionResult:
         "agentic_proactive_daily_catchup", "agentic_trending_alert",
         "agentic_vague_refind", "agentic_group_dm_summary",
         "agentic_wrong_recipient_check",
-        "daily_personalized_briefing",
+        # daily_personalized_briefing removed in Step 4.3.
         "over_personalization_chatbot_text",
         "over_personalization_repetition_chatbot",
         "proactive_unfulfilled_stated_need",
