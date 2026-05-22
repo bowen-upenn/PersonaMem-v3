@@ -48,6 +48,42 @@ but miss real mistakes. Macro-F1 across paired instances forces both.
 ### Hidden personas (with privacy-flagged markers)
 {hidden_personas_text}
 
+## Trigger modes (CRITICAL — read carefully)
+
+This task fires in TWO modes. Aim for ~50/50 across your candidates:
+
+  • **Reactive** — `triggering_user_query` is set. The user just sent a
+    message; the conflict surfaces in their next message and the agent
+    must catch the mistake while responding to whatever they asked.
+  • **Proactive** — `triggering_user_query` is EMPTY string `""`. No
+    user message at all. The agent is supposed to volunteer the warning
+    on its own, having scanned cross-surface signals. Examples: agent
+    wakes up the morning of a trip and realises the Lyft is booked to
+    the wrong airport vs. the calendar's flight; agent notices a
+    calendar entry was removed yesterday but a Threads post still
+    references the meeting as on; agent sees the user's diet's
+    `stop_condition` expired but social engagement is still on the
+    old topic.
+
+## Mistake archetypes (substance-only seeds — feel free to find others)
+
+  A. **Wrong airport / train station.** Calendar entry "Flight UA 432
+     JFK→LAX 6pm" + user's chatbot turn 2 days earlier "Lyft to Newark
+     for Wednesday" → warn about JFK vs Newark.
+  B. **Stale meeting appointment.** Calendar modification stream shows
+     the entry was `removed` yesterday but a recent post or DM still
+     references the meeting as on.
+  C. **Travel without preference reset.** User is in city B for a few
+     days (geo shift visible) but recent recsys / social engagement is
+     still anchored on home-city hashtags (#philly_brunch, etc.).
+  D. **Short-term stop-condition expired but engagement continues.**
+     A `stop_condition.expected_stop_ts` has already passed (keto diet,
+     wedding-prep, etc.) but the user is still engaging on the old topic.
+  E. **Calendar double-book caused by chatbot.** Chatbot in a prior turn
+     suggested "dentist Tue 3pm" with an added calendar entry, but
+     another calendar entry already occupies Tue 3pm (client call,
+     etc.) → conflict the user may not have caught.
+
 ## Form examples (do NOT copy substance — these are SHAPES only)
 
   1. (geo ⊕ chatbot query) — geo in city X; user asks a question whose
@@ -78,19 +114,25 @@ form-examples from prior conversations; do not transplant).
 ## Output
 
 Produce 3–5 paired candidates as JSON. For each pair emit BOTH polarities.
-Keep each `triggering_user_query` to ONE sentence and keep `foil_construction`
+Aim for ~50% **reactive** (with `triggering_user_query`) and ~50%
+**proactive** (`triggering_user_query: ""`). Keep each non-empty
+`triggering_user_query` to ONE sentence and keep `foil_construction`
 to ONE short sentence. Brevity matters — we need room for all candidates.
 
 ## triggering_user_query — voice rules (CRITICAL)
 
 The user is a real person typing on their phone, not an essayist. Each
-`triggering_user_query` MUST satisfy:
+NON-EMPTY `triggering_user_query` MUST satisfy:
 
 - ≤ 25 words.
 - Use contractions: don't, I'm, it's, can't, won't, that's. Never expanded forms.
 - At least one contraction per query.
 - Allow fragments and lowercase opens (real phone typing).
 - Skip pleasantries. No "could you help me" / "I was wondering if".
+
+For PROACTIVE candidates set `triggering_user_query` to the empty string
+`""`. Do NOT invent a fake user query just to fill the field — proactive
+moments are real and the eval needs them to land cleanly.
 
 FORBIDDEN patterns (never produce):
 - Parallel-triplet lists ("X, Y, or Z")
@@ -102,6 +144,7 @@ Good examples (form only):
 - "what time should I leave for the airport tomorrow?"
 - "can you draft something quick to dani about saturday?"
 - "what's a good takeout pick near here?"
+- (proactive — empty string, agent volunteers the alert on its own)
 
 ```json
 [

@@ -443,7 +443,18 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "all",
         "state_write_policy": "writes_ok",
         "expected_response_kind": "text_with_tool_calls",
-        "rubric_tags": list(_RUBRIC_E6) + ["negative_leakage"],
+        # Task-specific axes (mistake_prevention_recall, false_alarm_emission,
+        # warning_quality) PLUS the universal personalization dimensions used
+        # by chatbot Q&A, over-personalization, and proactive_actions. Same
+        # pattern as yuan's 98a33c1: task-specific + universal in one bundle.
+        # Polarity (warn vs foil) is carried by `polarity` on the instance,
+        # not by tag presence.
+        "rubric_tags": list(_RUBRIC_E6) + [
+            "preference_alignment",
+            "voice_match",
+            "negative_leakage",
+            "stale_preference_use",
+        ],
     },
     # Silent geo-shift local recommendation. The agent must infer the user's
     # current city from the most-recent `event_location.city` in their

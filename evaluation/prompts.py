@@ -147,37 +147,56 @@ def e6_active_mistake_prevention_prompt(
 ) -> str:
     """Prompt for E6 — active mistake prevention.
 
-    The agent sees the user's in-chat message and the user's cross-app
-    history / calendar / geo (when `history_block` is provided). The
-    agent must decide whether to proactively warn about a real-world
-    mistake detectable by linking ≥ 2 signals. The instance itself does
-    NOT disclose which pair polarity (warn/foil) the agent is facing —
-    that is precisely what we are measuring.
+    Fires in two modes:
+      • Reactive: `user_query` is set. The agent both answers the message
+        and decides whether to warn.
+      • Proactive: `user_query` is empty. The agent has no concurrent
+        message; it must decide on its own whether to volunteer a warning.
+        Stay silent (return an empty response) when no mistake is detected.
+
+    The agent has cross-app history (calendar, geo, social, prior chatbot)
+    via `history_block`. The instance does NOT disclose pair polarity
+    (warn/foil) — that is what we are measuring.
     """
     history = f"\n## Cross-app user history (time-masked)\n{history_block}\n" if history_block else ""
+    if user_query and user_query.strip():
+        mode_block = f"""## Current user query
+{user_query}
+
+## Your job (reactive mode)
+- Answer the user's question helpfully.
+- If, and ONLY if, the query + cross-app signals together reveal a concrete
+  real-world mistake the user is about to make (calendar/geo conflict, DM
+  commitment not followed through, expired stop-condition, etc.), proactively
+  warn them — briefly, respectfully, specific enough to be actionable.
+- If there is no such contradiction, do NOT warn. Answer directly and stay
+  silent on hypothetical concerns. False alarms are costly."""
+    else:
+        mode_block = """## Current user query
+(none — proactive moment; no concurrent message from the user)
+
+## Your job (proactive mode)
+- Scan the cross-app history for a concrete real-world mistake the user is
+  about to make (calendar entry vs. geo trace mismatch, calendar removal vs.
+  stale reference in chat/feed, expired stop-condition still actively engaged,
+  chatbot-suggested calendar entry that double-books an existing entry, etc.).
+- If you find ONE, volunteer a brief, respectful, specific warning. Cite the
+  two signals that contradict each other so the user can verify.
+- If you don't find one, return `response: ""` and `warned: false`. Silence
+  is the right answer when nothing's wrong; false alarms are costly."""
     return f"""# Task: respond to the user; proactively warn only if you detect a real mistake
 
 The user is chatting with an AI assistant. You have access to the user's cross-app
 history (calendar, geo, Instagram, Facebook, Threads, prior chatbot turns) via the
 history block below.
-
-Your job:
-- Answer the user's question helpfully.
-- If, and ONLY if, the user's query + cross-app signals together reveal a concrete
-  real-world mistake the user is about to make (contradicting calendar, geo in a
-  city whose norm the user doesn't know, DM commitment not followed through, etc.),
-  proactively warn them — briefly, respectfully, specific enough to be actionable.
-- If there is no such contradiction, do NOT warn. Answer the user's question
-  directly and stay silent on hypothetical concerns. False alarms are costly.
 {history}
-## Current user query
-{user_query}
+{mode_block}
 
 ## Output
 Respond with a single fenced ```json``` block:
 ```json
 {{
-  "response": "the assistant's reply to the user, as plain text",
+  "response": "the assistant's reply to the user, as plain text (empty string if proactive and no warning)",
   "warned": true | false,
   "reasoning": "<=2 sentences on why you chose to warn or stay silent"
 }}
