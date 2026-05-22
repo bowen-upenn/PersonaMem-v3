@@ -66,8 +66,16 @@ def _ts_iso(ts: int) -> str:
         return ""
 
 
-def _harvest_shift_candidates(profile: dict, rng: random.Random) -> list[dict]:
+def _harvest_shift_candidates(
+    bq: BackendQuery, user_id: str, rng: random.Random,
+) -> list[dict]:
     """Return a list of shift candidates.
+
+    NOTE: `update_history` and `stop_condition` live on per-app preference
+    dicts inside `backend/{uid}/{app}.json` events, NOT on `profile.json`
+    (where `preferences` is just a string list). We have to read the raw
+    per-app JSONs to see these fields — `bq.get_events` strips them via
+    `_LEAK_FIELDS_PREF`.
 
     Each candidate is a dict with:
       - `kind`: "stance_shift" | "short_term_expiration"
@@ -76,81 +84,90 @@ def _harvest_shift_candidates(profile: dict, rng: random.Random) -> list[dict]:
       - `old_preference`: {text, category, polarity}
       - `new_preference`: {text, category, polarity}  # for stance_shift; None for short_term
     """
+    import json
+    from pathlib import Path
+
     out: list[dict] = []
-    preferences = profile.get("preferences") or []
-    by_norm: dict[str, list[dict]] = {}
-    for p in preferences:
-        norm = (p.get("persona_item") or "").strip().lower()
-        if not norm:
+    seen_keys: set[str] = set()
+    base = Path(getattr(bq, "base", "backend")) / user_id
+    apps = ("instagram", "facebook", "threads", "chatbot")
+    for app in apps:
+        path = base / f"{app}.json"
+        if not path.exists():
             continue
-        by_norm.setdefault(norm, []).append(p)
+        try:
+            events = json.loads(path.read_text())
+        except Exception:
+            continue
+        for ev in events:
+            if not isinstance(ev, dict):
+                continue
+            for p in (ev.get("preferences") or []):
+                if not isinstance(p, dict):
+                    continue
+                persona_item = (p.get("persona_item") or "").strip()
+                if not persona_item:
+                    continue
+                key_base = persona_item.lower()
 
-    # Stance shifts: scan for contradicted entries (both resolution flavors).
-    for p in preferences:
-        history = p.get("update_history") or []
-        for h in history:
-            if not isinstance(h, dict):
-                continue
-            if h.get("update_type") != "contradicted":
-                continue
-            res = h.get("resolution")
-            if res not in ("stance_shift_with_precedent",
-                           "suppressed_insufficient_precedent"):
-                continue
-            t_shift = h.get("timestamp") or 0
-            if not t_shift:
-                continue
-            other = h.get("preference") or ""
-            if not other:
-                continue
-            # The two stances: `p` is the surviving / post-shift side
-            # for stance_shift_with_precedent. For suppressed_insufficient_precedent
-            # the SURVIVOR is the stronger stance — by convention `p` is on
-            # the survivor side too. The `preference` field on the history
-            # entry names the OTHER stance (the old / suppressed one).
-            out.append({
-                "kind": "stance_shift",
-                "resolution": res,
-                "category": p.get("category", ""),
-                "t_shift": int(t_shift),
-                "new_preference": {
-                    "text": p.get("persona_item", ""),
-                    "category": p.get("category", ""),
-                    "polarity": p.get("polarity", "pos"),
-                },
-                "old_preference": {
-                    "text": other,
-                    "category": p.get("category", ""),  # heuristic; usually same category
-                    "polarity": "neg" if p.get("polarity", "pos") == "pos" else "pos",
-                },
-            })
+                # Stance shifts via update_history `contradicted` entries.
+                for h in (p.get("update_history") or []):
+                    if not isinstance(h, dict):
+                        continue
+                    if h.get("update_type") != "contradicted":
+                        continue
+                    res = h.get("resolution")
+                    if res not in ("stance_shift_with_precedent",
+                                   "suppressed_insufficient_precedent"):
+                        continue
+                    t_shift = h.get("timestamp") or 0
+                    if not t_shift:
+                        continue
+                    other = h.get("preference") or ""
+                    if not other:
+                        continue
+                    key = f"shift|{key_base}|{other.lower()}"
+                    if key in seen_keys:
+                        continue
+                    seen_keys.add(key)
+                    out.append({
+                        "kind": "stance_shift",
+                        "resolution": res,
+                        "category": p.get("category", ""),
+                        "t_shift": int(t_shift),
+                        "new_preference": {
+                            "text": persona_item,
+                            "category": p.get("category", ""),
+                            "polarity": p.get("polarity", "pos"),
+                        },
+                        "old_preference": {
+                            "text": other,
+                            "category": p.get("category", ""),
+                            "polarity": "neg" if p.get("polarity", "pos") == "pos" else "pos",
+                        },
+                    })
 
-    # Short-term expirations.
-    for p in preferences:
-        if (p.get("time_horizon") or "long_term") != "short_term":
-            continue
-        sc = p.get("stop_condition") or {}
-        if not isinstance(sc, dict):
-            continue
-        stop_ts = sc.get("expected_stop_ts")
-        if not stop_ts:
-            continue
-        out.append({
-            "kind": "short_term_expiration",
-            "stop_type": sc.get("type", "event"),
-            "category": p.get("category", ""),
-            "t_shift": int(stop_ts),
-            "old_preference": {
-                "text": p.get("persona_item", ""),
-                "category": p.get("category", ""),
-                "polarity": p.get("polarity", "pos"),
-            },
-            # For short-term expirations the "new" stance is "no longer
-            # relevant" — there's no replacement preference. Mark as None
-            # so the discovery prompt knows to frame the query as "the
-            # agent should NOT surface the old short-term pref any more."
-            "new_preference": None,
-        })
+                # Short-term expirations.
+                if (p.get("time_horizon") or "long_term") == "short_term":
+                    sc = p.get("stop_condition") or {}
+                    if isinstance(sc, dict):
+                        stop_ts = sc.get("expected_stop_ts")
+                        if stop_ts:
+                            key = f"expire|{key_base}"
+                            if key not in seen_keys:
+                                seen_keys.add(key)
+                                out.append({
+                                    "kind": "short_term_expiration",
+                                    "stop_type": sc.get("type", "event"),
+                                    "category": p.get("category", ""),
+                                    "t_shift": int(stop_ts),
+                                    "old_preference": {
+                                        "text": persona_item,
+                                        "category": p.get("category", ""),
+                                        "polarity": p.get("polarity", "pos"),
+                                    },
+                                    "new_preference": None,
+                                })
 
     rng.shuffle(out)
     return out
@@ -214,12 +231,8 @@ def build_preference_shift_followthrough(
     downstream consumers; the task type just produces zero non-empty
     instances until the LLM wiring lands.
     """
-    profile = bq.get_full_profile(user_id) or {}
-    if not profile:
-        return []
-
     rng = random.Random(rng_seed)
-    cands = _harvest_shift_candidates(profile, rng)
+    cands = _harvest_shift_candidates(bq, user_id, rng)
     if not cands:
         return []
 
