@@ -44,7 +44,7 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "personalized_recommendation":            {"min": 20, "max": 30},
     "short_vs_long_term_lifecycle":           {"min": 8,  "max": 12},
     "active_mistake_prevention":              {"min": 5,  "max": 6},
-    "preference_removal_regen":               {"min": 6,  "max": 8},
+    # preference_removal_regen removed in Step 4.4. See DROPPED_TASK_TYPES.
     # Silent geo-shift local recommendation — only fires for users with
     # mobility_class != "homebody" AND >= 2 city transitions in their event
     # stream. Homebodies generate 0 instances (the eval doesn't apply).

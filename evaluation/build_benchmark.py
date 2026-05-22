@@ -3698,7 +3698,7 @@ def build_benchmark(
         c1e_buckets = {"new_suggestions_recsys": [], "new_suggestions_chatbot": []}
         print(f"[build_benchmark] WARN: c1e new_suggestions builder failed: {exc}")
     c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
-    c4_instances = build_c4_instances(b_arms["chatbot_personalized_response"])
+    # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
 
     # Agentic tasks T6-T19.
     # - E: builders that fix t_test=t_probe get their instances scattered
@@ -3852,7 +3852,7 @@ def build_benchmark(
         "over_personalization_context_shift":     c2_instances,
         "over_personalization_distractor_reject": c3_instances,
         "over_personalization_sensitive_event":   sensitive_event_instances,
-        "preference_removal_regen":               c4_instances,
+        # preference_removal_regen removed in Step 4.4.
         "at_ai_directive_followup":               e2_instances,
         # daily_personalized_briefing removed in Step 4.3 (e3_instances empty).
         # workstream D: e4 builder now emits the personalized_recommendation

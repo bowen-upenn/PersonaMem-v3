@@ -36,7 +36,7 @@ Index from the paper's Section 3 tables to the internal task code-names used in 
 | Repetitive feed personalization | `over_personalization_repetition_recsys` |
 | Repetitive chatbot personalization | `over_personalization_repetition_chatbot` |
 | Do-not-personalize follow-up / Personalization carve-out | `over_personalization_context_shift` |
-| Memory-removal regeneration † | `preference_removal_regen` (removed from code; paper §3.2.3 sync pending) |
+| Memory-removal regeneration † | `preference_removal_regen` (REMOVED in Step 4.4 — superseded by `preference_shift_followthrough`; paper §3.2.3 sync pending) |
 | QA on preference changes (NEW) | `preference_shift_followthrough` |
 
 **Personalized agentic tasks**

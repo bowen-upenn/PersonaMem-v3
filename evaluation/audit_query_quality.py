@@ -44,7 +44,7 @@ RANKING_TASKS = {
     "personalized_recommendation",
     "at_ai_directive_followup",
     # daily_personalized_briefing removed in Step 4.3.
-    "preference_removal_regen",
+    # preference_removal_regen removed in Step 4.4.
     "short_vs_long_term_lifecycle",
 }
 # Tasks where there's a real user-typed message that should pass the
@@ -676,21 +676,7 @@ def _ranking_inversion_check(inst: dict, example: str, inferior: str) -> tuple[b
 
 # Per-task contract registry.
 _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
-    # ---- Removal: must re-use the REMOVED pref -----------------------
-    "preference_removal_regen": {
-        "axis_name": "uses_removed_preference",
-        "axis_description": (
-            "The user JUST tapped a 'Don't personalize on this' button on "
-            "the prior assistant response. The foil must lean on that exact "
-            "removed preference (verbatim, or by clear topical implication "
-            "— e.g. naming artists / sub-scenes / specific items the "
-            "preference covers). A foil that name-drops a DIFFERENT user "
-            "preference does NOT test this task — even if it's "
-            "over-personalized, it fails on the wrong axis."
-        ),
-        "kind": "llm",
-        "evidence_fn": _evidence_held_out_pref,
-    },
+    # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
     # ---- Over-personalization (control-arm restraint) ----------------
     "over_personalization_chatbot_text": {
         "axis_name": "leaks_user_preference_on_unprompted_query",

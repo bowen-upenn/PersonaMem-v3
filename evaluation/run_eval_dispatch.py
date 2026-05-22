@@ -89,8 +89,7 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
         rows = over_personalization.run_task_c2(**common)
     elif task_type == "over_personalization_distractor_reject":
         rows = over_personalization.run_task_c3(**common)
-    elif task_type == "preference_removal_regen":
-        rows = over_personalization.run_task_c4(**common)
+    # preference_removal_regen removed in Step 4.4 — dropped at aggregation.
     elif task_type == "at_ai_directive_followup":
         from evaluation.tasks import e2_at_ai_followup as _e2
         rows = _e2.run_e2_at_ai_followup(**common)

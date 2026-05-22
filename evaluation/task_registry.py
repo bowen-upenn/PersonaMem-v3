@@ -109,6 +109,12 @@ DROPPED_TASK_TYPES: set[str] = {
     # are dropped at aggregation time. e3_daily_briefing_multi still
     # resolves via OLD_TO_NEW so historical strings parse before the drop.
     "daily_personalized_briefing",
+    # Removed in Step 4.4 — superseded by preference_shift_followthrough
+    # (Step 4.5), which tests the more general "agent uses post-shift
+    # stance" axis without requiring a removal-button signal that the
+    # data-gen pipeline no longer emits. c4_button_regen still resolves
+    # via OLD_TO_NEW so historical strings parse before the drop.
+    "preference_removal_regen",
 }
 
 
@@ -286,13 +292,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "text",
         "rubric_tags": ["avoid_overpersonalization"],
     },
-    "preference_removal_regen": {
-        "task_family": "over_personalization",
-        "mcp_tools_allowed": "none",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "ranking",
-        "rubric_tags": ["avoid_overpersonalization"],
-    },
+    # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
 
     # ------------------------------------------------------------------
     # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
@@ -586,7 +586,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "over_personalization_context_shift":                "user_query",
     "over_personalization_distractor_reject": "user_query",
     "over_personalization_sensitive_event":   "user_query",
-    "preference_removal_regen":               "user_query",
+    # preference_removal_regen removed in Step 4.4.
     "at_ai_directive_followup":               "user_query",
     # daily_personalized_briefing removed in Step 4.3.
     # personalized_recommendation (renamed from personalized_search_ranking)
@@ -626,7 +626,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "over_personalization_context_shift":                "avoid_overpersonalization",
     "over_personalization_distractor_reject": "avoid_overpersonalization",
     "over_personalization_sensitive_event":   "avoid_overpersonalization",
-    "preference_removal_regen":               "avoid_overpersonalization",
+    # preference_removal_regen removed in Step 4.4.
     "at_ai_directive_followup":               "proactive_recommend",
     # daily_personalized_briefing removed in Step 4.3.
     "personalized_recommendation":            "proactive_recommend",
@@ -707,7 +707,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Same headline metric as the distractor-reject task: lower leak rate
     # = better restraint around the user's private/sensitive episode.
     "over_personalization_sensitive_event":        ("personalization_leak_rate", "inverted_fraction"),
-    "preference_removal_regen":          ("removal_success", "fraction"),
+    # preference_removal_regen removed in Step 4.4.
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
     # JSON), which any non-empty response trivially passed.
