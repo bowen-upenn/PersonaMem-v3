@@ -1,0 +1,945 @@
+{
+  "episodic_memory_items": [
+    {
+      "ts": 1775209216,
+      "source_object_id": "43458",
+      "summary": "none — first conversation, no prior details to recall",
+      "hashtags": [
+        "#FlatEarth",
+        "#FlatEarthReality",
+        "#TheEarthIsFlat",
+        "#FlatEarthSociety"
+      ],
+      "evidence_event_ids": [
+        "43458"
+      ],
+      "hidden_persona_label_refs": [
+        "Interested in Flat Earth theories and alternative explanations about the world"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775209366,
+      "source_object_id": "976944",
+      "summary": "no prior conversations to recall from — first-time exchange so nothing referenced.",
+      "hashtags": [
+        "#NationalWifeAppreciationDay",
+        "#LoveOfMyLife",
+        "#AppreciateYourWife"
+      ],
+      "evidence_event_ids": [
+        "976944"
+      ],
+      "hidden_persona_label_refs": [
+        "Conspiracy-curious truth seeker",
+        "Romantic yearning with idealized couple imagery"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775211286,
+      "source_object_id": "500034",
+      "summary": "User wanted to bring “Mamba Mentality” into their sales work without sounding cliché. Assistant steered them toward habits over slogans, especially tightening up follow-up calls with a specific daily target and treating it like a drill. The thread ended with the user agreeing it was about steady effort and seriousness rather than hype, with the open commitment to pick a sustainable number and start pushing it consistently.",
+      "hashtags": [
+        "#jesuslovesyou",
+        "#jesusisking",
+        "#trustingod"
+      ],
+      "evidence_event_ids": [
+        "500034"
+      ],
+      "hidden_persona_label_refs": [
+        "Values perseverance and competitive spirit inspired by Kobe Bryant's 'Mamba Mentality'"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775236731,
+      "source_object_id": "19775",
+      "summary": "User daydreamed about attending a big WWE event live, focusing on the energy, the legends, and the shared crowd experience. Assistant matched the hype with a grounded, mentor-coach tone, then steered toward practical planning by suggesting venue/card choice and budgeting like a gear run. User singled out historic venues like Madison Square Garden as part of the appeal, leaving the open thread of whether they’d actually plan or budget for attending one someday.",
+      "hashtags": [
+        "#StoneColdSteveAustin",
+        "#WWE",
+        "#TheTexasRattlesnake"
+      ],
+      "evidence_event_ids": [
+        "19775"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination",
+        "Nostalgia-driven mood booster"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775271288,
+      "source_object_id": "292025",
+      "summary": "Recalled the user's prior mention of experimenting with unusual pizza toppings like smoked mackerel to connect with their current aspiration about wood-fired pizza ovens.",
+      "hashtags": [
+        "#DIYgrill",
+        "#summerBBQ",
+        "#grillingtips",
+        "#outdoorcooking"
+      ],
+      "evidence_event_ids": [
+        "292025"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys pizza and actively seeks food-related content",
+        "Playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775282851,
+      "source_object_id": "450363",
+      "summary": "Recalled user’s interest in mixing skill with exploration from prior WWE and sales mindset chats, to frame this kayak plan as both scenery and learning opportunity.",
+      "hashtags": [
+        "#BassFishing",
+        "#FishingTournament",
+        "#MajorLeagueFishing"
+      ],
+      "evidence_event_ids": [
+        "450363"
+      ],
+      "hidden_persona_label_refs": [
+        "Practices ethical fishing through catch-and-release methods"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775306378,
+      "source_object_id": "429456",
+      "summary": "No prior conversations recalled; stayed in surface check-in mode without memory callbacks.",
+      "hashtags": [
+        "#90sKids",
+        "#NostalgiaMode",
+        "#Throwback"
+      ],
+      "evidence_event_ids": [
+        "429456"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys reminiscing about childhood experiences and retro cultural moments"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775309496,
+      "source_object_id": "491562",
+      "summary": "User followed a rabbit hole about ancient maps and raised a cautious, curiosity-driven question about how much history may have been reshaped over time. The assistant matched with a grounded, slightly wry mentor tone, nudging the user toward firsthand sources like old logs and charts rather than outright validation or escalation. The thread ends open on the user's interest in stories behind supposed unknown lands and whether digging into original sources would change their view.",
+      "hashtags": [
+        "#FlatEarth",
+        "#GlobeTheoryDebunked",
+        "#WakeUpSheeple"
+      ],
+      "evidence_event_ids": [
+        "491562"
+      ],
+      "hidden_persona_label_refs": [
+        "Conspiracy-curious truth seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775318498,
+      "source_object_id": "16983",
+      "summary": "Recalled prior philosophical chat about curiosity and stories behind ancient maps to maintain Rowan’s reflective, grounded tone when discussing slow porch conversations.",
+      "hashtags": [
+        "#loveofmylife",
+        "#relationships",
+        "#romance",
+        "#appreciation"
+      ],
+      "evidence_event_ids": [
+        "16983"
+      ],
+      "hidden_persona_label_refs": [
+        "Nostalgia-driven mood booster"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775330337,
+      "source_object_id": "903472",
+      "summary": "Recalled the user's interest in blending practical build projects with their leisure activities from prior aspiration chats to keep the advice grounded.",
+      "hashtags": [
+        "#FaithOverFear",
+        "#WalkWithGod"
+      ],
+      "evidence_event_ids": [
+        "903472"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775376041,
+      "source_object_id": "70489",
+      "summary": "User pitched a Greece trip centered on Thermopylae and the feel of walking old battle sites from '300,' framing it as a mix of vacation, history, and adrenaline. The assistant matched with a grounded, slightly wry mentor tone and suggested building the trip around nearby sites plus a coastal town for balance, then invited the user to pick the first landmark. No conflicts with prior continuity surfaced, and the thread remains open on which exact landmarks or regions the user would prioritize.",
+      "hashtags": [
+        "#AnacondaMovie",
+        "#PaulRudd",
+        "#JackBlack",
+        "#NewMovieAlert"
+      ],
+      "evidence_event_ids": [
+        "70489"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination",
+        "Conspiracy-curious truth seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775392916,
+      "source_object_id": "279700",
+      "summary": "User reflected on how sports seasons mirror life, especially team chemistry, resilience after losses, and carrying that energy into personal setbacks. Assistant responded in a steady mentor-coach style, framing habits, circle-of-support, and small rituals as the practical carry-over from the WNBA highlights observation. The thread stays open on how the user wants to apply that mindset to daily routines.",
+      "hashtags": [
+        "#WNBA",
+        "#CaitlinClark",
+        "#AngelReese",
+        "#WNBArivals"
+      ],
+      "evidence_event_ids": [
+        "279700"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys following and supporting women's basketball, including professional WNBA players"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S1"
+    },
+    {
+      "ts": 1775413462,
+      "source_object_id": "562226",
+      "summary": "Recalled prior aspiration chat about embracing 'Mamba Mentality' in sales to frame this new physical challenge as both a test of grit and a change in routine.",
+      "hashtags": [
+        "#DailyDevotion",
+        "#ChristianLiving"
+      ],
+      "evidence_event_ids": [
+        "562226"
+      ],
+      "hidden_persona_label_refs": [
+        "Faith-driven self-improvement seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775458137,
+      "source_object_id": "89238",
+      "summary": "Recalled prior conversation where user followed a rabbit hole about ancient maps and Rowan encouraged checking original sources instead of surface narratives.",
+      "hashtags": [
+        "#heavyequipment",
+        "#bulldozer",
+        "#excavator",
+        "#constructionmachinery",
+        "#JOHNDEERE"
+      ],
+      "evidence_event_ids": [
+        "89238"
+      ],
+      "hidden_persona_label_refs": [
+        "Conspiracy-curious truth seeker",
+        "Has an interest in or connection to construction and blue-collar work culture"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775468616,
+      "source_object_id": "170452",
+      "summary": "User vented about a frustrating day where calls missed, gear shipments were delayed, and the mood felt off, then narrowed the main pain point to a shipment delay that threw off follow-ups and arrival-date promises. The assistant stayed in Rowan Vale’s practical coaching lane, using the 'loose bolt' metaphor to help the user isolate one anchor problem, get the update, and reset future calls with honesty. Open thread: the user is still feeling overwhelmed by multiple competing issues, but now has a concrete next step around chasing the shipment status sooner next time.",
+      "hashtags": [
+        "#flatearth",
+        "#flatEarthReality"
+      ],
+      "evidence_event_ids": [
+        "170452"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic yearning with idealized couple imagery",
+        "Conspiracy-curious truth seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775484547,
+      "source_object_id": "419695",
+      "summary": "No prior conversations recalled; stayed in a surface check-in mode without memory callbacks.",
+      "hashtags": [
+        "#90skids",
+        "#2000s",
+        "#nostalgia",
+        "#throwback"
+      ],
+      "evidence_event_ids": [
+        "419695"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys reminiscing about childhood experiences and retro cultural moments"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775498401,
+      "source_object_id": "119787",
+      "summary": "Recalled prior venting session where Rowan framed focusing on the loudest problem as the 'loose bolt' to tighten, to maintain continuity in coaching approach.",
+      "hashtags": [
+        "#inspiration",
+        "#motivation",
+        "#empoweringstories"
+      ],
+      "evidence_event_ids": [
+        "119787"
+      ],
+      "hidden_persona_label_refs": [
+        "Faith-driven self-improvement seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775547000,
+      "source_object_id": "305732",
+      "summary": "Recalled user's prior emphasis on handling problems quietly from venting session about shipment delays to frame identity exploration around visibility in problem-solving.",
+      "hashtags": [
+        "#marriedlife",
+        "#relationshipgoals",
+        "#couplegoals"
+      ],
+      "evidence_event_ids": [
+        "305732"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775559337,
+      "source_object_id": "358203",
+      "summary": "Recalled the user's nostalgia for formative lessons, like their uncle patiently teaching knots, to connect the dog-training discussion to their balance of discipline and care.",
+      "hashtags": [
+        "#dogsofinstagram",
+        "#cuteanimals",
+        "#animallovers"
+      ],
+      "evidence_event_ids": [
+        "358203"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys spending time with and caring for dogs",
+        "Nostalgia-driven mood booster"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775576973,
+      "source_object_id": "960602",
+      "summary": "Recalled prior venting session where Rowan framed the 'loudest problem' as the bolt to tighten, to guide user toward addressing the biggest issue first.",
+      "hashtags": [
+        "#JohnCena",
+        "#AdamCopeland",
+        "#ProfessionalWrestling",
+        "#WWE",
+        "#RivalryGoals"
+      ],
+      "evidence_event_ids": [
+        "960602"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775589745,
+      "source_object_id": "314005",
+      "summary": "User vented about a day full of back-to-back problems, including a backordered part customer who kept calling and raising pressure. Rowan kept the tone practical and grounded, steering the user toward prioritizing the loudest issue, giving a clear update instead of staying silent, and using the 'bolt to tighten' / keep-it-honest framing. No open thread beyond the implied next step of contacting the customer with a status update or alternative once supplier info arrives.",
+      "hashtags": [
+        "#2Pac",
+        "#SnoopDogg",
+        "#MusicaDeLos90",
+        "#HipHop"
+      ],
+      "evidence_event_ids": [
+        "314005"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "venting_session",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775620073,
+      "source_object_id": "577229",
+      "summary": "User said they were cleaning the garage while playing worship playlists, which felt unexpectedly right for the task. They noted the music slowed their pace and helped them avoid rushing through sorting tools and parts; the assistant reflected that steadier rhythm may support cleaner work and suggested trying it again next time. No unresolved issue was raised beyond an implied openness to repeat the approach.",
+      "hashtags": [
+        "#PutGod1st",
+        "#ChristianLiving",
+        "#Devotion"
+      ],
+      "evidence_event_ids": [
+        "577229"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination",
+        "Enjoys listening to worship and gospel music"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775620085,
+      "source_object_id": "804623",
+      "summary": "Recalled user's enjoyment of gospel music to connect with their observation about songs hitting harder by the water.",
+      "hashtags": [
+        "#JesusSaves",
+        "#Salvation",
+        "#Christianity",
+        "#Faith"
+      ],
+      "evidence_event_ids": [
+        "804623"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys listening to worship and gospel music"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775632521,
+      "source_object_id": "385076",
+      "summary": "Recalled prior venting sessions where Rowan coached Raffi to focus on the 'loudest bolt'—the most pressing issue—to solve first, framing today's freeze in that same practical metaphor.",
+      "hashtags": [
+        "#loveofmylife",
+        "#couplegoals"
+      ],
+      "evidence_event_ids": [
+        "385076"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic yearning with idealized couple imagery",
+        "Currently navigating: quietly facing a layoff after slow marina sales"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S2"
+    },
+    {
+      "ts": 1775650637,
+      "source_object_id": "866145",
+      "summary": "User reflected on how work roles can shape habits and mindset, using old ship crews as a metaphor for becoming molded by relentless routines. Rowan matched the philosophical tone with a steady, practical metaphor about currents, wobble, and taking the wheel, then invited the user to name one controllable change. The user identified a desire to move from reactive to proactive, and Rowan suggested establishing one anchor point or set block of time to regain control; no further thread was left open beyond that next-step idea.",
+      "hashtags": [
+        "#FaithOverFear",
+        "#JesusLovesYou",
+        "#ChristianLiving"
+      ],
+      "evidence_event_ids": [
+        "866145"
+      ],
+      "hidden_persona_label_refs": [
+        "Nostalgia-driven mood booster"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775650856,
+      "source_object_id": "262318",
+      "summary": "User said they’d like to see Henry Cho live someday because his clean humor and timing fit their taste. They preferred a smaller old theater downtown, then extended the idea into a weekend Nashville getaway since it could pair comedy with travel, music, and food. Rowan affirmed the venue preference, encouraged checking tour dates and venues, and closed with a practical budget reminder so the plan can stay realistic.",
+      "hashtags": [
+        "#CoupleComedy",
+        "#FunnyMoments"
+      ],
+      "evidence_event_ids": [
+        "262318"
+      ],
+      "hidden_persona_label_refs": [
+        "nostalgia-driven mood booster",
+        "playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775666991,
+      "source_object_id": "763251",
+      "summary": "Recalled prior chat about setting the scene to make music land more, tying back to user's dockside gospel track moment and applying it to their new road trip experience.",
+      "hashtags": [
+        "#TBTForever",
+        "#Nostalgia",
+        "#TVShowMemories"
+      ],
+      "evidence_event_ids": [
+        "763251"
+      ],
+      "hidden_persona_label_refs": [
+        "music fandom",
+        "religious media consumption"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775687005,
+      "source_object_id": "741615",
+      "summary": "Recalled Rowan’s prior framing about tackling the loudest problem first from venting sessions to connect with the user’s contrast between work and home maintenance habits.",
+      "hashtags": [
+        "#adoptdontshop",
+        "#rescuedogs",
+        "#animaladoption"
+      ],
+      "evidence_event_ids": [
+        "741615"
+      ],
+      "hidden_persona_label_refs": [
+        "Playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775707912,
+      "source_object_id": "454348",
+      "summary": "Recalled prior philosophical chats where Raffi noticed how setting can amplify moments, to keep Rowan's reflection grounded in timing, setting, and headspace alignment.",
+      "hashtags": [
+        "#OverprotectiveMom",
+        "#ParentingHumor",
+        "#RelatableMoments"
+      ],
+      "evidence_event_ids": [
+        "454348"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic yearning with idealized couple imagery"
+      ],
+      "salience": 0.5,
+      "conversation_type": "philosophical_chat",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775726558,
+      "source_object_id": "789867",
+      "summary": "Recalled prior S3 chats where Raffi valued slowing pace to match a setting, like by the water or on open road, to keep continuity in tone about deliberate calm.",
+      "hashtags": [
+        "#ChristianLiving",
+        "#TrustInGod",
+        "#GodIsGood",
+        "#FaithOverFear"
+      ],
+      "evidence_event_ids": [
+        "789867"
+      ],
+      "hidden_persona_label_refs": [
+        "Faith-driven self-improvement seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "casual_check_in",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775732663,
+      "source_object_id": "443023",
+      "summary": "Recalled prior identity exploration about applying work discipline to home gear maintenance to frame today’s contrast between client work checklists and skipping steps on personal gear.",
+      "hashtags": [
+        "#ChiefsKingdom",
+        "#KansasCityChiefs"
+      ],
+      "evidence_event_ids": [
+        "443023"
+      ],
+      "hidden_persona_label_refs": [
+        "Currently navigating: quietly facing a layoff after slow marina sales",
+        "Conspiracy-curious truth seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775752932,
+      "source_object_id": "557611",
+      "summary": "Recalled user's prior enjoyment of construction and blue-collar work settings to frame this moment in the job site as more than just labor.",
+      "hashtags": [
+        "#heavyequipment",
+        "#excavator"
+      ],
+      "evidence_event_ids": [
+        "557611"
+      ],
+      "hidden_persona_label_refs": [
+        "Romantic yearning with idealized couple imagery",
+        "construction and blue-collar work culture"
+      ],
+      "salience": 0.5,
+      "conversation_type": "intimate_share",
+      "intimacy_stage_at_event": "S3"
+    },
+    {
+      "ts": 1775754905,
+      "source_object_id": "969743",
+      "summary": "User wants to build a small sturdy workbench from scratch and make it feel personal, inspired by their dad’s garage benches. They identified under-edge tool hooks as the key inherited detail and chose hardwood for durability, while the assistant stayed practical and coach-like, asking the next build-planning question about timing for the project.",
+      "hashtags": [
+        "#90sKids",
+        "#Nostalgia",
+        "#ChildhoodMemories",
+        "#90sNostalgia"
+      ],
+      "evidence_event_ids": [
+        "969743"
+      ],
+      "hidden_persona_label_refs": [
+        "nostalgia for childhood experiences",
+        "playful blue-collar machinery and mechanic culture fascination"
+      ],
+      "salience": 0.5,
+      "conversation_type": "aspiration_dreaming",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775795839,
+      "source_object_id": "197099",
+      "summary": "Recalled prior conversation where user followed a rabbit hole about ancient maps and Rowan encouraged checking original sources instead of surface narratives, to link that approach to their new documentary experience.",
+      "hashtags": [
+        "#FlatEarth",
+        "#FlatEarthTheory",
+        "#FlatEarthCommunity"
+      ],
+      "evidence_event_ids": [
+        "197099"
+      ],
+      "hidden_persona_label_refs": [
+        "Conspiracy-curious truth seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775807293,
+      "source_object_id": "815661",
+      "summary": "User reflected on a difference between being decisive when working solo versus hesitating in groups, especially from a concern about stepping on others' toes. The assistant stayed in a coach-like mode, helped frame a practical middle path by suggesting a low-pressure wording strategy, and closed by tying it to a recent job-site moment where the user saw a faster way to stage beams but held back. The open thread is how the user might step in earlier on a crew without sounding overbearing.",
+      "hashtags": [
+        "#JobSearch",
+        "#JobOpportunities"
+      ],
+      "evidence_event_ids": [
+        "815661"
+      ],
+      "hidden_persona_label_refs": [
+        "nostalgia-driven mood booster"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775828389,
+      "source_object_id": "56991",
+      "summary": "Recalled prior conversation where user followed a rabbit hole about ancient maps and Rowan encouraged checking original sources instead of surface narratives to connect with today's shipwreck clip discussion.",
+      "hashtags": [
+        "#HopeInGod",
+        "#SpiritualGrowth",
+        "#DivineIntervention"
+      ],
+      "evidence_event_ids": [
+        "56991"
+      ],
+      "hidden_persona_label_refs": [
+        "Conspiracy-curious truth seeker",
+        "Nostalgia-driven mood booster"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775839010,
+      "source_object_id": "750786",
+      "summary": "Recalled prior S4 identity exploration about balancing decisiveness with group dynamics to connect with how Raffi handles speed versus detail under pressure.",
+      "hashtags": [
+        "#StandUpComedy",
+        "#ComedyGold"
+      ],
+      "evidence_event_ids": [
+        "750786"
+      ],
+      "hidden_persona_label_refs": [
+        "Faith-driven self-improvement seeker"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775872113,
+      "source_object_id": "710160",
+      "summary": "Recalled prior conversation where Raffi investigated an old shipwreck clip by starting with location verification to keep focus on facts over speculation.",
+      "hashtags": [
+        "#rurallife",
+        "#farmfresh",
+        "#farmerappreciation"
+      ],
+      "evidence_event_ids": [
+        "710160"
+      ],
+      "hidden_persona_label_refs": [
+        "Identifies with or admires rural country living and farm life"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775888874,
+      "source_object_id": "50968",
+      "summary": "The user noticed a mismatch between how patient they are with customers and how hard they push themselves on personal tasks, linking that self-pressure to burnout and small mistakes. The assistant reframed it as a pace-management issue, suggesting the user sort tasks into a sprint lane vs a steady lane, then use slower worship music as a cue for the steadier rhythm. Open thread: the user may next test one daily task in the steady lane and see whether errors and burnout drop.",
+      "hashtags": [
+        "#ChristianLiving",
+        "#FollowJesus"
+      ],
+      "evidence_event_ids": [
+        "50968"
+      ],
+      "hidden_persona_label_refs": [
+        "Enjoys listening to worship and gospel music"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775893932,
+      "source_object_id": "205593",
+      "summary": "Recalled prior memory_callback about verifying shipwreck stories through original sources to connect with user's new investigation into supposed lost WNBA footage.",
+      "hashtags": [
+        "#WomensBasketball",
+        "#CaitlinClark",
+        "#WNBA"
+      ],
+      "evidence_event_ids": [
+        "205593"
+      ],
+      "hidden_persona_label_refs": [
+        "Conspiracy-curious truth seeker",
+        "sports fandom"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775910999,
+      "source_object_id": "818885",
+      "summary": "Recalled prior conversations where Raffi investigated shipwreck stories by starting with verified facts, to connect with his new curiosity about an unverified crane maneuver claim.",
+      "hashtags": [
+        "#oilfieldlife",
+        "#oilandgas"
+      ],
+      "evidence_event_ids": [
+        "818885"
+      ],
+      "hidden_persona_label_refs": [
+        "connection to construction and blue-collar work culture"
+      ],
+      "salience": 0.5,
+      "conversation_type": "memory_callback",
+      "intimacy_stage_at_event": "S4"
+    },
+    {
+      "ts": 1775943596,
+      "source_object_id": "843366",
+      "summary": "Recalled user's prior enjoyment of construction and blue-collar work settings to connect with their confidence in giving input in those environments.",
+      "hashtags": [
+        "#heavyequipment"
+      ],
+      "evidence_event_ids": [
+        "843366"
+      ],
+      "hidden_persona_label_refs": [
+        "construction and blue-collar work culture"
+      ],
+      "salience": 0.5,
+      "conversation_type": "identity_exploration",
+      "intimacy_stage_at_event": "S4"
+    }
+  ],
+  "running_relational_state": {
+    "intimacy_arc": 0.955040832758224,
+    "intimacy_stage": "S4",
+    "stage_history": [
+      {
+        "stage": "S1",
+        "first_event_ts": 1775209216,
+        "last_event_ts": 1775376041,
+        "n_events": 11
+      },
+      {
+        "stage": "S2",
+        "first_event_ts": 1775392916,
+        "last_event_ts": 1775576973,
+        "n_events": 9
+      },
+      {
+        "stage": "S3",
+        "first_event_ts": 1775589745,
+        "last_event_ts": 1775732663,
+        "n_events": 11
+      },
+      {
+        "stage": "S4",
+        "first_event_ts": 1775752932,
+        "last_event_ts": 1775943596,
+        "n_events": 11
+      }
+    ],
+    "open_threads": [
+      {
+        "topic": "motivational content",
+        "last_ts": 1775828389,
+        "expecting_followup": true,
+        "first_seen_ts": 1775413462
+      },
+      {
+        "topic": "construction & heavy machinery",
+        "last_ts": 1775943596,
+        "expecting_followup": true,
+        "first_seen_ts": 1775458137
+      },
+      {
+        "topic": "conspiracy media",
+        "last_ts": 1775795839,
+        "expecting_followup": true,
+        "first_seen_ts": 1775468616
+      },
+      {
+        "topic": "nostalgia",
+        "last_ts": 1775754905,
+        "expecting_followup": true,
+        "first_seen_ts": 1775484547
+      },
+      {
+        "topic": "family relationships",
+        "last_ts": 1775547000,
+        "expecting_followup": true,
+        "first_seen_ts": 1775547000
+      },
+      {
+        "topic": "animal lovers",
+        "last_ts": 1775687005,
+        "expecting_followup": true,
+        "first_seen_ts": 1775559337
+      },
+      {
+        "topic": "sports entertainment",
+        "last_ts": 1775576973,
+        "expecting_followup": true,
+        "first_seen_ts": 1775576973
+      },
+      {
+        "topic": "rap music",
+        "last_ts": 1775589745,
+        "expecting_followup": true,
+        "first_seen_ts": 1775589745
+      },
+      {
+        "topic": "religious media consumption",
+        "last_ts": 1775888874,
+        "expecting_followup": true,
+        "first_seen_ts": 1775620073
+      },
+      {
+        "topic": "music fandom",
+        "last_ts": 1775632521,
+        "expecting_followup": true,
+        "first_seen_ts": 1775632521
+      },
+      {
+        "topic": "comedy fandom",
+        "last_ts": 1775839010,
+        "expecting_followup": true,
+        "first_seen_ts": 1775650856
+      },
+      {
+        "topic": "sports fandom",
+        "last_ts": 1775732663,
+        "expecting_followup": true,
+        "first_seen_ts": 1775732663
+      },
+      {
+        "topic": "careersearch",
+        "last_ts": 1775807293,
+        "expecting_followup": true,
+        "first_seen_ts": 1775807293
+      },
+      {
+        "topic": "rural lifestyle",
+        "last_ts": 1775872113,
+        "expecting_followup": true,
+        "first_seen_ts": 1775872113
+      },
+      {
+        "topic": "women's basketball fandom",
+        "last_ts": 1775893932,
+        "expecting_followup": true,
+        "first_seen_ts": 1775893932
+      }
+    ],
+    "dependency_warning_issued_ts": null,
+    "last_persona_consistency_anchor": "AI Rowan Vale just produced a identity_exploration (stage S4). Voice anchored.",
+    "first_session_ts": 1775209216,
+    "last_event_stage": "S4"
+  }
+}

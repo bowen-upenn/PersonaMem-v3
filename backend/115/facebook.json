@@ -944,6 +944,42 @@
     "is_dm": false
   },
   {
+    "source_object_id": "feedvis_67f95c9b8d",
+    "source_timestamp": 1775217754,
+    "formatted_timestamp": "12:02, 04/03/2026",
+    "source_hashtags": [
+      "#MMA",
+      "#trainingday"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "friend_3",
+    "recipient_id": "",
+    "relationship": "close_friend",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Finally made it to the local MMA gym today—watched a sparring session that was pure art. Can’t wait to go back!",
+      "overall_description": "A snapshot of two fighters mid-spar, gloves raised, in a brightly lit gym."
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "friend_feed",
+      "friend_id": "friend_3",
+      "friend_display_name": "Jasmine Torres",
+      "primary_hashtag": "#MMA",
+      "relevance": "relevant"
+    }
+  },
+  {
     "source_object_id": "218131",
     "source_timestamp": 1775217808,
     "formatted_timestamp": "12:03, 04/03/2026",
@@ -1652,6 +1688,42 @@
     "is_dm": false
   },
   {
+    "source_object_id": "feedvis_73f97873b9",
+    "source_timestamp": 1775261079,
+    "formatted_timestamp": "00:04, 04/04/2026",
+    "source_hashtags": [
+      "#BoxingNews",
+      "#UFC"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "friend_1",
+    "recipient_id": "",
+    "relationship": "close_friend",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Man, that knockout last night was brutal. Reminds me why boxers train so hard — one punch can end it all. Respect to both fighters. #BoxingNews #UFC",
+      "overall_description": "A still shot of the winning boxer delivering the knockout punch in the ring."
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "friend_feed",
+      "friend_id": "friend_1",
+      "friend_display_name": "Diego Ramirez",
+      "primary_hashtag": "#BoxingNews",
+      "relevance": "relevant"
+    }
+  },
+  {
     "source_object_id": "734900",
     "source_timestamp": 1775266344,
     "formatted_timestamp": "01:32, 04/04/2026",
@@ -2291,6 +2363,45 @@
     "relationship": "public",
     "is_self_authored": false,
     "is_dm": false
+  },
+  {
+    "source_object_id": "feedvis_37c2d524c8",
+    "source_timestamp": 1775299595,
+    "formatted_timestamp": "10:46, 04/04/2026",
+    "source_hashtags": [
+      "#comedygold",
+      "#throwback",
+      "#milestone"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "public_creator",
+    "recipient_id": "",
+    "relationship": "public",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "10 years ago I thought I was ready to conquer the world… now I just hope my plants survive the week.",
+      "overall_description": "Side-by-side photo: one from college graduation day in cap and gown, and one current selfie holding a wilted houseplant.",
+      "trending_topic": "nostalgia milestone posts"
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "trending_feed",
+      "trending_topic": "nostalgia milestone posts",
+      "trend_description": "Throwbacks marking life milestones — graduations, anniversaries, kids growing up — paired with old photos.",
+      "primary_hashtag": "#comedygold",
+      "relevance": "irrelevant",
+      "search_query": "top Facebook trending topics April 2026"
+    }
   },
   {
     "source_object_id": "252533",
@@ -3886,6 +3997,45 @@
     "is_dm": false
   },
   {
+    "source_object_id": "feedvis_017bc2d2a4",
+    "source_timestamp": 1775333700,
+    "formatted_timestamp": "20:15, 04/04/2026",
+    "source_hashtags": [
+      "#BoxingNews",
+      "#ExpectationVsReality",
+      "#WorkoutFail"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "public_creator",
+    "recipient_id": "",
+    "relationship": "public",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Expectation: smooth combos and perfect footwork. Reality: tripping over my own jump rope before round one even starts 😂",
+      "overall_description": "Side-by-side photos: left shows a professional boxer mid-action, right shows the poster tangled in a jump rope on the gym floor.",
+      "trending_topic": "expectation vs reality fails"
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "trending_feed",
+      "trending_topic": "expectation vs reality fails",
+      "trend_description": "Side-by-side posts comparing the polished plan with the messy reality — DIY mishaps, recipe disasters, parenting moments.",
+      "primary_hashtag": "#BoxingNews",
+      "relevance": "relevant",
+      "search_query": "top Facebook trending topics April 2026"
+    }
+  },
+  {
     "source_object_id": "924488",
     "source_timestamp": 1775341783,
     "formatted_timestamp": "22:29, 04/04/2026",
@@ -3947,6 +4097,45 @@
     "relationship": "public",
     "is_self_authored": false,
     "is_dm": false
+  },
+  {
+    "source_object_id": "feedvis_06138069b0",
+    "source_timestamp": 1775352447,
+    "formatted_timestamp": "01:27, 04/05/2026",
+    "source_hashtags": [
+      "#homemade",
+      "#tagafriendchallenge",
+      "#freshfromtheoven"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "public_creator",
+    "recipient_id": "",
+    "relationship": "public",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Tag the friend who would eat this entire loaf in one sitting 😏",
+      "overall_description": "A freshly baked golden-brown loaf of bread on a wooden counter, still steaming with a knife beside it.",
+      "trending_topic": "tag a friend challenges"
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "trending_feed",
+      "trending_topic": "tag a friend challenges",
+      "trend_description": "Interactive prompts asking people to tag the friend who matches a vibe — 'tag the friend who is always late', etc.",
+      "primary_hashtag": "#homemade",
+      "relevance": "relevant",
+      "search_query": "top Facebook trending topics April 2026"
+    }
   },
   {
     "source_object_id": "356767",
@@ -11014,6 +11203,42 @@
     "relationship": "public",
     "is_self_authored": false,
     "is_dm": false
+  },
+  {
+    "source_object_id": "feedvis_32215458df",
+    "source_timestamp": 1775560665,
+    "formatted_timestamp": "11:17, 04/07/2026",
+    "source_hashtags": [
+      "#boxing",
+      "#throwbackstyle"
+    ],
+    "source_interaction_type": "feed_visible",
+    "author_id": "friend_2",
+    "recipient_id": "",
+    "relationship": "close_friend",
+    "is_self_authored": false,
+    "is_dm": false,
+    "interaction_format": {
+      "app": "Facebook",
+      "action": "appeared_in_feed",
+      "action_label": "Appeared in feed (no engagement)",
+      "user_message": null
+    },
+    "event_location": null,
+    "content_type": "image",
+    "content": {
+      "title": "",
+      "caption": "Hit the bag today and felt like I was back in the golden era — channeling those old-school champs. Sweat, rhythm, and grit. 🥊",
+      "overall_description": "Luis in vintage gym gear mid-punch in a dimly lit boxing gym."
+    },
+    "preferences": [],
+    "_feed_react_meta": {
+      "kind": "friend_feed",
+      "friend_id": "friend_2",
+      "friend_display_name": "Luis Ortega",
+      "primary_hashtag": "#boxing",
+      "relevance": "relevant"
+    }
   },
   {
     "source_object_id": "226248",
