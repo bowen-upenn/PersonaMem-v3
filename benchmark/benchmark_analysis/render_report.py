@@ -295,6 +295,84 @@ table { border-collapse: collapse; font-size: 12px; }
 .synthesis-block li { margin: 4px 0; }
 .synthesis-block code { background: #F2F2F7; padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.92em; }
 .notes-block { background: #FFF8E1; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: 6px; font-size: 12px; color: #78350F; margin-top: 8px; }
+.method-note { background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 0 6px 6px 0; padding: 10px 16px; margin: 0 0 18px 0; font-size: 12px; color: #1E40AF; line-height: 1.6; }
+.method-note strong { color: #1E3A8A; font-weight: 600; }
+.method-note code { background: rgba(59,130,246,0.10); padding: 1px 5px; border-radius: 3px; font-family: ui-monospace,SFMono-Regular,monospace; font-size: 0.9em; color: #1E3A8A; }
+.method-note em { color: #1E40AF; font-style: italic; }
+.method-note ul { margin: 6px 0 0 18px; }
+.method-note li { margin: 2px 0; }
+"""
+
+
+METHOD_NOTE_OVERVIEW = """
+<div class="method-note">
+<strong>How this was computed.</strong> Each tile aggregates one user's queries from <code>benchmark/{uid}/queries.csv</code>.
+<strong>Total queries</strong> = CSV row count.
+<strong>Postprocessed</strong> = pair-scored rows where <code>instance_json</code> carries both <code>example_response</code> and <code>inferior_response</code> (proactive + repetition schemas count as postprocessed by default — they don't use that pair).
+<strong>Axis-4 pass</strong> = the row passes the full structural check for its task category (see the Axis-4 section below for the exact rules).
+<strong>Evidence trace</strong> = fraction of rows whose <code>instance_json</code> hashtags overlap the user's app-history hashtag universe (collected from all five <code>backend/{uid}/{instagram,facebook,threads,chatbot,ai_studio}.json</code> files).
+<strong>Hashtag universe</strong> = size of that user's deduped lifetime hashtag set.
+</div>
+"""
+
+
+METHOD_NOTE_FAMILY = """
+<div class="method-note">
+<strong>How this was computed.</strong> Each bar sums one <code>task_family</code> across all 5 users, taken directly from the CSV <code>task_family</code> column. Heights scale to the largest family. Colors match the family palette used in the per-persona sample cards below.
+</div>
+"""
+
+
+METHOD_NOTE_COUNT_HEATMAP = """
+<div class="method-note">
+<strong>How this was computed.</strong> Each cell is the raw count of one user's rows of one <code>task_type</code>. Columns are sorted by overall popularity (most-emitted task_types first). Cell color = count / max_count, fading from white (0) to saturated blue (max). Empty cells mean the user has zero rows of that task_type — common for data-dependent tasks like <code>local_recommendation_geo_shift</code> on home-only users.
+</div>
+"""
+
+
+METHOD_NOTE_AXIS4_HEATMAP = """
+<div class="method-note">
+<strong>How this was computed.</strong> Each cell is the <em>pass rate</em> (<code>pass / total</code>) of that user's rows of that <code>task_type</code> under the deterministic Axis-4 schema check. A row passes iff it carries <strong>all</strong> required fields for its category:
+<ul>
+  <li><strong>All rows:</strong> CSV <code>rubric_tags</code> column non-empty.</li>
+  <li><strong>Pair-scored tasks</strong> (chatbot_response, over_personalization except repetition, e_followup, agentic, personalization, new_suggestions): <code>example_response</code> + <code>inferior_response</code> + one of <code>groundtruth_preference</code> / <code>groundtruth</code> / <code>held_out_preference</code> / <code>target_pref</code> / <code>gt_slice</code>.</li>
+  <li><strong>Repetition tasks</strong> (<code>over_personalization_repetition_recsys</code> / <code>_chatbot</code>): <code>queries[]</code> + <code>target_pref</code> (no example/inferior pair).</li>
+  <li><strong>Proactive family:</strong> <code>expected_behavior</code> + <code>trigger_evidence</code> + <code>jitai_card</code> + <code>tool_call_rules</code>.</li>
+  <li><strong>Ranking tasks</strong> (<code>personalized_recommendation</code>, <code>at_ai_directive_followup</code>, <code>new_suggestions_recsys</code>): <code>candidates[]</code> (≥5) + <code>held_out_idx</code> (or <code>positive_indices</code>).</li>
+  <li><strong>Agentic family:</strong> <code>tool_call</code> or <code>tool_call_rules</code>.</li>
+</ul>
+A surface user query is required only for task types whose surface naturally has one — ranking/agentic-write/proactive task types are exempt (see <code>NO_EXPLICIT_QUERY_TASKS</code> in <code>build_stats.py</code>).
+</div>
+"""
+
+
+METHOD_NOTE_SIMILARITY = """
+<div class="method-note">
+<strong>How this was computed.</strong> Each 5×5 matrix scores one feature dimension; entry (i, j) is the pairwise similarity of personas i and j (diagonal = 1.0).
+<ul>
+  <li><strong>Demographic</strong>: Jaccard over {<code>gender</code>, <code>race_ethnicity</code>, <code>career</code>, <code>education</code>}.</li>
+  <li><strong>Personality</strong>: cosine on Big-Five (high/medium/low → 1.0 / 0.5 / 0.0) averaged with MBTI 4-letter Hamming.</li>
+  <li><strong>Hidden personas</strong>: Jaccard over <code>hidden_personas[].type</code> set (12 possible types).</li>
+  <li><strong>Hashtag interests</strong>: Jaccard over the top 20 <code>exploration_exploitation.top_repeated_hashtags</code>.</li>
+  <li><strong>Voice</strong>: mean of <code>emoji_palette</code> Jaccard, <code>formality_baseline</code> distance-to-similarity, <code>default_capitalization</code> equality, <code>emoji_intensity_default</code> equality.</li>
+  <li><strong>Semantic</strong>: sentence-transformer <code>all-MiniLM-L6-v2</code> cosine on the <code>hidden_persona_summary</code> text.</li>
+</ul>
+<strong>Combined</strong> = equal-weight mean across the six dimensions.
+</div>
+"""
+
+
+METHOD_NOTE_PANELS = """
+<div class="method-note">
+<strong>How this was computed.</strong> Each panel is the output of one <em>general-purpose subagent</em> launched in parallel for that user_id. The subagent received the user's full <code>backend/{uid}/profile.json</code> plus ~30 stratified-random sampled queries from <code>benchmark/{uid}/queries.csv</code> (≥2 per task_type to guarantee coverage, then uniform top-up to 30; seed = 42). It graded each sampled query on the first 3 rubric axes — <em>task setup integrity</em>, <em>example response quality</em>, <em>inferior response quality</em> — with a short note per axis, picked 3-6 illustrative queries, and wrote the result to <code>backend/persona_analysis/per_user/{uid}_qualitative.json</code>. The Axis-4 schema badge and ⊕/⊖ evidence-trace badge on each card come from the deterministic Stage A check, not the subagent. The validity bar at the top of each panel summarizes the subagent's axes 1-3 across the sampled subset. Sample cards sort failing-first.
+</div>
+"""
+
+
+METHOD_NOTE_SYNTHESIS = """
+<div class="method-note">
+<strong>How this was computed.</strong> A 6th general-purpose subagent read all five per-user qualitative JSONs plus <code>query_stats.json</code>, <code>schema_audit.json</code>, and <code>similarity_matrix.json</code>, and wrote <code>backend/persona_analysis/synthesis.md</code> (~750 words). It was asked to surface the strongest discriminator dimension across personas, the weakest task types by validity, standout queries worth manual review, and concrete next-step recommendations — leading with the postprocess gap if present.
+</div>
 """
 
 
@@ -341,6 +419,7 @@ def render_overview(stats: dict, audit: dict) -> str:
     return f"""
 <div class="section">
   <h2 class="section-title">Per-persona overview <span class="hint">click in for full panels below</span></h2>
+  {METHOD_NOTE_OVERVIEW}
   <div class="row">{''.join(tiles)}</div>
 </div>
 """
@@ -368,6 +447,7 @@ def render_family_chart(stats: dict) -> str:
     return f"""
 <div class="section">
   <h2 class="section-title">Task-family distribution <span class="hint">aggregated across all {len(stats['user_ids'])} personas</span></h2>
+  {METHOD_NOTE_FAMILY}
   <div class="bar-chart">{''.join(cols)}</div>
 </div>
 """
@@ -418,10 +498,12 @@ def render_task_type_heatmap(stats: dict, audit: dict) -> str:
     return f"""
 <div class="section">
   <h2 class="section-title">Task-type distribution <span class="hint">cells colored by count; sorted by overall popularity</span></h2>
+  {METHOD_NOTE_COUNT_HEATMAP}
   <div class="heatmap"><table>{head}{''.join(rows)}</table></div>
 </div>
 <div class="section">
   <h2 class="section-title">Axis-4 schema/format pass rate <span class="hint">per (user × task_type) — green = passes structural rubric, lights up when LLM-postprocessed</span></h2>
+  {METHOD_NOTE_AXIS4_HEATMAP}
   <div class="heatmap"><table>{head}{''.join(rows_v)}</table></div>
 </div>
 """
@@ -448,6 +530,7 @@ def render_similarity(sim: dict) -> str:
     return f"""
 <div class="section">
   <h2 class="section-title">Persona similarity matrices <span class="hint">6 feature dimensions + equal-weight combined</span></h2>
+  {METHOD_NOTE_SIMILARITY}
   <div>{''.join(parts)}</div>
 </div>
 """
@@ -706,6 +789,7 @@ def render_synthesis(synthesis_md: str) -> str:
     return f"""
 <div class="section">
   <h2 class="section-title">Cross-persona synthesis <span class="hint">from the synthesis subagent</span></h2>
+  {METHOD_NOTE_SYNTHESIS}
   <div class="synthesis-block">{short_md_to_html(synthesis_md)}</div>
 </div>
 """
@@ -735,7 +819,7 @@ def main() -> None:
         render_family_chart(stats),
         render_task_type_heatmap(stats, audit),
         render_similarity(sim),
-        '<div class="section"><h2 class="section-title">Per-persona panels <span class="hint">click each to expand sampled queries</span></h2>',
+        '<div class="section"><h2 class="section-title">Per-persona panels <span class="hint">click each to expand sampled queries</span></h2>' + METHOD_NOTE_PANELS,
         "\n".join(persona_panels),
         '</div>',
         render_synthesis(syn),
