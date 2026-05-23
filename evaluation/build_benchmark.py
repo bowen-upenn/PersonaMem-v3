@@ -3715,15 +3715,16 @@ def build_benchmark(
         preference_shift_instances = []
         print(f"[build_benchmark] WARN: preference_shift_followthrough builder failed: {exc}")
 
-    # Step 4.6 — hidden_persona_implicit_qa (chatbot + recsys flavors).
-    # Scaffolded builder; emits instances only when the user has hidden
-    # personas meeting evidence floors. Discovery-LLM wiring lands later.
+    # Step 4.6 — hidden_persona_implicit_qa (chatbot flavor only).
+    # Discovery LLM populates user_query + example/inferior pair from
+    # each eligible hidden persona; emits nothing when discovery_llm is
+    # unavailable (rather than shipping empty stub rows).
     try:
         from evaluation.tasks.hidden_persona_implicit_qa import (
             build_hidden_persona_implicit_qa,
         )
         hidden_persona_implicit_instances = build_hidden_persona_implicit_qa(
-            bq, user_id, t_probe, discovery_llm=None, rng_seed=rng_seed,
+            bq, user_id, t_probe, discovery_llm=discovery_llm, rng_seed=rng_seed,
         )
     except Exception as exc:
         hidden_persona_implicit_instances = []
