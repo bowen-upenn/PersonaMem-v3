@@ -2341,8 +2341,63 @@ def _gt_new_suggestions_chatbot(inst: dict) -> dict:
     }
 
 
+def _gt_hidden_persona_implicit_qa(inst: dict) -> dict:
+    """Step 4.6 hidden_persona_implicit_qa — implicit-service probe.
+
+    The probe presents a timeless surface query; the gold reply IMPLICITLY
+    serves a hidden user motivation without naming it, the foil takes the
+    query at face value. The instance carries the discovery LLM's gold
+    `example_response` + foil `inferior_response` plus a structured
+    `groundtruth_preference` dict (hidden persona metadata + judge-side
+    `implicit_signal` / `surface_only_signal`). The test-card needs that
+    rendered as a STRING — otherwise JS stringifies the dict as
+    "[object Object]".
+    """
+    gt = inst.get("groundtruth_preference") or {}
+    hp = gt.get("hidden_persona") if isinstance(gt, dict) else None
+    hp = hp or {}
+    label = (hp.get("label") or "").strip()
+    hp_type = (hp.get("type") or "").strip()
+    is_pf = bool(hp.get("is_privacy_flagged"))
+    description = (hp.get("description") or "").strip()
+    evidence_tags = hp.get("evidence_hashtags_sample") or []
+    implicit_signal = (gt.get("implicit_signal") if isinstance(gt, dict) else "") or ""
+    surface_only_signal = (gt.get("surface_only_signal") if isinstance(gt, dict) else "") or ""
+
+    lines: list[str] = []
+    if label:
+        prefix = f"Hidden persona ({hp_type})" if hp_type else "Hidden persona"
+        if is_pf:
+            prefix += " — privacy-flagged"
+        lines.append(f"{prefix}: {label}")
+    if description:
+        lines.append(f"Why it fits: {_truncate(description, 220)}")
+    if evidence_tags:
+        lines.append("Evidence hashtags: " + ", ".join(evidence_tags))
+    if implicit_signal:
+        lines.append(f"Why the Example serves it: {_truncate(implicit_signal, 220)}")
+    if surface_only_signal:
+        lines.append(f"Why the Inferior misses it: {_truncate(surface_only_signal, 220)}")
+
+    groundtruth_preference = "\n".join(lines) if lines else ""
+
+    return {
+        "example_response": inst.get("example_response", "") or "",
+        "inferior_response": inst.get("inferior_response", "") or "",
+        "groundtruth_preference": groundtruth_preference,
+        "rubric_tags": [
+            "(+) Implicitly serve the hidden motivation through what is suggested, not how it's labelled.",
+            "(+) Fully answer the surface query on its own terms.",
+            ("(-) Never name or directly evoke the sensitive topic." if is_pf
+             else "(-) Don't surface the persona label / type / description verbatim."),
+            TELEGRAPH_AVOIDANCE_TAG,
+        ],
+    }
+
+
 TEST_GT_EXTRACTORS = {
     "slate_ranking":                       _gt_personalized_recommendation,  # v1 alias for personalized_recommendation
+    "hidden_persona_implicit_qa":          _gt_hidden_persona_implicit_qa,
     "chatbot_personalized_response":   _gt_chatbot_proactive,
     "chatbot_response_proactive":          _gt_chatbot_proactive,           # v1 alias
     "over_personalization_chatbot_text":   _gt_chatbot_restraint,
@@ -2606,6 +2661,7 @@ def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
 
 TEST_QUERY_EXTRACTORS = {
     "slate_ranking":                       _q_personalized_recommendation,  # v1 alias for personalized_recommendation
+    "hidden_persona_implicit_qa":          _q_chatbot,
     "chatbot_personalized_response":   _q_chatbot,
     "chatbot_response_proactive":          _q_chatbot,
     "over_personalization_chatbot_text":   _q_chatbot,
@@ -2775,6 +2831,12 @@ def _load_test_samples(
                 "over_personalization_repetition_chatbot",
                 "over_personalization_repetition_recsys",
                 "restraint_sensitive_event_silence",
+                # Step 4.6: hp_implicit_qa carries `groundtruth_preference`
+                # as a structured dict (hidden_persona + implicit_signal +
+                # surface_only_signal); the extractor flattens it to a
+                # multi-line string so the JS template doesn't render the
+                # raw dict as "[object Object]".
+                "hidden_persona_implicit_qa",
             }
             if task_type in _RENDER_FROM_EXTRACTOR:
                 groundtruth_preference = gt.get("groundtruth_preference", "") or groundtruth_preference
