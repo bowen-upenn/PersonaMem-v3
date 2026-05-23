@@ -233,6 +233,14 @@ table { border-collapse: collapse; font-size: 12px; }
 .heatmap th { background: #F2F2F7; font-weight: 600; position: sticky; top: 0; }
 .heatmap th.rotated { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); height: 160px; padding: 6px 4px; font-weight: 500; font-size: 10px; }
 .heatmap td.label { font-weight: 700; background: #FAFAFA; text-align: left; padding: 6px 10px; }
+/* Vertical heatmap layout — rows = task_types, narrow user_id columns + Σ column */
+.heatmap-vert table { font-size: 12px; }
+.heatmap-vert th.row-label-head { text-align: left; padding: 8px 14px; min-width: 280px; background: #F2F2F7; font-size: 12px; }
+.heatmap-vert th.uid-col { min-width: 64px; width: 64px; padding: 8px 6px; font-size: 12px; }
+.heatmap-vert th.total-col { min-width: 70px; width: 70px; padding: 8px 8px; background: #E5E5EA; font-size: 12px; }
+.heatmap-vert td.label { font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace; font-size: 11.5px; font-weight: 600; padding: 6px 14px; background: #FAFAFA; color: var(--text); min-width: 280px; }
+.heatmap-vert td { padding: 6px 8px; }
+.heatmap-vert td.total-col { font-weight: 700; background: #F2F2F7; min-width: 70px; }
 .sim-matrix { display: inline-block; vertical-align: top; margin-right: 18px; margin-bottom: 14px; }
 .sim-matrix h4 { font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.4px; }
 .sim-matrix table { font-size: 11px; }
@@ -466,29 +474,42 @@ def render_task_type_heatmap(stats: dict, audit: dict) -> str:
         for uid in user_ids for tt in type_cols
     ) or 1
 
-    head = "<tr><th>User</th>" + "".join(
-        f'<th class="rotated">{esc(tt)}</th>' for tt in type_cols
-    ) + "</tr>"
+    # Transposed layout: rows = task_types (horizontal label), cols = user_ids.
+    head = (
+        '<tr><th class="row-label-head">Task type</th>'
+        + "".join(f'<th class="uid-col">{esc(uid)}</th>' for uid in user_ids)
+        + '<th class="total-col">Σ</th></tr>'
+    )
 
+    # --- Count heatmap (rows = task_types) ---
     rows = []
-    for uid in user_ids:
+    for tt in type_cols:
         cells = []
-        for tt in type_cols:
+        row_total = 0
+        for uid in user_ids:
             c = stats["per_user_task_type"].get(uid, {}).get(tt, 0)
+            row_total += c
             color = count_color(c, max_c)
             txt_color = "#1D1D1F" if c < max_c * 0.6 else "#fff"
             cells.append(f'<td style="background:{color}; color:{txt_color};">{c if c else ""}</td>')
-        rows.append(f'<tr><td class="label">{uid}</td>{"".join(cells)}</tr>')
+        rows.append(
+            f'<tr><td class="label">{esc(tt)}</td>'
+            f'{"".join(cells)}'
+            f'<td class="total-col">{row_total}</td></tr>'
+        )
 
-    # Axis-4 pass-rate heatmap
+    # --- Axis-4 pass-rate heatmap (rows = task_types) ---
     rows_v = []
-    for uid in user_ids:
+    for tt in type_cols:
         cells = []
-        pt = audit["per_user_task_type_pass_rate"].get(uid, {})
-        for tt in type_cols:
-            v = pt.get(tt, {})
+        agg_pass = 0
+        agg_total = 0
+        for uid in user_ids:
+            v = audit["per_user_task_type_pass_rate"].get(uid, {}).get(tt, {})
             total = v.get("total", 0)
             passed = v.get("pass", 0)
+            agg_pass += passed
+            agg_total += total
             if total == 0:
                 cells.append('<td style="background:#FAFAFA; color:#AEAEB2;">—</td>')
                 continue
@@ -496,18 +517,28 @@ def render_task_type_heatmap(stats: dict, audit: dict) -> str:
             color = heat_color(rate)
             txt = f"{int(rate*100)}%"
             cells.append(f'<td style="background:{color};" title="{passed}/{total}">{txt}</td>')
-        rows_v.append(f'<tr><td class="label">{uid}</td>{"".join(cells)}</tr>')
+        if agg_total:
+            agg_rate = agg_pass / agg_total
+            agg_color = heat_color(agg_rate)
+            agg_cell = f'<td class="total-col" style="background:{agg_color};" title="{agg_pass}/{agg_total}">{int(agg_rate*100)}%</td>'
+        else:
+            agg_cell = '<td class="total-col" style="background:#FAFAFA; color:#AEAEB2;">—</td>'
+        rows_v.append(
+            f'<tr><td class="label">{esc(tt)}</td>'
+            f'{"".join(cells)}'
+            f'{agg_cell}</tr>'
+        )
 
     return f"""
 <div class="section">
-  <h2 class="section-title">Task-type distribution <span class="hint">cells colored by count; sorted by overall popularity</span></h2>
+  <h2 class="section-title">Task-type distribution <span class="hint">rows = task_types, columns = users; sorted by overall popularity</span></h2>
   {METHOD_NOTE_COUNT_HEATMAP}
-  <div class="heatmap"><table>{head}{''.join(rows)}</table></div>
+  <div class="heatmap heatmap-vert"><table>{head}{''.join(rows)}</table></div>
 </div>
 <div class="section">
-  <h2 class="section-title">Axis-4 schema/format pass rate <span class="hint">per (user × task_type) — green = passes structural rubric, lights up when LLM-postprocessed</span></h2>
+  <h2 class="section-title">Axis-4 schema/format pass rate <span class="hint">rows = task_types, columns = users — green = passes structural rubric, lights up when LLM-postprocessed</span></h2>
   {METHOD_NOTE_AXIS4_HEATMAP}
-  <div class="heatmap"><table>{head}{''.join(rows_v)}</table></div>
+  <div class="heatmap heatmap-vert"><table>{head}{''.join(rows_v)}</table></div>
 </div>
 """
 
