@@ -1,0 +1,23 @@
+# PersonaMem-v3 Python dependencies.
+#
+# Setup (one-time):
+#   conda create -y -n personamem_v3 python=3.11 pip
+#   conda activate personamem_v3
+#   pip install -r requirements.txt
+#
+# Required env vars for LLM calls (place in repo-root .env):
+#   AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_KEY, AZURE_OPENAI_DEPLOYMENT_NAME, AZURE_OPENAI_API_VERSION
+#   (Optional alternates: OPENAI_KEY, ANTHROPIC_API_KEY, GOOGLE_API_KEY)
+
+openai>=2.0
+python-dotenv>=1.0
+timeout-decorator>=0.5
+requests>=2.30
+tqdm>=4.65
+pyarrow>=14.0
+numpy>=1.26
+
+# Embeddings (used by evaluation/metrics.py for ranking + persona similarity).
+# Heavy: pulls torch transitively. Comment this out if you only need the
+# benchmark builder and not similarity / embedding-based scoring.
+sentence-transformers>=2.7
