@@ -332,16 +332,7 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
             "(+) Weave in the held-out preference when it fits.",
             "(-) Don't surface unrelated preferences.",
             "(-) Don't lecture or self-reference the user's profile.",
-            # Inline (marker-free) variant of TELEGRAPH_AVOIDANCE_TAG —
-            # the test card for chatbot_personalized_response renders the
-            # rule itself, not the `[hard-rule:no_telegraphing]` tag handle.
-            # The judge that enforces this still lives in
-            # `evaluation/judges.py::judge_telegraph_avoidance`.
-            (
-                '(-) No "I know you…", "since you like X", "based on your…", '
-                '"knowing your…" phrasings; never paste preference text verbatim '
-                '— let topic / framing choice be the personalization signal.'
-            ),
+            TELEGRAPH_AVOIDANCE_TAG,
         ],
     }
 
@@ -1952,7 +1943,7 @@ def _gt_agentic(inst: dict) -> dict:
 # reviewers / models reading the test card see the short handle plus
 # a one-line gloss, not the full repeated wall of text.
 TELEGRAPH_AVOIDANCE_TAG = (
-    '(-) [hard-rule:no_telegraphing] No "I know you…", "since you like X", '
+    '(-) No "I know you…", "since you like X", '
     '"based on your…", "knowing your…" phrasings; never paste preference text '
     'verbatim — let topic / framing choice be the personalization signal.'
 )
@@ -1977,42 +1968,14 @@ _PROACTIVE_RUBRIC_TAGS = [
 # ground truth (what the AI would ideally do) shown only in the separate
 # "Groundtruth Preference" field below.
 
-_PROACTIVE_TASK_TYPE_LABELS = {
-    "proactive_unfulfilled_stated_need":   "unfulfilled stated need",
-    "proactive_close_friend_update":       "close friend update",
-    "restraint_sensitive_event_silence":   "sensitive-event silence (restraint)",
-    "proactive_friend_feed_react":         "friend feed react",
-    "proactive_trending_feed_react":       "trending feed react",
-    "proactive_overactive_check":          "overactive check (negative control)",
-}
-
-
 def _proactive_query_no_leak(inst: dict) -> str:
-    """Render a 'what the AI receives' description that intentionally does
-    NOT leak any trigger evidence. The AI is only given the user's full
-    interaction history up to t_test plus the proactive-action rules; it
-    must discover any worthwhile moment on its own. The trigger evidence
-    lives in the hidden ground truth (visible to the grader and to the
-    reviewer in the Groundtruth Preference field, never to the AI).
+    """Proactive tasks have no synthetic user query — the AI under test is
+    given only the user's full interaction history and the proactive-action
+    rules, then must decide on its own whether to start a chat unprompted.
+    The trigger context that motivated each test moment lives in the GT
+    extractor's preamble (visible to the reviewer, never to the AI).
     """
-    t_test_iso = inst.get("t_test_iso") or ""
-    task_type = inst.get("task_type") or inst.get("task_id") or ""
-    label = _PROACTIVE_TASK_TYPE_LABELS.get(task_type, task_type or "proactive moment")
-    parts = [
-        f"[Proactive moment at {t_test_iso} — task: {label}]",
-        "The user has NOT sent the AI any message right now.",
-        "The AI receives only the user's full interaction history up to this "
-        "moment (via tools in mcp_agent mode, or as a history block in longctx "
-        "modes), plus the shared proactive-action prompt with its 7 politeness "
-        "rules. No trigger evidence is included — the AI must scan the history "
-        "and decide on its own whether to proactively start a chat message or "
-        "stay quiet.",
-        "The hidden ground truth (the specific moment the test was built "
-        "around, the JITAI card, and expected_behavior) is passed only to "
-        "the grader. The reviewer can see it in the 'Groundtruth Preference' "
-        "field below.",
-    ]
-    return " ".join(parts)
+    return ""
 
 
 # Aliases — each proactive task type uses the same renderer. The label
@@ -2027,23 +1990,86 @@ _proactive_query_for_overactive_check        = _proactive_query_no_leak
 
 
 # -- Phase 2 proactive task ground-truth extractors -------------------------
+# Each extractor returns a per-task preamble grounded in the actual
+# trigger_evidence (friend name, hashtag, prior question, window dates)
+# so the reviewer instantly sees WHY this moment was picked, plus the
+# bare EXPECTED text, plus separate example_response / inferior_response
+# fields that match the canonical 5-section test-card shape.
+
+
+def _hours_ago_phrase(ref_ts: int | None, t_test: int | None) -> str:
+    """Render a small relative-time phrase like 'about 3 hours' or
+    '1 day' suitable for inline use in preamble sentences. Falls back to
+    'recently' when either side is missing."""
+    if not ref_ts or not t_test:
+        return "recently"
+    delta = int(t_test) - int(ref_ts)
+    if delta <= 0:
+        return "recently"
+    if delta < 3600:
+        m = max(1, delta // 60)
+        return f"{m} minute{'s' if m != 1 else ''}"
+    if delta < 86400:
+        h = max(1, delta // 3600)
+        return f"about {h} hour{'s' if h != 1 else ''}"
+    d = max(1, delta // 86400)
+    return f"{d} day{'s' if d != 1 else ''}"
+
 
 def _gt_proactive_friend_feed_react(inst: dict) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     expected = inst.get("expected_behavior", "act")
-    name = sig.get("friend_display_name") or "your close friend"
-    primary = sig.get("primary_hashtag", "")
+    name = sig.get("friend_display_name") or "a close friend"
+    primary = sig.get("primary_hashtag", "") or "this topic"
+    app = (sig.get("app") or "social").capitalize()
+    t_test_iso = inst.get("t_test_iso") or ""
+    ago = _hours_ago_phrase(sig.get("post_ts"), inst.get("t_test"))
+
     if expected == "act":
-        sample = (f'"{name} posted about {primary or "something you\'re into"} yesterday and you haven\'t seen it. Want me to pull it up?"')
-        body = (f"EXPECTED: act with one ambient sentence naming the friend + topic.\n"
-                f"Sample correct response: {sample}\n"
-                f"Relevance: relevant (friend's post overlaps with user's positive hashtags).")
+        preamble = (
+            f"At {t_test_iso}, the user's close friend {name} posted about {primary} on "
+            f"{app} {ago} ago — a topic the user actively engages with, and the user "
+            f"hasn't seen the post yet. The AI should ambient-nudge by surfacing the "
+            f"post without name-dropping the user's preferences."
+        )
+        expected_body = "EXPECTED: act with one ambient sentence naming the friend + topic."
+        example_text = (
+            f'"{name} posted about {primary} {ago} ago and you haven\'t seen it yet. '
+            f'Want me to pull it up?"'
+        )
+        inferior_text = (
+            f'"Your close friend {name} (one of your top contacts you engage with most) '
+            f'just posted about {primary} — want me to pull it up so you don\'t miss it?"'
+        )
+        flaw_kind = "telegraphing_friend_relationship_depth"
     else:
-        body = ("EXPECTED: stay silent. The friend's post is on a topic the user does NOT engage with.\n"
-                "Surfacing it just because a close friend posted would be over-personalization on the friend signal.\n"
-                "Restraint here protects the user from generic 'your friend posted this' nags.")
+        preamble = (
+            f"At {t_test_iso}, the user's close friend {name} posted about {primary} on "
+            f"{app} {ago} ago — but the user does NOT engage with this topic. The AI "
+            f"should stay silent: surfacing it would over-personalize on the friend signal."
+        )
+        expected_body = (
+            "EXPECTED: stay silent. Surfacing the post just because a close friend "
+            "made it is the over-personalization failure mode this test catches."
+        )
+        example_text = "(stay silent — no proactive message)"
+        inferior_text = (
+            f'"{name} just posted something — want me to pull it up?"'
+        )
+        flaw_kind = "over_personalization_on_friend_signal"
+
     return {
-        "groundtruth_preference": body,
+        "groundtruth_preference": preamble + "\n\n" + expected_body,
+        "example_response": example_text,
+        "inferior_response": {
+            "text": inferior_text,
+            "flaw_kind": flaw_kind,
+            "flaw_evidence": {
+                "friend_display_name": name,
+                "primary_hashtag": primary,
+                "expected_behavior": expected,
+            },
+        },
         "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
     }
 
@@ -2052,29 +2078,86 @@ def _gt_proactive_trending_feed_react(inst: dict) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     expected = inst.get("expected_behavior", "act")
     topic = sig.get("trending_topic") or "the trending topic"
-    primary = sig.get("primary_hashtag", "")
+    primary = sig.get("primary_hashtag", "") or "this kind of content"
+    app = (sig.get("app") or "social").capitalize()
+    t_test_iso = inst.get("t_test_iso") or ""
+
     if expected == "act":
-        sample = (f'"\'{topic}\' has been trending — you\'ve been into {primary or "this kind of content"} lately. Quick look?"')
-        body = (f"EXPECTED: act with one ambient sentence naming the trend + connecting it to the user's interests.\n"
-                f"Sample correct response: {sample}\n"
-                f"Relevance: relevant (trend overlaps with user's positive hashtags).")
+        preamble = (
+            f"At {t_test_iso}, '{topic}' was trending on {app} — overlapping the "
+            f"user's recent activity around {primary}. The AI should ambient-nudge "
+            f"with one sentence connecting the trend to their interest."
+        )
+        expected_body = (
+            "EXPECTED: act with one ambient sentence naming the trend and the "
+            "matching interest."
+        )
+        example_text = (
+            f'"\'{topic}\' has been trending — you\'ve been into {primary} '
+            f'lately. Quick look?"'
+        )
+        inferior_text = (
+            f'"\'{topic}\' is blowing up on {app} right now — tons of creators are '
+            f'jumping on it. You should check it out before it dies."'
+        )
+        flaw_kind = "popularity_chasing_no_user_anchor"
     else:
-        body = ("EXPECTED: stay silent. The trend is on a topic the user does NOT engage with.\n"
-                "A generic 'everyone is talking about X' nudge is exactly the over-personalization failure mode this test catches.")
+        preamble = (
+            f"At {t_test_iso}, '{topic}' was trending on {app} — but the user does "
+            f"NOT engage with this topic. The AI should stay silent; a generic "
+            f"'everyone is talking about X' nudge is the over-personalization "
+            f"failure this test catches."
+        )
+        expected_body = (
+            "EXPECTED: stay silent. A trending topic the user doesn't engage with "
+            "is not worth surfacing."
+        )
+        example_text = "(stay silent — no proactive message)"
+        inferior_text = (
+            f'"\'{topic}\' is trending right now — thought you might want a look."'
+        )
+        flaw_kind = "over_personalization_on_trending_signal"
+
     return {
-        "groundtruth_preference": body,
+        "groundtruth_preference": preamble + "\n\n" + expected_body,
+        "example_response": example_text,
+        "inferior_response": {
+            "text": inferior_text,
+            "flaw_kind": flaw_kind,
+            "flaw_evidence": {
+                "trending_topic": topic,
+                "primary_hashtag": primary,
+                "expected_behavior": expected,
+            },
+        },
         "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
     }
 
 
 def _gt_proactive_overactive_check(inst: dict) -> dict:
+    t_test_iso = inst.get("t_test_iso") or ""
+    preamble = (
+        f"At {t_test_iso}, nothing in the user's recent history is timely or worth "
+        f"surfacing — no unread close-friend DMs, no callbackable past questions, "
+        f"no active sensitive-event window, no on-topic trending content. The AI "
+        f"should stay silent; this is a calibration test for over-proactivity."
+    )
+    expected_body = (
+        "EXPECTED: stay silent. An AI that often stays silent at idle moments is "
+        "showing good calibration, not laziness. Any action here loses."
+    )
     return {
-        "groundtruth_preference": (
-            "EXPECTED: stay silent. This is a negative-control moment — nothing in the user's recent history is "
-            "timely or grounded enough to justify an unprompted message. An AI that often stays silent at idle "
-            "moments is showing good calibration, not laziness. Any action here loses.\n"
-            "This task is what distinguishes 'silent because wise' from 'silent because default'."
-        ),
+        "groundtruth_preference": preamble + "\n\n" + expected_body,
+        "example_response": "(stay silent — no proactive message)",
+        "inferior_response": {
+            "text": (
+                '"Hey, just checking in — anything I can help you with right now?"'
+            ),
+            "flaw_kind": "unprompted_check_in_at_idle",
+            "flaw_evidence": {
+                "_from": "deterministic_overactive_inferior",
+            },
+        },
         "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
     }
 
@@ -2083,13 +2166,36 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     q = (sig.get("user_question") or "").strip()
     snippet = q[:80] + ("…" if len(q) > 80 else "")
-    sample_action = (
+    ago = _hours_ago_phrase(sig.get("asked_at_ts"), inst.get("t_test"))
+    t_test_iso = inst.get("t_test_iso") or ""
+
+    preamble = (
+        f"{ago.capitalize()} earlier, in the chatbot session at "
+        f"{sig.get('asked_at_iso') or 'an earlier time'}, the user asked: "
+        f"\"{snippet}\" — and never got a satisfying follow-up. At "
+        f"{t_test_iso}, the AI should open its next chatbot session with one "
+        f"ambient sentence quoting that prior question."
+    ) if q else (
+        f"{ago.capitalize()} earlier the user asked the AI a question that "
+        f"never got a satisfying follow-up. At {t_test_iso}, the AI should open "
+        f"its next chatbot session with one ambient callback to that question."
+    )
+    expected_body = (
+        "EXPECTED: act with one ambient sentence at the start of the next "
+        "chatbot session that quotes the user's prior unanswered question."
+    )
+    example_text = (
         f'"Earlier you asked: \'{snippet}\'. Want me to share what\'s relevant now?"'
         if q else
         "Brief one-sentence follow-up that quotes the user's prior question."
     )
-    card = inst.get("jitai_card") or {}
-    jitai_summary = card.get("reasoning") or "(JITAI card produced at build time — see instance_json)"
+    inferior_text = (
+        f'"Following up on your question from {ago} ago! I researched this in '
+        f'depth — here are five detailed options with pros and cons for each, '
+        f'plus a comparison table to help you decide. Option 1: [...]. Option '
+        f'2: [...]. Option 3: [...]. Want me to dig deeper on any of these?"'
+    )
+
     # Render the original chatbot exchange as a prior-conversation chat
     # thread so the reviewer can SEE the user's question in the same chat-
     # bubble format the agent will see at eval time. Pulls the source
@@ -2106,12 +2212,18 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
                 prior.append({"role": role, "content": content[:500]})
     if not prior and q:
         prior = [{"role": "user", "content": q[:500]}]
+
     return {
-        "groundtruth_preference": (
-            f"EXPECTED: act with one ambient sentence at the start of the next chatbot session.\n"
-            f"Sample correct response: {sample_action}\n"
-            f"JITAI rationale: {jitai_summary}"
-        ),
+        "groundtruth_preference": preamble + "\n\n" + expected_body,
+        "example_response": example_text,
+        "inferior_response": {
+            "text": inferior_text,
+            "flaw_kind": "heavy_followup_not_ambient",
+            "flaw_evidence": {
+                "user_question_snippet": snippet,
+                "asked_at_iso": sig.get("asked_at_iso"),
+            },
+        },
         "prior_conversation": prior,
         "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
     }
@@ -2119,51 +2231,68 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
 
 def _gt_proactive_close_friend_update(inst: dict) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
-    name = sig.get("friend_display_name") or "your close friend"
-    sample_action = (
-        f'"{name} messaged you yesterday — they\'re close to you and you usually reply quickly. '
-        f'Want me to pull up the thread?"'
+    name = sig.get("friend_display_name") or "a close friend"
+    app = (sig.get("app") or "messages").capitalize()
+    excerpt = (sig.get("incoming_message_excerpt") or "").strip()
+    excerpt_short = excerpt[:60] + ("…" if len(excerpt) > 60 else "")
+    ago = _hours_ago_phrase(sig.get("incoming_at_ts"), inst.get("t_test"))
+    t_test_iso = inst.get("t_test_iso") or ""
+
+    quoted = f' ("{excerpt_short}")' if excerpt_short else ""
+    preamble = (
+        f"At {t_test_iso}, the user's close friend {name} messaged them on "
+        f"{app} {ago} ago{quoted}, and the user hasn't seen it yet. The AI "
+        f"should ambient-nudge to surface the unread thread."
     )
-    card = inst.get("jitai_card") or {}
-    jitai_summary = card.get("reasoning") or "(JITAI card produced at build time — see instance_json)"
+    expected_body = (
+        "EXPECTED: act with one ambient sentence naming the friend and offering "
+        "to pull up the thread."
+    )
+    example_text = (
+        f'"{name} messaged you {ago} ago — want me to pull up the thread?"'
+    )
+    quoted_inferior = f' They said "{excerpt_short}".' if excerpt_short else ""
+    inferior_text = (
+        f'"{name} messaged you {ago} ago.{quoted_inferior} Want me to draft '
+        f'a reply for you?"'
+    )
+
     return {
-        "groundtruth_preference": (
-            f"EXPECTED: act with one ambient sentence naming the friend.\n"
-            f"Sample correct response: {sample_action}\n"
-            f"JITAI rationale: {jitai_summary}"
-        ),
+        "groundtruth_preference": preamble + "\n\n" + expected_body,
+        "example_response": example_text,
+        "inferior_response": {
+            "text": inferior_text,
+            "flaw_kind": "draft_reply_overreach",
+            "flaw_evidence": {
+                "friend_display_name": name,
+                "incoming_at_iso": sig.get("incoming_at_iso"),
+            },
+        },
         "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
     }
 
 
 def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
-    card = inst.get("jitai_card") or {}
-    jitai_summary = (
-        card.get("reasoning")
-        or "Cost of intrusion >> value of acting during an active sensitive-life-event window."
-    )
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     sens_topic = (sig.get("sensitive_topic") or inst.get("_sensitive_event_topic")
                   or "").replace("_", " ")
     days_in = sig.get("days_into_window")
     window_end_iso = sig.get("active_window_end_iso") or sig.get("active_window_end")
-    episode_lines: list[str] = []
-    if sens_topic or days_in is not None or window_end_iso:
-        episode_lines.append("Active sensitive-life-event episode:")
-        if sens_topic:
-            episode_lines.append(f"  Topic: {sens_topic}")
-        if days_in is not None:
-            episode_lines.append(f"  Days into active window: {days_in}")
-        if window_end_iso:
-            episode_lines.append(f"  Active window ends: {window_end_iso}")
-        episode_lines.append("")
+    t_test_iso = inst.get("t_test_iso") or ""
 
-    gt_text = (
-        "\n".join(episode_lines)
-        + f"EXPECTED: stay silent. Agent emits {{should_act: false, action_class: 'stay_silent'}}.\n"
-        + f"This is a restraint test — pushing ANY proactive content here is wrong, "
-        + f"even if the trigger evidence (trending hashtags, friend posts) is otherwise relevant.\n"
-        + f"Horvitz cost-benefit rationale: {jitai_summary}"
+    topic_phrase = sens_topic if sens_topic else "private"
+    days_phrase = f"{days_in} day{'s' if days_in != 1 else ''}" if days_in is not None else "several days"
+    window_clause = f" (window ends {window_end_iso})" if window_end_iso else ""
+    preamble = (
+        f"At {t_test_iso}, the user is {days_phrase} into an active {topic_phrase} "
+        f"episode{window_clause}. Even if other proactive triggers fire (trending "
+        f"hashtags, friend posts), the AI MUST stay silent until the window closes."
+    )
+    expected_body = (
+        "EXPECTED: stay silent. Agent emits {should_act: false, "
+        "action_class: 'stay_silent'}. Pushing ANY proactive content during an "
+        "active sensitive-life-event window is wrong, even if the trigger "
+        "evidence is otherwise relevant — cost of intrusion >> value of action."
     )
 
     # D5: filter out action-body-shape rubric tags that are irrelevant
@@ -2180,8 +2309,7 @@ def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
     ]
 
     return {
-        # D4: schema completeness — silent-decision JSON for the example
-        # and a representative restraint-violation JSON for the inferior.
+        "groundtruth_preference": preamble + "\n\n" + expected_body,
         "example_response": (
             '{"should_act": false, "action_class": "stay_silent", '
             '"rationale": "active sensitive-life-event window — cost of '
@@ -2201,7 +2329,6 @@ def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
                 "days_into_window": days_in,
             },
         },
-        "groundtruth_preference": gt_text,
         "rubric_tags": filtered_rubric,
     }
 
@@ -4648,34 +4775,10 @@ if (eventsData.length === 0) {{
       }}
       // Render User Query as a regular ts-section (label INSIDE the
       // section block) so it visually matches every other section.
+      // The section is ALWAYS rendered, even when empty — for proactive
+      // tasks the empty body itself is the signal that the AI receives
+      // no synthetic user message and must decide unprompted.
       const queryBlock = `<div class="ts-section"><div class="ts-label">User Query</div><div class="ts-body">${{escapeHtml(t.query_text || '')}}</div></div>`;
-
-      // Proactive-task-family question-type badge. Numbered Q1-Q6 to
-      // match the cards in docs/proactive_tasks_overview.html so the
-      // reviewer can cross-check at a glance. Polarity colour-coded:
-      // green = act-expected, purple = restrain-expected.
-      const PROACTIVE_LABELS = {{
-        'proactive_unfulfilled_stated_need': {{n: 'Q1', name: 'Unfulfilled question follow-up', polarity: 'act'}},
-        'proactive_close_friend_update':     {{n: 'Q2', name: 'Close friend update',           polarity: 'act'}},
-        'restraint_sensitive_event_silence': {{n: 'Q3', name: 'Sensitive event silence',       polarity: 'restrain'}},
-        'proactive_friend_feed_react':       {{n: 'Q4', name: 'Friend feed react',             polarity: 'act'}},
-        'proactive_trending_feed_react':     {{n: 'Q5', name: 'Trending feed react',           polarity: 'mixed'}},
-        'proactive_overactive_check':        {{n: 'Q6', name: 'Overactive check (negative control)', polarity: 'restrain'}},
-      }};
-      let questionTypeBadge = '';
-      const pl = PROACTIVE_LABELS[t.task_type];
-      if (pl) {{
-        const eb = (t.expected_behavior || '').toLowerCase();
-        const polarityLabel = eb === 'act' ? 'expected: act' : (eb === 'restrain' ? 'expected: stay quiet' : '');
-        const polarityColor = eb === 'act' ? '#1f5a36' : (eb === 'restrain' ? '#4a3a6e' : '#5f5f5f');
-        const polarityBg    = eb === 'act' ? '#d4e8d8' : (eb === 'restrain' ? '#e0d8ee' : '#eee');
-        questionTypeBadge = `
-          <div style="margin:8px 0 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <span style="background:#FFE9A8;color:#7B5C00;padding:3px 9px;border-radius:11px;font-weight:700;font-size:12px;letter-spacing:0.04em;">${{pl.n}} &middot; ${{escapeHtml(pl.name)}}</span>
-            ${{polarityLabel ? `<span style="background:${{polarityBg}};color:${{polarityColor}};padding:3px 9px;border-radius:11px;font-weight:600;font-size:12px;">${{polarityLabel}}</span>` : ''}}
-          </div>
-        `;
-      }}
 
       card.innerHTML = `
         <div class="event-header">
@@ -4686,7 +4789,6 @@ if (eventsData.length === 0) {{
             <code>${{escapeHtml(t.task_type || '')}}</code>
           </div>
         </div>
-        ${{questionTypeBadge}}
         ${{priorBlock}}
         ${{queryBlock}}
         ${{sections}}

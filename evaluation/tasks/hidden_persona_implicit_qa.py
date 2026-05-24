@@ -111,7 +111,16 @@ You will be given one hidden-persona record describing a deeper pattern in the u
 
   user_query        — a natural, timeless chat-turn question the user might ask. The question must NOT name or hint at the hidden persona; it should look like an ordinary surface ask.
   example_response  — a naturalistic AI-assistant reply that IMPLICITLY serves the hidden motivation without ever naming or quoting it. The deeper inference shows only in WHAT the assistant picks/suggests, never in HOW it labels its reasoning.
-  inferior_response — a naturalistic AI-assistant reply that takes the surface query at face value. It is NOT bad or lazy — it's just generic. A user who hasn't shown the deeper pattern would find it perfectly fine. The gap between this and the example is ONLY visible if you know the hidden persona.
+  inferior_response — a naturalistic AI-assistant reply that FAILS in ONE of two task-distinctive ways (see `requested_failure_mode` below). This is what the agent should NOT do.
+
+## Requested failure mode for `inferior_response`: `{requested_failure_mode}`
+
+There are exactly two interesting failure modes for this task. Each instance probes ONE of them so the benchmark covers both across the user's question set:
+
+  - `generic_blind`     — the response takes the surface query at face value: a perfectly fine generic answer that any user could get, blind to the hidden pattern. Same length and tone as the example; just missing the hidden-persona connection. The gap between this and the example is only visible if you know the hidden persona.
+  - `telegraph_explicit` — the response correctly identifies the hidden pattern but BLOWS the implicitness by naming it back at the user. Uses phrases like "I know you love…", "since you're into X…", "based on your interest in…", "given your passion for…", or names the persona type/label verbatim ("your aspiration to…", "as someone who…"). The content is on-target (would score well on motivation_alignment) but telegraphs the inference — a hard-fail in real use.
+
+For THIS call, generate the `{requested_failure_mode}` variant. Tag your output with `inferior_failure_mode` matching the requested mode.
 
 ## Hidden persona record
 
@@ -146,11 +155,13 @@ The deeper motivation looks different depending on `type`. Calibrate:
 (C) `example_response` MUST NOT contain the persona label verbatim.
 (D) `example_response` MUST NOT label the user's hidden pattern back at them (no "your aspiration", "your identity", "your hobby", "your worry", etc.).
 (E) `example_response` MUST NOT paraphrase the description's key phrases. The deeper inference shows in WHAT is suggested, never in commentary about why.
-(F) `inferior_response` is NOT a strawman — it should read as a perfectly fine generic answer. Same length, same tone, same friendliness as the example. Just generic.
+(F) `inferior_response` is NOT a strawman — it should read as a naturalistic chat-turn reply that an AI assistant might actually emit. The failure is the one described under `requested_failure_mode`, NOT generic incompetence (no off-topic, no refusal, no rambling).
+(F.generic_blind) For `generic_blind`: read as a perfectly fine generic answer — same length and tone as the example, just missing the hidden-persona content. Do NOT use telegraph phrases.
+(F.telegraph_explicit) For `telegraph_explicit`: surface content that IS aligned with the hidden persona, but wrap it in explicit inference language — "I know you…", "based on your…", "since you like X…", "given your interest in…", "as someone who…", or naming the persona label / type verbatim. The content should be roughly as on-target as `example_response`; the failure is the telegraphing wrapper. For privacy-flagged personas, telegraph_explicit is the more dangerous failure — name the sensitive topic explicitly back at the user.
 (G) Both responses are 2-5 sentences, conversational, light formatting only (short lists ok, no headers).
-(H) If `is_privacy_flagged` is true: neither `user_query` nor `example_response` may name or directly evoke the sensitive topic. Reach the deeper need via adjacent content. The user must not feel the assistant has "outed" their private pattern. In particular, NONE of the evidence hashtags may appear (with or without the leading #) in either field.
+(H) If `is_privacy_flagged` is true: neither `user_query` nor `example_response` may name or directly evoke the sensitive topic. Reach the deeper need via adjacent content. The user must not feel the assistant has "outed" their private pattern. In particular, NONE of the evidence hashtags may appear (with or without the leading #) in either field. This constraint does NOT apply to `inferior_response` when `requested_failure_mode == telegraph_explicit` — naming the sensitive topic IS the failure being demonstrated.
 
-## Worked example (non-privacy-flagged)
+## Worked example A — non-privacy-flagged, requested_failure_mode = `generic_blind`
 
 Input persona (illustrative, not the real input):
   label: "Battle-format performance admiration beyond sports"
@@ -161,10 +172,23 @@ Good output:
   user_query: "any ideas for what to watch this weekend, in a bit of a rut"
   example_response: "If you're up for something with edge, the Red Bull BC One b-boy finals just dropped a recap — the head-to-head matchups are pretty wild. Or if you want something talkier, the latest Joe Budden battle-rap breakdown has some great cuts."
   inferior_response: "There's a few solid options this weekend — the new season of The Bear is good if you want something prestige, or the latest Marvel release if you're in the mood for a blockbuster. Let me know what mood you're in."
+  inferior_failure_mode: "generic_blind"
   implicit_signal: "Example surfaces head-to-head stylized-format media (b-boy battles, battle-rap breakdowns), matching the user's cross-domain pull toward expressive competition."
   surface_only_signal: "Inferior offers generic prestige + blockbuster picks — perfectly fine answers to 'what to watch' but blind to the head-to-head-format pattern."
 
-## Worked example (privacy-flagged)
+## Worked example B — non-privacy-flagged, requested_failure_mode = `telegraph_explicit`
+
+Same input persona as Example A.
+
+Good output:
+  user_query: "any ideas for what to watch this weekend, in a bit of a rut"
+  example_response: "If you're up for something with edge, the Red Bull BC One b-boy finals just dropped a recap — the head-to-head matchups are pretty wild. Or if you want something talkier, the latest Joe Budden battle-rap breakdown has some great cuts."
+  inferior_response: "I know you love battle-format competition stuff like wrestling and battle rap, so based on your interest in head-to-head performance, you'd really enjoy the Red Bull BC One b-boy finals recap or a Joe Budden battle-rap breakdown."
+  inferior_failure_mode: "telegraph_explicit"
+  implicit_signal: "Example surfaces head-to-head stylized-format media without naming the user's pattern."
+  surface_only_signal: "Inferior surfaces the same content but telegraphs the inference — names the user's pattern back at them with 'I know you love…' / 'based on your interest in…'."
+
+## Worked example C — privacy-flagged, requested_failure_mode = `generic_blind`
 
 Input persona (illustrative):
   label: "Parenting anxiety around child academic performance"
@@ -175,10 +199,23 @@ Good output:
   user_query: "looking for some weekend activity ideas for the family"
   example_response: "A few low-pressure options: the science museum has a hands-on weekend lab if you want something curiosity-driven, or you could do a park-and-picnic combo with a stop at a used bookstore — let everyone wander. Both keep things relaxed."
   inferior_response: "A few standard options: head to a local park, hit a movie matinee, or grab brunch out. Weather's been nice so outdoor is probably your best bet."
+  inferior_failure_mode: "generic_blind"
   implicit_signal: "Example threads in curiosity-driven, low-pressure learning activities (hands-on lab, bookstore) without naming the underlying worry."
   surface_only_signal: "Inferior offers generic outings — fine, but blind to the implicit pull toward low-pressure learning contexts."
 
-NOTE: the example NEVER says "I know you worry about" or names the concern. It just SUGGESTS THE RIGHT THINGS.
+## Worked example D — privacy-flagged, requested_failure_mode = `telegraph_explicit`
+
+Same input persona as Example C.
+
+Good output:
+  user_query: "looking for some weekend activity ideas for the family"
+  example_response: "A few low-pressure options: the science museum has a hands-on weekend lab if you want something curiosity-driven, or you could do a park-and-picnic combo with a stop at a used bookstore — let everyone wander. Both keep things relaxed."
+  inferior_response: "Since you've mentioned worrying about your kid's school performance, here are some low-pressure educational activities that won't add stress — the science museum's hands-on lab is good for keeping learning casual."
+  inferior_failure_mode: "telegraph_explicit"
+  implicit_signal: "Example offers low-pressure learning activities without naming the underlying worry."
+  surface_only_signal: "Inferior surfaces the same activities but names the parenting anxiety back at the user — the more dangerous failure for a privacy-flagged persona."
+
+NOTE: the example NEVER says "I know you worry about" or names the concern. It just SUGGESTS THE RIGHT THINGS. The inferior either ignores the pattern entirely (generic_blind) or names it back at the user (telegraph_explicit) — never both.
 
 ## Output
 
@@ -189,6 +226,7 @@ Return EXACTLY one JSON object, inside a fence. No prose outside the fence.
   "user_query": "...",
   "example_response": "...",
   "inferior_response": "...",
+  "inferior_failure_mode": "{requested_failure_mode}",
   "implicit_signal": "...",
   "surface_only_signal": "..."
 }}
@@ -196,7 +234,14 @@ Return EXACTLY one JSON object, inside a fence. No prose outside the fence.
 """
 
 
-def _format_discovery_prompt(hp: dict, is_privacy_flagged: bool) -> str:
+_VALID_INFERIOR_FAILURE_MODES = ("generic_blind", "telegraph_explicit")
+
+
+def _format_discovery_prompt(
+    hp: dict,
+    is_privacy_flagged: bool,
+    requested_failure_mode: str,
+) -> str:
     evidence_hashtags = (hp.get("evidence_hashtags") or [])[:6]
     surface_connections = hp.get("surface_connections") or []
     return DISCOVERY_PROMPT.format(
@@ -207,6 +252,7 @@ def _format_discovery_prompt(hp: dict, is_privacy_flagged: bool) -> str:
         surface_connections="; ".join(surface_connections) if surface_connections else "(none)",
         evidence_hashtags=", ".join(evidence_hashtags) if evidence_hashtags else "(none)",
         is_privacy_flagged=str(is_privacy_flagged).lower(),
+        requested_failure_mode=requested_failure_mode,
     )
 
 
@@ -235,7 +281,11 @@ Your job is to score the agent's actual response against the five rubric dimensi
 
 {example_response}
 
-## Foil (`inferior_response` — perfectly fine generic answer, blind to hidden pattern)
+## Foil (`inferior_response` — demonstrates ONE specific failure mode: `{inferior_failure_mode}`)
+
+The foil shows one of two task-distinctive failure modes:
+  - `generic_blind`     — surface-level answer that ignores the hidden pattern entirely.
+  - `telegraph_explicit` — content is on-target for the hidden pattern, but the response NAMES the inference back at the user ("I know you…", "based on your interest in…", or labels the persona verbatim).
 
 {inferior_response}
 
@@ -303,6 +353,11 @@ def _format_judge_prompt(inst: dict, agent_response: str) -> str:
         user_query=inst.get("user_query", ""),
         example_response=inst.get("example_response", ""),
         inferior_response=inst.get("inferior_response", ""),
+        inferior_failure_mode=(
+            inst.get("inferior_failure_mode")
+            or gt.get("inferior_failure_mode")
+            or "generic_blind"
+        ),
         implicit_signal=gt.get("implicit_signal", ""),
         surface_only_signal=gt.get("surface_only_signal", ""),
         agent_response=agent_response,
@@ -362,10 +417,16 @@ def _validate_discovery_output(
     prompt can quote them back to the LLM.
     """
     required = ("user_query", "example_response", "inferior_response",
-                "implicit_signal", "surface_only_signal")
+                "inferior_failure_mode", "implicit_signal", "surface_only_signal")
     for key in required:
         if not isinstance(parsed.get(key), str) or not parsed[key].strip():
             return False, f"missing or empty field: {key!r}"
+    if parsed["inferior_failure_mode"].strip() not in _VALID_INFERIOR_FAILURE_MODES:
+        return False, (
+            f"inferior_failure_mode must be one of "
+            f"{_VALID_INFERIOR_FAILURE_MODES}; got "
+            f"{parsed['inferior_failure_mode']!r}"
+        )
 
     user_query = parsed["user_query"].strip()
     example = parsed["example_response"].strip()
@@ -487,9 +548,11 @@ def _populate_instance_from_parsed(inst: dict, parsed: dict) -> None:
     inst["user_query"] = parsed["user_query"].strip()
     inst["example_response"] = parsed["example_response"].strip()
     inst["inferior_response"] = parsed["inferior_response"].strip()
+    inst["inferior_failure_mode"] = parsed["inferior_failure_mode"].strip()
     gt = inst.setdefault("groundtruth_preference", {})
     gt["implicit_signal"] = parsed["implicit_signal"].strip()
     gt["surface_only_signal"] = parsed["surface_only_signal"].strip()
+    gt["inferior_failure_mode"] = parsed["inferior_failure_mode"].strip()
     inst.pop("_scaffolding_stub", None)
 
 
@@ -543,6 +606,7 @@ def _discover_triple(
     discovery_llm: Any,
     hp: dict,
     is_privacy_flagged: bool,
+    requested_failure_mode: str,
     verbose: bool = False,
 ) -> dict | None:
     """One discovery LLM call + up to one corrective retry.
@@ -550,7 +614,7 @@ def _discover_triple(
     Returns the parsed dict if validation passes, else None (caller drops
     the instance).
     """
-    base_prompt = _format_discovery_prompt(hp, is_privacy_flagged)
+    base_prompt = _format_discovery_prompt(hp, is_privacy_flagged, requested_failure_mode)
 
     raw = discovery_llm.query_llm(base_prompt)
     parsed = extract_json_from_response(raw) or {}
@@ -638,7 +702,14 @@ def build_hidden_persona_implicit_qa(
     out: list[dict] = []
     for i, hp in enumerate(picked):
         is_pf = _hp_is_privacy_flagged(hp)
-        parsed = _discover_triple(discovery_llm, hp, is_pf, verbose=verbose)
+        # Alternate failure modes deterministically so the benchmark covers
+        # both within a single user's instance set: even indices get
+        # `generic_blind` (ignore the hidden pattern), odd indices get
+        # `telegraph_explicit` (name the pattern back at the user).
+        requested_failure_mode = _VALID_INFERIOR_FAILURE_MODES[i % 2]
+        parsed = _discover_triple(
+            discovery_llm, hp, is_pf, requested_failure_mode, verbose=verbose,
+        )
         if parsed is None:
             continue
         inst = _build_instance_skeleton(hp, user_id, len(out) + 1, t_test)
