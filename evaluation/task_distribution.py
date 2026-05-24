@@ -56,13 +56,22 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # New in Step 4.6 — QA on hidden personas. Implicit query whose right
     # answer requires deep inference. data_dependent: needs hidden_personas
     # meeting evidence floors (≥25 rows, ≥3% row fraction, last seen ≤30d).
-    "hidden_persona_implicit_qa":             {"min": 2, "max": 4, "data_dependent": True},
+    # Cap raised 4→8 in the metric-artifact remediation pass: n=3 was
+    # too noisy for the 0-3 deep_motivation_alignment headline (1 lucky
+    # instance swung the mean by ~11pp). The hidden_persona builder
+    # already alternates generic_blind / telegraph_explicit failure
+    # modes — more instances ⇒ each mode gets 3-4 samples.
+    "hidden_persona_implicit_qa":             {"min": 4, "max": 8, "data_dependent": True},
     # Silent geo-shift local recommendation — only fires for users with
     # mobility_class != "homebody" AND >= 2 city transitions in their event
     # stream. Homebodies generate 0 instances (the eval doesn't apply).
     "local_recommendation_geo_shift":         {"min": 4,  "max": 9, "data_dependent": True},
 
     # Restraint sub-types
+    # n_queries per cluster was raised 5→7 in build_benchmark.py for the
+    # repetition family — tail size grows from 2 to 4 so the metric can
+    # actually fail. Cluster COUNT stays small (these are expensive: each
+    # cluster fires 7 sequential queries to the agent).
     "over_personalization_repetition_recsys":  {"min": 2,  "max": 3},
     "over_personalization_repetition_chatbot": {"min": 1,  "max": 2},
     "over_personalization_context_shift":      {"min": 5,  "max": 6},
@@ -93,16 +102,19 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
     "agentic_trending_alert":                 {"min": 5,  "max": 8},
 
-    # Proactive Actions (Phase 1) — small quotas; agent decides whether to
-    # act on user evidence. All `data_dependent` because eligibility depends
-    # on user history producing the right kind of moment.
-    "proactive_unfulfilled_stated_need":      {"min": 2, "max": 4, "data_dependent": True},
-    "proactive_close_friend_update":          {"min": 2, "max": 3, "data_dependent": True},
-    "restraint_sensitive_event_silence":      {"min": 1, "max": 3, "data_dependent": True},
-    # Phase 2 — feed-react tasks + overactive-check negative control.
-    "proactive_friend_feed_react":            {"min": 2, "max": 4, "data_dependent": True},
-    "proactive_trending_feed_react":          {"min": 2, "max": 4, "data_dependent": True},
-    "proactive_overactive_check":             {"min": 2, "max": 3, "data_dependent": True},
+    # Proactive Actions — quotas raised in the metric-artifact remediation
+    # pass. Previously every proactive family drew n ≤ 4 instances per
+    # user, which made the headline statistically meaningless. The new
+    # floors target n ≥ 4 per polarity-arm so the act/restrain decision
+    # boundary is actually tested. `data_dependent` floors are advisory
+    # — if the user's trigger catalog has < 4 candidates of a type, the
+    # task family emits whatever exists (the audit doesn't fail).
+    "proactive_unfulfilled_stated_need":      {"min": 4, "max": 6, "data_dependent": True},
+    "proactive_close_friend_update":          {"min": 4, "max": 6, "data_dependent": True},
+    "restraint_sensitive_event_silence":      {"min": 4, "max": 6, "data_dependent": True},
+    "proactive_friend_feed_react":            {"min": 4, "max": 8, "data_dependent": True},
+    "proactive_trending_feed_react":          {"min": 4, "max": 8, "data_dependent": True},
+    "proactive_overactive_check":             {"min": 4, "max": 6, "data_dependent": True},
 }
 
 # Tasks marked ``data_dependent: True`` produce 0 instances when the

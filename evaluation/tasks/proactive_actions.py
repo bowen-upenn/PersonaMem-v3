@@ -29,13 +29,18 @@ from evaluation.inference_utils import dispatch_agent_run
 # ---------------------------------------------------------------------------
 
 # Quotas — match evaluation/task_distribution.py.
+#
+# Quotas raised in the metric-artifact remediation pass: previously every
+# proactive task family drew n ≤ 4 instances per user, which made the
+# score statistically meaningless. The new floors target n ≥ 4 per
+# polarity-arm so the headline is discriminating.
 _QUOTAS: dict[str, tuple[int, int]] = {
-    "proactive_unfulfilled_stated_need": (2, 4),
-    "proactive_close_friend_update":     (2, 3),
-    "restraint_sensitive_event_silence": (1, 3),
-    "proactive_friend_feed_react":       (2, 4),
-    "proactive_trending_feed_react":     (2, 4),
-    "proactive_overactive_check":        (2, 3),
+    "proactive_unfulfilled_stated_need": (4, 6),
+    "proactive_close_friend_update":     (4, 6),
+    "restraint_sensitive_event_silence": (4, 6),
+    "proactive_friend_feed_react":       (4, 8),  # split ≥2 per polarity
+    "proactive_trending_feed_react":     (4, 8),  # split ≥2 per polarity
+    "proactive_overactive_check":        (4, 6),
 }
 
 
@@ -44,6 +49,48 @@ def _trim_to_quota(items: list[dict], task_type: str) -> list[dict]:
     items = sorted(items, key=lambda c: c.get("t_test", 0), reverse=True)
     _, mx = _QUOTAS.get(task_type, (1, 5))
     return items[:mx]
+
+
+def _split_by_polarity_for_quota(
+    candidates: list[dict],
+    task_type: str,
+) -> list[dict]:
+    """Pick instances ensuring ≥ 2 per polarity (act + restrain) when
+    available, so the headline measures both arms.
+
+    Each candidate carries a `relevance` field set at persona-gen time;
+    `relevant` → act, `irrelevant` → restrain. If one polarity has fewer
+    than 2 candidates, fill the rest from the other polarity and tag the
+    remaining instances `polarity_imbalanced=True` so the aggregator
+    flags them.
+    """
+    _, mx = _QUOTAS.get(task_type, (2, 4))
+    candidates = sorted(candidates, key=lambda c: c.get("t_test", 0), reverse=True)
+    act = [c for c in candidates if (c.get("relevance") or "").lower() == "relevant"]
+    restrain = [c for c in candidates if (c.get("relevance") or "").lower() != "relevant"]
+
+    # Take half from each polarity, with a floor of min(2, available).
+    half = mx // 2
+    act_n = min(len(act), max(2, half))
+    restrain_n = min(len(restrain), max(2, half))
+    picked = act[:act_n] + restrain[:restrain_n]
+
+    # Top off from whichever polarity has more if we're below the quota.
+    if len(picked) < mx:
+        remaining_act = act[act_n:]
+        remaining_restrain = restrain[restrain_n:]
+        picked.extend((remaining_act + remaining_restrain)[: mx - len(picked)])
+
+    # Flag polarity imbalance — happens when one arm has < 2 candidates
+    # in the trigger catalog (e.g. user 115 had 0 act-arm trending alerts
+    # at the time of the test).
+    n_act_picked = sum(1 for c in picked
+                       if (c.get("relevance") or "").lower() == "relevant")
+    n_restrain_picked = len(picked) - n_act_picked
+    if n_act_picked < 2 or n_restrain_picked < 2:
+        for c in picked:
+            c["polarity_imbalanced"] = True
+    return picked
 
 
 _GT_EXTRACTORS_CACHE: dict | None = None
@@ -230,16 +277,21 @@ def build_proactive_friend_feed_react(
 
     Each candidate carries a `relevance` label (relevant/irrelevant) set at
     persona-generation time from hashtag intersection. Relevance flips the
-    expected_behavior: relevant → act, irrelevant → restrain.
+    expected_behavior: relevant → act, irrelevant → restrain. The picker
+    enforces ≥2 instances per polarity when both are available so the
+    headline measures both decision arms, not just the more-populous one.
     """
     cat = _load_proactive_catalog(bq, user_id)
     cands = cat.get("friend_feed_react") or []
     out: list[dict] = []
-    for i, c in enumerate(_trim_to_quota(cands, "proactive_friend_feed_react")):
+    for i, c in enumerate(_split_by_polarity_for_quota(cands, "proactive_friend_feed_react")):
         expected = _polarity_for_relevance(c.get("relevance", "relevant"))
-        out.append(_candidate_to_instance(
+        inst = _candidate_to_instance(
             c, "proactive_friend_feed_react", expected, user_id, i,
-        ))
+        )
+        if c.get("polarity_imbalanced"):
+            inst["polarity_imbalanced"] = True
+        out.append(inst)
     return out
 
 
@@ -250,16 +302,20 @@ def build_proactive_trending_feed_react(
 ) -> list[dict]:
     """T2.E — platform trending content visible in feed; user hasn't engaged.
 
-    Relevance handling identical to friend_feed_react.
+    Relevance handling identical to friend_feed_react: ≥2 instances per
+    polarity when available.
     """
     cat = _load_proactive_catalog(bq, user_id)
     cands = cat.get("trending_feed_react") or []
     out: list[dict] = []
-    for i, c in enumerate(_trim_to_quota(cands, "proactive_trending_feed_react")):
+    for i, c in enumerate(_split_by_polarity_for_quota(cands, "proactive_trending_feed_react")):
         expected = _polarity_for_relevance(c.get("relevance", "relevant"))
-        out.append(_candidate_to_instance(
+        inst = _candidate_to_instance(
             c, "proactive_trending_feed_react", expected, user_id, i,
-        ))
+        )
+        if c.get("polarity_imbalanced"):
+            inst["polarity_imbalanced"] = True
+        out.append(inst)
     return out
 
 

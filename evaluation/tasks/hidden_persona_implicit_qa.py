@@ -57,8 +57,12 @@ MIN_EVIDENCE_ROW_FRACTION = 0.03
 MAX_DAYS_SINCE_LAST_SEEN = 30
 RECENT_EVIDENCE_DAYS = 7
 
-# Hard caps.
-INSTANCES_PER_USER_CAP = 4
+# Hard caps. Cap raised 4 → 8 in the metric-artifact remediation pass:
+# at n=3-4 instances/user the headline `deep_motivation_alignment` is
+# too noisy to discriminate (1 lucky instance swings the mean by 11pp).
+# 8 instances still respects the "type diversity" criterion below and
+# alternates generic_blind / telegraph_explicit failure modes evenly.
+INSTANCES_PER_USER_CAP = 8
 MIN_DISTINCT_TYPES = 2
 
 # Privacy-flagged hidden persona types — surfacing these implicitly is

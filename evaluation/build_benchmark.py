@@ -1682,7 +1682,13 @@ _C1C_WINDOW_SECONDS = 3 * 3600
 # proposed 4 because "the first two repetitions are allowed" leaves
 # only 1 must-diversify slot at N=4 — which collapses the diversification
 # signal into a single sample.
-_C1C_QUERIES_PER_CLUSTER = 5
+# Cluster size for c1c / c1d repetition tests. Bumped from 5 → 7 in
+# the metric-artifact remediation pass: at n_queries=5 with
+# n_allowed_repetitions=2 the tail is only 2 responses, giving a single
+# pairwise comparison that's trivially diverse (tail_passed=True
+# regardless of agent quality). n_queries=7 gives tail=4 → 6 pairwise
+# comparisons, so the diversification metric can actually fail.
+_C1C_QUERIES_PER_CLUSTER = 7
 
 # How many opening responses are tolerated as fully-repeating. The
 # 0-indexed range [0, N_ALLOWED_REPETITIONS] is the "head" zone — the
@@ -2022,7 +2028,10 @@ def build_c1c_same_preference_clusters(
 # then STOP referencing it from response 4 onward, instead answering
 # the user's question on its own terms without the pref crutch.
 
-_C1D_QUERIES_PER_CLUSTER = 5
+# Cluster size for c1d chatbot repetition tests. Bumped 5→7 in the
+# metric-artifact remediation pass for the same reason as c1c: tail size
+# grows from 2 → 4 so the diversification metric can actually fail.
+_C1D_QUERIES_PER_CLUSTER = 7
 _C1D_N_ALLOWED_REPETITIONS = 2
 _C1D_WINDOW_SECONDS = 3 * 3600
 _C1D_MAX_INSTANCES_PER_USER = 2
