@@ -649,7 +649,8 @@ def main() -> int:
             for row in parallel_rows + sequential_rows:
                 _emit(_run_seq_row(row))
         else:
-            from concurrent.futures import ProcessPoolExecutor, as_completed
+            import concurrent.futures
+            from concurrent.futures import ProcessPoolExecutor
 
             # Sequential agentic queue runs in a parent-process thread
             # — shares `ctx` and parent os.environ (no race because
@@ -670,10 +671,71 @@ def main() -> int:
             per_worker = max(1, args.rate_limit // args.workers)
             payloads = [_build_payload(row, args, run_dir, per_worker)
                         for row in parallel_rows]
+            # Per-future timeout safety net. The agent_tools / mcp_agent
+            # subprocess call has its own timeout_seconds=600, so a
+            # worker should always return within ~10 min. We give an
+            # extra 5-min buffer here (judge call + LLM client setup +
+            # IPC); anything past 900s is a true hang and we record an
+            # error instead of blocking the whole eval forever.
+            FUTURE_TIMEOUT_S = 900
             with ProcessPoolExecutor(max_workers=args.workers) as pool:
-                futs = [pool.submit(_run_one_in_worker, p) for p in payloads]
-                for fut in as_completed(futs):
-                    _emit(fut.result())
+                fut_to_payload = {
+                    pool.submit(_run_one_in_worker, p): p for p in payloads
+                }
+                pending = set(fut_to_payload.keys())
+                while pending:
+                    done, _ = concurrent.futures.wait(
+                        pending,
+                        timeout=FUTURE_TIMEOUT_S,
+                        return_when=concurrent.futures.FIRST_COMPLETED,
+                    )
+                    if not done:
+                        # Nothing completed in 15 min → assume all
+                        # remaining futures are wedged. Record them as
+                        # errors so results.csv reaches its expected
+                        # row count, then break out.
+                        print(
+                            f"[run_eval] WARN: {len(pending)} futures "
+                            f"hung past {FUTURE_TIMEOUT_S}s — recording "
+                            f"as errors and continuing.",
+                            file=sys.stderr, flush=True,
+                        )
+                        for fut in pending:
+                            payload = fut_to_payload[fut]
+                            row = payload["row"]
+                            _emit({
+                                "query_id": row["query_id"],
+                                "seq": row["seq"],
+                                "user_id": args.user_id,
+                                "task_type": row["task_type"],
+                                "ts": row["ts"],
+                                "metrics_json": "",
+                                "status": "error",
+                                "duration_ms": FUTURE_TIMEOUT_S * 1000,
+                                "error": f"future_hung_no_completion_in_{FUTURE_TIMEOUT_S}s",
+                                "agent_response": "",
+                            })
+                            fut.cancel()
+                        break
+                    for fut in done:
+                        pending.discard(fut)
+                        try:
+                            _emit(fut.result(timeout=5))
+                        except Exception as e:
+                            payload = fut_to_payload[fut]
+                            row = payload["row"]
+                            _emit({
+                                "query_id": row["query_id"],
+                                "seq": row["seq"],
+                                "user_id": args.user_id,
+                                "task_type": row["task_type"],
+                                "ts": row["ts"],
+                                "metrics_json": "",
+                                "status": "error",
+                                "duration_ms": 0,
+                                "error": f"worker_future_error: {type(e).__name__}: {e}",
+                                "agent_response": "",
+                            })
 
             # Wait for the sequential queue to drain (if it hasn't already).
             seq_thread.join()

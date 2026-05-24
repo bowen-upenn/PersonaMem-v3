@@ -588,7 +588,15 @@ def dispatch_agent_run(
 
     if mode == "agent_tools":
         snap = materialize_snapshot(bq, user_id, t)
-        sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model)
+        # Hard timeout on the Claude Code subprocess. Without this, a
+        # hung `claude -p` (deadlocked SDK, frozen stream-json output, or
+        # any other never-returns case) blocks the worker forever and
+        # the parent's `as_completed` never resolves the row's future.
+        # Same value used by mcp_agent mode.
+        sub = run_subagent(
+            prompt=prompt, snapshot_dir=snap, model=claude_model,
+            timeout_seconds=600,
+        )
         return sub.text, sub.turns, _pack_stats(sub, include_denials=True)
 
     if mode == "mcp_agent":
