@@ -134,6 +134,97 @@ def _e6_paired_f1(rows: list[dict]) -> dict[str, float]:
 
 
 # ---------------------------------------------------------------------------
+# Quality flags + by-class headline (see DESIGN.md "metric artifacts" plan)
+# ---------------------------------------------------------------------------
+
+# Minimum n per task for the headline to be considered statistically
+# meaningful. Tasks below this are flagged `insufficient_n` and excluded
+# from the adjusted mean.
+_MIN_N_HEADLINE = 5
+
+# A task is flagged `silence_dominated` when more than this fraction of
+# its rows tripped the substantive-engagement gate — i.e. the score is
+# being driven by empty/refusal responses rather than thoughtful answers.
+_SILENCE_PASS_THRESHOLD = 0.50
+
+# A task is flagged `hard_fail_dominated` when more than this fraction
+# of rows hit a privacy_leak / stale_pref hard-fail. The composite score
+# is then mostly measuring the hard-rule trigger, not personalization.
+_HARD_FAIL_THRESHOLD = 0.30
+
+# Task → benchmark family for the by-class breakout.
+_TASK_FAMILY_MAP = {
+    # Ranking
+    "personalized_recommendation": "ranking",
+    "at_ai_directive_followup": "ranking",
+    "active_mistake_prevention": "ranking",
+    "local_recommendation_geo_shift": "ranking",
+    # Generative chatbot
+    "chatbot_personalized_response": "chatbot",
+    "hidden_persona_implicit_qa": "chatbot",
+    # Over-personalization (restraint)
+    "over_personalization_chatbot_text": "over_personalization",
+    "over_personalization_context_shift": "over_personalization",
+    "over_personalization_sensitive_event": "over_personalization",
+    "over_personalization_repetition_chatbot": "over_personalization",
+    "over_personalization_repetition_recsys": "over_personalization",
+    # Proactive act + restraint
+    "proactive_close_friend_update": "proactive",
+    "proactive_friend_feed_react": "proactive",
+    "proactive_unfulfilled_stated_need": "proactive",
+    "proactive_overactive_check": "proactive",
+    "proactive_trending_feed_react": "proactive",
+    "restraint_sensitive_event_silence": "proactive",
+    # Agentic (T6-T19)
+    "agentic_user_tone_post": "agentic",
+    "agentic_auto_reply": "agentic",
+    "agentic_composed_post": "agentic",
+    "agentic_cross_app_repost": "agentic",
+    "agentic_dm_digest": "agentic",
+    "agentic_group_dm_summary": "agentic",
+    "agentic_proactive_daily_catchup": "agentic",
+    "agentic_send_post": "agentic",
+    "agentic_trending_alert": "agentic",
+    "agentic_vague_refind": "agentic",
+    "agentic_wrong_recipient_check": "agentic",
+}
+
+
+def _quality_flag(task_type: str, task_rows: list[dict], n: int) -> str:
+    """Classify a task as ok | insufficient_n | silence_dominated |
+    hard_fail_dominated. Multiple conditions can apply; we report the
+    most severe (insufficient_n trumps silence trumps hard_fail).
+    """
+    if n < _MIN_N_HEADLINE:
+        return "insufficient_n"
+    n_silent = 0
+    n_hard_fail = 0
+    n_with_metrics = 0
+    for r in task_rows:
+        m = r.get("_metrics") or {}
+        if not m:
+            continue
+        n_with_metrics += 1
+        # Substantive-gate signal (either spelling).
+        if m.get("non_substantive_response"):
+            n_silent += 1
+        elif (m.get("response_is_substantive") is not None
+              and not m.get("response_is_substantive")):
+            n_silent += 1
+        # Hard-fail signal (privacy_leak or stale_pref).
+        if (m.get("pr_privacy_leak_hard_fail")
+                or m.get("privacy_leak_hard_fail")
+                or m.get("pr_stale_preference_use_hard_fail")):
+            n_hard_fail += 1
+    denom = max(1, n_with_metrics)
+    if n_silent / denom > _SILENCE_PASS_THRESHOLD:
+        return "silence_dominated"
+    if n_hard_fail / denom > _HARD_FAIL_THRESHOLD:
+        return "hard_fail_dominated"
+    return "ok"
+
+
+# ---------------------------------------------------------------------------
 # Phase C: token-vs-accuracy table
 # ---------------------------------------------------------------------------
 
@@ -229,10 +320,17 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
                 pass
         n = len(task_rows)
         acc_mean = _mean(accs) if accs else None
+        # Quality flag — `ok` / `insufficient_n` / `silence_dominated` /
+        # `hard_fail_dominated`. Used by the adjusted-mean roll-up and
+        # also surfaced as a column so reviewers can spot inflated /
+        # deflated headlines at a glance.
+        flag = _quality_flag(task, task_rows, n)
         row = {
             "task_type": task,
             "n": n,
             "accuracy_pct": round(acc_mean, 2) if acc_mean is not None else "",
+            "quality_flag": flag,
+            "task_family": _TASK_FAMILY_MAP.get(task, "other"),
             "mean_input_tokens": round(_mean(in_toks), 1) if in_toks else 0,
             "mean_output_tokens": round(_mean(out_toks), 1) if out_toks else 0,
             "mean_cost_usd": round(_mean(costs), 4) if costs else 0,
@@ -255,6 +353,8 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
         "task_type": "ALL (micro, row-weighted)",
         "n": all_n,
         "accuracy_pct": round(weighted_sum_acc / weighted_n_acc, 2) if weighted_n_acc else "",
+        "quality_flag": "",
+        "task_family": "",
         "mean_input_tokens": round(sum_in_tok / sum_n_tok, 1) if sum_n_tok else 0,
         "mean_output_tokens": round(sum_out_tok / sum_n_tok, 1) if sum_n_tok else 0,
         "mean_cost_usd": round(sum_cost / sum_n_tok, 4) if sum_n_tok else 0,
@@ -263,7 +363,8 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
     table.append(all_row)
 
     # ALL row (macro, task-weighted): each task_type contributes one data
-    # point in [0,1], averaged across task_types. This is the headline number.
+    # point in [0,1], averaged across task_types. This is the historical
+    # headline number (kept for back-compat with the eval report).
     per_task_accs = [
         r["accuracy_pct"] for r in table
         if r["task_type"] not in ("ALL (micro, row-weighted)",)
@@ -271,23 +372,70 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
     ]
     macro_row = {
         "task_type": "ALL (macro, task-weighted)",
-        "n": len(per_task_accs),  # number of task_types contributing
+        "n": len(per_task_accs),
         "accuracy_pct": round(sum(per_task_accs) / len(per_task_accs), 2) if per_task_accs else "",
+        "quality_flag": "",
+        "task_family": "",
         "mean_input_tokens": "",
         "mean_output_tokens": "",
         "mean_cost_usd": "",
         "mean_duration_ms": "",
     }
     table.append(macro_row)
+
+    # ALL row (ADJUSTED, macro): only tasks flagged `ok` contribute.
+    # This is the metric-artifact-aware headline. Headlines should
+    # report both this AND the raw macro so the reader can see how much
+    # of the score is artifact.
+    ok_accs = [
+        r["accuracy_pct"] for r in table
+        if r.get("quality_flag") == "ok"
+        and isinstance(r.get("accuracy_pct"), (int, float))
+    ]
+    adjusted_row = {
+        "task_type": "ALL (macro, adjusted: artifact-flagged tasks excluded)",
+        "n": len(ok_accs),
+        "accuracy_pct": round(sum(ok_accs) / len(ok_accs), 2) if ok_accs else "",
+        "quality_flag": "",
+        "task_family": "",
+        "mean_input_tokens": "",
+        "mean_output_tokens": "",
+        "mean_cost_usd": "",
+        "mean_duration_ms": "",
+    }
+    table.append(adjusted_row)
+
+    # BY-CLASS macro means: one row per task_family. Lets the reader
+    # see whether agentic vs ranking vs restraint dominate the headline.
+    family_accs: dict[str, list[float]] = defaultdict(list)
+    for r in table:
+        fam = r.get("task_family")
+        acc = r.get("accuracy_pct")
+        if fam and fam != "" and isinstance(acc, (int, float)):
+            family_accs[fam].append(acc)
+    for fam in sorted(family_accs):
+        accs_in_fam = family_accs[fam]
+        table.append({
+            "task_type": f"  by-class: {fam}",
+            "n": len(accs_in_fam),
+            "accuracy_pct": round(sum(accs_in_fam) / len(accs_in_fam), 2),
+            "quality_flag": "",
+            "task_family": fam,
+            "mean_input_tokens": "",
+            "mean_output_tokens": "",
+            "mean_cost_usd": "",
+            "mean_duration_ms": "",
+        })
     return table
 
 
 def _print_token_accuracy_table(table: list[dict]) -> None:
     """Pretty-print to stdout — fixed-width columns, ALL row at the end."""
     cols = [
-        ("task_type", 40),
+        ("task_type", 52),
         ("n", 5),
         ("accuracy_pct", 12),
+        ("quality_flag", 22),
         ("mean_input_tokens", 17),
         ("mean_output_tokens", 18),
         ("mean_cost_usd", 13),
@@ -404,7 +552,7 @@ def main() -> int:
         json.dumps(overall, indent=2, ensure_ascii=False), encoding="utf-8",
     )
     table_path = out_dir / "token_accuracy_table.csv"
-    cols = ["task_type", "n", "accuracy_pct",
+    cols = ["task_type", "n", "accuracy_pct", "quality_flag", "task_family",
             "mean_input_tokens", "mean_output_tokens", "mean_cost_usd", "mean_duration_ms"]
     with table_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=cols)

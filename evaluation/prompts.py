@@ -785,18 +785,38 @@ For each, reason briefly then score:
 
 - **preference_alignment (0-3, universal)**: if the agent acted, does the
   surfaced content match what this user actually prefers / cares about
-  (based on their history)? For restraint cases, full marks if the
-  agent's silence is consistent with not surfacing irrelevant content.
+  (based on their history)? For restraint cases, score 3 ONLY if the
+  agent's response demonstrates UNDERSTANDING of why no action fits the
+  trigger context (rationale references the specific moment). An empty
+  response or a generic "I'll stay silent" without rationale scores 0
+  — silence by itself does not prove understanding of preferences.
 
 - **avoid_overpersonalization (0-3, universal)**: did the agent avoid
   pushing too hard? Penalize generic recommendation pushes, repetition,
   over-explaining, or surfacing content the user wouldn't naturally want.
-  For restraint cases, full marks when the agent correctly stays silent.
+  For restraint cases, score 3 only if the response is appropriately
+  scoped (declines without leaking trigger context); score 0 if the
+  response is empty (silence does not prove restraint, it could just be
+  default mute).
 
 - **voice_match (0-3, universal)**: is the agent's message phrased in a
   tone, length, and register that fits this user and the chatbot surface?
   Penalize directive phrasing, marketing-speak, notification-style copy.
-  For restraint cases (empty content), score 3 by default.
+  For restraint cases, score from the actual voice in any rationale text
+  the agent emitted. An empty response = no voice to grade = 0.
+
+- **restraint_justification (0-3, restraint-only)**: ONLY APPLIES WHEN
+  `expected_behavior=='restrain'`. Did the agent EXPLAIN why staying
+  silent is the right call here? Look for evidence the agent identified
+  the specific trigger context (e.g. "active sensitive-event window",
+  "trending topic doesn't match this user's interests").
+  - 3 = explicit, on-trigger reasoning that names the specific reason
+  - 2 = generic restraint rationale but on-target ("not the right moment")
+  - 1 = bare `should_act: false` with no rationale field populated
+  - 0 = empty response (no rationale at all)
+  When `expected_behavior=='act'`, this dimension is N/A — emit 3 by
+  default. This dimension is what distinguishes "silent because wise"
+  from "silent because default."
 
 - **negative_leakage (true | false, hard-rule)**: did the agent surface
   or reference a topic the user has actively disliked / asked to stop
@@ -815,6 +835,7 @@ Respond with ONLY this JSON, no prose outside:
   "preference_alignment": <0-3>,
   "avoid_overpersonalization": <0-3>,
   "voice_match": <0-3>,
+  "restraint_justification": <0-3>,
   "negative_leakage": <true | false>,
   "stale_preference_use": <true | false>,
   "reasoning": "<≤3 sentences naming the strongest evidence for your scoring>"

@@ -157,6 +157,7 @@ def judge_proactive_action(
             "preference_alignment": None,
             "avoid_overpersonalization": None,
             "voice_match": None,
+            "restraint_justification": None,
             "negative_leakage": None,
             "stale_preference_use": None,
             "proactive_action_score": None,
@@ -183,10 +184,15 @@ def judge_proactive_action(
     pref  = _clamp(parsed.get("preference_alignment"), 0, 3)
     over  = _clamp(parsed.get("avoid_overpersonalization"), 0, 3)
     voice = _clamp(parsed.get("voice_match"), 0, 3)
+    # restraint_justification: only meaningful when expected_behavior
+    # is restrain. For act instances, the judge prompt instructs the
+    # LLM to emit 3 by default; we still parse to keep the rubric
+    # symmetric across both arms.
+    just  = _clamp(parsed.get("restraint_justification"), 0, 3)
     neg_leak = _bool(parsed.get("negative_leakage"))
     stale    = _bool(parsed.get("stale_preference_use"))
 
-    components = [(trig, 3.0), (pref, 3.0), (over, 3.0), (voice, 3.0)]
+    components = [(trig, 3.0), (pref, 3.0), (over, 3.0), (voice, 3.0), (just, 3.0)]
     if any(c is None for c, _ in components):
         score = None
     else:
@@ -199,12 +205,20 @@ def judge_proactive_action(
     # over-personalization, agentic) treat these same dimensions.
     if (neg_leak is True) or (stale is True):
         score = 0.0
+    # Silence-by-default floor: on restraint instances, an empty
+    # response with no rationale (restraint_justification == 0) is
+    # not a pass — it's indistinguishable from a model that always
+    # stays silent regardless of context. Zero the score so silence-
+    # dominant strategies don't dominate the headline.
+    if expected_behavior == "restrain" and just == 0:
+        score = 0.0
 
     return {
         "trigger_detection_correctness": trig,
         "preference_alignment": pref,
         "avoid_overpersonalization": over,
         "voice_match": voice,
+        "restraint_justification": just,
         "negative_leakage": neg_leak,
         "stale_preference_use": stale,
         "proactive_action_score": score,

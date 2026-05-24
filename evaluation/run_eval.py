@@ -62,7 +62,37 @@ RESULTS_COLUMNS: list[str] = [
     "status",
     "duration_ms",
     "error",
+    "agent_response",
 ]
+
+
+# Truncation cap for agent_response in results.csv. Some agentic
+# responses (especially in mcp_agent mode) can be many KB of JSON;
+# we keep enough for downstream audits (privacy-leak detector
+# false-positive sampling, voice-match calibration) without
+# bloating the CSV beyond what spreadsheet tools handle.
+_AGENT_RESPONSE_TRUNCATE_BYTES = 4096
+
+
+def _truncate_agent_response(resp) -> str:
+    """Coerce runner-emitted `agent_response` (str | dict | None) to a
+    truncated UTF-8 string suitable for the CSV column."""
+    if resp is None:
+        return ""
+    if isinstance(resp, str):
+        s = resp
+    else:
+        try:
+            s = json.dumps(resp, ensure_ascii=False)
+        except (TypeError, ValueError):
+            s = str(resp)
+    if len(s.encode("utf-8")) <= _AGENT_RESPONSE_TRUNCATE_BYTES:
+        return s
+    # Encode-then-decode-with-replace to land on a valid char boundary.
+    truncated = s.encode("utf-8")[:_AGENT_RESPONSE_TRUNCATE_BYTES].decode(
+        "utf-8", errors="replace"
+    )
+    return truncated + "…[truncated]"
 
 
 def _parse_args() -> argparse.Namespace:
@@ -198,8 +228,8 @@ def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
     """Build the per-row CSV record from a runner's return value.
 
     Shared between the sequential and parallel-worker code paths so the
-    record shape (status, metrics, token counts) is identical regardless
-    of which queue serviced the row.
+    record shape (status, metrics, token counts, agent_response) is
+    identical regardless of which queue serviced the row.
     """
     if result is None:
         return {
@@ -207,6 +237,7 @@ def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
             "user_id": user_id, "task_type": task_type, "ts": ts,
             "metrics_json": "", "status": "no_result",
             "duration_ms": duration_ms, "error": "",
+            "agent_response": "",
         }
     metrics_dict = dict(result.get("metrics") or {})
     sub = result.get("subagent_stats") or {}
@@ -230,6 +261,11 @@ def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
         v = sub.get(k)
         if v is not None and k not in metrics_dict:
             metrics_dict[k] = v
+    # Prefer the runner's explicit agent_response; fall back to
+    # agent_response_raw (proactive_actions emits this) when present.
+    raw_resp = result.get("agent_response")
+    if raw_resp is None:
+        raw_resp = result.get("agent_response_raw")
     return {
         "query_id": qid, "seq": seq,
         "user_id": user_id, "task_type": task_type, "ts": ts,
@@ -237,6 +273,7 @@ def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
         "status": result.get("status", "ok"),
         "duration_ms": duration_ms,
         "error": result.get("error", "") or "",
+        "agent_response": _truncate_agent_response(raw_resp),
     }
 
 
@@ -312,6 +349,7 @@ def _run_one_in_worker(payload: dict) -> dict:
             "ts": row["ts"],
             "metrics_json": "", "status": "error", "duration_ms": 0,
             "error": f"instance_json parse: {type(e).__name__}: {e}",
+            "agent_response": "",
         }
 
     t0 = time.time()
@@ -338,6 +376,7 @@ def _run_one_in_worker(payload: dict) -> dict:
             "metrics_json": "", "status": "error",
             "duration_ms": int((time.time() - t0) * 1000),
             "error": f"{type(e).__name__}: {e} | {last_frame_loc}",
+            "agent_response": "",
         }
 
 
@@ -365,18 +404,49 @@ def _build_payload(row: dict, args: argparse.Namespace, run_dir: Path,
 
 
 def _summarize_by_task(rows: list[dict]) -> dict:
-    """Per-task: count + mean of each numeric metric field."""
+    """Per-task: count + mean of each numeric metric field.
+
+    Adds three derived fields per task on top of the raw per-metric means:
+
+    - `non_substantive_response_rate`: fraction of rows where the runner
+      flagged the agent's response as too short to be substantive (set
+      by the substantive-engagement gate in `evaluation/metrics.py`).
+      A high value here means the headline restraint score is being
+      driven by silence, not by thoughtful restraint — the aggregator
+      should flag that.
+
+    - `mean_input_tokens / mean_output_tokens / mean_total_tokens /
+      mean_cost_usd / cache_hit_rate`: per-row token spend means.
+      `cache_hit_rate = cache_read_tokens / input_tokens`. These are
+      already collected on every row (sub-agent or LLM API populates
+      `subagent_stats`); _summarize_by_task surfaces them as
+      first-class summary keys so the aggregator and reviewers don't
+      have to grep `metrics_json` to see cost-vs-accuracy tradeoffs.
+
+    - `error_rate`: fraction of rows whose status was not "ok".
+    """
     from collections import defaultdict
     by_task: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         by_task[r.get("task_type", "")].append(r)
+
+    _TOKEN_KEYS = ("input_tokens", "output_tokens",
+                   "cache_read_tokens", "cost_usd")
 
     out: dict[str, dict] = {}
     for task, task_rows in by_task.items():
         m = {"n": len(task_rows)}
         metric_sums: dict[str, float] = {}
         metric_counts: dict[str, int] = {}
+        # Derived counters
+        non_substantive = 0
+        n_non_ok = 0
+        tok_sums = {k: 0.0 for k in _TOKEN_KEYS}
+        tok_counts = {k: 0 for k in _TOKEN_KEYS}
         for r in task_rows:
+            status = r.get("status", "")
+            if status != "ok":
+                n_non_ok += 1
             mj = r.get("metrics_json") or ""
             if not mj:
                 continue
@@ -384,12 +454,49 @@ def _summarize_by_task(rows: list[dict]) -> dict:
                 metrics = json.loads(mj)
             except Exception:
                 continue
+            # Substantive-gate signal: many runners emit either
+            # `non_substantive_response` (over_personalization) or
+            # `response_is_substantive` (e6) — handle both.
+            if metrics.get("non_substantive_response"):
+                non_substantive += 1
+            elif (metrics.get("response_is_substantive") is not None
+                  and not metrics.get("response_is_substantive")):
+                non_substantive += 1
             for k, v in (metrics or {}).items():
                 if isinstance(v, (int, float)) and not isinstance(v, bool):
                     metric_sums[k] = metric_sums.get(k, 0.0) + float(v)
                     metric_counts[k] = metric_counts.get(k, 0) + 1
+                    if k in _TOKEN_KEYS:
+                        tok_sums[k] += float(v)
+                        tok_counts[k] += 1
         for k, s in metric_sums.items():
             m[k] = s / max(1, metric_counts[k])
+        # Derived: error rate.
+        m["error_rate"] = n_non_ok / max(1, len(task_rows))
+        # Derived: non-substantive rate (silence-pass signal).
+        m["non_substantive_response_rate"] = (
+            non_substantive / max(1, len(task_rows))
+        )
+        # Derived: per-row token + cost means (the original metric
+        # means already include these from the metric_sums loop above,
+        # so these are duplicates — kept under explicit names so the
+        # aggregator's cost-vs-accuracy table can pull them directly
+        # without guessing field names).
+        in_mean = tok_sums["input_tokens"] / max(1, tok_counts["input_tokens"])
+        out_mean = tok_sums["output_tokens"] / max(1, tok_counts["output_tokens"])
+        cache_mean = tok_sums["cache_read_tokens"] / max(1, tok_counts["cache_read_tokens"])
+        cost_mean = tok_sums["cost_usd"] / max(1, tok_counts["cost_usd"])
+        m["mean_input_tokens"] = in_mean
+        m["mean_output_tokens"] = out_mean
+        m["mean_cache_read_tokens"] = cache_mean
+        m["mean_total_tokens"] = in_mean + out_mean
+        m["mean_cost_usd"] = cost_mean
+        # Anthropic + OpenAI report `input_tokens` as FRESH (non-cached)
+        # tokens and `cache_read_tokens` separately. Cache-hit rate is
+        # cached / (fresh + cached). Without this denominator fix, the
+        # ratio reads ~200,000% for cached-heavy agentic runs.
+        total_prompt = in_mean + cache_mean
+        m["cache_hit_rate"] = (cache_mean / total_prompt) if total_prompt > 0 else 0.0
         out[task] = m
     return out
 
@@ -500,6 +607,7 @@ def main() -> int:
                 "ts": row["ts"],
                 "metrics_json": "", "status": "error", "duration_ms": 0,
                 "error": f"instance_json parse: {type(e).__name__}: {e}",
+                "agent_response": "",
             }
         _set_query_env(row, run_dir, args.user_id, args.backend_dir)
         t0 = time.time()
@@ -525,6 +633,7 @@ def main() -> int:
                 "metrics_json": "", "status": "error",
                 "duration_ms": int((time.time() - t0) * 1000),
                 "error": f"{type(e).__name__}: {e} | {last_frame_loc}",
+                "agent_response": "",
             }
 
     # Effective worker count — dry_run forces single-threaded so any
@@ -573,8 +682,31 @@ def main() -> int:
             bar.close()
         out_file.close()
 
-    # Per-persona summary
+    # Per-persona summary + per-persona totals across all tasks.
     summary = _summarize_by_task(written_results)
+    persona_totals = {
+        "input_tokens": 0.0,
+        "output_tokens": 0.0,
+        "cache_read_tokens": 0.0,
+        "cost_usd": 0.0,
+        "non_substantive_responses": 0,
+        "errored_rows": 0,
+    }
+    for task, m in summary.items():
+        n = int(m.get("n", 0))
+        # Per-task means × n = totals.
+        persona_totals["input_tokens"] += m.get("mean_input_tokens", 0.0) * n
+        persona_totals["output_tokens"] += m.get("mean_output_tokens", 0.0) * n
+        persona_totals["cache_read_tokens"] += m.get("mean_cache_read_tokens", 0.0) * n
+        persona_totals["cost_usd"] += m.get("mean_cost_usd", 0.0) * n
+        persona_totals["non_substantive_responses"] += int(
+            m.get("non_substantive_response_rate", 0.0) * n
+        )
+        persona_totals["errored_rows"] += int(m.get("error_rate", 0.0) * n)
+    persona_totals["total_tokens"] = (
+        persona_totals["input_tokens"] + persona_totals["output_tokens"]
+    )
+
     (run_dir / "summary.json").write_text(
         json.dumps(
             {
@@ -583,6 +715,7 @@ def main() -> int:
                 "model": args.model,
                 "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
                 "n_queries_run": len(written_results),
+                "persona_totals": persona_totals,
                 "by_task": summary,
             },
             ensure_ascii=False, indent=2,
@@ -594,6 +727,15 @@ def main() -> int:
     for t, m in sorted(summary.items()):
         print(f"  {t}: n={m['n']}  "
               + "  ".join(f"{k}={v:.3f}" for k, v in m.items() if k != "n"))
+    print()
+    print(f"[run_eval] persona totals: "
+          f"input={persona_totals['input_tokens']:,.0f} tokens, "
+          f"output={persona_totals['output_tokens']:,.0f}, "
+          f"cache_read={persona_totals['cache_read_tokens']:,.0f}, "
+          f"cost=${persona_totals['cost_usd']:.2f}, "
+          f"non_substantive={persona_totals['non_substantive_responses']}/"
+          f"{len(written_results)}, "
+          f"errored={persona_totals['errored_rows']}/{len(written_results)}")
     return 0
 
 

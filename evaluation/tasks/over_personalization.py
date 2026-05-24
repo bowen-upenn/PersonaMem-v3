@@ -70,7 +70,13 @@ def run_task_c2(
         else:
             response_text = raw_response
 
-        leak = metrics.keyword_leak_rate(response_text, sc.get("forbidden_items") or [])
+        # Gated leak rate — empty/refusal responses are tagged as
+        # non-substantive (hard_fail=1) instead of trivially scoring
+        # leak_rate=0. Silence is not restraint.
+        leak_dict = metrics.keyword_leak_rate_with_gate(
+            response_text, sc.get("forbidden_items") or [],
+        )
+        leak = leak_dict["leak_rate"]
         carve = 1
         if sc.get("carve_out"):
             carve = metrics.carve_out_respect(
@@ -109,6 +115,9 @@ def run_task_c2(
             "metrics": {
                 "keyword_leak_rate": leak,
                 "carve_out_respect": carve,
+                "non_substantive_response": leak_dict.get("hard_fail", 0),
+                **({"skip_reason": leak_dict["skip_reason"]}
+                   if leak_dict.get("skip_reason") else {}),
                 **judge_scores,
             },
         })
