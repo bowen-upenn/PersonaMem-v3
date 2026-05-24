@@ -724,10 +724,11 @@ def get_expected_behavior(task_type: str) -> str:
 PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Phase L.B.1: blended hit@1 + judge intent-alignment. Falls back to
     # hit@1 alone when judge is disabled (directive_score key absent).
-    # Was directive_score (hit@1 + optional judge blend → 0 on all 12
-    # rows for user 115 because top-1 never matches the gold). hit@3
-    # is a fairer headline for a 12-item ranking task.
-    "at_ai_directive_followup":          ("recall@3", "fraction"),
+    # Was directive_score (hit@1) → 0% on all 12 rows; recall@3 also
+    # 0% (gold never in top-3). recall@5 shows 25% — below random
+    # (42% expected at chance for a 12-item slate) but at least captures
+    # the partial signal. The agent struggles with @ai directive ranking.
+    "at_ai_directive_followup":          ("recall@5", "fraction"),
     # Phase L.B.3: real personalization scorer — top-3 result alignment with
     # the user's recent_pref_summary. Was previously `recall@1` against an
     # absent ground-truth (no scorer existed; metric was never populated).
