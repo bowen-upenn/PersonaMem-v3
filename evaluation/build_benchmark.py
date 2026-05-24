@@ -880,6 +880,7 @@ def build_task_b_arms(
     test_items: list[TestItem],
     blind_check_llm=None,
     blind_check_limit: int | None = None,
+    discovery_llm=None,
     no_conv_type_gate: bool = False,
     triplet_regen_chatbot: bool = True,
 ) -> dict:
@@ -1565,6 +1566,7 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
         print(f"[adversarial] user {user_id}: LLM call failed: {exc}")
         return []
 
+    from data_preparation.utils import extract_json_from_response
     parsed = extract_json_from_response(raw) or []
     if isinstance(parsed, dict):
         parsed = [parsed]
@@ -3744,6 +3746,7 @@ def build_benchmark(
         test_items=test_items,
         blind_check_llm=blind_check_llm,
         blind_check_limit=blind_check_limit,
+        discovery_llm=discovery_llm,
     )
 
     # Task C1c/C1d/C2/C3/C4. (C1a/C1b dropped — they tested
