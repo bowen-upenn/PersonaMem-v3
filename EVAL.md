@@ -308,26 +308,87 @@ Each instance carries a stable `test_id` / `probe_id` / `scenario_id` plus enoug
 ```bash
 # 0. Build the benchmark once per user. Deterministic given --rng_seed and the
 #    backend data. Wires both LLMs (blind_check for Task B routing + E6 discovery
-#    for paired warn/foil). Use --skip_blind_check / --skip_e6 for cheap rebuilds.
+#    for paired warn/foil + adversarial restraint query generation).
 python scripts/prepare_eval_data.py --user_id 115
 # → writes benchmark/115/queries.csv (single artifact; no JSON sidecar)
 
 # 1. Run the eval. `run_eval.py` reads benchmark/{uid}/queries.csv and dispatches
-#    each row to its task-specific runner. Output: benchmark/{uid}/runs/{ts}/results.csv.
-python -m evaluation.run_eval --user_id 115 --mode mcp_agent --claude_model sonnet
+#    each row to its task-specific runner. --workers controls parallelism.
+python -m evaluation.run_eval --user_id 115 --mode agent_tools \
+    --run_dir benchmark/115/runs/$(date +%s) \
+    --claude_model sonnet --judge_model gpt-5-chat --workers 16
 # `--mode` ∈ {mcp_agent, agent_tools, llm_longctx}; see "Modes" below.
+# `--workers 16` parallelizes non-agentic rows; agentic writes stay sequential.
+# `--workers 1` disables parallelism (original sequential behavior).
 
-# 2. Aggregate the results across runs. Emits per-task accuracy + macro/micro headline.
+# 2. Aggregate the results across runs. Emits per-task accuracy + quality flags +
+#    adjusted/by-class means + token-vs-accuracy cost table.
+python scripts/aggregate_eval.py
+
+# Run N personas in parallel at the shell level:
+for uid in 105 115 229 282 760; do
+    python -m evaluation.run_eval --user_id $uid --mode agent_tools \
+        --run_dir benchmark/$uid/runs/$(date +%s) \
+        --claude_model sonnet --judge_model gpt-5-chat --workers 16 &
+done
+wait
 python scripts/aggregate_eval.py
 ```
 
-(The legacy `evaluation/run_inference.py` runner is kept for back-compat with
-the deleted `benchmark.json` artifact and is no longer the canonical entry
-point. New work should target `run_eval.py`.)
-
 If the persona pipeline reprocesses a user (backend data changes), rerun step 0 to refresh the benchmark. The `backend_hash` guard will tell you when this is needed.
 
-Results land in `benchmark/{user_id}/runs/{timestamp}/` — per-task JSONs, `summary.json`, and `summary.md`. Each summary records the benchmark version + hash + seed so you can tell which frozen inputs a given result set corresponds to.
+Results land in `benchmark/{user_id}/runs/{timestamp}/` — `results.csv` (per-row scores + `agent_response` column), `summary.json` (per-task means + `persona_totals` with token/cost rollups), and `writes.jsonl` (agentic overlay).
+
+### Parallelization architecture
+
+`--workers N` splits rows into two concurrent queues:
+
+- **Parallel pool** (ProcessPoolExecutor, N workers): all rows where `state_write_policy == "read_only"` — chatbot, ranking, proactive, recsys, hidden_persona, geo, restraint, repetition-fatigue. Each worker gets its own `os.environ` (safe — no env-var races), its own `BackendQuery` + `SnapshotCache` + judge LLM client.
+- **Sequential thread** (1 thread in the parent process): all rows where `state_write_policy == "writes_ok"` — agentic write tasks that append to the shared `writes.jsonl` overlay. Runs in `seq` order to prevent JSONL corruption.
+
+Both queues drain concurrently. The parallel phase finishes in minutes; the sequential agentic phase is the wall-clock bottleneck (~15 min for a typical persona). A `threading.Lock` guards CSV writes + tqdm.
+
+Threading is **unsafe** (per-row `PM3_T_TEST` env var is process-global); process-based parallelism is required.
+
+Timeouts: each Claude Code subprocess has `timeout_seconds=600`. The parallel pool has a `FUTURE_TIMEOUT_S=900` safety net — if nothing completes in 15 min, remaining futures are recorded as errors and the eval continues. The sequential thread has no per-row timeout but benefits from the subprocess timeout.
+
+Typical wall times (user 115, 207 rows):
+
+| Workers | Wall time | Speedup |
+|---:|---:|---:|
+| 1 | ~110 min | 1× |
+| 4 | ~30 min | 3.7× |
+| 8 | ~25 min | 4.4× |
+| 16 | ~20 min | 5.5× |
+| 32 | rate-limit risk | — |
+
+### What the agent sees vs what's hidden
+
+The agent receives ONLY task-specific prompts + history access (via mode). It does NOT see:
+
+| Agent sees | Agent does NOT see |
+|---|---|
+| Task framing ("produce a chatbot response") | Example response, inferior response |
+| User history (via snapshot / MCP / prompt block) | Groundtruth preference, GT slice |
+| Output format spec (JSON schema) | Judge rubric, scoring dimensions |
+| Prior responses (for repetition tests) | Diversification rules, tolerance thresholds |
+| Task parameters (target_app, recipient, etc.) | Hidden persona labels, privacy flags |
+| System prompt: "personalize when appropriate" | Which preferences to surface or avoid |
+
+This separation is enforced by design: agent prompts contain NO scoring criteria, diversification rules, or rubric dimensions. The judge grades independently using a separate prompt. See "Prompt design principles" below.
+
+### Prompt design principles
+
+Agent-facing prompts intentionally omit all scoring criteria. Leaking the rubric into the prompt turns the eval from "does the agent know the right policy?" into "can the agent follow embedded instructions?" — a different (easier) test.
+
+Specifically stripped from all agent prompts:
+- **Proactive rules** (7-rule block: chatbot-only, ≤30 words, cite evidence, sensitive-window silence, etc.) — the agent must decide policy on its own.
+- **Diversification rules** (Jaccard thresholds, hashtag-overlap limits, n_allowed_repetitions) — the agent sees its prior responses but must infer when to diversify.
+- **Telegraph-avoidance rules** ("don't say 'I know you...'") — the agent should avoid this naturally, not because the prompt said so.
+- **Scenario notes** (sympathy-card/tax-question context names) — the agent sees only the user query and must infer the context.
+- **Leak-pool identifiers** (which preferences are forbidden) — the agent must restrain on its own judgment.
+
+The system prompt says "personalize when appropriate" — giving the agent license so that restraint is a genuine judgment call.
 
 ### Prerequisites
 
@@ -535,24 +596,24 @@ Ground truth is built from two strictly-separated windows:
 
 ## Flags reference
 
+### `run_eval.py`
+
 | Flag | Default | Meaning |
 |---|---|---|
 | `--user_id` | _(required)_ | User directory under `backend/` |
+| `--run_dir` | _(required)_ | Output directory for `results.csv` + `summary.json` + `writes.jsonl` |
 | `--backend_dir` | `backend` | Path to backend root |
 | `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx` |
-| `--task` | `all` | `all`, `a`, `b`, `c`, `c1`, `c2`, `c3`, `new_suggestions_recsys`, `new_suggestions_chatbot`, `personalized_recommendation`, `e2`, `e3`, `e5`, `local_recommendation_geo_shift`, `agentic`, individual `t6`–`t19`, or explicit task name |
-| `--limit` | _none_ | Cap items per task (for fast iteration) |
-| `--enable_llm_judge` | off | Turn on LLM-as-judge layer (optional) |
-| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` mode (QueryLLM backend: Azure/OpenAI/Claude/Gemini) |
-| `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model for `agent_tools` / `mcp_agent` (`haiku`, `sonnet`, `opus`) — uses your Claude Code subscription |
-| `--judge_model` | `$EVAL_JUDGE_MODEL` or `claude-opus` | Judge model (only used with `--enable_llm_judge`) |
-| `--slate_k` | `$EVAL_SLATE_K` or `10` | Slate size K for Task A |
-| `--context_budget` | _none_ | Token budget for long-context modes; exceeds → per-app reservoir-sample with warning |
-| `--rate_limit` | `50` | LLM rate limit per minute |
-| `--dry_run` | off | Build prompts without LLM calls |
-| `--output_dir` | auto (`benchmark/{user_id}/runs/`) | Results root |
-| `--benchmark` | auto | Path to frozen benchmark JSON (default: `benchmark/{user_id}/benchmark.json`) |
-| `--allow_stale` | off | Run even if backend_hash has drifted since the benchmark was built |
+| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` mode |
+| `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model (`haiku`/`sonnet`/`opus`) |
+| `--judge_model` | `$EVAL_JUDGE_MODEL` or `claude-opus` | LLM judge model |
+| `--workers` | `4` | Parallel worker count for non-agentic rows. Agentic writes always sequential. `--workers 1` = original sequential behavior. Max safe: 16 (32 risks Azure rate limits). |
+| `--enable_llm_judge` | **on** | Run the LLM judge for pr_* dimensions. `--no-enable_llm_judge` to disable. |
+| `--limit` | _none_ | Cap total query rows (for quick smoke tests) |
+| `--rate_limit` | `50` | LLM rate limit per minute (split across workers: each gets `rate_limit // workers`) |
+| `--context_budget` | _none_ | Token budget for long-context modes |
+| `--resume` | off | Skip queries already in `{run_dir}/results.csv` |
+| `--dry_run` | off | Build prompts without LLM calls (forces sequential, useful for debugging) |
 
 **Model env vars** — two are honored across the eval + build pipeline:
 - `$EVAL_MODEL` (large, default `gpt-5-chat`) — flagship / judge / heavy-discovery calls.
@@ -571,22 +632,33 @@ Benchmark-building is its own CLI:
 
 Results land under `benchmark/{user_id}/runs/{timestamp}/`:
 
-- `slate_ranking.json`, `chatbot_response.json`, `c1_fatigue.json`, `c2_scenarios.json`, `c3_restraint.json`, `d_negative_avoidance.json` — per-task row arrays.
-- `summary.json` — mean hard metrics per task.
-- `summary.md` — human-readable Markdown summary.
+- `results.csv` — one row per query with `query_id`, `task_type`, `status`, `metrics_json`, `agent_response` (truncated to 4 KB), `duration_ms`, `error`.
+- `summary.json` — per-task means + derived fields:
+  - `non_substantive_response_rate` (fraction of rows where the agent gave an empty/refusal response — the silence-pass signal)
+  - `error_rate`, `mean_input_tokens`, `mean_output_tokens`, `mean_total_tokens`, `mean_cost_usd`, `cache_hit_rate`
+  - Top-level `persona_totals` block: grand-total `input_tokens`, `output_tokens`, `total_tokens`, `cost_usd`, `non_substantive_responses`, `errored_rows`.
+- `writes.jsonl` — agentic overlay (MCP write side-effects).
 
-Per-row schema:
-```json
-{
-  "task": "...",
-  "user_id": "115",
-  "test_id": "...",
-  "mode": "agent_tools",
-  "agent_response": "...",
-  "tool_calls": 3,
-  "history_tokens": 47312,
-  "metrics": { "...": ... }
-}
+Cross-persona aggregation (`python scripts/aggregate_eval.py`):
+
+- `eval_aggregate/summary_by_task.csv` — per-task mean with `quality_flag` (`ok` / `insufficient_n` / `silence_dominated` / `hard_fail_dominated`) + `task_family`.
+- `eval_aggregate/token_accuracy_table.csv` — headline accuracy + token cost per task + three roll-up rows: ALL (micro), ALL (macro), ALL (adjusted: artifact-flagged tasks excluded) + by-class breakouts (ranking, chatbot, agentic, proactive, over_personalization).
+- `eval_aggregate/summary_overall.json` — grand totals + E6 paired-F1 + `accuracy_pct_macro` + `accuracy_pct_micro`.
+
+### Token accounting
+
+In `agent_tools` mode, each query spawns a Claude Code subagent that autonomously decides which files to Read. Token counts reflect the **full agentic loop cost**:
+
+| Counter | What it measures |
+|---|---|
+| `input_tokens` | Fresh (non-cached) prompt tokens across ALL turns of the agentic loop |
+| `cache_read_tokens` | Cached prompt tokens (Anthropic caching reuses system prompt + prior turns) |
+| `output_tokens` | All agent output across ALL turns — reasoning + Read tool calls + final answer |
+| `cost_usd` | Per-row USD cost from the Claude Code SDK |
+
+Total prompt = `input_tokens + cache_read_tokens`. `cache_hit_rate = cache_read / total_prompt`. An agent that reads all 5 app JSONs uses ~90K input tokens; one that reads 1 file uses ~5K. The agent's search strategy is part of the cost — an efficient agent reads fewer files.
+
+The `input/output` ratio is a proxy for search efficiency: higher = more searching relative to answering. Typical range: 20:1 (light tasks) to 45:1 (heavy personalization tasks).
 ```
 
 ## Per-query quality audit (`scripts/audit_benchmark_queries.py`)
@@ -619,15 +691,54 @@ per-dim pass-rate table. Cost ≈ 5 mini-tier calls per applicable query ×
 
 ## Interpreting metrics
 
-- **Task A**: `hit@1 > 0.1` (random baseline) is the floor; good agents reach `hit@3 > 0.5`, `mrr > 0.3`.
-- **Task B**: `avoid_leak_rate → 0` is non-negotiable — any sustained leak means the agent is surfacing things the user just said they disliked. `held_out_hit` and `target_match_recall` rise together as the agent gets better at reading contemporaneous signals.
-- **Task C1**: `diversification_rate → 1` — if the agent returns more saturated hashtags, it's reinforcing the fatigue.
-- **Task C2**: `keyword_leak_rate → 0`, `carve_out_respect → 1`.
-- **`over_personalization_chatbot_text`** (all 4 arms — control/adversarial/stale/distractor; the old `over_personalization_distractor_reject` metrics `irrelevant_rejection_f1` / `held_out_wrongly_rejected` are still reported per-instance under `arm="distractor"`): `personalization_leak_rate → 0` across arms. F1 (not precision) was the original distractor headline so always-reject and always-accept both score 0.
-- **Task D**: `negative_in_top1_rate → 0`, `irrelevant_in_top1_rate → 0`.
-- **`local_recommendation_geo_shift`**: `geo_shift_correctness → 1`, `stale_geo_anchor → 0`. The composite headline blends the binary city-grounded / stale-anchor flags into 0/0.5/1; sustained 0.5 means the agent is producing safe-but-generic responses without picking up the geo signal, while sustained 0 means the agent is anchoring on stale geo evidence (the regression we want to catch).
-- **Task F — Proactive Actions** (`proactive_*` + `restraint_*` task family): `decision_correct → 1` is the floor (act/restrain decision matches `expected_behavior`); `evidence_cited → 1`, `content_length_ok → 1`. Composite `proactive_action_score` blends `trigger_detection_correctness` (proactive-specific) with the universal personalization dimensions; 0.6+ is solid, 0.75+ is strong. Phase-2 feed-react tasks lean heavily on the `relevance` label flipping `expected_behavior` — a model that always-acts will collapse on `irrelevant` candidates; a model that always-restrains will collapse on `relevant` ones. `proactive_overactive_check` is a pure restraint floor — any act response there is by definition wrong.
-- **Judge scores** (opt-in): typical frontier models land in the 2.0–2.5 range on the 0–3 rubrics; 2.5+ is strong.
+### Headline metrics per task family
+
+| Task family | Headline metric | Kind | Target |
+|---|---|---|---|
+| `chatbot_personalized_response` | `pr_combined_personalization_score / max` | Combined personalization quality (preference_alignment + over_personalization + voice_match + hard-rule gates) | Higher = better |
+| `personalized_recommendation` | `recall@5` | Fraction of gold items in top-5 | Higher = better |
+| `at_ai_directive_followup` | `recall@5` + `carveout_before_all_positives` | Gold in top-5; negatives must rank below ALL positives | Higher recall, lower carveout |
+| `over_personalization_chatbot_text` | `personalization_leak_rate` (inverted) | Fraction of user preferences that DON'T leak into off-topic responses | Higher = better restraint |
+| `over_personalization_context_shift` | `keyword_leak_rate` (inverted) | Same as above for scenario-specific restraint | Higher = better |
+| `over_personalization_repetition_*` | `tail_passed` | Did the agent diversify after N repetitions? (tail size ≥ 4, 6 pairwise comparisons) | True = pass |
+| `proactive_*` + `restraint_*` | `proactive_action_score` | Composite of trigger_detection + preference_alignment + avoid_overpersonalization + voice_match + **restraint_justification** (5 dims / 15 max) | 0.6+ solid, 0.75+ strong |
+| `agentic_*` (T6-T19) | `pr_combined_personalization_score / max` | Same as chatbot — personalization quality, NOT tool-call pass rate | Higher = better |
+| `hidden_persona_implicit_qa` | `deep_motivation_alignment` (0-3 judge) | Did the agent serve the hidden persona WITHOUT naming it? | Higher = better |
+| `active_mistake_prevention` | `correct` (warn + foil) | Paired warn-recall + foil-precision; foil requires substantive response (empty = fail) | Higher = better |
+
+### Metric artifact safeguards
+
+Three mechanisms prevent inflated/deflated scores:
+
+1. **Substantive-engagement gate** (`evaluation/metrics.py::is_substantive_response`): responses with <15 distinct tokens are tagged `non_substantive_response=1` and treated as soft failures (`hard_fail=1`). An empty response can no longer achieve 100% on restraint tasks by leaking nothing. Applied to: `personalization_leak_rate`, `keyword_leak_rate_with_gate`, E6 foil arm.
+
+2. **Restraint-justification dimension** (`evaluation/judges.py::judge_proactive_action`): for `expected_behavior=restrain`, the judge now scores a 5th dimension `restraint_justification` (0-3). Empty responses score 0 (was auto-3 on 3 of 4 dims before). The composite denominator is 15, not 12. If `restraint_justification == 0` on a restrain instance, the entire score is forced to 0.
+
+3. **Quality flags** (`scripts/aggregate_eval.py::_quality_flag`): each task in the aggregator gets `ok | insufficient_n | silence_dominated | hard_fail_dominated`. Tasks with `n < 5`, `> 50%` non-substantive, or `> 30%` hard-fail are flagged. The headline reports three tiers:
+   - **Raw macro** (all tasks)
+   - **Adjusted macro** (artifact-flagged tasks excluded)
+   - **By-class** (ranking / chatbot / agentic / proactive / over_personalization)
+
+### Adversarial restraint queries
+
+`over_personalization_chatbot_text` includes LLM-generated adversarial queries (8 per user) across 4 categories:
+
+| Category | Slots | What it tests |
+|---|---:|---|
+| `wrong_recipient` | 2 | Agent must NOT transfer user prefs to a third party |
+| `explicitly_generic` | 2 | "for beginners" framing makes personalization presumptuous |
+| `professional` | 1 | Workplace context where hobby injection is inappropriate |
+| `semantic_trap` | 3 | Words overlap with user interests but domain is different |
+
+Each query is adjacent to a DIFFERENT user preference (round-robin assignment). Post-generation Jaccard dedup (>50% overlap → drop) ensures diversity. The system prompt says "personalize when appropriate" — so restraint on these queries is a genuine judgment call, not a default.
+
+### Token-cost interpretation
+
+For `agent_tools` mode, the agent autonomously decides which files to Read. The token counts reflect the full agentic loop — an agent that reads every file uses ~90K input tokens while one that reads efficiently uses ~5K. The `input/output` ratio measures search efficiency (higher = more searching). Typical range: 20:1 (light tasks) to 45:1 (heavy personalization).
+
+### Proactive task polarity
+
+Feed-react tasks (`proactive_friend_feed_react`, `proactive_trending_feed_react`) have both act and restrain variants based on `relevance`. The builder enforces ≥2 instances per polarity when candidates exist; instances from users with insufficient candidates for one arm are tagged `polarity_imbalanced=True` and flagged in the aggregator. A model that always-acts collapses on irrelevant candidates; one that always-restrains collapses on relevant ones.
 
 ## Extending the harness
 
