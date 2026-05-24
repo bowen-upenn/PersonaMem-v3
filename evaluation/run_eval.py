@@ -217,9 +217,16 @@ _SEQUENTIAL_TASK_FAMILIES = {"agentic"}
 
 
 def _is_sequential(task_type: str) -> bool:
-    """Rows that must run in seq order alongside other agentic rows."""
-    from evaluation.task_registry import get_meta
-    meta = get_meta(task_type)
+    """Rows that must run in seq order alongside other agentic rows.
+
+    Normalizes aliased task_types (e.g. `agentic_send_post` →
+    `agentic_composed_post`) before looking up the task_family.
+    Without this, OLD_TO_NEW aliases fall through to `task_family=unknown`
+    and land in the parallel pool — which can hang or corrupt the
+    overlay.
+    """
+    from evaluation.task_registry import get_meta, normalize_task_type
+    meta = get_meta(normalize_task_type(task_type))
     return meta.get("task_family") in _SEQUENTIAL_TASK_FAMILIES
 
 
