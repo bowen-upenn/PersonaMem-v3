@@ -209,21 +209,25 @@ def _set_query_env(row: dict, run_dir: Path, user_id: str, backend_dir: str) -> 
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
 
 
-def _is_sequential(task_type: str) -> bool:
+def _is_sequential(task_type: str, mode: str = "") -> bool:
     """Rows that must run in seq order within a persona.
 
-    Only rows whose `state_write_policy == "writes_ok"` need the
-    sequential queue — they APPEND to the shared `writes.jsonl` overlay
-    file and concurrent appends would corrupt the JSONL. Read-only
-    agentic tasks (dm_digest, group_dm_summary, vague_refind,
-    proactive_daily_catchup, trending_alert) safely parallelize because
-    they only READ the overlay during scoring, and the overlay is
-    complete by the time scoring runs (the write tasks that feed it
-    are in the sequential queue and execute first in `seq` order).
+    Sequential execution is only needed when BOTH conditions hold:
+      (a) the task has `state_write_policy == "writes_ok"` (appends to
+          the shared `writes.jsonl` overlay), AND
+      (b) the eval mode is `mcp_agent` (the only mode where writes
+          actually happen).
 
-    Normalizes aliased task_types (e.g. `agentic_send_post` →
-    `agentic_composed_post`) before lookup.
+    In `agent_tools` mode, the agent is read-only (filesystem snapshot,
+    no MCP tools, no overlay). In `llm_longctx` mode, there's no agent
+    framework at all. So in both non-mcp modes, ALL tasks can safely
+    run in parallel — the sequential constraint is unnecessary.
+
+    This alone eliminates the sequential bottleneck for agent_tools
+    mode: the 26-min agentic queue drops to ~4 min with 16 workers.
     """
+    if mode != "mcp_agent":
+        return False
     from evaluation.task_registry import get_meta, normalize_task_type
     meta = get_meta(normalize_task_type(task_type))
     return meta.get("state_write_policy") == "writes_ok"
@@ -575,8 +579,8 @@ def main() -> int:
     # Partition rows. Agentic_* tasks must run in seq order in a single
     # worker (shared writes.jsonl overlay); everything else parallelizes.
     pending = [r for r in rows if r["query_id"] not in done]
-    parallel_rows = [r for r in pending if not _is_sequential(r["task_type"])]
-    sequential_rows = [r for r in pending if _is_sequential(r["task_type"])]
+    parallel_rows = [r for r in pending if not _is_sequential(r["task_type"], args.mode)]
+    sequential_rows = [r for r in pending if _is_sequential(r["task_type"], args.mode)]
     print(f"[run_eval] partition: parallel={len(parallel_rows)} "
           f"sequential={len(sequential_rows)} workers={args.workers}")
 
