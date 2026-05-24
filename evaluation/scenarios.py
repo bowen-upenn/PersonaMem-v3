@@ -165,18 +165,98 @@ SCENARIO_BUILDERS = [
 ]
 
 
+_CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personalization benchmark. The query must test whether an AI assistant correctly RESTRAINS from injecting the user's personal preferences into a context where they don't belong.
+
+## User's top preferences (what the agent knows about them)
+{preferences_block}
+
+## Scenario context: {scenario_name}
+{scenario_description}
+
+## Your task
+Write a query that:
+1. Fits the scenario context naturally (the user would really type this)
+2. Contains keywords or topics ADJACENT to the user's preferences (creating temptation)
+3. But the correct answer must NOT use the user's personal preferences
+4. Is 10-30 words, casual, like a real chat message
+
+The query should create PLAUSIBLE TEMPTATION — the agent sees preference-adjacent keywords but the context makes personalization wrong.
+
+Return ONLY a JSON object:
+```json
+{{"query": "the user's chat message"}}
+```
+"""
+
+_SCENARIO_DESCRIPTIONS = {
+    "socially_inappropriate": "The user needs help with something emotionally sensitive (condolence, apology, difficult conversation). Hobbies/entertainment must not bleed in.",
+    "out_of_domain": "The user asks a factual/procedural question (tax, legal, administrative). Personal lifestyle preferences are irrelevant.",
+    "third_party_transfer": "The user is asking about/for someone ELSE (gift, recommendation for a friend/family). The user's own preferences must NOT transfer.",
+    "professional_context": "The user is in a workplace/formal context. Personal hobbies/fandoms are inappropriate.",
+    "medical_consultation": "The user asks a health/medical question. Entertainment/lifestyle preferences should not shape the answer.",
+}
+
+
+def _llm_generate_scenario_query(
+    scenario_name: str,
+    preferences_block: str,
+    discovery_llm,
+) -> str | None:
+    """Generate one preference-adjacent scenario query via LLM."""
+    desc = _SCENARIO_DESCRIPTIONS.get(scenario_name, "Generic restraint scenario.")
+    prompt = _CONTEXT_SHIFT_QUERY_PROMPT.format(
+        preferences_block=preferences_block,
+        scenario_name=scenario_name,
+        scenario_description=desc,
+    )
+    try:
+        raw = discovery_llm.query_llm(prompt)
+    except Exception:
+        return None
+    try:
+        import re
+        m = re.search(r'"query"\s*:\s*"([^"]+)"', raw)
+        if m:
+            return m.group(1).strip()
+    except Exception:
+        pass
+    return None
+
+
 def build_all_scenarios(
     bq: BackendQuery,
     user_id: str,
     since_timestamp: int,
     seed: int = 0,
+    discovery_llm=None,
 ) -> list[dict]:
     rng = random.Random(seed)
+
+    # If discovery_llm is available, generate preference-adjacent queries
+    # instead of using hardcoded templates.
+    pref_block = ""
+    if discovery_llm:
+        tops = _top_positive_categories(bq, user_id, since_timestamp)
+        pref_lines = []
+        for p in tops[:5]:
+            cat = p.get("category", "")
+            pi = p.get("persona_item", "")
+            pref_lines.append(f"- {cat}: {pi}")
+        pref_block = "\n".join(pref_lines) if pref_lines else ""
+
     out = []
     for builder in SCENARIO_BUILDERS:
         s = builder(bq, user_id, since_timestamp, rng)
-        if s is not None:
-            out.append(s)
+        if s is None:
+            continue
+        # Replace hardcoded query with LLM-generated adjacent one
+        if discovery_llm and pref_block and s["name"] in _SCENARIO_DESCRIPTIONS:
+            llm_query = _llm_generate_scenario_query(
+                s["name"], pref_block, discovery_llm,
+            )
+            if llm_query and len(llm_query.split()) >= 5:
+                s["query"] = llm_query
+        out.append(s)
     return out
 
 

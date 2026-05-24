@@ -3403,11 +3403,14 @@ def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
 
 # --- Task C2: scenario instances -------------------------------------------
 
-def build_c2_instances(bq: BackendQuery, user_id: str, t_probe: int, rng_seed: int) -> list[dict]:
+def build_c2_instances(bq: BackendQuery, user_id: str, t_probe: int, rng_seed: int,
+                       discovery_llm=None) -> list[dict]:
     """Workstream E: scatter scenario instances across the user's
     observation window so context_shift probes don't all fire at the
     end of history. Each scenario is built at its own anchor."""
-    scs = scenarios_mod.build_all_scenarios(bq, user_id, t_probe, seed=rng_seed)
+    scs = scenarios_mod.build_all_scenarios(
+        bq, user_id, t_probe, seed=rng_seed, discovery_llm=discovery_llm,
+    )
     if not scs:
         return []
     anchors = _task_dist.spread_anchors(bq, user_id, t_probe, n=len(scs))
@@ -3783,7 +3786,8 @@ def build_benchmark(
     except Exception as exc:
         c1e_buckets = {"new_suggestions_recsys": [], "new_suggestions_chatbot": []}
         print(f"[build_benchmark] WARN: c1e new_suggestions builder failed: {exc}")
-    c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed)
+    c2_instances = build_c2_instances(bq, user_id, t_probe, rng_seed=rng_seed,
+                                      discovery_llm=discovery_llm)
     # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
 
     # Step 4.5 — preference_shift_followthrough (chatbot + recsys flavors).
