@@ -744,7 +744,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
     "chatbot_personalized_response":               ("held_out_score", "fraction"),
     "over_personalization_chatbot_text":           ("personalization_leak_rate", "inverted_fraction"),
-    "over_personalization_context_shift":                     ("pr_personalization_hard_fail_count", "inverted_fraction"),
+    "over_personalization_context_shift":                     ("keyword_leak_rate", "inverted_fraction"),
     # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was
     # the headline before; F1 punishes both always-accept and always-reject.
     # Phase I.3: now an open-ended chatbot task — graded by leak rate
@@ -785,4 +785,10 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "proactive_unfulfilled_stated_need": ("proactive_action_score", "fraction"),
     "proactive_close_friend_update":     ("proactive_action_score", "fraction"),
     "restraint_sensitive_event_silence": ("proactive_action_score", "fraction"),
+    # Phase 2 proactive — same composite as Phase 1.
+    "proactive_friend_feed_react":       ("proactive_action_score", "fraction"),
+    "proactive_trending_feed_react":     ("proactive_action_score", "fraction"),
+    "proactive_overactive_check":        ("proactive_action_score", "fraction"),
+    # Personalized recommendation — recall@5 is the standard recsys headline.
+    "personalized_recommendation":       ("recall_at_5", "fraction"),
 }

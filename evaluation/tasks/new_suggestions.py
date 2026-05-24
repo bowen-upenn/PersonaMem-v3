@@ -117,6 +117,7 @@ def run_task_c1e_new_suggestions_recsys(
             "mode": mode,
             "metrics": m,
             "agent_response": raw_response,
+            "subagent_stats": subagent_stats,
             "history_tokens": history_tokens,
             "tool_call_count": tool_call_count,
         })
@@ -254,6 +255,7 @@ def run_task_c1f_new_suggestions_chatbot(
             "mode": mode,
             "metrics": m,
             "agent_response": raw_response,
+            "subagent_stats": subagent_stats,
             "history_tokens": history_tokens,
             "tool_call_count": tool_call_count,
         })

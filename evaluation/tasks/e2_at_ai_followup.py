@@ -401,6 +401,7 @@ def run_e2_at_ai_followup(
             "directive_action": inst["directive_action"],
             "metrics": scored,
             "agent_response": raw_response,
+            "subagent_stats": subagent_stats,
             "history_tokens": history_tokens,
             "tool_call_count": tool_call_count,
         })

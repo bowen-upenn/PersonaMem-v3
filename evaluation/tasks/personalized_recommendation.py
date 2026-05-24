@@ -423,6 +423,7 @@ def run_personalized_recommendation(
             "mode": mode,
             "metrics": m,
             "agent_response": raw_response,
+            "subagent_stats": subagent_stats,
             "history_tokens": history_tokens,
             "tool_call_count": tool_call_count,
         })

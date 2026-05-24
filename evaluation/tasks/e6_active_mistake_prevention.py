@@ -664,6 +664,7 @@ def run_e6_active_mistake_prevention(
             "mode": mode,
             "metrics": metrics,
             "agent_response": response_text,
+            "subagent_stats": subagent_stats,
             "raw_response": raw_response,
             "history_tokens": history_tokens,
             "tool_call_count": tool_call_count,
