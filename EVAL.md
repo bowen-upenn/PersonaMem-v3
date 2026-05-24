@@ -315,7 +315,7 @@ python scripts/prepare_eval_data.py --user_id 115
 # 1. Run the eval. `run_eval.py` reads benchmark/{uid}/queries.csv and dispatches
 #    each row to its task-specific runner. Output: benchmark/{uid}/runs/{ts}/results.csv.
 python -m evaluation.run_eval --user_id 115 --mode mcp_agent --claude_model sonnet
-# `--mode` ∈ {mcp_agent, agent_tools, agent_longctx, llm_longctx}; see "Modes" below.
+# `--mode` ∈ {mcp_agent, agent_tools, llm_longctx}; see "Modes" below.
 
 # 2. Aggregate the results across runs. Emits per-task accuracy + macro/micro headline.
 python scripts/aggregate_eval.py
@@ -465,10 +465,9 @@ The agent decides **on its own** whether to initiate contact at a moment the use
 |---|---|---|---|
 | `agent_tools` | Real **Claude Code subagent** via `claude -p` (uses your subscription auth) | Read-only into a **time-masked filesystem snapshot** at `/tmp/pm3_eval_snapshots/{user_id}/T_{t_test}/` | Claude Code's actual filesystem-agent behavior |
 | `mcp_agent` | Claude Code subagent via `claude -p --mcp-config` with 4 mock MCP servers | Structured MCP tools: `get_feed`, `create_post`, `react`, `send_dm`, etc. per app; writes go to `writes.jsonl` overlay | Structured-API agentic behavior — comparable to real app integrations |
-| `agent_longctx` | Same Claude Code subagent, **no tools** (`allowed_tools=()`) | Full pre-`T_test` history pre-loaded in the prompt | Claude Code framework effect without any retrieval |
 | `llm_longctx` | Direct single `QueryLLM.query_llm` call (Azure/OpenAI/Claude/Gemini) | Full history concatenated + per-app token annotations | Pure long-context baseline, no agent framework |
 
-Running all four answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history? (c) does the Claude Code framework add value over a plain LLM call?
+Running all three answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history?
 
 ### How the `agent_tools` sandbox works
 
@@ -540,12 +539,12 @@ Ground truth is built from two strictly-separated windows:
 |---|---|---|
 | `--user_id` | _(required)_ | User directory under `backend/` |
 | `--backend_dir` | `backend` | Path to backend root |
-| `--mode` | `llm_longctx` | One of `agent_tools`, `agent_longctx`, `llm_longctx` |
+| `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx` |
 | `--task` | `all` | `all`, `a`, `b`, `c`, `c1`, `c2`, `c3`, `new_suggestions_recsys`, `new_suggestions_chatbot`, `personalized_recommendation`, `e2`, `e3`, `e5`, `local_recommendation_geo_shift`, `agentic`, individual `t6`–`t19`, or explicit task name |
 | `--limit` | _none_ | Cap items per task (for fast iteration) |
 | `--enable_llm_judge` | off | Turn on LLM-as-judge layer (optional) |
 | `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` mode (QueryLLM backend: Azure/OpenAI/Claude/Gemini) |
-| `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model for `agent_tools` / `agent_longctx` (`haiku`, `sonnet`, `opus`) — uses your Claude Code subscription |
+| `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model for `agent_tools` / `mcp_agent` (`haiku`, `sonnet`, `opus`) — uses your Claude Code subscription |
 | `--judge_model` | `$EVAL_JUDGE_MODEL` or `claude-opus` | Judge model (only used with `--enable_llm_judge`) |
 | `--slate_k` | `$EVAL_SLATE_K` or `10` | Slate size K for Task A |
 | `--context_budget` | _none_ | Token budget for long-context modes; exceeds → per-app reservoir-sample with warning |

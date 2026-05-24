@@ -405,7 +405,7 @@ def run_local_recommendation_geo_shift(
 
         history_block = None
         history_tokens = 0
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, stats = snapshot_cache.get_or_build(
                 bq, user_id, t, model_name, context_budget,
             )

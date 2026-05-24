@@ -78,13 +78,13 @@ TASK_ALIASES = {
     **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
 }
 
-MODES = ("agent_tools", "mcp_agent", "agent_longctx", "llm_longctx")
+MODES = ("agent_tools", "mcp_agent", "llm_longctx")
 
 
 def _build_llm_clients(args):
     """Only the llm_longctx mode + optional judge go through QueryLLM; the
     Claude Code modes use the subscription-authed `claude` CLI directly."""
-    if args.dry_run or args.mode in ("agent_tools", "agent_longctx", "mcp_agent"):
+    if args.dry_run or args.mode in ("agent_tools", "mcp_agent"):
         baseline_client = None
     else:
         from query_llm import QueryLLM
@@ -254,7 +254,7 @@ def main():
     parser.add_argument("--limit", type=int, default=None, help="Cap per-task item count (for quick runs)")
     parser.add_argument("--enable_llm_judge", action="store_true", help="Enable LLM-as-judge optional layer")
     parser.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"), help="Baseline (llm_longctx) model — QueryLLM backend (Azure/OpenAI/Claude/Gemini)")
-    parser.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"), help="Claude Code subagent model for agent_tools / agent_longctx (haiku, sonnet, opus)")
+    parser.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"), help="Claude Code subagent model for agent_tools (haiku, sonnet, opus)")
     parser.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "claude-opus"), help="Judge model (QueryLLM)")
     parser.add_argument("--context_budget", type=int, default=None, help="Token budget for long-context modes")
     parser.add_argument("--rate_limit", type=int, default=50, help="LLM rate limit per minute")

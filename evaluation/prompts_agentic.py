@@ -147,8 +147,8 @@ def _action_or_final(target_app: str, write_tool: str, text_only: bool,
     """Pick the output contract for a write task based on mode.
 
     text_only=True (llm_longctx): the model emits the actual content as JSON;
-    no tool is available. text_only=False (mcp_agent / agent_longctx): the
-    model is told to call the MCP tool to actually perform the action.
+    no tool is available. text_only=False (mcp_agent): the model is told to
+    call the MCP tool to actually perform the action.
     """
     if text_only:
         return _response_final_answer(content_fields,
@@ -597,8 +597,7 @@ You are an AI assistant for a specific user. The user has NOT just sent
 you a message. You have access to the user's interaction history up to
 right now. In modes with tools (mcp_agent, agent_tools) you fetch what
 you need via tool calls or filesystem reads; in modes without tools
-(agent_longctx, llm_longctx) the relevant history is included as a
-block below.
+(llm_longctx) the relevant history is included as a block below.
 
 Decide for yourself whether this is a moment to proactively start a
 short conversation or stay quiet. The user has not asked you for

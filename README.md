@@ -85,7 +85,6 @@ component (framework, retrieval, structured API) drives performance:
 |---|---|
 | `mcp_agent` | Claude Code agent + structured per-app MCP tools — closest to a real app integration |
 | `agent_tools` | Claude Code agent reading time-masked filesystem snapshots |
-| `agent_longctx` | Claude Code agent with full pre-T_test history pre-loaded, no tools |
 | `llm_longctx` | Direct LLM call (no agent framework) — pure long-context baseline |
 
 Single-persona variant: `scripts/run_eval.sh 115 --mode mcp_agent`.

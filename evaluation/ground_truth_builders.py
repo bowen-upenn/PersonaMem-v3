@@ -2,8 +2,8 @@
 
 The agentic prompts (T6-T19, defined in prompts_agentic.py) historically
 told the model to call MCP tools (mcp__instagram__list_dms etc.) to fetch
-data. In llm_longctx and agent_longctx modes those tools don't exist, and
-even in mcp_agent mode the model sometimes refuses upfront ("I can't access
+data. In llm_longctx mode those tools don't exist, and even in mcp_agent
+mode the model sometimes refuses upfront ("I can't access
 your DMs"). These builders fetch the focused data each task needs from
 backend/{user_id}/*.json and embed it in the prompt so the model has real
 data to ground its response in.
