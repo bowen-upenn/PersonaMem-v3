@@ -810,6 +810,7 @@ def chatbot_proactive_triplet_prompt(
     user_voice: dict | None = None,
     chatbot_persona: dict | None = None,
     recent_topical_signals: list[str] | None = None,
+    prior_queries: list[str] | None = None,
 ) -> str:
     """Generate the (user_query, example_response, inferior_response) triplet
     for ONE `chatbot_personalized_response` test card.
@@ -912,6 +913,21 @@ def chatbot_proactive_triplet_prompt(
             + "\n"
         )
 
+    diversity_block = ""
+    if prior_queries:
+        prior_lines = "\n".join(f"  - \"{q}\"" for q in prior_queries[-8:])
+        diversity_block = f"""
+## DIVERSITY CONSTRAINT — already-generated queries (DO NOT repeat these patterns)
+
+The following queries were already generated for this user's other test cards.
+Your user_query must be STRUCTURALLY DIFFERENT — different topic angle, different
+ask type, different framing. Do NOT generate another "what should I watch/do
+tonight" variant. Use a DIFFERENT query type from the list above.
+
+Already used:
+{prior_lines}
+"""
+
     return f"""\
 You are crafting ONE test card for a personalization benchmark. Output JSON only.
 
@@ -922,7 +938,7 @@ You are crafting ONE test card for a personalization benchmark. Output JSON only
 ```json
 {profile_json}
 ```
-{voice_block}{persona_block}{signals_block}
+{voice_block}{persona_block}{signals_block}{diversity_block}
 ## What you must produce
 
 A JSON object with three fields:
@@ -934,7 +950,7 @@ A JSON object with three fields:
 
 - 1–2 short sentences, ≤ 30 words. Casual, conversational, on-the-phone register.
 - Honor the user's voice: capitalization, contractions ("don't", "i'm"), punctuation habits.
-- It must be an OPEN-ENDED ask whose ideal answer would naturally lean on the held-out preference: a recommendation, an "what should I do tonight", a decision between vague options, a "vibe-check" reflection, an advice / how-do-I question, an open creative prompt.
+- It must be an OPEN-ENDED ask whose ideal answer would naturally lean on the held-out preference. Vary the ASK TYPE across calls — do NOT always generate "what should I watch/do tonight" variants. Pick from: weekend planning, gift ideas, conversation starters, meal planning, workout advice, podcast/music recommendations, social outing ideas, home décor, creative projects, learning new skills, travel planning, self-care routines.
 - NEVER an editorial / clerical request. Forbidden: "clean up", "tighten", "edit", "fix", "polish", "rewrite", "translate", "proofread", "make it sound", "need a text", "for a girl I'm talking to", "for my friend", "make it more like me". Do NOT have the user paste a draft to be cleaned up.
 - It must NOT mention the preference verbatim, NOT allude to it ("as a fan of...", "since I'm into..."), NOT name the topic directly. A hash-blind reader of the question alone should not be able to guess the preference.
 - It must NOT include self-referential phrases like "based on what I like", "you know I love", "recall my preferences", "what I usually want" — those make the test trivial.

@@ -3442,8 +3442,10 @@ def build_c3_instance(test: TestItem, rng: random.Random) -> dict | None:
         return None
     irrels = list(test.over_personalization_irrelevant)
 
-    # Synthesize a generic question — choose deterministically by hashing
-    # the test_id so two regens produce the same question for the same test.
+    # Synthesize a generic question. Bank expanded (was 8 → 20) to avoid
+    # hash-collision duplicates when > 8 distractor instances exist.
+    # Sequential counter (_distractor_idx) replaces hash-based selection
+    # so each instance gets a unique query.
     GENERIC_QUERIES = [
         "how do you organize your notes app? mine's a mess.",
         "any breathing exercise that actually works for stress?",
@@ -3453,9 +3455,24 @@ def build_c3_instance(test: TestItem, rng: random.Random) -> dict | None:
         "keyboard's getting gross. how do you keep yours clean?",
         "what's your trick for remembering someone's name?",
         "can't sleep when it's hot. tips?",
+        "best way to iron a dress shirt without an actual iron?",
+        "how do you get motivated to clean your apartment?",
+        "any good phone games for a 15 minute wait?",
+        "what's the best way to store leftovers so they actually last?",
+        "how do you politely leave a conversation at a party?",
+        "simple cocktail i can make with stuff i probably already have?",
+        "what's the move when your phone battery is dying and you're out?",
+        "how do you stay awake in a boring meeting without being obvious?",
+        "tips for packing a carry-on for a weekend trip?",
+        "what's a good way to break awkward silence on a first date?",
+        "how do you stop procrastinating on a thing you actually want to do?",
+        "best way to hang a picture frame without messing up the wall?",
     ]
-    seed = abs(hash(test.source_object_id)) % len(GENERIC_QUERIES)
-    user_query = GENERIC_QUERIES[seed]
+    if not hasattr(build_c3_instance, "_idx"):
+        build_c3_instance._idx = 0
+    idx = build_c3_instance._idx
+    build_c3_instance._idx += 1
+    user_query = GENERIC_QUERIES[idx % len(GENERIC_QUERIES)]
 
     # Same shape as chatbot_response control-arm instances so the
     # existing _finalize() path in build_task_b_arms can handle it

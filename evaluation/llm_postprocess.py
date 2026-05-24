@@ -632,6 +632,7 @@ def _generate_chatbot_triplet(
     user_voice: dict | None,
     chatbot_persona: dict | None,
     recent_topical_signals: list[str] | None = None,
+    prior_queries: list[str] | None = None,
     max_attempts: int = 3,
 ) -> dict | None:
     """Generate a (user_query, example_response, inferior_response) triplet
@@ -661,6 +662,7 @@ def _generate_chatbot_triplet(
         user_voice=user_voice,
         chatbot_persona=chatbot_persona,
         recent_topical_signals=recent_topical_signals,
+        prior_queries=prior_queries,
     )
     last: dict | None = None
     for attempt in range(max_attempts):
@@ -2569,6 +2571,10 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
 
     n_chatbot_triplet_built = 0
     n_chatbot_triplet_failed = 0
+    # Accumulate generated user_queries so the triplet prompt can enforce
+    # diversity — each new call sees the prior queries as negative examples
+    # and must produce a structurally different ask type.
+    _chatbot_prior_queries: list[str] = []
 
     for task_id, items in bm.items():
         if not isinstance(items, list) or task_id not in _PERSONALIZATION_TASKS:
@@ -2622,6 +2628,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     user_voice=user_voice_block,
                     chatbot_persona=chatbot_app_persona,
                     recent_topical_signals=topical_signals,
+                    prior_queries=_chatbot_prior_queries,
                 )
                 if triplet and triplet.get("user_query") and triplet.get("example_response"):
                     inst["user_query"] = triplet["user_query"]
@@ -2632,6 +2639,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                             "flaw_kind": "missed_personalization",
                             "flaw_evidence": {"_from": "chatbot_triplet_regen"},
                         }
+                    _chatbot_prior_queries.append(triplet["user_query"])
                     n_chatbot_triplet_built += 1
                     # Skip the rest of the standard workstream I/J path —
                     # the triplet replaces user_query, example_response,
