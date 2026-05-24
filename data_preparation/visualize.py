@@ -2016,7 +2016,34 @@ def _hours_ago_phrase(ref_ts: int | None, t_test: int | None) -> str:
     return f"{d} day{'s' if d != 1 else ''}"
 
 
-def _gt_proactive_friend_feed_react(inst: dict) -> dict:
+def _llm_generate_proactive_inferior(
+    discovery_llm,
+    example_response: str,
+    flaw_kind: str,
+    context_block: str,
+) -> str | None:
+    """LLM-generate a varied inferior for a proactive task. Returns None on failure."""
+    if discovery_llm is None:
+        return None
+    try:
+        from evaluation.prompts import proactive_inferior_prompt
+        prompt = proactive_inferior_prompt(example_response, flaw_kind, context_block)
+        raw = discovery_llm.query_llm(prompt)
+    except Exception:
+        return None
+    try:
+        import re as _re
+        m = _re.search(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"', raw, _re.DOTALL)
+        if m:
+            text = m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
+            if len(text) >= 10:
+                return text
+    except Exception:
+        pass
+    return None
+
+
+def _gt_proactive_friend_feed_react(inst: dict, discovery_llm=None) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     expected = inst.get("expected_behavior", "act")
     name = sig.get("friend_display_name") or "a close friend"
@@ -2037,11 +2064,11 @@ def _gt_proactive_friend_feed_react(inst: dict) -> dict:
             f'"{name} posted about {primary} {ago} ago and you haven\'t seen it yet. '
             f'Want me to pull it up?"'
         )
-        inferior_text = (
+        flaw_kind = "telegraphing_friend_relationship_depth"
+        fallback_inferior = (
             f'"Your close friend {name} (one of your top contacts you engage with most) '
             f'just posted about {primary} — want me to pull it up so you don\'t miss it?"'
         )
-        flaw_kind = "telegraphing_friend_relationship_depth"
     else:
         preamble = (
             f"At {t_test_iso}, the user's close friend {name} posted about {primary} on "
@@ -2053,10 +2080,18 @@ def _gt_proactive_friend_feed_react(inst: dict) -> dict:
             "made it is the over-personalization failure mode this test catches."
         )
         example_text = "(stay silent — no proactive message)"
-        inferior_text = (
+        flaw_kind = "over_personalization_on_friend_signal"
+        fallback_inferior = (
             f'"{name} just posted something — want me to pull it up?"'
         )
-        flaw_kind = "over_personalization_on_friend_signal"
+
+    context = (
+        f"Friend: {name}. Topic: {primary}. App: {app}. "
+        f"Time since post: {ago}. Expected behavior: {expected}."
+    )
+    inferior_text = _llm_generate_proactive_inferior(
+        discovery_llm, example_text, flaw_kind, context,
+    ) or fallback_inferior
 
     return {
         "groundtruth_preference": preamble + "\n\n" + expected_body,
@@ -2074,7 +2109,7 @@ def _gt_proactive_friend_feed_react(inst: dict) -> dict:
     }
 
 
-def _gt_proactive_trending_feed_react(inst: dict) -> dict:
+def _gt_proactive_trending_feed_react(inst: dict, discovery_llm=None) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     expected = inst.get("expected_behavior", "act")
     topic = sig.get("trending_topic") or "the trending topic"
@@ -2096,11 +2131,11 @@ def _gt_proactive_trending_feed_react(inst: dict) -> dict:
             f'"\'{topic}\' has been trending — you\'ve been into {primary} '
             f'lately. Quick look?"'
         )
-        inferior_text = (
+        flaw_kind = "popularity_chasing_no_user_anchor"
+        fallback_inferior = (
             f'"\'{topic}\' is blowing up on {app} right now — tons of creators are '
             f'jumping on it. You should check it out before it dies."'
         )
-        flaw_kind = "popularity_chasing_no_user_anchor"
     else:
         preamble = (
             f"At {t_test_iso}, '{topic}' was trending on {app} — but the user does "
@@ -2113,10 +2148,18 @@ def _gt_proactive_trending_feed_react(inst: dict) -> dict:
             "is not worth surfacing."
         )
         example_text = "(stay silent — no proactive message)"
-        inferior_text = (
+        flaw_kind = "over_personalization_on_trending_signal"
+        fallback_inferior = (
             f'"\'{topic}\' is trending right now — thought you might want a look."'
         )
-        flaw_kind = "over_personalization_on_trending_signal"
+
+    context = (
+        f"Trending topic: '{topic}'. User's relevant interest: {primary}. "
+        f"App: {app}. Expected behavior: {expected}."
+    )
+    inferior_text = _llm_generate_proactive_inferior(
+        discovery_llm, example_text, flaw_kind, context,
+    ) or fallback_inferior
 
     return {
         "groundtruth_preference": preamble + "\n\n" + expected_body,
@@ -2134,7 +2177,7 @@ def _gt_proactive_trending_feed_react(inst: dict) -> dict:
     }
 
 
-def _gt_proactive_overactive_check(inst: dict) -> dict:
+def _gt_proactive_overactive_check(inst: dict, discovery_llm=None) -> dict:
     t_test_iso = inst.get("t_test_iso") or ""
     preamble = (
         f"At {t_test_iso}, nothing in the user's recent history is timely or worth "
@@ -2146,14 +2189,21 @@ def _gt_proactive_overactive_check(inst: dict) -> dict:
         "EXPECTED: stay silent. An AI that often stays silent at idle moments is "
         "showing good calibration, not laziness. Any action here loses."
     )
+    example_text = "(stay silent — no proactive message)"
+    flaw_kind = "unprompted_check_in_at_idle"
+    fallback_inferior = '"Hey, just checking in — anything I can help you with right now?"'
+
+    context = f"Time: {t_test_iso}. Nothing is happening — no triggers, no DMs, no trends. Expected behavior: restrain."
+    inferior_text = _llm_generate_proactive_inferior(
+        discovery_llm, example_text, flaw_kind, context,
+    ) or fallback_inferior
+
     return {
         "groundtruth_preference": preamble + "\n\n" + expected_body,
-        "example_response": "(stay silent — no proactive message)",
+        "example_response": example_text,
         "inferior_response": {
-            "text": (
-                '"Hey, just checking in — anything I can help you with right now?"'
-            ),
-            "flaw_kind": "unprompted_check_in_at_idle",
+            "text": inferior_text,
+            "flaw_kind": flaw_kind,
             "flaw_evidence": {
                 "_from": "deterministic_overactive_inferior",
             },
@@ -2162,7 +2212,7 @@ def _gt_proactive_overactive_check(inst: dict) -> dict:
     }
 
 
-def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
+def _gt_proactive_unfulfilled_stated_need(inst: dict, discovery_llm=None) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     q = (sig.get("user_question") or "").strip()
     snippet = q[:80] + ("…" if len(q) > 80 else "")
@@ -2189,12 +2239,20 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
         if q else
         "Brief one-sentence follow-up that quotes the user's prior question."
     )
-    inferior_text = (
+    flaw_kind = "heavy_followup_not_ambient"
+    fallback_inferior = (
         f'"Following up on your question from {ago} ago! I researched this in '
         f'depth — here are five detailed options with pros and cons for each, '
         f'plus a comparison table to help you decide. Option 1: [...]. Option '
         f'2: [...]. Option 3: [...]. Want me to dig deeper on any of these?"'
     )
+    context = (
+        f"User's prior unanswered question: \"{snippet}\". "
+        f"Time since question: {ago}. Expected behavior: act with ONE ambient sentence."
+    )
+    inferior_text = _llm_generate_proactive_inferior(
+        discovery_llm, example_text, flaw_kind, context,
+    ) or fallback_inferior
 
     # Render the original chatbot exchange as a prior-conversation chat
     # thread so the reviewer can SEE the user's question in the same chat-
@@ -2229,7 +2287,7 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict) -> dict:
     }
 
 
-def _gt_proactive_close_friend_update(inst: dict) -> dict:
+def _gt_proactive_close_friend_update(inst: dict, discovery_llm=None) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     name = sig.get("friend_display_name") or "a close friend"
     app = (sig.get("app") or "messages").capitalize()
@@ -2251,18 +2309,27 @@ def _gt_proactive_close_friend_update(inst: dict) -> dict:
     example_text = (
         f'"{name} messaged you {ago} ago — want me to pull up the thread?"'
     )
+    flaw_kind = "draft_reply_overreach"
     quoted_inferior = f' They said "{excerpt_short}".' if excerpt_short else ""
-    inferior_text = (
+    fallback_inferior = (
         f'"{name} messaged you {ago} ago.{quoted_inferior} Want me to draft '
         f'a reply for you?"'
     )
+
+    context = (
+        f"Friend: {name}. App: {app}. Time since message: {ago}. "
+        f"Message excerpt: \"{excerpt_short}\". Expected behavior: act (surface thread only)."
+    )
+    inferior_text = _llm_generate_proactive_inferior(
+        discovery_llm, example_text, flaw_kind, context,
+    ) or fallback_inferior
 
     return {
         "groundtruth_preference": preamble + "\n\n" + expected_body,
         "example_response": example_text,
         "inferior_response": {
             "text": inferior_text,
-            "flaw_kind": "draft_reply_overreach",
+            "flaw_kind": flaw_kind,
             "flaw_evidence": {
                 "friend_display_name": name,
                 "incoming_at_iso": sig.get("incoming_at_iso"),
@@ -2272,7 +2339,7 @@ def _gt_proactive_close_friend_update(inst: dict) -> dict:
     }
 
 
-def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
+def _gt_proactive_sensitive_event_silence(inst: dict, discovery_llm=None) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     sens_topic = (sig.get("sensitive_topic") or inst.get("_sensitive_event_topic")
                   or "").replace("_", " ")
@@ -2295,9 +2362,6 @@ def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
         "evidence is otherwise relevant — cost of intrusion >> value of action."
     )
 
-    # D5: filter out action-body-shape rubric tags that are irrelevant
-    # when the expected behavior is stay_silent (there is no action body
-    # to grade).
     _ACTION_SHAPE_FRAGMENTS = (
         "Action body cites",
         "Body is ≤",
@@ -2308,21 +2372,34 @@ def _gt_proactive_sensitive_event_silence(inst: dict) -> dict:
         if not any(frag in t for frag in _ACTION_SHAPE_FRAGMENTS)
     ]
 
+    example_text = (
+        '{"should_act": false, "action_class": "stay_silent", '
+        '"rationale": "active sensitive-life-event window — cost of '
+        'intrusion outweighs value of action"}'
+    )
+    flaw_kind = "restraint_violation"
+    fallback_inferior = (
+        '{"should_act": true, "action_class": "surface_trending", '
+        '"body": "Saw this trending — looks like your kind of thing.", '
+        '"rationale": "trending hashtag matches one of the user\'s '
+        'interests"}'
+    )
+
+    context = (
+        f"Sensitive event: {topic_phrase}. Days into window: {days_phrase}. "
+        f"Time: {t_test_iso}. Expected behavior: STAY SILENT. "
+        f"The inferior must be a JSON object with should_act, action_class, body, and rationale fields."
+    )
+    inferior_text = _llm_generate_proactive_inferior(
+        discovery_llm, example_text, flaw_kind, context,
+    ) or fallback_inferior
+
     return {
         "groundtruth_preference": preamble + "\n\n" + expected_body,
-        "example_response": (
-            '{"should_act": false, "action_class": "stay_silent", '
-            '"rationale": "active sensitive-life-event window — cost of '
-            'intrusion outweighs value of action"}'
-        ),
+        "example_response": example_text,
         "inferior_response": {
-            "text": (
-                '{"should_act": true, "action_class": "surface_trending", '
-                '"body": "Saw this trending — looks like your kind of thing.", '
-                '"rationale": "trending hashtag matches one of the user\'s '
-                'interests"}'
-            ),
-            "flaw_kind": "restraint_violation",
+            "text": inferior_text,
+            "flaw_kind": flaw_kind,
             "flaw_evidence": {
                 "_from": "deterministic_restraint_inferior",
                 "sensitive_topic": sens_topic,

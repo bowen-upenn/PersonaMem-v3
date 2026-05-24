@@ -130,6 +130,7 @@ def _candidate_to_instance(
     expected_behavior: str,
     user_id: str,
     idx: int,
+    discovery_llm=None,
 ) -> dict:
     """Normalize a Step-28 trigger candidate into the eval instance shape.
 
@@ -159,23 +160,24 @@ def _candidate_to_instance(
             "count('facebook_send_dm') == 0",
             "count('threads_send_dm') == 0",
         ],
-        # Aligned with the universal personalization rubric used by other
-        # task families (chatbot Q&A, over-personalization, agentic).
-        # Same dimensions regardless of expected_behavior — polarity is
-        # carried by the hidden `expected_behavior` field, not by the tags.
         "rubric_tags": [
-            "trigger_detection_correctness",   # proactive-specific
-            "preference_alignment",            # universal
-            "avoid_overpersonalization",       # universal
-            "voice_match",                     # universal
-            "negative_leakage",                # universal hard-rule
-            "stale_preference_use",            # universal hard-rule
+            "trigger_detection_correctness",
+            "preference_alignment",
+            "avoid_overpersonalization",
+            "voice_match",
+            "negative_leakage",
+            "stale_preference_use",
         ],
     }
     extractor = _get_gt_extractor(task_type)
     if extractor is not None:
         try:
-            gt = extractor(inst)
+            gt = extractor(inst, discovery_llm=discovery_llm)
+        except TypeError:
+            try:
+                gt = extractor(inst)
+            except Exception:
+                gt = {}
         except Exception:
             gt = {}
         for k in ("example_response", "inferior_response", "groundtruth_preference"):
@@ -215,6 +217,7 @@ def build_proactive_unfulfilled_stated_need(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> list[dict]:
     """T1.A — chatbot questions N days unresolved."""
     cat = _load_proactive_catalog(bq, user_id)
@@ -223,6 +226,7 @@ def build_proactive_unfulfilled_stated_need(
     for i, c in enumerate(_trim_to_quota(cands, "proactive_unfulfilled_stated_need")):
         out.append(_candidate_to_instance(
             c, "proactive_unfulfilled_stated_need", "act", user_id, i,
+            discovery_llm=discovery_llm,
         ))
     return out
 
@@ -231,6 +235,7 @@ def build_proactive_close_friend_update(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> list[dict]:
     """T3.A — incoming DM from close friend with no reply within 24h."""
     cat = _load_proactive_catalog(bq, user_id)
@@ -239,6 +244,7 @@ def build_proactive_close_friend_update(
     for i, c in enumerate(_trim_to_quota(cands, "proactive_close_friend_update")):
         out.append(_candidate_to_instance(
             c, "proactive_close_friend_update", "act", user_id, i,
+            discovery_llm=discovery_llm,
         ))
     return out
 
@@ -247,6 +253,7 @@ def build_restraint_sensitive_event_silence(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> list[dict]:
     """T4.A — restraint candidates inside an active sensitive_life_event window."""
     cat = _load_proactive_catalog(bq, user_id)
@@ -255,6 +262,7 @@ def build_restraint_sensitive_event_silence(
     for i, c in enumerate(_trim_to_quota(cands, "restraint_sensitive_event_silence")):
         out.append(_candidate_to_instance(
             c, "restraint_sensitive_event_silence", "restrain", user_id, i,
+            discovery_llm=discovery_llm,
         ))
     return out
 
@@ -272,6 +280,7 @@ def build_proactive_friend_feed_react(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> list[dict]:
     """T2.D — close friend posted to feed; user hasn't engaged within 24h.
 
@@ -288,6 +297,7 @@ def build_proactive_friend_feed_react(
         expected = _polarity_for_relevance(c.get("relevance", "relevant"))
         inst = _candidate_to_instance(
             c, "proactive_friend_feed_react", expected, user_id, i,
+            discovery_llm=discovery_llm,
         )
         if c.get("polarity_imbalanced"):
             inst["polarity_imbalanced"] = True
@@ -299,6 +309,7 @@ def build_proactive_trending_feed_react(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> list[dict]:
     """T2.E — platform trending content visible in feed; user hasn't engaged.
 
@@ -312,6 +323,7 @@ def build_proactive_trending_feed_react(
         expected = _polarity_for_relevance(c.get("relevance", "relevant"))
         inst = _candidate_to_instance(
             c, "proactive_trending_feed_react", expected, user_id, i,
+            discovery_llm=discovery_llm,
         )
         if c.get("polarity_imbalanced"):
             inst["polarity_imbalanced"] = True
@@ -323,6 +335,7 @@ def build_proactive_overactive_check(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> list[dict]:
     """Negative-control task: at idle moments where nothing else fires, the
     AI is asked the same proactive question. Right answer is always
@@ -334,6 +347,7 @@ def build_proactive_overactive_check(
     for i, c in enumerate(_trim_to_quota(cands, "proactive_overactive_check")):
         out.append(_candidate_to_instance(
             c, "proactive_overactive_check", "restrain", user_id, i,
+            discovery_llm=discovery_llm,
         ))
     return out
 
@@ -342,21 +356,22 @@ def build_all_proactive_instances(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
+    discovery_llm=None,
 ) -> dict[str, list[dict]]:
     """Convenience: build all six proactive task types in one call."""
     return {
         "proactive_unfulfilled_stated_need":
-            build_proactive_unfulfilled_stated_need(bq, user_id, t_probe),
+            build_proactive_unfulfilled_stated_need(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "proactive_close_friend_update":
-            build_proactive_close_friend_update(bq, user_id, t_probe),
+            build_proactive_close_friend_update(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "restraint_sensitive_event_silence":
-            build_restraint_sensitive_event_silence(bq, user_id, t_probe),
+            build_restraint_sensitive_event_silence(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "proactive_friend_feed_react":
-            build_proactive_friend_feed_react(bq, user_id, t_probe),
+            build_proactive_friend_feed_react(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "proactive_trending_feed_react":
-            build_proactive_trending_feed_react(bq, user_id, t_probe),
+            build_proactive_trending_feed_react(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "proactive_overactive_check":
-            build_proactive_overactive_check(bq, user_id, t_probe),
+            build_proactive_overactive_check(bq, user_id, t_probe, discovery_llm=discovery_llm),
     }
 
 

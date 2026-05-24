@@ -1912,16 +1912,32 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
             f"because the writing is bad."
         )
     if flaw_kind == "factual_error":
+        hints: list[str] = []
+        wrong_app = evidence.get("wrong_app")
+        if wrong_app:
+            hints.append(
+                f"swap the platform/app name to '{wrong_app}' (the gold uses a different app)")
+        mutated_tags = evidence.get("mutated_hashtags")
+        if mutated_tags:
+            hints.append(
+                f"swap one hashtag to something slightly off (e.g. use {mutated_tags[0]} instead)")
+        orig_title = evidence.get("original_title")
+        if orig_title and len(orig_title) > 20:
+            hints.append("alter the title/snippet slightly (change a word or truncate)")
+        hint_block = ""
+        if hints:
+            hint_block = (
+                "\n  - Suggested mutation (pick ONE): " + "; OR ".join(hints) + "."
+            )
         return (
             "Introduce ONE subtle factual error inside the foil's content — "
             "for example: change a sender name to a different plausible "
-            "name, swap one topic for another, change a count (e.g. "
+            "name, swap one topic/platform for another, change a count (e.g. "
             "'three' → 'two'), drop one of the items the gold lists, or "
-            "attribute a message to the wrong person.\n"
-            "  - You may rewrite the response with somewhat different "
-            "phrasing than the gold (so the foil isn't trivially "
-            "distinguishable from the gold by surface features), but "
-            "preserve the gold's overall structure and length.\n"
+            "attribute a message to the wrong person." + hint_block + "\n"
+            "  - REWRITE the response with DIFFERENT phrasing than the gold "
+            "(different opening, different sentence structure) so the foil "
+            "is NOT a trivial synonym swap. Preserve overall structure and length.\n"
             "  - The error should look like a careless mistake a hurried "
             "summarizer would make, not an off-topic personalization leak.\n"
             "  - Do NOT introduce any persona reference. Do NOT add "
@@ -2103,12 +2119,28 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
                 }
         cats = persona_ctx.get("top_categories") or []
         if cats:
-            return {"persona_item": cats[0][0]}
+            pool = cats[:min(6, len(cats))]
+            chosen = rng.choice(pool)
+            return {"persona_item": chosen[0]}
         return None
     if flaw_kind == "factual_error":
-        # No external evidence needed — the LLM mutates the gold's own
-        # content. Return a sentinel non-None dict so the caller proceeds.
-        return {"persona_item": ""}
+        grounding: dict = {"_from": "factual_error_grounding"}
+        source_app = (inst.get("source_app") or inst.get("target_app") or "").strip()
+        if source_app:
+            wrong_apps = [a for a in ("Instagram", "Facebook", "Threads") if a.lower() != source_app.lower()]
+            if wrong_apps:
+                grounding["wrong_app"] = rng.choice(wrong_apps)
+        hashtags = list(inst.get("source_hashtags") or [])
+        if hashtags and len(hashtags) >= 2:
+            mutated = list(hashtags)
+            idx_to_swap = rng.randrange(len(mutated))
+            mutated[idx_to_swap] = "#" + rng.choice(["trending", "viral", "popular", "new"]) + mutated[idx_to_swap].lstrip("#")[:8]
+            grounding["mutated_hashtags"] = mutated
+        title = (inst.get("title") or "").strip()
+        if title:
+            grounding["original_title"] = title
+        grounding["persona_item"] = ""
+        return grounding
     if flaw_kind == "voice_mismatch":
         # Pick a CONTRASTING voice register that differs from the user's
         # natural voice on idiolect / stance / syntax — NOT on emoji
@@ -2251,13 +2283,11 @@ def _generate_inferior(llm: Callable[[str], str], response: str,
     return None
 
 
-def synthesize_special_task_example_inferior(inst: dict, task_id: str) -> dict | None:
-    """Deterministic example/inferior synthesis for task families that the
-    standard `postprocess_benchmark` skips (they're not in
-    `_PERSONALIZATION_TASKS`). All three carry a structural / multi-turn
-    failure mode that doesn't fit the single-turn `_generate_inferior`
-    LLM path; the audit + persona.html visualizer still need an
-    example/inferior pair so reviewers can see the contrast.
+def synthesize_special_task_example_inferior(inst: dict, task_id: str,
+                                              discovery_llm=None) -> dict | None:
+    """Example/inferior synthesis for task families that the standard
+    `postprocess_benchmark` skips (they're not in `_PERSONALIZATION_TASKS`).
+    Uses LLM when available, falls back to templates.
 
     Returns:
         {"example_response": str, "inferior_response": {text, flaw_kind, flaw_evidence}}
@@ -2341,9 +2371,6 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str) -> dict |
         }
 
     if task_id == "restraint_sensitive_event_silence":
-        # Gold = the agent stays silent (no proactive message). Foil =
-        # the agent SPEAKS UP with a well-meaning proactive line that
-        # violates the silence-during-sensitive-event-window contract.
         evidence = inst.get("trigger_evidence") or {}
         situation = ""
         if isinstance(evidence, dict):
@@ -2355,12 +2382,27 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str) -> dict |
             "no notification, no 'just checking in' nudge. Silence is the "
             "correct action; speaking up here would over-step."
         )
-        inferior_text = (
+        fallback_inferior = (
             "Hey — just thinking of you. I noticed a few things in your feed "
             "I thought you might want to catch up on; want me to pull a quick "
             "summary together? Totally cool to skip — just wanted to flag "
             "it in case it helps your day."
         )
+        inferior_text = fallback_inferior
+        if discovery_llm is not None:
+            from evaluation.prompts import proactive_inferior_prompt
+            context = f"Sensitive event: {situation or 'private episode'}. Expected behavior: STAY SILENT."
+            try:
+                prompt = proactive_inferior_prompt(example_text, "wrong_act_restrain_decision", context)
+                raw = discovery_llm.query_llm(prompt)
+                import re as _re
+                m = _re.search(r'"text"\s*:\s*"((?:[^"\\]|\\.)*)"', raw, _re.DOTALL)
+                if m:
+                    text = m.group(1).replace('\\"', '"').replace('\\n', '\n').strip()
+                    if len(text) >= 10:
+                        inferior_text = text
+            except Exception:
+                pass
         return {
             "example_response": example_text,
             "inferior_response": {

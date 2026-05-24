@@ -1499,3 +1499,116 @@ Respond with ONE fenced ```json block:
 }}
 ```
 """
+
+
+# ---------------------------------------------------------------------------
+# Proactive-action inferior generation prompts
+# ---------------------------------------------------------------------------
+
+_PROACTIVE_INFERIOR_FLAW_INSTRUCTIONS: dict[str, str] = {
+    "telegraphing_friend_relationship_depth": (
+        "The inferior response REVEALS that the agent tracks engagement frequency "
+        "or ranks contacts. It should leak internal knowledge in varied ways: "
+        "naming engagement stats, citing 'top contacts', explaining WHY this "
+        "friend matters to the user, or referencing how often they interact. "
+        "The correct response simply names the friend and topic without "
+        "revealing relationship-depth metadata."
+    ),
+    "draft_reply_overreach": (
+        "The inferior response OFFERS to draft, write, or compose a reply "
+        "WITHOUT the user asking. Vary the overreach: some draft replies "
+        "unsolicited, some summarize the message with editorial opinions, "
+        "some assume urgency and offer to respond immediately, some suggest "
+        "specific reply text. The correct response just surfaces the thread."
+    ),
+    "heavy_followup_not_ambient": (
+        "The inferior response is an OVER-RESEARCHED, unsolicited deep-dive "
+        "instead of a light ambient callback. It should feel like the agent "
+        "went away and built a report: multiple options, pros/cons, comparison "
+        "tables, 'I looked into this extensively'. The correct response is ONE "
+        "ambient sentence quoting the user's prior question and asking if they "
+        "want a follow-up now."
+    ),
+    "restraint_violation": (
+        "The inferior response SPEAKS UP during a sensitive-life-event window "
+        "when the agent should stay completely silent. Vary the trigger: "
+        "surface a trending topic, offer a daily catch-up, flag a friend's "
+        "post, or do a well-meaning check-in. The content should be plausible "
+        "and well-intentioned — the failure is acting at all, not what it says."
+    ),
+    "popularity_chasing_no_user_anchor": (
+        "The inferior response surfaces a trending topic using FOMO language "
+        "WITHOUT anchoring it to the user's actual interests. It chases "
+        "popularity signals ('blowing up', 'everyone is talking about', "
+        "'don't miss out', 'before it dies') instead of connecting the trend "
+        "to something the user cares about. The correct response names the "
+        "trend AND the user's relevant interest."
+    ),
+    "over_personalization_on_trending_signal": (
+        "The inferior response surfaces a trending topic that the user does "
+        "NOT engage with. The agent should have stayed silent because the "
+        "topic is irrelevant. Instead, it pushes the trend as if it matters."
+    ),
+    "over_personalization_on_friend_signal": (
+        "The inferior response surfaces a friend's post about a topic the "
+        "user does NOT engage with. The agent should have stayed silent — "
+        "the friend relationship alone is not enough to justify the nudge."
+    ),
+    "unprompted_check_in_at_idle": (
+        "The inferior response is an unsolicited check-in when NOTHING is "
+        "happening — no unread DMs, no trends, no pending questions. Vary "
+        "the style: some are casual ('hey, what's up?'), some are helpful "
+        "('anything I can help with?'), some are chatty, some offer to recap "
+        "recent activity. The correct response is silence."
+    ),
+    "wrong_act_restrain_decision": (
+        "The inferior response ACTS when it should RESTRAIN (or vice versa). "
+        "It makes a plausible-sounding decision but gets the act/restrain "
+        "call wrong given the context."
+    ),
+}
+
+
+def proactive_inferior_prompt(
+    example_response: str,
+    flaw_kind: str,
+    context_block: str,
+) -> str:
+    """Generate ONE varied inferior response for a proactive-action test card.
+
+    The inferior must commit the specified flaw in a non-templated,
+    natural-sounding way. Each call should produce a structurally
+    different inferior even for the same flaw kind.
+    """
+    flaw_instruction = _PROACTIVE_INFERIOR_FLAW_INSTRUCTIONS.get(
+        flaw_kind,
+        f"The inferior commits the '{flaw_kind}' flaw — it makes a subtle "
+        f"but real mistake in its proactive behavior."
+    )
+    return f"""\
+You are crafting ONE inferior (foil) response for a proactive-action benchmark test.
+
+## Context
+{context_block}
+
+## Gold (correct) response
+{example_response}
+
+## Flaw kind: {flaw_kind}
+{flaw_instruction}
+
+## Rules
+- The inferior must be a PLAUSIBLE, well-intentioned response — not obviously broken.
+- It must commit the specified flaw naturally, not by tacking on an awkward clause.
+- Length: within ±30% of the gold response. If gold is silence, inferior is 1-2 sentences.
+- Do NOT copy the gold response's phrasing — write fresh.
+- Do NOT include meta-commentary ("as your AI", "based on my analysis").
+- If the gold is a JSON object, the inferior must also be valid JSON with the same schema.
+- Produce a DIFFERENT phrasing each time — vary sentence structure, vocabulary, and how the flaw manifests.
+
+## Output
+Respond with ONE fenced JSON block:
+```json
+{{"text": "<the inferior response>"}}
+```
+"""

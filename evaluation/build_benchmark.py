@@ -3940,7 +3940,8 @@ def build_benchmark(
     # didn't run (no LLM client at data-gen time), all three return empty.
     try:
         from evaluation.tasks.proactive_actions import build_all_proactive_instances
-        proactive_buckets = build_all_proactive_instances(bq, user_id, t_probe)
+        proactive_buckets = build_all_proactive_instances(bq, user_id, t_probe,
+                                                          discovery_llm=discovery_llm)
     except Exception as exc:
         proactive_buckets = {
             "proactive_unfulfilled_stated_need": [],
