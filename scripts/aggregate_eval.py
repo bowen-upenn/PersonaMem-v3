@@ -290,6 +290,11 @@ def _accuracy_value(task_type: str, metrics: dict, status: str, e6_paired: dict 
         return 100.0 * (1.0 - float(v))
     if kind == "boolean":
         return 100.0 if v else 0.0
+    if kind == "pr_combined":
+        mx = metrics.get("pr_combined_max_possible")
+        if not mx or float(mx) <= 0:
+            return None
+        return 100.0 * float(v) / float(mx)
     return 100.0 * float(v)
 
 

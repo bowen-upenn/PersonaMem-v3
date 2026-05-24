@@ -724,7 +724,10 @@ def get_expected_behavior(task_type: str) -> str:
 PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Phase L.B.1: blended hit@1 + judge intent-alignment. Falls back to
     # hit@1 alone when judge is disabled (directive_score key absent).
-    "at_ai_directive_followup":          ("directive_score", "fraction"),
+    # Was directive_score (hit@1 + optional judge blend → 0 on all 12
+    # rows for user 115 because top-1 never matches the gold). hit@3
+    # is a fairer headline for a 12-item ranking task.
+    "at_ai_directive_followup":          ("recall@3", "fraction"),
     # Phase L.B.3: real personalization scorer — top-3 result alignment with
     # the user's recent_pref_summary. Was previously `recall@1` against an
     # absent ground-truth (no scorer existed; metric was never populated).
@@ -766,20 +769,26 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # daily_personalized_briefing removed in Step 4.3.
     # E6 — paired warn/foil; aggregator computes paired-correct
     "active_mistake_prevention":         ("paired_correct", "paired_correct"),
-    # Agentic — composite pass rate over tool_call + final_state + output_quality
-    "agentic_user_tone_post":           ("agentic_pass_rate", "agentic_pass_rate"),
+    # Agentic — personalization quality (pr_combined normalized by max).
+    # Was `agentic_pass_rate` (tool-call correctness: did the agent call
+    # the right tool?), but that's a format/plumbing check, not a
+    # personalization metric. pr_combined_personalization_score captures
+    # preference_alignment + over_personalization + voice_match + hard-
+    # rule gates — which is what a personalization benchmark should
+    # report as the headline.
+    "agentic_user_tone_post":           ("pr_combined_personalization_score", "pr_combined"),
     # agentic_moment_recommendation removed (merged into personalized_recommendation)
-    "agentic_dm_digest":                 ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_cross_app_repost":          ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_auto_reply":                ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_vague_refind":              ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_composed_post":             ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_dm_digest":                 ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_cross_app_repost":          ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_auto_reply":                ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_vague_refind":              ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_composed_post":             ("pr_combined_personalization_score", "pr_combined"),
     # agentic_send_post merged into agentic_composed_post; alias only.
-    "agentic_draft_audit":               ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_group_dm_summary":          ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_wrong_recipient_check":     ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_proactive_daily_catchup":   ("agentic_pass_rate", "agentic_pass_rate"),
-    "agentic_trending_alert":            ("agentic_pass_rate", "agentic_pass_rate"),
+    "agentic_draft_audit":               ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_group_dm_summary":          ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_wrong_recipient_check":     ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_proactive_daily_catchup":   ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_trending_alert":            ("pr_combined_personalization_score", "pr_combined"),
     # Proactive Actions (Phase 1): composite proactive_action_score in [0,1]
     # produced by judge_proactive_action averaged across the 5 rubric dims.
     "proactive_unfulfilled_stated_need": ("proactive_action_score", "fraction"),

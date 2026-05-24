@@ -293,6 +293,23 @@ def compute_e2_metrics(ranked: list[int], instance: dict) -> dict:
     top1 = ranked[0] if ranked else -1
     top3 = set(ranked[:3]) if ranked else set()
     top5 = set(ranked[:5]) if ranked else set()
+    # Negative-directive compliance: carveout items (topics the user
+    # explicitly said to stop recommending) must ALL rank BELOW every
+    # positive item. If any carveout appears before the last positive
+    # in the agent's ranking, the agent failed to respect the directive.
+    carveout_before_positives = 0
+    if carveouts and positives and ranked:
+        rank_of = {idx: rank for rank, idx in enumerate(ranked)}
+        last_pos_rank = max(
+            (rank_of.get(p, len(ranked)) for p in positives),
+            default=len(ranked),
+        )
+        first_carveout_rank = min(
+            (rank_of.get(c, len(ranked)) for c in carveouts),
+            default=len(ranked),
+        )
+        carveout_before_positives = int(first_carveout_rank < last_pos_rank)
+
     out = {
         "hit@1": int(top1 in positives),
         "recall@3": len(positives & top3) / max(len(positives), 1) if positives else 0.0,
@@ -301,6 +318,8 @@ def compute_e2_metrics(ranked: list[int], instance: dict) -> dict:
         "directive_respect@1": int(top1 in positives),
         "carveout_violation@1": int(top1 in carveouts),
         "carveout_violation@3": int(bool(top3 & carveouts)),
+        "carveout_violation@5": int(bool(top5 & carveouts)),
+        "carveout_before_all_positives": carveout_before_positives,
     }
     lag = instance.get("lag_bucket")
     if lag:
