@@ -409,7 +409,7 @@ def run_personalized_recommendation(
             })
             continue
 
-        raw_response, tool_call_count, _ = dispatch_agent_run(
+        raw_response, tool_call_count, subagent_stats = dispatch_agent_run(
             mode, prompt, bq=bq, user_id=user_id, t=t,
             claude_model=claude_model, llm_client=llm_client,
         )

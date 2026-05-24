@@ -209,25 +209,24 @@ def _set_query_env(row: dict, run_dir: Path, user_id: str, backend_dir: str) -> 
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
 
 
-# Task families whose rows MUST run in `seq` order within a persona.
-# Agentic tasks all share a single writes.jsonl overlay file: writers
-# append + later readers consume the merged view. Parallel execution
-# would corrupt JSONL appends AND make read-during-write races.
-_SEQUENTIAL_TASK_FAMILIES = {"agentic"}
-
-
 def _is_sequential(task_type: str) -> bool:
-    """Rows that must run in seq order alongside other agentic rows.
+    """Rows that must run in seq order within a persona.
+
+    Only rows whose `state_write_policy == "writes_ok"` need the
+    sequential queue — they APPEND to the shared `writes.jsonl` overlay
+    file and concurrent appends would corrupt the JSONL. Read-only
+    agentic tasks (dm_digest, group_dm_summary, vague_refind,
+    proactive_daily_catchup, trending_alert) safely parallelize because
+    they only READ the overlay during scoring, and the overlay is
+    complete by the time scoring runs (the write tasks that feed it
+    are in the sequential queue and execute first in `seq` order).
 
     Normalizes aliased task_types (e.g. `agentic_send_post` →
-    `agentic_composed_post`) before looking up the task_family.
-    Without this, OLD_TO_NEW aliases fall through to `task_family=unknown`
-    and land in the parallel pool — which can hang or corrupt the
-    overlay.
+    `agentic_composed_post`) before lookup.
     """
     from evaluation.task_registry import get_meta, normalize_task_type
     meta = get_meta(normalize_task_type(task_type))
-    return meta.get("task_family") in _SEQUENTIAL_TASK_FAMILIES
+    return meta.get("state_write_policy") == "writes_ok"
 
 
 def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
