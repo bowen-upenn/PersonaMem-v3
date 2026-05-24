@@ -46,6 +46,37 @@ def _trim_to_quota(items: list[dict], task_type: str) -> list[dict]:
     return items[:mx]
 
 
+_GT_EXTRACTORS_CACHE: dict | None = None
+
+
+def _get_gt_extractor(task_type: str):
+    """Lazily import the per-task GT extractor from data_preparation.visualize.
+
+    Lazy because visualize.py is a heavy module (5k+ lines) and only the
+    proactive-task builders need its 6 extractor functions. Cached so the
+    dispatch dict is built once per process.
+    """
+    global _GT_EXTRACTORS_CACHE
+    if _GT_EXTRACTORS_CACHE is None:
+        from data_preparation.visualize import (
+            _gt_proactive_friend_feed_react,
+            _gt_proactive_trending_feed_react,
+            _gt_proactive_overactive_check,
+            _gt_proactive_unfulfilled_stated_need,
+            _gt_proactive_close_friend_update,
+            _gt_proactive_sensitive_event_silence,
+        )
+        _GT_EXTRACTORS_CACHE = {
+            "proactive_friend_feed_react":      _gt_proactive_friend_feed_react,
+            "proactive_trending_feed_react":    _gt_proactive_trending_feed_react,
+            "proactive_overactive_check":       _gt_proactive_overactive_check,
+            "proactive_unfulfilled_stated_need": _gt_proactive_unfulfilled_stated_need,
+            "proactive_close_friend_update":    _gt_proactive_close_friend_update,
+            "restraint_sensitive_event_silence": _gt_proactive_sensitive_event_silence,
+        }
+    return _GT_EXTRACTORS_CACHE.get(task_type)
+
+
 def _candidate_to_instance(
     cand: dict,
     task_type: str,
@@ -53,8 +84,14 @@ def _candidate_to_instance(
     user_id: str,
     idx: int,
 ) -> dict:
-    """Normalize a Step-28 trigger candidate into the eval instance shape."""
-    return {
+    """Normalize a Step-28 trigger candidate into the eval instance shape.
+
+    Attaches `example_response`, `inferior_response`, and
+    `groundtruth_preference` so they ride along in `instance_json` (and
+    therefore in queries.csv) — same shape every other personalization
+    task family ships to the eval runner / judge.
+    """
+    inst: dict = {
         "instance_id": f"{task_type}_{user_id}_{idx:02d}",
         "task_id": task_type,
         "task_type": task_type,
@@ -88,6 +125,16 @@ def _candidate_to_instance(
             "stale_preference_use",            # universal hard-rule
         ],
     }
+    extractor = _get_gt_extractor(task_type)
+    if extractor is not None:
+        try:
+            gt = extractor(inst)
+        except Exception:
+            gt = {}
+        for k in ("example_response", "inferior_response", "groundtruth_preference"):
+            if k in gt and gt[k] is not None:
+                inst[k] = gt[k]
+    return inst
 
 
 _PROACTIVE_MISSING_WARNED: set[str] = set()
@@ -299,9 +346,9 @@ def run_proactive_task(
 ) -> list[dict]:
     """Run one proactive-action instance through the agent + judge.
 
-    For `mcp_agent` / `agent_longctx` modes the agent has access to chatbot
-    MCP tools (read-only); for `llm_longctx` mode the prompt receives a
-    pre-built history block.
+    For `mcp_agent` mode the agent has access to chatbot MCP tools
+    (read-only); for `llm_longctx` mode the prompt receives a pre-built
+    history block.
     """
     if limit is not None:
         instances = instances[:limit]
@@ -317,7 +364,7 @@ def run_proactive_task(
 
         history_block = None
         history_tokens = 0
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, stats = snapshot_cache.get_or_build(
                 bq, user_id, t, model_name, context_budget,
             )
@@ -327,7 +374,7 @@ def run_proactive_task(
         # under test. They are hidden ground truth used only by the judge.
         # The AI must discover proactive moments by reading the user's
         # history (via tools in mcp_agent/agent_tools, via history_block
-        # in agent_longctx/llm_longctx).
+        # in llm_longctx).
         prompt = prompts_agentic.proactive_action_prompt(
             user_state_summary=user_state_summary,
             history_block=history_block,

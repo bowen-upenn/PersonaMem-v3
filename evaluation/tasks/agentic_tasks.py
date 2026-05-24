@@ -314,17 +314,31 @@ def _dispatch_and_score(
         bq=bq, user_id=user_id, t=t,
         claude_model=claude_model, llm_client=llm_client,
     )
-    parsed = extract_json_from_response(raw) or {}
+    parsed = extract_json_from_response(raw)
     # `final_answer` is the llm_longctx (text-only) JSON key — checked first
     # so write-task content lands in response_text instead of falling through
-    # to a stale `summary` field.
-    response_text = (
-        parsed.get("final_answer")
-        or parsed.get("response")
-        or parsed.get("summary")
-        or parsed.get("reply_to_user")
-        or raw or ""
-    )
+    # to a stale `summary` field. Defensive `isinstance` because the
+    # parser can return a list/scalar/None when the LLM doesn't emit a
+    # JSON object — `.get(...)` would crash on those. Also coerce the
+    # picked field to a string: T16 group-DM summaries sometimes come
+    # back as `{"summary": {"alice": "...", "bob": "..."}}` (dict instead
+    # of string), and downstream rubric scoring calls `re.findall(s)`
+    # which raises TypeError on non-strings.
+    if isinstance(parsed, dict):
+        picked = (
+            parsed.get("final_answer")
+            or parsed.get("response")
+            or parsed.get("summary")
+            or parsed.get("reply_to_user")
+            or raw or ""
+        )
+    else:
+        picked = raw or ""
+    if isinstance(picked, str):
+        response_text = picked
+    else:
+        # Flatten dict/list to JSON text so downstream string ops work.
+        response_text = json.dumps(picked, ensure_ascii=False)
 
     # Universal personalization rubric.
     gt = pr.build_source_a(bq, user_id, t, query_text=query_text, query_hashtags=query_hashtags or [])
@@ -1260,7 +1274,7 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
         # the model to call non-existent MCP tools.
         gt_block = ground_truth_builders.build_for_task(task_id, bq, user_id, t, inst)
         history_block = None
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, _ = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
         allow_extra = (mode == "mcp_agent")
         text_only = (mode == "llm_longctx")
@@ -1326,7 +1340,14 @@ def _prompt_for(task_id: str):
     def t9(inst, h, **kw): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h, **kw)
     def t10(inst, h, **kw): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"), **kw)
     def t11(inst, h, **kw): return pa.t11_vague_refind(inst["topic"], h, **kw)
-    def t12(inst, h, **kw): return pa.t12_agent_composed_post(inst["target_app"], inst["update"], h, **kw)
+    def t12(inst, h, **kw):
+        # agentic_composed_post + agentic_send_post merged in task_registry —
+        # the merged instance set carries the post-body under either `update`
+        # (compose-from-scratch builder) or `context` (chatbot-dispatch
+        # builder). Accept either to avoid KeyError on the normalized
+        # task_type.
+        body = inst.get("update") or inst.get("context") or ""
+        return pa.t12_agent_composed_post(inst["target_app"], body, h, **kw)
     def t13(inst, h, **kw): return pa.t13_send_post(inst["target_app"], inst["context"], h, **kw)
     def t14(inst, h, **kw): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
     def t16(inst, h, **kw): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"), **kw)

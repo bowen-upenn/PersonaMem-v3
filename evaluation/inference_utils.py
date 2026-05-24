@@ -582,7 +582,6 @@ def dispatch_agent_run(
 
     - `agent_tools`: Claude Code subagent with filesystem Read on a snapshot.
     - `mcp_agent`:   Claude Code subagent with MCP tools (writes to overlay).
-    - `agent_longctx`: Claude Code subagent, no tools, history in prompt.
     - `llm_longctx`: single QueryLLM call (non-Claude provider baseline).
     """
     from evaluation.claude_subagent import run_subagent
@@ -591,11 +590,6 @@ def dispatch_agent_run(
         snap = materialize_snapshot(bq, user_id, t)
         sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model)
         return sub.text, sub.turns, _pack_stats(sub, include_denials=True)
-
-    if mode == "agent_longctx":
-        snap = materialize_snapshot(bq, user_id, t)
-        sub = run_subagent(prompt=prompt, snapshot_dir=snap, model=claude_model, allowed_tools=())
-        return sub.text, 0, _pack_stats(sub)
 
     if mode == "mcp_agent":
         from evaluation.mcp_config_builder import build_mcp_config, mcp_allowed_tools, write_mcp_config
@@ -712,6 +706,24 @@ def build_judge_evidence(
     gt = build_gt_slice(bq, test_item)
     profile = bq.get_full_profile(test_item.user_id)
     flat_prefs = profile.get("preferences", []) or []
+
+    # Step 24 of the persona pipeline emits each entry in
+    # `profile.preferences` as a timestamp-prefixed STRING (format:
+    # "YYYY-MM-DD HH:MM : <persona_item>"), not a dict. Coerce to a
+    # uniform dict shape so downstream scoring works regardless of
+    # whether a future builder reverts to dicts.
+    def _coerce_pref(p) -> dict:
+        if isinstance(p, dict):
+            return p
+        if isinstance(p, str):
+            # Strip the optional "<ts> : " prefix.
+            text = p
+            if " : " in text:
+                _, _, text = text.partition(" : ")
+            return {"persona_item": text.strip(), "category": "", "source_hashtags": []}
+        return {"persona_item": "", "category": "", "source_hashtags": []}
+
+    flat_prefs = [_coerce_pref(p) for p in flat_prefs]
 
     out_lower = (agent_output or "").lower()
 

@@ -42,7 +42,7 @@ def run_task_c2(
         t_probe = sc["t_probe"]
         history_block = None
         history_tokens = 0
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t_probe, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
@@ -64,8 +64,11 @@ def run_task_c2(
             claude_model=claude_model, llm_client=llm_client,
         )
 
-        parsed = extract_json_from_response(raw_response) or {}
-        response_text = parsed.get("response") or raw_response
+        parsed = extract_json_from_response(raw_response)
+        if isinstance(parsed, dict):
+            response_text = parsed.get("response") or raw_response
+        else:
+            response_text = raw_response
 
         leak = metrics.keyword_leak_rate(response_text, sc.get("forbidden_items") or [])
         carve = 1
@@ -136,7 +139,7 @@ def run_task_c3(
         t = inst["source_timestamp"]
         history_block = None
         history_tokens = 0
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
@@ -294,7 +297,7 @@ def run_task_c1c(
         # 90 minutes of history.
         t_test = int(cluster.get("t_test") or queries[-1]["ts"])
         history_block = None
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, _stats = snapshot_cache.get_or_build(
                 bq, user_id, t_test, model_name, context_budget,
             )
@@ -493,7 +496,7 @@ def run_task_c1d(
 
         t_test = int(cluster.get("t_test") or queries[-1]["ts"])
         history_block = None
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, _stats = snapshot_cache.get_or_build(
                 bq, user_id, t_test, model_name, context_budget,
             )
@@ -530,8 +533,11 @@ def run_task_c1d(
                 mode, prompt, bq=bq, user_id=user_id, t=ts,
                 claude_model=claude_model, llm_client=llm_client,
             )
-            parsed = extract_json_from_response(raw) or {}
-            response_text = (parsed.get("response") or raw or "").strip()
+            parsed = extract_json_from_response(raw)
+            if isinstance(parsed, dict):
+                response_text = (parsed.get("response") or raw or "").strip()
+            else:
+                response_text = (raw or "").strip()
             responses.append({
                 "ts": ts,
                 "user_query": q["user_query"],
@@ -607,7 +613,7 @@ def run_task_c4(
         user_query = inst["user_query"]
         prior = inst.get("prior_conversation") or []
         history_block = None
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
 
         if dry_run:

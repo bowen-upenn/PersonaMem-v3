@@ -10,7 +10,7 @@ the shell level (see `scripts/run_eval_all.sh`).
 
 CLI:
     python -m evaluation.run_eval --user_id 115 --run_dir benchmark/115/runs/<ts>
-        [--mode llm_longctx|mcp_agent|agent_longctx]
+        [--mode llm_longctx|mcp_agent|agent_tools]
         [--limit N] [--resume] [--dry_run]
         [--enable_llm_judge]
 """
@@ -74,7 +74,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--run_dir", required=True,
                    help="Output directory for results.csv + writes.jsonl + summary files")
     p.add_argument("--mode",
-                   choices=("llm_longctx", "mcp_agent", "agent_tools", "agent_longctx"),
+                   choices=("llm_longctx", "mcp_agent", "agent_tools"),
                    default="llm_longctx")
     p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"),
                    help="Baseline LLM model for llm_longctx mode")
@@ -94,12 +94,17 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--resume", action="store_true",
                    help="Skip queries already present in {run_dir}/results.csv")
     p.add_argument("--dry_run", action="store_true")
+    p.add_argument("--workers", type=int, default=4,
+                   help="Parallel worker count for non-agentic rows. "
+                        "Agentic rows (T6-T19) always run sequentially in a "
+                        "dedicated worker because they share writes.jsonl. "
+                        "--workers 1 disables parallelism (original behavior).")
     return p.parse_args()
 
 
 def _build_llm_clients(args: argparse.Namespace):
     """Mirror the clients set up by run_inference.py._build_llm_clients."""
-    if args.dry_run or args.mode in ("agent_tools", "agent_longctx", "mcp_agent"):
+    if args.dry_run or args.mode in ("agent_tools", "mcp_agent"):
         baseline = None
     else:
         from query_llm import QueryLLM
@@ -172,6 +177,191 @@ def _set_query_env(row: dict, run_dir: Path, user_id: str, backend_dir: str) -> 
     os.environ["PM3_USER_ID"] = user_id
     os.environ["PM3_BACKEND_DIR"] = backend_dir
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
+
+
+# Task families whose rows MUST run in `seq` order within a persona.
+# Agentic tasks all share a single writes.jsonl overlay file: writers
+# append + later readers consume the merged view. Parallel execution
+# would corrupt JSONL appends AND make read-during-write races.
+_SEQUENTIAL_TASK_FAMILIES = {"agentic"}
+
+
+def _is_sequential(task_type: str) -> bool:
+    """Rows that must run in seq order alongside other agentic rows."""
+    from evaluation.task_registry import get_meta
+    meta = get_meta(task_type)
+    return meta.get("task_family") in _SEQUENTIAL_TASK_FAMILIES
+
+
+def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
+              result: dict | None, duration_ms: int) -> dict:
+    """Build the per-row CSV record from a runner's return value.
+
+    Shared between the sequential and parallel-worker code paths so the
+    record shape (status, metrics, token counts) is identical regardless
+    of which queue serviced the row.
+    """
+    if result is None:
+        return {
+            "query_id": qid, "seq": seq,
+            "user_id": user_id, "task_type": task_type, "ts": ts,
+            "metrics_json": "", "status": "no_result",
+            "duration_ms": duration_ms, "error": "",
+        }
+    metrics_dict = dict(result.get("metrics") or {})
+    sub = result.get("subagent_stats") or {}
+    # Repetition runners (c1c/c1d) emit `subagent_stats` as a LIST
+    # (one entry per query in the cluster); collapse by summing token
+    # counts so the token-vs-accuracy aggregator works uniformly.
+    if isinstance(sub, list):
+        agg: dict = {}
+        for s in sub:
+            if not isinstance(s, dict):
+                continue
+            for k in ("input_tokens", "output_tokens",
+                      "cache_read_tokens", "cost_usd"):
+                v = s.get(k)
+                if isinstance(v, (int, float)):
+                    agg[k] = agg.get(k, 0) + v
+        sub = agg
+    elif not isinstance(sub, dict):
+        sub = {}
+    for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cost_usd"):
+        v = sub.get(k)
+        if v is not None and k not in metrics_dict:
+            metrics_dict[k] = v
+    return {
+        "query_id": qid, "seq": seq,
+        "user_id": user_id, "task_type": task_type, "ts": ts,
+        "metrics_json": json.dumps(metrics_dict, ensure_ascii=False),
+        "status": result.get("status", "ok"),
+        "duration_ms": duration_ms,
+        "error": result.get("error", "") or "",
+    }
+
+
+def _run_one_in_worker(payload: dict) -> dict:
+    """Top-level function so ProcessPoolExecutor can pickle it.
+
+    Each child process inherits a copy of the parent env at spawn time
+    and mutates its OWN copy of os.environ — safe sibling-isolation that
+    threads cannot provide (PM3_T_TEST would race across threads).
+
+    Parallel workers should never dispatch agentic_* task types — the
+    caller filters those out — so the overlay file is never touched here.
+    The PM3_OVERLAY_PATH env var is still set for parity with the
+    sequential path and because the MCP server config reads it
+    unconditionally at import time.
+    """
+    import os  # noqa: F811 — explicit so this module ships standalone
+    import json  # noqa: F811
+    import time  # noqa: F811
+    import traceback
+    from pathlib import Path  # noqa: F811
+    from evaluation.backend_query import BackendQuery
+    from evaluation.inference_utils import SnapshotCache
+    from evaluation.run_eval_dispatch import DispatchContext, dispatch_single
+
+    row = payload["row"]
+    run_dir = Path(payload["run_dir_str"])
+    user_id = payload["user_id"]
+
+    os.environ["PM3_T_TEST"] = str(row["ts"])
+    os.environ["PM3_USER_ID"] = user_id
+    os.environ["PM3_BACKEND_DIR"] = payload["backend_dir"]
+    os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
+
+    # Build per-worker LLM clients. Each worker keeps its own QueryLLM
+    # connection — instantiation is cheap relative to the per-row wall
+    # time (~25s). The per-worker rate limit is scaled down so the
+    # aggregate doesn't exceed the parent's intended bound.
+    judge = None
+    if payload["enable_llm_judge"]:
+        from query_llm import QueryLLM
+        judge = QueryLLM(
+            {"models": {"llm_model": payload["judge_model_name"]}},
+            rate_limit_per_min=payload["per_worker_rate_limit"],
+        )
+    baseline = None
+    if payload["mode"] == "llm_longctx" and not payload["dry_run"]:
+        from query_llm import QueryLLM
+        baseline = QueryLLM(
+            {"models": {"llm_model": payload["model_name"]}},
+            rate_limit_per_min=payload["per_worker_rate_limit"],
+        )
+
+    bq = BackendQuery(payload["backend_dir"])
+    ctx = DispatchContext(
+        user_id=user_id, bq=bq,
+        llm_client=baseline, judge_client=judge,
+        mode=payload["mode"], snapshot_cache=SnapshotCache(),
+        model_name=payload["model_name"],
+        claude_model=payload["claude_model"],
+        context_budget=payload["context_budget"],
+        enable_llm_judge=payload["enable_llm_judge"],
+        dry_run=payload["dry_run"],
+    )
+
+    qid = row["query_id"]
+    try:
+        inst = json.loads(row["instance_json"])
+    except Exception as e:
+        return {
+            "query_id": qid, "seq": row["seq"],
+            "user_id": user_id, "task_type": row["task_type"],
+            "ts": row["ts"],
+            "metrics_json": "", "status": "error", "duration_ms": 0,
+            "error": f"instance_json parse: {type(e).__name__}: {e}",
+        }
+
+    t0 = time.time()
+    try:
+        result = dispatch_single(row["task_type"], inst, ctx)
+        return _pack_rec(qid, row["seq"], user_id, row["task_type"],
+                         row["ts"], result, int((time.time() - t0) * 1000))
+    except Exception as e:
+        tb = traceback.format_exc()
+        last_frame_loc = ""
+        for line in reversed(tb.splitlines()):
+            if line.startswith("  File "):
+                last_frame_loc = line.strip()
+                break
+        # Print to the worker's stderr so the parent's tail captures it.
+        print(
+            f"[run_eval/worker] ERROR on query_id={qid} task_type={row['task_type']}:\n{tb}",
+            file=sys.stderr, flush=True,
+        )
+        return {
+            "query_id": qid, "seq": row["seq"],
+            "user_id": user_id, "task_type": row["task_type"],
+            "ts": row["ts"],
+            "metrics_json": "", "status": "error",
+            "duration_ms": int((time.time() - t0) * 1000),
+            "error": f"{type(e).__name__}: {e} | {last_frame_loc}",
+        }
+
+
+def _build_payload(row: dict, args: argparse.Namespace, run_dir: Path,
+                   per_worker_rate_limit: int) -> dict:
+    """Pack per-row args for `_run_one_in_worker` over IPC.
+
+    Only picklable primitives — no live BackendQuery / SnapshotCache /
+    QueryLLM clients (each worker constructs its own).
+    """
+    return {
+        "row": row,
+        "run_dir_str": str(run_dir),
+        "user_id": args.user_id,
+        "backend_dir": args.backend_dir,
+        "mode": args.mode,
+        "model_name": args.model,
+        "claude_model": args.claude_model,
+        "judge_model_name": args.judge_model,
+        "enable_llm_judge": args.enable_llm_judge,
+        "context_budget": args.context_budget,
+        "dry_run": args.dry_run,
+        "per_worker_rate_limit": per_worker_rate_limit,
+    }
 
 
 def _summarize_by_task(rows: list[dict]) -> dict:
@@ -269,85 +459,115 @@ def main() -> int:
     else:
         bar = None
 
-    try:
-        for i, row in enumerate(rows):
-            qid = row["query_id"]
-            if qid in done:
-                continue
-            try:
-                inst = json.loads(row["instance_json"])
-            except Exception as e:
-                rec = {
-                    "query_id": qid, "seq": row["seq"],
-                    "user_id": args.user_id, "task_type": row["task_type"],
-                    "ts": row["ts"],
-                    "metrics_json": "", "status": "error", "duration_ms": 0,
-                    "error": f"instance_json parse: {type(e).__name__}: {e}",
-                }
-                writer.writerow(rec)
-                out_file.flush()
-                written_results.append(rec)
-                continue
+    # Partition rows. Agentic_* tasks must run in seq order in a single
+    # worker (shared writes.jsonl overlay); everything else parallelizes.
+    pending = [r for r in rows if r["query_id"] not in done]
+    parallel_rows = [r for r in pending if not _is_sequential(r["task_type"])]
+    sequential_rows = [r for r in pending if _is_sequential(r["task_type"])]
+    print(f"[run_eval] partition: parallel={len(parallel_rows)} "
+          f"sequential={len(sequential_rows)} workers={args.workers}")
 
-            _set_query_env(row, run_dir, args.user_id, args.backend_dir)
-            t0 = time.time()
-            try:
-                result = dispatch_single(row["task_type"], inst, ctx)
-                duration_ms = int((time.time() - t0) * 1000)
-                if result is None:
-                    rec = {
-                        "query_id": qid, "seq": row["seq"],
-                        "user_id": args.user_id, "task_type": row["task_type"],
-                        "ts": row["ts"],
-                        "metrics_json": "", "status": "no_result",
-                        "duration_ms": duration_ms, "error": "",
-                    }
-                else:
-                    # Pull token counts from subagent_stats (Claude Code modes
-                    # populate them) and inject into metrics_json so the
-                    # aggregator can build the token-vs-accuracy table without
-                    # having to peek into nested dicts. Per-task runners that
-                    # already populate these (slate, chatbot, agentic) get a
-                    # no-op merge — the keys overwrite to the same values.
-                    metrics_dict = dict(result.get("metrics") or {})
-                    sub = result.get("subagent_stats") or {}
-                    for k in ("input_tokens", "output_tokens", "cache_read_tokens", "cost_usd"):
-                        v = sub.get(k)
-                        if v is not None and k not in metrics_dict:
-                            metrics_dict[k] = v
-                    rec = {
-                        "query_id": qid, "seq": row["seq"],
-                        "user_id": args.user_id, "task_type": row["task_type"],
-                        "ts": row["ts"],
-                        "metrics_json": json.dumps(metrics_dict, ensure_ascii=False),
-                        "status": result.get("status", "ok"),
-                        "duration_ms": duration_ms,
-                        "error": result.get("error", "") or "",
-                    }
-            except Exception as e:
-                duration_ms = int((time.time() - t0) * 1000)
-                rec = {
-                    "query_id": qid, "seq": row["seq"],
-                    "user_id": args.user_id, "task_type": row["task_type"],
-                    "ts": row["ts"],
-                    "metrics_json": "", "status": "error",
-                    "duration_ms": duration_ms,
-                    "error": f"{type(e).__name__}: {e}",
-                }
+    import threading
+    import traceback
+    write_lock = threading.Lock()
+
+    def _emit(rec: dict) -> None:
+        """Write one record + tqdm tick under the writer lock.
+        Called from both the sequential thread and the parallel
+        future-consumer (main thread)."""
+        with write_lock:
             writer.writerow(rec)
             out_file.flush()
             written_results.append(rec)
-
             if bar is not None:
                 bar.set_postfix_str(
-                    f"{row['task_type']}/{rec['status']} {rec['duration_ms']}ms",
+                    f"{rec['task_type']}/{rec['status']} {rec['duration_ms']}ms",
                     refresh=False,
                 )
                 bar.update(1)
-            elif (i + 1) % 10 == 0 or i == len(rows) - 1:
-                print(f"[run_eval] {i + 1}/{len(rows)} done "
-                      f"(latest: {row['task_type']} {row['seq']} {rec['status']} "
-                      f"{rec['duration_ms']}ms)")
+
+    def _run_seq_row(row: dict) -> dict:
+        """Run one row inline in the current thread/process using the
+        parent's shared `ctx`. Used by both the sequential queue and
+        the --workers 1 / dry_run fallback."""
+        qid = row["query_id"]
+        try:
+            inst = json.loads(row["instance_json"])
+        except Exception as e:
+            return {
+                "query_id": qid, "seq": row["seq"],
+                "user_id": args.user_id, "task_type": row["task_type"],
+                "ts": row["ts"],
+                "metrics_json": "", "status": "error", "duration_ms": 0,
+                "error": f"instance_json parse: {type(e).__name__}: {e}",
+            }
+        _set_query_env(row, run_dir, args.user_id, args.backend_dir)
+        t0 = time.time()
+        try:
+            result = dispatch_single(row["task_type"], inst, ctx)
+            return _pack_rec(qid, row["seq"], args.user_id, row["task_type"],
+                             row["ts"], result, int((time.time() - t0) * 1000))
+        except Exception as e:
+            tb = traceback.format_exc()
+            print(
+                f"[run_eval] ERROR on query_id={qid} task_type={row['task_type']}:\n{tb}",
+                file=sys.stderr, flush=True,
+            )
+            last_frame_loc = ""
+            for line in reversed(tb.splitlines()):
+                if line.startswith("  File "):
+                    last_frame_loc = line.strip()
+                    break
+            return {
+                "query_id": qid, "seq": row["seq"],
+                "user_id": args.user_id, "task_type": row["task_type"],
+                "ts": row["ts"],
+                "metrics_json": "", "status": "error",
+                "duration_ms": int((time.time() - t0) * 1000),
+                "error": f"{type(e).__name__}: {e} | {last_frame_loc}",
+            }
+
+    # Effective worker count — dry_run forces single-threaded so any
+    # crashes in the runner surface directly with full tracebacks.
+    use_pool = (args.workers > 1
+                and not args.dry_run
+                and len(parallel_rows) > 0)
+
+    try:
+        if not use_pool:
+            # Sequential fallback — old behavior. Walks parallel_rows
+            # then sequential_rows in seq order, all in the main thread.
+            for row in parallel_rows + sequential_rows:
+                _emit(_run_seq_row(row))
+        else:
+            from concurrent.futures import ProcessPoolExecutor, as_completed
+
+            # Sequential agentic queue runs in a parent-process thread
+            # — shares `ctx` and parent os.environ (no race because
+            # parallel workers never touch the overlay).
+            seq_done_flag = threading.Event()
+
+            def _drive_sequential():
+                for row in sequential_rows:
+                    _emit(_run_seq_row(row))
+                seq_done_flag.set()
+
+            seq_thread = threading.Thread(target=_drive_sequential, daemon=False)
+            seq_thread.start()
+
+            # Parallel pool drives the non-agentic queue. Each worker
+            # gets its own per-rate-limit budget so the aggregate stays
+            # under args.rate_limit.
+            per_worker = max(1, args.rate_limit // args.workers)
+            payloads = [_build_payload(row, args, run_dir, per_worker)
+                        for row in parallel_rows]
+            with ProcessPoolExecutor(max_workers=args.workers) as pool:
+                futs = [pool.submit(_run_one_in_worker, p) for p in payloads]
+                for fut in as_completed(futs):
+                    _emit(fut.result())
+
+            # Wait for the sequential queue to drain (if it hasn't already).
+            seq_thread.join()
     finally:
         if bar is not None:
             bar.close()

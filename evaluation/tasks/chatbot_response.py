@@ -79,7 +79,7 @@ def run_task_b(
 
         history_block = None
         history_tokens = 0
-        if mode in ("agent_longctx", "llm_longctx"):
+        if mode == "llm_longctx":
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
@@ -108,8 +108,15 @@ def run_task_b(
             claude_model=claude_model, llm_client=llm_client,
         )
 
-        parsed = extract_json_from_response(raw_response) or {}
-        response_text = parsed.get("response") or raw_response
+        parsed = extract_json_from_response(raw_response)
+        # `extract_json_from_response` returns whatever the LLM emitted —
+        # could be a dict, a list, a scalar, or None. Only dicts have a
+        # "response" key worth probing; everything else is the response
+        # body itself.
+        if isinstance(parsed, dict):
+            response_text = parsed.get("response") or raw_response
+        else:
+            response_text = raw_response
 
         # Task B v2 metric bundle depends on arm.
         gt = inst.get("gt_slice") or {"target": [], "avoid": []}

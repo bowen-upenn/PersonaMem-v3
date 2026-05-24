@@ -115,7 +115,10 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
         rows = _geo.run_local_recommendation_geo_shift(**common)
     elif task_type in ("proactive_unfulfilled_stated_need",
                        "proactive_close_friend_update",
-                       "restraint_sensitive_event_silence"):
+                       "restraint_sensitive_event_silence",
+                       "proactive_friend_feed_react",
+                       "proactive_trending_feed_react",
+                       "proactive_overactive_check"):
         from evaluation.tasks import proactive_actions as _proactive
         rows = _proactive.run_proactive_task(**common)
     elif task_type == "new_suggestions_recsys":
