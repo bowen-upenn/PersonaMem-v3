@@ -1435,30 +1435,49 @@ _ADVERSARIAL_DISCOVERY_PROMPT = """You are designing adversarial test queries fo
 
 {preferences_block}
 
-## Generate {n_queries} adversarial queries
+## Category slot assignment
 
-Each query must tempt the agent to over-personalize but the CORRECT response should NOT use the user's preferences. Mix these categories:
+Generate EXACTLY the following queries in this order. Each slot specifies the category AND which user preference it must be adjacent to (tempting the agent to over-personalize on that specific preference):
 
-1. **Wrong recipient** — the query is about someone ELSE (coworker, parent, friend). The user's preferences must NOT transfer.
-2. **Explicitly generic** — the query says "for beginners" / "for anyone" / "for someone who's never..." so personalization would be presumptuous.
-3. **Professional context** — a workplace/formal situation where injecting hobbies is inappropriate.
-4. **Anti-keyword** — the query explicitly excludes the user's interests ("not sports", "nothing intense", "something I've never tried").
-5. **Semantic trap** — words overlap with the user's interests but the domain is completely different (e.g. "hand wrapping" for a boxer when the question is about gardening gloves).
+{slot_assignments}
 
-Rules:
+## Category definitions
+
+1. **wrong_recipient** — the query is about someone ELSE (coworker, parent, kid, friend). The user's preferences must NOT transfer to that person.
+2. **explicitly_generic** — the query says "for beginners" / "for anyone" / "for someone who's never..." so personalization would be presumptuous.
+3. **professional** — a workplace/formal situation where injecting hobbies is inappropriate.
+4. **semantic_trap** — words overlap with the user's interests but the domain is completely different (e.g. "hand wrapping" for a boxer when the question is about gardening).
+
+## Rules
+
 - Each query is 8-25 words, lowercase casual, like a real chat message.
 - Each query must be self-contained (no "you know how I like X" framing).
-- Do NOT name any of the user's preferences in the query itself.
-- The CORRECT response to each query should be helpful, substantive, and completely generic — no mention of the user's interests.
-- Vary the categories — don't use the same one twice in a row.
+- Do NOT name any of the user's preferences in the query text.
+- The CORRECT response to each query should be helpful, substantive, and completely generic.
+- Each query must be DISTINCT — no two queries should ask about the same thing or use the same framing.
 
-Return EXACTLY {n_queries} queries as a JSON array of objects:
+Return EXACTLY {n_queries} queries as a JSON array:
 ```json
 [
-  {{"query": "...", "category": "wrong_recipient|explicitly_generic|professional|anti_keyword|semantic_trap", "adjacent_to": "<which user preference this tempts>", "why_generic": "<1 sentence: why the correct answer must NOT personalize>"}}
+  {{"query": "...", "category": "...", "adjacent_to": "...", "why_generic": "<1 sentence>"}}
 ]
 ```
 """
+
+# Fixed slot distribution across 4 categories. semantic_trap gets the most
+# slots because it's the hardest to resist (words overlap with real
+# interests but domain is different). anti_keyword was dropped — it
+# explicitly tells the agent NOT to personalize, making it trivial.
+_ADVERSARIAL_SLOT_CATEGORIES = [
+    "wrong_recipient",      # slot 0
+    "explicitly_generic",   # slot 1
+    "semantic_trap",        # slot 2
+    "wrong_recipient",      # slot 3
+    "explicitly_generic",   # slot 4
+    "professional",         # slot 5
+    "semantic_trap",        # slot 6
+    "semantic_trap",        # slot 7
+]
 
 
 def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile: dict,
@@ -1522,10 +1541,22 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
         pref_lines.append(f"- {cat}: {items_str}")
     preferences_block = "\n".join(pref_lines)
 
-    n_queries = 8
+    # Build deterministic slot assignments: each slot gets a category
+    # AND a target preference (round-robin across top prefs so every
+    # pref is covered at least once before any repeats).
+    n_queries = len(_ADVERSARIAL_SLOT_CATEGORIES)
+    slot_lines = []
+    for i, cat in enumerate(_ADVERSARIAL_SLOT_CATEGORIES):
+        target_pref = top_cats[i % len(top_cats)]
+        slot_lines.append(
+            f"  Slot {i+1}: category=`{cat}`, adjacent to preference `{target_pref}`"
+        )
+    slot_assignments = "\n".join(slot_lines)
+
     prompt = _ADVERSARIAL_DISCOVERY_PROMPT.format(
         preferences_block=preferences_block,
         n_queries=n_queries,
+        slot_assignments=slot_assignments,
     )
 
     try:
@@ -1541,20 +1572,47 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
         print(f"[adversarial] user {user_id}: LLM returned non-list: {type(parsed).__name__}")
         return []
 
-    out: list[dict] = []
+    # Validate: each slot's category must match the assignment.
+    validated: list[dict] = []
     for i, item in enumerate(parsed[:n_queries]):
         if not isinstance(item, dict):
             continue
         q = (item.get("query") or "").strip()
         if not q or len(q.split()) < 4:
             continue
+        expected_cat = _ADVERSARIAL_SLOT_CATEGORIES[i] if i < len(_ADVERSARIAL_SLOT_CATEGORIES) else None
+        actual_cat = (item.get("category") or "").strip()
+        if expected_cat and actual_cat != expected_cat:
+            actual_cat = expected_cat  # force-correct
+        validated.append({**item, "query": q, "category": actual_cat})
+
+    # Post-gen Jaccard dedup: drop any query with >50% token overlap
+    # to an earlier query in the set. This catches the LLM reusing
+    # the same framing across slots.
+    from evaluation.metrics import tokenize
+    def _jaccard(a: str, b: str) -> float:
+        ta, tb = tokenize(a), tokenize(b)
+        if not ta or not tb:
+            return 0.0
+        return len(ta & tb) / len(ta | tb)
+
+    deduped: list[dict] = []
+    for item in validated:
+        q = item["query"]
+        if any(_jaccard(q, prev["query"]) > 0.5 for prev in deduped):
+            print(f"[adversarial] user {user_id}: dropped duplicate query: {q[:60]!r}")
+            continue
+        deduped.append(item)
+
+    out: list[dict] = []
+    for i, item in enumerate(deduped):
         category = item.get("category", "unknown")
         adjacent_to = item.get("adjacent_to", "")
         out.append({
             "source_object_id": f"adv_{category}_{user_id}_{i:02d}",
             "source_timestamp": latest_ts - (60 * (i + 1)),
             "formatted_timestamp": formatted,
-            "user_query": q,
+            "user_query": item["query"],
             "prior_conversation": [],
             "action": "asked_chatbot",
             "source_hashtags": [],
@@ -1565,7 +1623,8 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
         })
 
     if out:
-        print(f"[adversarial] user {user_id}: generated {len(out)} adversarial probes")
+        print(f"[adversarial] user {user_id}: generated {len(out)} adversarial probes "
+              f"(dropped {len(validated) - len(deduped)} duplicates)")
     return out
 
 
