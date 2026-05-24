@@ -745,7 +745,12 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "new_suggestions_chatbot":                 ("passed", "fraction"),
     # Chatbot response — held-out preference alignment for proactive arm,
     # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
-    "chatbot_personalized_response":               ("held_out_score", "fraction"),
+    # Was held_out_score (cosine similarity against ONE specific held-out
+    # preference → 7.8% because the agent can personalize well on OTHER
+    # preferences and still miss the exact held-out one). pr_combined
+    # measures broader personalization quality: preference_alignment +
+    # over_personalization + subtle_personalization + hard-rule gates.
+    "chatbot_personalized_response":               ("pr_combined_personalization_score", "pr_combined"),
     "over_personalization_chatbot_text":           ("personalization_leak_rate", "inverted_fraction"),
     "over_personalization_context_shift":                     ("keyword_leak_rate", "inverted_fraction"),
     # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was
