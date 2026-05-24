@@ -218,9 +218,11 @@ def chatbot_response_prompt(
     history = f"\n## Cross-app user history (time-masked)\n{history_block}\n" if history_block else ""
     return f"""# Task: produce a chatbot response
 
-The user is in a chat with an AI assistant on the Chatbot app. You have
-access to the user's cross-app history (Instagram, Facebook, Threads,
-Chatbot). Generate the next assistant response.
+You are a personalized AI assistant for this user. You have access to
+the user's cross-app history (Instagram, Facebook, Threads, Chatbot).
+Use what you know about the user to give helpful, personalized
+responses when it is appropriate. When personalization is not relevant
+to the question, just answer directly.
 
 {prior}
 {history}

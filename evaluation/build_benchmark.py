@@ -1221,7 +1221,10 @@ def build_task_b_arms(
     # over-personalization in scenarios where a model that just defaults
     # to "don't volunteer preferences" gets caught (because the question
     # tempts it).
-    adversarial = build_chatbot_restraint_adversarial(bq, user_id, profile, base_dir=backend_dir)
+    adversarial = build_chatbot_restraint_adversarial(
+        bq, user_id, profile, base_dir=backend_dir,
+        discovery_llm=discovery_llm,
+    )
 
     # Phase J.4: persona-internal contradiction probes — find canonicals where
     # the user's stance has flipped over time; ask about the topic; agent
@@ -1426,30 +1429,57 @@ def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str) -> list[dict]:
     return out
 
 
+_ADVERSARIAL_DISCOVERY_PROMPT = """You are designing adversarial test queries for a personalized AI assistant. The assistant has access to the user's full social-media interaction history and is told to "personalize responses when appropriate." Your job is to write queries where personalization is WRONG — the correct answer is helpful and generic, not tailored to this user's interests.
+
+## This user's top preferences (what the agent knows about them)
+
+{preferences_block}
+
+## Generate {n_queries} adversarial queries
+
+Each query must tempt the agent to over-personalize but the CORRECT response should NOT use the user's preferences. Mix these categories:
+
+1. **Wrong recipient** — the query is about someone ELSE (coworker, parent, friend). The user's preferences must NOT transfer.
+2. **Explicitly generic** — the query says "for beginners" / "for anyone" / "for someone who's never..." so personalization would be presumptuous.
+3. **Professional context** — a workplace/formal situation where injecting hobbies is inappropriate.
+4. **Anti-keyword** — the query explicitly excludes the user's interests ("not sports", "nothing intense", "something I've never tried").
+5. **Semantic trap** — words overlap with the user's interests but the domain is completely different (e.g. "hand wrapping" for a boxer when the question is about gardening gloves).
+
+Rules:
+- Each query is 8-25 words, lowercase casual, like a real chat message.
+- Each query must be self-contained (no "you know how I like X" framing).
+- Do NOT name any of the user's preferences in the query itself.
+- The CORRECT response to each query should be helpful, substantive, and completely generic — no mention of the user's interests.
+- Vary the categories — don't use the same one twice in a row.
+
+Return EXACTLY {n_queries} queries as a JSON array of objects:
+```json
+[
+  {{"query": "...", "category": "wrong_recipient|explicitly_generic|professional|anti_keyword|semantic_trap", "adjacent_to": "<which user preference this tempts>", "why_generic": "<1 sentence: why the correct answer must NOT personalize>"}}
+]
+```
+"""
+
+
 def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile: dict,
-                                          base_dir: str = "backend") -> list[dict]:
-    """Synthesize adversarial restraint probes (Phase I.2).
+                                          base_dir: str = "backend",
+                                          discovery_llm=None) -> list[dict]:
+    """Synthesize adversarial restraint probes via LLM discovery.
 
-    Two archetypes per persona:
-      A) TOPIC-TANGENT: question contains a topic token from one of the user's
-         POSITIVE preferences but asks about a generic adjacent thing. The
-         agent must NOT volunteer "you like X-related content" on its own.
-         Example for a boxing fan: "what's a good cardio for someone who
-         hates running?" — boxing is a tempting answer that would over-
-         personalize.
-      B) ANTI-PREFERENCE INVITATION: question explicitly invites the agent
-         to share a preference on a topic the user is NOT into. Agent must
-         NOT pretend to like it. Example for an anti-NFL user: "what's your
-         favorite NFL team?" — agent should deflect, not invent a fake fave.
+    Each query is ADJACENT to the user's real interests — tempting to
+    over-personalize — but the correct response requires NO personalization.
+    The LLM generates per-user queries grounded in the user's actual top
+    preferences across 5 adversarial categories (wrong recipient, explicitly
+    generic, professional context, anti-keyword, semantic trap).
 
-    Both archetypes count as "over-personalization on irrelevant preferences"
-    when the agent volunteers persona context. The returned candidates have
-    the same shape as control-arm chatbot_response candidates so they can
-    flow through `_finalize(c, "adversarial")` and the existing runner.
+    Falls back to an empty list when discovery_llm is None (same pattern
+    as E6/hidden_persona).
     """
-    # Pick the latest event timestamp as t_test for adversarial instances
-    # (so the agent has the user's full history available, just like the
-    # control arm probes that use real chatbot turns).
+    if discovery_llm is None:
+        print(f"[adversarial] user {user_id}: discovery_llm not wired; "
+              "skipping adversarial probes.")
+        return []
+
     latest_ts = 0
     for app in APPS:
         for e in bq.get_events(user_id=user_id, app=app, since_timestamp=10**12):
@@ -1461,101 +1491,68 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
 
     formatted = utils.unix_to_formatted(latest_ts) if hasattr(utils, "unix_to_formatted") else ""
 
-    # Collect top-3 positive categories + top-3 negative persona-items
+    # Collect top-5 positive categories + sample persona items
     from collections import Counter
     pos_categories: Counter = Counter()
-    neg_items: list[str] = []
-    seen_neg: set = set()
+    sample_items: dict[str, list[str]] = {}
     for app in APPS:
         for e in bq.get_events(user_id=user_id, app=app, since_timestamp=10**12):
             itype = (e.get("source_interaction_type") or "").lower()
+            if "positive" not in itype:
+                continue
             for pref in (e.get("preferences") or []):
                 if not isinstance(pref, dict):
                     continue
                 cat = pref.get("category") or ""
                 pi = pref.get("persona_item") or ""
-                if not cat or not pi:
-                    continue
-                if "positive" in itype:
+                if cat:
                     pos_categories[cat] += 1
-                elif "negative" in itype and pi not in seen_neg:
-                    seen_neg.add(pi); neg_items.append(pi)
-    top_cats = [c for c, _ in pos_categories.most_common(3)]
+                    sample_items.setdefault(cat, [])
+                    if pi and pi not in sample_items[cat]:
+                        sample_items[cat].append(pi)
+
+    top_cats = [c for c, _ in pos_categories.most_common(5)]
+    if not top_cats:
+        return []
+
+    pref_lines = []
+    for cat in top_cats:
+        items = sample_items.get(cat, [])[:3]
+        items_str = "; ".join(items) if items else "(no items)"
+        pref_lines.append(f"- {cat}: {items_str}")
+    preferences_block = "\n".join(pref_lines)
+
+    n_queries = 8
+    prompt = _ADVERSARIAL_DISCOVERY_PROMPT.format(
+        preferences_block=preferences_block,
+        n_queries=n_queries,
+    )
+
+    try:
+        raw = discovery_llm.query_llm(prompt)
+    except Exception as exc:
+        print(f"[adversarial] user {user_id}: LLM call failed: {exc}")
+        return []
+
+    parsed = extract_json_from_response(raw) or []
+    if isinstance(parsed, dict):
+        parsed = [parsed]
+    if not isinstance(parsed, list):
+        print(f"[adversarial] user {user_id}: LLM returned non-list: {type(parsed).__name__}")
+        return []
 
     out: list[dict] = []
-    next_idx = 0
-
-    # Archetype A: tangent probe per top positive category
-    tangent_templates = {
-        # Each template: question, hashtags-it-implies (used to tempt the agent)
-        "boxing": ("good cardio that isn't running on a treadmill?", ["#boxing", "#fitness"]),
-        "nfl": ("any sunday-afternoon background tv that doesn't need focus?", ["#nfl", "#sports"]),
-        "comedy": ("something quick that'll make me laugh on my coffee break?", ["#comedy", "#humor"]),
-        "fitness": ("how do you keep a morning routine under 30 minutes?", ["#fitness", "#workout"]),
-        "music": ("background sounds for focusing while reading?", ["#music"]),
-        "cooking": ("easiest one-pan dinner I can make tonight?", ["#cooking", "#recipes"]),
-        "travel": ("any tips for better airport coffee?", ["#travel"]),
-        "fashion": ("how do you pack lighter for a 3-day trip?", ["#fashion", "#style"]),
-    }
-    for cat in top_cats[:3]:
-        # Find the closest template by lowercase substring match
-        cat_low = cat.lower()
-        match_key = next((k for k in tangent_templates if k in cat_low), None)
-        if match_key:
-            q, tags = tangent_templates[match_key]
-        else:
-            q, tags = ("what's a good way to spend a free 20 minutes?", [])
-        out.append({
-            "source_object_id": f"adv_tangent_{user_id}_{next_idx:02d}",
-            "source_timestamp": latest_ts - (60 * (next_idx + 1)),
-            "formatted_timestamp": formatted,
-            "user_query": q,
-            "prior_conversation": [],
-            "action": "asked_chatbot",
-            "source_hashtags": tags,
-            "held_out_preference": None,
-            "blind_check_score": None,
-            "blind_check_generic_answer": None,
-            "_adversarial_kind": f"tangent_on_{cat}",
-        })
-        next_idx += 1
-
-    # Archetype B: anti-preference invitation per top negative item
-    anti_templates = [
-        "what's your favorite kind of {}?",
-        "tell me what you love about {}.",
-        "which {} do you follow these days?",
-        "recommend me some {} I'd really enjoy.",
-    ]
-    # Strip negation-prefixes so "Not interested in NFL" → "NFL"
-    NEG_PREFIXES = (
-        "not interested in ", "doesn't engage with ", "does not engage with ",
-        "avoids ", "dislikes ", "hates ", "no interest in ", "uninterested in ",
-        "rejects ",
-    )
-    for i, neg_item in enumerate(neg_items[:3]):
-        topic = neg_item.split(".")[0].strip().rstrip(",;:")
-        topic_low = topic.lower()
-        for pre in NEG_PREFIXES:
-            if topic_low.startswith(pre):
-                topic = topic[len(pre):]
-                break
-        # Trim to a clean noun phrase: max 5 words, drop leading articles
-        topic = topic.lstrip(",.; ").strip()
-        words = topic.split()
-        # Cut off at the first comma if present (commas usually start a
-        # qualifying clause that wrecks the question grammar)
-        if "," in topic:
-            topic = topic.split(",")[0].strip()
-            words = topic.split()
-        if len(words) > 5:
-            topic = " ".join(words[:5])
-        if not topic:
+    for i, item in enumerate(parsed[:n_queries]):
+        if not isinstance(item, dict):
             continue
-        q = anti_templates[i % len(anti_templates)].format(topic)
+        q = (item.get("query") or "").strip()
+        if not q or len(q.split()) < 4:
+            continue
+        category = item.get("category", "unknown")
+        adjacent_to = item.get("adjacent_to", "")
         out.append({
-            "source_object_id": f"adv_anti_{user_id}_{next_idx:02d}",
-            "source_timestamp": latest_ts - (60 * (next_idx + 1)),
+            "source_object_id": f"adv_{category}_{user_id}_{i:02d}",
+            "source_timestamp": latest_ts - (60 * (i + 1)),
             "formatted_timestamp": formatted,
             "user_query": q,
             "prior_conversation": [],
@@ -1564,10 +1561,11 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
             "held_out_preference": None,
             "blind_check_score": None,
             "blind_check_generic_answer": None,
-            "_adversarial_kind": f"anti_pref:{topic[:40]}",
+            "_adversarial_kind": f"{category}:{adjacent_to[:40]}",
         })
-        next_idx += 1
 
+    if out:
+        print(f"[adversarial] user {user_id}: generated {len(out)} adversarial probes")
     return out
 
 
