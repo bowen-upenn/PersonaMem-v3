@@ -9,8 +9,9 @@ Each function matches the return shape of its counterpart in metrics.py
 so callers can swap with minimal changes. The additional `judge` parameter
 is a callable `(prompt: str) -> str` (typically `judge_client.query_llm`).
 
-When `judge` is None, falls back to the deterministic metrics.py version
-so the harness still works without a judge LLM configured.
+When `judge` is None, falls back to the deterministic metrics.py version.
+This fallback should only fire with --no-enable_llm_judge; all production
+runs should use the LLM judge path.
 """
 
 from __future__ import annotations

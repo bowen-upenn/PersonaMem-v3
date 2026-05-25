@@ -1158,7 +1158,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # `groundtruth_preference.old_preference.text`.
     "preference_shift_followthrough":              ("preference_shift_consistency", "fraction"),
     # Step 4.6 — headline is `deep_motivation_alignment` (0-3 LLM judge).
-    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "fraction"),
+    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "0to3"),
     "hidden_persona_recommendation":              ("recall_at_1", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
