@@ -193,7 +193,8 @@ Return EXACTLY one JSON object inside a fence. No prose outside the fence.
 ```json
 {{
   "target_index": <0-15>,
-  "resonance_signal": "1-2 sentences explaining the motivational connection to THIS user's specific identity and needs",
+  "resonance_signal": "1-2 sentences: what psychological need does the target feed, and through what mechanism?",
+  "user_grounding": "1-2 sentences: why THIS specific user (given their career, identity, life stage) would linger on the target — connect it to concrete details about who they are",
   "items": [
     {{"title": "...", "caption": "...", "hashtags": ["...", "...", "..."]}},
     ... // exactly 16 items total
@@ -283,6 +284,10 @@ def _validate_discovery_output(
     resonance = parsed.get("resonance_signal")
     if not isinstance(resonance, str) or not resonance.strip():
         return False, "resonance_signal must be a non-empty string"
+
+    grounding = parsed.get("user_grounding")
+    if not isinstance(grounding, str) or not grounding.strip():
+        return False, "user_grounding must be a non-empty string"
 
     for i, item in enumerate(items):
         if not isinstance(item, dict):
@@ -570,9 +575,11 @@ def build_hidden_persona_recommendation(
                     "type": hp.get("type", ""),
                     "is_privacy_flagged": is_pf,
                     "description": hp.get("description", ""),
+                    "inferred_motivation": hp.get("inferred_motivation", ""),
                     "evidence_hashtags_sample": (hp.get("evidence_hashtags") or [])[:6],
                 },
                 "resonance_signal": parsed.get("resonance_signal", ""),
+                "user_grounding": parsed.get("user_grounding", ""),
             },
         }
         out.append(inst)
