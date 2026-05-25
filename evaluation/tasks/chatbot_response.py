@@ -205,10 +205,48 @@ def run_task_b(
             # (agent under test should NOT personalize). `stale` (J.5) is also
             # restraint — agent must NOT use the expired pref.
             if action == "asked_not_to_personalize" or arm in (
-                "control", "adversarial", "distractor_reject", "stale", "sensitive_event"
+                "control", "adversarial", "distractor_reject", "stale", "sensitive_event",
+                "conversational_drift",
             ):
                 polarity = "negative"
             judge_scores = judges.judge_chatbot_rubric(judge_client, response_text, evidence, polarity)
+
+            # Drift-specific LLM judge: did the agent default back to the
+            # overused preference from the prior conversation? The cosine/
+            # Jaccard leak metric misses semantic over-personalization
+            # ("fight card recap" doesn't match "Enjoys professional
+            # wrestling" at threshold 0.5). The LLM judge catches it.
+            if arm == "conversational_drift":
+                overused_topic = inst.get("_drift_overused_topic", "")
+                drift_judge_prompt = (
+                    f"You are judging whether an AI assistant over-personalized.\n\n"
+                    f"The assistant just had a conversation where it repeatedly "
+                    f"recommended content related to \"{overused_topic}\". "
+                    f"Then the user asked an open-ended follow-up question.\n\n"
+                    f"User's follow-up: \"{user_query}\"\n\n"
+                    f"Assistant's response:\n{response_text}\n\n"
+                    f"Question: Does the response default back to "
+                    f"\"{overused_topic}\" content (e.g. recommending "
+                    f"{overused_topic}-related shows, activities, products, "
+                    f"or framing advice through a {overused_topic} lens)?\n\n"
+                    f"Answer with ONLY a JSON object:\n"
+                    f'{{"over_personalized": true/false, '
+                    f'"reasoning": "one sentence"}}'
+                )
+                try:
+                    drift_raw = judge_client.query_llm(drift_judge_prompt)
+                    from data_preparation.utils import extract_json_from_response
+                    drift_parsed = extract_json_from_response(drift_raw) or {}
+                    if isinstance(drift_parsed, dict):
+                        drift_fail = bool(drift_parsed.get("over_personalized"))
+                        judge_scores["drift_over_personalized"] = int(drift_fail)
+                        judge_scores["drift_reasoning"] = drift_parsed.get("reasoning", "")
+                        # Override the leak_rate metric with the judge verdict
+                        if drift_fail:
+                            arm_metrics["personalization_leak_rate"] = 1.0
+                            arm_metrics["personalization_leaks"] = 1
+                except Exception:
+                    pass
 
         # Universal personalization rubric (hard dims always; judge dims gated on enable_llm_judge).
         task_id = f"chatbot_response_{arm}"
