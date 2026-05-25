@@ -375,13 +375,16 @@ def run_task_c1c(
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
                         if hasattr(judge_client, "query_llm") else judge_client)
-            for r in tail_responses:
-                persona_alignment_passes.append(
-                    _c1c_persona_alignment_check(
-                        r, persona_categories, persona_hashtags,
-                        off_persona_distractors, judge_fn,
-                    )
+            # Parallelize the judge calls — they're independent
+            # (each checks one tail response against the persona).
+            from concurrent.futures import ThreadPoolExecutor
+            def _check_one(r):
+                return _c1c_persona_alignment_check(
+                    r, persona_categories, persona_hashtags,
+                    off_persona_distractors, judge_fn,
                 )
+            with ThreadPoolExecutor(max_workers=len(tail_responses)) as pool:
+                persona_alignment_passes = list(pool.map(_check_one, tail_responses))
         else:
             persona_alignment_passes = [True] * len(tail_responses)
 
@@ -564,14 +567,15 @@ def run_task_c1d(
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
                         if hasattr(judge_client, "query_llm") else judge_client)
-            for r in responses:
-                pref_invoked.append(
-                    _c1d_check_pref_invoked(
-                        r["response"], r["user_query"],
-                        target_pref, primary_category, target_hashtags,
-                        judge_fn,
-                    )
+            from concurrent.futures import ThreadPoolExecutor
+            def _check_invoked(r):
+                return _c1d_check_pref_invoked(
+                    r["response"], r["user_query"],
+                    target_pref, primary_category, target_hashtags,
+                    judge_fn,
                 )
+            with ThreadPoolExecutor(max_workers=len(responses)) as pool:
+                pref_invoked = list(pool.map(_check_invoked, responses))
         else:
             pref_invoked = [False] * len(responses)
 
