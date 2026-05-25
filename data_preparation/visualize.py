@@ -1039,6 +1039,20 @@ def _gt_local_recommendation_geo_shift(inst: dict) -> dict:
             f"Category: {category}\n"
             "Composite headline metric: geo_shift_correctness ∈ {0.0, 0.5, 1.0}."
         ),
+        "inferior_response": {
+            "text": (
+                f"Recommend {category} options in {prior_city or '<prior city>'} — "
+                f"the agent anchors on the user's previous location instead of "
+                f"detecting the geo-shift to {current_city or '<current city>'}."
+            ),
+            "flaw_kind": "stale_geo_anchor",
+            "flaw_evidence": {
+                "_from": "deterministic_geo_shift_inferior",
+                "prior_city": prior_city,
+                "current_city": current_city,
+                "category": category,
+            },
+        },
         "rubric_tags": [
             "(+) Recommendations should be in the CURRENT city.",
             "(-) Don't anchor on the PRIOR city — that's the stale-geo failure mode.",

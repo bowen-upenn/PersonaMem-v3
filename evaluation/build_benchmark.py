@@ -3915,6 +3915,42 @@ def build_benchmark(
         geo_shift_instances = []
         print(f"[build_benchmark] WARN: local_recommendation_geo_shift builder failed: {exc}")
 
+    # Attach GT extractor output (example/inferior/groundtruth) to c1c, c1d,
+    # and geo_shift instances. These task types are not in _PERSONALIZATION_TASKS
+    # so the postprocess loop skips them — we must populate the fields here.
+    try:
+        from data_preparation.visualize import (
+            _gt_over_personalization_repetition_recsys,
+            _gt_over_personalization_repetition_chatbot,
+            _gt_local_recommendation_geo_shift,
+        )
+        for inst in c1c_clusters:
+            try:
+                gt = _gt_over_personalization_repetition_recsys(inst)
+                for k in ("example_response", "inferior_response", "groundtruth_preference", "rubric_tags"):
+                    if k in gt and gt[k] is not None:
+                        inst[k] = gt[k]
+            except Exception:
+                pass
+        for inst in c1d_chatbot_clusters:
+            try:
+                gt = _gt_over_personalization_repetition_chatbot(inst)
+                for k in ("example_response", "inferior_response", "groundtruth_preference", "rubric_tags"):
+                    if k in gt and gt[k] is not None:
+                        inst[k] = gt[k]
+            except Exception:
+                pass
+        for inst in geo_shift_instances:
+            try:
+                gt = _gt_local_recommendation_geo_shift(inst)
+                for k in ("example_response", "inferior_response", "groundtruth_preference", "rubric_tags"):
+                    if k in gt and gt[k] is not None:
+                        inst[k] = gt[k]
+            except Exception:
+                pass
+    except ImportError:
+        pass
+
     c3_instances = []
     for t in test_items:
         if t.app not in SOCIAL_APPS or not t.over_personalization_irrelevant:
