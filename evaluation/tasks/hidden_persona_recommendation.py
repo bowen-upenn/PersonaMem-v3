@@ -95,11 +95,16 @@ def _word_count(text: str) -> int:
 DISCOVERY_PROMPT = """You are designing a content recommendation benchmark slate. The slate tests whether an AI agent can identify which piece of general-interest content a specific user would most enjoy, based on a hidden motivational pattern the agent has inferred from the user's behavioral history.
 
 You will receive:
-  1. A hidden-persona record — a deeper behavioral pattern inferred from cross-row hashtag analysis
-  2. The user's canonical preferences — the slate must NOT overlap with these topics
-  3. Other hidden personas for this user — distractors must not accidentally align with any of them
+  1. Who this user IS — their identity, career, and personality
+  2. A hidden-persona record — a deeper behavioral pattern inferred from cross-row hashtag analysis
+  3. The user's canonical preferences — the slate must NOT overlap with these topics
+  4. Other hidden personas for this user — distractors must not accidentally align with any of them
 
-Your job: produce EXACTLY 16 content items + indicate which ONE subtly resonates with the hidden persona.
+Your job: produce EXACTLY 16 content items + indicate which ONE subtly resonates with the hidden persona IN A WAY THAT IS GROUNDED IN WHO THIS USER IS.
+
+## Who the user is
+
+{user_context_block}
 
 ## Hidden persona record
 
@@ -121,7 +126,7 @@ Your job: produce EXACTLY 16 content items + indicate which ONE subtly resonates
 
 ## Hard constraints
 
-(A) ALL 16 items must be GENERAL-INTEREST content — topics any adult might find mildly interesting. NONE may overlap with the user's canonical preferences listed above. No boxing, wrestling, MMA, hip-hop, breakdancing, or any topic appearing in the preference list. Check EVERY preference.
+(A) ALL 16 items must be GENERAL-INTEREST content — topics any adult might find mildly interesting. NONE may overlap with the user's canonical preferences listed above. Check EVERY preference.
 (B) Exactly ONE item (at target_index) subtly resonates with the hidden persona's DEEPER MOTIVATIONAL PATTERN. The connection is thematic/motivational, NOT through shared hashtags or topic keywords.
 (C) The target must NOT contain any of the persona's evidence hashtags (bare, case-insensitive) in its title, caption, or hashtags.
 (D) The target must NOT contain the persona label or type verbatim in its title or caption.
@@ -135,35 +140,51 @@ Your job: produce EXACTLY 16 content items + indicate which ONE subtly resonates
     caption  : 1-2 sentences, 15-40 words, specific and engaging
     hashtags : 3-5 hashtags (no leading #)
 
+## CRITICAL: depth over surface mirroring
+
+DO NOT just transplant the hidden persona's described format or keywords into a new domain. That produces shallow, detectable targets (e.g., if the persona says "head-to-head competition" do NOT make a "head-to-head X in another domain"). Instead:
+
+  1. Ask: what PSYCHOLOGICAL NEED does this persona serve for THIS specific person, given their career, identity, and life stage?
+  2. Find content that FEEDS THAT NEED through a completely different mechanism — not by recreating the same structure in a new coat of paint.
+  3. The target should feel like something THIS user — not a generic person with this persona type — would linger on. Ground it in who they are.
+
+Think of it this way: the hidden persona description tells you WHAT the pattern looks like from outside. Your target must serve WHY the pattern exists for THIS user — the underlying hunger, not the surface behavior.
+
+Do NOT echo key phrases from the description or inferred_motivation fields. The target's title and caption must use DIFFERENT vocabulary from those fields.
+
 ## Per-type guidance for the target item
 
-Calibrate the target's resonance based on `type`:
-  - personality_trait        -> content whose FORMAT or STRUCTURE mirrors the trait (e.g., head-to-head elimination format for a competition-admirer)
-  - aspiration               -> content touching the aspirational domain from a fresh angle
-  - emotional_pattern        -> content creating the same affective scaffolding (e.g., public-recognition narrative for visible-affirmation seeker)
-  - identity_anchor          -> content respecting the user's values code via an analogous domain
-  - intimate_interest        -> PRIVACY-FLAGGED — adjacent-domain content only
-  - intellectual_curiosity   -> content going one layer deeper into mechanism / history
-  - private_hobby            -> content inviting craft-process engagement indirectly
-  - parasocial_attachment    -> content invoking the figure's world/aesthetic without naming them
-  - compensatory_need        -> PRIVACY-FLAGGED — serves underlying need without naming gap
-  - covert_concern           -> PRIVACY-FLAGGED — soothes the worry without naming it
-  - medical_aesthetic_concern-> PRIVACY-FLAGGED — adjacent content only
-  - sensitive_life_event     -> PRIVACY-FLAGGED — respects active window without naming event
+  - personality_trait        -> what psychological itch does this trait scratch for THIS person given their work and identity? Find content that scratches the SAME itch through a different mechanism entirely.
+  - aspiration               -> what is the unspoken gap between where they are and where they want to be? Content that bridges that specific gap without naming the aspiration.
+  - emotional_pattern        -> what emotional state does this person keep recreating? Content that would produce that SAME feeling through an unexpected channel — not by describing recognition/affirmation/etc. but by EVOKING it indirectly.
+  - identity_anchor          -> what does this person need the world to see them as? Content that quietly validates that self-image from an unexpected angle.
+  - intimate_interest        -> PRIVACY-FLAGGED — adjacent-domain content only.
+  - intellectual_curiosity   -> content going one layer deeper into mechanism / history.
+  - private_hobby            -> content the user's hands and mind would itch to try, even if the domain is new, because the CRAFT-PROCESS maps to what they already love doing.
+  - parasocial_attachment    -> content invoking the figure's world/aesthetic without naming them.
+  - compensatory_need        -> PRIVACY-FLAGGED — serves underlying need without naming gap.
+  - covert_concern           -> PRIVACY-FLAGGED — soothes the worry without naming it.
+  - medical_aesthetic_concern-> PRIVACY-FLAGGED — adjacent content only.
+  - sensitive_life_event     -> PRIVACY-FLAGGED — respects active window without naming event.
 
-## Worked example
+## Worked example (showing DEEP vs SHALLOW)
 
 Persona: "Battle-format performance admiration beyond sports"
   type: personality_trait
-  evidence hashtags: BattleRap, DancePerformance, WWE, Wrestling
-Canonical prefs include boxing, wrestling, MMA, breakdancing, hip-hop.
+  User: a museum lighting technician who rigs shows, trains BJJ, and loves visible mastery.
+  description mentions: "head-to-head formats where style, bravado, and execution are tested in public"
+  inferred_motivation: "energized by arenas where identity is proven through performance under pressure"
 
-  target_index: 3
-  Items [0]-[2], [4]-[15] are diverse general content (Roman gardens, weather stations, color psychology, lighthouses, ice harvesting, origami, composting, sleep science, coral reefs, sourdough history, typewriter design, constellation guides, fermentation, train architecture, sign lettering).
-  Item [3]: "The Great British Cheese Rivalry: County Showdowns That Shape Artisan Dairy"
-    caption: "A documentary following four cheesemakers through elimination-style head-to-head judging rounds where decades of craft reputation ride on a single blind tasting."
-    hashtags: [cheese, competition, artisan, craft, judging]
-  resonance_signal: "The cheese competition documentary mirrors the cross-domain pull toward head-to-head formats where identity is proven through craft under pressure — same motivational structure as boxing/wrestling/battle-rap but in an unrelated domain."
+SHALLOW target (BAD — just transplants "head-to-head competition" into cheese):
+  "Cheese Rivalry: Head-to-Head Artisan Showdowns" — This literally recreates the described format in another domain. An evaluator who reads the persona description can match it instantly. Fails the depth test.
+
+DEEP target (GOOD — serves the underlying need through a different mechanism):
+  "The Rigger's Minute: How Concert Lighting Crews Earn Trust in a Single Load-In"
+    caption: "A short doc profiling arena lighting riggers who get one shot to prove their precision to a new tour crew — where a clean, fast hang under a skeptical eye is the only audition that matters."
+    hashtags: [rigging, liveshows, stagecraft, precision, touring]
+  resonance_signal: "For a museum lighting tech who trains BJJ, the appeal of watching skilled tradespeople earn respect through a single high-pressure execution isn't about competition format — it's about seeing his own world reflected: invisible craft skill that only matters in the moment you're tested."
+
+NOTE: the deep target resonates because it connects to WHO the user IS (a rigger who knows what it feels like to be tested through craft execution), not because it copies the structural label "head-to-head competition."
 
 ## Output
 
@@ -172,7 +193,7 @@ Return EXACTLY one JSON object inside a fence. No prose outside the fence.
 ```json
 {{
   "target_index": <0-15>,
-  "resonance_signal": "1-2 sentences explaining the motivational connection",
+  "resonance_signal": "1-2 sentences explaining the motivational connection to THIS user's specific identity and needs",
   "items": [
     {{"title": "...", "caption": "...", "hashtags": ["...", "...", "..."]}},
     ... // exactly 16 items total
@@ -182,11 +203,36 @@ Return EXACTLY one JSON object inside a fence. No prose outside the fence.
 """
 
 
+def _build_user_context(profile: dict) -> str:
+    parts = []
+    name = profile.get("name", "")
+    if name:
+        parts.append(f"  name:           {name}")
+    gender = profile.get("gender", "")
+    if gender:
+        parts.append(f"  gender:         {gender}")
+    race = profile.get("race_ethnicity", "")
+    if race:
+        parts.append(f"  race/ethnicity: {race}")
+    career = profile.get("career", "")
+    if career:
+        parts.append(f"  career:         {career}")
+    bio = profile.get("bio", "")
+    if bio:
+        parts.append(f"  bio:            {bio[:300]}")
+    big5 = profile.get("big_five")
+    if isinstance(big5, dict):
+        traits = ", ".join(f"{k}={v}" for k, v in big5.items())
+        parts.append(f"  big_five:       {traits}")
+    return "\n".join(parts) if parts else "(no user context available)"
+
+
 def _format_discovery_prompt(
     hp: dict,
     is_privacy_flagged: bool,
     other_personas: list[dict],
     canonical_preferences: list[str],
+    user_context: str = "",
 ) -> str:
     evidence_hashtags = (hp.get("evidence_hashtags") or [])[:8]
     surface_connections = hp.get("surface_connections") or []
@@ -212,6 +258,7 @@ def _format_discovery_prompt(
         is_privacy_flagged=str(is_privacy_flagged).lower(),
         other_hidden_personas_block=other_block,
         canonical_preferences_block=pref_block,
+        user_context_block=user_context or "(no user context available)",
     )
 
 
@@ -290,6 +337,23 @@ def _validate_discovery_output(
             if eh and eh in target_text:
                 return False, f"privacy-flagged: evidence hashtag {eh!r} appears in target title/caption"
 
+    # Description-echo check: target must not parrot key phrases from the
+    # persona description or inferred_motivation.  A shared content-token
+    # bigram means the LLM is shallow-mirroring instead of going deeper.
+    desc_text = (hp.get("description") or "") + " " + (hp.get("inferred_motivation") or "")
+    desc_tokens = _content_tokens(desc_text)
+    desc_bigrams = {tuple(desc_tokens[i:i + 2]) for i in range(len(desc_tokens) - 1)}
+    target_full = target["title"] + " " + target["caption"]
+    target_tokens_list = _content_tokens(target_full)
+    target_bigrams = {tuple(target_tokens_list[i:i + 2]) for i in range(len(target_tokens_list) - 1)}
+    echoed = desc_bigrams & target_bigrams
+    if echoed:
+        sample = " ".join(next(iter(echoed)))
+        return False, (
+            f"target echoes a bigram from the persona description/motivation: "
+            f"'{sample}' — the target must use completely different vocabulary"
+        )
+
     # Canonical preference keyword leakage check.
     for item in items:
         item_tokens = set(_content_tokens(
@@ -357,10 +421,12 @@ def _discover_slate(
     is_privacy_flagged: bool,
     other_personas: list[dict],
     canonical_preferences: list[str],
+    user_context: str = "",
     verbose: bool = False,
 ) -> dict | None:
     base_prompt = _format_discovery_prompt(
         hp, is_privacy_flagged, other_personas, canonical_preferences,
+        user_context=user_context,
     )
 
     raw = discovery_llm.query_llm(base_prompt)
@@ -449,6 +515,8 @@ def build_hidden_persona_recommendation(
         if not isinstance(canonical_preferences[0], str):
             canonical_preferences = [str(p) for p in canonical_preferences]
 
+    user_context = _build_user_context(profile)
+
     rng = random.Random(rng_seed)
     rng.shuffle(eligible)
 
@@ -466,7 +534,8 @@ def build_hidden_persona_recommendation(
 
         parsed = _discover_slate(
             discovery_llm, hp, is_pf, other_personas,
-            canonical_preferences, verbose=verbose,
+            canonical_preferences, user_context=user_context,
+            verbose=verbose,
         )
         if parsed is None:
             continue
