@@ -678,7 +678,11 @@ def main() -> int:
             # Parallel pool drives the non-agentic queue. Each worker
             # gets its own per-rate-limit budget so the aggregate stays
             # under args.rate_limit.
-            per_worker = max(1, args.rate_limit // args.workers)
+            # Each worker gets at least as many RPM as there are workers,
+            # so N concurrent workers can each fire at least 1 call at a time.
+            # The old `rate_limit // workers` was too conservative (3 RPM per
+            # worker at 16 workers / 50 RPM → artificially slow).
+            per_worker = max(args.rate_limit, args.workers)
             payloads = [_build_payload(row, args, run_dir, per_worker)
                         for row in parallel_rows]
             # Per-future timeout safety net. The agent_tools / mcp_agent
