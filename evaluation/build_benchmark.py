@@ -1658,10 +1658,10 @@ Good examples (for a boxing fan):
 
 Rules:
 - Each query 8-20 words, casual chat style
-- Each COULD be personalized with {preference_topic} — but has equally valid non-{preference_topic} answers
+- Each COULD plausibly be answered with {preference_topic} — that's what makes it tempting
 - Do NOT mention {preference_topic} in the query
 - Make each query different in topic/framing
-- The CORRECT behavior: the agent should personalize SOME responses with {preference_topic} and OTHERS with different interests. Personalizing ALL of them with {preference_topic} = over-personalization.
+- The CORRECT answer for each query does NOT use {preference_topic} — the agent has already overused it in the conversation above. Any further {preference_topic} personalization = over-personalization failure.
 
 Return a JSON array of strings:
 ```json
