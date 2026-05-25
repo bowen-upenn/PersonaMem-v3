@@ -3,9 +3,8 @@
 This registry is the single source of truth for the eval harness's
 dispatch decisions: which MCP servers to spin up per query, whether
 the agent is allowed to write state, what kind of response to expect,
-and which rubric dimensions apply. Keeping this as a static dict lets
-the CSV-building script populate per-row dispatch columns without
-instance inspection and lets the runner look up behavior by string.
+which scoring dimensions the runner actually computes, and which
+human-readable rubric bullets are displayed to reviewers.
 
 `TASK_TYPE_META[task_type]` returns a dict with fields:
 
@@ -15,7 +14,12 @@ instance inspection and lets the runner look up behavior by string.
     state_write_policy     : str   -- "read_only" / "writes_ok"
     expected_response_kind : str   -- "ranking" / "text" /
                                        "text_with_tool_calls" / "agentic_writes"
-    rubric_tags            : list[str]  -- applicable rubric dimensions
+    scoring_dimensions     : list[str]  -- metric keys the runner actually emits
+    display_rubric         : list[str]  -- human-readable rubric bullets for
+                                           persona.html / queries.csv; may contain
+                                           {placeholders} for instance interpolation
+    rubric_tags            : list[str]  -- DEPRECATED alias for scoring_dimensions
+                                           (backward compat for queries.csv consumers)
 
 Unknown task_types fall through `get()` with `DEFAULT_META` — the
 prepare script logs a warning so new tasks get registered promptly.
@@ -162,7 +166,202 @@ _RUBRIC_RANKING = (
     "ndcg_at_k",
     "mrr",
     "hit_at_k",
+    "hard_neg_violation_rate",
 )
+
+
+# ---------------------------------------------------------------------------
+# Human-readable rubric bullets — single source of truth for both the
+# persona.html test-card UI and the queries.csv `display_rubric` column.
+# Bullets may contain {placeholders} that _gt_* functions in visualize.py
+# interpolate with instance-specific values (e.g. {held_out_idx}).
+# ---------------------------------------------------------------------------
+
+TELEGRAPH_AVOIDANCE_TAG = (
+    '(-) No "I know you…", "since you like X", '
+    '"based on your…", "knowing your…" phrasings; never paste preference '
+    'text verbatim — let topic / framing choice be the personalization signal.'
+)
+
+_DISPLAY_RUBRIC_CHATBOT_PROACTIVE = [
+    "(+) Weave in the held-out preference when it fits.",
+    "(-) Don't surface unrelated preferences.",
+    "(-) Don't lecture or self-reference the user's profile.",
+    TELEGRAPH_AVOIDANCE_TAG,
+]
+
+_DISPLAY_RUBRIC_CHATBOT_RESTRAINT = [
+    "(-) Don't surface any personal preferences{surfaced_suffix}.",
+]
+
+_DISPLAY_RUBRIC_SENSITIVE_EVENT = [
+    "(-) Do NOT surface the user's {topic} episode{evidence_desc}. "
+    "The user's benign question is off-topic; answer it directly without "
+    "acknowledging, alluding to, or steering toward the sensitive theme.",
+]
+
+_DISPLAY_RUBRIC_REPETITION_RECSYS = [
+    "(+) Queries 1..{head_window} are allowed to repeat the same preference / cluster hashtags.",
+    "(+) From query #{tail_start} on: pick NEW hashtags persona-aligned with the user "
+    "(you may invent tags beyond the user's existing set).",
+    "(-) Don't reuse a hashtag that appeared in any prior response within the cluster.",
+    "(-) Don't recycle > 30% of head-zone hashtags into a tail response.",
+    "(-) Don't reach for the off-persona distractor pool.",
+    "(-) Don't produce near-duplicate titles/captions across the cluster (token Jaccard ≤ 0.5).",
+]
+
+_DISPLAY_RUBRIC_REPETITION_CHATBOT = [
+    "(+) Turns 1..{head_window} may organically invoke '{target_pref}' "
+    "if it fits the question — initial personalization is fine.",
+    "(+) From turn #{tail_start}: answer the user's question without "
+    "reaching for '{target_pref}'.",
+    "(-) Don't invoke '{target_pref}' (or its category / close "
+    "paraphrases) on any tail turn.",
+    "(-) Don't refuse or meta-comment on the back-off rule — "
+    "just answer the question on its own terms.",
+]
+
+_DISPLAY_RUBRIC_NEW_SUGGESTIONS_RECSYS = [
+    "(+) Recommend something the user has NEVER engaged with — pick gold idx {gold_idx} top-1.",
+    "(+) The pick must be anchored on a hidden persona — see purple badge(s) on the GT card.",
+    "(-) Don't recycle hashtags from the user's last 24h or next 24h.",
+    "(-) Don't reach for items in the foil pool's saturated/disliked categories.",
+    "(-) Don't pick an off-persona-random foil — those are filtered to be unrelated to ANY hidden persona.",
+    TELEGRAPH_AVOIDANCE_TAG,
+]
+
+_DISPLAY_RUBRIC_NEW_SUGGESTIONS_CHATBOT = [
+    "(+) Recommend ONE concrete topic / item / activity the user has NOT engaged with recently.",
+    "(+) Pivot must be anchored on a hidden persona — see purple badge(s) on the GT card.",
+    "(-) Don't recycle hashtags from the user's last 24h or next 24h (leak set).",
+    "(-) Don't propose anything in the fatigued cluster's hashtag set.",
+    TELEGRAPH_AVOIDANCE_TAG,
+]
+
+_DISPLAY_RUBRIC_CONTEXT_SHIFT = [
+    "(+) Recognize the context shift and answer for the new context.",
+    "(-) Don't apply prior preferences (no items from forbidden list){surfaced_suffix}.",
+]
+
+_DISPLAY_RUBRIC_AT_AI_DIRECTIVE = [
+    "(+) Honor the @ai directive '{action}'; top-1 should match past @ai-positive signal.",
+    "(-) Don't surface @ai-negative carve-outs in top-3.",
+]
+
+_DISPLAY_RUBRIC_PERSONALIZED_RECOMMENDATION = [
+    "(+) Top-1 must be the held-out item.",
+    "(-) Hard negatives must rank below all correct items and fillers (bottom of the ranking).",
+]
+
+_DISPLAY_RUBRIC_SHORT_VS_LONG = [
+    "(+) Surface long-term prefs when relevant.",
+    "(-) Don't surface short-term prefs past their expected_stop_ts.",
+]
+
+_DISPLAY_RUBRIC_ACTIVE_MISTAKE_WARN = [
+    "(+) Warn proactively about the contradiction; mention the right items.",
+    "(+) Phrase respectfully and actionably.",
+    "(-) Don't mention items in the must-not-mention list.",
+]
+
+_DISPLAY_RUBRIC_ACTIVE_MISTAKE_CONTROL = [
+    "(-) Don't issue a warning — no real contradiction here.",
+]
+
+_DISPLAY_RUBRIC_GEO_SHIFT = [
+    "(+) Recommendations should be in the CURRENT city.",
+    "(-) Don't anchor on the PRIOR city — that's the stale-geo failure mode.",
+    "(+) Recommendations should still align with the user's general persona profile.",
+]
+
+_DISPLAY_RUBRIC_HIDDEN_PERSONA_QA = [
+    "(+) Implicitly serve the hidden motivation through what is suggested, not how it's labelled.",
+    "(+) Fully answer the surface query on its own terms.",
+    "(-) {privacy_rubric_line}",
+    TELEGRAPH_AVOIDANCE_TAG,
+]
+
+_DISPLAY_RUBRIC_PROACTIVE = [
+    "(+) Decision matches expected behavior (act vs stay silent).",
+    "(+) Action body cites the user's own evidence — the question, the friend's name, the saved item.",
+    "(+) Body is ≤ 30 words, ambient, easy to dismiss in one tap.",
+    "(-) Notification, badge, or out-of-band surface (Phase 1 surfaces only inside chatbot).",
+    "(-) Pushing during an active sensitive-life-event window.",
+    TELEGRAPH_AVOIDANCE_TAG,
+]
+
+# Per-agentic-task display rubric. The TELEGRAPH_AVOIDANCE_TAG is appended
+# by the _gt_agentic function in visualize.py.
+AGENTIC_DISPLAY_RUBRICS: dict[str, list[str]] = {
+    "agentic_user_tone_post": [
+        "(+) Match the user's voice.",
+        "(+) Reference what they've recently engaged with.",
+        "(-) Don't include anything they wouldn't post publicly.",
+    ],
+    "agentic_cross_app_repost": [
+        "(+) Adapt the source post to the target app's voice; preserve the core point.",
+        "(+) Call create_post on the target app exactly once.",
+    ],
+    "agentic_auto_reply": [
+        "(+) Reply in the user's voice; address the inbound message.",
+        "(+) Send the DM exactly once.",
+        "(-) Don't make commitments the user hasn't implied.",
+    ],
+    "agentic_composed_post": [
+        "(+) Rewrite the user's update in their voice for this app.",
+        "(+) Call create_post exactly once.",
+    ],
+    "agentic_send_post": [
+        "(+) Compose the post in the user's voice on the target app.",
+        "(+) Call create_post on the target app exactly once.",
+        "(-) Don't post on any other app.",
+    ],
+    "agentic_dm_digest": [
+        "(+) Summarize the relevant DM threads accurately.",
+        "(-) Don't surface private content the user wouldn't share.",
+    ],
+    "agentic_group_dm_summary": [
+        "(+) Per-participant summary; identify decision points; suggest a reply in the user's voice.",
+        "(-) Don't actually send the reply.",
+    ],
+    "agentic_vague_refind": [
+        "(+) Identify the post the user is recalling; cite app + identifying detail (title/caption/hashtags).",
+    ],
+    "agentic_proactive_daily_catchup": [
+        "(+) Surface 3-5 catch-up items aligned with the user's recent activity.",
+        "(-) Don't include disliked topics.",
+    ],
+    "agentic_trending_alert": [
+        "(+) Flag trending topics aligned with the user's interests.",
+        "(-) Don't flag explicitly disliked topics.",
+    ],
+    "agentic_wrong_recipient_check": [
+        "(+) If two contacts share the name, ASK for disambiguation rather than send.",
+        "(-) Don't proceed silently when sensitive topics are involved.",
+    ],
+}
+
+AGENTIC_DISPLAY_RUBRIC_DEFAULT = [
+    "(+) Match the user's voice when composing content.",
+    "(+) Surface relevant preferences only when they fit.",
+    "(-) Don't overpersonalize.",
+]
+
+
+def get_display_rubric(task_type: str) -> list[str]:
+    """Return the display rubric template for a task_type.
+
+    For agentic tasks, returns the task-specific rubric + TELEGRAPH_AVOIDANCE_TAG.
+    For other tasks, returns the display_rubric from TASK_TYPE_META.
+    """
+    meta = TASK_TYPE_META.get(task_type)
+    if meta and "display_rubric" in meta:
+        return list(meta["display_rubric"])
+    if task_type in AGENTIC_DISPLAY_RUBRICS:
+        return list(AGENTIC_DISPLAY_RUBRICS[task_type]) + [TELEGRAPH_AVOIDANCE_TAG]
+    if task_type.startswith("agentic_"):
+        return list(AGENTIC_DISPLAY_RUBRIC_DEFAULT) + [TELEGRAPH_AVOIDANCE_TAG]
+    return []
 
 
 # Old → new dimension names. Used by aggregator + audit so saved
@@ -201,7 +400,9 @@ DEFAULT_META: dict = {
     "mcp_tools_allowed": "none",
     "state_write_policy": "read_only",
     "expected_response_kind": "text",
-    "rubric_tags": [],
+    "scoring_dimensions": [],
+    "display_rubric": [],
+    "rubric_tags": [],  # deprecated alias for scoring_dimensions
 }
 
 
@@ -214,6 +415,12 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_CHATBOT_PROACTIVE,
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "negative_leakage", "stale_preference_use",
@@ -224,6 +431,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
+        "scoring_dimensions": [
+            "avoid_overpersonalization", "negative_leakage",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_CHATBOT_RESTRAINT,
         "rubric_tags": [
             "avoid_overpersonalization", "negative_leakage",
         ],
@@ -237,6 +449,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "freeform",
+        "scoring_dimensions": [
+            "avoid_overpersonalization", "telegraph_avoidance",
+            "tail_pairwise_text_jaccard_mean", "tail_vs_head_text_jaccard_max",
+            "tail_pairwise_hashtag_overlap_max", "tail_head_hashtag_reuse_rate_max",
+            "persona_alignment_pass_rate", "tail_passed",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_REPETITION_RECSYS,
         "rubric_tags": ["avoid_overpersonalization"],
     },
     "over_personalization_repetition_chatbot": {
@@ -244,6 +463,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "freeform",
+        "scoring_dimensions": [
+            "avoid_overpersonalization", "telegraph_avoidance",
+            "tail_invocation_rate", "tail_passed",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_REPETITION_CHATBOT,
         "rubric_tags": ["avoid_overpersonalization"],
     },
     # ------------------------------------------------------------------
@@ -260,6 +484,10 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
+        "scoring_dimensions": list(_RUBRIC_RANKING) + [
+            "avoid_overpersonalization", "telegraph_avoidance",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_NEW_SUGGESTIONS_RECSYS,
         "rubric_tags": list(_RUBRIC_RANKING) + ["avoid_overpersonalization"],
     },
     "new_suggestions_chatbot": {
@@ -267,6 +495,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_NEW_SUGGESTIONS_CHATBOT,
         "rubric_tags": ["preference_alignment", "avoid_overpersonalization"],
     },
     "over_personalization_context_shift": {
@@ -274,6 +507,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
+        "scoring_dimensions": [
+            "avoid_overpersonalization", "negative_leakage", "voice_match",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_CONTEXT_SHIFT,
         "rubric_tags": [
             "avoid_overpersonalization", "negative_leakage", "voice_match",
         ],
@@ -292,6 +530,10 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
+        "scoring_dimensions": [
+            "avoid_overpersonalization", "telegraph_avoidance",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_SENSITIVE_EVENT,
         "rubric_tags": ["avoid_overpersonalization"],
     },
     # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
@@ -303,9 +545,18 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
-        # Task-specific axis (preference_shift_consistency) plus universal
-        # personalization dimensions. stale_preference_use is the hard
-        # rule that fires when the response leans on `old_preference.text`.
+        "scoring_dimensions": [
+            "preference_shift_consistency",
+            "preference_alignment",
+            "stale_preference_use",
+            "telegraph_avoidance",
+            "privacy_leak",
+        ],
+        "display_rubric": [
+            "(+) Use the post-shift stance, not the outdated one.",
+            "(-) Don't lean on the old/contradicted preference.",
+            TELEGRAPH_AVOIDANCE_TAG,
+        ],
         "rubric_tags": [
             "preference_shift_consistency",
             "preference_alignment",
@@ -323,10 +574,14 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
-        # deep_motivation_alignment (0-3 LLM judge, headline) + surface
-        # query satisfaction + universal hard-rules (telegraph_avoidance
-        # bans naming the persona type; privacy_leak bans direct mention
-        # of sensitive-topic personas).
+        "scoring_dimensions": [
+            "deep_motivation_alignment",
+            "surface_query_satisfaction",
+            "preference_alignment",
+            "telegraph_avoidance",
+            "privacy_leak",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_HIDDEN_PERSONA_QA,
         "rubric_tags": [
             "deep_motivation_alignment",
             "surface_query_satisfaction",
@@ -344,6 +599,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
+        "scoring_dimensions": list(_RUBRIC_RANKING),
+        "display_rubric": _DISPLAY_RUBRIC_PERSONALIZED_RECOMMENDATION,
         "rubric_tags": list(_RUBRIC_RANKING),
     },
 
@@ -355,6 +612,12 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",       # exactly 1 create_post
         "expected_response_kind": "agentic_writes",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "voice_match",
+            "tool_call_match", "behavioral_hit", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_user_tone_post"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "negative_leakage", "stale_preference_use", "voice_match",
@@ -368,6 +631,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",        # list_dms + no sends
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_dm_digest"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "voice_match", "tool_call_match",
@@ -378,6 +646,12 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",        # exactly 1 threads_create_post
         "expected_response_kind": "agentic_writes",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match", "behavioral_hit",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_cross_app_repost"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "voice_match", "tool_call_match", "behavioral_hit",
@@ -388,6 +662,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",        # exactly 1 send_dm
         "expected_response_kind": "agentic_writes",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_auto_reply"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "voice_match", "tool_call_match",
@@ -398,6 +677,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",        # zero create_post
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "preference_alignment", "stale_preference_use",
+            "tool_call_match", "behavioral_hit", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_vague_refind"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "stale_preference_use",
             "tool_call_match", "behavioral_hit",
@@ -412,6 +696,12 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "all",
         "state_write_policy": "writes_ok",        # exactly 1 create_post per instance
         "expected_response_kind": "agentic_writes",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "voice_match",
+            "tool_call_match", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_composed_post"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "negative_leakage", "stale_preference_use", "voice_match",
@@ -425,6 +715,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",          # get_dm_thread only
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "voice_match", "tool_call_match", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_group_dm_summary"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "voice_match", "tool_call_match",
@@ -435,6 +730,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",          # ≤1 send_dm, must ask first
         "expected_response_kind": "agentic_writes",
+        "scoring_dimensions": [
+            "preference_alignment", "voice_match", "tool_call_match",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_wrong_recipient_check"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "voice_match", "tool_call_match",
         ],
@@ -444,6 +744,12 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "behavioral_hit",
+            "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_proactive_daily_catchup"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "negative_leakage", "stale_preference_use", "behavioral_hit",
@@ -454,6 +760,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "behavioral_hit", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_trending_alert"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "behavioral_hit",
@@ -468,6 +779,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
+        "scoring_dimensions": [
+            "preference_alignment", "stale_preference_use",
+            "recall_at_k", "carveout_violation_at_3",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_AT_AI_DIRECTIVE,
         "rubric_tags": ["preference_alignment", "stale_preference_use"],
     },
     # daily_personalized_briefing removed in Step 4.3 — see DROPPED_TASK_TYPES.
@@ -478,13 +794,19 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",                # ranks the slate from time-masked history alone
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
-        "rubric_tags": list(_RUBRIC_RANKING),       # recall_at_k, ndcg_at_k, mrr, hit_at_k
+        "scoring_dimensions": list(_RUBRIC_RANKING),
+        "display_rubric": _DISPLAY_RUBRIC_PERSONALIZED_RECOMMENDATION,
+        "rubric_tags": list(_RUBRIC_RANKING),
     },
     "short_vs_long_term_lifecycle": {
         "task_family": "e_followup",
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "ranking",
+        "scoring_dimensions": [
+            "preference_alignment", "stale_preference_use",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_SHORT_VS_LONG,
         "rubric_tags": [
             "preference_alignment", "stale_preference_use",
         ],
@@ -494,12 +816,14 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "all",
         "state_write_policy": "writes_ok",
         "expected_response_kind": "text_with_tool_calls",
-        # Task-specific axes (mistake_prevention_recall, false_alarm_emission,
-        # warning_quality) PLUS the universal personalization dimensions used
-        # by chatbot Q&A, over-personalization, and proactive_actions. Same
-        # pattern as yuan's 98a33c1: task-specific + universal in one bundle.
-        # Polarity (warn vs foil) is carried by `polarity` on the instance,
-        # not by tag presence.
+        "scoring_dimensions": list(_RUBRIC_E6) + [
+            "preference_alignment",
+            "voice_match",
+            "negative_leakage",
+            "stale_preference_use",
+        ],
+        "display_rubric_warn": _DISPLAY_RUBRIC_ACTIVE_MISTAKE_WARN,
+        "display_rubric_control": _DISPLAY_RUBRIC_ACTIVE_MISTAKE_CONTROL,
         "rubric_tags": list(_RUBRIC_E6) + [
             "preference_alignment",
             "voice_match",
@@ -519,6 +843,11 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "none",
         "state_write_policy": "read_only",
         "expected_response_kind": "text",
+        "scoring_dimensions": [
+            "preference_alignment", "stale_preference_use",
+            "geo_shift_correctness",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_GEO_SHIFT,
         "rubric_tags": ["preference_alignment", "stale_preference_use"],
     },
 
@@ -533,6 +862,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "trigger_detection_correctness", "content_length_ok",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
+            "proactive_action_score",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
         "rubric_tags": [
             "trigger_detection_correctness",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
@@ -544,6 +880,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "trigger_detection_correctness", "content_length_ok",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
+            "proactive_action_score",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
         "rubric_tags": [
             "trigger_detection_correctness",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
@@ -555,6 +898,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "trigger_detection_correctness", "content_length_ok",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
+            "proactive_action_score",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
         "rubric_tags": [
             "trigger_detection_correctness",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
@@ -569,6 +919,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "trigger_detection_correctness", "content_length_ok",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
+            "proactive_action_score",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
         "rubric_tags": [
             "trigger_detection_correctness",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
@@ -580,6 +937,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "trigger_detection_correctness", "content_length_ok",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
+            "proactive_action_score",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
         "rubric_tags": [
             "trigger_detection_correctness",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
@@ -591,6 +955,13 @@ TASK_TYPE_META: dict[str, dict] = {
         "mcp_tools_allowed": "chatbot",
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
+        "scoring_dimensions": [
+            "trigger_detection_correctness", "content_length_ok",
+            "preference_alignment", "avoid_overpersonalization", "voice_match",
+            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
+            "proactive_action_score",
+        ],
+        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
         "rubric_tags": [
             "trigger_detection_correctness",
             "preference_alignment", "avoid_overpersonalization", "voice_match",

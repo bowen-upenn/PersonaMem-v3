@@ -83,6 +83,7 @@ COLUMNS: list[str] = [
     "state_write_policy",
     "expected_response_kind",
     "rubric_tags",
+    "display_rubric",
     "instance_json",
 ]
 
@@ -219,7 +220,8 @@ def _project_row(
         "mcp_tools_allowed": meta["mcp_tools_allowed"],
         "state_write_policy": meta["state_write_policy"],
         "expected_response_kind": meta["expected_response_kind"],
-        "rubric_tags": ";".join(meta["rubric_tags"]),
+        "rubric_tags": ";".join(meta.get("scoring_dimensions") or meta["rubric_tags"]),
+        "display_rubric": ";".join(meta.get("display_rubric") or []),
         "instance_json": instance_json,
     }
 

@@ -1255,3 +1255,19 @@ Every emitted instance carries `gold_anchor_personas` — up to 2 hidden persona
 - 1 mini-tier judge call per chatbot test instance at eval time.
 
 Negligible at the per-user level.
+
+## 23. Rubric Alignment — Single Source of Truth
+
+`evaluation/task_registry.py` is now the single source of truth for both **what the eval scores** and **what reviewers see**. Each task_type carries:
+
+- `scoring_dimensions` — metric keys the runner actually computes (replaces the old `rubric_tags` list, which was a lossy summary).
+- `display_rubric` — human-readable bullets rendered in `persona.html` test cards and the `queries.csv` `display_rubric` column. May contain `{placeholders}` for instance-specific interpolation.
+- `rubric_tags` — deprecated alias for `scoring_dimensions`; kept for backward compat.
+
+`data_preparation/visualize.py`'s `_gt_*` functions now call `_registry_display_rubric(task_type, **kwargs)` which imports from `task_registry.get_display_rubric()` and interpolates instance-specific values. The `TELEGRAPH_AVOIDANCE_TAG` and `AGENTIC_DISPLAY_RUBRICS` constants live in `task_registry.py`.
+
+### Scoring gaps closed
+
+- **`personalized_recommendation`**: `hard_neg_violation_rate` metric added — fraction of hard negatives ranked above the lowest-ranked filler. Display rubric: "Hard negatives must rank below all correct items and fillers."
+- **`proactive_*` tasks**: `content_length_ok` (body ≤ 30 words) now gates the `proactive_action_score` composite with a 0.7 multiplier even when the LLM judge runs.
+- **`at_ai_directive_followup`**: `carveout_violation_at_3` added to `scoring_dimensions` (metric was already computed but not advertised).

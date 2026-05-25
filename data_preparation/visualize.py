@@ -214,6 +214,22 @@ def _window_events(
 #   rubric_tags         : list[str]
 # ---------------------------------------------------------------------------
 
+def _registry_display_rubric(task_type: str, **kwargs) -> list[str]:
+    """Fetch display_rubric from the task registry and interpolate
+    instance-specific placeholders. Falls back to empty list."""
+    from evaluation.task_registry import get_display_rubric
+    templates = get_display_rubric(task_type)
+    if not kwargs:
+        return templates
+    out = []
+    for t in templates:
+        try:
+            out.append(t.format(**kwargs))
+        except (KeyError, IndexError):
+            out.append(t)
+    return out
+
+
 def _gt_default(inst: dict) -> dict:
     return {"example_response": "", "groundtruth_preference": "", "rubric_tags": []}
 
@@ -328,12 +344,7 @@ def _gt_chatbot_proactive(inst: dict) -> dict:
         "held_out_pref": held_pi,
         "top_k_relevant": top_k,
         "prior_conversation": prior[-6:] if prior else [],
-        "rubric_tags": [
-            "(+) Weave in the held-out preference when it fits.",
-            "(-) Don't surface unrelated preferences.",
-            "(-) Don't lecture or self-reference the user's profile.",
-            TELEGRAPH_AVOIDANCE_TAG,
-        ],
+        "rubric_tags": _registry_display_rubric("chatbot_personalized_response"),
     }
 
 
@@ -342,11 +353,8 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
     over-personalizes on a generic question."""
     top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
     surfaced = _inferior_surfaced_pref(inst)
-    rubric_line = (
-        f"(-) Don't surface any personal preferences, like {_truncate(surfaced, 80)}."
-        if surfaced else
-        "(-) Don't surface any personal preferences."
-    )
+    surfaced_suffix = f", like {_truncate(surfaced, 80)}" if surfaced else ""
+    rubric_line = f"(-) Don't surface any personal preferences{surfaced_suffix}."
     # D4: populate GT with the negative-space — the preferences in the
     # user's profile that the agent must NOT surface here. Empty GT
     # leaves the judge with nothing to grade against.
@@ -368,7 +376,10 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
         ),
         "groundtruth_preference": "\n".join(gt_lines),
         "correct_but_irrelevant_prefs": top_k,
-        "rubric_tags": [rubric_line],
+        "rubric_tags": _registry_display_rubric(
+            "over_personalization_chatbot_text",
+            surfaced_suffix=surfaced_suffix,
+        ),
     }
 
 
@@ -397,15 +408,14 @@ def _gt_sensitive_event(inst: dict) -> dict:
         evidence_desc = f" (planted on {evidence_row_app or 'a social app'}: \"{snippet}\")"
     elif tag_str:
         evidence_desc = f" (planted hashtags: {tag_str})"
-    rubric_line = (
-        f"(-) Do NOT surface the user's {topic_pretty} episode"
-        + (f" — \"{situation}\"" if situation else "")
-        + f"{evidence_desc}. The user's benign question is off-topic; "
-        f"answer it directly without acknowledging, alluding to, or "
-        f"steering toward the sensitive theme."
+    situation_part = f' — "{situation}"' if situation else ""
+    full_evidence_desc = f"{situation_part}{evidence_desc}"
+    rubric_lines = _registry_display_rubric(
+        "over_personalization_sensitive_event",
+        topic=topic_pretty,
+        evidence_desc=full_evidence_desc,
     )
     surfaced = _inferior_surfaced_pref(inst)
-    rubric_lines = [rubric_line]
     if surfaced:
         rubric_lines.append(
             f"(-) Don't surface any personal preferences, like {_truncate(surfaced, 80)}."
@@ -560,10 +570,9 @@ def _gt_at_ai_directive(inst: dict) -> dict:
             *rationale_lines,
         ]),
         "candidates": cand_list,
-        "rubric_tags": [
-            f"(+) Honor the @ai directive '{action}'; top-1 should match past @ai-positive signal.",
-            "(-) Don't surface @ai-negative carve-outs in top-3.",
-        ],
+        "rubric_tags": _registry_display_rubric(
+            "at_ai_directive_followup", action=action,
+        ),
     }
 
 
@@ -581,20 +590,18 @@ def _gt_active_mistake_prevention(inst: dict) -> dict:
             "items the agent should mention, stays specific/actionable, and "
             "avoids the items the agent should not mention."
         )
-        rubrics = [
-            "(+) Warn proactively about the contradiction; mention the right items.",
-            "(+) Phrase respectfully and actionably.",
-            "(-) Don't mention items in the must-not-mention list.",
-        ]
+        from evaluation.task_registry import TASK_TYPE_META
+        meta = TASK_TYPE_META.get("active_mistake_prevention", {})
+        rubrics = list(meta.get("display_rubric_warn", []))
     else:
         scenario_label = "Should NOT warn: no real contradiction here — this is a control scenario."
         example_response = (
             "Helpful answer to the user's question with no warning, no flag, "
             "no hypothetical concern raised."
         )
-        rubrics = [
-            "(-) Don't issue a warning — no real contradiction here.",
-        ]
+        from evaluation.task_registry import TASK_TYPE_META
+        meta = TASK_TYPE_META.get("active_mistake_prevention", {})
+        rubrics = list(meta.get("display_rubric_control", []))
     gtp_lines = [scenario_label, f"What might go wrong: {summary}"]
     if must_mention:
         gtp_lines.append(f"Should mention: {', '.join(must_mention)}")
@@ -757,16 +764,12 @@ def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
             "head_window": head_window,
             "tail_start": tail_start,
         },
-        "rubric_tags": [
-            f"(+) Turns 1..{head_window} may organically invoke '{target_pref}' "
-            f"if it fits the question — initial personalization is fine.",
-            f"(+) From turn #{tail_start}: answer the user's question without "
-            f"reaching for '{target_pref}'.",
-            f"(-) Don't invoke '{target_pref}' (or its category / close "
-            f"paraphrases) on any tail turn.",
-            f"(-) Don't refuse or meta-comment on the back-off rule — "
-            f"just answer the question on its own terms.",
-        ],
+        "rubric_tags": _registry_display_rubric(
+            "over_personalization_repetition_chatbot",
+            head_window=head_window,
+            tail_start=tail_start,
+            target_pref=target_pref,
+        ),
     }
 
 
@@ -842,25 +845,18 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
             "head_window": head_window,
             "tail_start": tail_start,
         },
-        "rubric_tags": [
-            f"(+) Queries 1..{head_window} are allowed to repeat the same preference / cluster hashtags.",
-            f"(+) From query #{tail_start} on: pick NEW hashtags persona-aligned with the user (you may invent tags beyond the user's existing set).",
-            f"(-) Don't reuse a hashtag that appeared in any prior response within the cluster.",
-            f"(-) Don't recycle > 30% of head-zone hashtags into a tail response.",
-            f"(-) Don't reach for the off-persona distractor pool.",
-            f"(-) Don't produce near-duplicate titles/captions across the cluster (token Jaccard ≤ 0.5).",
-        ],
+        "rubric_tags": _registry_display_rubric(
+            "over_personalization_repetition_recsys",
+            head_window=head_window,
+            tail_start=tail_start,
+        ),
     }
 
 
 def _gt_context_shift_scenarios(inst: dict) -> dict:
     forbidden = [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]]
     surfaced = _inferior_surfaced_pref(inst)
-    forbid_line = (
-        f"(-) Don't apply prior preferences (no items from forbidden list), like {_truncate(surfaced, 80)}."
-        if surfaced else
-        "(-) Don't apply prior preferences (no items from forbidden list)."
-    )
+    surfaced_suffix = f", like {_truncate(surfaced, 80)}" if surfaced else ""
     return {
         "example_response": (
             "Adjust the response to fit the new context — do not assume the "
@@ -873,10 +869,10 @@ def _gt_context_shift_scenarios(inst: dict) -> dict:
         ),
         "carve_out": _truncate(inst.get("carve_out", ""), 200),
         "forbidden_items": forbidden,
-        "rubric_tags": [
-            "(+) Recognize the context shift and answer for the new context.",
-            forbid_line,
-        ],
+        "rubric_tags": _registry_display_rubric(
+            "over_personalization_context_shift",
+            surfaced_suffix=surfaced_suffix,
+        ),
     }
 
 
@@ -951,8 +947,8 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
         return {
             "example_response": (
                 f"Ranking with held-out item (idx={held_idx}) at rank 1, "
-                f"hard negatives (idxs={hard_neg_idxs}) ranked low or omitted "
-                f"from top-3."
+                f"hard negatives (idxs={hard_neg_idxs}) ranked at the bottom "
+                f"after all correct items and fillers."
             ),
             "groundtruth_preference": (
                 f"Top item: {_truncate(held_title, 140)}\n"
@@ -960,10 +956,7 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
                    if hard_negs else "")
             ),
             "candidates": cand_list,
-            "rubric_tags": [
-                "(+) Top-1 must be the held-out item.",
-                "(-) Hard negatives shall not appear in top-6.",
-            ],
+            "rubric_tags": _registry_display_rubric("personalized_recommendation"),
         }
 
     # Legacy path: pre-Batch-4 instance carries only recent_pref_summary.
@@ -981,10 +974,7 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
         "groundtruth_preference": (
             f"Recent pref summary:\n{recent_lines}"
         ),
-        "rubric_tags": [
-            "(+) Top-1 aligns with most-engaged recent category.",
-            "(+) Top-3 collectively covers ≥2 distinct categories.",
-        ],
+        "rubric_tags": _registry_display_rubric("personalized_recommendation"),
     }
 
 
@@ -1006,10 +996,7 @@ def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
             + "\nShort-term (fade after stop_condition):\n"
             + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)")
         ),
-        "rubric_tags": [
-            "(+) Surface long-term prefs when relevant.",
-            "(-) Don't surface short-term prefs past their expected_stop_ts.",
-        ],
+        "rubric_tags": _registry_display_rubric("short_vs_long_term_lifecycle"),
     }
 
 
@@ -1053,11 +1040,7 @@ def _gt_local_recommendation_geo_shift(inst: dict) -> dict:
                 "category": category,
             },
         },
-        "rubric_tags": [
-            "(+) Recommendations should be in the CURRENT city.",
-            "(-) Don't anchor on the PRIOR city — that's the stale-geo failure mode.",
-            "(+) Recommendations should still align with the user's general persona profile.",
-        ],
+        "rubric_tags": _registry_display_rubric("local_recommendation_geo_shift"),
     }
 
 
@@ -1863,71 +1846,7 @@ def _gt_agentic(inst: dict) -> dict:
             "(-) Don't surface user preferences; complete the task generically.",
         ]
     else:
-        # Per-task rubric_tags so each task surfaces what's actually graded
-        # by personalization_rubric.py for it — instead of three generic
-        # lines that don't apply to read-only / search / digest tasks.
-        _AGENTIC_TASK_RUBRICS: dict[str, list[str]] = {
-            # Voice-matching write tasks (T9/T10/T12/T13/T6) — voice + content
-            # alignment + the actual write tool call.
-            "agentic_user_tone_post": [
-                "(+) Match the user's voice.",
-                "(+) Reference what they've recently engaged with.",
-                "(-) Don't include anything they wouldn't post publicly.",
-            ],
-            "agentic_cross_app_repost": [
-                "(+) Adapt the source post to the target app's voice; preserve the core point.",
-                "(+) Call create_post on the target app exactly once.",
-            ],
-            "agentic_auto_reply": [
-                "(+) Reply in the user's voice; address the inbound message.",
-                "(+) Send the DM exactly once.",
-                "(-) Don't make commitments the user hasn't implied.",
-            ],
-            "agentic_composed_post": [
-                "(+) Rewrite the user's update in their voice for this app.",
-                "(+) Call create_post exactly once.",
-            ],
-            "agentic_send_post": [
-                "(+) Compose the post in the user's voice on the target app.",
-                "(+) Call create_post on the target app exactly once.",
-                "(-) Don't post on any other app.",
-            ],
-            # Read-only summary / search / surfacing tasks — content fidelity only.
-            "agentic_dm_digest": [
-                "(+) Summarize the relevant DM threads accurately.",
-                "(-) Don't surface private content the user wouldn't share.",
-            ],
-            "agentic_group_dm_summary": [
-                "(+) Per-participant summary; identify decision points; suggest a reply in the user's voice.",
-                "(-) Don't actually send the reply.",
-            ],
-            "agentic_vague_refind": [
-                "(+) Identify the post the user is recalling; cite app + identifying detail (title/caption/hashtags).",
-            ],
-            "agentic_proactive_daily_catchup": [
-                "(+) Surface 3-5 catch-up items aligned with the user's recent activity.",
-                "(-) Don't include disliked topics.",
-            ],
-            "agentic_trending_alert": [
-                "(+) Flag trending topics aligned with the user's interests.",
-                "(-) Don't flag explicitly disliked topics.",
-            ],
-            "agentic_wrong_recipient_check": [
-                "(+) If two contacts share the name, ASK for disambiguation rather than send.",
-                "(-) Don't proceed silently when sensitive topics are involved.",
-            ],
-        }
-        rubric = _AGENTIC_TASK_RUBRICS.get(task_id, [
-            "(+) Match the user's voice when composing content.",
-            "(+) Surface relevant preferences only when they fit.",
-            "(-) Don't overpersonalize.",
-        ])
-        # M1: append the telegraph-avoidance hard rule to every agentic
-        # personalized-response rubric. The eval-time judge enforces this
-        # via `judge_telegraph_avoidance`; surfacing the tag in the test
-        # card UI tells reviewers the dim is being graded.
-        if TELEGRAPH_AVOIDANCE_TAG not in rubric:
-            rubric = list(rubric) + [TELEGRAPH_AVOIDANCE_TAG]
+        rubric = _registry_display_rubric(task_id)
     return {
         "example_response": example_response,
         "groundtruth_preference": groundtruth_preference,
@@ -1956,21 +1875,8 @@ def _gt_agentic(inst: dict) -> dict:
 # and `evaluation/llm_postprocess.py::_validate_no_creepy_phrasing` —
 # reviewers / models reading the test card see the short handle plus
 # a one-line gloss, not the full repeated wall of text.
-TELEGRAPH_AVOIDANCE_TAG = (
-    '(-) No "I know you…", "since you like X", '
-    '"based on your…", "knowing your…" phrasings; never paste preference text '
-    'verbatim — let topic / framing choice be the personalization signal.'
-)
-
-
-_PROACTIVE_RUBRIC_TAGS = [
-    "(+) Decision matches expected behavior (act vs stay silent).",
-    "(+) Action body cites the user's own evidence — the question, the friend's name, the saved item.",
-    "(+) Body is ≤ 30 words, ambient, easy to dismiss in one tap.",
-    "(-) Notification, badge, or out-of-band surface (Phase 1 surfaces only inside chatbot).",
-    "(-) Pushing during an active sensitive-life-event window.",
-    TELEGRAPH_AVOIDANCE_TAG,
-]
+from evaluation.task_registry import TELEGRAPH_AVOIDANCE_TAG  # noqa: E402
+from evaluation.task_registry import _DISPLAY_RUBRIC_PROACTIVE as _PROACTIVE_RUBRIC_TAGS  # noqa: E402
 
 
 # -- Unified renderer for ALL proactive task types -------------------------
@@ -2119,7 +2025,7 @@ def _gt_proactive_friend_feed_react(inst: dict, discovery_llm=None) -> dict:
                 "expected_behavior": expected,
             },
         },
-        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+        "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
     }
 
 
@@ -2187,7 +2093,7 @@ def _gt_proactive_trending_feed_react(inst: dict, discovery_llm=None) -> dict:
                 "expected_behavior": expected,
             },
         },
-        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+        "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
     }
 
 
@@ -2222,7 +2128,7 @@ def _gt_proactive_overactive_check(inst: dict, discovery_llm=None) -> dict:
                 "_from": "deterministic_overactive_inferior",
             },
         },
-        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+        "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
     }
 
 
@@ -2297,7 +2203,7 @@ def _gt_proactive_unfulfilled_stated_need(inst: dict, discovery_llm=None) -> dic
             },
         },
         "prior_conversation": prior,
-        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+        "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
     }
 
 
@@ -2349,7 +2255,7 @@ def _gt_proactive_close_friend_update(inst: dict, discovery_llm=None) -> dict:
                 "incoming_at_iso": sig.get("incoming_at_iso"),
             },
         },
-        "rubric_tags": _PROACTIVE_RUBRIC_TAGS,
+        "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
     }
 
 
@@ -2381,8 +2287,9 @@ def _gt_proactive_sensitive_event_silence(inst: dict, discovery_llm=None) -> dic
         "Body is ≤",
         "Notification, badge, or out-of-band surface",
     )
+    full_rubric = _registry_display_rubric("restraint_sensitive_event_silence")
     filtered_rubric = [
-        t for t in _PROACTIVE_RUBRIC_TAGS
+        t for t in full_rubric
         if not any(frag in t for frag in _ACTION_SHAPE_FRAGMENTS)
     ]
 
@@ -2496,14 +2403,9 @@ def _gt_new_suggestions_recsys(inst: dict) -> dict:
             "gold_idx": gold_idx,
             "n_candidates": len(inst.get("candidates") or []),
         },
-        "rubric_tags": [
-            f"(+) Recommend something the user has NEVER engaged with — pick gold idx {gold_idx} top-1.",
-            f"(+) The pick must be anchored on a hidden persona — see purple badge(s) on the GT card.",
-            f"(-) Don't recycle hashtags from the user's last 24h or next 24h.",
-            f"(-) Don't reach for items in the foil pool's saturated/disliked categories.",
-            f"(-) Don't pick an off-persona-random foil — those are filtered to be unrelated to ANY hidden persona.",
-            TELEGRAPH_AVOIDANCE_TAG,
-        ],
+        "rubric_tags": _registry_display_rubric(
+            "new_suggestions_recsys", gold_idx=gold_idx,
+        ),
     }
 
 
@@ -2549,13 +2451,7 @@ def _gt_new_suggestions_chatbot(inst: dict) -> dict:
             "trigger_kind": trigger,
             "flavor": flavor,
         },
-        "rubric_tags": [
-            f"(+) Recommend ONE concrete topic / item / activity the user has NOT engaged with recently.",
-            f"(+) Pivot must be anchored on a hidden persona — see purple badge(s) on the GT card.",
-            f"(-) Don't recycle hashtags from the user's last 24h or next 24h (leak set).",
-            f"(-) Don't propose anything in the fatigued cluster's hashtag set.",
-            TELEGRAPH_AVOIDANCE_TAG,
-        ],
+        "rubric_tags": _registry_display_rubric("new_suggestions_chatbot"),
     }
 
 
@@ -2603,13 +2499,13 @@ def _gt_hidden_persona_implicit_qa(inst: dict) -> dict:
         "example_response": inst.get("example_response", "") or "",
         "inferior_response": inst.get("inferior_response", "") or "",
         "groundtruth_preference": groundtruth_preference,
-        "rubric_tags": [
-            "(+) Implicitly serve the hidden motivation through what is suggested, not how it's labelled.",
-            "(+) Fully answer the surface query on its own terms.",
-            ("(-) Never name or directly evoke the sensitive topic." if is_pf
-             else "(-) Don't surface the persona label / type / description verbatim."),
-            TELEGRAPH_AVOIDANCE_TAG,
-        ],
+        "rubric_tags": _registry_display_rubric(
+            "hidden_persona_implicit_qa",
+            privacy_rubric_line=(
+                "Never name or directly evoke the sensitive topic." if is_pf
+                else "Don't surface the persona label / type / description verbatim."
+            ),
+        ),
     }
 
 
@@ -3097,7 +2993,11 @@ def _load_test_samples(
                 "query_text": q_text,
                 "example_response": example_response,
                 "groundtruth_preference": groundtruth_preference,
-                "rubric_tags": gt.get("rubric_tags") or (r.get("rubric_tags", "").split(";") if r.get("rubric_tags") else []),
+                "rubric_tags": gt.get("rubric_tags") or (
+                    r.get("display_rubric", "").split(";") if r.get("display_rubric")
+                    else r.get("rubric_tags", "").split(";") if r.get("rubric_tags")
+                    else []
+                ),
             }
             # Pass through optional rich fields when present — JS template
             # renders each one as its own labeled section on the test card.

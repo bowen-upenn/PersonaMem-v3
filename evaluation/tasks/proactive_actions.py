@@ -515,6 +515,10 @@ def run_proactive_task(
             )
             judge_scores = {**judge_scores, "proactive_action_score": fallback_score}
 
+        # Penalise verbose bodies regardless of score source (judge or fallback).
+        if "proactive_action_score" in judge_scores and not length_ok:
+            judge_scores["proactive_action_score"] = judge_scores["proactive_action_score"] * 0.7
+
         from evaluation.inference_utils import merge_token_metrics
         result_metrics = {**hard_metrics, **judge_scores}
         merge_token_metrics(
