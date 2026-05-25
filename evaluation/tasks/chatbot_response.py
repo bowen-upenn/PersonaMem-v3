@@ -134,6 +134,13 @@ def run_task_b(
         # `stale` (J.5) puts the now-expired pref into a synthesized pool of one
         # ([_stale_pref]) so the leak rate fires only when the agent surfaces
         # that specific stale item.
+        # LLM-as-a-judge for leak/alignment scoring. Falls back to
+        # similarity-based metrics when judge_client is None.
+        from evaluation import llm_metrics
+        _judge_fn = (judge_client.query_llm
+                     if enable_llm_judge and judge_client
+                     and hasattr(judge_client, "query_llm") else None)
+
         if arm in ("control", "adversarial", "distractor_reject", "stale", "sensitive_event", "conversational_drift"):
             if arm in ("distractor_reject", "sensitive_event", "conversational_drift"):
                 leak_pool = privacy_flagged
@@ -142,25 +149,32 @@ def run_task_b(
                 leak_pool = [{"persona_item": stale_pi}] if stale_pi else top_k_prefs
             else:
                 leak_pool = top_k_prefs
-            ctrl_leak = metrics.personalization_leak_rate(response_text, leak_pool)
+            ctrl_leak = llm_metrics.personalization_leak_check(
+                _judge_fn, response_text, leak_pool,
+                context=f"arm={arm}, query={user_query[:100]}",
+            )
             arm_metrics = {
                 "personalization_leak_rate": ctrl_leak["leak_rate"],
                 "personalization_leaks": ctrl_leak["leaked"],
             }
         else:
             # Proactive / contradiction: reward surfacing top-K relevant prefs.
-            align = metrics.top_k_preference_alignment(response_text, top_k_prefs)
+            align = llm_metrics.preference_alignment_check(
+                _judge_fn, response_text, top_k_prefs, user_query=user_query,
+            )
             arm_metrics = {
                 "top_k_alignment_rate": align["alignment_rate"],
                 "top_k_matched": align["matched"],
             }
 
-        # Privacy hard constraint applies on both arms.
-        priv = metrics.privacy_leak_rate(response_text, privacy_flagged)
+        # Privacy check also via LLM judge.
+        priv = llm_metrics.privacy_leak_check(_judge_fn, response_text, privacy_flagged)
         priv_metrics = {
             "privacy_leak_rate": priv["leak_rate"],
             "privacy_leak_hard_fail": priv["hard_fail"],
         }
+
+        # Privacy check already done via LLM judge above (priv_metrics).
 
         # Source B — behavioral hit/miss, only for proactive arm instances
         # that have a populated post-test window.

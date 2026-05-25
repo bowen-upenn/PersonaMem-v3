@@ -70,19 +70,22 @@ def run_task_c2(
         else:
             response_text = raw_response
 
-        # Gated leak rate — empty/refusal responses are tagged as
-        # non-substantive (hard_fail=1) instead of trivially scoring
-        # leak_rate=0. Silence is not restraint.
-        leak_dict = metrics.keyword_leak_rate_with_gate(
-            response_text, sc.get("forbidden_items") or [],
+        # LLM-as-a-judge for leak detection + carve-out respect.
+        from evaluation import llm_metrics
+        _judge_fn = (judge_client.query_llm
+                     if enable_llm_judge and judge_client
+                     and hasattr(judge_client, "query_llm") else None)
+
+        leak_dict = llm_metrics.keyword_leak_check(
+            _judge_fn, response_text, sc.get("forbidden_items") or [],
+            scenario_context=sc.get("name", ""),
         )
         leak = leak_dict["leak_rate"]
         carve = 1
         if sc.get("carve_out"):
-            carve = metrics.carve_out_respect(
-                response_text,
+            carve = llm_metrics.carve_out_respect_check(
+                _judge_fn, response_text,
                 sc["carve_out"].get("topic", ""),
-                sc["carve_out"].get("hashtags", []),
             )
 
         judge_scores: dict = {}

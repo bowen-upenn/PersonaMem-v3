@@ -554,17 +554,34 @@ def score(
     applicable = APPLICABILITY.get(task_id, {})
     out: dict = {"task_id": task_id, "applicable_dims": [k for k, v in applicable.items() if v]}
 
-    # Hard-rule dims — cheap, no LLM.
+    # Hard-rule dims — now LLM-judged when judge_client available,
+    # falls back to similarity-based metrics otherwise.
+    from evaluation import llm_metrics
+    _judge_fn = (judge_client.query_llm
+                 if judge_client and hasattr(judge_client, "query_llm")
+                 else None)
+
     if applicable.get("avoid_leak"):
-        r = metrics_mod.privacy_leak_rate(agent_output, ground_truth.get("user_negatives_nearby") or [], threshold)
+        r = llm_metrics.personalization_leak_check(
+            _judge_fn, agent_output,
+            ground_truth.get("user_negatives_nearby") or [],
+            context="avoid_leak: user has disliked these topics",
+        )
         out["avoid_leak_rate"] = r["leak_rate"]
         out["avoid_leak_hard_fail"] = r["hard_fail"]
     if applicable.get("privacy_leak"):
-        r = metrics_mod.privacy_leak_rate(agent_output, ground_truth.get("privacy_flagged_prefs") or [], threshold)
+        r = llm_metrics.privacy_leak_check(
+            _judge_fn, agent_output,
+            ground_truth.get("privacy_flagged_prefs") or [],
+        )
         out["privacy_leak_rate"] = r["leak_rate"]
         out["privacy_leak_hard_fail"] = r["hard_fail"]
     if applicable.get("stale_preference_use"):
-        r = metrics_mod.privacy_leak_rate(agent_output, ground_truth.get("update_history_contradictions") or [], threshold)
+        r = llm_metrics.personalization_leak_check(
+            _judge_fn, agent_output,
+            ground_truth.get("update_history_contradictions") or [],
+            context="stale_preference_use: user has contradicted these old preferences",
+        )
         out["stale_preference_use_rate"] = r["leak_rate"]
         out["stale_preference_use_hard_fail"] = r["hard_fail"]
     if applicable.get("telegraph_avoidance"):
