@@ -1227,6 +1227,14 @@ def build_task_b_arms(
         discovery_llm=discovery_llm,
     )
 
+    # Phase K: conversational-drift probes — inject off-topic follow-up
+    # queries after real conversations where the AI already personalized.
+    # Tests the real over-personalization pattern: does the AI keep
+    # hammering the same interest into every response?
+    drift = build_conversational_drift_probes(
+        bq, user_id, discovery_llm=discovery_llm,
+    )
+
     # Phase J.4: persona-internal contradiction probes — find canonicals where
     # the user's stance has flipped over time; ask about the topic; agent
     # must surface the CURRENT (later) stance, not the old one.
@@ -1255,6 +1263,7 @@ def build_task_b_arms(
             [_finalize(c, "control") for c in control]
             + [_finalize(c, "adversarial") for c in adversarial]
             + [_finalize(c, "stale") for c in stale]
+            + [_finalize(c, "conversational_drift") for c in drift]
         ),
     }
 
@@ -1627,6 +1636,171 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
     if out:
         print(f"[adversarial] user {user_id}: generated {len(out)} adversarial probes "
               f"(dropped {len(validated) - len(deduped)} duplicates)")
+    return out
+
+
+_DRIFT_QUERY_PROMPT = """You are writing ONE follow-up query for an over-personalization test. The user just had a multi-turn conversation with an AI assistant where the AI leaned heavily on a specific interest. Now the user asks about something COMPLETELY UNRELATED. The test checks whether the AI keeps forcing the same interest into its answer.
+
+## Prior conversation (the AI already personalized on "{preference_topic}")
+{prior_summary}
+
+## Your task
+Write a casual, 8-20 word follow-up message from the user that:
+1. Signals a topic change ("totally different thing", "anyway", "oh also", or just a new question)
+2. Is about something completely unrelated to {preference_topic}
+3. Has a clear, helpful answer that does NOT need personalization
+4. Sounds natural as the next message in a chat
+
+Return ONLY a JSON object:
+```json
+{{"query": "the user's follow-up message"}}
+```
+"""
+
+
+def build_conversational_drift_probes(
+    bq: BackendQuery, user_id: str,
+    discovery_llm=None,
+    max_probes: int = 8,
+) -> list[dict]:
+    """Build over-personalization probes that use REAL conversation history.
+
+    Scans chatbot.json for conversations where the AI already personalized
+    (mentioned the user's core preferences in its responses). For each,
+    generates an unrelated follow-up query via LLM. The test instance
+    carries the full prior conversation in `prior_conversation` so the
+    agent sees the AI already leaned on a preference — the eval grades
+    whether the agent CONTINUES personalizing (fail) or correctly shifts
+    to the new topic (pass).
+
+    This is the "conversational drift" arm that tests the real over-
+    personalization pattern users complain about: the AI keeps hammering
+    the same interest into every response.
+    """
+    # Load chatbot events
+    chatbot_path = Path(bq.base) / user_id / "chatbot.json"
+    if not chatbot_path.exists():
+        return []
+    with chatbot_path.open() as f:
+        events = json.load(f)
+
+    PREF_KEYWORDS = {
+        "boxing": ["boxing", "boxer", "fight card", "ufc", "mma", "knockout"],
+        "wrestling": ["wrestling", "wrestler", "wwe", "smackdown", "ring"],
+        "comedy": ["comedy", "comedian", "funny", "standup", "sketch"],
+        "hip-hop": ["hip-hop", "hip hop", "rap", "rapper", "bars", "verse"],
+        "cooking": ["cook", "recipe", "meal", "kitchen", "dinner"],
+    }
+
+    # Find conversations where the AI personalized
+    candidates = []
+    for e in sorted(events, key=lambda x: x.get("source_timestamp", 0)):
+        conv = e.get("conversation") or []
+        if len(conv) < 4:
+            continue
+        prefs = e.get("preferences") or []
+        pref_cats = [p.get("category", "") for p in prefs if isinstance(p, dict)]
+
+        # Check if assistant turns mention preference keywords
+        ai_text = " ".join(
+            (t.get("content") or "").lower()
+            for t in conv if t.get("role") == "assistant"
+        )
+        matched_topic = None
+        for topic, keywords in PREF_KEYWORDS.items():
+            if any(kw in ai_text for kw in keywords):
+                matched_topic = topic
+                break
+
+        if matched_topic and len(conv) >= 4:
+            candidates.append({
+                "event": e,
+                "conversation": conv,
+                "preference_topic": matched_topic,
+                "pref_categories": pref_cats,
+                "timestamp": e.get("source_timestamp", 0),
+            })
+
+    if not candidates:
+        return []
+
+    # Pick up to max_probes, spread across different preference topics
+    from collections import defaultdict
+    by_topic = defaultdict(list)
+    for c in candidates:
+        by_topic[c["preference_topic"]].append(c)
+
+    picked = []
+    topic_cycle = list(by_topic.keys())
+    idx = 0
+    while len(picked) < max_probes and any(by_topic.values()):
+        topic = topic_cycle[idx % len(topic_cycle)]
+        if by_topic[topic]:
+            picked.append(by_topic[topic].pop(0))
+        idx += 1
+        if idx > max_probes * 3:
+            break
+
+    out = []
+    for i, cand in enumerate(picked):
+        conv = cand["conversation"]
+        topic = cand["preference_topic"]
+        ts = cand["timestamp"]
+
+        # Generate follow-up query via LLM (or fallback)
+        follow_up = None
+        if discovery_llm:
+            prior_summary = "\n".join(
+                f"  {t['role']}: {(t.get('content') or '')[:80]}"
+                for t in conv[:6]
+            )
+            prompt = _DRIFT_QUERY_PROMPT.format(
+                preference_topic=topic,
+                prior_summary=prior_summary,
+            )
+            try:
+                raw = discovery_llm.query_llm(prompt)
+                import re
+                m = re.search(r'"query"\s*:\s*"([^"]+)"', raw)
+                if m:
+                    follow_up = m.group(1).strip()
+            except Exception:
+                pass
+
+        if not follow_up:
+            follow_up = "totally different thing — what's a good way to get coffee stains out of a white shirt?"
+
+        # Build the instance in the same shape as other chatbot arms
+        pref_items = [
+            {"persona_item": p.get("persona_item", ""), "category": p.get("category", "")}
+            for p in (cand["event"].get("preferences") or [])
+            if isinstance(p, dict) and p.get("persona_item")
+        ]
+
+        out.append({
+            "source_object_id": f"drift_{user_id}_{i:02d}",
+            "source_timestamp": ts,
+            "formatted_timestamp": utils.unix_to_formatted(ts) if hasattr(utils, "unix_to_formatted") else "",
+            "user_query": follow_up,
+            "prior_conversation": [
+                {"role": t["role"], "content": t.get("content", "")}
+                for t in conv
+            ],
+            "action": "asked_chatbot",
+            "source_hashtags": [],
+            "held_out_preference": None,
+            "blind_check_score": None,
+            "blind_check_generic_answer": None,
+            "privacy_flagged_prefs": pref_items,
+            "top_k_relevant_prefs": [],
+            "gt_slice": {"target": [], "avoid": [], "t_test": ts, "window_seconds": 86400},
+            "post_test_window": {"post_test_positives": [], "post_test_negatives": []},
+            "_adversarial_kind": f"conversational_drift:{topic}",
+        })
+
+    if out:
+        print(f"[drift] user {user_id}: generated {len(out)} conversational-drift probes "
+              f"from {len(candidates)} qualifying conversations")
     return out
 
 
