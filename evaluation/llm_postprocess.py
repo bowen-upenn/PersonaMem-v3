@@ -1434,8 +1434,8 @@ _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     # diff is (1) visible to a human reader, (2) subtle + natural (the foil
     # is a plausible recommendation for some user just not for this one
     # at this moment), (3) not a structural / format difference.
-    "agentic_proactive_daily_catchup": ("disliked_recent",),
-    "agentic_trending_alert":          ("disliked_recent",),
+    "agentic_proactive_daily_catchup": ("disliked_recent", "factual_error"),
+    "agentic_trending_alert":          ("disliked_recent", "factual_error"),
     "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
     "agentic_user_tone_post":          _FLAW_KINDS_VOICE,
     "agentic_composed_post":           _FLAW_KINDS_VOICE,
