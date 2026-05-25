@@ -96,6 +96,9 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     elif task_type == "hidden_persona_implicit_qa":
         from evaluation.tasks import hidden_persona_implicit_qa as _hp
         rows = _hp.run_hidden_persona_implicit_qa(**common)
+    elif task_type == "hidden_persona_recommendation":
+        from evaluation.tasks import hidden_persona_recommendation as _hpr
+        rows = _hpr.run_hidden_persona_recommendation(**common)
     elif task_type == "at_ai_directive_followup":
         from evaluation.tasks import e2_at_ai_followup as _e2
         rows = _e2.run_e2_at_ai_followup(**common)

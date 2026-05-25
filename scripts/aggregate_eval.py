@@ -162,6 +162,7 @@ _TASK_FAMILY_MAP = {
     # Generative chatbot
     "chatbot_personalized_response": "chatbot",
     "hidden_persona_implicit_qa": "chatbot",
+    "hidden_persona_recommendation": "ranking",
     # Over-personalization (restraint)
     "over_personalization_chatbot_text": "over_personalization",
     "over_personalization_context_shift": "over_personalization",

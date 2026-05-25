@@ -62,6 +62,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # already alternates generic_blind / telegraph_explicit failure
     # modes — more instances ⇒ each mode gets 3-4 samples.
     "hidden_persona_implicit_qa":             {"min": 4, "max": 8, "data_dependent": True},
+    # New in Step 4.8 — ranking variant of hidden-persona inference.
+    # One instance per eligible hidden persona; 16-item slate, all
+    # LLM-generated general content.
+    "hidden_persona_recommendation":          {"min": 3, "max": 6, "data_dependent": True},
     # Silent geo-shift local recommendation — only fires for users with
     # mobility_class != "homebody" AND >= 2 city transitions in their event
     # stream. Homebodies generate 0 instances (the eval doesn't apply).

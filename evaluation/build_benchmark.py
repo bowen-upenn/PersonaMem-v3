@@ -3994,6 +3994,20 @@ def build_benchmark(
         hidden_persona_implicit_instances = []
         print(f"[build_benchmark] WARN: hidden_persona_implicit_qa builder failed: {exc}")
 
+    # Step 4.8 — hidden_persona_recommendation (ranking flavor).
+    # 16-item LLM-generated slate per eligible hidden persona; emits
+    # nothing when discovery_llm is unavailable.
+    try:
+        from evaluation.tasks.hidden_persona_recommendation import (
+            build_hidden_persona_recommendation,
+        )
+        hidden_persona_rec_instances = build_hidden_persona_recommendation(
+            bq, user_id, t_probe, discovery_llm=discovery_llm, rng_seed=rng_seed,
+        )
+    except Exception as exc:
+        hidden_persona_rec_instances = []
+        print(f"[build_benchmark] WARN: hidden_persona_recommendation builder failed: {exc}")
+
     # Agentic tasks T6-T19.
     # - E: builders that fix t_test=t_probe get their instances scattered
     #   across the observation window.
@@ -4192,6 +4206,7 @@ def build_benchmark(
         # preference_removal_regen removed in Step 4.4.
         "preference_shift_followthrough":         preference_shift_instances,
         "hidden_persona_implicit_qa":             hidden_persona_implicit_instances,
+        "hidden_persona_recommendation":          hidden_persona_rec_instances,
         "at_ai_directive_followup":               e2_instances,
         # daily_personalized_briefing removed in Step 4.3 (e3_instances empty).
         # workstream D: e4 builder now emits the personalized_recommendation

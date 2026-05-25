@@ -335,6 +335,17 @@ TASK_TYPE_META: dict[str, dict] = {
             "privacy_leak",
         ],
     },
+    # New in Step 4.8 — hidden_persona_recommendation. Ranking task where
+    # all 16 slate items are LLM-generated general content and exactly one
+    # subtly resonates with a hidden persona. Same slate format + metrics
+    # as personalized_recommendation.
+    "hidden_persona_recommendation": {
+        "task_family": "personalization",
+        "mcp_tools_allowed": "none",
+        "state_write_policy": "read_only",
+        "expected_response_kind": "ranking",
+        "rubric_tags": list(_RUBRIC_RANKING),
+    },
 
     # ------------------------------------------------------------------
     # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
@@ -631,6 +642,7 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     # preference_removal_regen removed in Step 4.4.
     "preference_shift_followthrough":         "user_query",
     "hidden_persona_implicit_qa":             "user_query",
+    "hidden_persona_recommendation":          "proactive_recommendation",
     "at_ai_directive_followup":               "user_query",
     # daily_personalized_briefing removed in Step 4.3.
     # personalized_recommendation (renamed from personalized_search_ranking)
@@ -673,6 +685,7 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     # preference_removal_regen removed in Step 4.4.
     "preference_shift_followthrough":         "avoid_overpersonalization",
     "hidden_persona_implicit_qa":             "personalize",
+    "hidden_persona_recommendation":          "proactive_recommend",
     "at_ai_directive_followup":               "proactive_recommend",
     # daily_personalized_briefing removed in Step 4.3.
     "personalized_recommendation":            "proactive_recommend",
@@ -769,6 +782,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "preference_shift_followthrough":              ("preference_shift_consistency", "fraction"),
     # Step 4.6 — headline is `deep_motivation_alignment` (0-3 LLM judge).
     "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "fraction"),
+    "hidden_persona_recommendation":              ("recall_at_1", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
     # JSON), which any non-empty response trivially passed.
