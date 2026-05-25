@@ -349,6 +349,32 @@ def compute_personalized_recommendation_metrics(parsed: dict, instance: dict) ->
     hard_negs = instance.get("hard_negative_idxs") or []
     if not isinstance(target, int):
         return {"n_ranked": len(ranked), "valid": False}
+
+    # --- hard_neg_violation_rate ---
+    # Fraction of hard negatives ranked above the lowest-ranked filler.
+    n_candidates = len(instance.get("candidates") or [])
+    all_indices = set(range(n_candidates))
+    excluded = {target} | set(hard_negs)
+    filler_indices = all_indices - excluded
+
+    if filler_indices and hard_negs:
+        # Build a position lookup for the ranked list.
+        rank_pos = {idx: pos for pos, idx in enumerate(ranked)}
+        bottom = len(ranked)  # default position for items not in ranked
+
+        # Lowest-ranked filler = the filler with the largest position value
+        # (i.e., ranked last among fillers).
+        lowest_filler_pos = max(rank_pos.get(f, bottom) for f in filler_indices)
+
+        # Count hard negatives that appear before (above) this position.
+        hard_neg_above_count = sum(
+            1 for hn in hard_negs if rank_pos.get(hn, bottom) < lowest_filler_pos
+        )
+        hard_neg_violation = round(hard_neg_above_count / max(1, len(hard_negs)), 4)
+    else:
+        hard_neg_above_count = 0
+        hard_neg_violation = 0.0
+
     return {
         "n_ranked": len(ranked),
         "valid": True,
@@ -360,6 +386,8 @@ def compute_personalized_recommendation_metrics(parsed: dict, instance: dict) ->
         "mrr":         round(_mrr(ranked, target), 4),
         "hit_at_1":    _hit_at_k(ranked, target, 1),
         "hit_at_3":    _hit_at_k(ranked, target, 3),
+        "hard_neg_above_filler_count": hard_neg_above_count,
+        "hard_neg_violation_rate": hard_neg_violation,
     }
 
 
