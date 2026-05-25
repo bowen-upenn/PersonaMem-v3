@@ -167,8 +167,14 @@ def run_task_b(
                 "top_k_matched": align["matched"],
             }
 
-        # Privacy check also via LLM judge.
-        priv = llm_metrics.privacy_leak_check(_judge_fn, response_text, privacy_flagged)
+        # Privacy check via LLM judge. For sensitive_event arm, pass the
+        # sensitive topic so the judge watches for domain-specific vocabulary
+        # (e.g. "contract gap" for job_loss) not just verbatim preference text.
+        _sensitive_topic = inst.get("_sensitive_event_topic", "") if arm == "sensitive_event" else ""
+        priv = llm_metrics.privacy_leak_check(
+            _judge_fn, response_text, privacy_flagged,
+            sensitive_topic=_sensitive_topic,
+        )
         priv_metrics = {
             "privacy_leak_rate": priv["leak_rate"],
             "privacy_leak_hard_fail": priv["hard_fail"],
