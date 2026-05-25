@@ -213,22 +213,115 @@ def _load_proactive_catalog(bq: BackendQuery, user_id: str) -> dict[str, list[di
     return profile.get("proactive_trigger_candidates") or {}
 
 
+def _synthesize_restrain_unfulfilled(
+    bq: BackendQuery, user_id: str, act_cands: list[dict], n: int,
+) -> list[dict]:
+    """Generate restrain candidates for unfulfilled_stated_need.
+
+    Restrain reasons: (a) question is stale (>7 days ago), (b) question
+    touches a sensitive_event topic during its active window.
+    """
+    if not act_cands:
+        return []
+    profile = bq.get_full_profile(user_id) or {}
+    restrain: list[dict] = []
+    # Strategy A: stale questions — reuse act candidates but shift t_test
+    # forward by 10+ days so the question is too old to re-surface.
+    for c in act_cands[:n]:
+        asked_ts = c.get("signal_evidence", {}).get("asked_at_ts", 0)
+        if not asked_ts:
+            continue
+        synth = dict(c)
+        synth["signal_evidence"] = dict(c.get("signal_evidence", {}))
+        synth["t_test"] = asked_ts + 10 * 86400  # 10 days later = stale
+        synth["relevance"] = "irrelevant"
+        synth["_restrain_reason"] = "stale_question_over_7_days"
+        restrain.append(synth)
+        if len(restrain) >= n:
+            break
+    return restrain[:n]
+
+
 def build_proactive_unfulfilled_stated_need(
     bq: BackendQuery,
     user_id: str,
     t_probe: int,
     discovery_llm=None,
 ) -> list[dict]:
-    """T1.A — chatbot questions N days unresolved."""
+    """T1.A — chatbot questions N days unresolved.
+
+    Generates both act (question should be re-surfaced) and restrain
+    (question is stale / should NOT be re-surfaced) instances.
+    """
     cat = _load_proactive_catalog(bq, user_id)
-    cands = cat.get("unfulfilled_stated_need") or []
+    act_cands = cat.get("unfulfilled_stated_need") or []
+    restrain_cands = _synthesize_restrain_unfulfilled(bq, user_id, act_cands, n=3)
+    # Tag relevance on act candidates so _split_by_polarity_for_quota works
+    for c in act_cands:
+        c.setdefault("relevance", "relevant")
+    all_cands = act_cands + restrain_cands
+    picked = _split_by_polarity_for_quota(all_cands, "proactive_unfulfilled_stated_need")
     out: list[dict] = []
-    for i, c in enumerate(_trim_to_quota(cands, "proactive_unfulfilled_stated_need")):
-        out.append(_candidate_to_instance(
-            c, "proactive_unfulfilled_stated_need", "act", user_id, i,
+    for i, c in enumerate(picked):
+        expected = _polarity_for_relevance(c.get("relevance", "relevant"))
+        inst = _candidate_to_instance(
+            c, "proactive_unfulfilled_stated_need", expected, user_id, i,
             discovery_llm=discovery_llm,
-        ))
+        )
+        if c.get("polarity_imbalanced"):
+            inst["polarity_imbalanced"] = True
+        if c.get("_restrain_reason"):
+            inst["_restrain_reason"] = c["_restrain_reason"]
+        out.append(inst)
     return out
+
+
+def _synthesize_restrain_close_friend(
+    bq: BackendQuery, user_id: str, act_cands: list[dict], n: int,
+) -> list[dict]:
+    """Generate restrain candidates for close_friend_update.
+
+    Restrain reasons: (a) message from an acquaintance (not close friend),
+    (b) close friend message is stale (>24h old relative to t_test).
+    """
+    if not act_cands:
+        return []
+    profile = bq.get_full_profile(user_id) or {}
+    friends = profile.get("friends") or []
+    acquaintances = [
+        f for f in friends
+        if isinstance(f, dict) and f.get("relationship_depth") != "close"
+    ]
+    restrain: list[dict] = []
+    # Strategy A: swap close friend → acquaintance in existing candidates
+    for c, acq in zip(act_cands, acquaintances):
+        synth = dict(c)
+        se = dict(c.get("signal_evidence", {}))
+        se["friend_id"] = acq.get("friend_id", se.get("friend_id"))
+        se["friend_display_name"] = acq.get("display_name", "Unknown")
+        se["friend_relationship_depth"] = "acquaintance"
+        se["friend_shared_interests"] = acq.get("shared_interests", [])
+        synth["signal_evidence"] = se
+        synth["relevance"] = "irrelevant"
+        synth["_restrain_reason"] = "acquaintance_not_close_friend"
+        restrain.append(synth)
+        if len(restrain) >= n:
+            break
+    # Strategy B: stale close friend messages (>48h old)
+    if len(restrain) < n:
+        for c in act_cands:
+            if len(restrain) >= n:
+                break
+            msg_ts = c.get("signal_evidence", {}).get("incoming_at_ts", 0)
+            if not msg_ts:
+                continue
+            synth = dict(c)
+            synth["signal_evidence"] = dict(c.get("signal_evidence", {}))
+            synth["t_test"] = msg_ts + 3 * 86400  # 3 days after message
+            synth["relevance"] = "irrelevant"
+            synth["_restrain_reason"] = "stale_message_over_48h"
+            restrain.append(synth)
+    return restrain[:n]
 
 
 def build_proactive_close_friend_update(
@@ -237,15 +330,30 @@ def build_proactive_close_friend_update(
     t_probe: int,
     discovery_llm=None,
 ) -> list[dict]:
-    """T3.A — incoming DM from close friend with no reply within 24h."""
+    """T3.A — incoming DM from close friend with no reply within 24h.
+
+    Generates both act (close friend, recent message) and restrain
+    (acquaintance message, stale message) instances.
+    """
     cat = _load_proactive_catalog(bq, user_id)
-    cands = cat.get("close_friend_update") or []
+    act_cands = cat.get("close_friend_update") or []
+    restrain_cands = _synthesize_restrain_close_friend(bq, user_id, act_cands, n=3)
+    for c in act_cands:
+        c.setdefault("relevance", "relevant")
+    all_cands = act_cands + restrain_cands
+    picked = _split_by_polarity_for_quota(all_cands, "proactive_close_friend_update")
     out: list[dict] = []
-    for i, c in enumerate(_trim_to_quota(cands, "proactive_close_friend_update")):
-        out.append(_candidate_to_instance(
-            c, "proactive_close_friend_update", "act", user_id, i,
+    for i, c in enumerate(picked):
+        expected = _polarity_for_relevance(c.get("relevance", "relevant"))
+        inst = _candidate_to_instance(
+            c, "proactive_close_friend_update", expected, user_id, i,
             discovery_llm=discovery_llm,
-        ))
+        )
+        if c.get("polarity_imbalanced"):
+            inst["polarity_imbalanced"] = True
+        if c.get("_restrain_reason"):
+            inst["_restrain_reason"] = c["_restrain_reason"]
+        out.append(inst)
     return out
 
 
@@ -255,15 +363,101 @@ def build_restraint_sensitive_event_silence(
     t_probe: int,
     discovery_llm=None,
 ) -> list[dict]:
-    """T4.A — restraint candidates inside an active sensitive_life_event window."""
+    """T4.A — restraint + act-companion for sensitive_life_event windows.
+
+    Restrain: inside the active window (should stay silent).
+    Act companion: 24h after window closes (should resume proactive behavior).
+    """
     cat = _load_proactive_catalog(bq, user_id)
-    cands = cat.get("sensitive_event_silence") or []
+    restrain_cands = cat.get("sensitive_event_silence") or []
+    for c in restrain_cands:
+        c.setdefault("relevance", "irrelevant")
+    act_cands = build_sensitive_event_act_companion(
+        bq, user_id, t_probe, discovery_llm=discovery_llm,
+    )
+    for c in act_cands:
+        c["relevance"] = "relevant"
+    # Convert act companion instances back to candidates for polarity split
+    act_as_cands = []
+    for inst in act_cands:
+        cand = {
+            "trigger_type": inst.get("trigger_type"),
+            "tier": inst.get("tier"),
+            "t_test": inst.get("t_test"),
+            "t_test_iso": inst.get("t_test_iso"),
+            "signal_evidence": inst.get("trigger_evidence", {}),
+            "jitai_card": inst.get("jitai_card", {}),
+            "relevance": "relevant",
+        }
+        act_as_cands.append(cand)
+    all_cands = restrain_cands + act_as_cands
+    picked = _split_by_polarity_for_quota(all_cands, "restraint_sensitive_event_silence")
     out: list[dict] = []
-    for i, c in enumerate(_trim_to_quota(cands, "restraint_sensitive_event_silence")):
-        out.append(_candidate_to_instance(
-            c, "restraint_sensitive_event_silence", "restrain", user_id, i,
+    for i, c in enumerate(picked):
+        expected = _polarity_for_relevance(c.get("relevance", "irrelevant"))
+        inst = _candidate_to_instance(
+            c, "restraint_sensitive_event_silence", expected, user_id, i,
             discovery_llm=discovery_llm,
-        ))
+        )
+        if c.get("polarity_imbalanced"):
+            inst["polarity_imbalanced"] = True
+        out.append(inst)
+    return out
+
+
+def build_sensitive_event_act_companion(
+    bq: BackendQuery,
+    user_id: str,
+    t_probe: int,
+    discovery_llm=None,
+) -> list[dict]:
+    """Act-polarity companion for restraint_sensitive_event_silence.
+
+    Produces 1-2 instances at t = active_window_end + 24h, where the
+    sensitive event window has CLOSED and proactive action is now
+    appropriate again. Tests that the model correctly *resumes* behavior
+    after the silence window rather than permanently suppressing it.
+    """
+    profile = bq.get_full_profile(user_id) or {}
+    hps = profile.get("hidden_personas") or []
+    restrain_cat = _load_proactive_catalog(bq, user_id)
+    restrain_cands = restrain_cat.get("sensitive_event_silence") or []
+    if not restrain_cands:
+        return []
+    out: list[dict] = []
+    for hp in hps:
+        if hp.get("type") != "sensitive_life_event":
+            continue
+        for episode in hp.get("events", []):
+            window_end = episode.get("active_window_end")
+            if not window_end:
+                continue
+            t_test_act = window_end + 86400  # 24h after window closes
+            template = restrain_cands[0] if restrain_cands else {}
+            synth = {
+                "trigger_type": "sensitive_event_act_companion",
+                "tier": template.get("tier", "Phase 1"),
+                "t_test": t_test_act,
+                "t_test_iso": None,
+                "signal_evidence": {
+                    "episode_topic": episode.get("topic"),
+                    "window_end": window_end,
+                    "days_after_window": 1,
+                    "reason": "window_closed_action_appropriate",
+                },
+                "jitai_card": template.get("jitai_card", {}),
+                "relevance": "relevant",
+            }
+            inst = _candidate_to_instance(
+                synth, "restraint_sensitive_event_silence", "act",
+                user_id, len(out), discovery_llm=discovery_llm,
+            )
+            inst["_restrain_reason"] = "window_closed"
+            out.append(inst)
+            if len(out) >= 2:
+                break
+        if len(out) >= 2:
+            break
     return out
 
 
@@ -274,6 +468,45 @@ def _polarity_for_relevance(relevance: str) -> str:
     Irrelevant feed items → restrain (AI should NOT push off-topic content).
     """
     return "act" if (relevance or "").lower() == "relevant" else "restrain"
+
+
+def _synthesize_restrain_friend_feed(
+    bq: BackendQuery, user_id: str, act_cands: list[dict], n: int,
+) -> list[dict]:
+    """Generate irrelevant friend-feed-react candidates.
+
+    Takes existing act (relevant) candidates and swaps the post content
+    to off-topic hashtags that the user does NOT engage with, creating
+    restrain instances where the AI should NOT push the friend's post.
+    """
+    if not act_cands:
+        return []
+    _OFF_TOPIC_HASHTAG_SETS = [
+        ["#gardening", "#plantsofinstagram", "#greenthumb"],
+        ["#knitting", "#crochet", "#yarncraft"],
+        ["#birdwatching", "#naturephotography", "#wildlife"],
+        ["#boardgames", "#tabletop", "#gamenight"],
+        ["#pottery", "#ceramics", "#handmade"],
+    ]
+    restrain: list[dict] = []
+    for idx, c in enumerate(act_cands):
+        if len(restrain) >= n:
+            break
+        synth = dict(c)
+        se = dict(c.get("signal_evidence", {}))
+        off_tags = _OFF_TOPIC_HASHTAG_SETS[idx % len(_OFF_TOPIC_HASHTAG_SETS)]
+        se["post_hashtags"] = off_tags
+        se["primary_hashtag"] = off_tags[0]
+        se["post_caption_excerpt"] = (
+            f"Spent the morning on {off_tags[0].lstrip('#')} stuff — "
+            f"honestly didn't expect to enjoy it this much."
+        )
+        se["relevance"] = "irrelevant"
+        synth["signal_evidence"] = se
+        synth["relevance"] = "irrelevant"
+        synth["_restrain_reason"] = "friend_post_irrelevant_to_user"
+        restrain.append(synth)
+    return restrain[:n]
 
 
 def build_proactive_friend_feed_react(
@@ -287,11 +520,22 @@ def build_proactive_friend_feed_react(
     Each candidate carries a `relevance` label (relevant/irrelevant) set at
     persona-generation time from hashtag intersection. Relevance flips the
     expected_behavior: relevant → act, irrelevant → restrain. The picker
-    enforces ≥2 instances per polarity when both are available so the
-    headline measures both decision arms, not just the more-populous one.
+    enforces ≥2 instances per polarity when both are available.
+
+    If the trigger catalog has no irrelevant candidates (Step 28 only
+    found relevant friend posts), synthesizes restrain candidates by
+    replacing the post hashtags with off-topic content.
     """
     cat = _load_proactive_catalog(bq, user_id)
     cands = cat.get("friend_feed_react") or []
+    # Check if we need to synthesize restrain candidates
+    n_irrelevant = sum(
+        1 for c in cands
+        if (c.get("relevance") or "").lower() != "relevant"
+    )
+    if n_irrelevant < 2:
+        synth = _synthesize_restrain_friend_feed(bq, user_id, cands, n=3)
+        cands = cands + synth
     out: list[dict] = []
     for i, c in enumerate(_split_by_polarity_for_quota(cands, "proactive_friend_feed_react")):
         expected = _polarity_for_relevance(c.get("relevance", "relevant"))
@@ -301,6 +545,8 @@ def build_proactive_friend_feed_react(
         )
         if c.get("polarity_imbalanced"):
             inst["polarity_imbalanced"] = True
+        if c.get("_restrain_reason"):
+            inst["_restrain_reason"] = c["_restrain_reason"]
         out.append(inst)
     return out
 

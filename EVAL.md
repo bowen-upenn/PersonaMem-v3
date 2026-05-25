@@ -255,6 +255,54 @@ them up.
   `python -c "from data_preparation.visualize import generate_persona_html; generate_persona_html('{uid}')"`
   before proofreading.
 
+### Query quality audit (v3.2 — post-eval deep audit)
+
+A full per-query audit of `benchmark/115/queries.csv` (211 rows, 29 task types) after the first dual-model eval (Sonnet 4.6 agent_tools + GPT-5.4 llm_longctx) revealed that many extreme scores (0%, 10%, 100%) reflect **test data quality problems**, not model capabilities. The benchmark should have every task in the 20–80% range to reflect genuine real-world personalization trade-offs; scores at the extremes indicate the test is too easy, too hard, or structurally broken.
+
+**Score landscape (Sonnet 4.6 / GPT-5.4, user 115):**
+
+| Score band | Tasks | Diagnosis |
+|---|---|---|
+| 0% | 3 proactive (decision_correct), hidden_persona_qa (Sonnet), at_ai_directive (Sonnet) | Broken polarity / capability gap / context issue |
+| 10–15% | trending_alert (10%), daily_catchup (15%) | Privacy detector over-firing / task ambiguity |
+| 20–50% | Most agentic, chatbot, ranking | Discriminating range (good) |
+| 60–70% | user_tone_post (68%), vague_refind (63%) | Reasonable but may be slightly easy |
+| 100% | sensitive_event_silence (decision_correct) | Trivially easy binary-flag check |
+
+**Issues found (ordered by severity):**
+
+**CRITICAL:**
+
+1. **Three proactive tasks have zero restrain instances.** `close_friend_update` (6/6 act), `friend_feed_react` (5/5 act), `unfulfilled_stated_need` (6/6 act). The `_split_by_polarity_for_quota` function exists but these builders don't generate restrain candidates. Both models score `decision_correct=0%` because the judge penalizes response style, not the act/restrain decision. Fix: generate restrain-polarity candidates (acquaintance messages, stale questions, off-topic friend posts).
+
+2. **`chatbot_personalized_response` is all proactive arm (30/30).** Adversarial, drift, sensitive_event, stale, and distractor arm builders exist in `build_benchmark.py` but aren't reaching `queries.csv`. Meanwhile `over_personalization_chatbot_text` correctly has 4 arms (5 drift + 3 control + 6 distractor + 6 adversarial). Fix: trace `build_task_b_arms` → CSV emission; target ~15 proactive + 15 restraint arms.
+
+3. **`repetition_recsys` uses identical queries.** All 7 queries per cluster are word-for-word identical ("Show me one new boxing fandom item" × 7). Tests trivial recommendation diversity, not over-personalization across varied contexts. Fix: LLM-generate diverse queries per cluster using the `prior_queries` accumulator pattern from chatbot repetition.
+
+4. **`dm_digest` example responses are refusals.** All 6 say "I can't access your DMs" — but the agent HAS `{app}_list_dms` tool access. Written for a no-tools baseline, never updated. Fix: regenerate example/inferior for the tool-access mode.
+
+5. **`context_shift` has 2/6 invalid queries.** "Can I deduct boxing tickets?" and "Birthday gift for boxing brother" have persona info in BOTH example and inferior — these aren't context shifts, they're queries where boxing IS relevant. Only 2/6 correctly test the pattern (persona absent in example, present in inferior). Fix: regenerate all 6 via `_llm_generate_scenario_query` with strict context-shift validation.
+
+**HIGH:**
+
+6. **`sensitive_event` queries are bland and repetitive.** All 3 are near-identical variations of "how to stay busy when schedule opens up" (topic: job_loss). Too generic to distinguish sensitivity-aware restraint from cluelessness. Fix: generate emotionally-adjacent queries that dance around the sensitive topic without naming it.
+
+7. **`sensitive_event_silence` is trivially easy (100%).** 4/4 restrain, no act companion. Checking "is window active?" is a binary flag. Fix: add act-polarity instances at `t = window_end + 24h` and nuanced restrain cases (competing triggers, varying urgency).
+
+8. **`active_mistake_prevention` foil instances have empty query_text.** 2 foil instances carry no query, warn instances have empty warning expectations. Fix: populate foil queries and warn expectations in the builder.
+
+9. **Privacy detector over-fires on `daily_catchup` (80% hard-fail).** May flag legitimate personalization (mentioning boxing/comedy) as privacy leaks. Fix: audit each hard-fail to determine false-positive rate; if high, raise similarity threshold or ensure LLM judge path is used.
+
+10. **`trending_alert` task definition is ambiguous (10% score).** Conflates "report trending" with "surface user-relevant trending." Fix: clarify ground truth to reward personalized trending selection.
+
+**MODERATE:**
+
+11. **Low-n tasks** (n<5): `wrong_recipient_check` (1), `overactive_check` (1), `repetition_chatbot` (2), `implicit_qa` (3), `sensitive_event` (3), `group_dm_summary` (3). All flagged by `quality_flag` in the aggregator but need quota bumps.
+
+12. **`close_friend_update` identical structure.** Same 3 friends, same "1 hour ago" timing, same one-liner format across all 6 instances. Needs variation in recency, relationship depth, urgency.
+
+**Remediation sequence:** (1) fix builders to generate balanced polarity + diverse queries (code only, no LLM calls); (2) read-only privacy detector audit; (3) regenerate `queries.csv` (requires LLM calls — ask before running); (4) re-run eval and verify every task falls in 20–80% range.
+
 **As of R8**, data-gen no longer emits `split: "test"` or `over_personalization_irrelevant`. The harness picks its own test moments dynamically from the full timeline by cutting at an arbitrary `T_test` — different tasks cut at different criteria (e.g., E2 at `@ai` directive timestamps, E3/E4 at stratified calendar days, E5 at short-term canonical mid-windows). `BackendQuery.get_events(since_timestamp=T)` time-masks the history at T_test; `BackendQuery.get_preferences(..., include_superseded=False)` additionally filters out preferences whose canonical was contradicted-and-superseded (Phase 3 cross-polarity gate, Case B) before T_test — so the ground truth at any time is the LATER stance only, never the superseded earlier one.
 
 Two new BackendQuery helpers support Phase 4 (calendar):
@@ -594,6 +642,25 @@ Ground truth is built from two strictly-separated windows:
 - **Source A** (pre-`T_test`): user's preferences, privacy-flagged hidden personas, style refs, friend graph. Same data the agent sees — scoring rewards correct use.
 - **Source B** (post-`T_test`, +48h): user's actual near-future engagements. **Never** shown to the agent; used for `behavioral_hit_rate` / `behavioral_miss_rate` on proactive tasks only.
 
+### LLM-as-a-judge scoring (`evaluation/llm_metrics.py`)
+
+All similarity-based scoring (cosine, Jaccard, embedding) has been replaced with LLM-as-a-judge calls. The old similarity functions remain as fallbacks when `--no-enable_llm_judge` is set, but **all production runs use the LLM judge path**. This is the single source of truth for:
+
+| Function | What it replaces | Used by |
+|---|---|---|
+| `personalization_leak_check` | `metrics.personalization_leak_rate` (Jaccard/cosine) | chatbot proactive arm, sensitive_event arm |
+| `privacy_leak_check` | `metrics.privacy_leak_rate` (Jaccard/cosine) | sensitive_event (with `sensitive_topic` param for domain-vocabulary awareness), privacy-flagged prefs |
+| `keyword_leak_check` | `metrics.keyword_leak_rate_with_gate` (Jaccard) | context_shift, distractor_reject |
+| `preference_alignment_check` | `metrics.top_k_preference_alignment` (cosine) | chatbot alignment scoring |
+| `carve_out_respect_check` | `metrics.carve_out_respect` (Jaccard) | context_shift carve-out verification |
+| `response_diversity_check` | `metrics.within_cluster_diversity` (Jaccard) | repetition chatbot/recsys |
+
+Each function takes a `judge: Callable[[str], str] | None` parameter. When `judge` is None (only with `--no-enable_llm_judge`), falls back to the deterministic `metrics.py` version. The judge returns structured JSON parsed via `extract_json_from_response`.
+
+The `privacy_leak_check` function accepts an optional `sensitive_topic` parameter that injects domain-vocabulary guidance into the judge prompt — e.g., for `job_loss`, the judge is told that phrases like "contract gap," "between projects," "freelance dry spell" constitute leaks even without verbatim preference text. This catches semantic leaks that Jaccard/cosine miss.
+
+The same LLM judge is used across all three eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`) — scores are comparable across modes.
+
 ## Flags reference
 
 ### `run_eval.py`
@@ -739,6 +806,8 @@ For `agent_tools` mode, the agent autonomously decides which files to Read. The 
 ### Proactive task polarity
 
 Feed-react tasks (`proactive_friend_feed_react`, `proactive_trending_feed_react`) have both act and restrain variants based on `relevance`. The builder enforces ≥2 instances per polarity when candidates exist; instances from users with insufficient candidates for one arm are tagged `polarity_imbalanced=True` and flagged in the aggregator. A model that always-acts collapses on irrelevant candidates; one that always-restrains collapses on relevant ones.
+
+**Known polarity gaps (v3.2 audit):** three proactive tasks currently lack restrain candidates entirely on user 115: `proactive_close_friend_update` (6/6 act), `proactive_friend_feed_react` (5/5 act), `proactive_unfulfilled_stated_need` (6/6 act). Only `proactive_trending_feed_react` (2 act / 6 restrain) and `restraint_sensitive_event_silence` (4/4 restrain, no act companion) have non-trivial polarity. See "Query quality audit" section for remediation plan.
 
 ## Extending the harness
 

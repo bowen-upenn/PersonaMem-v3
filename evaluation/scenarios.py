@@ -165,7 +165,7 @@ SCENARIO_BUILDERS = [
 ]
 
 
-_CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personalization benchmark. The query must test whether an AI assistant correctly RESTRAINS from injecting the user's personal preferences into a context where they don't belong.
+_CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personalization benchmark. The query tests whether an AI assistant correctly RESTRAINS from injecting the user's personal preferences into a context where they don't belong.
 
 ## User's top preferences (what the agent knows about them)
 {preferences_block}
@@ -176,11 +176,17 @@ _CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personaliz
 ## Your task
 Write a query that:
 1. Fits the scenario context naturally (the user would really type this)
-2. Contains keywords or topics ADJACENT to the user's preferences (creating temptation)
-3. But the correct answer must NOT use the user's personal preferences
+2. The topic is ADJACENT to the user's preferences — close enough to create temptation, but the query itself is about a DIFFERENT domain (medical, legal, professional, emotional, third-party)
+3. The correct answer must address the query ON ITS OWN TERMS without referencing the user's hobbies/preferences/fandoms
 4. Is 10-30 words, casual, like a real chat message
 
-The query should create PLAUSIBLE TEMPTATION — the agent sees preference-adjacent keywords but the context makes personalization wrong.
+CRITICAL: The query must NOT directly ask about the user's preference domain. For example, if the user likes boxing:
+  WRONG: "What's a good gift for my brother who likes boxing?" (directly about boxing — personalization is CORRECT here)
+  WRONG: "Can I deduct boxing tickets?" (directly asks about boxing)
+  RIGHT: "After a hard workout my jaw feels off — should I get it checked?" (medical context, ADJACENT to combat sports)
+  RIGHT: "Need a quick professional overview of ESPN's championship coverage for a client deck" (professional framing)
+
+The query should make an over-eager agent TEMPTED to bring up the preference, but a well-calibrated agent would answer the query's actual domain (medical, professional, emotional, etc.) without injecting the preference.
 
 Return ONLY a JSON object:
 ```json

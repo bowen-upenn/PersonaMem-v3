@@ -2087,6 +2087,42 @@ def _c1c_anchor_timestamps(
     return sorted(best)
 
 
+_C1C_DIVERSE_QUERY_GEN_PROMPT = """You are designing a benchmark probe for AI-assistant over-personalization in a recommendation-feed context.
+
+The probe tests whether the assistant keeps recommending the SAME type of content when asked repeatedly, or whether it can diversify while staying persona-aligned.
+
+Write {n_queries} recommendation requests a user might naturally send to their AI feed assistant. The requests must be:
+
+(1) **Surface-diverse.** Different framing each time — some are mood-based ("show me something chill"), some are context-based ("for my commute," "for tonight"), some are social ("something I could share with a friend"), some are exploratory ("surprise me"). Do NOT write the same "show me a new X item" 7 times.
+
+(2) **Each one COULD naturally lead to a {primary_category} recommendation.** The target preference is relevant to each request, but each request is also answerable with non-{primary_category} content. That's the test: does the assistant default to {primary_category} every single time?
+
+(3) **Realistic and short.** 5–20 words each. Casual chat-turn length.
+
+## Target preference
+
+  persona_item: "{target_pref}"
+  category:     "{primary_category}"
+  example hashtags the user engages with: {persona_hashtags}
+
+## User profile snippet
+
+  Name:    {name}
+  Career:  {career}
+
+## Output
+
+```json
+[
+  {{"query": "<the user's request, 5-20 words, lowercase casual>"}},
+  ...
+]
+```
+
+Return EXACTLY {n_queries} entries. No prose outside the JSON fence.
+"""
+
+
 def build_c1c_same_preference_clusters(
     bq: BackendQuery,
     user_id: str,
@@ -2096,6 +2132,7 @@ def build_c1c_same_preference_clusters(
     queries_per_cluster: int = _C1C_QUERIES_PER_CLUSTER,
     min_anchors: int = _C1C_MIN_ANCHORS,
     n_allowed_repetitions: int = _C1C_N_ALLOWED_REPETITIONS,
+    discovery_llm=None,
 ) -> list[dict]:
     """Build same-preference repetition clusters: N successive queries on
     ONE preference (or a hashtag-overlap-similar group) inside a tight
@@ -2233,23 +2270,52 @@ def build_c1c_same_preference_clusters(
         target_pref = cluster["persona_items"][0] if cluster["persona_items"] else ""
         primary_category = cluster["categories"][0] if cluster["categories"] else ""
 
-        # Per-query natural recommendation prompts. Each carries an
-        # idiomatic "show me something" framing — the agent decides
-        # what specific recommendation to make. The prompt at run
-        # time will surface the prior responses so any repetition is
-        # the agent's own choice.
+        # Per-query recommendation prompts. When discovery_llm is
+        # available, generate surface-diverse queries so the test
+        # measures over-personalization across varied contexts (not
+        # just repeated identical "show me X" requests).
         queries = []
-        for i, ts in enumerate(anchor_ts):
-            queries.append({
-                "anchor_index": i,
-                "ts": ts,
-                "user_query": (
-                    f"Show me one new {primary_category or 'recommendation'} "
-                    f"item I'd be into right now."
-                    if primary_category else
-                    "Show me one new thing I'd be into right now."
-                ),
-            })
+        diverse_queries_ok = False
+        if discovery_llm is not None:
+            try:
+                name = profile.get("name", "").strip()
+                career = profile.get("career", "").strip()
+                gen_prompt = _C1C_DIVERSE_QUERY_GEN_PROMPT.format(
+                    n_queries=len(anchor_ts),
+                    target_pref=target_pref,
+                    primary_category=primary_category or "general",
+                    persona_hashtags=", ".join(
+                        f"#{h.lstrip('#')}" for h in cluster["hashtags"][:8]
+                    ) or "(none)",
+                    name=name or "(unspecified)",
+                    career=career or "(unspecified)",
+                )
+                raw = discovery_llm.query_llm(gen_prompt)
+                from data_preparation.utils import extract_json_from_response
+                gen_list = extract_json_from_response(raw) or []
+                if isinstance(gen_list, list) and len(gen_list) >= len(anchor_ts):
+                    for i, ts in enumerate(anchor_ts):
+                        q_text = gen_list[i].get("query", "") if isinstance(gen_list[i], dict) else str(gen_list[i])
+                        queries.append({
+                            "anchor_index": i,
+                            "ts": ts,
+                            "user_query": q_text,
+                        })
+                    diverse_queries_ok = True
+            except Exception:
+                pass
+        if not diverse_queries_ok:
+            for i, ts in enumerate(anchor_ts):
+                queries.append({
+                    "anchor_index": i,
+                    "ts": ts,
+                    "user_query": (
+                        f"Show me one new {primary_category or 'recommendation'} "
+                        f"item I'd be into right now."
+                        if primary_category else
+                        "Show me one new thing I'd be into right now."
+                    ),
+                })
 
         cluster_id = f"{user_id}_c1c_{anchor_ts[0]}"
         out.append({
@@ -3974,7 +4040,9 @@ def build_benchmark(
     # distinct from the actual repetition-fatigue concept the suite
     # is now organized around.)
     t_probe = max(t.source_timestamp for t in test_items)
-    c1c_clusters = build_c1c_same_preference_clusters(bq, user_id, test_items)
+    c1c_clusters = build_c1c_same_preference_clusters(
+        bq, user_id, test_items, discovery_llm=discovery_llm,
+    )
     c1d_chatbot_clusters = build_c1d_chatbot_diverse_clusters(
         bq, user_id, test_items, discovery_llm=discovery_llm,
     )

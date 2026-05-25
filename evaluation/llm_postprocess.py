@@ -847,6 +847,34 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
                 )
             return "\n".join(lines)
 
+        if task_id == "agentic_dm_digest":
+            target_app = (inst.get("target_app") or "").strip()
+            t_test = int(inst.get("t_test") or 0)
+            if not target_app or not t_test:
+                return ""
+            resp = bq.list_dm_threads(
+                user_id=user_id, app=target_app,
+                since_timestamp=t_test, limit=10,
+            ) or {}
+            threads = resp.get("results") or []
+            lines = [
+                f"The agent HAS tool access to {target_app}_list_dms and "
+                f"{target_app}_get_dm_thread. It should USE these tools to "
+                f"read the actual DM threads, then produce a personalized "
+                f"summary. The example must NOT say 'I can't access your "
+                f"DMs' — the agent can and should read them.",
+                "",
+                f"Recent DM threads on {target_app} (for grounding the example):",
+            ]
+            for t in threads[:5]:
+                snippet = (t.get("last_message_preview") or "").strip()
+                parts = ", ".join((t.get("participants") or [])[:3])
+                if snippet:
+                    lines.append(
+                        f"- Thread with {parts}: \"{snippet[:100]}\""
+                    )
+            return "\n".join(lines) if len(lines) > 3 else ""
+
         if task_id == "agentic_wrong_recipient_check":
             collision_ids = list(inst.get("collision_friend_ids") or [])
             recipient_name = (inst.get("recipient_name") or "").strip()
