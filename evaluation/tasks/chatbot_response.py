@@ -249,7 +249,6 @@ def run_task_b(
                 )
                 try:
                     drift_raw = judge_client.query_llm(drift_judge_prompt)
-                    from data_preparation.utils import extract_json_from_response
                     drift_parsed = extract_json_from_response(drift_raw) or {}
                     if isinstance(drift_parsed, dict):
                         drift_fail = bool(drift_parsed.get("over_personalized"))
