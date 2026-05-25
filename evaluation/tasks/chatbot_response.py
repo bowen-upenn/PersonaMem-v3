@@ -134,8 +134,8 @@ def run_task_b(
         # `stale` (J.5) puts the now-expired pref into a synthesized pool of one
         # ([_stale_pref]) so the leak rate fires only when the agent surfaces
         # that specific stale item.
-        if arm in ("control", "adversarial", "distractor_reject", "stale", "sensitive_event"):
-            if arm in ("distractor_reject", "sensitive_event"):
+        if arm in ("control", "adversarial", "distractor_reject", "stale", "sensitive_event", "conversational_drift"):
+            if arm in ("distractor_reject", "sensitive_event", "conversational_drift"):
                 leak_pool = privacy_flagged
             elif arm == "stale":
                 stale_pi = inst.get("_stale_pref") or ""
