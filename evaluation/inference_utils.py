@@ -425,7 +425,19 @@ def _compact_event(e: dict, strip_preferences: bool = False) -> dict:
         "type": e.get("source_interaction_type"),
         "hashtags": e.get("source_hashtags", []),
         "content_type": e.get("content_type"),
+        "author_id": e.get("author_id"),
+        "is_self_authored": e.get("is_self_authored"),
+        "is_dm": e.get("is_dm"),
     }
+    if e.get("is_trending"):
+        out["is_trending"] = True
+        out["trending_topic"] = e.get("trending_topic")
+        out["trending_relevance"] = e.get("trending_relevance")
+    if e.get("is_ad"):
+        out["is_ad"] = True
+    loc = e.get("event_location")
+    if isinstance(loc, dict) and loc.get("city"):
+        out["location"] = {k: v for k, v in loc.items() if v is not None}
     content = e.get("content") or {}
     if "title" in content:
         out["title"] = content.get("title")

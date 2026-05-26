@@ -21,7 +21,7 @@ from evaluation.backend_query import APPS, BackendQuery
 
 
 def _project_feed_event(e: dict) -> dict:
-    return {
+    item = {
         "post_id": str(e.get("source_object_id", "")),
         "timestamp": e.get("source_timestamp"),
         "hashtags": e.get("source_hashtags", []),
@@ -30,7 +30,18 @@ def _project_feed_event(e: dict) -> dict:
         "caption": (e.get("content") or {}).get("caption"),
         "author_id": e.get("author_id", "unknown"),
         "is_self_authored": bool(e.get("is_self_authored")),
+        "is_dm": bool(e.get("is_dm")),
+        "interaction_type": e.get("source_interaction_type", ""),
     }
+    if e.get("is_ad"):
+        item["is_ad"] = True
+    if e.get("is_trending"):
+        item["is_trending"] = True
+        item["trending_topic"] = e.get("trending_topic", "")
+    loc = e.get("event_location")
+    if isinstance(loc, dict) and loc.get("city"):
+        item["location"] = f"{loc.get('city', '')}, {loc.get('region', '')}".rstrip(", ")
+    return item
 
 
 def simulate_get_feed(

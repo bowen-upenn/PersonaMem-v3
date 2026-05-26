@@ -73,8 +73,9 @@ def make_server(app: str) -> FastMCP:
         events = view.get_events(user_id=user_id, app=app, since_timestamp=t_test)
         events.sort(key=lambda x: x.get("source_timestamp", 0), reverse=True)
         # Lightweight projection for feed.
-        feed_items = [
-            {
+        feed_items = []
+        for e in events:
+            item = {
                 "post_id": str(e.get("source_object_id", "")),
                 "timestamp": e.get("source_timestamp"),
                 "hashtags": e.get("source_hashtags", []),
@@ -83,9 +84,18 @@ def make_server(app: str) -> FastMCP:
                 "caption": (e.get("content") or {}).get("caption"),
                 "author_id": e.get("author_id", "unknown"),
                 "is_self_authored": bool(e.get("is_self_authored")),
+                "is_dm": bool(e.get("is_dm")),
+                "interaction_type": e.get("source_interaction_type", ""),
             }
-            for e in events
-        ]
+            if e.get("is_ad"):
+                item["is_ad"] = True
+            if e.get("is_trending"):
+                item["is_trending"] = True
+                item["trending_topic"] = e.get("trending_topic", "")
+            loc = e.get("event_location")
+            if isinstance(loc, dict) and loc.get("city"):
+                item["location"] = f"{loc.get('city', '')}, {loc.get('region', '')}".rstrip(", ")
+            feed_items.append(item)
         # Simple slicing (cursor = index-based here; BackendQuery's typed pagination
         # used elsewhere, but MCP feed-read is usually small).
         start = int(cursor) if (cursor and cursor.isdigit()) else 0
