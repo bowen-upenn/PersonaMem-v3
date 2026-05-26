@@ -296,8 +296,8 @@ def _accuracy_value(task_type: str, metrics: dict, status: str, e6_paired: dict 
         if not mx or float(mx) <= 0:
             return None
         return 100.0 * float(v) / float(mx)
-    if kind == "0to3":
-        return 100.0 * float(v) / 3.0
+    if kind == "0to10":
+        return 100.0 * float(v) / 10.0
     return 100.0 * float(v)
 
 

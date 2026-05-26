@@ -496,15 +496,15 @@ def judge_slate_soft_correctness_prompt(
 Judge whether this top pick is itself preference-aligned for the user at this moment,
 independent of whether it happens to be the held-out positive.
 
-Score 0–3:
-- 3: clearly matches the user's contemporaneous positive preferences, no conflict with negatives.
-- 2: plausibly aligned but weakly supported.
-- 1: neutral / low confidence either way.
+Score 0–10:
+- 10: clearly matches the user's contemporaneous positive preferences, no conflict with negatives.
+- 7: plausibly aligned but weakly supported.
+- 4: neutral / low confidence either way.
 - 0: contradicts user negatives or clearly misaligned.
 
 Reason step by step, then output:
 ```json
-{{"soft_correctness": <0-3>, "reasoning": "..."}}
+{{"soft_correctness": <0-10>, "reasoning": "..."}}
 ```
 """
 
@@ -538,18 +538,18 @@ Polarity guidance: {polarity_guidance}
 
 ## Rubric
 For each dimension reason briefly then score:
-- preference_alignment (0-3): does the response align with the user's contemporaneous preferences given the polarity guidance?
-- helpfulness (0-3): is the response itself useful to the user, independent of personalization?
-- appropriate_restraint (0-2): does it avoid pushing preferences that are irrelevant, disliked, or carved out?
-- no_hallucinated_preference (0-2): does it avoid asserting user traits ungrounded in history?
+- preference_alignment (0-10): does the response align with the user's contemporaneous preferences given the polarity guidance?
+- helpfulness (0-10): is the response itself useful to the user, independent of personalization?
+- appropriate_restraint (0-10): does it avoid pushing preferences that are irrelevant, disliked, or carved out?
+- no_hallucinated_preference (0-10): does it avoid asserting user traits ungrounded in history?
 
 Output:
 ```json
 {{
-  "preference_alignment": <0-3>,
-  "helpfulness": <0-3>,
-  "appropriate_restraint": <0-2>,
-  "no_hallucinated_preference": <0-2>,
+  "preference_alignment": <0-10>,
+  "helpfulness": <0-10>,
+  "appropriate_restraint": <0-10>,
+  "no_hallucinated_preference": <0-10>,
   "reasoning": "..."
 }}
 ```
@@ -578,13 +578,13 @@ def judge_restraint_prompt(
 
 ## Your task
 Score whether the response exhibits appropriate restraint for this scenario.
-- 3: perfect restraint — no inappropriate personalization.
-- 2: mostly restrained, minor leak.
-- 1: notable inappropriate personalization.
+- 10: perfect restraint — no inappropriate personalization.
+- 7: mostly restrained, minor leak.
+- 3: notable inappropriate personalization.
 - 0: forced user preferences into a context where they don't belong.
 
 ```json
-{{"restraint_score": <0-3>, "reasoning": "..."}}
+{{"restraint_score": <0-10>, "reasoning": "..."}}
 ```
 """
 
@@ -618,16 +618,16 @@ def judge_at_ai_directive_prompt(
 Read the directive carefully — what is the user actually asking for? Then judge
 whether the top-3 candidates reflect that intent.
 
-- 1.0 = top-3 clearly fit what the user described in their directive
-- 0.5 = partial fit (matches the broad topic but misses a key qualifier the
+- 10 = top-3 clearly fit what the user described in their directive
+- 5 = partial fit (matches the broad topic but misses a key qualifier the
   user named, e.g. they said "with my dog" and you returned solo-hiking)
-- 0.0 = top-3 ignore the directive's specifics, OR are off-topic, OR
+- 0 = top-3 ignore the directive's specifics, OR are off-topic, OR
   (for stop-recommending directives) the top-3 still surface what the user
   asked you to suppress
 
 Respond with ONLY a JSON object:
 ```json
-{{"intent_alignment_score": <0.0-1.0>, "reasoning": "<1-2 sentences>"}}
+{{"intent_alignment_score": <0-10>, "reasoning": "<1-2 sentences>"}}
 ```
 """
 
@@ -698,45 +698,45 @@ on violation — same behavior as the rest of the benchmark.
 
 For each, reason briefly then score:
 
-- **trigger_detection_correctness (0-3, proactive-specific)**: did the
+- **trigger_detection_correctness (0-10, proactive-specific)**: did the
   agent correctly decide to act vs stay silent given the polarity?
-  - 3 = perfect alignment with expected_behavior
-  - 2 = correct decision but reasoning weak
-  - 1 = mixed signals (acted but hedged heavily, or stayed silent without clear reason)
+  - 10 = perfect alignment with expected_behavior
+  - 7 = correct decision but reasoning weak
+  - 3 = mixed signals (acted but hedged heavily, or stayed silent without clear reason)
   - 0 = wrong decision (acted when restrain expected, or vice versa)
 
-- **preference_alignment (0-3, universal)**: if the agent acted, does the
+- **preference_alignment (0-10, universal)**: if the agent acted, does the
   surfaced content match what this user actually prefers / cares about
-  (based on their history)? For restraint cases, score 3 ONLY if the
+  (based on their history)? For restraint cases, score 10 ONLY if the
   agent's response demonstrates UNDERSTANDING of why no action fits the
   trigger context (rationale references the specific moment). An empty
   response or a generic "I'll stay silent" without rationale scores 0
   — silence by itself does not prove understanding of preferences.
 
-- **avoid_overpersonalization (0-3, universal)**: did the agent avoid
+- **avoid_overpersonalization (0-10, universal)**: did the agent avoid
   pushing too hard? Penalize generic recommendation pushes, repetition,
   over-explaining, or surfacing content the user wouldn't naturally want.
-  For restraint cases, score 3 only if the response is appropriately
+  For restraint cases, score 10 only if the response is appropriately
   scoped (declines without leaking trigger context); score 0 if the
   response is empty (silence does not prove restraint, it could just be
   default mute).
 
-- **voice_match (0-3, universal)**: is the agent's message phrased in a
+- **voice_match (0-10, universal)**: is the agent's message phrased in a
   tone, length, and register that fits this user and the chatbot surface?
   Penalize directive phrasing, marketing-speak, notification-style copy.
   For restraint cases, score from the actual voice in any rationale text
   the agent emitted. An empty response = no voice to grade = 0.
 
-- **restraint_justification (0-3, restraint-only)**: ONLY APPLIES WHEN
+- **restraint_justification (0-10, restraint-only)**: ONLY APPLIES WHEN
   `expected_behavior=='restrain'`. Did the agent EXPLAIN why staying
   silent is the right call here? Look for evidence the agent identified
   the specific trigger context (e.g. "active sensitive-event window",
   "trending topic doesn't match this user's interests").
-  - 3 = explicit, on-trigger reasoning that names the specific reason
-  - 2 = generic restraint rationale but on-target ("not the right moment")
-  - 1 = bare `should_act: false` with no rationale field populated
+  - 10 = explicit, on-trigger reasoning that names the specific reason
+  - 7 = generic restraint rationale but on-target ("not the right moment")
+  - 3 = bare `should_act: false` with no rationale field populated
   - 0 = empty response (no rationale at all)
-  When `expected_behavior=='act'`, this dimension is N/A — emit 3 by
+  When `expected_behavior=='act'`, this dimension is N/A — emit 10 by
   default. This dimension is what distinguishes "silent because wise"
   from "silent because default."
 
@@ -753,11 +753,11 @@ For each, reason briefly then score:
 Respond with ONLY this JSON, no prose outside:
 ```json
 {{
-  "trigger_detection_correctness": <0-3>,
-  "preference_alignment": <0-3>,
-  "avoid_overpersonalization": <0-3>,
-  "voice_match": <0-3>,
-  "restraint_justification": <0-3>,
+  "trigger_detection_correctness": <0-10>,
+  "preference_alignment": <0-10>,
+  "avoid_overpersonalization": <0-10>,
+  "voice_match": <0-10>,
+  "restraint_justification": <0-10>,
   "negative_leakage": <true | false>,
   "stale_preference_use": <true | false>,
   "reasoning": "<≤3 sentences naming the strongest evidence for your scoring>"
@@ -773,7 +773,7 @@ def query_blind_check_prompt(query: str) -> str:
 
     Called twice per candidate query:
     1. Generate a generic answer (no user context).
-    2. Rate the value of personalization on 0–3.
+    2. Rate the value of personalization on 0–10.
     """
     return f"""You are evaluating whether a chatbot query benefits from knowing the user.
 
@@ -789,17 +789,17 @@ If the user is asking the chatbot to clean up, translate, proofread, polish, tig
 
 Examples:
 - `clean this up: "yo Marcus, still good for sunday? thinking wings at my spot after the 1 o'clock games..."` → 0. The user asked for copyediting; the NFL backdrop is part of their draft, not an invitation to surface NFL recommendations.
-- `whats a good podcast for my drive home tonight, brain mushy` → 3. The user is explicitly asking for a recommendation that should reflect their tastes and current mood.
+- `whats a good podcast for my drive home tonight, brain mushy` → 10. The user is explicitly asking for a recommendation that should reflect their tastes and current mood.
 
 ## Rating scale
 - 0 = the answer is already complete OR the request is editorial / translation / proofreading / draft-composing; personalization adds nothing or is the wrong response.
-- 1 = personalization could add color but isn't necessary.
-- 2 = personalization would meaningfully improve the answer.
-- 3 = the answer is genuinely poor without user context; personalization is essential.
+- 3 = personalization could add color but isn't necessary.
+- 7 = personalization would meaningfully improve the answer.
+- 10 = the answer is genuinely poor without user context; personalization is essential.
 
 Return JSON:
 ```json
-{{"generic_answer": "<your answer>", "personalization_value": <0|1|2|3>, "reasoning": "<one line>"}}
+{{"generic_answer": "<your answer>", "personalization_value": <0-10>, "reasoning": "<one line>"}}
 ```
 """
 
@@ -1174,7 +1174,7 @@ answer that still fully addresses the query.
 
 _PERSONALIZATION_DIM_DEFS = {
     "preference_alignment": (
-        "0–3",
+        "0–10",
         "Does the output reflect the user's contemporaneous positive preferences that are relevant to this task?",
         "+",
     ),
@@ -1189,13 +1189,13 @@ _PERSONALIZATION_DIM_DEFS = {
         "-",
     ),
     "over_personalization": (
-        "0–3",
+        "0–10",
         "Was personalization applied only as much as the task context warranted? Penalize forcing user traits into neutral queries, reciting demographics, or repeating the same preference across unrelated outputs.",
         "-",
     ),
     "subtle_personalization": (
-        "0–3",
-        "When the output uses a user preference, is it embedded subtly and usefully into the response (e.g., naturally choosing a relevant example, recommendation, or framing) rather than being explicitly attributed to past user data? Penalize phrases like 'because you like X', 'since you mentioned Y', 'I remember that you ...', 'based on your past ...', or any other surface signal that the assistant is reciting stored preferences. 3 = preference is woven in invisibly and feels like a natural choice; 2 = mostly subtle with minor attribution slips; 1 = relevant but heavily attributed; 0 = the response reads like a memory dump.",
+        "0–10",
+        "When the output uses a user preference, is it embedded subtly and usefully into the response (e.g., naturally choosing a relevant example, recommendation, or framing) rather than being explicitly attributed to past user data? Penalize phrases like 'because you like X', 'since you mentioned Y', 'I remember that you ...', 'based on your past ...', or any other surface signal that the assistant is reciting stored preferences. 10 = preference is woven in invisibly and feels like a natural choice; 7 = mostly subtle with minor attribution slips; 3 = relevant but heavily attributed; 0 = the response reads like a memory dump.",
         "+",
     ),
     "stale_preference_use": (
@@ -1204,21 +1204,21 @@ _PERSONALIZATION_DIM_DEFS = {
         "-",
     ),
     "relationship_awareness": (
-        "0–3",
+        "0–10",
         "When the task involves a recipient (DM, reply, share), did the agent use the right friend/acquaintance/stranger relationship depth and friend_id resolution?",
         "+",
     ),
     "voice_match": (
-        "0–3 (mean of 3 sub-components)",
+        "0–10 (mean of 3 sub-components)",
         # 3-component judge replaces the old single-question voice_match. Each
-        # sub-component is scored 0–3; voice_match = mean. Layer-1+2+3+4 are
+        # sub-component is scored 0–10; voice_match = mean. Layer-1+2+3+4 are
         # tested separately so a candidate that only mimics surface (emoji /
         # phrase / length) doesn't silently pass.
         # NOTE: ground truth here is the pipeline's user_voice BLOCK, not real-
         # human writing. The judge is asking "did the agent's response respect
         # the same voice block the gold respected?" — relative comparison.
         (
-            "Score voice fidelity in three sub-components, each 0-3:\n"
+            "Score voice fidelity in three sub-components, each 0-10:\n"
             "  • identity_coherence — does the response reflect the user's declared "
             "    `signature_concerns` + `redemption_motifs` + `life_stage_preoccupations`? "
             "    Penalize off-spine topic, neutral 'anyone' framings, missing the underlying concerns.\n"
@@ -1233,7 +1233,7 @@ _PERSONALIZATION_DIM_DEFS = {
         "+",
     ),
     "voice_self_consistency": (
-        "0–3",
+        "0–10",
         # Pulls 4 of the user's pre-T_test pipeline-generated samples (Ext B
         # self-posts + DMs + chatbot user-turns) plus the candidate. The judge
         # sees `identity_spine` as context but NOT `idiolect` — Layer 2 must
@@ -1244,7 +1244,7 @@ _PERSONALIZATION_DIM_DEFS = {
         # consumers), not fidelity-to-real-human. Renamed from `voice_same_author`.
         (
             "Given 4 pipeline-generated samples by the same synthetic user + a 5th candidate, "
-            "score 0-3 whether the 5th plausibly comes from the same synthetic-user voice at "
+            "score 0-10 whether the 5th plausibly comes from the same synthetic-user voice at "
             "Layer 1 (concerns / topic-affinity, derivable from `identity_spine` shown in context) "
             "and Layer 2 (sentence structure / hedge habits, must be detected from the 4 prior samples). "
             "IGNORE surface emoji and catchphrase mimicry — those are decorations. "
@@ -1293,17 +1293,17 @@ def judge_personalization_dim_prompt(
         output_block = (
             "```json\n"
             "{\n"
-            "  \"identity_coherence\": <0-3>,\n"
-            "  \"idiolect_fidelity\": <0-3>,\n"
-            "  \"audience_appropriateness\": <0-3>,\n"
+            "  \"identity_coherence\": <0-10>,\n"
+            "  \"idiolect_fidelity\": <0-10>,\n"
+            "  \"audience_appropriateness\": <0-10>,\n"
             "  \"score\": <mean of the three, rounded to 1 decimal>,\n"
             "  \"reasoning\": \"<one short paragraph naming what each sub-score reflects>\"\n"
             "}\n"
             "```"
         )
         guidance = (
-            "Score each of the three sub-components independently 0–3, then compute "
-            "`score` as the mean. 3 = excellent on all three; 0 = terrible on all three. "
+            "Score each of the three sub-components independently 0–10, then compute "
+            "`score` as the mean. 10 = excellent on all three; 0 = terrible on all three. "
             "Do NOT inflate idiolect_fidelity just because identity_coherence was high "
             "(or vice versa) — each component is independent."
         )
@@ -1315,7 +1315,7 @@ def judge_personalization_dim_prompt(
         )
         guidance = (
             "For binary dims, output 1 if ANY violation is present, else 0."
-            if hard else "For 0–3 dims, 3 = excellent, 0 = terrible."
+            if hard else "For 0–10 dims, 10 = excellent, 0 = terrible."
         )
 
     return f"""{_JUDGE_PREFACE}
@@ -1489,12 +1489,12 @@ def judge_new_suggestions_chatbot_prompt(
 {agent_response}
 
 ## Scoring
-Score on a 0-3 scale how well the agent's recommendation aligns with the
+Score on a 0-10 scale how well the agent's recommendation aligns with the
 SPIRIT of the gold (not necessarily the exact same topic — different
 plausible new directions for this user are fine):
-  3 = obviously a fresh, persona-grounded pivot the user would love
-  2 = plausible new direction, somewhat aligned with hidden interests
-  1 = generic / barely persona-aware
+  10 = obviously a fresh, persona-grounded pivot the user would love
+  7 = plausible new direction, somewhat aligned with hidden interests
+  3 = generic / barely persona-aware
   0 = recycled, off-target, or violates a hard rule
 
 ## Output

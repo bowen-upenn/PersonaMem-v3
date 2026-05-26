@@ -5,13 +5,13 @@ A benchmark for *personalization* must score personalization, not just
 shared set of dimensions drawn from the user's ground-truth data:
 
 Dimensions (7 total):
-- preference_alignment (0–3 judge):   did the output reflect the user's positive prefs?
+- preference_alignment (0–10 judge):   did the output reflect the user's positive prefs?
 - avoid_leak           (binary hard): did the output surface user-negative prefs?
 - privacy_leak         (binary hard): did the output surface privacy-flagged prefs?
-- over_personalization (0–3 judge):   appropriate amount of personalization for this task?
+- over_personalization (0–10 judge):   appropriate amount of personalization for this task?
 - stale_preference_use (binary hard): did the output use prefs the user has since contradicted?
-- relationship_aware   (0–3 judge):   correct friend/stranger resolution when recipient involved?
-- voice_match          (0–3 judge):   user's voice when the task requires authoring?
+- relationship_aware   (0–10 judge):   correct friend/stranger resolution when recipient involved?
+- voice_match          (0–10 judge):   user's voice when the task requires authoring?
 
 Each task has its own applicability subset (see APPLICABILITY below).
 
@@ -441,7 +441,7 @@ def build_source_b(bq: BackendQuery, user_id: str, t_test: int, window_hours: in
 # --- Scoring ---------------------------------------------------------------
 
 # Polarity-aware combiner constants. Tuned so one hard-fail erases ~half of
-# a single positive dim's max contribution (3.0). Adjust together if you
+# a single positive dim's max contribution (10.0). Adjust together if you
 # rebalance — the goal is for `combined_personalization_score` to fall in
 # roughly the same range as `positive_score` when no hard-fails fire.
 PENALTY_PER_HARD_FAIL = 1.5
@@ -462,11 +462,11 @@ def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
 
     Mutates `out` in place to add three keys:
       - `positive_score`: sum of `out[f"{dim}_score"]` over each applicable
-        `+` dim that has a numeric score (0-3 each).
+        `+` dim that has a numeric score (0-10 each).
       - `negative_penalty`: sum over each applicable `-` dim of either
         `hard_fail * PENALTY_PER_HARD_FAIL` (binary dims) or
-        `(3 - dim_score) / 3 * PENALTY_PER_SOFT_NEG` (gap-from-ideal for
-        soft 0-3 negative dims).
+        `(10 - dim_score) / 10 * PENALTY_PER_SOFT_NEG` (gap-from-ideal for
+        soft 0-10 negative dims).
       - `combined_personalization_score`: clamp(positive_score - negative_penalty, 0, max_possible).
 
     Polarity comes from `evaluation.prompts._PERSONALIZATION_DIM_DEFS` via
@@ -498,7 +498,7 @@ def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
         else:
             neg_dims_applicable.append(dim)
 
-    # Positive contribution: judge-dim scores on the 0-3 scale.
+    # Positive contribution: judge-dim scores on the 0-10 scale.
     positive_score = 0.0
     n_positive_scored = 0
     for dim in pos_dims_applicable:
@@ -508,7 +508,7 @@ def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
             n_positive_scored += 1
 
     # Negative penalty: hard-fail flag × constant for binary dims; soft-gap
-    # × constant for 0-3 negative dims.
+    # × constant for 0-10 negative dims.
     negative_penalty = 0.0
     for dim in neg_dims_applicable:
         if dim in HARD_RULE_DIMS:
@@ -516,13 +516,13 @@ def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
             if isinstance(hf, (int, float)) and hf:
                 negative_penalty += PENALTY_PER_HARD_FAIL
         else:
-            # Soft 0-3 negative dim — gap from ideal counts as penalty.
+            # Soft 0-10 negative dim — gap from ideal counts as penalty.
             v = out.get(f"{dim}_score")
             if isinstance(v, (int, float)):
-                gap = max(0.0, 3.0 - float(v)) / 3.0
+                gap = max(0.0, 10.0 - float(v)) / 10.0
                 negative_penalty += gap * PENALTY_PER_SOFT_NEG
 
-    max_possible = 3.0 * len(pos_dims_applicable)
+    max_possible = 10.0 * len(pos_dims_applicable)
     combined = max(0.0, min(max_possible, positive_score - negative_penalty))
 
     out["positive_score"] = positive_score

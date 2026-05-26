@@ -98,7 +98,7 @@ def judge_at_ai_directive(
     not solo-hiking, not group-hiking.
 
     Returns:
-        {"intent_alignment_score": float in [0,1], "judge_reasoning": str}
+        {"intent_alignment_score": float in [0,10], "judge_reasoning": str}
     """
     prompt = prompts.judge_at_ai_directive_prompt(
         directive_user_message, directive_action, top_candidates,
@@ -112,7 +112,7 @@ def judge_at_ai_directive(
     try:
         score = float(raw) if raw is not None else None
         if score is not None:
-            score = max(0.0, min(1.0, score))
+            score = max(0.0, min(10.0, score))
     except (TypeError, ValueError):
         score = None
     return {
@@ -136,15 +136,15 @@ def judge_proactive_action(
 
     Rubric (1 proactive-specific + 3 universal LLM dims + 2 universal
     hard-rules):
-      - trigger_detection_correctness (0-3, proactive-specific)
-      - preference_alignment (0-3, universal)
-      - avoid_overpersonalization (0-3, universal)
-      - voice_match (0-3, universal)
+      - trigger_detection_correctness (0-10, proactive-specific)
+      - preference_alignment (0-10, universal)
+      - avoid_overpersonalization (0-10, universal)
+      - voice_match (0-10, universal)
       - negative_leakage (bool hard-rule, universal): True ⇒ score = 0.0
       - stale_preference_use (bool hard-rule, universal): True ⇒ score = 0.0
 
-    Composite proactive_action_score ∈ [0, 1] is the sum of the four LLM
-    dims divided by 12, gated to 0 on any hard-rule violation.
+    Composite proactive_action_score ∈ [0, 1] is the sum of the five LLM
+    dims divided by 50, gated to 0 on any hard-rule violation.
     """
     prompt = prompts.judge_proactive_action_prompt(
         response_obj, trigger_evidence, expected_behavior, jitai_card or {},
@@ -180,19 +180,19 @@ def judge_proactive_action(
             return v.strip().lower() in ("true", "yes", "1", "y")
         return None
 
-    trig  = _clamp(parsed.get("trigger_detection_correctness"), 0, 3)
-    pref  = _clamp(parsed.get("preference_alignment"), 0, 3)
-    over  = _clamp(parsed.get("avoid_overpersonalization"), 0, 3)
-    voice = _clamp(parsed.get("voice_match"), 0, 3)
+    trig  = _clamp(parsed.get("trigger_detection_correctness"), 0, 10)
+    pref  = _clamp(parsed.get("preference_alignment"), 0, 10)
+    over  = _clamp(parsed.get("avoid_overpersonalization"), 0, 10)
+    voice = _clamp(parsed.get("voice_match"), 0, 10)
     # restraint_justification: only meaningful when expected_behavior
     # is restrain. For act instances, the judge prompt instructs the
-    # LLM to emit 3 by default; we still parse to keep the rubric
+    # LLM to emit 10 by default; we still parse to keep the rubric
     # symmetric across both arms.
-    just  = _clamp(parsed.get("restraint_justification"), 0, 3)
+    just  = _clamp(parsed.get("restraint_justification"), 0, 10)
     neg_leak = _bool(parsed.get("negative_leakage"))
     stale    = _bool(parsed.get("stale_preference_use"))
 
-    components = [(trig, 3.0), (pref, 3.0), (over, 3.0), (voice, 3.0), (just, 3.0)]
+    components = [(trig, 10.0), (pref, 10.0), (over, 10.0), (voice, 10.0), (just, 10.0)]
     if any(c is None for c, _ in components):
         score = None
     else:

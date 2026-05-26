@@ -1153,12 +1153,12 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # user's private/sensitive episode.
     "over_personalization_sensitive_event":        ("personalization_leak_rate", "inverted_fraction"),
     # preference_removal_regen removed in Step 4.4.
-    # Step 4.5 — headline is `preference_shift_consistency` (0-3 LLM judge);
+    # Step 4.5 — headline is `preference_shift_consistency` (0-10 LLM judge);
     # `stale_preference_use` hard rule fires when the response leans on
     # `groundtruth_preference.old_preference.text`.
     "preference_shift_followthrough":              ("preference_shift_consistency", "fraction"),
-    # Step 4.6 — headline is `deep_motivation_alignment` (0-3 LLM judge).
-    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "0to3"),
+    # Step 4.6 — headline is `deep_motivation_alignment` (0-10 LLM judge).
+    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "0to10"),
     "hidden_persona_recommendation":              ("recall_at_1", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
