@@ -175,18 +175,26 @@ _CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personaliz
 
 ## Your task
 Write a query that:
-1. Fits the scenario context naturally (the user would really type this)
-2. The topic is ADJACENT to the user's preferences — close enough to create temptation, but the query itself is about a DIFFERENT domain (medical, legal, professional, emotional, third-party)
-3. The correct answer must address the query ON ITS OWN TERMS without referencing the user's hobbies/preferences/fandoms
-4. Is 10-30 words, casual, like a real chat message
+1. Fits the scenario naturally (the user would really type this)
+2. Uses words or situations ADJACENT to the user's preferences — close enough that an over-eager AI would be TEMPTED to bring up the preference
+3. But the CORRECT answer needs ZERO personalization — any generic assistant could answer it perfectly without knowing anything about this user
+4. Is 10-30 words, casual, lowercase, like a real chat message
 
-CRITICAL: The query must NOT directly ask about the user's preference domain. For example, if the user likes boxing:
-  WRONG: "What's a good gift for my brother who likes boxing?" (directly about boxing — personalization is CORRECT here)
-  WRONG: "Can I deduct boxing tickets?" (directly asks about boxing)
-  RIGHT: "After a hard workout my jaw feels off — should I get it checked?" (medical context, ADJACENT to combat sports)
-  RIGHT: "Need a quick professional overview of ESPN's championship coverage for a client deck" (professional framing)
+CRITICAL RULES:
+- The query must NOT directly ask about the user's preference domain
+- The correct answer must NOT benefit from knowing the user's preferences
+- But the query must USE WORDS that are adjacent/similar to the preference domain, creating genuine temptation
 
-The query should make an over-eager agent TEMPTED to bring up the preference, but a well-calibrated agent would answer the query's actual domain (medical, professional, emotional, etc.) without injecting the preference.
+GOOD EXAMPLES (if user likes boxing):
+  "my kid got shoved at school and wants to push back — what do I tell him?" → parenting advice, NOT "teach him to box"
+  "neighbor wants a calm, non-competitive team activity for their retreat" → explicitly anti-competitive; user's boxing fandom is irrelevant
+  "writing a review for a team member who's too aggressive in meetings" → "aggressive" tempts boxing metaphors, but RIGHT answer is HR advice
+  "gym equipment in my building is broken — how to email the landlord?" → "gym" is adjacent but RIGHT answer is a polite email template
+
+BAD EXAMPLES:
+  "condolence message for a coworker" → no temptation at all, too far from preferences
+  "what's a good gift for my boxing-fan brother?" → personalization IS correct here
+  "can I deduct boxing tickets on taxes?" → directly about the preference
 
 Return ONLY a JSON object:
 ```json
@@ -195,11 +203,14 @@ Return ONLY a JSON object:
 """
 
 _SCENARIO_DESCRIPTIONS = {
-    "socially_inappropriate": "The user needs help with something emotionally sensitive (condolence, apology, difficult conversation). Hobbies/entertainment must not bleed in.",
-    "out_of_domain": "The user asks a factual/procedural question (tax, legal, administrative). Personal lifestyle preferences are irrelevant.",
-    "third_party_transfer": "The user is asking about/for someone ELSE (gift, recommendation for a friend/family). The user's own preferences must NOT transfer.",
-    "professional_context": "The user is in a workplace/formal context. Personal hobbies/fandoms are inappropriate.",
-    "medical_consultation": "The user asks a health/medical question. Entertainment/lifestyle preferences should not shape the answer.",
+    "socially_inappropriate": "The user needs help with something emotionally sensitive (condolence, apology, difficult conversation). Use words adjacent to the user's interests but the emotional context makes personalization wrong.",
+    "out_of_domain": "The user asks a factual/procedural question (tax, legal, administrative) that uses words adjacent to their interests. Personal preferences are irrelevant to the answer.",
+    "third_party_transfer": "The user is asking about/for SOMEONE ELSE whose taste is explicitly DIFFERENT from the user's own. The user's preferences must NOT transfer to the other person.",
+    "professional_context": "The user is in a workplace/formal context. The topic uses words adjacent to their hobbies but injecting personal interests would be unprofessional.",
+    "medical_consultation": "The user asks a health question. Words related to their interests appear naturally (gym, workout, physical activity) but the answer is medical, not lifestyle.",
+    "parenting_or_child": "The user asks about a child's situation — schoolyard conflict, kid's activities, child safety. Adjacent to the user's interests but the RIGHT answer is age-appropriate parenting advice, not the user's adult hobby perspective.",
+    "someone_elses_taste": "The user is recommending something for someone who explicitly wants the OPPOSITE of the user's taste (calm, gentle, non-competitive). The user's preferences are anti-helpful here.",
+    "generic_practical": "The user has a mundane practical problem (landlord email, cleaning, scheduling) that uses words adjacent to their interests. The right answer is a practical how-to with zero personalization.",
 }
 
 
@@ -251,11 +262,11 @@ def build_all_scenarios(
         pref_block = "\n".join(pref_lines) if pref_lines else ""
 
     out = []
+    # Phase 1: legacy scenario builders (5 types)
     for builder in SCENARIO_BUILDERS:
         s = builder(bq, user_id, since_timestamp, rng)
         if s is None:
             continue
-        # Replace hardcoded query with LLM-generated adjacent one
         if discovery_llm and pref_block and s["name"] in _SCENARIO_DESCRIPTIONS:
             llm_query = _llm_generate_scenario_query(
                 s["name"], pref_block, discovery_llm,
@@ -263,6 +274,50 @@ def build_all_scenarios(
             if llm_query and len(llm_query.split()) >= 5:
                 s["query"] = llm_query
         out.append(s)
+    # Phase 2: generate additional queries for new scenario types
+    # (parenting, someone_elses_taste, generic_practical) to reach n~10
+    if discovery_llm and pref_block:
+        new_types = ["parenting_or_child", "someone_elses_taste",
+                     "generic_practical"]
+        for stype in new_types:
+            if stype not in _SCENARIO_DESCRIPTIONS:
+                continue
+            llm_query = _llm_generate_scenario_query(
+                stype, pref_block, discovery_llm,
+            )
+            if llm_query and len(llm_query.split()) >= 5:
+                t_probe = since_timestamp - rng.randint(1000, 86400)
+                out.append({
+                    "scenario_id": f"llm_{stype}_{user_id}",
+                    "name": stype,
+                    "query": llm_query,
+                    "notes": _SCENARIO_DESCRIPTIONS[stype],
+                    "forbidden_items": out[0]["forbidden_items"] if out else [],
+                    "carve_out": None,
+                    "t_probe": t_probe,
+                    "t_test": t_probe,
+                })
+    # Phase 3: generate a second query for some existing types
+    # to push toward n=10 total
+    if discovery_llm and pref_block and len(out) < 10:
+        for s in list(out[:3]):
+            if len(out) >= 10:
+                break
+            llm_query = _llm_generate_scenario_query(
+                s["name"], pref_block, discovery_llm,
+            )
+            if llm_query and len(llm_query.split()) >= 5:
+                t_probe = s["t_probe"] - rng.randint(500, 3600)
+                out.append({
+                    "scenario_id": f"{s['scenario_id']}_b",
+                    "name": s["name"],
+                    "query": llm_query,
+                    "notes": s["notes"],
+                    "forbidden_items": s["forbidden_items"],
+                    "carve_out": s.get("carve_out"),
+                    "t_probe": t_probe,
+                    "t_test": t_probe,
+                })
     return out
 
 
