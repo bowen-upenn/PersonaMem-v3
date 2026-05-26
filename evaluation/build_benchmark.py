@@ -1615,16 +1615,18 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
             continue
         deduped.append(item)
 
+    prior_convos = _get_recent_chatbot_conversations(bq, user_id)
     out: list[dict] = []
     for i, item in enumerate(deduped):
         category = item.get("category", "unknown")
         adjacent_to = item.get("adjacent_to", "")
+        prior = prior_convos[i % max(1, len(prior_convos))] if prior_convos else []
         out.append({
             "source_object_id": f"adv_{category}_{user_id}_{i:02d}",
             "source_timestamp": latest_ts - (60 * (i + 1)),
             "formatted_timestamp": formatted,
             "user_query": item["query"],
-            "prior_conversation": [],
+            "prior_conversation": prior,
             "action": "asked_chatbot",
             "source_hashtags": [],
             "held_out_preference": None,
@@ -3779,9 +3781,12 @@ def build_c2_instances(bq: BackendQuery, user_id: str, t_probe: int, rng_seed: i
     )
     if not scs:
         return []
+    prior_convos = _get_recent_chatbot_conversations(bq, user_id)
     anchors = _task_dist.spread_anchors(bq, user_id, t_probe, n=len(scs))
     out: list[dict] = []
     for i, s in enumerate(scs):
+        prior = prior_convos[i % max(1, len(prior_convos))] if prior_convos else []
+        s.setdefault("prior_conversation", prior)
         out.append({
             "scenario_id": f"{user_id}_{s['name']}",
             "t_probe": anchors[i],
@@ -3884,6 +3889,36 @@ def build_c3_instance(test: TestItem, rng: random.Random) -> dict | None:
 
 # --- Sensitive-event over-personalization probes (R10) -------------------
 
+def _get_recent_chatbot_conversations(
+    bq: BackendQuery, user_id: str, max_convos: int = 10,
+) -> list[list[dict]]:
+    """Pull recent multi-turn chatbot conversations for use as prior context.
+
+    Returns a list of conversations, each a list of {role, content} turns.
+    Used by sensitive_event and context_shift to make probes feel like
+    natural follow-ups in an ongoing chat (not cold-start questions).
+    """
+    chatbot_path = Path(bq.base) / user_id / "chatbot.json"
+    if not chatbot_path.exists():
+        return []
+    try:
+        events = json.loads(chatbot_path.read_text())
+    except Exception:
+        return []
+    convos = []
+    for e in sorted(events, key=lambda x: x.get("source_timestamp", 0), reverse=True):
+        conv = e.get("conversation") or []
+        if len(conv) >= 2:
+            turns = [
+                {"role": t["role"], "content": (t.get("content") or "")[:300]}
+                for t in conv[:6]
+            ]
+            convos.append(turns)
+        if len(convos) >= max_convos:
+            break
+    return convos
+
+
 def build_sensitive_event_instances(
     bq: BackendQuery,
     user_id: str,
@@ -3935,6 +3970,11 @@ def build_sensitive_event_instances(
     rng = random.Random(f"sensitive_event_eval:{user_id}:{rng_seed}")
     out: list[dict] = []
     from data_preparation.utils import extract_json_from_response
+
+    # Grab recent chatbot conversations to use as prior context.
+    # This makes the test multi-turn: the AI has been chatting with
+    # the user, then the user asks an emotionally adjacent question.
+    prior_convos = _get_recent_chatbot_conversations(bq, user_id)
 
     for ev_idx, ev in enumerate(se.get("events") or []):
         topic = (ev.get("topic") or "").lower()
@@ -4038,10 +4078,12 @@ def build_sensitive_event_instances(
 
             for q_idx, user_query in enumerate(generated_queries):
                 t_test = row_ts + rng.randint(60, 600)
+                # Pick a prior conversation so this feels like a multi-turn
+                # chat, not a cold-start question.
+                prior = prior_convos[
+                    (ev_idx * 10 + row_idx * 3 + q_idx) % max(1, len(prior_convos))
+                ] if prior_convos else []
 
-                # Per-row leak pool — what THIS planted row added to the agent's
-                # visible history. Surfacing any of these in the benign reply
-                # is a privacy leak.
                 row_hashtags = list(planted.get("source_hashtags") or [])
                 leak_pool = [
                     {
@@ -4064,7 +4106,7 @@ def build_sensitive_event_instances(
                     "source_timestamp": t_test,
                     "formatted_timestamp": formatted_ts,
                     "user_query": user_query,
-                    "prior_conversation": [],
+                    "prior_conversation": prior,
                     "action": "asked_chatbot",
                     "source_hashtags": row_hashtags,
                     "held_out_preference": None,
