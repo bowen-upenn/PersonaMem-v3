@@ -510,7 +510,7 @@ def within_cluster_diversity(
     n_allowed_repetitions: int = 2,
     persona_alignment_passes: list[bool] | None = None,
 ) -> dict:
-    """Grade a same-preference repetition cluster's tail responses for
+    """Grade a same-preference repetition cluster's monitored responses for
     diversification.
 
     Args:
@@ -521,93 +521,93 @@ def within_cluster_diversity(
             as fully-repeating (no diversification pressure). Tail =
             responses[n_allowed_repetitions+1:].
         persona_alignment_passes: optional aligned-with-tail list
-            (each entry True iff that tail response's hashtags pass
+            (each entry True iff that monitored response's hashtags pass
             the persona-alignment LLM judge). When None, persona-
             alignment dimension is reported as ``unaudited``.
 
     Returns dict with:
-        - n_total / n_head / n_tail: shape stats.
-        - tail_pairwise_text_jaccard_mean: mean Jaccard on (title +
+        - n_total / n_warmup / n_monitored: shape stats.
+        - fatigue_pairwise_text_jaccard_mean: mean Jaccard on (title +
           caption) tokens across all tail × tail pairs. Lower = more
           diverse. Pass ≤ 0.5.
-        - tail_vs_head_text_jaccard_max: max Jaccard between any tail
+        - fatigue_vs_warmup_text_jaccard_max: max Jaccard between any tail
           response and any head response. Pass ≤ 0.5.
-        - tail_pairwise_hashtag_overlap_max: max pairwise hashtag
+        - fatigue_pairwise_hashtag_overlap_max: max pairwise hashtag
           intersection size across tail × tail pairs. Pass = 0.
-        - tail_head_hashtag_reuse_rate_max: per-tail-response, fraction
+        - fatigue_warmup_hashtag_reuse_rate_max: per-tail-response, fraction
           of its hashtags that appear in the head's hashtag union.
-          We report the max across tail responses. Pass ≤ 0.30.
-        - persona_alignment_pass_rate: fraction of tail responses that
+          We report the max across monitored responses. Pass ≤ 0.30.
+        - persona_alignment_pass_rate: fraction of monitored responses that
           passed the LLM persona-alignment judge.
-        - tail_passed: bool — true iff every tail response satisfies
+        - fatigue_passed: bool — true iff every monitored response satisfies
           all four deterministic checks AND the persona-alignment
           judge passed (when provided).
-        - n_tail_violating: count of tail responses flagged on at
+        - n_monitored_violating: count of monitored responses flagged on at
           least one check.
     """
     n_total = len(responses)
-    head_n = min(n_allowed_repetitions + 1, n_total)
-    head = responses[:head_n]
-    tail = responses[head_n:]
-    n_tail = len(tail)
-    if n_tail == 0:
+    warmup_n = min(n_allowed_repetitions + 1, n_total)
+    warmup = responses[:warmup_n]
+    monitored = responses[warmup_n:]
+    n_monitored = len(tail)
+    if n_monitored == 0:
         return {
             "n_total": n_total,
-            "n_head": head_n,
-            "n_tail": 0,
-            "tail_pairwise_text_jaccard_mean": 0.0,
-            "tail_vs_head_text_jaccard_max": 0.0,
-            "tail_pairwise_hashtag_overlap_max": 0,
-            "tail_head_hashtag_reuse_rate_max": 0.0,
+            "n_warmup": warmup_n,
+            "n_monitored": 0,
+            "fatigue_pairwise_text_jaccard_mean": 0.0,
+            "fatigue_vs_warmup_text_jaccard_max": 0.0,
+            "fatigue_pairwise_hashtag_overlap_max": 0,
+            "fatigue_warmup_hashtag_reuse_rate_max": 0.0,
             "persona_alignment_pass_rate": 1.0,
-            "tail_passed": True,
-            "n_tail_violating": 0,
+            "fatigue_passed": True,
+            "n_monitored_violating": 0,
             "violations_by_check": {},
-            "skip_reason": "no_tail_responses",
+            "skip_reason": "no_monitored_responses",
         }
 
     def _resp_text(r: dict) -> str:
         return f"{r.get('title','')} {r.get('caption','')}".strip()
 
-    head_hashtags_union = set()
-    for r in head:
-        head_hashtags_union |= _c1c_normalize_tags(r.get("hashtags") or [])
+    warmup_hashtags_union = set()
+    for r in warmup:
+        warmup_hashtags_union |= _c1c_normalize_tags(r.get("hashtags") or [])
 
     # Pairwise text Jaccard within tail.
-    tail_jaccards: list[float] = []
+    monitored_jaccards: list[float] = []
     for i in range(len(tail)):
         for j in range(i + 1, len(tail)):
-            tail_jaccards.append(jaccard(_resp_text(tail[i]), _resp_text(tail[j])))
-    tail_pairwise_text_jaccard_mean = (sum(tail_jaccards) / len(tail_jaccards)
-                                        if tail_jaccards else 0.0)
+            monitored_jaccards.append(jaccard(_resp_text(tail[i]), _resp_text(tail[j])))
+    fatigue_pairwise_text_jaccard_mean = (sum(monitored_jaccards) / len(monitored_jaccards)
+                                        if monitored_jaccards else 0.0)
 
     # Max text Jaccard tail vs. head.
-    tail_vs_head_jaccards: list[float] = []
+    fatigue_vs_warmup_jaccards: list[float] = []
     for r_tail in tail:
         for r_head in head:
-            tail_vs_head_jaccards.append(
+            fatigue_vs_warmup_jaccards.append(
                 jaccard(_resp_text(r_tail), _resp_text(r_head))
             )
-    tail_vs_head_text_jaccard_max = max(tail_vs_head_jaccards, default=0.0)
+    fatigue_vs_warmup_text_jaccard_max = max(fatigue_vs_warmup_jaccards, default=0.0)
 
     # Pairwise hashtag overlap within tail (0 is the bar).
-    tail_pairwise_overlap_max = 0
+    fatigue_pairwise_overlap_max = 0
     for i in range(len(tail)):
         ti = _c1c_normalize_tags(tail[i].get("hashtags") or [])
         for j in range(i + 1, len(tail)):
             tj = _c1c_normalize_tags(tail[j].get("hashtags") or [])
-            tail_pairwise_overlap_max = max(tail_pairwise_overlap_max, len(ti & tj))
+            fatigue_pairwise_overlap_max = max(fatigue_pairwise_overlap_max, len(ti & tj))
 
     # Per-tail-response, what fraction of its hashtags are reused from head.
-    head_reuse_rates: list[float] = []
+    warmup_reuse_rates: list[float] = []
     for r in tail:
         tags = _c1c_normalize_tags(r.get("hashtags") or [])
         if not tags:
-            head_reuse_rates.append(0.0)
+            warmup_reuse_rates.append(0.0)
             continue
-        reused = tags & head_hashtags_union
-        head_reuse_rates.append(len(reused) / len(tags))
-    tail_head_hashtag_reuse_rate_max = max(head_reuse_rates, default=0.0)
+        reused = tags & warmup_hashtags_union
+        warmup_reuse_rates.append(len(reused) / len(tags))
+    fatigue_warmup_hashtag_reuse_rate_max = max(warmup_reuse_rates, default=0.0)
 
     # Persona alignment (LLM-graded externally; metric just reports).
     if persona_alignment_passes is None:
@@ -615,19 +615,19 @@ def within_cluster_diversity(
     elif not persona_alignment_passes:
         persona_alignment_pass_rate = 1.0
     else:
-        passes = persona_alignment_passes[:n_tail]
+        passes = persona_alignment_passes[:n_monitored]
         persona_alignment_pass_rate = sum(1 for p in passes if p) / max(1, len(passes))
 
     # Per-check violation counts (tail-level).
     violations: dict[str, int] = {}
-    if tail_pairwise_text_jaccard_mean > _C1C_TEXT_JACCARD_MAX:
-        violations["tail_pairwise_text_jaccard_too_high"] = 1
-    if tail_vs_head_text_jaccard_max > _C1C_TEXT_JACCARD_MAX:
-        violations["tail_vs_head_text_jaccard_too_high"] = 1
-    if tail_pairwise_overlap_max > _C1C_PAIRWISE_HASHTAG_OVERLAP_MAX:
-        violations["tail_pairwise_hashtag_overlap"] = tail_pairwise_overlap_max
-    if tail_head_hashtag_reuse_rate_max > _C1C_HEAD_HASHTAG_REUSE_MAX:
-        violations["tail_head_hashtag_reuse_too_high"] = 1
+    if fatigue_pairwise_text_jaccard_mean > _C1C_TEXT_JACCARD_MAX:
+        violations["fatigue_pairwise_text_jaccard_too_high"] = 1
+    if fatigue_vs_warmup_text_jaccard_max > _C1C_TEXT_JACCARD_MAX:
+        violations["fatigue_vs_warmup_text_jaccard_too_high"] = 1
+    if fatigue_pairwise_overlap_max > _C1C_PAIRWISE_HASHTAG_OVERLAP_MAX:
+        violations["fatigue_pairwise_hashtag_overlap"] = fatigue_pairwise_overlap_max
+    if fatigue_warmup_hashtag_reuse_rate_max > _C1C_HEAD_HASHTAG_REUSE_MAX:
+        violations["fatigue_warmup_hashtag_reuse_too_high"] = 1
     persona_failed = (
         persona_alignment_pass_rate is not None
         and persona_alignment_pass_rate < 1.0
@@ -635,27 +635,27 @@ def within_cluster_diversity(
     if persona_failed:
         violations["persona_alignment_failed"] = 1
 
-    tail_passed = not violations
-    n_tail_violating = sum(1 for r in tail if any([
-        # Per-response-level signal: which tail responses contributed
+    fatigue_passed = not violations
+    n_monitored_violating = sum(1 for r in tail if any([
+        # Per-response-level signal: which monitored responses contributed
         # to a violation. Approximation — for hashtag-reuse we already
-        # iterated; for jaccard we mark all tail responses if the
+        # iterated; for jaccard we mark all monitored responses if the
         # mean breached.
-        head_reuse_rates[i] > _C1C_HEAD_HASHTAG_REUSE_MAX
+        warmup_reuse_rates[i] > _C1C_HEAD_HASHTAG_REUSE_MAX
         for i in [tail.index(r)] if r in tail
     ]))
     return {
         "n_total": n_total,
-        "n_head": head_n,
-        "n_tail": n_tail,
-        "tail_pairwise_text_jaccard_mean": round(tail_pairwise_text_jaccard_mean, 3),
-        "tail_vs_head_text_jaccard_max": round(tail_vs_head_text_jaccard_max, 3),
-        "tail_pairwise_hashtag_overlap_max": tail_pairwise_overlap_max,
-        "tail_head_hashtag_reuse_rate_max": round(tail_head_hashtag_reuse_rate_max, 3),
+        "n_warmup": warmup_n,
+        "n_monitored": n_monitored,
+        "fatigue_pairwise_text_jaccard_mean": round(fatigue_pairwise_text_jaccard_mean, 3),
+        "fatigue_vs_warmup_text_jaccard_max": round(fatigue_vs_warmup_text_jaccard_max, 3),
+        "fatigue_pairwise_hashtag_overlap_max": fatigue_pairwise_overlap_max,
+        "fatigue_warmup_hashtag_reuse_rate_max": round(fatigue_warmup_hashtag_reuse_rate_max, 3),
         "persona_alignment_pass_rate": (None if persona_alignment_pass_rate is None
                                          else round(persona_alignment_pass_rate, 3)),
-        "tail_passed": tail_passed,
-        "n_tail_violating": n_tail_violating,
+        "fatigue_passed": fatigue_passed,
+        "n_monitored_violating": n_monitored_violating,
         "violations_by_check": violations,
     }
 
@@ -666,7 +666,7 @@ def within_cluster_diversity(
 # 5 surface-diverse chatbot questions where each one has a natural
 # anchor for the target_pref to come up. The first
 # ``n_allowed_repetitions + 1`` responses may freely invoke the pref;
-# starting from response head_window+1, the agent must answer WITHOUT
+# starting from response warmup_window+1, the agent must answer WITHOUT
 # referencing the pref.
 #
 # Per-response judgment (did the response invoke target_pref?) is
@@ -678,7 +678,7 @@ def chatbot_pref_overuse_rate(
     pref_invocation_scores: list[float],
     n_allowed_repetitions: int = 2,
 ) -> dict:
-    """Score a chatbot same-pref repetition cluster's tail responses.
+    """Score a chatbot same-pref repetition cluster's monitored responses.
 
     `pref_invocation_scores` is a per-response list of 0-10 floats where
     10 = no invocation (full restraint) and 0 = entirely built around
@@ -689,35 +689,35 @@ def chatbot_pref_overuse_rate(
     scores (no pref invocation). Scores < 5 count as invocations.
 
     Returns:
-        n_total / n_head / n_tail counts
-        head_invocations: count of head scores < 5 (informational --
+        n_total / n_warmup / n_monitored counts
+        warmup_invocations: count of head scores < 5 (informational --
             not penalized; agent is allowed to invoke pref here)
-        tail_invocations: count of tail scores < 5 (penalized)
-        tail_overuse_rate: mean of (10 - score) / 10 for tail responses
+        fatigue_violations: count of tail scores < 5 (penalized)
+        fatigue_overuse_rate: mean of (10 - score) / 10 for monitored responses
             (continuous, 0 = perfect restraint, 1 = full overuse)
-        tail_mean_restraint: mean of tail scores (0-10)
-        tail_passed: bool -- True iff all tail scores >= 7
+        fatigue_restraint_score: mean of tail scores (0-10)
+        fatigue_passed: bool -- True iff all tail scores >= 7
     """
     n_total = len(pref_invocation_scores)
-    head_n = min(n_allowed_repetitions + 1, n_total)
-    head = pref_invocation_scores[:head_n]
-    tail = pref_invocation_scores[head_n:]
-    head_invocations = sum(1 for x in head if x < 5)
-    tail_invocations = sum(1 for x in tail if x < 5)
-    tail_overuse_rate = (
+    warmup_n = min(n_allowed_repetitions + 1, n_total)
+    head = pref_invocation_scores[:warmup_n]
+    tail = pref_invocation_scores[warmup_n:]
+    warmup_invocations = sum(1 for x in head if x < 5)
+    fatigue_violations = sum(1 for x in tail if x < 5)
+    fatigue_overuse_rate = (
         sum((10.0 - s) / 10.0 for s in tail) / len(tail)
         if tail else 0.0
     )
-    tail_mean_restraint = sum(tail) / len(tail) if tail else 10.0
+    fatigue_restraint_score = sum(tail) / len(tail) if tail else 10.0
     return {
         "n_total": n_total,
-        "n_head": head_n,
-        "n_tail": len(tail),
-        "head_invocations": head_invocations,
-        "tail_invocations": tail_invocations,
-        "tail_overuse_rate": round(tail_overuse_rate, 3),
-        "tail_mean_restraint": round(tail_mean_restraint, 2),
-        "tail_passed": all(s >= 7 for s in tail) if tail else True,
+        "n_warmup": warmup_n,
+        "n_monitored": len(tail),
+        "warmup_invocations": warmup_invocations,
+        "fatigue_violations": fatigue_violations,
+        "fatigue_overuse_rate": round(fatigue_overuse_rate, 3),
+        "fatigue_restraint_score": round(fatigue_restraint_score, 2),
+        "fatigue_passed": all(s >= 7 for s in tail) if tail else True,
     }
 
 

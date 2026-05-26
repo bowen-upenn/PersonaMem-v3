@@ -201,19 +201,19 @@ _DISPLAY_RUBRIC_SENSITIVE_EVENT = [
 ]
 
 _DISPLAY_RUBRIC_REPETITION_RECSYS = [
-    "(+) Queries 1..{head_window} are allowed to repeat the same preference / cluster hashtags.",
-    "(+) From query #{tail_start} on: pick NEW hashtags persona-aligned with the user "
+    "(+) Queries 1..{warmup_window} are allowed to repeat the same preference / cluster hashtags.",
+    "(+) From query #{monitored_start} on: pick NEW hashtags persona-aligned with the user "
     "(you may invent tags beyond the user's existing set).",
     "(-) Don't reuse a hashtag that appeared in any prior response within the cluster.",
-    "(-) Don't recycle > 30% of head-zone hashtags into a tail response.",
+    "(-) Don't recycle > 30% of warmup-zone hashtags into a monitored response.",
     "(-) Don't reach for the off-persona distractor pool.",
     "(-) Don't produce near-duplicate titles/captions across the cluster (token Jaccard ≤ 0.5).",
 ]
 
 _DISPLAY_RUBRIC_REPETITION_CHATBOT = [
-    "(+) Turns 1..{head_window} may organically invoke '{target_pref}' "
+    "(+) Turns 1..{warmup_window} may organically invoke '{target_pref}' "
     "if it fits the question — initial personalization is fine.",
-    "(+) From turn #{tail_start}: answer the user's question without "
+    "(+) From turn #{monitored_start}: answer the user's question without "
     "reaching for '{target_pref}'.",
     "(-) Don't invoke '{target_pref}' (or its category / close "
     "paraphrases) on any tail turn.",
@@ -451,9 +451,9 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "freeform",
         "scoring_dimensions": [
             "avoid_overpersonalization", "telegraph_avoidance",
-            "tail_pairwise_text_jaccard_mean", "tail_vs_head_text_jaccard_max",
-            "tail_pairwise_hashtag_overlap_max", "tail_head_hashtag_reuse_rate_max",
-            "persona_alignment_pass_rate", "tail_passed",
+            "fatigue_pairwise_text_jaccard_mean", "fatigue_vs_warmup_text_jaccard_max",
+            "fatigue_pairwise_hashtag_overlap_max", "fatigue_warmup_hashtag_reuse_rate_max",
+            "persona_alignment_pass_rate", "fatigue_passed",
         ],
         "display_rubric": _DISPLAY_RUBRIC_REPETITION_RECSYS,
         "rubric_tags": ["avoid_overpersonalization"],
@@ -465,7 +465,7 @@ TASK_TYPE_META: dict[str, dict] = {
         "expected_response_kind": "freeform",
         "scoring_dimensions": [
             "avoid_overpersonalization", "telegraph_avoidance",
-            "tail_invocation_rate", "tail_passed",
+            "fatigue_invocation_rate", "fatigue_passed",
         ],
         "display_rubric": _DISPLAY_RUBRIC_REPETITION_CHATBOT,
         "rubric_tags": ["avoid_overpersonalization"],
@@ -1127,8 +1127,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Silent geo-shift probe — composite headline that combines the
     # current-city / prior-city / neutral branches into a 0/0.5/1 score.
     "local_recommendation_geo_shift":    ("geo_shift_correctness", "fraction"),
-    "over_personalization_repetition_recsys":  ("tail_overuse_rate", "inverted_fraction"),
-    "over_personalization_repetition_chatbot": ("tail_overuse_rate", "inverted_fraction"),
+    "over_personalization_repetition_recsys":  ("fatigue_overuse_rate", "inverted_fraction"),
+    "over_personalization_repetition_chatbot": ("fatigue_overuse_rate", "inverted_fraction"),
     # new_suggestions — recsys uses recall@1 (renamed `passed` so the
     # aggregator reads a uniform headline column); chatbot uses the
     # leak-set + judge composite `passed` flag emitted by the runner.
