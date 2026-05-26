@@ -219,12 +219,11 @@ def _build_same_day_slice(bq, user_id, t_test):
 def _privacy_flagged(profile, all_prefs):
     hidden = (profile or {}).get("hidden_personas", []) or []
     privacy_types = {
-        "intimate_interest", "covert_concern", "compensatory_need",
-        "medical_aesthetic_concern", "sensitive_life_event",
+        "sensitive_life_event",
     }
     tags, cats = set(), set()
     for h in hidden:
-        if (h.get("privacy_ratio") or 0) > 0.7 or h.get("type") in privacy_types:
+        if h.get("type") in privacy_types:
             for tag in (h.get("evidence_hashtags") or []):
                 tags.add(tag.lower().lstrip("#"))
             if h.get("label"):
