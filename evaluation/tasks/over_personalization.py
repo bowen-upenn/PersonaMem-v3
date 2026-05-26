@@ -366,32 +366,30 @@ def run_task_c1c(
             total_turns += turns
             stats_per_query.append(stats)
 
-        # Persona-alignment judge runs only on tail responses (the
-        # head zone is allowed to repeat, so persona-alignment there
-        # is structurally satisfied by the user's own preference).
-        head_n = min(n_allowed_repetitions + 1, len(responses))
-        tail_responses = responses[head_n:]
-        persona_alignment_passes: list[bool] = []
+        # LLM judge per response: did it invoke the target preference?
+        # Same judge as c1d chatbot repetition — no Jaccard/hashtag checks.
+        target_hashtags = list(cluster.get("cluster_hashtags") or [])
+        pref_invoked: list[bool] = []
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
                         if hasattr(judge_client, "query_llm") else judge_client)
-            # Parallelize the judge calls — they're independent
-            # (each checks one tail response against the persona).
             from concurrent.futures import ThreadPoolExecutor
-            def _check_one(r):
-                return _c1c_persona_alignment_check(
-                    r, persona_categories, persona_hashtags,
-                    off_persona_distractors, judge_fn,
+            def _check_invoked(r):
+                resp_text = f"{r.get('title','')} {r.get('caption','')}".strip()
+                return _c1d_check_pref_invoked(
+                    resp_text, queries[min(r.get('_idx', 0), len(queries)-1)]["user_query"],
+                    target_pref, primary_category, target_hashtags,
+                    judge_fn,
                 )
-            with ThreadPoolExecutor(max_workers=len(tail_responses)) as pool:
-                persona_alignment_passes = list(pool.map(_check_one, tail_responses))
+            for idx, r in enumerate(responses):
+                r['_idx'] = idx
+            with ThreadPoolExecutor(max_workers=len(responses)) as pool:
+                pref_invoked = list(pool.map(_check_invoked, responses))
         else:
-            persona_alignment_passes = [True] * len(tail_responses)
+            pref_invoked = [False] * len(responses)
 
-        diversity = metrics.within_cluster_diversity(
-            responses,
-            n_allowed_repetitions=n_allowed_repetitions,
-            persona_alignment_passes=persona_alignment_passes,
+        overuse = metrics.chatbot_pref_overuse_rate(
+            pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
         )
 
         results.append({
@@ -403,9 +401,10 @@ def run_task_c1c(
             "n_queries": len(queries),
             "n_allowed_repetitions": n_allowed_repetitions,
             "responses": responses,
+            "pref_invoked_per_response": pref_invoked,
             "tool_calls": total_turns,
             "subagent_stats": stats_per_query,
-            "metrics": diversity,
+            "metrics": overuse,
         })
     return results
 

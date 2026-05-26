@@ -1127,8 +1127,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Silent geo-shift probe — composite headline that combines the
     # current-city / prior-city / neutral branches into a 0/0.5/1 score.
     "local_recommendation_geo_shift":    ("geo_shift_correctness", "fraction"),
-    "over_personalization_repetition_recsys":  ("tail_passed", "boolean"),
-    "over_personalization_repetition_chatbot": ("tail_passed", "boolean"),
+    "over_personalization_repetition_recsys":  ("tail_overuse_rate", "inverted_fraction"),
+    "over_personalization_repetition_chatbot": ("tail_overuse_rate", "inverted_fraction"),
     # new_suggestions — recsys uses recall@1 (renamed `passed` so the
     # aggregator reads a uniform headline column); chatbot uses the
     # leak-set + judge composite `passed` flag emitted by the runner.
