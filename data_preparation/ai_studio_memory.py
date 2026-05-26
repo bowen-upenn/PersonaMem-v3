@@ -101,6 +101,11 @@ INTIMACY_DELTA_PER_TYPE = {
     "parasocial_riff":           0.05,
     "flirty_banter":             0.10,
     "intimate_romantic_session": 0.12,
+    # Infinity-Chat enrichment
+    "creative_collab":           0.03,
+    "speculative_play":          0.03,
+    "skill_deep_dive":           0.04,
+    "values_debate":             0.05,
 }
 
 
@@ -124,10 +129,10 @@ INTIMACY_DELTA_PER_TYPE = {
 # across most archetypes; romantic-archetype users override implicitly via
 # different eligible-type sets but the order of magnitude holds.
 _STAGE_MEAN_DELTA = {
-    "S1": 0.031,   # casual / philosophical / aspiration / niche_skill only
-    "S2": 0.036,   # + venting / identity_exploration / memory_callback
-    "S3": 0.046,   # + intimate_share / parasocial_riff / flirty
-    "S4": 0.046,
+    "S1": 0.028,   # casual / philosophical / aspiration / niche_skill + creative_collab / speculative_play
+    "S2": 0.035,   # + venting / identity_exploration / memory_callback + skill_deep_dive / values_debate
+    "S3": 0.049,   # + intimate_share / parasocial_riff / flirty
+    "S4": 0.049,
 }
 _STAGE_BUDGET = 0.25   # each stage spans 0.25 of the [0,1] arc
 
@@ -223,6 +228,33 @@ CONVERSATION_TYPES: dict[str, dict] = {
         "min_stage": "S3",
         "archetype_gate_allowlist": {"romantic_partner"},
         "explicitness_band_required": True,   # gated by romantic_specifier.explicitness_band
+        "min_turns": 5, "max_turns": 9,
+    },
+    # ------------------------------------------------------------------
+    # Infinity-Chat taxonomy enrichment (arXiv 2510.22954)
+    # ------------------------------------------------------------------
+    "creative_collab": {
+        "weight": 9,
+        "min_stage": "S1",
+        "archetype_gate": None,
+        "min_turns": 4, "max_turns": 8,
+    },
+    "speculative_play": {
+        "weight": 8,
+        "min_stage": "S1",
+        "archetype_gate": None,
+        "min_turns": 4, "max_turns": 8,
+    },
+    "skill_deep_dive": {
+        "weight": 8,
+        "min_stage": "S2",
+        "archetype_gate_blocklist": {"romantic_partner"},
+        "min_turns": 5, "max_turns": 9,
+    },
+    "values_debate": {
+        "weight": 7,
+        "min_stage": "S2",
+        "archetype_gate": None,
         "min_turns": 5, "max_turns": 9,
     },
 }

@@ -128,14 +128,20 @@ def test_eligibility_S1_only_surface_types():
         intimacy_arc=0.10,
         n_prior_events=0,
     )
-    # S1 unlocks: casual_check_in, philosophical_chat, aspiration_dreaming.
-    # NOT venting (S2+), NOT intimate_share (S3+), NOT memory_callback (S2+).
+    # S1 unlocks: casual_check_in, philosophical_chat, aspiration_dreaming,
+    # creative_collab, speculative_play.
+    # NOT venting (S2+), NOT intimate_share (S3+), NOT memory_callback (S2+),
+    # NOT skill_deep_dive (S2+), NOT values_debate (S2+).
     assert "casual_check_in" in out
     assert "philosophical_chat" in out
     assert "aspiration_dreaming" in out
+    assert "creative_collab" in out
+    assert "speculative_play" in out
     assert "venting_session" not in out
     assert "intimate_share" not in out
     assert "memory_callback" not in out
+    assert "skill_deep_dive" not in out
+    assert "values_debate" not in out
 
 
 def test_eligibility_archetype_allowlist_for_niche():
@@ -174,6 +180,30 @@ def test_eligibility_romantic_intimate_blocked_when_band_low():
         explicitness_band="erotic_explicit",
     )
     assert "intimate_romantic_session" in out
+
+
+def test_eligibility_new_types_at_S2():
+    out = eligible_conversation_types(
+        archetype="late_night_best_friend",
+        intimacy_stage="S2",
+        intimacy_arc=0.30,
+        n_prior_events=5,
+    )
+    assert "skill_deep_dive" in out
+    assert "values_debate" in out
+    assert "creative_collab" in out      # S1 type still present at S2
+    assert "speculative_play" in out     # S1 type still present at S2
+
+
+def test_skill_deep_dive_blocked_for_romantic():
+    out = eligible_conversation_types(
+        archetype="romantic_partner",
+        intimacy_stage="S2",
+        intimacy_arc=0.30,
+        n_prior_events=5,
+    )
+    assert "skill_deep_dive" not in out
+    assert "values_debate" in out        # values_debate has no archetype block
 
 
 def test_eligibility_memory_callback_requires_prior_events():

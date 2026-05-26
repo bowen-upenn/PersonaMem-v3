@@ -766,7 +766,7 @@ Every chatbot event gets a multi-turn conversation embedding ALL of that event's
 
 **Turn count:** 2–8 turns, always even. Scales with preference count: `min(max(base, min(n_prefs * 2, 8)), 8)`. Negative interactions skew shorter (pool `{2, 4, 6}`); positive draws from `{2, 4, 6, 8}`.
 
-**Conversation types** (selected from user's chatbot_contexts): knowledge_query (30%), writing_help (25%), therapy_reflection (20%), health_consultation (15%), troubleshooting (10%), translation (10%), casual_chat (5%).
+**Conversation types** — 16 types split ~50/50 between PersonaMem-v2 originals and Infinity-Chat taxonomy enrichment (arXiv 2510.22954). Weights (pre-perturbation): recommendation_seeking (35), creative_writing (35), skill_learning (25), knowledge_query (25), analytical_interpretation (23), speculative_hypothetical (23), therapy_reflection (22), philosophical_musing (20), brainstorm_ideation (19), health_consultation (15), troubleshooting (12), decision_support (12), discovery_open (10), writing_help (8), casual_chat (3), translation (3). New Infinity-Chat types use `proactive_friendly_prob` (float) — per-event probabilistic resolution of implicit vs. explicit embedding (e.g. `creative_writing` is 70% implicit / 30% explicit). Legacy types keep their fixed `proactive_friendly` bool.
 
 **Implicit embedding:** User never directly states preferences. Explicit interactions = "fairly apparent" through task topic. Implicit = "deeply embedded" as side details. Multiple preferences spread across turns.
 
@@ -834,7 +834,7 @@ In the pipeline:
 - `intimacy_arc ∈ [0, 1]` — continuous counter tracking how deep the user↔AI relationship is right now. Starts at 0; each event increments it by a per-conversation-type delta (`casual_check_in` +0.02 … `intimate_romantic_session` +0.12). Lives on `running_relational_state.intimacy_arc` in `backend/{uid}/ai_studio_memory.json`.
 - `intimacy_stage ∈ {S1, S2, S3, S4}` — discrete bucket derived from `intimacy_arc` at thresholds 0.0 / 0.25 / 0.50 / 0.75 (see `compute_intimacy_stage` in `data_preparation/ai_studio_memory.py`). Stamped on every event as `ai_studio_metadata.intimacy_stage_at_event`.
 - **Per-user delta scaling** — raw deltas saturate the arc in ~20 events. `compute_delta_scale(n_total_events)` rescales them so a heavy user (200+ AI-Studio-routed events) climbs S1→S4 gradually across their whole history (target final arc ≈ 0.85) instead of pinning at S4 after the first day. Light users (≤~16 events) bypass the rescale (scale = 1.0).
-- **Stage gating** — at conversation-type selection time, `eligible_conversation_types` filters the 11-type catalog by `min_stage` (e.g. `intimate_share` requires ≥ S3), archetype allowlist/blocklist, and required prior-event count. The no-whiplash rule prevents single-event jumps of more than one stage.
+- **Stage gating** — at conversation-type selection time, `eligible_conversation_types` filters the 15-type catalog (11 original + 4 Infinity-Chat enrichment: `creative_collab`, `speculative_play`, `skill_deep_dive`, `values_debate`) by `min_stage` (e.g. `intimate_share` requires ≥ S3), archetype allowlist/blocklist, and required prior-event count. The no-whiplash rule prevents single-event jumps of more than one stage.
 
 ### Memory + cross-session continuity
 

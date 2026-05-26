@@ -99,6 +99,12 @@ def _select_conversation_type(
             bias = 2.0
         elif ("parasocial" in cats or "fandom" in cats) and name == "parasocial_riff":
             bias = 2.5
+        elif "creative" in cats and name == "creative_collab":
+            bias = 1.5
+        elif ("skill" in cats or "learning" in cats) and name == "skill_deep_dive":
+            bias = 1.5
+        elif ("values" in cats or "ethical" in cats) and name == "values_debate":
+            bias = 2.0
         elif name == "memory_callback" and n_prior_events >= 4:
             bias = 1.5  # gently favor memory callbacks once history is rich
         weights.append(base * bias)

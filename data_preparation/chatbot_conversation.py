@@ -259,6 +259,157 @@ CHATBOT_CONVERSATION_TYPES: dict[str, dict] = {
         "weight": 10.0,
         "proactive_friendly": True,
     },
+    # ------------------------------------------------------------------
+    # Infinity-Chat taxonomy enrichment (arXiv 2510.22954)
+    # New types use `proactive_friendly_prob` (float) — probability that
+    # a given instance is explicit/proactive. Resolved per-event via RNG.
+    # ------------------------------------------------------------------
+    "creative_writing": {
+        "description": "User asks the chatbot to create an original piece of writing — a short story, "
+                       "poem, song lyrics, script snippet, joke, worldbuilding sketch, or genre fiction "
+                       "scene. Unlike writing_help (which is about editing existing drafts), this is about "
+                       "generation from scratch. The preference is embedded in WHAT the user asks to be "
+                       "created — the setting, genre, mood, characters, or subject matter reveals their "
+                       "interests without direct statement. For example, a user into bouldering might ask "
+                       "'write me a short campfire story about someone stranded on a cliff face' — the "
+                       "climbing context is the preference, the creative request is the task.",
+        "compatible_contexts": [
+            "composing social media posts",
+            "composing chat messages",
+            "knowledge exploration",
+        ],
+        "compatible_use_purposes": [
+            "draft messages or captions",
+            "work through ideas",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "design and business help",
+        ],
+        "weight": 35.0,
+        "proactive_friendly_prob": 0.30,
+    },
+    "speculative_hypothetical": {
+        "description": "User poses a 'what if' or hypothetical scenario and asks the chatbot to reason "
+                       "through it. The preference is embedded in WHICH hypothetical the user chooses to "
+                       "explore — the domain, the framing, the stakes reveal what they care about. For "
+                       "example, a user into urban farming might ask 'what would happen to food prices "
+                       "if every rooftop in NYC had a garden?' — the urban-farming interest is the "
+                       "backdrop, the speculative analysis is the task. The user is NOT asking for "
+                       "real-world advice; they want the thought experiment itself.",
+        "compatible_contexts": [
+            "knowledge exploration",
+        ],
+        "compatible_use_purposes": [
+            "work through ideas",
+            "ask practical questions",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+        ],
+        "weight": 23.0,
+        "proactive_friendly_prob": 0.70,
+    },
+    "skill_learning": {
+        "description": "User asks the chatbot to teach them something specific — a technique, a how-to, "
+                       "a step-by-step breakdown of a skill they want to acquire or improve. Unlike "
+                       "knowledge_query (which asks factual or conceptual questions), skill_learning is "
+                       "about DOING: 'how do I get better at X', 'walk me through Y step by step', "
+                       "'what's the right form for Z'. The preference is embedded in WHICH skill the "
+                       "user wants to learn — the domain reveals their interests. For example, a user "
+                       "into sourdough baking might ask 'walk me through shaping a high-hydration boule "
+                       "— I keep getting flat loaves' — the baking interest is the backdrop, the skill "
+                       "instruction is the task.",
+        "compatible_contexts": [
+            "knowledge exploration",
+            "medical consultations",
+        ],
+        "compatible_use_purposes": [
+            "ask practical questions",
+            "work through ideas",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "fitness and training",
+            "design and business help",
+        ],
+        "weight": 25.0,
+        "proactive_friendly_prob": 0.70,
+    },
+    "brainstorm_ideation": {
+        "description": "User asks the chatbot to brainstorm ideas — names for a project, gift ideas, "
+                       "weekend plans, business concepts, creative directions, content ideas. The user "
+                       "wants QUANTITY and VARIETY, not a single answer. Personalization matters because "
+                       "the best brainstorm reflects what THIS user is into. The preference surfaces "
+                       "through which ideas land and which the user engages with. For example, a user "
+                       "into vintage cars might say 'I need 5 date ideas for this Saturday — budget is "
+                       "medium' and the best answers skew toward car shows, scenic drives, garage cafes. "
+                       "The user is NOT asking to compose a text or edit a draft — they want a list of ideas.",
+        "compatible_contexts": [
+            "knowledge exploration",
+            "composing social media posts",
+            "composing chat messages",
+            "therapy and reflection",
+        ],
+        "compatible_use_purposes": [
+            "work through ideas",
+            "ask practical questions",
+            "draft messages or captions",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "fitness and training",
+            "relationship or life reflection",
+            "design and business help",
+        ],
+        "weight": 19.0,
+        "proactive_friendly_prob": 0.70,
+    },
+    "analytical_interpretation": {
+        "description": "User asks the chatbot to analyze, compare, interpret, or break down something — "
+                       "a trend, a text, a dataset, a cultural phenomenon, a historical pattern, a piece "
+                       "of media. The user wants UNDERSTANDING, not a recommendation or a solution. The "
+                       "preference is embedded in WHAT the user chooses to analyze — the domain reveals "
+                       "their interests. For example, a user into hip-hop might ask 'why did drill music "
+                       "blow up in Brooklyn but not the West Coast?' — the music interest is the "
+                       "backdrop, the analytical question is the task.",
+        "compatible_contexts": [
+            "knowledge exploration",
+        ],
+        "compatible_use_purposes": [
+            "work through ideas",
+            "ask practical questions",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "design and business help",
+        ],
+        "weight": 23.0,
+        "proactive_friendly_prob": 0.70,
+    },
+    "philosophical_musing": {
+        "description": "User poses an abstract, philosophical, or value-laden question — meaning of life, "
+                       "ethics, aesthetics, the nature of some concept. The preference is embedded in WHICH "
+                       "philosophical territory the user gravitates toward and the specific angles they "
+                       "take. For example, a user into martial arts might ask 'is discipline just another "
+                       "word for self-repression, or is there a real difference?' — the martial-arts-"
+                       "discipline connection is the backdrop, the philosophical question is the task. "
+                       "The chatbot should engage thoughtfully, not lecture.",
+        "compatible_contexts": [
+            "knowledge exploration",
+            "therapy and reflection",
+        ],
+        "compatible_use_purposes": [
+            "work through ideas",
+            "reflect privately",
+        ],
+        "compatible_topical_focus": [
+            "knowledge exploration",
+            "relationship or life reflection",
+        ],
+        "weight": 20.0,
+        "proactive_friendly_prob": 0.70,
+    },
 }
 
 # Fraction of ALL chatbot conversations (any polarity) that get either an
@@ -333,6 +484,22 @@ def select_conversation_type(
     names = [e[0] for e in eligible]
     weights = _perturb_weights([e[1] for e in eligible], rng)
     return rng.choices(names, weights=weights, k=1)[0]
+
+
+def resolve_proactive_friendly(conv_type: str, rng: random.Random) -> bool:
+    """Resolve the proactive_friendly flag for *conv_type*.
+
+    Legacy types carry a fixed ``proactive_friendly`` bool.  Infinity-Chat
+    types carry ``proactive_friendly_prob`` (float) — the probability that
+    this particular conversation instance is explicit/proactive.  The RNG
+    roll happens once per event at generation time; the resolved value is
+    stored on the event record and consumed by the prompt and eval harness.
+    """
+    spec = CHATBOT_CONVERSATION_TYPES.get(conv_type, {})
+    prob = spec.get("proactive_friendly_prob")
+    if prob is not None:
+        return rng.random() < prob
+    return bool(spec.get("proactive_friendly", False))
 
 
 def select_num_turns(interaction_type: str, rng: random.Random) -> int:
@@ -464,6 +631,8 @@ def generate_chatbot_conversations(
             user_use_purposes=user_use_purposes,
             user_topical_focus=user_topical_focus,
         )
+        pf_resolved = resolve_proactive_friendly(conv_type, rng)
+        rec["proactive_friendly"] = pf_resolved
         variant: str | None = pick_conversation_variant(interaction_type, rng)
 
         # Pick the "primary" preference that the variant acts on.
@@ -531,9 +700,7 @@ def generate_chatbot_conversations(
                 user_profile=user_profile, chatbot_persona=chatbot_persona,
                 interaction_type=interaction_type, num_turns=num_turns,
                 user_voice=user_voice,
-                proactive_friendly=bool(
-                    CHATBOT_CONVERSATION_TYPES[conv_type].get("proactive_friendly", False)
-                ),
+                proactive_friendly=pf_resolved,
             )
 
         work_items.append((i, prompt, conv_type, variant))
@@ -593,23 +760,12 @@ def generate_chatbot_conversations(
     # flagship `llm_query_fn` so single-tier callers still work.
     voice_judge_fn = mini_query_fn or llm_query_fn
 
-    # Conversation types where the user pastes a draft (email, caption,
-    # cover letter, message) and asks for editorial help. The pasted
-    # draft must ALSO carry the user's voice — it's the strongest
-    # implicit-pref signal the AI under eval will read. See
-    # CHATBOT_CONVERSATION_TYPES; embedded types are the ones with
-    # `proactive_friendly: False`.
-    _embedded_conv_types = {
-        ct for ct, meta in CHATBOT_CONVERSATION_TYPES.items()
-        if not meta.get("proactive_friendly", True)
-    }
-
     def _call_llm_with_retry(item):
         idx, prompt, conv_type, variant = item
         n_prefs = len((chatbot_records[idx].get("preferences") or []))
         last_judgment: dict | None = None
         last_parsed: list | None = None
-        is_embedded = conv_type in _embedded_conv_types
+        is_embedded = not chatbot_records[idx].get("proactive_friendly", True)
         surface_label = (
             "chatbot conversation user turns + pasted drafts"
             if is_embedded else "chatbot conversation user turns"

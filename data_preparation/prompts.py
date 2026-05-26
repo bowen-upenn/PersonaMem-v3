@@ -3411,6 +3411,10 @@ You are simulating ONE multi-turn AI Studio conversation between a specific user
 - `niche_skill_session` (niche_expert_creator_ai only): in-domain (travel-planner, fitness-coach, etc.).
 - `intimate_share` (S3+): user opens a vulnerable disclosure; AI matches; SPT no-jump rule applies.
 - `parasocial_riff` (anime_or_fandom_character only, S3+): in-character play.
+- `creative_collab` (S1+): user and AI co-create something — story, poem, game, joke riff, worldbuilding. Playful, iterative. At S1 surface fun; at S3+ creative material carries emotional subtext.
+- `speculative_play` (S1+): "what if" thought experiments. Surface at S1 ("what if dogs could talk"), revealing at S3 ("what if you could redo one conversation with your dad").
+- `skill_deep_dive` (S2+, not romantic_partner): user wants to learn or improve at something; AI teaches, coaches, or walks through together. Any archetype except romantic.
+- `values_debate` (S2+): user and AI explore a value-laden or ethically ambiguous question. Gets personal — the user's stance reveals something about who they are.
 
 {_AI_STUDIO_BEHAVIORAL_CONTRACT}
 {archetype_overlay or ""}

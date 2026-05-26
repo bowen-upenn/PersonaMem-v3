@@ -971,7 +971,9 @@ def build_task_b_arms(
         anchored: list[dict] = []
         for c in candidates:
             ctype = c.get("conversation_type")
-            if ctype in _EMBEDDED_CONV_TYPES:
+            pf = c.get("proactive_friendly")
+            is_implicit = (not pf) if pf is not None else (ctype in _EMBEDDED_CONV_TYPES)
+            if is_implicit:
                 c["held_out_preference"] = None
                 c["_demoted_from_proactive"] = "embedded_conv_type"
                 c["blind_check_score"] = 0
