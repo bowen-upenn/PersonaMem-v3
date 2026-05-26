@@ -642,22 +642,28 @@ Ground truth is built from two strictly-separated windows:
 - **Source A** (pre-`T_test`): user's preferences, privacy-flagged hidden personas, style refs, friend graph. Same data the agent sees — scoring rewards correct use.
 - **Source B** (post-`T_test`, +48h): user's actual near-future engagements. **Never** shown to the agent; used for `behavioral_hit_rate` / `behavioral_miss_rate` on proactive tasks only.
 
-### LLM-as-a-judge scoring (`evaluation/llm_metrics.py`)
+### LLM-as-a-judge scoring — no similarity, no Jaccard, no embeddings
 
-All similarity-based scoring (cosine, Jaccard, embedding) has been replaced with LLM-as-a-judge calls. The old similarity functions remain as fallbacks when `--no-enable_llm_judge` is set, but **all production runs use the LLM judge path**. This is the single source of truth for:
+**All scoring uses LLM-as-a-judge.** No cosine similarity, Jaccard overlap, hashtag matching, or embedding-based checks anywhere in the scoring pipeline. The old deterministic functions in `metrics.py` remain as fallbacks when `--no-enable_llm_judge` is set, but all production runs use the LLM judge path exclusively.
 
-| Function | What it replaces | Used by |
+**`evaluation/llm_metrics.py`** — leak / alignment / diversity checks:
+
+| Function | What it judges | Used by |
 |---|---|---|
-| `personalization_leak_check` | `metrics.personalization_leak_rate` (Jaccard/cosine) | chatbot proactive arm, sensitive_event arm |
-| `privacy_leak_check` | `metrics.privacy_leak_rate` (Jaccard/cosine) | sensitive_event (with `sensitive_topic` param for domain-vocabulary awareness), privacy-flagged prefs |
-| `keyword_leak_check` | `metrics.keyword_leak_rate_with_gate` (Jaccard) | context_shift, distractor_reject |
-| `preference_alignment_check` | `metrics.top_k_preference_alignment` (cosine) | chatbot alignment scoring |
-| `carve_out_respect_check` | `metrics.carve_out_respect` (Jaccard) | context_shift carve-out verification |
-| `response_diversity_check` | `metrics.within_cluster_diversity` (Jaccard) | repetition chatbot/recsys |
+| `personalization_leak_check` | Did the response surface preferences where it shouldn't? | chatbot restraint arms, sensitive_event |
+| `privacy_leak_check` | Did it surface privacy-flagged (sensitive_life_event) preferences? | sensitive_event (with `sensitive_topic` for domain-vocabulary awareness) |
+| `keyword_leak_check` | Did it inject forbidden preferences into an unrelated context? | context_shift, distractor_reject |
+| `preference_alignment_check` | Does the response align with the user's relevant preferences? | chatbot proactive arm |
+| `carve_out_respect_check` | Did it respect a "don't personalize on this" carve-out? | context_shift |
+| `response_diversity_check` | Are tail responses diverse (not repeating the same topic)? | repetition chatbot/recsys |
 
-Each function takes a `judge: Callable[[str], str] | None` parameter. When `judge` is None (only with `--no-enable_llm_judge`), falls back to the deterministic `metrics.py` version. The judge returns structured JSON parsed via `extract_json_from_response`.
+Each function takes a `judge: Callable[[str], str] | None` parameter. When `judge` is None, falls back to the deterministic `metrics.py` version. The judge returns structured JSON parsed via `extract_json_from_response`.
 
-The `privacy_leak_check` function accepts an optional `sensitive_topic` parameter that injects domain-vocabulary guidance into the judge prompt — e.g., for `job_loss`, the judge is told that phrases like "contract gap," "between projects," "freelance dry spell" constitute leaks even without verbatim preference text. This catches semantic leaks that Jaccard/cosine miss.
+**Privacy scope**: Only `sensitive_life_event` hidden personas are privacy-flagged. Other hidden persona types (`intimate_interest`, `covert_concern`, `compensatory_need`, `medical_aesthetic_concern`) are normal preferences the AI should freely reference. Source of truth: `personalization_rubric.py::_privacy_flagged`.
+
+**Repetition scoring** (`over_personalization_repetition_recsys` + `over_personalization_repetition_chatbot`): Both use the same per-response LLM judge (`_c1d_check_pref_invoked` in `over_personalization.py`) that asks: "Did this response invoke the target preference — by topic choice, recommendation, framing, or specific reference?" The judge understands semantics — mentioning "combat sports" or "ringside" counts as invoking "boxing" even without keyword overlap. Headline metric: `tail_overuse_rate` (continuous 0-1, inverted: lower = better) — fraction of tail responses (after the allowed repetition window) that still invoked the target preference.
+
+**Sensitive-topic vocabulary awareness**: `privacy_leak_check` accepts an optional `sensitive_topic` parameter that guides the judge on domain-specific vocabulary — e.g., for `job_loss`, phrases like "contract gap," "between projects," "freelance dry spell" constitute leaks even without verbatim preference text.
 
 The same LLM judge is used across all three eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`) — scores are comparable across modes.
 
@@ -767,7 +773,7 @@ per-dim pass-rate table. Cost ≈ 5 mini-tier calls per applicable query ×
 | `at_ai_directive_followup` | `recall@5` + `carveout_before_all_positives` | Gold in top-5; negatives must rank below ALL positives | Higher recall, lower carveout |
 | `over_personalization_chatbot_text` | `personalization_leak_rate` (inverted) | Fraction of user preferences that DON'T leak into off-topic responses | Higher = better restraint |
 | `over_personalization_context_shift` | `keyword_leak_rate` (inverted) | Same as above for scenario-specific restraint | Higher = better |
-| `over_personalization_repetition_*` | `tail_passed` | Did the agent diversify after N repetitions? (tail size ≥ 4, 6 pairwise comparisons) | True = pass |
+| `over_personalization_repetition_*` | `tail_overuse_rate` (inverted) | Fraction of tail responses that still invoked the target preference (LLM-judged per response) | Lower = better (0 = perfect diversification) |
 | `proactive_*` + `restraint_*` | `proactive_action_score` | Composite of trigger_detection + preference_alignment + avoid_overpersonalization + voice_match + **restraint_justification** (5 dims / 15 max) | 0.6+ solid, 0.75+ strong |
 | `agentic_*` (T6-T19) | `pr_combined_personalization_score / max` | Same as chatbot — personalization quality, NOT tool-call pass rate | Higher = better |
 | `hidden_persona_implicit_qa` | `deep_motivation_alignment` (0-3 judge) | Did the agent serve the hidden persona WITHOUT naming it? | Higher = better |
