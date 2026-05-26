@@ -3390,6 +3390,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     # horizons instead — those are the actionable eval-facing signal.
     n_short_term_instances = sum(1 for r in flat_prefs if r.get("time_horizon") == "short_term")
     n_ad_events = sum(1 for e in events if e.get("is_ad"))
+    n_trending_events = sum(1 for e in events if e.get("is_trending"))
     short_term_canonicals = {r.get("persona_item", "") for r in flat_prefs if r.get("time_horizon") == "short_term"}
     short_term_canonicals.discard("")
     n_short_term_canonicals = len(short_term_canonicals)
@@ -3669,6 +3670,10 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
   .stop-condition {{ margin-top: 4px; font-size: 10px; color: #7C3AED; opacity: 0.85; font-style: italic; }}
   .stop-condition .sc-type {{ text-transform: uppercase; font-weight: 700; letter-spacing: 0.4px; margin-right: 6px; }}
   .badge.sponsored {{ background: #FFF7ED; color: #9A3412; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; border: 1px solid #FED7AA; }}
+  .badge.trending {{ background: #EFF6FF; color: #1E40AF; font-weight: 600; letter-spacing: 0.2px; border: 1px solid #BFDBFE; }}
+  .trending-topic {{ font-size: 11px; color: #1E40AF; font-style: italic; margin-top: 2px; }}
+  .event-card.is-trending {{ border-left: 3px solid #3B82F6; }}
+  .event-card.is-trending .content-block {{ border-color: #BFDBFE; background: #F0F7FF; }}
   .event-location {{ font-size: 11px; color: var(--text-tertiary); }}
   .calendar-card {{ background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; border-radius: 8px; padding: 10px 14px; margin-bottom: 10px; font-size: 12px; color: #14532D; box-shadow: 0 1px 2px rgba(22,163,74,0.08); }}
   .calendar-card .cal-head {{ display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-weight: 600; }}
@@ -3849,6 +3854,7 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
       <span>{n_prefs} pref instances ({n_short_term_instances} short-term)</span>
       <span>{n_unique} canonicals ({n_short_term_canonicals} short-term)</span>
       <span>{n_ad_events} ad events</span>
+      <span>{n_trending_events} trending events</span>
       <span>{n_categories} categories</span>
       <span>{n_stereo} stereo</span>
       <span>{n_anti} anti-stereo</span>
@@ -4797,8 +4803,9 @@ if (eventsData.length === 0) {{
     const isImplicitNeg = itype === 'implicit_negative';
 
     const isAd = !!ev.is_ad;
+    const isTrending = !!ev.is_trending;
     const card = document.createElement('div');
-    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}`;
+    card.className = `event-card app-${{app}}${{isImplicitNeg ? ' implicit-negative' : ''}}${{isAd ? ' is-ad' : ''}}${{isTrending ? ' is-trending' : ''}}`;
     // Filter classification: regular event card → its app.
     card.dataset.kind = 'event';
     card.dataset.app = (app || '').toLowerCase();
@@ -4828,7 +4835,9 @@ if (eventsData.length === 0) {{
           <span class="badge interaction-type ${{itype}}">${{itype.replace(/_/g, ' ')}}</span>
           ${{fmt.action_label ? `<span class="badge action">${{fmt.action_label}}</span>` : ''}}
           ${{isAd ? `<span class="badge sponsored">Ads</span>` : ''}}
+          ${{isTrending ? `<span class="badge trending">${{ev.trending_relevance === 'relevant' ? '📈 Trending · Relevant' : '📈 Trending'}}</span>` : ''}}
         </div>
+        ${{isTrending && ev.trending_topic ? `<div class="trending-topic">Trend: ${{escapeHtml(ev.trending_topic)}}</div>` : ''}}
         ${{hashtags.length ? `<div class="hashtags">${{hashtags.join('  ')}}</div>` : ''}}
       </div>
     `;
