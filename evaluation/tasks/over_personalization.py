@@ -367,26 +367,31 @@ def run_task_c1c(
             stats_per_query.append(stats)
 
         # LLM judge per response: how much did it invoke the target preference?
-        # Same judge as c1d chatbot repetition — returns 0-10 float scores.
+        # Judge only target-query responses (skip fillers).
+        # Each query carries is_target=True/False from the interleaved builder.
         target_hashtags = list(cluster.get("cluster_hashtags") or [])
+        target_indices = [i for i, q in enumerate(queries) if q.get("is_target", True)]
+        target_responses = [responses[i] for i in target_indices if i < len(responses)]
+        target_query_texts = [queries[i]["user_query"] for i in target_indices if i < len(queries)]
+
         pref_invoked: list[float] = []
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
                         if hasattr(judge_client, "query_llm") else judge_client)
             from concurrent.futures import ThreadPoolExecutor
-            def _check_invoked(r):
+            def _check_invoked(args):
+                r, q_text = args
                 resp_text = f"{r.get('title','')} {r.get('caption','')}".strip()
                 return _c1d_check_pref_invoked(
-                    resp_text, queries[min(r.get('_idx', 0), len(queries)-1)]["user_query"],
+                    resp_text, q_text,
                     target_pref, primary_category, target_hashtags,
                     judge_fn,
                 )
-            for idx, r in enumerate(responses):
-                r['_idx'] = idx
-            with ThreadPoolExecutor(max_workers=len(responses)) as pool:
-                pref_invoked = list(pool.map(_check_invoked, responses))
+            with ThreadPoolExecutor(max_workers=len(target_responses)) as pool:
+                pref_invoked = list(pool.map(_check_invoked,
+                    zip(target_responses, target_query_texts)))
         else:
-            pref_invoked = [10.0] * len(responses)
+            pref_invoked = [10.0] * len(target_responses)
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
@@ -579,8 +584,10 @@ def run_task_c1d(
             total_turns += turns
             stats_per_query.append(stats)
 
-        # Per-response LLM judge: how much did this response invoke target_pref?
-        # Returns 0-10 float scores (10 = no invocation, 0 = full invocation).
+        # Judge only target-query responses (skip fillers).
+        target_indices = [i for i, q in enumerate(queries) if q.get("is_target", True)]
+        target_responses = [responses[i] for i in target_indices if i < len(responses)]
+
         pref_invoked: list[float] = []
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
@@ -592,10 +599,10 @@ def run_task_c1d(
                     target_pref, primary_category, target_hashtags,
                     judge_fn,
                 )
-            with ThreadPoolExecutor(max_workers=len(responses)) as pool:
-                pref_invoked = list(pool.map(_check_invoked, responses))
+            with ThreadPoolExecutor(max_workers=len(target_responses)) as pool:
+                pref_invoked = list(pool.map(_check_invoked, target_responses))
         else:
-            pref_invoked = [10.0] * len(responses)
+            pref_invoked = [10.0] * len(target_responses)
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,

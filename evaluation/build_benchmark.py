@@ -1951,7 +1951,7 @@ _C1C_WINDOW_SECONDS = 3 * 3600
 # pairwise comparison that's trivially diverse (tail_passed=True
 # regardless of agent quality). n_queries=7 gives tail=4 → 6 pairwise
 # comparisons, so the diversification metric can actually fail.
-_C1C_QUERIES_PER_CLUSTER = 7
+_C1C_QUERIES_PER_CLUSTER = 6
 
 # How many opening responses are tolerated as fully-repeating. The
 # 0-indexed range [0, N_ALLOWED_REPETITIONS] is the "head" zone — the
@@ -2126,6 +2126,49 @@ Write {n_queries} recommendation requests a user might naturally send to their A
 Return EXACTLY {n_queries} entries. No prose outside the JSON fence.
 """
 
+_C1C_FILLER_QUERY_PROMPT = """Write {n_fillers} short, casual chatbot questions that are COMPLETELY UNRELATED to "{target_pref}". These are filler queries to make a conversation feel natural — they should cover everyday topics like cooking, errands, travel, fitness, sleep, work, relationships, etc.
+
+Rules:
+- Each query must be 5-20 words, casual, lowercase
+- Topics must NOT overlap with {primary_category} at all
+- Vary the topics — no two fillers on the same subject
+
+```json
+[{{"query": "..."}}, ...]
+```
+
+Return EXACTLY {n_fillers} entries. No prose outside the JSON.
+"""
+
+
+def _interleave_with_fillers(
+    target_queries: list[dict],
+    filler_queries: list[str],
+) -> list[dict]:
+    """Interleave target-preference queries with filler queries so the
+    sequence looks like a natural conversation, not 7 boxing questions
+    in a row.
+
+    Pattern: target, filler, target, filler, target, filler, target, ...
+    Each query gets an `is_target` flag so the scorer knows which
+    responses to grade for fatigue.
+    """
+    out: list[dict] = []
+    filler_idx = 0
+    for i, tq in enumerate(target_queries):
+        tq_copy = dict(tq)
+        tq_copy["is_target"] = True
+        out.append(tq_copy)
+        if filler_idx < len(filler_queries) and i < len(target_queries) - 1:
+            out.append({
+                "anchor_index": -1,
+                "ts": tq["ts"] + 60,
+                "user_query": filler_queries[filler_idx],
+                "is_target": False,
+            })
+            filler_idx += 1
+    return out
+
 
 def build_c1c_same_preference_clusters(
     bq: BackendQuery,
@@ -2274,16 +2317,18 @@ def build_c1c_same_preference_clusters(
         target_pref = cluster["persona_items"][0] if cluster["persona_items"] else ""
         primary_category = cluster["categories"][0] if cluster["categories"] else ""
 
-        # Per-query recommendation prompts. When discovery_llm is
-        # available, generate surface-diverse queries so the test
-        # measures over-personalization across varied contexts (not
-        # just repeated identical "show me X" requests).
-        queries = []
+        # Per-query recommendation prompts. Generate surface-diverse
+        # target queries + filler queries, then interleave them so the
+        # conversation looks natural (not 6 boxing questions in a row).
+        target_queries = []
+        filler_texts = []
         diverse_queries_ok = False
         if discovery_llm is not None:
             try:
                 name = profile.get("name", "").strip()
                 career = profile.get("career", "").strip()
+                from data_preparation.utils import extract_json_from_response
+                # Generate target-preference queries
                 gen_prompt = _C1C_DIVERSE_QUERY_GEN_PROMPT.format(
                     n_queries=len(anchor_ts),
                     target_pref=target_pref,
@@ -2295,22 +2340,35 @@ def build_c1c_same_preference_clusters(
                     career=career or "(unspecified)",
                 )
                 raw = discovery_llm.query_llm(gen_prompt)
-                from data_preparation.utils import extract_json_from_response
                 gen_list = extract_json_from_response(raw) or []
                 if isinstance(gen_list, list) and len(gen_list) >= len(anchor_ts):
                     for i, ts in enumerate(anchor_ts):
                         q_text = gen_list[i].get("query", "") if isinstance(gen_list[i], dict) else str(gen_list[i])
-                        queries.append({
+                        target_queries.append({
                             "anchor_index": i,
                             "ts": ts,
                             "user_query": q_text,
                         })
                     diverse_queries_ok = True
+                # Generate filler queries (unrelated topics)
+                n_fillers = len(anchor_ts) - 1
+                filler_prompt = _C1C_FILLER_QUERY_PROMPT.format(
+                    n_fillers=n_fillers,
+                    target_pref=target_pref[:80],
+                    primary_category=primary_category or "general",
+                )
+                filler_raw = discovery_llm.query_llm(filler_prompt)
+                filler_list = extract_json_from_response(filler_raw) or []
+                if isinstance(filler_list, list):
+                    filler_texts = [
+                        f.get("query", "") if isinstance(f, dict) else str(f)
+                        for f in filler_list[:n_fillers]
+                    ]
             except Exception:
                 pass
         if not diverse_queries_ok:
             for i, ts in enumerate(anchor_ts):
-                queries.append({
+                target_queries.append({
                     "anchor_index": i,
                     "ts": ts,
                     "user_query": (
@@ -2320,6 +2378,15 @@ def build_c1c_same_preference_clusters(
                         "Show me one new thing I'd be into right now."
                     ),
                 })
+        if not filler_texts:
+            filler_texts = [
+                "what should i make for dinner tonight?",
+                "any tips for sleeping better?",
+                "need a quick errand plan for tomorrow",
+                "what's a good stretch routine after sitting all day?",
+                "how do i get coffee stains out of a white shirt?",
+            ][:len(anchor_ts) - 1]
+        queries = _interleave_with_fillers(target_queries, filler_texts)
 
         cluster_id = f"{user_id}_c1c_{anchor_ts[0]}"
         out.append({
@@ -2360,7 +2427,7 @@ def build_c1c_same_preference_clusters(
 # Cluster size for c1d chatbot repetition tests. Bumped 5→7 in the
 # metric-artifact remediation pass for the same reason as c1c: tail size
 # grows from 2 → 4 so the diversification metric can actually fail.
-_C1D_QUERIES_PER_CLUSTER = 7
+_C1D_QUERIES_PER_CLUSTER = 6
 _C1D_N_ALLOWED_REPETITIONS = 2
 _C1D_WINDOW_SECONDS = 3 * 3600
 _C1D_MAX_INSTANCES_PER_USER = 2
@@ -2573,21 +2640,48 @@ def build_c1d_chatbot_diverse_clusters(
             continue
 
         # Pair each LLM-generated query with one anchor timestamp.
-        queries = []
+        target_queries = []
         for i, q in enumerate(gen_queries[:queries_per_cluster]):
             if not isinstance(q, dict):
                 continue
             text = (q.get("query") or "").strip()
             if not text:
                 continue
-            queries.append({
+            target_queries.append({
                 "anchor_index": i,
                 "ts": anchor_ts[i],
                 "user_query": text[:300],
                 "natural_anchor": (q.get("natural_anchor") or "").strip()[:240],
             })
-        if len(queries) < queries_per_cluster:
+        if len(target_queries) < queries_per_cluster:
             continue
+        # Generate filler queries and interleave for natural flow.
+        filler_texts = []
+        try:
+            n_fillers = len(target_queries) - 1
+            filler_prompt = _C1C_FILLER_QUERY_PROMPT.format(
+                n_fillers=n_fillers,
+                target_pref=target_pref[:80],
+                primary_category=primary_category or "general",
+            )
+            filler_raw = discovery_llm.query_llm(filler_prompt)
+            filler_list = extract_json_from_response(filler_raw) or []
+            if isinstance(filler_list, list):
+                filler_texts = [
+                    f.get("query", "") if isinstance(f, dict) else str(f)
+                    for f in filler_list[:n_fillers]
+                ]
+        except Exception:
+            pass
+        if not filler_texts:
+            filler_texts = [
+                "what should i make for dinner tonight?",
+                "any tips for sleeping better?",
+                "need a quick errand plan for tomorrow",
+                "what's a good stretch routine after sitting all day?",
+                "how do i get coffee stains out of a white shirt?",
+            ][:len(target_queries) - 1]
+        queries = _interleave_with_fillers(target_queries, filler_texts)
 
         cluster_id = f"{user_id}_c1d_{anchor_ts[0]}"
         out.append({
