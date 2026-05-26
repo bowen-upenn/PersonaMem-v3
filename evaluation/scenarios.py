@@ -267,6 +267,9 @@ def build_all_scenarios(
         s = builder(bq, user_id, since_timestamp, rng)
         if s is None:
             continue
+        s.setdefault("scenario_id", f"{s['name']}_{user_id}")
+        s.setdefault("t_probe", since_timestamp)
+        s.setdefault("t_test", since_timestamp)
         if discovery_llm and pref_block and s["name"] in _SCENARIO_DESCRIPTIONS:
             llm_query = _llm_generate_scenario_query(
                 s["name"], pref_block, discovery_llm,
@@ -307,7 +310,7 @@ def build_all_scenarios(
                 s["name"], pref_block, discovery_llm,
             )
             if llm_query and len(llm_query.split()) >= 5:
-                t_probe = s["t_probe"] - rng.randint(500, 3600)
+                t_probe = s.get("t_probe", since_timestamp) - rng.randint(500, 3600)
                 out.append({
                     "scenario_id": f"{s['scenario_id']}_b",
                     "name": s["name"],
