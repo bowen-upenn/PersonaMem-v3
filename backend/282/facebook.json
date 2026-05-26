@@ -2659,7 +2659,8 @@
       "friend_display_name": "Andre Wijaya",
       "primary_hashtag": "#NFL",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "734294",
@@ -5985,7 +5986,8 @@
       "friend_display_name": "Dimas Pratama",
       "primary_hashtag": "#fishinglife",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "fa_thr_282_000",
@@ -22289,7 +22291,8 @@
       "friend_display_name": "Farhan Siregar",
       "primary_hashtag": "#NFL",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "32012",

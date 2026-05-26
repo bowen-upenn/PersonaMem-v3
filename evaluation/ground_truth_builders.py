@@ -529,8 +529,10 @@ def _t19_trending_alert(bq: BackendQuery, user_id: str, t_test: int, inst: dict)
             tag = h.get("hashtag", "?")
             rank = h.get("rank", "?")
             aligned = h.get("user_aligned")
+            topic = h.get("trending_topic", "")
             note = " (aligned with this user's interests)" if aligned else ""
-            sections.append(f"- #{rank}: {tag}{note}\n")
+            topic_note = f" — topic: '{topic}'" if topic else ""
+            sections.append(f"- #{rank}: {tag}{topic_note}{note}\n")
     summary = bq.hashtag_summary(user_id=user_id, since_timestamp=t_test)
     pos = [r for r in summary if (r.get("positive") or 0) > 0][:10]
     neg = [r for r in summary if (r.get("negative") or 0) > 0][:10]

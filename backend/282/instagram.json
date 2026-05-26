@@ -6455,7 +6455,8 @@
       "friend_display_name": "Farhan Siregar",
       "primary_hashtag": "#WaterSports",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "420008",
@@ -18333,7 +18334,8 @@
       "friend_display_name": "Andre Wijaya",
       "primary_hashtag": "#humor",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "277438",
@@ -31095,7 +31097,8 @@
       "friend_display_name": "Dimas Pratama",
       "primary_hashtag": "#BassFishing",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "568879",

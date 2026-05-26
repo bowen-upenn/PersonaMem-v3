@@ -13721,7 +13721,8 @@
       "friend_display_name": "Alex Morgan",
       "primary_hashtag": "#selfcare",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "196426",
@@ -14854,7 +14855,8 @@
       "friend_display_name": "Caleb Foster",
       "primary_hashtag": "#RetroGaming",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "148444",
@@ -19961,7 +19963,8 @@
       "friend_display_name": "Hannah Whitmore",
       "primary_hashtag": "#selfcare",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "in_thr_229_007",

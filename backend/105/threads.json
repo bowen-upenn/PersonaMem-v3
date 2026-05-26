@@ -2375,7 +2375,8 @@
       "friend_display_name": "Hui Zhao",
       "primary_hashtag": "#relationshipgoals",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "218554",
@@ -4392,7 +4393,8 @@
       "friend_display_name": "Wei Zhang",
       "primary_hashtag": "#personalgrowth",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "1008492",
@@ -7662,7 +7664,8 @@
       "friend_display_name": "Alex Morgan",
       "primary_hashtag": "#wellness",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "827300",

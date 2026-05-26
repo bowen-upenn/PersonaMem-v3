@@ -26,7 +26,6 @@ sys.path.insert(0, str(REPO_ROOT))
 from data_preparation.extension_b.friend_graph import generate_friend_graph
 from data_preparation.extension_b.self_posts import generate_self_posts
 from data_preparation.extension_b.dm_threads import generate_dm_threads
-from data_preparation.extension_b.trending import generate_trending
 
 
 SOCIAL_APPS = ("instagram", "facebook", "threads")
@@ -107,11 +106,6 @@ def run_extension_b(
         dm_events_per_app[app] = dm_events
         report[f"dm_threads_{app}"] = len(dm_events)
 
-    # 4) Trending hashtags — deterministic, no LLM.
-    if verbose: print("[ext_b] computing trending hashtags …")
-    trending = generate_trending(user_id, backend_dir)
-    report["trending_count"] = len(trending.get("hashtags", []))
-
     if dry_run:
         if verbose:
             print("\n[ext_b] DRY RUN — nothing written. Report:")
@@ -143,12 +137,8 @@ def run_extension_b(
         merged.sort(key=lambda x: int(x.get("source_timestamp", 0)))
         app_path.write_text(json.dumps(merged, ensure_ascii=False, indent=2))
 
-    # (c) Write trending.json. DM threads live inside {app}.json (is_dm=true)
-    #     — no separate {app}_dms.json file anymore.
-    (base / "trending.json").write_text(json.dumps(trending, ensure_ascii=False, indent=2))
-
     if verbose:
-        print("[ext_b] wrote: profile.json, {app}.json × 3 (appended with DM threads inline), trending.json")
+        print("[ext_b] wrote: profile.json, {app}.json × 3 (appended with DM threads inline)")
         print(f"[ext_b] report: {report}")
     return report
 

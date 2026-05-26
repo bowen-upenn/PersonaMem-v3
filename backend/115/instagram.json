@@ -4844,7 +4844,11 @@
       "primary_hashtag": "#dance",
       "relevance": "relevant",
       "search_query": "top Instagram trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "I asked the universe sign",
+    "trending_relevance": "relevant",
+    "trending_primary_hashtag": "#dance"
   },
   {
     "source_object_id": "779012",
@@ -5363,7 +5367,11 @@
       "primary_hashtag": "#comedygold",
       "relevance": "irrelevant",
       "search_query": "top Instagram trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "two-person walk lip-sync",
+    "trending_relevance": "irrelevant",
+    "trending_primary_hashtag": "#comedygold"
   },
   {
     "source_object_id": "791433",
@@ -6071,7 +6079,11 @@
       "primary_hashtag": "#RelationshipGoals",
       "relevance": "relevant",
       "search_query": "top Instagram trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "headphone swap reel",
+    "trending_relevance": "relevant",
+    "trending_primary_hashtag": "#RelationshipGoals"
   },
   {
     "source_object_id": "156695",
@@ -9789,7 +9801,8 @@
       "friend_display_name": "Luis Ortega",
       "primary_hashtag": "#Boxing",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "in_thr_115_006",
@@ -10452,7 +10465,8 @@
       "friend_display_name": "Diego Ramirez",
       "primary_hashtag": "#boxing",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "self_instagram_115_004",
@@ -18882,7 +18896,8 @@
       "friend_display_name": "Jasmine Torres",
       "primary_hashtag": "#Boxing",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "216498",

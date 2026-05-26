@@ -4184,7 +4184,8 @@
       "friend_display_name": "Alex Morgan",
       "primary_hashtag": "#humor",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "104638",
@@ -5666,7 +5667,8 @@
       "friend_display_name": "Hannah Whitmore",
       "primary_hashtag": "#humor",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "953706",
@@ -20039,7 +20041,8 @@
       "friend_display_name": "Caleb Foster",
       "primary_hashtag": "#Nostalgia",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "963964",

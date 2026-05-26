@@ -1885,7 +1885,8 @@
       "friend_display_name": "Jonas Vermeulen",
       "primary_hashtag": "#DIY",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "294419",
@@ -9100,7 +9101,8 @@
       "friend_display_name": "Emily Carlson",
       "primary_hashtag": "#NFL",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "117562",
@@ -17603,7 +17605,8 @@
       "friend_display_name": "Alex Morgan",
       "primary_hashtag": "#Football",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "280592",

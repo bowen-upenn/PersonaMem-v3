@@ -255,6 +255,7 @@ def generate_friend_self_posts(
                 "relationship": "close_friend",
                 "is_self_authored": False,
                 "is_dm": False,
+                "is_trending": False,
                 "interaction_format": {
                     "app": app_pretty,
                     "action": FEED_VISIBLE_ACTION[app]["action"],
@@ -470,6 +471,10 @@ def generate_trending_posts(
                 "relationship": "public",
                 "is_self_authored": False,
                 "is_dm": False,
+                "is_trending": True,
+                "trending_topic": trend.get("label", ""),
+                "trending_relevance": polarity,
+                "trending_primary_hashtag": primary_tag,
                 "interaction_format": {
                     "app": app_pretty,
                     "action": FEED_VISIBLE_ACTION[app]["action"],

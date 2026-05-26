@@ -4638,7 +4638,11 @@
       "primary_hashtag": "#Boxing",
       "relevance": "relevant",
       "search_query": "top Threads trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "dear algo posts",
+    "trending_relevance": "relevant",
+    "trending_primary_hashtag": "#Boxing"
   },
   {
     "source_object_id": "615283",
@@ -4905,7 +4909,11 @@
       "primary_hashtag": "#FightNight",
       "relevance": "relevant",
       "search_query": "top Threads trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "NBA playoffs hot takes",
+    "trending_relevance": "relevant",
+    "trending_primary_hashtag": "#FightNight"
   },
   {
     "source_object_id": "849826",
@@ -5274,7 +5282,11 @@
       "primary_hashtag": "#relatable",
       "relevance": "irrelevant",
       "search_query": "top Threads trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "niche micro-community threads",
+    "trending_relevance": "irrelevant",
+    "trending_primary_hashtag": "#relatable"
   },
   {
     "source_object_id": "85755",
@@ -7925,7 +7937,8 @@
       "friend_display_name": "Luis Ortega",
       "primary_hashtag": "#BoxingFans",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "191122",
@@ -16331,7 +16344,8 @@
       "friend_display_name": "Jasmine Torres",
       "primary_hashtag": "#HipHop",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "95729",
@@ -20264,7 +20278,8 @@
       "friend_display_name": "Diego Ramirez",
       "primary_hashtag": "#Boxing",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "101962",

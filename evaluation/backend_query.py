@@ -547,23 +547,48 @@ class BackendQuery:
         }
 
     def get_trending(self, user_id: str) -> list[dict]:
-        """Return the trending-hashtag list for this user.
+        """Return trending topics visible in this user's feed.
 
-        Reads trending.json (Extension B addendum 3) and returns the inner
-        `hashtags` list. If the file is missing (v1 backend), returns a
-        degraded fallback derived from the user's top-20 hashtags, labeled
-        with `degraded_fallback: True` so the caller knows it's synthesized.
-        Always returns a list — callers can uniformly do `len(...)`, `[:5]`, etc.
+        Scans instagram/facebook/threads app JSONs for feed_visible events
+        with ``is_trending=True``.  Falls back to legacy ``trending.json``
+        then to a degraded top-20-hashtag synthesis.
         """
+        trending_events: list[dict] = []
+        for app in ("instagram", "facebook", "threads"):
+            for e in self._load_events(user_id, app):
+                if e.get("is_trending"):
+                    content = e.get("content") or {}
+                    trending_events.append({
+                        "hashtag": (
+                            e.get("trending_primary_hashtag")
+                            or (e.get("source_hashtags") or [""])[0]
+                        ),
+                        "trending_topic": (
+                            e.get("trending_topic")
+                            or content.get("trending_topic", "")
+                        ),
+                        "relevance": e.get("trending_relevance", "relevant"),
+                        "user_aligned": e.get("trending_relevance", "relevant") == "relevant",
+                        "app": app,
+                        "post_id": e.get("source_object_id", ""),
+                    })
+        if trending_events:
+            relevant = [t for t in trending_events if t["user_aligned"]]
+            irrelevant = [t for t in trending_events if not t["user_aligned"]]
+            for i, t in enumerate(relevant + irrelevant):
+                t["rank"] = i + 1
+            return relevant + irrelevant
+
+        # Legacy fallback: trending.json (pre-migration backends).
         path = self.base / user_id / "trending.json"
         if path.exists():
             with path.open() as f:
                 data = json.load(f)
-            # v2 format: {"built_at": ..., "hashtags": [...]}. Unwrap.
             if isinstance(data, dict) and "hashtags" in data:
                 return data["hashtags"]
             if isinstance(data, list):
                 return data
+
         # Degraded fallback.
         counts: dict[str, int] = {}
         for app in APPS:

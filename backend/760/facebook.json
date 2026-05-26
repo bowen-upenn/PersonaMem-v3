@@ -874,7 +874,8 @@
       "friend_display_name": "Jonas Vermeulen",
       "primary_hashtag": "#ComedyGold",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "840314",
@@ -5222,7 +5223,8 @@
       "friend_display_name": "Emily Carlson",
       "primary_hashtag": "#NFLMemes",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "self_facebook_760_000",
@@ -29972,7 +29974,8 @@
       "friend_display_name": "Alex Morgan",
       "primary_hashtag": "#NFLMemes",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "952101",

@@ -9976,9 +9976,9 @@ class PersonaAgent:
         CLI invocation required.
 
         Idempotent: rerunning replaces self-post events, DM threads,
-        friends list, and trending with fresh generations while
-        preserving all pipeline-authored events. Writes back to
-        backend/{uid}/{profile.json, {app}.json ×3, trending.json}.
+        and friends list with fresh generations while preserving all
+        pipeline-authored events. Writes back to
+        backend/{uid}/{profile.json, {app}.json ×3}.
 
         Skipped gracefully when no LLM client is configured (Claude Code
         subagent mode handles this inline via skill.md).
@@ -10602,12 +10602,22 @@ class PersonaAgent:
                     continue
                 if ev.get("author_id") != "public_creator":
                     continue
-                meta = ev.get("_feed_react_meta") or {}
-                if meta.get("kind") != "trending_feed":
-                    continue
+                # Prefer top-level is_trending; fall back to _feed_react_meta.
+                if ev.get("is_trending"):
+                    relevance = ev.get("trending_relevance", "relevant")
+                    trending_topic = ev.get("trending_topic", "")
+                    primary_hashtag = ev.get("trending_primary_hashtag", "")
+                    trend_description = ""
+                else:
+                    meta = ev.get("_feed_react_meta") or {}
+                    if meta.get("kind") != "trending_feed":
+                        continue
+                    relevance = meta.get("relevance", "relevant")
+                    trending_topic = meta.get("trending_topic", "")
+                    primary_hashtag = meta.get("primary_hashtag", "")
+                    trend_description = meta.get("trend_description", "")
                 post_ts = int(ev.get("source_timestamp") or 0)
                 t_test = post_ts + 24 * 3600
-                relevance = meta.get("relevance", "relevant")
                 content = ev.get("content") or {}
                 candidates.append({
                     "trigger_type": "trending_feed_react",
@@ -10617,14 +10627,14 @@ class PersonaAgent:
                     "relevance": relevance,
                     "signal_evidence": {
                         "app": app,
-                        "trending_topic": meta.get("trending_topic", ""),
-                        "trend_description": meta.get("trend_description", ""),
+                        "trending_topic": trending_topic,
+                        "trend_description": trend_description,
                         "post_event_id": ev.get("source_object_id"),
                         "post_ts": post_ts,
                         "post_iso": ev.get("formatted_timestamp", ""),
                         "post_hashtags": ev.get("source_hashtags", []),
                         "post_caption_excerpt": (content.get("caption") or "")[:280],
-                        "primary_hashtag": meta.get("primary_hashtag", ""),
+                        "primary_hashtag": primary_hashtag,
                         "relevance": relevance,
                     },
                 })

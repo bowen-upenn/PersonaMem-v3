@@ -977,7 +977,8 @@
       "friend_display_name": "Jasmine Torres",
       "primary_hashtag": "#MMA",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "218131",
@@ -1721,7 +1722,8 @@
       "friend_display_name": "Diego Ramirez",
       "primary_hashtag": "#BoxingNews",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "734900",
@@ -2401,7 +2403,11 @@
       "primary_hashtag": "#comedygold",
       "relevance": "irrelevant",
       "search_query": "top Facebook trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "nostalgia milestone posts",
+    "trending_relevance": "irrelevant",
+    "trending_primary_hashtag": "#comedygold"
   },
   {
     "source_object_id": "252533",
@@ -4033,7 +4039,11 @@
       "primary_hashtag": "#BoxingNews",
       "relevance": "relevant",
       "search_query": "top Facebook trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "expectation vs reality fails",
+    "trending_relevance": "relevant",
+    "trending_primary_hashtag": "#BoxingNews"
   },
   {
     "source_object_id": "924488",
@@ -4135,7 +4145,11 @@
       "primary_hashtag": "#homemade",
       "relevance": "relevant",
       "search_query": "top Facebook trending topics April 2026"
-    }
+    },
+    "is_trending": true,
+    "trending_topic": "tag a friend challenges",
+    "trending_relevance": "relevant",
+    "trending_primary_hashtag": "#homemade"
   },
   {
     "source_object_id": "356767",
@@ -11238,7 +11252,8 @@
       "friend_display_name": "Luis Ortega",
       "primary_hashtag": "#boxing",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "226248",

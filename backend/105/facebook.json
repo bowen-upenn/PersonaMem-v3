@@ -1872,7 +1872,8 @@
       "friend_display_name": "Hui Zhao",
       "primary_hashtag": "#funnyvideos",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "48626",
@@ -19191,7 +19192,8 @@
       "friend_display_name": "Wei Zhang",
       "primary_hashtag": "#hairgrowth",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "646477",
@@ -28100,7 +28102,8 @@
       "friend_display_name": "Alex Morgan",
       "primary_hashtag": "#hairgrowth",
       "relevance": "relevant"
-    }
+    },
+    "is_trending": false
   },
   {
     "source_object_id": "767630",

@@ -12,7 +12,7 @@ Assertions (from plan Extension D₀):
 - ≥ 8 named friends
 - ≥ 3 hidden_personas with privacy_ratio > 0.7
 - ≥ 2 topics (hashtags) appearing on events from ≥ 2 apps
-- trending.json exists with ≥ 20 hashtags
+- ≥ 6 trending feed events (is_trending=True) across social app JSONs
 
 e6 assertions (pass `--e6` to enable; class-adaptive):
 - mobility_class present on profile
@@ -137,10 +137,13 @@ def check(user_id: str, backend_dir: str | Path) -> list[tuple[str, bool, str]]:
     multi_app_topics = len({h for h, _ in shared.most_common() if shared[h] >= 1})
     results.append(("multi_app_topics", multi_app_topics >= 2, f"{multi_app_topics} hashtags on ≥2 apps (need ≥2)"))
 
-    # Trending.
-    trending = _load(base / "trending.json") or {}
-    trending_hashtags = trending.get("hashtags", []) if isinstance(trending, dict) else []
-    results.append(("trending_hashtags", len(trending_hashtags) >= 20, f"{len(trending_hashtags)} trending tags (need ≥20)"))
+    # Trending events embedded in app JSONs.
+    _trending_count = 0
+    for _app in APPS[:3]:
+        _app_data = _load(base / f"{_app}.json") or []
+        if isinstance(_app_data, list):
+            _trending_count += sum(1 for _e in _app_data if _e.get("is_trending"))
+    results.append(("trending_events", _trending_count >= 6, f"{_trending_count} trending feed events (need ≥6)"))
 
     return results
 
