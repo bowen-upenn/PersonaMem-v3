@@ -149,6 +149,18 @@ def run_task_b(
                 leak_pool = [{"persona_item": stale_pi}] if stale_pi else top_k_prefs
             else:
                 leak_pool = top_k_prefs
+            # Fallback: if the leak pool is empty (no topically-aligned prefs
+            # for adversarial/control queries), use the user's full preference
+            # list — ANY personalization is wrong for these restraint arms.
+            if not leak_pool and arm in ("control", "adversarial"):
+                all_prefs = bq.get_preferences(user_id, t) if bq else []
+                leak_pool = [
+                    {"persona_item": p.get("persona_item", ""),
+                     "category": p.get("category", ""),
+                     "source_hashtags": p.get("source_hashtags", [])}
+                    for p in (all_prefs or [])[:10]
+                    if isinstance(p, dict) and p.get("persona_item")
+                ]
             ctrl_leak = llm_metrics.personalization_leak_check(
                 _judge_fn, response_text, leak_pool,
                 context=f"arm={arm}, query={user_query[:100]}",

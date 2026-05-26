@@ -1191,12 +1191,10 @@ def build_task_b_arms(
             "target": target_set,
             "avoid": [],
         }
-        # Privacy-flagged is meaningful only for the distractor_reject arm
-        # downstream — for other arms it produced misleading "must-not-surface"
-        # entries on otherwise-benign prefs (e.g. "values long-term romantic
-        # commitment" got flagged as privacy-sensitive when it isn't). Default
-        # empty; the dedicated build_c3_instance handles its own pool.
-        privacy_flagged: list[dict] = []
+        # Privacy-flagged prefs: preserve if the builder already populated
+        # them (drift instances carry the overused-topic leak pool). Otherwise
+        # default empty — the dedicated build_c3_instance handles its own pool.
+        privacy_flagged: list[dict] = c.get("privacy_flagged_prefs") or []
         source_b = _build_post_test_window(bq, user_id, t_test)
         return {
             "test_id": c["source_object_id"],
@@ -1798,6 +1796,12 @@ def build_conversational_drift_probes(
             for p in (cand["event"].get("preferences") or [])
             if isinstance(p, dict) and p.get("persona_item")
         ]
+        # If the event carries no structured preferences but we know the
+        # overused topic from keyword matching, synthesize a leak-pool
+        # entry so the scorer has something to check against.
+        if not pref_items and topic:
+            pref_items = [{"persona_item": topic, "category": topic,
+                           "source_hashtags": keywords}]
 
         for q_idx, query in enumerate(queries[:queries_per_conversation]):
             out.append({
