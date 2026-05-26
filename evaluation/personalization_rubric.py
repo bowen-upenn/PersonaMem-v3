@@ -99,8 +99,10 @@ SOURCE_B_APPLICABLE = {
     "agentic_proactive_daily_catchup", "agentic_trending_alert",
 }
 
-HARD_RULE_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use",
-                  "telegraph_avoidance"}
+PENALTY_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use",
+                "telegraph_avoidance"}
+# Backward compat alias — old code that references HARD_RULE_DIMS still works.
+HARD_RULE_DIMS = PENALTY_DIMS
 JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_personalization",
                   "relationship_aware", "voice_match", "voice_self_consistency",
                   "telegraph_avoidance"}
@@ -507,20 +509,22 @@ def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
             positive_score += float(v)
             n_positive_scored += 1
 
-    # Negative penalty: hard-fail flag × constant for binary dims; soft-gap
-    # × constant for 0-10 negative dims.
+    # Negative penalty: all dims now use gap-from-ideal on their 0-10 score.
+    # Penalty dims (formerly hard-rule) contribute via their _score key;
+    # if only a hard_fail flag is present (no _score), fall back to the
+    # binary PENALTY_PER_HARD_FAIL constant.
     negative_penalty = 0.0
     for dim in neg_dims_applicable:
-        if dim in HARD_RULE_DIMS:
+        v = out.get(f"{dim}_score")
+        if isinstance(v, (int, float)):
+            gap = max(0.0, 10.0 - float(v)) / 10.0
+            weight = PENALTY_PER_HARD_FAIL if dim in PENALTY_DIMS else PENALTY_PER_SOFT_NEG
+            negative_penalty += gap * weight
+        elif dim in PENALTY_DIMS:
+            # Fallback: only a hard_fail flag exists (no 0-10 score).
             hf = out.get(f"{dim}_hard_fail")
             if isinstance(hf, (int, float)) and hf:
                 negative_penalty += PENALTY_PER_HARD_FAIL
-        else:
-            # Soft 0-10 negative dim — gap from ideal counts as penalty.
-            v = out.get(f"{dim}_score")
-            if isinstance(v, (int, float)):
-                gap = max(0.0, 10.0 - float(v)) / 10.0
-                negative_penalty += gap * PENALTY_PER_SOFT_NEG
 
     max_possible = 10.0 * len(pos_dims_applicable)
     combined = max(0.0, min(max_possible, positive_score - negative_penalty))
@@ -566,34 +570,42 @@ def score(
             ground_truth.get("user_negatives_nearby") or [],
             context="avoid_leak: user has disliked these topics",
         )
+        avoid_leak_score = float(r.get("restraint_score", 10.0 if r["leak_rate"] == 0 else 0.0))
+        out["avoid_leak_score"] = avoid_leak_score
         out["avoid_leak_rate"] = r["leak_rate"]
-        out["avoid_leak_hard_fail"] = r["hard_fail"]
+        out["avoid_leak_hard_fail"] = 1 if avoid_leak_score <= 2 else 0
     if applicable.get("privacy_leak"):
         r = llm_metrics.privacy_leak_check(
             _judge_fn, agent_output,
             ground_truth.get("privacy_flagged_prefs") or [],
         )
+        privacy_leak_score = float(r.get("restraint_score", 10.0 if r["leak_rate"] == 0 else 0.0))
+        out["privacy_leak_score"] = privacy_leak_score
         out["privacy_leak_rate"] = r["leak_rate"]
-        out["privacy_leak_hard_fail"] = r["hard_fail"]
+        out["privacy_leak_hard_fail"] = 1 if privacy_leak_score <= 2 else 0
     if applicable.get("stale_preference_use"):
         r = llm_metrics.personalization_leak_check(
             _judge_fn, agent_output,
             ground_truth.get("update_history_contradictions") or [],
             context="stale_preference_use: user has contradicted these old preferences",
         )
+        stale_score = float(r.get("restraint_score", 10.0 if r["leak_rate"] == 0 else 0.0))
+        out["stale_preference_use_score"] = stale_score
         out["stale_preference_use_rate"] = r["leak_rate"]
-        out["stale_preference_use_hard_fail"] = r["hard_fail"]
+        out["stale_preference_use_hard_fail"] = 1 if stale_score <= 2 else 0
     if applicable.get("telegraph_avoidance"):
         # Deterministic — runs the regex + verbatim-pref-insertion check
         # in `evaluation.llm_postprocess._validate_no_creepy_phrasing`.
-        # No LLM needed; treat hard_fail like privacy_leak.
+        # No LLM needed; output 0-10 score: 10 if no telegraph phrase, 0 if detected.
         from evaluation.judges import judge_telegraph_avoidance as _jta
         held_out = (ground_truth.get("held_out_preference")
                     or ground_truth.get("groundtruth_preference")
                     or ground_truth.get("target_pref"))
         ja = _jta(agent_output, held_out)
-        out["telegraph_avoidance_score"] = ja["telegraph_avoidance"]
-        out["telegraph_avoidance_hard_fail"] = 0 if ja["telegraph_avoidance"] >= 1.0 else 1
+        # Convert the old [0, 1] scale to 0-10: 1.0 -> 10, 0.0 -> 0
+        telegraph_score_010 = float(ja["telegraph_avoidance"]) * 10.0
+        out["telegraph_avoidance_score"] = telegraph_score_010
+        out["telegraph_avoidance_hard_fail"] = 1 if telegraph_score_010 <= 2 else 0
         if ja.get("telegraph_reason"):
             out["telegraph_avoidance_reason"] = ja["telegraph_reason"]
 
@@ -609,20 +621,20 @@ def score(
             try:
                 resp = judge_client(prompt) if callable(judge_client) else judge_client.query_llm(prompt)
                 parsed = extract_json_from_response(resp) or {}
-                if dim in HARD_RULE_DIMS:
-                    out[f"{dim}_judge_fail"] = int(parsed.get("fail", 0) or 0)
-                else:
-                    score_val = parsed.get("score")
-                    if isinstance(score_val, (int, float)):
-                        out[f"{dim}_score"] = float(score_val)
-                    # voice_match returns 3 sub-scores plus the mean — surface
-                    # them all for diagnostic visibility (helps diagnose whether
-                    # a low score is identity / idiolect / audience).
-                    if dim == "voice_match":
-                        for sub in ("identity_coherence", "idiolect_fidelity", "audience_appropriateness"):
-                            sub_val = parsed.get(sub)
-                            if isinstance(sub_val, (int, float)):
-                                out[f"voice_match_{sub}"] = float(sub_val)
+                score_val = parsed.get("score")
+                if isinstance(score_val, (int, float)):
+                    out[f"{dim}_score"] = float(score_val)
+                    # Derive hard_fail for backward compat if this is a penalty dim
+                    if dim in PENALTY_DIMS:
+                        out[f"{dim}_hard_fail"] = 1 if float(score_val) <= 2 else 0
+                # voice_match returns 3 sub-scores plus the mean — surface
+                # them all for diagnostic visibility (helps diagnose whether
+                # a low score is identity / idiolect / audience).
+                if dim == "voice_match":
+                    for sub in ("identity_coherence", "idiolect_fidelity", "audience_appropriateness"):
+                        sub_val = parsed.get(sub)
+                        if isinstance(sub_val, (int, float)):
+                            out[f"voice_match_{sub}"] = float(sub_val)
             except Exception as exc:
                 out[f"{dim}_judge_error"] = str(exc)
 

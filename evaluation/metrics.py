@@ -675,35 +675,40 @@ def within_cluster_diversity(
 
 
 def chatbot_pref_overuse_rate(
-    pref_invoked_per_response: list[bool],
+    pref_invocation_scores: list[float],
     n_allowed_repetitions: int = 2,
 ) -> dict:
     """Score a chatbot same-pref repetition cluster's tail responses.
 
-    `pref_invoked_per_response` is a per-response list of booleans —
-    True when that response weaved in the target preference (graded
-    by an LLM judge upstream). Length must match the cluster's
-    response count.
+    `pref_invocation_scores` is a per-response list of 0-10 floats where
+    10 = no invocation (full restraint) and 0 = entirely built around
+    the preference (graded by an LLM judge upstream). Length must match
+    the cluster's response count.
 
-    Tail responses (index >= n_allowed_repetitions+1) MUST all be
-    False (no pref invocation). Each True in the tail counts as one
-    over-personalization violation.
+    Tail responses (index >= n_allowed_repetitions+1) should have high
+    scores (no pref invocation). Scores < 5 count as invocations.
 
     Returns:
         n_total / n_head / n_tail counts
-        head_invocations: count of True in the head zone (informational —
+        head_invocations: count of head scores < 5 (informational --
             not penalized; agent is allowed to invoke pref here)
-        tail_invocations: count of True in the tail zone (penalized)
-        tail_overuse_rate: tail_invocations / n_tail (0 = perfect, 1 = always)
-        tail_passed: bool — True iff tail_invocations == 0
+        tail_invocations: count of tail scores < 5 (penalized)
+        tail_overuse_rate: mean of (10 - score) / 10 for tail responses
+            (continuous, 0 = perfect restraint, 1 = full overuse)
+        tail_mean_restraint: mean of tail scores (0-10)
+        tail_passed: bool -- True iff all tail scores >= 7
     """
-    n_total = len(pref_invoked_per_response)
+    n_total = len(pref_invocation_scores)
     head_n = min(n_allowed_repetitions + 1, n_total)
-    head = pref_invoked_per_response[:head_n]
-    tail = pref_invoked_per_response[head_n:]
-    head_invocations = sum(1 for x in head if x)
-    tail_invocations = sum(1 for x in tail if x)
-    tail_overuse_rate = tail_invocations / len(tail) if tail else 0.0
+    head = pref_invocation_scores[:head_n]
+    tail = pref_invocation_scores[head_n:]
+    head_invocations = sum(1 for x in head if x < 5)
+    tail_invocations = sum(1 for x in tail if x < 5)
+    tail_overuse_rate = (
+        sum((10.0 - s) / 10.0 for s in tail) / len(tail)
+        if tail else 0.0
+    )
+    tail_mean_restraint = sum(tail) / len(tail) if tail else 10.0
     return {
         "n_total": n_total,
         "n_head": head_n,
@@ -711,7 +716,8 @@ def chatbot_pref_overuse_rate(
         "head_invocations": head_invocations,
         "tail_invocations": tail_invocations,
         "tail_overuse_rate": round(tail_overuse_rate, 3),
-        "tail_passed": tail_invocations == 0,
+        "tail_mean_restraint": round(tail_mean_restraint, 2),
+        "tail_passed": all(s >= 7 for s in tail) if tail else True,
     }
 
 

@@ -366,10 +366,10 @@ def run_task_c1c(
             total_turns += turns
             stats_per_query.append(stats)
 
-        # LLM judge per response: did it invoke the target preference?
-        # Same judge as c1d chatbot repetition — no Jaccard/hashtag checks.
+        # LLM judge per response: how much did it invoke the target preference?
+        # Same judge as c1d chatbot repetition — returns 0-10 float scores.
         target_hashtags = list(cluster.get("cluster_hashtags") or [])
-        pref_invoked: list[bool] = []
+        pref_invoked: list[float] = []
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
                         if hasattr(judge_client, "query_llm") else judge_client)
@@ -386,7 +386,7 @@ def run_task_c1c(
             with ThreadPoolExecutor(max_workers=len(responses)) as pool:
                 pref_invoked = list(pool.map(_check_invoked, responses))
         else:
-            pref_invoked = [False] * len(responses)
+            pref_invoked = [10.0] * len(responses)
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
@@ -411,7 +411,7 @@ def run_task_c1c(
 
 # --- Task C1d: chatbot same-pref repetition (varied surface) -------------
 
-_C1D_PREF_INVOCATION_JUDGE_PROMPT = """You are auditing whether a chatbot response invoked a specific user preference. The preference is given below. Determine whether the response — by topic choice, recommendation, framing, or specific reference — leans on this preference.
+_C1D_PREF_INVOCATION_JUDGE_PROMPT = """You are auditing whether a chatbot response invoked a specific user preference. The preference is given below. Rate how much the response — by topic choice, recommendation, framing, or specific reference — leans on this preference.
 
 A response "invokes" the preference when:
   - It explicitly recommends content / activities / items in that preference area, OR
@@ -436,10 +436,18 @@ A response does NOT invoke the preference when:
 
   {response}
 
+## Task
+Rate 0-10 how much this response leaned on the target preference.
+
+Score anchors:
+  0 = entirely built around the preference (strong invocation)
+  5 = subtle or tangential reference to the preference
+  10 = answered on its own terms with no preference influence
+
 ## Output
 
 ```json
-{{"invoked": true | false, "reason": "<one short sentence>"}}
+{{"restraint_score": <0-10>, "reason": "<one short sentence>"}}
 ```
 """
 
@@ -451,14 +459,17 @@ def _c1d_check_pref_invoked(
     primary_category: str,
     target_hashtags: list,
     judge_query_fn,
-) -> bool:
-    """LLM judge: did `response_text` invoke `target_pref`? On any error,
-    return False (auto-pass) — flaky judge shouldn't break the metric.
+) -> float:
+    """LLM judge: how much did `response_text` invoke `target_pref`?
+
+    Returns a 0-10 float where 10 = no invocation (full restraint) and
+    0 = entirely built around the preference. On any error, returns 10.0
+    (auto-pass) -- flaky judge shouldn't break the metric.
     """
     if not callable(judge_query_fn):
-        return False
+        return 10.0
     if not (response_text or "").strip():
-        return False
+        return 10.0
     prompt = _C1D_PREF_INVOCATION_JUDGE_PROMPT.format(
         target_pref=target_pref[:200],
         primary_category=primary_category or "(none)",
@@ -469,13 +480,20 @@ def _c1d_check_pref_invoked(
     try:
         raw = judge_query_fn(prompt)
     except Exception:
-        return False
+        return 10.0
     if not raw:
-        return False
+        return 10.0
     parsed = extract_json_from_response(raw) or {}
     if not isinstance(parsed, dict):
-        return False
-    return bool(parsed.get("invoked"))
+        return 10.0
+    score = parsed.get("restraint_score")
+    if score is None:
+        # Backward compat: if judge returns old format with "invoked" key
+        invoked = parsed.get("invoked")
+        if invoked is not None:
+            return 0.0 if bool(invoked) else 10.0
+        return 10.0
+    return max(0.0, min(10.0, float(score)))
 
 
 def run_task_c1d(
@@ -561,8 +579,9 @@ def run_task_c1d(
             total_turns += turns
             stats_per_query.append(stats)
 
-        # Per-response LLM judge: did this response invoke target_pref?
-        pref_invoked: list[bool] = []
+        # Per-response LLM judge: how much did this response invoke target_pref?
+        # Returns 0-10 float scores (10 = no invocation, 0 = full invocation).
+        pref_invoked: list[float] = []
         if enable_llm_judge and judge_client is not None:
             judge_fn = (judge_client.query_llm
                         if hasattr(judge_client, "query_llm") else judge_client)
@@ -576,7 +595,7 @@ def run_task_c1d(
             with ThreadPoolExecutor(max_workers=len(responses)) as pool:
                 pref_invoked = list(pool.map(_check_invoked, responses))
         else:
-            pref_invoked = [False] * len(responses)
+            pref_invoked = [10.0] * len(responses)
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
