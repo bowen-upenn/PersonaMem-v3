@@ -24,25 +24,18 @@ enough to test, but the old stance still feels "tempting" to surface.
 Per the project plan, instance fields follow the canonical 5-field layout
 (user_query, example_response, inferior_response, groundtruth_preference,
 rubric_dimensions). Shift metadata lives inside `groundtruth_preference`.
-
-This file ships with discovery scaffolding + a stub runner. Bringing it
-to full life requires either:
-  - wiring an LLM client through `build_preference_shift_followthrough`
-    (see the `discovery_llm` parameter), OR
-  - generating the user_query + example/inferior pairs offline.
-The runner dispatches through `chatbot_response.run_task_b` once the
-build step emits instances, since the grading reduces to a personalized
-chatbot response with a `stale_preference_use` hard-fail.
 """
 
 from __future__ import annotations
 
 import datetime as dt
 import json
+import re
 import random
-from typing import Iterable
+from typing import Any, Iterable
 
 from evaluation.backend_query import BackendQuery
+from data_preparation.utils import extract_json_from_response
 
 
 # Maximum spread from T_shift to T_test (days). Past this, the shift is
@@ -58,12 +51,26 @@ INSTANCES_PER_USER_CAP = 4
 # Require this many distinct categories per user before emitting.
 MIN_DISTINCT_CATEGORIES = 2
 
+# Word-count bounds for discovery validation.
+_USER_QUERY_MIN_WORDS = 5
+_USER_QUERY_MAX_WORDS = 25
+_RESPONSE_MIN_WORDS = 15
+_RESPONSE_MAX_WORDS = 100
+
+_DISCOVERY_RETRIES = 1
+
+_WORD_RE = re.compile(r"\b[\w']+\b")
+
 
 def _ts_iso(ts: int) -> str:
     try:
         return dt.datetime.fromtimestamp(int(ts), tz=dt.timezone.utc).isoformat()
     except Exception:
         return ""
+
+
+def _word_count(text: str) -> int:
+    return len(_WORD_RE.findall(text or ""))
 
 
 def _harvest_shift_candidates(
@@ -84,7 +91,6 @@ def _harvest_shift_candidates(
       - `old_preference`: {text, category, polarity}
       - `new_preference`: {text, category, polarity}  # for stance_shift; None for short_term
     """
-    import json
     from pathlib import Path
 
     out: list[dict] = []
@@ -189,12 +195,7 @@ def _build_instance(
     seq: int,
     t_test: int,
 ) -> dict:
-    """Emit one instance in the canonical 5-field shape.
-
-    `user_query`, `example_response`, `inferior_response` are placeholders
-    here — production builds should fill them via an LLM discovery call.
-    Build_benchmark drops instances with empty user_query at audit time.
-    """
+    """Emit one instance in the canonical 5-field shape."""
     return {
         "instance_id": f"pshift_{user_id}_{seq:03d}_{flavor}",
         "task_type": "preference_shift_followthrough",
@@ -202,9 +203,9 @@ def _build_instance(
         "flavor": flavor,
         "entry_point": "chatbot_routed" if flavor == "chatbot" else "app_native",
         "t_test": t_test,
-        "user_query": "",  # to be filled by discovery LLM
-        "example_response": "",  # to be filled by discovery LLM
-        "inferior_response": "",  # to be filled by discovery LLM
+        "user_query": "",
+        "example_response": "",
+        "inferior_response": "",
         "groundtruth_preference": {
             "t_shift": cand["t_shift"],
             "shift_kind": cand["kind"],
@@ -212,8 +213,173 @@ def _build_instance(
             "old_preference": cand["old_preference"],
             "new_preference": cand.get("new_preference"),
         },
-        # rubric_tags is set at CSV-emission time from TASK_TYPE_META.
     }
+
+
+# ---------------------------------------------------------------------------
+# Discovery prompt (build-time mini-tier LLM call)
+# ---------------------------------------------------------------------------
+
+DISCOVERY_PROMPT = """You are designing a benchmark probe for whether an AI assistant correctly tracks a preference shift — using the user's CURRENT stance instead of the outdated one.
+
+You will be given metadata about a preference shift: what the user USED to like/do (`old_preference`) and what they NOW like/do (`new_preference`, or None if the old preference simply expired). Your job is to produce a triple:
+
+  user_query        — a natural, casual chat-turn the user might send. It should touch the category/domain of the shifted preference WITHOUT directly asking "what do I like now?" The query invites the agent to demonstrate whether it knows the current stance.
+  example_response  — a natural AI reply that correctly uses the NEW/current stance (or, for expirations, avoids surfacing the expired preference).
+  inferior_response — a natural AI reply that incorrectly leans on the OLD/outdated stance. Same length and tone; the error is that it treats the old stance as still active.
+
+## Shift metadata
+
+  shift_kind:     {shift_kind}
+  category:       {category}
+  old_preference: {old_pref_text} ({old_pref_polarity})
+  new_preference: {new_pref_text} ({new_pref_polarity})
+  resolution:     {resolution}
+
+## User context
+
+  name:   {name}
+  career: {career}
+  bio:    {bio}
+
+## Hard constraints
+
+(A) `user_query` is {min_words}-{max_words} words, lowercase casual, real chat-turn length.
+(B) `user_query` must NOT contain the preference text verbatim — it should ask about the domain/topic naturally.
+(C) `example_response` uses the NEW stance — it suggests/recommends/discusses based on the current preference, NOT the old one.
+(D) `inferior_response` uses the OLD stance — it suggests/recommends based on the outdated preference as if nothing changed.
+(E) For short_term_expiration (new_preference is null): `example_response` should answer the query without leaning on the now-expired preference. `inferior_response` incorrectly still surfaces the expired preference as if it's active.
+(F) Neither response should use "I know you…", "since you like X…", "based on your history…", or similar telegraphing phrases. Personalization should be visible in CONTENT CHOICE, not in self-referential framing.
+(G) Both responses are 2-4 sentences, conversational. Same length and tone so the difference is content, not quality.
+(H) `user_query` should NOT be a yes/no question — it should invite an open-ended response where the agent naturally reveals which stance it holds.
+
+## Output
+
+Return ONE JSON object inside a fenced block:
+
+```json
+{{
+  "user_query": "...",
+  "example_response": "...",
+  "inferior_response": "..."
+}}
+```"""
+
+
+def _format_discovery_prompt(cand: dict, profile: dict) -> str:
+    old_pref = cand.get("old_preference") or {}
+    new_pref = cand.get("new_preference")
+    new_text = new_pref.get("text", "") if isinstance(new_pref, dict) else "(expired — no replacement)"
+    new_pol = new_pref.get("polarity", "") if isinstance(new_pref, dict) else ""
+    return DISCOVERY_PROMPT.format(
+        shift_kind=cand.get("kind", ""),
+        category=cand.get("category", ""),
+        old_pref_text=old_pref.get("text", ""),
+        old_pref_polarity=old_pref.get("polarity", ""),
+        new_pref_text=new_text,
+        new_pref_polarity=new_pol,
+        resolution=cand.get("resolution", ""),
+        name=profile.get("name", "the user"),
+        career=profile.get("career", ""),
+        bio=(profile.get("bio", "") or "")[:300],
+        min_words=_USER_QUERY_MIN_WORDS,
+        max_words=_USER_QUERY_MAX_WORDS,
+    )
+
+
+def _validate_discovery_output(
+    parsed: dict,
+    cand: dict,
+) -> tuple[bool, str]:
+    """Deterministic post-validator. Returns (passed, violation_reason)."""
+    for key in ("user_query", "example_response", "inferior_response"):
+        if not isinstance(parsed.get(key), str) or not parsed[key].strip():
+            return False, f"missing or empty field: {key!r}"
+
+    user_query = parsed["user_query"].strip()
+    example = parsed["example_response"].strip()
+    inferior = parsed["inferior_response"].strip()
+
+    uq_wc = _word_count(user_query)
+    if not (_USER_QUERY_MIN_WORDS <= uq_wc <= _USER_QUERY_MAX_WORDS):
+        return False, f"user_query has {uq_wc} words; must be {_USER_QUERY_MIN_WORDS}-{_USER_QUERY_MAX_WORDS}"
+
+    for name, text in (("example_response", example), ("inferior_response", inferior)):
+        wc = _word_count(text)
+        if not (_RESPONSE_MIN_WORDS <= wc <= _RESPONSE_MAX_WORDS):
+            return False, f"{name} has {wc} words; must be {_RESPONSE_MIN_WORDS}-{_RESPONSE_MAX_WORDS}"
+
+    old_text = (cand.get("old_preference") or {}).get("text", "").strip().lower()
+    if old_text and len(old_text) > 15 and old_text in example.lower():
+        return False, "example_response contains old preference text verbatim"
+
+    if example.lower() == inferior.lower():
+        return False, "example_response and inferior_response are identical"
+
+    # Telegraph check
+    from evaluation.llm_postprocess import _TELEGRAPH_PHRASE_RE
+    for name, text in (("example_response", example), ("inferior_response", inferior)):
+        m = _TELEGRAPH_PHRASE_RE.search(text)
+        if m:
+            return False, f"{name} contains telegraph phrase: {m.group(0)!r}"
+
+    return True, ""
+
+
+def _build_corrective_prompt(base_prompt: str, violation: str) -> str:
+    return (
+        base_prompt
+        + "\n\n## Your last attempt failed validation\n\n"
+        + f"Violation: {violation}\n\n"
+        + "Try again, keeping every other constraint the same. "
+        "Return ONE JSON object inside a fenced block, no prose outside."
+    )
+
+
+def _discover_shift_triplet(
+    discovery_llm: Any,
+    cand: dict,
+    profile: dict,
+    verbose: bool = False,
+) -> dict | None:
+    """One discovery LLM call + up to one corrective retry.
+
+    Returns the parsed dict if validation passes, else None.
+    """
+    base_prompt = _format_discovery_prompt(cand, profile)
+
+    raw = discovery_llm.query_llm(base_prompt)
+    parsed = extract_json_from_response(raw) or {}
+    if isinstance(parsed, list):
+        parsed = parsed[0] if parsed else {}
+    if isinstance(parsed, dict):
+        ok, why = _validate_discovery_output(parsed, cand)
+        if ok:
+            return parsed
+    else:
+        ok, why = False, f"LLM returned non-object JSON: {type(parsed).__name__}"
+
+    if verbose:
+        cat = cand.get("category", "?")
+        print(f"[preference_shift_followthrough] retry ({cat}): {why}")
+
+    for _ in range(_DISCOVERY_RETRIES):
+        corrective = _build_corrective_prompt(base_prompt, why)
+        raw = discovery_llm.query_llm(corrective)
+        parsed = extract_json_from_response(raw) or {}
+        if isinstance(parsed, list):
+            parsed = parsed[0] if parsed else {}
+        if isinstance(parsed, dict):
+            ok, why = _validate_discovery_output(parsed, cand)
+            if ok:
+                return parsed
+        else:
+            why = f"LLM returned non-object JSON: {type(parsed).__name__}"
+
+    if verbose:
+        cat = cand.get("category", "?")
+        print(f"[preference_shift_followthrough] dropping ({cat}) after {_DISCOVERY_RETRIES + 1} attempts: {why}")
+    return None
 
 
 def build_preference_shift_followthrough(
@@ -222,25 +388,32 @@ def build_preference_shift_followthrough(
     t_now: int,
     discovery_llm=None,
     rng_seed: int = 0,
+    verbose: bool = False,
 ) -> list[dict]:
     """Build preference_shift_followthrough instances for one user.
 
-    Scaffolding only: emits empty user_query / example / inferior fields.
-    A discovery LLM call (TODO) should populate those. The audit step
-    drops empty-query rows so this is safe to ship without breaking
-    downstream consumers; the task type just produces zero non-empty
-    instances until the LLM wiring lands.
+    When `discovery_llm` is provided, populates user_query / example_response /
+    inferior_response via LLM calls. When None, emits scaffolding stubs that
+    the audit step drops automatically.
     """
     rng = random.Random(rng_seed)
     cands = _harvest_shift_candidates(bq, user_id, rng)
     if not cands:
         return []
 
-    # Diversity: require ≥ MIN_DISTINCT_CATEGORIES distinct categories.
     cats = {c.get("category") for c in cands if c.get("category")}
     if len(cats) < MIN_DISTINCT_CATEGORIES:
-        # Still emit if at least one cat — the diversity gate is advisory.
         pass
+
+    profile = {}
+    if discovery_llm is not None:
+        try:
+            from pathlib import Path
+            profile_path = Path(getattr(bq, "base", "backend")) / user_id / "profile.json"
+            if profile_path.exists():
+                profile = json.loads(profile_path.read_text())
+        except Exception:
+            pass
 
     out: list[dict] = []
     flavor_cycle = iter(["chatbot", "recsys", "chatbot", "recsys"])
@@ -250,23 +423,37 @@ def build_preference_shift_followthrough(
             continue
         flavor = next(flavor_cycle, "chatbot")
         inst = _build_instance(c, flavor, user_id, i + 1, t_test)
-        # If a discovery_llm is wired, fill user_query / example_response /
-        # inferior_response here. For now, mark a hint so the audit step
-        # knows this is a build-time scaffolding stub.
-        inst["_scaffolding_stub"] = True
-        out.append(inst)
+
+        if discovery_llm is not None:
+            parsed = _discover_shift_triplet(discovery_llm, c, profile, verbose=verbose)
+            if parsed is not None:
+                inst["user_query"] = parsed["user_query"].strip()
+                inst["example_response"] = parsed["example_response"].strip()
+                inst["inferior_response"] = parsed["inferior_response"].strip()
+            else:
+                inst["_scaffolding_stub"] = True
+        else:
+            inst["_scaffolding_stub"] = True
+
+        if not inst.get("_scaffolding_stub"):
+            out.append(inst)
+        elif discovery_llm is None:
+            out.append(inst)
 
     if discovery_llm is None:
         print(f"[preference_shift_followthrough] user {user_id}: "
               f"emitted {len(out)} scaffolded instance(s) — "
               f"discovery_llm not wired, user_query/example/inferior empty.")
+    else:
+        filled = sum(1 for inst in out if not inst.get("_scaffolding_stub"))
+        print(f"[preference_shift_followthrough] user {user_id}: "
+              f"{filled}/{len(out)} instances filled by discovery LLM.")
     return out
 
 
 # ---------------------------------------------------------------------------
-# Runner — once instances carry non-empty user_query, this dispatches to the
-# chatbot_response runner since the grading reduces to "personalized chatbot
-# response with stale_preference_use hard-fail". For now it's a no-op stub.
+# Runner — dispatches to chatbot_response runner once instances carry
+# non-empty user_query. Scaffolded instances return a placeholder result.
 # ---------------------------------------------------------------------------
 
 
@@ -285,21 +472,59 @@ def run_preference_shift_followthrough(
     dry_run: bool,
     limit: int | None = None,
 ) -> list[dict]:
-    """Stub runner. Returns one dry_run-style result per scaffolded instance
-    so the benchmark pipeline doesn't crash. Replace with a chatbot_response
-    dispatch once the discovery LLM fills user_query / example / inferior.
+    """Run preference_shift_followthrough instances.
+
+    Non-stub chatbot instances dispatch to chatbot_response.run_task_b.
+    Stub instances return a placeholder result.
     """
     if limit is not None:
         instances = instances[:limit]
     results: list[dict] = []
     for inst in instances:
-        results.append({
-            "task": "preference_shift_followthrough",
-            "user_id": user_id,
-            "instance_id": inst.get("instance_id", ""),
-            "flavor": inst.get("flavor", ""),
-            "mode": mode,
-            "metrics": {},
-            "status": "scaffolding_stub" if inst.get("_scaffolding_stub") else "ok",
-        })
+        if inst.get("_scaffolding_stub"):
+            results.append({
+                "task": "preference_shift_followthrough",
+                "user_id": user_id,
+                "instance_id": inst.get("instance_id", ""),
+                "flavor": inst.get("flavor", ""),
+                "mode": mode,
+                "metrics": {},
+                "status": "scaffolding_stub",
+            })
+            continue
+
+        if inst.get("flavor") == "chatbot":
+            try:
+                from evaluation.tasks.chatbot_response import run_task_b
+                task_b_results = run_task_b(
+                    [inst], user_id, bq, llm_client, judge_client,
+                    mode, snapshot_cache,
+                    model_name=model_name,
+                    claude_model=claude_model,
+                    context_budget=context_budget,
+                    enable_llm_judge=enable_llm_judge,
+                    dry_run=dry_run,
+                    limit=1,
+                )
+                results.extend(task_b_results)
+            except Exception as exc:
+                results.append({
+                    "task": "preference_shift_followthrough",
+                    "user_id": user_id,
+                    "instance_id": inst.get("instance_id", ""),
+                    "flavor": "chatbot",
+                    "mode": mode,
+                    "metrics": {},
+                    "status": f"runner_error: {type(exc).__name__}: {exc}",
+                })
+        else:
+            results.append({
+                "task": "preference_shift_followthrough",
+                "user_id": user_id,
+                "instance_id": inst.get("instance_id", ""),
+                "flavor": inst.get("flavor", "recsys"),
+                "mode": mode,
+                "metrics": {},
+                "status": "recsys_not_implemented",
+            })
     return results

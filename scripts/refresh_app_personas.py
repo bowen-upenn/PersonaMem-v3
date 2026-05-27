@@ -210,7 +210,6 @@ def main():
             audience_type=entry.get("audience_type", "mixed"),
             audience_lens=str(entry.get("audience_lens", "")),
             style_description=str(entry.get("style_description", "")),
-            posting_frequency=entry.get("posting_frequency", "weekly"),
             topical_focus=list(entry.get("topical_focus", [])),
             chatbot_contexts=list(entry.get("chatbot_contexts", [])) if app_name == "Chatbot" else [],
             expression=expression,

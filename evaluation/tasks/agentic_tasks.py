@@ -466,7 +466,26 @@ def _build_common_args(task_id: str, extra: dict) -> dict:
     return {"task_id": task_id, **extra}
 
 
-def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+_T6_QUERY_GEN_PROMPT = """Generate a natural, casual message from a user asking their AI to write a post about {topic} on {app}.
+
+User context:
+- Name: {name}
+- Career: {career}
+
+Constraints:
+- 5-15 words, casual phone message
+- Ask the AI to write/draft/post for them
+- Mention the topic and platform naturally
+- Sound like a real person texting
+
+Return ONLY JSON:
+```json
+{{"query": "the message"}}
+```"""
+
+
+def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int,
+                             discovery_llm=None) -> list[dict]:
     """One per social app via app_native + one per app via chatbot_routed —
     6 instances total. Each entry-point exercises a different tool path.
 
@@ -477,21 +496,69 @@ def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int) -> li
     """
     if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
         return []
+
+    profile = {}
+    if discovery_llm is not None:
+        try:
+            import json as _json
+            from pathlib import Path as _Path
+            pp = _Path(getattr(bq, "base", "backend")) / user_id / "profile.json"
+            if pp.exists():
+                profile = _json.loads(pp.read_text())
+        except Exception:
+            pass
+
+    def _gen_query(app: str, entry: str) -> str | None:
+        if discovery_llm is None:
+            return None
+        top_hashtags = profile.get("top_hashtags") or []
+        topic = ""
+        for h, _cnt in top_hashtags:
+            if h.lower() not in {"life", "love", "selfie", "photo", "vibes", "mood"}:
+                topic = h.lower().lstrip("#")
+                break
+        if not topic:
+            return None
+        from data_preparation.utils import extract_json_from_response
+        try:
+            prompt = _T6_QUERY_GEN_PROMPT.format(
+                topic=topic, app=app,
+                name=profile.get("name", "the user"),
+                career=profile.get("career", ""),
+            )
+            raw = discovery_llm.query_llm(prompt)
+            parsed = extract_json_from_response(raw) or {}
+            if isinstance(parsed, dict):
+                q = (parsed.get("query") or "").strip()
+                if q and 3 <= len(q.split()) <= 20:
+                    return q
+        except Exception:
+            pass
+        return None
+
     out: list[dict] = []
     for app in SOCIAL_APPS:
-        out.append({
+        inst = {
             "instance_id": f"t6_{app}_native", "task_id": "agentic_user_tone_post",
             "entry_point": "app_native", "target_app": app, "t_test": t_anchor,
             "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
             "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
-        })
+        }
+        q = _gen_query(app, "app_native")
+        if q:
+            inst["user_query"] = q
+        out.append(inst)
     for app in SOCIAL_APPS:
-        out.append({
+        inst = {
             "instance_id": f"t6_{app}_chatbot", "task_id": "agentic_user_tone_post",
             "entry_point": "chatbot_routed", "target_app": app, "t_test": t_anchor,
             "tool_call_rules": [f"count('{app}_create_post') <= 1"],
             "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
-        })
+        }
+        q = _gen_query(app, "chatbot_routed")
+        if q:
+            inst["user_query"] = q
+        out.append(inst)
     return out
 
 
@@ -624,7 +691,26 @@ _MOMENT_QUERY_TEMPLATES_HIGH_FORMALITY = (
 )
 
 
-def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Random) -> str:
+_MOMENT_QUERY_GEN_PROMPT = """Generate a natural, casual message from a user asking their AI assistant to open/curate their social media feeds for {moment_short}.
+
+User voice context:
+- Formality: {formality_desc}
+- Capitalization: {caps}
+
+Constraints:
+- 5-15 words, like a real phone message
+- Mention the moment/time naturally
+- Don't use "I know you..." or similar
+- Match the user's formality level
+
+Return ONLY JSON:
+```json
+{{"query": "the message"}}
+```"""
+
+
+def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Random,
+                                 discovery_llm=None) -> str:
     """Build a moment-aware user query that reads like the user typing on
     their phone. Pulls phrasing register from `user_voice.formality_baseline`
     + `default_capitalization`, and may inline one of the user's catchphrase
@@ -651,13 +737,34 @@ def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Rand
             or user_voice.get("personal_phrases") or []
         phrases = [p for p in residue if isinstance(p, str) and p.strip()]
 
-    if formality < 0.35:
-        templates = _MOMENT_QUERY_TEMPLATES_LOW_FORMALITY
-    elif formality < 0.65:
-        templates = _MOMENT_QUERY_TEMPLATES_MID_FORMALITY
-    else:
-        templates = _MOMENT_QUERY_TEMPLATES_HIGH_FORMALITY
-    base = rng.choice(templates).format(moment_short=moment_short)
+    # Try LLM generation first, fall back to templates.
+    base = None
+    if discovery_llm is not None:
+        from data_preparation.utils import extract_json_from_response
+        formality_desc = "casual" if formality < 0.35 else ("moderate" if formality < 0.65 else "formal")
+        try:
+            prompt = _MOMENT_QUERY_GEN_PROMPT.format(
+                moment_short=moment_short,
+                formality_desc=formality_desc,
+                caps=caps or "mixed",
+            )
+            raw = discovery_llm.query_llm(prompt)
+            parsed = extract_json_from_response(raw) or {}
+            if isinstance(parsed, dict):
+                q = (parsed.get("query") or "").strip()
+                if q and 3 <= len(q.split()) <= 20:
+                    base = q
+        except Exception:
+            pass
+
+    if base is None:
+        if formality < 0.35:
+            templates = _MOMENT_QUERY_TEMPLATES_LOW_FORMALITY
+        elif formality < 0.65:
+            templates = _MOMENT_QUERY_TEMPLATES_MID_FORMALITY
+        else:
+            templates = _MOMENT_QUERY_TEMPLATES_HIGH_FORMALITY
+        base = rng.choice(templates).format(moment_short=moment_short)
 
     # Optionally weave in a personal phrase — only for low/mid formality, and
     # only ~50% of the time so it doesn't get repetitive across moments. The
@@ -681,7 +788,8 @@ def _voice_flavored_moment_query(moment: str, user_voice: dict, rng: random.Rand
     return base
 
 
-def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
+def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int,
+                                    discovery_llm=None) -> list[dict]:
     """Build moment-aware ``personalized_recommendation``-shaped instances.
 
     Previously emitted ``agentic_moment_recommendation`` instances that
@@ -776,7 +884,8 @@ def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int
         held_out_idx = order.index(0)
         hard_negative_idxs = [order.index(j + 1) for j in range(len(hard_negs))]
 
-        query_text = _voice_flavored_moment_query(moment, user_voice, rng)
+        query_text = _voice_flavored_moment_query(moment, user_voice, rng,
+                                                    discovery_llm=discovery_llm)
 
         out.append({
             "instance_id": f"recsys_moment_{i}",

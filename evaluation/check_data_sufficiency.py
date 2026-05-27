@@ -5,7 +5,7 @@ Tasks T6–T19. Green = benchmark can be built; red = block with an actionable
 error message.
 
 Assertions (from plan Extension D₀):
-- ≥ 10 self-authored posts per social app (ceiling → floor 5 if posting_frequency=rarely)
+- ≥ 10 self-authored posts per social app (floor 5 if total events < 50)
 - ≥ 25 inbound DMs across the four apps combined
 - ≥ 15 outbound DMs (sent by the user)
 - ≥ 3 group-DM threads (each ≥ 3 participants, ≥ 3 messages)
@@ -76,13 +76,12 @@ def check(user_id: str, backend_dir: str | Path) -> list[tuple[str, bool, str]]:
     for app in SOCIAL_APPS:
         events = _load(base / f"{app}.json") or []
         self_posts = [e for e in events if e.get("is_self_authored")]
-        posting_freq = ((profile.get("app_personas", {}) or {}).get(app.capitalize(), {}) or {}).get("posting_frequency", "weekly")
-        floor = 5 if posting_freq == "rarely" else 10
+        floor = 5 if len(events) < 50 else 10
         ok = len(self_posts) >= floor
         results.append((
             f"self_posts_{app}",
             ok,
-            f"{len(self_posts)} self-posts ({posting_freq}, floor={floor})",
+            f"{len(self_posts)} self-posts ({len(events)} events, floor={floor})",
         ))
 
     # DM counts across apps. DM threads now live inline in {app}.json as

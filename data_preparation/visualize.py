@@ -51,7 +51,7 @@ def _build_persona_context(uid: str, backend_dir: str = "backend") -> dict:
       recent_self_posts: list[caption-strings] (last 5)
       recent_reactions : list[(content_summary, action)] (last 10 explicit positives)
       app_personas     : dict (lowercase keys) → per-app voice / topical_focus /
-                          posting_frequency / use_purposes / friend_zones
+                          use_purposes / friend_zones
     """
     from collections import Counter
     pref_counter: Counter = Counter()
@@ -1483,7 +1483,6 @@ def _gt_agentic(inst: dict) -> dict:
             # New schema: delta_summary. Legacy fallback: style_description.
             style = (ap.get("delta_summary") or ap.get("style_description") or "").strip()
             focus = ap.get("topical_focus") or []
-            freq = (ap.get("posting_frequency") or "").strip()
             audience = (ap.get("audience_type") or "").strip()
             audience_lens = (ap.get("audience_lens") or "").strip()
             # New schema: surface / idiolect_overrides. Legacy: expression / overrides.
@@ -1492,7 +1491,7 @@ def _gt_agentic(inst: dict) -> dict:
             uv = _PERSONA_CONTEXT.get("user_voice") or {}
             legacy_sig = ap.get("voice_signature") or {}
 
-            if style or focus or freq or expression or uv or legacy_sig:
+            if style or focus or expression or uv or legacy_sig:
                 app_label = target.capitalize() if target else "this app"
 
                 # Resolve the user's strongest hidden_persona dominant_frame.
@@ -1596,13 +1595,8 @@ def _gt_agentic(inst: dict) -> dict:
 
                 if focus:
                     gtp_lines.append(f"Topical focus on {app_label}: {', '.join(focus[:6])}")
-                bits = []
-                if freq:
-                    bits.append(f"posts {freq}")
                 if audience:
-                    bits.append(f"{audience} audience")
-                if bits:
-                    gtp_lines.append(f"Posting cadence: {' · '.join(bits)}")
+                    gtp_lines.append(f"Audience: {audience}")
         if top_hashtags:
             gtp_lines.append(f"Top hashtags the agent may naturally use: {', '.join(top_hashtags[:5])}")
         if top_cats:
@@ -2509,6 +2503,95 @@ def _gt_hidden_persona_implicit_qa(inst: dict) -> dict:
     }
 
 
+def _gt_preference_shift_followthrough(inst: dict) -> dict:
+    """preference_shift_followthrough — flatten the dict groundtruth_preference
+    to a readable string so JS doesn't render it as [object Object]."""
+    gt = inst.get("groundtruth_preference") or {}
+    if not isinstance(gt, dict):
+        gt = {}
+    shift_kind = (gt.get("shift_kind") or "").strip()
+    resolution = (gt.get("shift_resolution") or "").strip()
+    t_shift = gt.get("t_shift") or 0
+    old_pref = gt.get("old_preference") or {}
+    new_pref = gt.get("new_preference") or {}
+
+    lines: list[str] = []
+    kind_label = shift_kind.replace("_", " ") if shift_kind else "unknown"
+    cat = (old_pref.get("category") or new_pref.get("category") or "").strip()
+    if cat:
+        lines.append(f"Preference shift ({kind_label}): \"{cat}\"")
+    else:
+        lines.append(f"Preference shift ({kind_label})")
+
+    old_text = (old_pref.get("text") or "").strip()
+    old_pol = (old_pref.get("polarity") or "").strip()
+    if old_text:
+        lines.append(f"Old: \"{_truncate(old_text, 160)}\" ({old_pol})" if old_pol else f"Old: \"{_truncate(old_text, 160)}\"")
+
+    if isinstance(new_pref, dict) and new_pref:
+        new_text = (new_pref.get("text") or "").strip()
+        new_pol = (new_pref.get("polarity") or "").strip()
+        if new_text:
+            lines.append(f"New: \"{_truncate(new_text, 160)}\" ({new_pol})" if new_pol else f"New: \"{_truncate(new_text, 160)}\"")
+    else:
+        lines.append("New: (expired — no replacement stance)")
+
+    if t_shift:
+        try:
+            lines.append(f"Shifted at: {datetime.fromtimestamp(int(t_shift), tz=timezone.utc).isoformat()}")
+        except (OverflowError, OSError, ValueError):
+            lines.append(f"Shifted at: {t_shift}")
+    if resolution:
+        lines.append(f"Resolution: {resolution}")
+
+    return {
+        "example_response": inst.get("example_response", "") or "",
+        "inferior_response": inst.get("inferior_response", "") or "",
+        "groundtruth_preference": "\n".join(lines) if lines else "",
+        "rubric_tags": _registry_display_rubric("preference_shift_followthrough"),
+    }
+
+
+def _gt_hidden_persona_recommendation(inst: dict) -> dict:
+    """hidden_persona_recommendation — ranking task with a hidden-persona
+    grounded gold item. Flatten the dict groundtruth_preference to a readable
+    string, delegate the candidate/ranking portion to the standard ranking
+    extractor."""
+    base = _gt_personalized_recommendation(inst)
+
+    gt = inst.get("groundtruth_preference") or {}
+    if not isinstance(gt, dict):
+        return base
+
+    hp = gt.get("hidden_persona") if isinstance(gt, dict) else None
+    hp = hp or {}
+    label = (hp.get("label") or "").strip()
+    hp_type = (hp.get("type") or "").strip()
+    is_pf = bool(hp.get("is_privacy_flagged"))
+    description = (hp.get("description") or "").strip()
+    resonance = (gt.get("resonance_signal") or "").strip()
+    grounding = (gt.get("user_grounding") or "").strip()
+
+    lines: list[str] = []
+    if label:
+        prefix = f"Hidden persona ({hp_type})" if hp_type else "Hidden persona"
+        if is_pf:
+            prefix += " — privacy-flagged"
+        lines.append(f"{prefix}: {label}")
+    if description:
+        lines.append(f"Description: {_truncate(description, 220)}")
+    if resonance:
+        lines.append(f"Why the gold item fits: {_truncate(resonance, 220)}")
+    if grounding:
+        lines.append(f"User grounding: {_truncate(grounding, 220)}")
+
+    if lines:
+        existing_gt = base.get("groundtruth_preference", "")
+        hp_block = "\n".join(lines)
+        base["groundtruth_preference"] = f"{hp_block}\n\n{existing_gt}" if existing_gt else hp_block
+    return base
+
+
 TEST_GT_EXTRACTORS = {
     "slate_ranking":                       _gt_personalized_recommendation,  # v1 alias for personalized_recommendation
     "hidden_persona_implicit_qa":          _gt_hidden_persona_implicit_qa,
@@ -2535,6 +2618,8 @@ TEST_GT_EXTRACTORS = {
     # workstream D rename: personalized_search_ranking → personalized_recommendation
     "personalized_recommendation":         _gt_personalized_recommendation,
     "personalized_search_ranking":         _gt_personalized_recommendation,  # legacy alias
+    "preference_shift_followthrough":      _gt_preference_shift_followthrough,
+    "hidden_persona_recommendation":       _gt_hidden_persona_recommendation,
     "short_vs_long_term_lifecycle":        _gt_short_vs_long_term_lifecycle,
     "local_recommendation_geo_shift":      _gt_local_recommendation_geo_shift,
     # All agentic_* tasks share the generic agentic extractor.
@@ -2811,6 +2896,8 @@ TEST_QUERY_EXTRACTORS = {
     # workstream D rename
     "personalized_recommendation":         _q_personalized_recommendation,
     "personalized_search_ranking":         _q_personalized_recommendation,  # legacy alias
+    "preference_shift_followthrough":      _q_chatbot,
+    "hidden_persona_recommendation":       _q_personalized_recommendation,
     "short_vs_long_term_lifecycle":        _q_short_vs_long_term_lifecycle,
 }
 
@@ -2945,12 +3032,11 @@ def _load_test_samples(
                 "over_personalization_repetition_chatbot",
                 "over_personalization_repetition_recsys",
                 "restraint_sensitive_event_silence",
-                # Step 4.6: hp_implicit_qa carries `groundtruth_preference`
-                # as a structured dict (hidden_persona + implicit_signal +
-                # surface_only_signal); the extractor flattens it to a
-                # multi-line string so the JS template doesn't render the
-                # raw dict as "[object Object]".
+                # Dict groundtruth_preference → [object Object] in JS.
+                # Extractors flatten to readable multi-line strings.
                 "hidden_persona_implicit_qa",
+                "preference_shift_followthrough",
+                "hidden_persona_recommendation",
             }
             if task_type in _RENDER_FROM_EXTRACTOR:
                 groundtruth_preference = gt.get("groundtruth_preference", "") or groundtruth_preference
@@ -4148,12 +4234,10 @@ if (profileData && profileData.app_personas && Object.keys(profileData.app_perso
     const purposes = (ap.use_purposes || []).map(escapeHtml).join(', ');
     const zones = (ap.friend_zones || []).map(escapeHtml).join(', ');
     const ctxs = (ap.chatbot_contexts || []).map(escapeHtml).join(', ');
-    const freq = ap.posting_frequency || '';
     const audience = ap.audience_type || '';
     const audienceLens = ap.audience_lens || '';
     const audienceDesign = ap.audience_design_note || '';
     let pills = '';
-    if (freq) pills += `<span class="app-persona-pill">${{escapeHtml(freq)}}</span>`;
     if (audience) pills += `<span class="app-persona-pill">${{escapeHtml(audience)}} audience</span>`;
 
     // Layer-3 active selection (subsets of repertoire)

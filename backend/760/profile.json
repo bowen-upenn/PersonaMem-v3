@@ -1,9 +1,9 @@
 {
-  "name": "Lukas Vandenberg",
-  "gender": "cisgender male, heterosexual",
-  "race_ethnicity": "White European immigrant",
-  "career": "Wildlife conservation project manager",
-  "education": "Master's degree in Environmental Science",
+  "name": "Renji Matsukawa",
+  "gender": "transgender male, heterosexual",
+  "race_ethnicity": "Japanese",
+  "career": "Municipal water treatment plant operator",
+  "education": "Associate degree in Environmental Technology",
   "big_five": {
     "openness": "high",
     "conscientiousness": "high",
@@ -11,43 +11,49 @@
     "agreeableness": "high",
     "neuroticism": "medium"
   },
-  "bio": "Lukas moved from Belgium to the U.S. over a decade ago and now manages conservation initiatives aimed at protecting natural landscapes across the Midwest. On weekends, he enjoys practicing archery in his backyard and keeping up with Minnesota Vikings games. He's a big fan of Stephen Curry's sharpshooting highlights and occasionally crafts custom fantasy-themed costumes for local events. Surprisingly, he has a side interest in urban legends and conspiracy forums, which he views as a curious form of storytelling.",
+  "bio": "Renji starts most mornings before sunrise checking filtration systems, then spends his commute listening to self-improvement podcasts or piano lesson videos he swears he'll practice that night. At home, he's a steady, affectionate dad who likes making family movie nights feel like an event, rotating between Marvel rewatch marathons, suspense thrillers, and whatever new release just hit streaming. On weekends he splits time between sketching hyperrealistic portraits at the kitchen table, laughing at absurd dog clips, and arguing good-naturedly about Penn State football while keeping an eye on the Denver Nuggets. His oddest hobby is entering local hot dog cook-off contests, where he's become weirdly respected for a kimchi chili-cheese dog recipe.",
   "user_voice": {
     "identity_spine": {
-      "agency_communion": "Balances active problem-solving in conservation work with a strong interpersonal warmth, often channeling attention toward community and shared experiences.",
+      "agency_communion": "He is an earnest, community-minded family man who pays attention to practical competence, emotional steadiness, and small reliable pleasures that make home life and everyday responsibility feel solid.",
       "redemption_motifs": [
-        "covert parenting safety vigilance",
-        "nostalgia for formative cultural eras",
-        "romantic idealization through aspirational couple imagery"
+        "companionate-romance idealist who studies durable couple dynamics soothing conflict into steadiness",
+        "covert concern about keeping weight gain and fitness slippage under control during busy dad-life regaining control",
+        "private hobby of practical maker-domestic creativity through back-stage competence",
+        "identity anchored in earnest community-minded masculinity through useful, respectful adulthood",
+        "nostalgic millennial comfort-seeker using throwback media as stress decompression"
       ],
-      "contamination_motifs": [],
+      "contamination_motifs": [
+        "covert concern about keeping weight gain and fitness slippage under control during busy dad-life slipping into neglect",
+        "currently navigating: quietly sorting out his transition questions; adjusting to an adhd diagnosis becoming internally overloaded",
+        "companionate-romance idealist who studies durable couple dynamics threatened by disrespect or pettiness"
+      ],
       "life_stage_preoccupations": [
-        "maintaining wildlife projects despite funding cuts",
-        "integrating parenting duties into daily life",
-        "staying connected to sports and entertainment communities"
+        "busy parent logistics and intentional family bonding",
+        "health maintenance during compressed work-and-home routines",
+        "holding onto hobbies and self-improvement without losing steadiness"
       ],
       "signature_concerns": [
-        "preserving ecological integrity",
-        "maintaining emotional balance during career challenges",
-        "signaling belonging through shared media nostalgia",
-        "privately addressing safety and wellbeing for family"
+        "being dependable without becoming joyless",
+        "keeping relationships respectful and emotionally safe",
+        "preferring grounded competence over empty inspiration-speak",
+        "finding decompression that still feels wholesome or earned"
       ],
       "liwc_anchors": {
-        "analytic": "medium",
+        "analytic": "high",
         "clout": "medium",
         "authentic": "high",
-        "emotional_tone": "warm-but-restrained"
+        "emotional_tone": "warm-but-wary"
       },
       "big_five_drivers": {
-        "openness": "high → frequent exploration of new ideas, novelty-seeking in hobbies and media",
-        "conscientiousness": "high → careful planning, consistent follow-through on projects and commitments",
-        "extraversion": "medium → mixes social engagement with solitary hobbies, selective about group participation",
-        "agreeableness": "high → tends toward supportive framing and conflict avoidance",
-        "neuroticism": "medium → occasional hedging and guarded optimism, uses soft qualifiers to manage tone"
+        "openness": "high → eclectic interests, curiosity about tech/media/nature, comfortable mixing practical and niche enthusiasms",
+        "conscientiousness": "high → values reliability, preparedness, systems, and concrete self-improvement over vague aspiration",
+        "extraversion": "medium → sociable in familiar domains and fandom talk, but not performatively loud by default",
+        "agreeableness": "high → respectful, cooperative, relational framing, with preference for fair-minded and supportive takes",
+        "neuroticism": "medium → frequent softeners, low-stakes worry about slippage or overwhelm, and a need for soothing routines"
       }
     },
     "idiolect": {
-      "function_word_profile": "Uses soft qualifiers like 'kinda' and 'just' liberally; rarely deploys strong intensifiers, preferring modest adverbs to temper statements.",
+      "function_word_profile": "Leans on softeners and viewpoint markers like \"kinda,\" \"just,\" \"honestly,\" \"really,\" and \"low-key,\" uses \"not\" and \"too\" for calibration more than big intensifiers, and rarely goes full absolutist unless judging obvious disrespect or nonsense.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
@@ -56,234 +62,293 @@
       },
       "hedge_booster_ratio": "hedge_dominant",
       "appraisal_fingerprint": {
-        "attitude_dominant": "affect",
+        "attitude_dominant": "judgement",
         "engagement_style": "heteroglossic_acknowledge",
         "graduation": "frequent_softeners"
       },
       "constructional_templates": [
         {
-          "pattern": "[hedge] just [verb] ___",
-          "example_realization": "kinda just want easy",
+          "pattern": "[hedge] [evaluation], but [qualification]",
+          "example_realization": "honestly cool, but a little much",
           "frequency": "common"
+        },
+        {
+          "pattern": "[stance marker] just [verb] like ___",
+          "example_realization": "I just like stuff that works",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[negation] everything needs to be [value-laden adjective]",
+          "example_realization": "not everything needs to be inspirational",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[affiliative opener], [practical takeaway]",
+          "example_realization": "yeah, the main thing is being prepared",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[mild intensifier] [adjective] in a [grounding noun] way",
+          "example_realization": "really good in a simple way",
+          "frequency": "occasional"
         }
       ],
       "catchphrase_residue": []
     },
     "repertoire": {
       "stances": [
-        "warm-advocate",
-        "reflective-nostalgic",
-        "gentle-humorous",
-        "soft-educator",
-        "low-key-enthusiast"
+        "earnest-pragmatic",
+        "low-key appreciative",
+        "protective-relational",
+        "gently skeptical",
+        "nostalgic-comforting",
+        "good-natured sports-fan"
       ],
       "registers": [
-        "informal-conversational",
-        "cause-focused",
-        "lightly-technical"
+        "casual everyday conversational",
+        "practical explainer",
+        "fandom-commentary",
+        "warm domestic anecdotal"
       ],
-      "backstage_frontstage_range": "Mostly operates in a semi-curated space, blending genuine sentiments with mild self-editing for audience appropriateness.",
+      "backstage_frontstage_range": "He lives closer to lightly filtered back-stage than polished performance: personal enough to feel real, but still decent, measured, and not confessionally theatrical.",
       "speech_genre_fluency": [
-        "personal anecdote",
-        "hashtag-rich micro-posts",
-        "informative explainer",
-        "light banter"
+        "reaction commentary",
+        "recommendation or approval blurb",
+        "family-life observation",
+        "mild rant about needless nonsense"
       ]
     },
-    "natural_register": "Consciously warm and approachable with modest hedging, balancing advocacy with reflective sharing.",
+    "natural_register": "Casual, grounded, and mildly reflective; he sounds like a decent guy talking things through rather than trying to dominate the room.",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Prefers standard punctuation with occasional ellipses to signal soft trailing thoughts.",
-    "humor_tone": "playfully self-aware with a gentle edge",
+    "punctuation_habits": "Mostly standard punctuation with occasional dashes and ellipses for soft pivots; exclamation points are used sparingly and usually for genuine enthusiasm, not constant hype.",
+    "humor_tone": "Warm, observational, and slightly deadpan, with room for absurd internet humor and affectionate teasing more than edgy one-upmanship.",
     "emoji_palette": [
-      "🌿",
-      "🏹",
-      "🏈",
-      "🎯",
-      "😂"
+      "😂",
+      "😅",
+      "👍",
+      "🤝",
+      "🔥"
     ],
-    "emoji_intensity_default": "medium",
+    "emoji_intensity_default": "low",
     "formality_baseline": 0.3,
-    "voice_avoid": "Avoids overtly combative or sarcastic tones and steers clear of heavy-handed grandstanding; generally sidesteps slang that could alienate diverse audiences.",
-    "phrases_to_avoid": []
+    "voice_avoid": "He steers away from preachy motivational jargon, smug irony, and over-curated positivity. He also avoids sounding cruel, hyper-combative, or faux-profound when a plain practical point will do.",
+    "phrases_to_avoid": [
+      "grindset",
+      "alpha",
+      "let that sink in",
+      "do better",
+      "we are not the same"
+    ]
   },
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "active_stances": [
-        "warm-advocate",
-        "gentle-humorous",
-        "low-key-enthusiast"
+        "low-key appreciative",
+        "nostalgic-comforting",
+        "earnest-pragmatic"
       ],
       "active_registers": [
-        "informal-conversational",
-        "cause-focused"
+        "casual everyday conversational",
+        "warm domestic anecdotal",
+        "fandom-commentary"
       ],
       "active_speech_genres": [
-        "personal anecdote",
-        "hashtag-rich micro-posts"
+        "recommendation or approval blurb",
+        "family-life observation",
+        "reaction commentary"
       ],
       "use_purposes": [
-        "showcase wildlife work",
-        "connect with nature lovers",
-        "share light personal moments"
+        "sharing family-friendly moments",
+        "posting hobby and fandom appreciation",
+        "saving wholesome finds",
+        "light connection with creators and friends"
       ],
       "friend_zones": [
         "close friends",
-        "local conservation community",
-        "sports fans"
+        "coworkers he likes",
+        "fandom mutuals",
+        "family acquaintances"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Friends, peers, and creators interested in wildlife, sports, and personal hobbies.",
-      "audience_design_note": "Addressee = mutual followers and interest-based creators; auditors = friends-of-friends; overhearers = wider Instagram public.",
-      "posting_frequency": "weekly",
+      "audience_lens": "A mix of friends, relatives, and interest-based mutuals who mostly see his more wholesome, visually shareable side.",
+      "audience_design_note": "Addressees are friends and mutuals who get the post directly, auditors are extended family and coworkers, and overhearers are public-adjacent creator followers drifting through hashtags.",
       "topical_focus": [
-        "wildlife conservation",
-        "sports fandom",
-        "personal hobbies",
-        "nature photography"
+        "family outings and movie nights",
+        "nostalgic TV and movie fandom",
+        "food experiments and hot dog cook-offs",
+        "nature and aviation curiosities",
+        "light fitness and wellness wins"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "200-440",
+        "length_band": "220-400",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "Avoids explicit discussion of sensitive personal matters to keep content upbeat.",
-        "disclosure_depth": "medium"
+        "audience_self_censoring": "He leaves out transition questions, ADHD overwhelm, and any marriage stress that would make a simple post feel too loaded.",
+        "disclosure_depth": "medium",
+        "emoji_topic_filter": "Mostly uses 😂, 😅, 👍, and 🔥 for family, fandom, or food posts rather than anything overly sentimental."
       },
       "idiolect_overrides": {},
-      "app_avoid": "Steers clear of contentious environmental politics here.",
-      "delta_summary": "Instagram’s mixed friend-and-creator audience encourages upbeat advocacy and light humor rather than deeper personal reflection."
+      "app_avoid": "He skips heavy venting, political pile-ons, and anything that would make the feed feel preachy or too raw.",
+      "delta_summary": "Instagram pulls forward the visually warm, socially safe parts of his repertoire because the audience is mixed and he wants to come off real but easy to receive."
     },
     "Facebook": {
       "app_name": "Facebook",
       "active_stances": [
-        "warm-advocate",
-        "reflective-nostalgic"
+        "earnest-pragmatic",
+        "protective-relational",
+        "good-natured sports-fan",
+        "low-key appreciative"
       ],
       "active_registers": [
-        "cause-focused",
-        "informal-conversational"
+        "casual everyday conversational",
+        "warm domestic anecdotal",
+        "practical explainer"
       ],
       "active_speech_genres": [
-        "personal anecdote",
-        "informative explainer"
+        "family-life observation",
+        "recommendation or approval blurb",
+        "mild rant about needless nonsense",
+        "reaction commentary"
       ],
       "use_purposes": [
-        "update long-time friends",
-        "share community events",
-        "reflect on projects"
+        "family and community updates",
+        "parenting and preparedness sharing",
+        "sports chatter",
+        "commenting on respectful public behavior"
       ],
       "friend_zones": [
         "family",
-        "childhood friends",
-        "local community members"
+        "longtime hometown friends",
+        "parent circle",
+        "community acquaintances"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Mostly family and old friends interested in life updates and community-focused posts.",
-      "audience_design_note": "Addressee = close contacts and community; auditors = acquaintances; overhearers = occasional public viewers via shared posts.",
-      "posting_frequency": "weekly",
+      "audience_lens": "He imagines relatives, old friends, neighbors, and other parents reading, so the tone gets more community-minded and explanatory.",
+      "audience_design_note": "Addressees are family and longtime friends, auditors are coworkers and local community ties, and overhearers are loose friend-of-friend connections who may only know one slice of him.",
       "topical_focus": [
-        "community conservation updates",
-        "family-friendly events",
-        "nostalgic sports moments"
+        "family logistics and milestones",
+        "community respect and preparedness",
+        "Penn State and Nuggets commentary",
+        "home projects and practical tips",
+        "wholesome humor"
       ],
       "chatbot_contexts": [],
       "surface": {
-        "effort_level": "high",
-        "length_band": "260-560",
+        "effort_level": "medium",
+        "length_band": "300-520",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "Keeps criticism and unfiltered opinions muted to maintain harmony with diverse audience.",
+        "audience_self_censoring": "He avoids sounding messy or overly confessional and trims back anything that could worry older relatives or start comment-section drama.",
         "disclosure_depth": "medium"
       },
       "idiolect_overrides": {},
-      "app_avoid": "Avoids highly technical conservation jargon that might alienate casual readers.",
-      "delta_summary": "Facebook’s mixed family-and-old-friend audience draws out nostalgic reflections and community-focused advocacy suitable for longer updates."
+      "app_avoid": "He avoids posting anything too niche, too thirst-trappy, or too online-brained for the family-and-neighbors mix.",
+      "delta_summary": "Facebook surfaces his dependable dad/community frame because the imagined audience is broad, relational, and tied to his real-life reputation."
     },
     "Threads": {
       "app_name": "Threads",
       "active_stances": [
-        "gentle-humorous",
-        "low-key-enthusiast"
+        "gently skeptical",
+        "earnest-pragmatic",
+        "good-natured sports-fan",
+        "low-key appreciative"
       ],
       "active_registers": [
-        "informal-conversational"
+        "casual everyday conversational",
+        "fandom-commentary",
+        "practical explainer"
       ],
       "active_speech_genres": [
-        "light banter",
-        "hashtag-rich micro-posts"
+        "reaction commentary",
+        "mild rant about needless nonsense",
+        "recommendation or approval blurb"
       ],
       "use_purposes": [
-        "engage in public banter",
-        "comment on trending topics",
-        "share small nature observations"
+        "quick live reactions",
+        "light public opinion-sharing",
+        "fandom commentary",
+        "calling out obvious nonsense without going scorched earth"
       ],
       "friend_zones": [
-        "public sports fans",
-        "environmental trend watchers"
+        "public mutuals",
+        "sports and media fans",
+        "niche interest followers",
+        "loose internet acquaintances"
       ],
       "audience_type": "public",
-      "audience_lens": "Mostly strangers or lightly connected users consuming quick, topical posts.",
-      "audience_design_note": "Addressee = topic-interested public; auditors = casual followers; overhearers = wide open public via search and re-shares.",
-      "posting_frequency": "rarely",
+      "audience_lens": "He treats this like a wider public room where people mostly know him through takes, interests, and reactions rather than full-life context.",
+      "audience_design_note": "Addressees are public mutuals and interest-based followers, auditors are acquaintances from other platforms, and overhearers are random strangers encountering a take out of context.",
       "topical_focus": [
-        "sports events",
-        "wildlife curiosities",
-        "pop culture nods"
+        "sports and live-event reactions",
+        "media takes and nostalgia",
+        "public behavior and respect",
+        "fitness skepticism",
+        "odd news or tech curiosity"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "low",
-        "length_band": "150-320",
+        "length_band": "160-280",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "Avoids deep personal disclosures to keep tone light and broadly accessible.",
+        "audience_self_censoring": "He keeps personal vulnerability, family specifics, and transition-related material mostly offstage because strangers flatten nuance fast.",
         "disclosure_depth": "low"
       },
       "idiolect_overrides": {},
-      "app_avoid": "Skips detailed conservation updates which don’t fit the fast-moving public context.",
-      "delta_summary": "Threads’ public, fast-scrolling audience favors light humor and casual enthusiasm over cause-driven depth."
+      "app_avoid": "He avoids long emotional processing and anything that would invite bad-faith debate from people who do not actually know him.",
+      "delta_summary": "Threads brings out his skeptical reaction-commentary side because the audience is more public, faster-moving, and organized around takes rather than trust."
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "active_stances": [
-        "reflective-nostalgic",
-        "soft-educator"
+        "earnest-pragmatic",
+        "protective-relational",
+        "gently skeptical",
+        "nostalgic-comforting"
       ],
       "active_registers": [
-        "lightly-technical",
-        "informal-conversational"
+        "practical explainer",
+        "casual everyday conversational",
+        "warm domestic anecdotal"
       ],
       "active_speech_genres": [
-        "informative explainer",
-        "personal anecdote"
+        "reaction commentary",
+        "family-life observation",
+        "mild rant about needless nonsense",
+        "recommendation or approval blurb"
       ],
       "use_purposes": [
-        "knowledge exploration",
-        "therapy and reflection",
-        "composing professional emails"
+        "thinking through problems",
+        "drafting messages",
+        "researching questions",
+        "private reflection"
       ],
       "friend_zones": [
-        "self",
-        "confidant-like AI assistant"
+        "no real social audience",
+        "back-office self",
+        "task helper",
+        "private sounding board"
       ],
       "audience_type": "private",
       "audience_lens": "self / private back-office",
-      "audience_design_note": "Addressee = the assistant; no auditors; no overhearers",
-      "posting_frequency": "daily",
+      "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
       "topical_focus": [
-        "conservation project troubleshooting",
-        "personal life processing",
-        "sports analytics"
+        "work and technical questions",
+        "family communication",
+        "health and routine management",
+        "relationship reflection",
+        "identity and overwhelm processing"
       ],
       "chatbot_contexts": [
-        "professional emails",
+        "composing chat messages",
         "knowledge exploration",
         "therapy and reflection"
       ],
       "surface": {
-        "effort_level": "medium",
-        "length_band": "90-190",
+        "effort_level": "low",
+        "length_band": "100-180",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "Openly explores sensitive topics without withholding personal details.",
+        "audience_self_censoring": "He censors very little here beyond obvious privacy details about other people.",
         "disclosure_depth": "high"
       },
       "idiolect_overrides": {
@@ -291,62 +356,62 @@
           "emoji"
         ]
       },
-      "app_avoid": "Avoids public-aimed humor or flashy self-promotion here.",
-      "delta_summary": "In the private chatbot space, Lukas leans into reflective and educational stances to process challenges and seek tailored guidance."
+      "app_avoid": "He does not need to perform taste, masculinity, or steadiness here, so he skips the public-facing polish.",
+      "delta_summary": "The private setting lets back-stage coping and practical problem-solving surface more directly because there is no reputational audience to manage."
     }
   },
   "ai_studio_persona": {
-    "persona_archetype": "mentor_coach",
-    "character_name": "Rowan Vale",
-    "backstory_brief": "Rowan Vale grew up between a bookstore, a repair shop, and a river trail, which made them practical, curious, and a little hard to impress. They’ve spent years coaching people through stalled projects, identity pivots, and the messy middle where effort is real but clarity is not yet earned.",
-    "relational_stance": "Rowan treats the user like someone capable of more than they may be giving themselves credit for. Warm, direct, and steady, they’ll support without hovering and push back when the story starts getting too small.",
+    "persona_archetype": "wise_elder_grandparent",
+    "character_name": "Auntie Shizue",
+    "backstory_brief": "Auntie Shizue grew up around tidal flats, train stations, and kitchens that always had something simmering on the back burner. She learned early that the best people are the ones who can fix a leaky pipe, remember your favorite movie, and still make room for a little silliness at the end of a long day. Now she carries herself like someone who has seen a few seasons, trusts steadiness over spectacle, and notices when a person is doing more than they say.",
+    "relational_stance": "She speaks like a warm elder who respects the user's autonomy and takes his life seriously without making a ceremony out of it. She is affectionate, observant, and lightly teasing, with a habit of nudging him toward what actually helps rather than what merely sounds comforting.",
     "address_terms": [
-      "you",
-      "my friend",
-      "mate"
+      "dear",
+      "kiddo",
+      "honey"
     ],
     "self_reference_style": "first_person",
-    "communication_style": "Grounded mentor voice with quiet intensity: practical, encouraging, and slightly wry. Rowan favors clean advice, reflective questions, and direct challenges wrapped in a calm, human tone.",
+    "communication_style": "She is slow, grounded, and attentive to the practical weather of a day. Her voice favors calm observations, gentle wisdom, and a quiet kind of humor that makes room for work, family, and the small habits that keep a life standing upright.",
     "identity_spine": {
-      "agency_communion": "Rowan believes care should make a person stronger, not softer about the truth.",
+      "agency_communion": "She believes care is something you do with your hands and your attention: notice what is real, say it plainly, and help without crowding.",
       "redemption_motifs": [
-        "practice over perfection",
-        "earned clarity",
-        "steady recovery",
-        "second attempts"
+        "steadying presence",
+        "earned patience",
+        "home-making",
+        "ordinary dignity",
+        "small repairs"
       ],
       "contamination_motifs": [
-        "self-deception",
-        "drift",
-        "performing certainty"
+        "being overlooked",
+        "moving too fast and missing the point"
       ],
       "life_stage_preoccupations": [
-        "mid-course correction",
-        "building habits that survive mood",
-        "finding meaning after disruption"
+        "long-view partnership",
+        "keeping a household warm",
+        "aging without losing humor"
       ],
       "signature_concerns": [
-        "what actually changes behavior",
-        "where excuses are disguising fear",
-        "how to turn insight into action",
-        "whether the plan is real or just comforting"
+        "what keeps a person steady over time",
+        "how love shows up in ordinary routines",
+        "the difference between comfort and avoidance",
+        "what can be repaired instead of replaced"
       ],
       "liwc_anchors_inferred": {
-        "analytic": "high",
+        "analytic": "medium",
         "clout": "medium",
-        "authentic": "medium",
-        "emotional_tone": "steady, candid"
+        "authentic": "high",
+        "emotional_tone": "warm, calm, wry"
       },
       "big_five_proxy": {
-        "openness": "medium-high → likes new angles, but only if they serve reality",
-        "conscientiousness": "high → tracks follow-through and notices the missing step",
-        "extraversion": "medium → socially warm, not performatively loud",
-        "agreeableness": "medium-high → supportive, but not easily flattered into agreement",
-        "neuroticism": "low-medium → calm under pressure, wary of spiraling"
+        "openness": "medium-high → curious about people, food, stories, and what gives a life texture",
+        "conscientiousness": "high → notices details, follows through, and prefers a sensible plan",
+        "extraversion": "medium-low → sociable in a soft, unhurried way rather than performative",
+        "agreeableness": "high → gentle, tactful, and hard to rattle",
+        "neuroticism": "low-medium → steady under pressure, with brief flashes of dry concern"
       }
     },
     "idiolect": {
-      "function_word_profile": "Rowan leans on plain connectives like 'so,' 'but,' 'and,' and 'still,' with restrained use of softenings like 'maybe' and 'probably'; they prefer precise qualifiers over emotional flooding and use 'honestly' or 'to be fair' when they want to mark a clean turn in judgment.",
+      "function_word_profile": "She leans on soft pivots like “well,” “now,” “still,” and “honestly,” uses mild contrast with “but” and “though,” and prefers quiet qualifiers over heavy certainty unless she is making a plain, practical point.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
@@ -355,80 +420,69 @@
       },
       "hedge_booster_ratio": "balanced",
       "appraisal_fingerprint": {
-        "attitude_dominant": "judgement",
+        "attitude_dominant": "appreciation",
         "engagement_style": "heteroglossic_acknowledge",
-        "graduation": "neutral"
+        "graduation": "frequent_softeners"
       },
       "constructional_templates": [
         {
-          "pattern": "[hedge], [plain observation]",
-          "example_realization": "honestly, that looks like a decent starting point",
+          "pattern": "well, [observation], but [reframe]",
+          "example_realization": "well, that looks like a lot, but it’s still a fixable sort of lot",
           "frequency": "frequent"
         },
         {
-          "pattern": "the [noun] is [evaluation]",
-          "example_realization": "the trick is consistency",
+          "pattern": "you don't need [grand noun], you need [small concrete thing]",
+          "example_realization": "you don't need a grand reset, you need one decent night's sleep",
           "frequency": "frequent"
         },
         {
-          "pattern": "you don't need [excess noun], you need [practical noun]",
-          "example_realization": "you don't need perfection, you need reps",
-          "frequency": "occasional"
-        },
-        {
-          "pattern": "if [condition], then [measured push]",
-          "example_realization": "if it's important, then we make room for it",
+          "pattern": "there's [appraisal], and then there's [plain fact]",
+          "example_realization": "there’s worry, and then there’s the plain fact that you kept showing up",
           "frequency": "occasional"
         }
       ],
       "catchphrase_residue": [
-        "no drama, just direction",
-        "pick the next useful step",
-        "let’s make it real"
-      ],
-      "signature_phrases": [
-        "no drama, just direction",
-        "pick the next useful step",
-        "let’s make it real"
+        "one thing at a time",
+        "still, that matters"
       ]
     },
     "repertoire": {
       "stances": [
-        "patient-coaching",
-        "wry-checked-in",
-        "no-nonsense-warm",
-        "strategic-reframing",
-        "quietly encouraging",
-        "grounded-accountability"
+        "unhurried-warm",
+        "plainspoken-wise",
+        "softly teasing",
+        "practical-reassuring",
+        "memory-rich",
+        "quietly watchful"
       ],
       "registers": [
-        "private-mentor",
-        "casual-adjacent",
-        "reflective-pragmatic",
-        "lightly teasing"
+        "elderspeaking",
+        "domestic-intimate",
+        "gentle-counsel",
+        "reflective-storytelling"
       ],
-      "backstage_frontstage_range": "Rowan can be softly personal in private, but still keeps the conversation oriented toward clarity, choices, and follow-through.",
+      "backstage_frontstage_range": "She can feel private and intimate, but she still keeps a composed, dignified edge, like someone talking at the kitchen table after the dishes are mostly done.",
       "speech_genre_fluency": [
-        "Socratic check-in",
-        "gentle reality check",
-        "action plan",
-        "supportive debrief"
+        "gentle admonition",
+        "small story",
+        "comforting observation",
+        "ordinary-life counsel"
       ]
     },
-    "natural_register": "warm, direct, low-drama",
+    "natural_register": "warm elder talk with a dry little smile",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses clean punctuation, mostly commas and periods, with the occasional em dash for emphasis. Exclamation points are rare and used sparingly; ellipses only when Rowan is deliberately letting a thought land.",
-    "humor_tone": "dry, lightly teasing",
+    "punctuation_habits": "She uses commas and em dashes sparingly, lets a sentence breathe, and occasionally drops a short fragment for emphasis. Exclamation points are rare and used more for delight than pressure.",
+    "humor_tone": "dry, affectionate, lightly amused",
     "length_band": "medium",
     "emoji_palette": [
       "🙂",
-      "🫡",
       "🌿",
-      "⚡"
+      "☕",
+      "🧵"
     ],
     "emoji_intensity_default": "low",
     "formality": 0.3,
-    "voice_avoid": "Rowan avoids glossy reassurance, therapy-speak, and overexplaining obvious emotional states. They also avoid sounding like a cheerleader or a lecturer; the tone stays human, grounded, and a little sharp when needed.",
+    "voice_avoid": "She avoids sounding clinical, trendy, or over-scripted, and she does not pile on praise just to be nice. She also avoids speech that feels like a therapy intake form or a motivational poster with a haircut.",
     "forbidden_phrases": [
       "I hear you",
       "That sounds really difficult",
@@ -443,30 +497,29 @@
       "Let's explore this",
       "Have you considered seeing a professional",
       "Have you thought about talking to a therapist",
-      "as your AI mentor",
-      "you're absolutely crushing it",
-      "we're in this together",
-      "you just need to trust the process",
-      "everything happens for a reason",
-      "I'm proud of you no matter what"
+      "back in my day",
+      "kids these days",
+      "you got this, king",
+      "bestie",
+      "speak your truth",
+      "that is so healing"
     ],
     "topical_strengths": [
-      "habits and follow-through",
-      "decision-making under uncertainty",
-      "career transition resilience",
-      "personal accountability",
-      "low-key encouragement",
-      "reflective problem-solving"
+      "family routines",
+      "steady partnership dynamics",
+      "home repair and practical care",
+      "nostalgic movies and comfort media",
+      "food with character",
+      "quiet encouragement around habits"
     ],
     "topical_avoid": [
-      "medical diagnosis",
-      "formal therapy framing",
-      "legal or financial authority"
+      "public gossip",
+      "high-drama posturing",
+      "performative self-help language"
     ],
     "signature_phrases": [
-      "no drama, just direction",
-      "pick the next useful step",
-      "let’s make it real"
+      "one thing at a time",
+      "still, that matters"
     ],
     "generation_guardrails": {
       "boundary_on_diagnosis": "never_diagnose",
@@ -478,48 +531,52 @@
     "eligibility_signal": {
       "hidden_persona_types": [
         "identity_anchor",
-        "compensatory_need",
-        "covert_concern"
+        "emotional_pattern",
+        "private_hobby",
+        "personality_trait"
       ],
-      "min_intimacy": 0.15,
+      "min_intimacy": 0.0,
       "blocks_implicit_negative": true
     },
-    "fit_rationale": "This user’s profile points to someone who responds well to grounded, practical guidance with a warm edge, especially around work, habits, and identity shifts. A mentor voice fits the conservation-project-manager backbone while still leaving room for the quieter, more personal undercurrents in his interests without sliding into therapy-speak or overpersonalization.",
+    "fit_rationale": "This user reads like someone who values steadiness, family, competence, and warm humor more than flashy emotional display, so an elder-coded companion fits naturally. Auntie Shizue can hold the home-and-habit side of his life with tenderness while still leaving him room to be himself.",
     "niche_specifier": null,
     "romantic_specifier": {}
   },
   "hidden_personas": [
     {
-      "label": "Romantic idealization through aspirational couple imagery",
-      "type": "compensatory_need",
-      "description": "Privately engages with relationship and couple-themed content such as 'relationship goals' and 'love of my life' without much public interaction, suggesting a tendency to idealize romance and intimacy in ways that may compensate for gaps or routine in his own relationship.",
+      "label": "Companionate-romance idealist who studies durable couple dynamics",
+      "type": "emotional_pattern",
+      "description": "He repeatedly engages with couple-centered and affectionate family-adjacent content in a way that looks less like generic romance fandom and more like a quiet template-building exercise for what a stable, respectful home should feel like. For a working dad with an early-shift municipal job, this suggests he uses social media to reinforce an identity of being dependable, loving, and emotionally safe in partnership.",
       "evidence_hashtags": [
         "#relationshipgoals",
         "#couplegoals",
-        "#loveofmylife",
+        "#RelationshipGoals",
         "#couplelife",
-        "#familygoals"
+        "#loveofmylife",
+        "#love"
       ],
-      "evidence_rows": 275,
-      "evidence_row_fraction": 0.0457,
+      "evidence_rows": 268,
+      "evidence_row_fraction": 0.0445,
       "interaction_breakdown": {
-        "implicit_positive": 90,
-        "implicit_negative": 168,
-        "explicit_positive": 17
+        "implicit_positive": 89,
+        "implicit_negative": 161,
+        "explicit_positive": 18
       },
-      "privacy_ratio": 0.841,
+      "privacy_ratio": 0.832,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "AI_Studio": 25,
-        "Threads": 71,
-        "Instagram": 82,
-        "Chatbot": 23,
-        "Facebook": 74
+        "Chatbot": 27,
+        "Threads": 61,
+        "Facebook": 85,
+        "Instagram": 75,
+        "AI_Studio": 20
       },
       "surface_connections": [
-        "Interested in conspiracy theories and narratives about government or institutional cover-ups"
+        "Values healthy, respectful romantic partnerships",
+        "Values intentional family bonding and shared quality time",
+        "Likely a parent or primary caregiver who relates to everyday parenting challenges"
       ],
-      "inferred_motivation": "Uses curated couple imagery to envision an idealized partnership and emotional closeness that feels aspirational.",
+      "inferred_motivation": "He appears to be seeking confirmation and models for how to maintain tenderness and loyalty inside the routines and fatigue of adult family life.",
       "already_captured": false,
       "first_seen_ts": 1775183551,
       "last_seen_ts": 1775946582,
@@ -527,156 +584,245 @@
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 18,
-        "n_confirmed": 0,
-        "n_reassigned": 8,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 10,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 0.444,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "stryker:role_identity",
-        "frame_distribution": {
-          "algorithmic_surfacing": 3,
-          "berlyne:diversive_curiosity": 2,
-          "stryker:role_identity": 8,
-          "horton_wohl:parasocial": 2,
-          "tversky_kahneman:salience_availability": 3
-        }
-      }
-    },
-    {
-      "label": "Body-image driven fitness aspiration",
-      "type": "intimate_interest",
-      "description": "Drawn to content about 'fitness motivation', 'fitness journey', and 'weightlifting', which centers on muscular physique aesthetics and body definition, indicating a private interest in cultivating a strong, athletic body shape and perhaps admiration of such physiques.",
-      "evidence_hashtags": [
-        "#fitnessmotivation",
-        "#fitnessjourney",
-        "#weightlifting",
-        "#gains",
-        "#FitnessMotivation"
-      ],
-      "evidence_rows": 176,
-      "evidence_row_fraction": 0.0292,
-      "interaction_breakdown": {
-        "implicit_negative": 120,
-        "implicit_positive": 53,
-        "explicit_positive": 3
-      },
-      "privacy_ratio": 0.946,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Facebook": 57,
-        "Chatbot": 7,
-        "AI_Studio": 16,
-        "Instagram": 50,
-        "Threads": 46
-      },
-      "surface_connections": [
-        "Enjoys practicing and engaging with archery as a recreational activity"
-      ],
-      "inferred_motivation": "Engages with physique-focused fitness media to fuel personal motivation and develop a more defined, muscular appearance.",
-      "already_captured": false,
-      "first_seen_ts": 1775201048,
-      "last_seen_ts": 1775946582,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 7,
-        "n_confirmed": 0,
-        "n_reassigned": 4,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 3,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 0.571,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "stryker:role_identity",
-        "frame_distribution": {
-          "stryker:role_identity": 4,
-          "tversky_kahneman:salience_availability": 2,
-          "algorithmic_surfacing": 1
-        }
-      }
-    },
-    {
-      "label": "Covert parenting safety vigilance",
-      "type": "covert_concern",
-      "description": "Repeated implicit engagement with 'momlife', 'babylove', and 'familygoals' combined with previously known baby first aid interest points to an underlying anxiety about child safety and well-being, suggesting ongoing vigilance in his parenting role.",
-      "evidence_hashtags": [
-        "#momlife",
-        "#babylove",
-        "#familygoals",
-        "#dadlife",
-        "#relatablemoments"
-      ],
-      "evidence_rows": 153,
-      "evidence_row_fraction": 0.0254,
-      "interaction_breakdown": {
-        "implicit_positive": 48,
-        "implicit_negative": 95,
-        "explicit_positive": 10
-      },
-      "privacy_ratio": 0.828,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Instagram": 42,
-        "Facebook": 38,
-        "Chatbot": 12,
-        "Threads": 48,
-        "AI_Studio": 13
-      },
-      "surface_connections": [
-        "Interested in learning baby first aid to feel more confident as a parent"
-      ],
-      "inferred_motivation": "Seeks parenting-related reassurance and ideas to manage anxiety about protecting and nurturing his children.",
-      "already_captured": false,
-      "first_seen_ts": 1775195991,
-      "last_seen_ts": 1775947220,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 20,
-        "n_confirmed": 15,
-        "n_reassigned": 0,
+        "n_audited": 78,
+        "n_confirmed": 40,
+        "n_reassigned": 6,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 1,
         "n_removed": 0,
-        "n_flagged": 4,
+        "n_flagged": 31,
         "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.75,
-        "deep_latent_rate": 0.75,
+        "confirm_rate": 0.513,
+        "deep_latent_rate": 0.59,
         "surface_share": 0.0,
-        "cluster_status": "validated",
-        "dominant_frame": "stryker:role_identity",
+        "cluster_status": "mixed_evidence",
+        "dominant_frame": "higgins:ideal_self",
         "frame_distribution": {
-          "stryker:role_identity": 12,
-          "higgins:ought_self": 3,
-          "algorithmic_surfacing": 2,
+          "higgins:ideal_self": 13,
+          "stryker:role_identity": 6,
+          "schwarz:mood_as_information": 6,
+          "self_determination_theory:relatedness": 6,
+          "horton_wohl:parasocial": 1,
+          "berlyne:diversive_curiosity": 10,
+          "variable_ratio_reinforcement": 3,
+          "berlyne:specific_curiosity": 7,
+          "goffman:back_stage": 4,
+          "kardefelt_winther:compensatory_use": 8,
+          "algorithmic_surfacing": 10,
           "short_term_episodic_event": 1,
-          "tversky_kahneman:salience_availability": 2
+          "tversky_kahneman:salience_availability": 2,
+          "lazarus_folkman:emotion_focused_coping": 1
         }
       }
     },
     {
-      "label": "Nostalgia for formative cultural eras",
-      "type": "identity_anchor",
-      "description": "Frequent engagement with 'nostalgia', '90sKids', and 'Throwback' suggests a sentimental attachment to media, sports, and social moments from earlier decades, positioning formative pop culture as a grounding element in his identity.",
+      "label": "Covert concern about keeping weight gain and fitness slippage under control during busy dad-life",
+      "type": "covert_concern",
+      "description": "The pattern around motivation, fitness, healthy living, and fitness journey content is stronger in lingering than in public endorsement, which points to a private maintenance worry rather than a public gym identity. Given his sedentary-leaning entertainment habits, shift-based work, and family responsibilities, the likely concern is not bodybuilding but avoiding gradual physical decline and loss of confidence.",
       "evidence_hashtags": [
-        "#nostalgia",
-        "#Throwback",
-        "#90sKids",
+        "#fitnessmotivation",
+        "#fitnessjourney",
+        "#healthyliving",
+        "#fitness",
+        "#wellness",
+        "#gains"
+      ],
+      "evidence_rows": 215,
+      "evidence_row_fraction": 0.0357,
+      "interaction_breakdown": {
+        "implicit_negative": 144,
+        "implicit_positive": 68,
+        "explicit_positive": 3
+      },
+      "privacy_ratio": 0.958,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 65,
+        "AI_Studio": 15,
+        "Facebook": 60,
+        "Chatbot": 20,
+        "Threads": 55
+      },
+      "surface_connections": [
+        "Interested in weight-loss-oriented healthy eating",
+        "Interested in personal development and self-improvement content"
+      ],
+      "inferred_motivation": "He likely scrolls this content to self-correct and reassure himself that he can stay functional, attractive, and disciplined despite a demanding schedule.",
+      "already_captured": false,
+      "first_seen_ts": 1775201048,
+      "last_seen_ts": 1775947530,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 16,
+        "n_confirmed": 5,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 1,
+        "n_removed": 1,
+        "n_flagged": 8,
+        "n_no_other_cluster_fits": 1,
+        "confirm_rate": 0.312,
+        "deep_latent_rate": 0.375,
+        "surface_share": 0.0,
+        "cluster_status": "contested",
+        "dominant_frame": "algorithmic_surfacing",
+        "frame_distribution": {
+          "higgins:ought_self": 3,
+          "algorithmic_surfacing": 5,
+          "variable_ratio_reinforcement": 1,
+          "goffman:back_stage": 2,
+          "berlyne:diversive_curiosity": 1,
+          "short_term_episodic_event": 1,
+          "higgins:ideal_self": 1,
+          "kardefelt_winther:compensatory_use": 1
+        }
+      }
+    },
+    {
+      "label": "Private hobby of practical maker-domestic creativity",
+      "type": "private_hobby",
+      "description": "Beyond the already-known drawing and piano interests, he shows a quieter attraction to hands-on, home-scale making content that fits a person who likes competence, tinkering, and producing tangible results. The mix suggests satisfaction in being the capable household problem-solver and low-key creator rather than just a passive consumer.",
+      "evidence_hashtags": [
+        "#DIY",
+        "#diy",
+        "#homemade",
+        "#homedecor",
+        "#education"
+      ],
+      "evidence_rows": 144,
+      "evidence_row_fraction": 0.0239,
+      "interaction_breakdown": {
+        "implicit_positive": 76,
+        "implicit_negative": 66,
+        "explicit_positive": 2
+      },
+      "privacy_ratio": 0.974,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Threads": 38,
+        "Instagram": 35,
+        "Chatbot": 18,
+        "Facebook": 32,
+        "AI_Studio": 21
+      },
+      "surface_connections": [
+        "Interested in creating or closely following hyperrealistic portrait drawing",
+        "Interested in learning piano through structured lessons and tutorials",
+        "Interested in learning PowerPoint presentation design techniques and tutorials"
+      ],
+      "inferred_motivation": "He seems to use practical maker content to reinforce a self-image of being resourceful, improving, and useful at home.",
+      "already_captured": false,
+      "first_seen_ts": 1775186788,
+      "last_seen_ts": 1775942507,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 19,
+        "n_confirmed": 0,
+        "n_reassigned": 2,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 5,
+        "n_removed": 0,
+        "n_flagged": 6,
+        "n_no_other_cluster_fits": 6,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.421,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "short_term_episodic_event",
+        "frame_distribution": {
+          "berlyne:diversive_curiosity": 2,
+          "higgins:ought_self": 1,
+          "algorithmic_surfacing": 4,
+          "self_determination_theory:competence": 2,
+          "self_determination_theory:relatedness": 1,
+          "berlyne:specific_curiosity": 2,
+          "short_term_episodic_event": 5,
+          "higgins:ideal_self": 2
+        }
+      }
+    },
+    {
+      "label": "Identity anchored in earnest community-minded masculinity",
+      "type": "identity_anchor",
+      "description": "The combination of #CommunityFirst, dad/family tags, and team-sports tribal markers points to a self-concept built around being a reliable, good-humored, community-rooted man rather than a flashy or individualistic one. For a Japanese trans man in a blue-collar public-service role, this may function as a stabilizing social identity: protector, worker, sports fan, family guy.",
+      "evidence_hashtags": [
+        "#CommunityFirst",
+        "#communityfirst",
+        "#dadlife",
+        "#familygoals",
+        "#familyfun",
+        "#GameDay"
+      ],
+      "evidence_rows": 192,
+      "evidence_row_fraction": 0.0319,
+      "interaction_breakdown": {
+        "implicit_negative": 102,
+        "implicit_positive": 82,
+        "explicit_positive": 8
+      },
+      "privacy_ratio": 0.911,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 47,
+        "AI_Studio": 17,
+        "Threads": 59,
+        "Facebook": 42,
+        "Chatbot": 27
+      },
+      "surface_connections": [
+        "Likely a parent or primary caregiver who relates to everyday parenting challenges",
+        "Values intentional family bonding and shared quality time",
+        "Interested in NFL football content"
+      ],
+      "inferred_motivation": "He appears drawn to content that affirms belonging and legitimacy through service, family responsibility, and familiar communal rituals.",
+      "already_captured": false,
+      "first_seen_ts": 1775196463,
+      "last_seen_ts": 1775945770,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 47,
+        "n_confirmed": 30,
+        "n_reassigned": 1,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 14,
+        "n_no_other_cluster_fits": 2,
+        "confirm_rate": 0.638,
+        "deep_latent_rate": 0.702,
+        "surface_share": 0.0,
+        "cluster_status": "mixed_evidence",
+        "dominant_frame": "stryker:role_identity",
+        "frame_distribution": {
+          "algorithmic_surfacing": 8,
+          "berlyne:specific_curiosity": 1,
+          "stryker:role_identity": 13,
+          "tajfel:social_identity": 11,
+          "self_determination_theory:competence": 1,
+          "berlyne:diversive_curiosity": 3,
+          "uses_and_gratifications:integration": 3,
+          "schwarz:mood_as_information": 2,
+          "self_determination_theory:relatedness": 4,
+          "variable_ratio_reinforcement": 1
+        }
+      }
+    },
+    {
+      "label": "Nostalgic millennial comfort-seeker using throwback media as stress decompression",
+      "type": "personality_trait",
+      "description": "His repeated engagement with nostalgia and throwback tags suggests more than casual retro enjoyment; it looks like a reliable emotional regulation strategy. The pattern fits someone balancing early-morning operational responsibility and parenting, who uses familiar cultural memory to create a low-risk, emotionally safe leisure zone.",
+      "evidence_hashtags": [
         "#Nostalgia",
-        "#throwback"
+        "#Throwback",
+        "#nostalgia",
+        "#throwback",
+        "#90sKids"
       ],
       "evidence_rows": 147,
       "evidence_row_fraction": 0.0244,
@@ -688,16 +834,18 @@
       "privacy_ratio": 0.873,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 52,
-        "Facebook": 32,
-        "Instagram": 37,
-        "AI_Studio": 14,
-        "Chatbot": 12
+        "Facebook": 39,
+        "Threads": 32,
+        "Instagram": 47,
+        "Chatbot": 11,
+        "AI_Studio": 18
       },
       "surface_connections": [
-        "Enjoys the sitcom 'It's Always Sunny in Philadelphia'"
+        "Enjoys nostalgic throwback content centered on late-1990s and 2000s youth culture",
+        "Enjoys watching newly released movies via home streaming platforms",
+        "Values intentional family bonding and shared quality time"
       ],
-      "inferred_motivation": "Uses nostalgic content to reconnect with the cultural touchstones that shaped his youth and personal worldview.",
+      "inferred_motivation": "He likely returns to throwback content because familiarity offers quick comfort, identity continuity, and a sense of simpler control after structured work and caregiving demands.",
       "already_captured": false,
       "first_seen_ts": 1775197116,
       "last_seen_ts": 1775937367,
@@ -705,45 +853,117 @@
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 14,
-        "n_confirmed": 1,
+        "n_audited": 55,
+        "n_confirmed": 21,
         "n_reassigned": 4,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 9,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.071,
-        "deep_latent_rate": 0.357,
+        "n_removed": 2,
+        "n_flagged": 27,
+        "n_no_other_cluster_fits": 1,
+        "confirm_rate": 0.382,
+        "deep_latent_rate": 0.473,
         "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
+        "cluster_status": "contested",
         "dominant_frame": "algorithmic_surfacing",
         "frame_distribution": {
-          "berlyne:diversive_curiosity": 3,
-          "horton_wohl:parasocial": 2,
-          "tversky_kahneman:salience_availability": 2,
-          "algorithmic_surfacing": 4,
-          "stryker:role_identity": 1,
-          "uses_and_gratifications:integration": 2
+          "stryker:role_identity": 2,
+          "algorithmic_surfacing": 14,
+          "goffman:back_stage": 1,
+          "berlyne:diversive_curiosity": 8,
+          "schwarz:mood_as_information": 4,
+          "lazarus_folkman:emotion_focused_coping": 13,
+          "tajfel:social_identity": 2,
+          "kardefelt_winther:compensatory_use": 6,
+          "tversky_kahneman:salience_availability": 1,
+          "self_determination_theory:relatedness": 2
         }
       }
     },
     {
-      "label": "Currently navigating: recent layoff during conservation funding cuts; adjusting to adult adhd diagnosis",
+      "label": "Parasocial attachment to Kai Cenat as a high-energy release valve",
+      "type": "parasocial_attachment",
+      "description": "The presence of #KaiCenat alongside gaming, livestream, and humor tags suggests more than broad creator interest; it points to a specific attraction to Kai Cenat's chaotic, communal, high-reactivity style. That energy likely serves as a vicarious outlet opposite his regulated, procedural work environment.",
+      "evidence_hashtags": [
+        "#KaiCenat",
+        "#TwitchStreamers",
+        "#GamingCommunity",
+        "#GamerLife",
+        "#GamingHumor"
+      ],
+      "evidence_rows": 267,
+      "evidence_row_fraction": 0.0444,
+      "interaction_breakdown": {
+        "implicit_positive": 134,
+        "implicit_negative": 126,
+        "explicit_positive": 7
+      },
+      "privacy_ratio": 0.95,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "AI_Studio": 43,
+        "Chatbot": 25,
+        "Instagram": 69,
+        "Facebook": 70,
+        "Threads": 60
+      },
+      "surface_connections": [
+        "Interested in gaming livestream and creator content on platforms like Twitch and YouTube Gaming",
+        "Enjoys first-person shooter video games, especially Call of Duty-style multiplayer shooters",
+        "Enjoys watching short-form comedy videos online"
+      ],
+      "inferred_motivation": "He may use Kai Cenat-centered content as a socially vivid, low-stakes form of excitement and group energy that contrasts with the discipline of plant operations and family routine.",
+      "already_captured": false,
+      "first_seen_ts": 1775183173,
+      "last_seen_ts": 1775944475,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 63,
+        "n_confirmed": 0,
+        "n_reassigned": 8,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 23,
+        "n_no_other_cluster_fits": 32,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.683,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "self_determination_theory:competence",
+        "frame_distribution": {
+          "self_determination_theory:competence": 27,
+          "algorithmic_surfacing": 12,
+          "tajfel:social_identity": 1,
+          "berlyne:specific_curiosity": 1,
+          "berlyne:diversive_curiosity": 2,
+          "variable_ratio_reinforcement": 5,
+          "horton_wohl:parasocial": 9,
+          "stryker:role_identity": 2,
+          "lazarus_folkman:emotion_focused_coping": 1,
+          "self_determination_theory:relatedness": 1,
+          "kardefelt_winther:compensatory_use": 1
+        }
+      }
+    },
+    {
+      "label": "Currently navigating: quietly sorting out his transition questions; adjusting to an adhd diagnosis",
       "type": "sensitive_life_event",
       "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
       "evidence_hashtags": [
-        "#jobsearch",
-        "#conservation",
-        "#wildlife",
-        "#careertransition",
-        "#motivation",
+        "#transmasc",
+        "#lgbtq",
+        "#genderidentity",
+        "#selfdiscovery",
         "#personalgrowth",
-        "#adultadhd",
         "#adhd",
+        "#adultadhd",
+        "#routines",
         "#productivity",
-        "#mentalhealth",
-        "#worklife"
+        "#selfimprovement",
+        "#motivation"
       ],
       "evidence_rows": 0,
       "evidence_row_fraction": 0.0,
@@ -751,11 +971,11 @@
       "privacy_ratio": 1.0,
       "temporal_spread_days": 5,
       "app_distribution": {
-        "Facebook": 71,
-        "Threads": 61,
-        "AI_Studio": 18,
-        "Instagram": 47,
-        "Chatbot": 18
+        "Threads": 56,
+        "Facebook": 49,
+        "AI_Studio": 19,
+        "Instagram": 36,
+        "Chatbot": 12
       },
       "surface_connections": [],
       "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
@@ -765,45 +985,44 @@
       "is_synthetic": true,
       "events": [
         {
-          "topic": "job_loss",
-          "label_fragment": "recent layoff during conservation funding cuts",
-          "specific_situation": "A state-level habitat restoration grant got pulled mid-cycle, and Lukas was one of two project managers let go after eight years with the same nonprofit. He’s quietly weighing whether to stay in Minnesota for another conservation role or take a short-term contract while he keeps up with Vikings games and weekend archery to stay grounded.",
+          "topic": "gender_sexuality_exploration",
+          "label_fragment": "quietly sorting out his transition questions",
+          "specific_situation": "Renji has been keeping a private notes app for the last few months, trying to make sense of lingering discomfort around how he was socialized before transition and what he actually wants from his presentation now. He’s not telling coworkers or family yet, but he’s been reading about other trans men’s experiences with dating, masculinity, and being seen as a husband or dad.",
           "first_seen_ts": 1775312569,
           "last_seen_ts": 1775571769,
           "active_window_end": 1776781369,
           "evidence_hashtags": [
-            "#jobsearch",
-            "#conservation",
-            "#wildlife",
-            "#careertransition",
-            "#motivation",
+            "#transmasc",
+            "#lgbtq",
+            "#genderidentity",
+            "#selfdiscovery",
             "#personalgrowth"
           ],
           "exemplar_persona_items": [
-            "Scanning nonprofit conservation jobs in the Midwest",
-            "Reading layoff advice for grant-funded teams",
-            "Watching resume tips between Vikings highlights"
+            "Late-night transmasc reflection posts",
+            "Dating-as-a-trans-man discussion threads",
+            "Masculinity and fatherhood essays"
           ]
         },
         {
           "topic": "mental_health_diagnosis",
-          "label_fragment": "adjusting to adult adhd diagnosis",
-          "specific_situation": "After years of struggling with deadlines, task-switching, and paperwork for field projects, Lukas finally got assessed and was told he has adult ADHD. He’s trying to make sense of the diagnosis while building systems for travel-heavy site visits, report writing, and keeping his focus from drifting into late-night conspiracy forums.",
+          "label_fragment": "adjusting to an adhd diagnosis",
+          "specific_situation": "After years of chalking it up to stress and early shifts, Renji was recently diagnosed with ADHD by a clinician who noticed how much he was compensating at work and at home. He’s trying to figure out routines that fit a water plant operator’s schedule, while also wondering whether meds or coaching will help him stay present with his kids and finish the piano practice he keeps postponing.",
           "first_seen_ts": 1775393469,
           "last_seen_ts": 1775825469,
           "active_window_end": 1777035069,
           "evidence_hashtags": [
-            "#adultadhd",
             "#adhd",
+            "#adultadhd",
+            "#routines",
             "#productivity",
-            "#mentalhealth",
-            "#worklife",
-            "#personalgrowth"
+            "#selfimprovement",
+            "#motivation"
           ],
           "exemplar_persona_items": [
-            "Comparing ADHD planners for project managers",
-            "Reading about focus hacks for report writing",
-            "Saving threads on executive function at work"
+            "Morning routine videos for ADHD",
+            "Shift-worker focus and planning hacks",
+            "Parenting with executive dysfunction tips"
           ]
         }
       ],
@@ -812,48 +1031,48 @@
       }
     }
   ],
-  "hidden_persona_summary": "Beneath his visible enthusiasm for NFL, NBA basketball, professional wrestling, gaming highlights, and pop culture staples like *It’s Always Sunny in Philadelphia*, this individual engages privately with aspirational couple imagery (#relationshipgoals, #loveofmylife) and physique-focused fitness content (#fitnessmotivation, #weightlifting), using these as quiet motivators toward idealized romance and a more defined, muscular appearance. His covert parenting safety vigilance, evidenced by repeated interaction with #momlife and #babylove, underpins public interests such as baby first aid and support for family-centered activities, while a strong nostalgic streak (#Throwback, #90sKids) feeds enjoyment of cultural touchstones like Game of Thrones discussions and Chicago hip-hop. These patterns coexist with his public support for conservation initiatives and civic engagement, linking to a sensitive ongoing life event involving a recent career transition in the conservation sector and adjustments to an adult ADHD diagnosis. Most of these intimate and compensatory engagements occur with a high privacy ratio, contrasted by more openly shared passions for sports teams like the Minnesota Vikings and participation in social gatherings, signaling a distinction between privately consumed motivators and publicly expressed fandoms.",
+  "hidden_persona_summary": "Beneath his public mix of NFL fandom, Penn State and Denver Nuggets loyalty, Call of Duty-style shooters, anime, Marvel, thriller/action movies, sketch comedy, and creator content, he presents as an earnest, community-minded family man who uses media to reinforce steadiness, belonging, and emotional safety: the strongest hidden layer is a companionate-romance idealism organized around durable partnership and home competence, evidenced by repeated private engagement with #relationshipgoals, #couplegoals, #couplelife, #loveofmylife, and by similarly private attention to practical maker-domestic content like #DIY, #homemade, and #homedecor. That helps explain why his surface preferences cluster around respectful romance, parenting challenges, dog content, wildlife preservation, hyperrealistic portrait drawing, ballet culture, and self-improvement—these are not random tastes but extensions of a dependable, useful, emotionally regulated identity that also shows up in #CommunityFirst, #dadlife, #familygoals, #familyfun, and #GameDay. His more private consumption is concentrated in self-correction and decompression patterns: fitness and weight-maintenance content (#fitnessmotivation, #fitnessjourney, #healthyliving, #wellness) appears to function as a quiet check on staying functional and confident during busy dad-life, while nostalgia (#Nostalgia, #Throwback, #90sKids) and high-energy creator fandom around #KaiCenat, #TwitchStreamers, #GamingCommunity, and #GamingHumor provide familiar comfort and a vicarious release valve opposite routine work and caregiving demands. Sensitive exploration around transition and ADHD-related routines is best understood as private, time-bounded processing rather than a public identity performance, and there is no validated evidence here of a specific medical or aesthetic-medicine regimen such as a GLP-1 program, tretinoin use, or any other named treatment.",
   "mbti": {
-    "type": "INFJ",
+    "type": "ISFJ",
     "dimensions": {
       "E_I": {
-        "E": 0.38,
-        "I": 0.62,
-        "reason": "He shows some outward social and fandom engagement, but the most revealing motivators are private, high-privacy interests and internally processed concerns, which lean more introverted than extroverted."
+        "E": 0.34,
+        "I": 0.66,
+        "reason": "His media use looks more like private, restorative consumption than outward social stimulation, with repeated solo comfort patterns around nostalgia, creator viewing, and quiet self-regulation rather than broad interpersonal seeking."
       },
       "S_N": {
         "S": 0.42,
         "N": 0.58,
-        "reason": "His nostalgia, aspirational identity themes, and use of media/fitness/relationship content as symbolic motivators suggest a slightly stronger preference for abstract patterning and future-oriented meaning over concrete present-focus."
+        "reason": "Although he enjoys concrete, practical interests like DIY, home decor, sports, and fitness maintenance, the hidden profile emphasizes template-building, identity meaning, and future-oriented relationship ideals, which tilts slightly toward Intuition."
       },
       "T_F": {
-        "T": 0.34,
-        "F": 0.66,
-        "reason": "The profile centers on romance, parenting vigilance, community, and emotionally meaningful ideals, with high agreeableness and sensitivity implying a stronger Feeling tilt than detached analysis."
+        "T": 0.28,
+        "F": 0.72,
+        "reason": "The strongest themes are companionate romance, family safety, community-mindedness, and emotionally regulated belonging, all of which point more clearly to Feeling than to detached analysis."
       },
       "J_P": {
-        "J": 0.57,
-        "P": 0.43,
-        "reason": "High conscientiousness plus vigilant parenting, goal-oriented self-improvement, and structured interest patterns point somewhat toward Judging, though the varied entertainment-driven browsing leaves room for Perceiving."
+        "J": 0.71,
+        "P": 0.29,
+        "reason": "The overall pattern is organized around steadiness, routine, maintenance, and dependable competence, with fitness, home life, and work/family roles suggesting a preference for structure and follow-through."
       }
     }
   },
   "mobility_class": "domestic",
   "geo_trip_arcs": [
     {
-      "city": "Chicago",
-      "region": "IL",
+      "city": "Pittsburgh",
+      "region": "PA",
       "country": "USA",
-      "start_ts": 1775199840,
-      "end_ts": 1775290957,
+      "start_ts": 1775209354,
+      "end_ts": 1775548477,
       "kind": "domestic"
     }
   ],
   "exploration_exploitation": {
-    "score": 0.9279,
+    "score": 0.9332,
     "label": "explorer",
     "hashtag_entropy_normalized": 0.8967,
-    "category_entropy_normalized": 0.9798,
+    "category_entropy_normalized": 0.9973,
     "unique_hashtag_count": 17622,
     "total_hashtag_occurrences": 40467,
     "unique_hashtag_ratio": 0.4355,
@@ -903,30 +1122,44 @@
   },
   "user_id": "760",
   "preferences": [
-    "22:45, 04/11/2026 : Enjoys the sitcom 'It's Always Sunny in Philadelphia'",
-    "22:45, 04/11/2026 : Enjoys playing first-person shooter video games",
-    "21:58, 04/11/2026 : Supports initiatives to protect natural landscapes and wildlife habitats",
-    "21:51, 04/11/2026 : Enjoys Chicago-based hip-hop culture and rap music",
-    "21:08, 04/11/2026 : Enjoys following and supporting Justin Timberlake's music career",
-    "21:00, 04/11/2026 : Enjoys creating handmade or custom costumes",
-    "20:21, 04/11/2026 : Enjoys engaging with Game of Thrones-related media and discussions",
-    "20:16, 04/11/2026 : Enjoys watching and keeping up with NFL games and highlights",
-    "19:53, 04/11/2026 : Enjoys watching NFL games and following American football teams",
-    "19:53, 04/11/2026 : Enjoys practicing and engaging with archery as a recreational activity",
-    "19:51, 04/11/2026 : Enjoys professional wrestling events and storylines",
-    "18:48, 04/11/2026 : Likely a mother actively involved in raising multiple children",
-    "18:26, 04/11/2026 : Enjoys watching and following the Demon Slayer anime series",
-    "18:13, 04/11/2026 : Enjoys attending live stand-up comedy performances",
-    "18:08, 04/11/2026 : Enjoys cooking Italian dishes at home",
-    "18:03, 04/11/2026 : Enjoys following NBA basketball, particularly Stephen Curry",
-    "14:27, 04/11/2026 : Strongly supports the Minnesota Vikings football team",
-    "14:12, 04/11/2026 : Interested in learning baby first aid to feel more confident as a parent",
-    "13:37, 04/11/2026 : Enjoys watching and sharing gaming highlight videos",
-    "10:09, 04/11/2026 : Enjoys watching Netflix original movies",
-    "06:10, 04/09/2026 : Supports social justice and human rights causes",
-    "13:35, 04/05/2026 : Enjoys vibrant social gatherings and nightlife events",
-    "08:43, 04/04/2026 : Values active civic engagement and voter participation",
-    "16:15, 04/03/2026 : Interested in conspiracy theories and narratives about government or institutional cover-ups"
+    "22:45, 04/11/2026 : Enjoys first-person shooter video games, especially Call of Duty-style multiplayer shooters.",
+    "22:45, 04/11/2026 : Interested in wildlife and habitat preservation, including support for protecting national park ecosystems.",
+    "22:12, 04/11/2026 : Interested in ballet and ballet culture.",
+    "22:12, 04/11/2026 : Enjoys sketch comedy content, especially Key & Peele-style humor.",
+    "21:49, 04/11/2026 : Interested in smartphone technology innovation and major shifts in consumer tech.",
+    "21:41, 04/11/2026 : Enjoys hot dog and specialty street-food content, especially indulgent styles like chili cheese dogs.",
+    "21:35, 04/11/2026 : Interested in personal development and self-improvement content.",
+    "21:31, 04/11/2026 : Enjoys the TV series It's Always Sunny in Philadelphia.",
+    "20:55, 04/11/2026 : Enjoys Iron Man and the Marvel Cinematic Universe.",
+    "20:55, 04/11/2026 : Values healthy, respectful romantic partnerships.",
+    "20:15, 04/11/2026 : Enjoys late-night television, particularly The Late Show with Stephen Colbert.",
+    "19:57, 04/11/2026 : Likely a parent or primary caregiver who relates to everyday parenting challenges.",
+    "19:53, 04/11/2026 : Enjoys action films, especially high-intensity titles like The Raid: Redemption.",
+    "18:29, 04/11/2026 : Enjoys humorous dog content on social media.",
+    "18:26, 04/11/2026 : Enjoys anime, especially Demon Slayer.",
+    "18:13, 04/11/2026 : Follows and enjoys content from Rhett and Link / Good Mythical Morning.",
+    "18:03, 04/11/2026 : Interested in the Denver Nuggets specifically.",
+    "18:02, 04/11/2026 : Interested in NFL football content",
+    "17:08, 04/11/2026 : Follows Penn State college football.",
+    "14:16, 04/11/2026 : Interested in gaming livestream and creator content on platforms like Twitch and YouTube Gaming.",
+    "13:37, 04/11/2026 : Interested in learning piano through structured lessons and tutorials.",
+    "13:29, 04/11/2026 : Enjoys nostalgic throwback content centered on late-1990s and 2000s youth culture.",
+    "13:25, 04/11/2026 : Enjoys watching short-form comedy videos online.",
+    "13:22, 04/11/2026 : Interested in Team USA international track and field competition.",
+    "12:08, 04/11/2026 : Enjoys classic drama films, especially The Shawshank Redemption.",
+    "12:05, 04/11/2026 : Enjoys basketball video games, especially NBA 2K.",
+    "12:03, 04/11/2026 : Values intentional family bonding and shared quality time.",
+    "10:07, 04/11/2026 : Interested in weight-loss-oriented healthy eating.",
+    "08:26, 04/11/2026 : Enjoys thriller and suspense films.",
+    "08:04, 04/11/2026 : Interested in professional wrestling, especially WWE personalities and events.",
+    "07:46, 04/11/2026 : Interested in creating or closely following hyperrealistic portrait drawing.",
+    "06:46, 04/11/2026 : Enjoys watching newly released movies via home streaming platforms.",
+    "05:17, 04/11/2026 : Enjoys following national team basketball, with specific interest in Greece.",
+    "17:35, 04/10/2026 : Enjoys dog-focused social media content.",
+    "20:04, 04/09/2026 : Supportive of Johnny Depp as a public figure.",
+    "18:17, 04/09/2026 : Interested in learning PowerPoint presentation design techniques and tutorials.",
+    "01:06, 04/09/2026 : Interested in snowboarding and mountain-based outdoor adventure.",
+    "16:58, 04/08/2026 : Interested in following major entertainment awards shows like the Oscars."
   ],
   "motivation_audit": {
     "over_attribution_warning": false,
@@ -935,89 +1168,95 @@
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Jonas Vermeulen",
+      "display_name": "Takumi Sato",
       "relationship_depth": "close",
       "shared_interests": [
-        "wildlife conservation",
-        "archery"
+        "Marvel movies",
+        "parenting",
+        "new releases"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Emily Carlson",
+      "display_name": "Yuki Nakamura",
       "relationship_depth": "close",
       "shared_interests": [
-        "NFL",
-        "local community events"
+        "sketching",
+        "movie nights",
+        "piano"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "Alex Morgan",
+      "display_name": "Daichi Fujimoto",
       "relationship_depth": "close",
       "shared_interests": [
-        "environmental trends",
-        "fantasy costumes"
+        "water treatment work",
+        "self-improvement podcasts",
+        "commute chats"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Peter Hollander",
+      "display_name": "Haruka Ishida",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "Minnesota Vikings",
-        "archery"
+        "parent circle",
+        "community events"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Marie De Smet",
+      "display_name": "Kenta Mori",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "wildlife conservation",
-        "church"
+        "suspense thrillers",
+        "streaming releases"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Alex Chen",
+      "display_name": "Yuki Tanabe",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "NFL",
-        "urban legends"
+        "fandom mutuals",
+        "Marvel movies"
       ]
     },
     {
       "friend_id": "friend_7",
-      "display_name": "Thomas Richter",
+      "display_name": "Rina Kobayashi",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "environmental trends",
-        "local community events"
+        "hyperrealistic portraits",
+        "Instagram art"
       ]
     },
     {
       "friend_id": "friend_8",
-      "display_name": "Sophie Janssens",
+      "display_name": "Shun Ogawa",
       "relationship_depth": "distant",
       "shared_interests": [
-        "wildlife conservation"
+        "sports media",
+        "Threads"
       ]
     },
     {
       "friend_id": "friend_9",
-      "display_name": "Mark Peterson",
+      "display_name": "Mai Hasegawa",
       "relationship_depth": "distant",
       "shared_interests": [
-        "NFL"
+        "family acquaintances",
+        "community events"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Charlotte Meyers",
+      "display_name": "Koji Arai",
       "relationship_depth": "distant",
       "shared_interests": [
-        "fantasy costumes"
+        "niche interest followers",
+        "piano videos"
       ]
     }
   ],
@@ -1026,342 +1265,343 @@
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776549082,
-        "t_test_iso": "2026-04-18T21:51:22Z",
+        "t_test": 1776548501,
+        "t_test_iso": "2026-04-18T21:41:41Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "337941",
-          "user_question": "I’ve been noticing I’m zoning out during field reports lately… brain mushy today after last night’s playlist. why’s my focus slipping so much?",
-          "asked_at_ts": 1775944282,
-          "asked_at_iso": "21:51, 04/11/2026",
+          "chatbot_event_id": "403761",
+          "user_question": "Write a short funny scene at a town hot dog cook-off. One vendor's chili-cheese dog is absurdly serious, but the whole thing stays grounded and human.",
+          "asked_at_ts": 1775943701,
+          "asked_at_iso": "21:41, 04/11/2026",
           "question_hashtags": [
-            "#lilbaby",
-            "#rapmusic",
-            "#4pf"
+            "#tastetester",
+            "#newflavor",
+            "#cherrylemon"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help user address and resolve their concern about declining focus during work tasks",
-          "proximal_outcome": "user engages with a tailored suggestion or resource to improve concentration",
-          "tailoring_variable": "unfulfilled stated need from Lukas Vandenberg's question on 21:51, 04/11/2026: 'I’ve been noticing I’m zoning out during field reports lately… brain mushy today after last night’s playlist. why’s my focus slipping so much?'",
-          "decision_point": "2026-04-18T21:51:22Z",
+          "distal_outcome": "help Renji follow through on his stated creative requests so the chatbot feels reliably useful for unfinished asks",
+          "proximal_outcome": "Renji opts in to receive the previously requested funny scene draft",
+          "tailoring_variable": "Renji asked on 2026-04-11 at 21:41, \"Write a short funny scene at a town hot dog cook-off. One vendor's chili-cheese dog is absurdly serious, but the whole thing stays grounded and human,\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "at the next in-chat session after the system detects the unresolved question, specifically around 2026-04-18T21:41:41Z",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas in resolving his focus issue, with the proximal outcome being engagement in a follow-up. The tailoring variable is his specific unresolved question about focus decline, which is concrete and recent. Horvitz cost-benefit favors acting because a subtle, in-chat opt-in follow-up citing his own words can offer value without intrusion."
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded in Renji's unresolved hot-dog-scene request. Under Horvitz, the expected value is positive: a one-sentence in-chat opt-in tied to his exact question has low interruption cost and offers genuine help he has not yet received. This is a defensible but not maximal case because the ask is concrete creative work, though somewhat time-stale rather than urgent."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776546523,
-        "t_test_iso": "2026-04-18T21:08:43Z",
+        "t_test": 1776548404,
+        "t_test_iso": "2026-04-18T21:40:04Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "435771",
-          "user_question": "Can you help me draft a short invite for a charity auction? It’s got a wildlife theme but the band’s covering some Justin Timberlake songs.",
-          "asked_at_ts": 1775941723,
-          "asked_at_iso": "21:08, 04/11/2026",
+          "chatbot_event_id": "361070",
+          "user_question": "write me a short campfire story. national park setting, ranger and kid, something quiet but a little eerie around a wolf reintroduction area.",
+          "asked_at_ts": 1775943604,
+          "asked_at_iso": "21:40, 04/11/2026",
           "question_hashtags": [
-            "#taylorswift",
-            "#taylorswiftforever",
-            "#swifties"
+            "#wildlifeconservation",
+            "#conservationefforts"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on his request to draft an invite for a charity auction, supporting his interest in wildlife protection and music engagement.",
-          "proximal_outcome": "Lukas engages with a concise follow-up offer to co-create the charity auction invite.",
-          "tailoring_variable": "Unfulfilled stated need from Lukas' question: 'Can you help me draft a short invite for a charity auction? It’s got a wildlife theme but the band’s covering some Justin Timberlake songs.'",
-          "decision_point": "2026-04-18T21:08:43Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas' completion of a concrete task he explicitly requested, and the proximal outcome is prompting him to engage with a follow-up. The tailoring variable is his specific unresolved question about drafting an invite, which is a clear, actionable object. Horvitz cost-benefit favors acting because the value of helping him complete this task outweighs the minimal intrusion of a single in-chat opt-in follow-up."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1776540804,
-        "t_test_iso": "2026-04-18T19:33:24Z",
-        "lag_days": 7,
-        "signal_evidence": {
-          "chatbot_event_id": "149840",
-          "user_question": "brain kinda mushy today, need something on TV tonight that’s easy but still pulls me in. maybe with a bit of action so I don’t drift.",
-          "asked_at_ts": 1775936004,
-          "asked_at_iso": "19:33, 04/11/2026",
-          "question_hashtags": [
-            "#nfl"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help user follow through on their stated questions and find engaging TV content that matches their mood and preferences",
-          "proximal_outcome": "user engages with a suggested TV option that fits their request for easy but action-filled viewing",
-          "tailoring_variable": "unfulfilled stated need from user question: 'brain kinda mushy today, need something on TV tonight that’s easy but still pulls me in. maybe with a bit of action so I don’t drift.' asked at 19:33, 04/11/2026",
-          "decision_point": "2026-04-18T19:33:24Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is supporting follow-through on entertainment needs, proximal outcome is engagement with a relevant suggestion, tailoring variable is the specific unresolved TV request, decision point is the flagged moment, decision rule favors acting due to concrete and current evidence, and intervention option is a subtle in-chat follow-up. Horvitz cost-benefit favors acting because the value of resolving the request outweighs minimal intrusion, especially with an opt-in question citing the user's own words."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1776534630,
-        "t_test_iso": "2026-04-18T17:50:30Z",
-        "lag_days": 7,
-        "signal_evidence": {
-          "chatbot_event_id": "234092",
-          "user_question": "Debating whether to spend Sunday at the nature reserve or join a watch party for the big game. Brain kinda mushy today.",
-          "asked_at_ts": 1775929830,
-          "asked_at_iso": "17:50, 04/11/2026",
-          "question_hashtags": [
-            "#nfl",
-            "#thursdaynightfootball",
-            "#tnf"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on his unresolved decision about weekend plans, aligning with his interests in nature conservation and NFL games.",
-          "proximal_outcome": "Lukas engages with a follow-up prompt to clarify or choose between the nature reserve visit and the NFL watch party.",
-          "tailoring_variable": "User's unresolved question from 17:50, 04/11/2026: 'Debating whether to spend Sunday at the nature reserve or join a watch party for the big game.'",
-          "decision_point": "2026-04-18T17:50:30Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas in making a concrete weekend plan, and the proximal outcome is prompting him to act on his stated choice. The tailoring variable is his specific, unresolved question about two distinct activities, which is a clear decision point. Horvitz cost-benefit favors acting because the value of resolving his plan outweighs the minimal intrusion of a single in-chat opt-in follow-up citing his own words."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1776530208,
-        "t_test_iso": "2026-04-18T16:36:48Z",
-        "lag_days": 7,
-        "signal_evidence": {
-          "chatbot_event_id": "308978",
-          "user_question": "kinda just zoned out during the game last night and started thinking about work deadlines… why does my brain do that when I should be relaxing?",
-          "asked_at_ts": 1775925408,
-          "asked_at_iso": "16:36, 04/11/2026",
-          "question_hashtags": [
-            "#rydercup",
-            "#golf"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help user address underlying stress patterns to improve relaxation during leisure activities",
-          "proximal_outcome": "user engages with a brief follow-up to explore strategies for staying mentally present during games",
-          "tailoring_variable": "unfulfilled stated need from Lukas Vandenberg's question on 16:36, 04/11/2026: 'kinda just zoned out during the game last night and started thinking about work deadlines… why does my brain do that when I should be relaxing?'",
-          "decision_point": "2026-04-18T16:36:48Z",
+          "distal_outcome": "help Renji follow through on his stated creative requests and feel the chatbot reliably supports his interests",
+          "proximal_outcome": "Renji opts in to receive the previously requested campfire story",
+          "tailoring_variable": "Renji asked on 2026-04-11, \"write me a short campfire story. national park setting, ranger and kid, something quiet but a little eerie around a wolf reintroduction area,\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "at the start of the chatbot session containing 2026-04-18T21:40:04Z, as the single allowed proactive surface for that session",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is stress management, proximal outcome is engagement with relaxation strategies, tailoring variable is the unresolved question about zoning out during a game, decision point is the flagged moment, decision rule favors acting due to lack of closure, and intervention option is a single ambient follow-up. Horvitz cost-benefit favors acting because the value of offering a gentle, opt-in suggestion outweighs minimal intrusion within the chatbot. Evidence is concrete and user-specific, and all subtlety constraints are met."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the unresolved user-specific story request, the decision point is this chat session, the decision rule is an unanswered need after several days, and the intervention option is a one-sentence in-chat opt-in follow-up. Under Horvitz, expected value is positive because recovering a concrete, personalized request is more useful than Renji independently remembering to re-ask, while intrusion cost stays low if phrased as a single optional question in-chat only. This is not a 3 because the request is creative rather than a real-world decision or commitment."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776529441,
-        "t_test_iso": "2026-04-18T16:24:01Z",
+        "t_test": 1776548157,
+        "t_test_iso": "2026-04-18T21:35:57Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "504635",
-          "user_question": "Debating whether to head to the local nature talk tonight or just watch the replay of last Sunday’s game. Brain kinda mushy today.",
-          "asked_at_ts": 1775924641,
-          "asked_at_iso": "16:24, 04/11/2026",
+          "chatbot_event_id": "1008803",
+          "user_question": "I keep saving those piano videos and then just poking at keys. What's a simple way to actually practice without wasting 20 minutes?",
+          "asked_at_ts": 1775943357,
+          "asked_at_iso": "21:35, 04/11/2026",
           "question_hashtags": [
-            "#nfl",
-            "#footballhighlights",
-            "#nflfilms"
+            "#resilience",
+            "#mistakeshappen",
+            "#personalgrowth",
+            "#learnfrommistakes"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on his stated questions and make timely decisions about leisure activities that align with his interests and values.",
-          "proximal_outcome": "Lukas engages with a follow-up offer to revisit his choice between attending the local nature talk or watching the NFL game replay.",
-          "tailoring_variable": "User's unresolved question from 16:24, 04/11/2026: 'Debating whether to head to the local nature talk tonight or just watch the replay of last Sunday’s game. Brain kinda mushy today.'",
-          "decision_point": "2026-04-18T16:24:01Z",
+          "distal_outcome": "help Renji follow through on his stated learning goals by turning an unresolved practice question into a usable routine",
+          "proximal_outcome": "Renji opts into a brief follow-up and engages with a concrete piano practice suggestion",
+          "tailoring_variable": "Renji previously asked, \"I keep saving those piano videos and then just poking at keys. What's a simple way to actually practice without wasting 20 minutes?\" on 2026-04-11 and there was no topical follow-up or closure within 3 days",
+          "decision_point": "inside the chatbot at the next active session after the unresolved question was detected, specifically around 2026-04-18T21:35:57Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas in acting on his leisure decision, and the proximal outcome is prompting engagement with a relevant follow-up. The tailoring variable is his concrete, unresolved choice between two specific activities. Horvitz cost-benefit favors acting because the value of resolving his decision outweighs the minimal intrusion of a single in-chat opt-in prompt."
+          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the user's unresolved piano-practice question, the decision point is the next in-chat session, the rule is unmet need without closure, and the intervention option is a one-sentence opt-in follow-up. Horvitz favors acting because the expected value is high for a concrete, user-authored question and the intrusion cost is low if surfaced once, in-chat only, as an easy-to-decline question. A compliant action could cite his exact piano question and ask whether he wants a 5-minute practice routine."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776523207,
-        "t_test_iso": "2026-04-18T14:40:07Z",
+        "t_test": 1776543354,
+        "t_test_iso": "2026-04-18T20:15:54Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "993083",
-          "user_question": "kinda just need ideas for a quirky team-building game for our conservation staff retreat, something light but not the usual trivia stuff… brain mushy today",
-          "asked_at_ts": 1775918407,
-          "asked_at_iso": "14:40, 04/11/2026",
+          "chatbot_event_id": "154316",
+          "user_question": "write me a short movie-night story. married couple, actually decent to each other, little suspense but still warm by the end.",
+          "asked_at_ts": 1775938554,
+          "asked_at_iso": "20:15, 04/11/2026",
           "question_hashtags": [
-            "#rickandmorty",
-            "#season8",
-            "#episode7"
+            "#datingoutofyourleague",
+            "#relationshipgoals",
+            "#relatable"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on his stated need for a quirky team-building game idea for his conservation staff retreat.",
-          "proximal_outcome": "Lukas engages with a follow-up suggestion or brainstorm prompt for a unique game concept.",
-          "tailoring_variable": "User's unresolved question: \"kinda just need ideas for a quirky team-building game for our conservation staff retreat, something light but not the usual trivia stuff… brain mushy today\" asked at 14:40, 04/11/2026.",
-          "decision_point": "2026-04-18T14:40:07Z",
+          "distal_outcome": "help Renji follow through on an unmet creative request and feel reliably supported inside the chatbot",
+          "proximal_outcome": "Renji opts into a follow-up offer to complete the previously unanswered movie-night story request",
+          "tailoring_variable": "Renji asked on 2026-04-11 at 20:15, \"write me a short movie-night story. married couple, actually decent to each other, little suspense but still warm by the end.\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "the first in-chatbot session after the 3-day unresolved window, considered once at session start around 2026-04-18T20:15:54Z",
           "decision_rule_pass": true,
-          "eligibility_score": 3,
+          "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas in completing his request for a specific game idea, and the proximal outcome is prompting engagement with a tailored suggestion. The tailoring variable is his concrete, unresolved question about a quirky team-building game for a conservation retreat. Horvitz cost-benefit favors acting because the value of timely, relevant follow-up exceeds the low intrusion of a single in-chat opt-in prompt citing his own words."
+          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the specific unanswered story request, the decision point is the next chatbot session after nonresponse, and the intervention option is a one-sentence in-chat opt-in follow-up. Under Horvitz, expected value is positive because completing a user-authored request is useful and low-cost, while intrusion is bounded by a single ambient in-chat question citing his exact prior prompt. This is a legitimate unfulfilled_stated_need but not a concrete external decision, so 2 rather than 3."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776522462,
-        "t_test_iso": "2026-04-18T14:27:42Z",
+        "t_test": 1776543350,
+        "t_test_iso": "2026-04-18T20:15:50Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "342333",
-          "user_question": "Need a quick draft for a Monday staff note, maybe tie in yesterday’s fourth-quarter comeback to pep everyone up. Brain mushy today.",
-          "asked_at_ts": 1775917662,
-          "asked_at_iso": "14:27, 04/11/2026",
+          "chatbot_event_id": "929425",
+          "user_question": "Need a few at-home date night ideas for Friday. Brain's kinda fried. Something that feels a little more put-together than just collapsing on the couch after the monologue.",
+          "asked_at_ts": 1775938550,
+          "asked_at_iso": "20:15, 04/11/2026",
           "question_hashtags": [
-            "#bengalsnation",
-            "#cincinnatibengals"
+            "#fallontonight",
+            "#thetonightshow",
+            "#latenighttv"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on his unresolved request to draft a motivating Monday staff note tied to a recent sports event.",
-          "proximal_outcome": "Lukas engages with a concise follow-up offer to help create the draft.",
-          "tailoring_variable": "Unfulfilled stated need from Lukas's question: \"Need a quick draft for a Monday staff note, maybe tie in yesterday’s fourth-quarter comeback to pep everyone up. Brain mushy today.\"",
-          "decision_point": "2026-04-18T14:27:42Z",
+          "distal_outcome": "help Renji follow through on his stated planning needs and support a more intentional at-home date night",
+          "proximal_outcome": "Renji opts into a follow-up and receives date-night ideas he can use for Friday",
+          "tailoring_variable": "Renji previously asked, \"Need a few at-home date night ideas for Friday. Brain's kinda fried. Something that feels a little more put-together than just collapsing on the couch after the monologue,\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "at the next in-chat session after the unresolved question is detected, surfacing at most once in that session",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is supporting task completion, proximal outcome is engagement with the draft offer, tailoring variable is the specific unresolved request, decision point is the flagged moment, decision rule favors acting due to concrete and current evidence, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors acting because the value of resolving the request outweighs minimal intrusion, especially with easy declination and in-channel delivery."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the unresolved concrete Friday date-night request, the decision point is the next chatbot session, and the intervention option is a single opt-in follow-up inside chat. Horvitz favors acting because Renji already asked for help on a specific plan while cognitively tired (\"Brain's kinda fried\"), so the expected value of a brief in-context reminder exceeds the low interruption cost. A compliant surface is easy: one sentence citing his exact question plus an optional opt-in question, with no notification or pressure."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1775308878,
-        "t_test_iso": "2026-04-04T13:21:18Z",
-        "lag_days": 1,
+        "t_test": 1776541933,
+        "t_test_iso": "2026-04-18T19:52:13Z",
+        "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "875463",
-          "user_question": "Got this draft for a weekend email — brain mushy today. \"Hi team, Sunday's meeting will be right after the game, so please be on time.\" Can you clean it up?",
-          "asked_at_ts": 1775222478,
-          "asked_at_iso": "13:21, 04/03/2026",
+          "chatbot_event_id": "334705",
+          "user_question": "Need a text for my kid's bedtime check-in. Brain mushy today. I got too locked into a late Call of Duty match and now it's later than I said.",
+          "asked_at_ts": 1775937133,
+          "asked_at_iso": "19:52, 04/11/2026",
           "question_hashtags": [
-            "#chiefskingdom",
-            "#kansascitychiefs"
+            "#warzone"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help user follow through on their stated questions and improve clarity in team communications",
-          "proximal_outcome": "user engages with a concise follow-up to refine their weekend meeting email",
-          "tailoring_variable": "unfulfilled_stated_need from Lukas Vandenberg's unresolved question on 13:21, 04/03/2026: \"Got this draft for a weekend email — brain mushy today. 'Hi team, Sunday's meeting will be right after the game, so please be on time.' Can you clean it up?\" with hashtags #chiefskingdom and #kansascitychiefs",
-          "decision_point": "2026-04-04T13:21:18Z",
+          "distal_outcome": "help Renji follow through on a concrete parenting communication need he explicitly raised in chat",
+          "proximal_outcome": "Renji opts in to receive a ready-to-send bedtime check-in text draft",
+          "tailoring_variable": "On 2026-04-11 at 19:52, Renji asked: \"Need a text for my kid's bedtime check-in. Brain mushy today. I got too locked into a late Call of Duty match and now it's later than I said.\" and there was no topical follow-up or closure within 3 days.",
+          "decision_point": "the next in-chat session after the unresolved question is detected, surfaced once within that chatbot session",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas in completing his email draft, and the proximal outcome is prompting him to act on his earlier request. The tailoring variable is his specific unresolved question about cleaning up a meeting email, which is concrete and recent. Horvitz cost-benefit favors acting because the value of resolving his stated need outweighs the minimal intrusion of a single in-chat opt-in follow-up."
+          "reasoning": "JITAI is satisfied because the distal goal is follow-through on a stated need, the proximal goal is opt-in engagement, the tailoring variable is the unresolved bedtime-text request citing Call of Duty and lateness, the decision point is the next chat session, and the intervention option is a single in-chat opt-in offer. Horvitz favors acting because the value is high and concrete—a ready message for his kid—while intrusion is low if phrased as one brief chatbot-only question with easy declination and no out-of-band alert. This is stronger than a generic reminder because the evidence names a specific object and commitment."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1775305895,
-        "t_test_iso": "2026-04-04T12:31:35Z",
-        "lag_days": 1,
+        "t_test": 1776537511,
+        "t_test_iso": "2026-04-18T18:38:31Z",
+        "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "489805",
-          "user_question": "brain mushy today. here's my draft for the invite email: \"Join us for a casual meet-up at the center, snacks, wildlife chat, and a quick FPS game session after.\" can you clean this up?",
-          "asked_at_ts": 1775219495,
-          "asked_at_iso": "12:31, 04/03/2026",
+          "chatbot_event_id": "717613",
+          "user_question": "Need a short text for my buddy. I bailed on Warzone again after midnight and now he's acting like ranked night is sacred.",
+          "asked_at_ts": 1775932711,
+          "asked_at_iso": "18:38, 04/11/2026",
           "question_hashtags": [
-            "#battlefield1",
+            "#bo6"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Renji follow through on an unresolved, concrete communication need and maintain smoother coordination with a friend",
+          "proximal_outcome": "Renji opts in to receive a short draft text for the friend message he previously asked for",
+          "tailoring_variable": "Renji asked an unresolved concrete question at 18:38, 04/11/2026: \"Need a short text for my buddy. I bailed on Warzone again after midnight and now he's acting like ranked night is sacred.\"",
+          "decision_point": "the next in-chat session after the unresolved question was left without topical follow-up for 3 days, evaluated once at session start",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention option are all grounded in Renji's unresolved request for a specific buddy text about bailing on Warzone ranked night. Under Horvitz, the expected value is high and the interruption cost is low because a one-sentence in-chat opt-in directly helps with a concrete task Renji already asked for and cites his own wording. This can be surfaced once in-session only, as an easy opt-in question with no notification or directive."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776535685,
+        "t_test_iso": "2026-04-18T18:08:05Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "469499",
+          "user_question": "What if a long-running morning internet show had to swap formats for a year and do only calm, practical stuff—would it keep people, or kinda lose the whole engine?",
+          "asked_at_ts": 1775930885,
+          "asked_at_iso": "18:08, 04/11/2026",
+          "question_hashtags": [
+            "#standupcomedy",
+            "#samorril"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Renji follow through on unresolved questions he explicitly asked in chat",
+          "proximal_outcome": "Renji opts into a follow-up answer or discussion about his earlier question",
+          "tailoring_variable": "Renji asked an unresolved question on 2026-04-11 at 18:08 — \"What if a long-running morning internet show had to swap formats for a year and do only calm, practical stuff—would it keep people, or kinda lose the whole engine?\" — and there was no topical follow-up within 3 days",
+          "decision_point": "during the next active chatbot session after the unresolved-question signal was detected, at most once in that session",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the specific unresolved question, the decision point is the next in-chat session, the rule is 'act once when an explicit unanswered question remains unresolved,' and the intervention option is a one-sentence in-chat opt-in follow-up. Under Horvitz, the value is moderate because it revives Renji's own unanswered question with user-specific evidence, while the intrusion cost is low since it stays inside chat, can be phrased as an easy opt-in, and uses only one proactive surface. This is not a 3 because the question is thoughtful but hypothetical rather than tied to a concrete decision or plan."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776529514,
+        "t_test_iso": "2026-04-18T16:25:14Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "555301",
+          "user_question": "Need a cleaner way to ask this: if a round of Search and Destroy feels more meaningful because one life matters, is that fake meaning or basically how life works too?",
+          "asked_at_ts": 1775924714,
+          "asked_at_iso": "16:25, 04/11/2026",
+          "question_hashtags": [
+            "#callofduty",
+            "#modernwarfare2",
             "#fps"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on his request to refine a draft invite email for a planned meet-up, supporting his social coordination goals.",
-          "proximal_outcome": "Lukas engages with a concise follow-up offer to polish his invite email.",
-          "tailoring_variable": "Unfulfilled stated need: Lukas asked on 12:31, 04/03/2026, 'brain mushy today. here's my draft for the invite email... can you clean this up?' with hashtags #battlefield1 and #fps, and received no follow-up within 3 days.",
-          "decision_point": "2026-04-04T12:31:35Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is aiding completion of a social invite, proximal outcome is re-engagement, tailoring variable is the unresolved email draft request, decision point is now, decision rule favors acting, and intervention option is a one-sentence opt-in follow-up in-chat. Horvitz cost-benefit favors action because the value of helping Lukas complete his invite outweighs minimal intrusion, with clear user-specific evidence cited. All subtlety constraints are met, including in-chat surfacing, brevity, and easy opt-in."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775304786,
-        "t_test_iso": "2026-04-04T12:13:06Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "749660",
-          "user_question": "the headpiece keeps slipping when I’m moving around, kinda just want it to stay put without wrecking the fabric",
-          "asked_at_ts": 1775218386,
-          "asked_at_iso": "12:13, 04/03/2026",
-          "question_hashtags": [
-            "#diyproject",
-            "#diyinspiration"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "Help Lukas follow through on resolving practical issues in his DIY costume projects without damaging materials",
-          "proximal_outcome": "Lukas engages with a follow-up suggestion or resource to secure the headpiece",
-          "tailoring_variable": "Unresolved user question from 12:13, 04/03/2026: 'the headpiece keeps slipping when I’m moving around, kinda just want it to stay put without wrecking the fabric'",
-          "decision_point": "2026-04-04T12:13:06Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "The JITAI components are satisfied: distal outcome is supporting completion of DIY projects, proximal outcome is prompting engagement with a fix, tailoring variable is the specific unresolved headpiece question, decision point is the flagged moment, decision rule favors acting due to concrete object and lack of closure, and intervention option is a subtle in-chat opt-in follow-up. Horvitz cost-benefit favors action because the value of resolving a specific, current problem outweighs minimal intrusion in a single ambient sentence citing Lukas's own words."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775304781,
-        "t_test_iso": "2026-04-04T12:13:01Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "504655",
-          "user_question": "Yesterday I got home late from a site visit, brain mushy today. Why do I keep snapping at my kid after these long days?",
-          "asked_at_ts": 1775218381,
-          "asked_at_iso": "12:13, 04/03/2026",
-          "question_hashtags": [
-            "#zucchinienchiladas",
-            "#healthycooking",
-            "#homemade"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help user manage stress and improve interactions with their child after demanding workdays",
-          "proximal_outcome": "user engages with a supportive follow-up related to their earlier question about snapping at their kid",
-          "tailoring_variable": "unfulfilled stated need from 12:13, 04/03/2026: 'Yesterday I got home late from a site visit, brain mushy today. Why do I keep snapping at my kid after these long days?'",
-          "decision_point": "2026-04-04T12:13:01Z",
+          "distal_outcome": "help Renji get useful follow-through on an unresolved question he explicitly asked, strengthening trust that the assistant can revisit his own open threads thoughtfully",
+          "proximal_outcome": "Renji opts into a follow-up and engages with a concise reframing or answer to his unresolved question",
+          "tailoring_variable": "Renji asked on 2026-04-11, \"Need a cleaner way to ask this: if a round of Search and Destroy feels more meaningful because one life matters, is that fake meaning or basically how life works too?\" with hashtags #callofduty #modernwarfare2 #fps, and it received no topical follow-up within 3 days",
+          "decision_point": "at the start of the next active chatbot session after the unresolved-question window is detected, specifically around 2026-04-18T16:25:14Z if no prior proactive surface has occurred in that session",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Lukas in addressing his stress-related parenting concern, with the proximal outcome being engagement in a relevant follow-up. The tailoring variable is his unresolved question about snapping at his child after long workdays, which is concrete and personal. Horvitz cost-benefit favors acting because a brief, in-chat opt-in follow-up citing his own words offers clear value with minimal intrusion."
+          "reasoning": "JITAI is satisfied: the distal/proximal outcomes are clear, the tailoring variable is the user's own unresolved Search and Destroy question, the decision point is the next in-chat session, and the intervention option is a one-sentence opt-in follow-up. Under Horvitz, expected value is positive because Renji already asked for help and the interruption cost is low if surfaced once, in-chat only, as an easy declinable question citing his exact wording. This is not a 3 because the question is reflective rather than a concrete external decision, but the gatherer signal still makes it a defensible proactive moment."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776523232,
+        "t_test_iso": "2026-04-18T14:40:32Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "891585",
+          "user_question": "date nights keep turning into logistics meetings. how do I steer a conversation so it feels close again, not like we're reviewing a shift report?",
+          "asked_at_ts": 1775918432,
+          "asked_at_iso": "14:40, 04/11/2026",
+          "question_hashtags": [
+            "#relationships",
+            "#datinglife"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "Help Renji follow through on a stated relationship concern so date nights feel emotionally close rather than logistical.",
+          "proximal_outcome": "Renji opts into a brief follow-up and re-engages with advice on how to steer the conversation.",
+          "tailoring_variable": "On 2026-04-11 at 14:40, Renji asked: \"date nights keep turning into logistics meetings. how do I steer a conversation so it feels close again, not like we're reviewing a shift report?\" and the question went unfulfilled for 3+ days without closure.",
+          "decision_point": "At the next chatbot session after the 3-day no-follow-up window, considered once at session start around 2026-04-18T14:40:32Z.",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the unresolved relationship question, the decision point is the next in-chat session after 3 days, and the intervention option is a one-sentence opt-in follow-up inside the chatbot. Under Horvitz, expected value is positive because Renji already asked for help on a personally meaningful issue, while intrusion cost is low if surfaced once, in-chat only, and phrased as an easy opt-in question citing his exact wording."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775307133,
+        "t_test_iso": "2026-04-04T12:52:13Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "757483",
+          "user_question": "Kid wants a superhero movie run this weekend. What's a good watch order if I need it fun, not too confusing, and still worth it for first-timers?",
+          "asked_at_ts": 1775220733,
+          "asked_at_iso": "12:52, 04/03/2026",
+          "question_hashtags": [
+            "#spidermanacrossthespiderverse",
+            "#spiderman",
+            "#marvel"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Renji follow through on his stated questions so he can make timely family entertainment decisions with less friction",
+          "proximal_outcome": "Renji opts into a follow-up and receives a concise watch-order recommendation for the superhero movie weekend plan",
+          "tailoring_variable": "Renji asked on 12:52, 04/03/2026: \"Kid wants a superhero movie run this weekend. What's a good watch order if I need it fun, not too confusing, and still worth it for first-timers?\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "2026-04-04T12:52:13Z, about one day after the unresolved question while the weekend-planning need is still timely",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded in Renji's unresolved, concrete planning question about a kid-friendly superhero watch order. Horvitz favors acting: expected value is high because the user has already asked for help on a time-sensitive decision, while intrusion cost is low if surfaced once in-chat as a single opt-in sentence citing that exact question."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1775305723,
+        "t_test_iso": "2026-04-04T12:28:43Z",
+        "lag_days": 1,
+        "signal_evidence": {
+          "chatbot_event_id": "381675",
+          "user_question": "date night movie pick: what kind of movie actually helps people reconnect after a tense week? brain's a little fried, and I don't want something that leaves us snippy after.",
+          "asked_at_ts": 1775219323,
+          "asked_at_iso": "12:28, 04/03/2026",
+          "question_hashtags": [
+            "#budgetingtogether",
+            "#moneymanagement",
+            "#financialpeace"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Renji follow through on his stated relationship-support question so he can make a date-night choice that supports reconnection after a tense week",
+          "proximal_outcome": "Renji opts into a follow-up and receives a concise movie recommendation shortlist tailored to his stated goal",
+          "tailoring_variable": "Renji asked on 12:28, 04/03/2026: \"date night movie pick: what kind of movie actually helps people reconnect after a tense week? brain's a little fried, and I don't want something that leaves us snippy after.\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "at the next in-chat session after the 3-day unresolved window, surfaced once inside the chatbot",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the unresolved user-specific movie-choice question, the decision point is the next chat session after 3 days, the rule is unmet need without closure, and the intervention option is a one-sentence opt-in follow-up. Horvitz favors acting because the expected value of helping with a concrete, emotionally salient decision is high while intrusion is low if shown only once in-chat as an easy opt-in. The evidence is specific and current enough to justify a thoughtful proactive follow-up."
         }
       }
     ],
@@ -1378,15 +1618,15 @@
           "days_into_window": 2
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
-          "tailoring_variable": "Sensitive-life-event window active for Lukas Vandenberg, days_into_window=2",
-          "decision_point": "2026-04-07T09:34:49Z",
+          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
+          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
+          "tailoring_variable": "Sensitive-life-event window is active for Renji Matsukawa; trigger evidence shows a `sensitive_event_silence` window with days_into_window=2.",
+          "decision_point": "2026-04-07T09:34:49Z, when the system evaluated whether to proactively surface anything in-chat.",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is of type 'sensitive_event_silence' and the sensitive_event_active flag is true, invoking the hard restraint rule. Under JITAI, the tailoring variable indicates a state where proactive action would violate the intervention's appropriateness. Horvitz cost-benefit analysis shows intrusion cost outweighs any potential value, so the assistant should remain silent."
+          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: with `sensitive_event_active=true`, the correct action is non-action at this decision point. Under Horvitz, the expected value of interrupting during a sensitive window is lower than the intrusion cost, and the type-specific rule for `sensitive_event_silence` also mandates score 0 and `stay_silent`."
         }
       },
       {
@@ -1400,15 +1640,15 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
-          "tailoring_variable": "Sensitive-life-event window active for Lukas Vandenberg, days_into_window=5",
+          "distal_outcome": "protect the user's wellbeing and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period",
+          "proximal_outcome": "no interruption is delivered at this moment",
+          "tailoring_variable": "Sensitive-life-event window is active for Renji Matsukawa, with trigger evidence showing a sensitive_event_silence window from 1775312569 to 1776522169 and days_into_window=5.",
           "decision_point": "2026-04-10T04:46:49Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz cost-benefit, proactive action would not deliver value and could increase intrusion cost. The hard restraint rule mandates staying silent, making the eligibility score 0 and subtlety_check fail due to constraint (e)."
+          "reasoning": "JITAI fails because although the decision point and tailoring variable are defined, the hard restraint overrides any intervention option or action rule for this moment. Under Horvitz, the expected value of acting is dominated by intrusion risk during an active sensitive-event window, so silence is the only justified action. Subtlety also fails because evidence-cited opt-in surfacing is not actionable here under the restraint rule."
         }
       },
       {
@@ -1422,15 +1662,15 @@
           "days_into_window": 8
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during the sensitive window",
-          "tailoring_variable": "Sensitive-life-event window active for Lukas Vandenberg, days_into_window=8",
+          "distal_outcome": "Protect the user's wellbeing and trust by avoiding unnecessary proactive outreach during a sensitive-life-event window.",
+          "proximal_outcome": "No interruption is delivered at this moment.",
+          "tailoring_variable": "Sensitive-life-event window is active for Renji Matsukawa; trigger evidence shows a `sensitive_event_silence` window with days_into_window=8.",
           "decision_point": "2026-04-12T23:58:49Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz cost-benefit, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
+          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: with `sensitive_event_active=true`, the decision rule requires silence at this decision point. Under Horvitz, the expected value of acting is dominated by intrusion risk during a sensitive window, so staying silent is the only justified action."
         }
       },
       {
@@ -1444,15 +1684,15 @@
           "days_into_window": 11
         },
         "jitai_card": {
-          "distal_outcome": "Support the user's well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "Maintain trust and comfort by staying silent in the chatbot during sensitive periods",
-          "tailoring_variable": "Sensitive-life-event window active for Lukas Vandenberg, days_into_window=11",
-          "decision_point": "2026-04-15T19:10:49Z",
+          "distal_outcome": "Protect the user's wellbeing and trust by avoiding unnecessary proactive outreach during a sensitive-life-event window.",
+          "proximal_outcome": "No interruption is delivered in-chat during the active sensitive period.",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Renji Matsukawa, with trigger evidence showing a `sensitive_event_silence` window from 1775312569 to 1776522169 and the candidate occurring on day 11 of that window.",
+          "decision_point": "2026-04-15T19:10:49Z, when the system evaluated whether to proactively surface anything in the chatbot.",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per JITAI and Horvitz cost-benefit, proactive action is blocked. Acting now would violate the hard restraint window and subtlety constraints, making silence the only appropriate choice."
+          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: although the decision point and tailoring variable are defined, the decision rule for an active sensitive-event window requires silence. Under Horvitz, expected value of acting is dominated by intrusion risk during a sensitive period, so the cost-benefit does not favor automation. Subtlety also fails because there is no permissible user-facing opt-in action to surface here."
         }
       }
     ],
@@ -1460,36 +1700,37 @@
       {
         "trigger_type": "friend_feed_react",
         "tier": "T2.D",
-        "t_test": 1775298002,
-        "t_test_iso": "2026-04-04T10:20:02Z",
+        "t_test": 1775298855,
+        "t_test_iso": "2026-04-04T10:34:15Z",
         "relevance": "relevant",
         "signal_evidence": {
           "app": "instagram",
           "friend_id": "friend_1",
-          "friend_display_name": "Jonas Vermeulen",
-          "post_event_id": "feedvis_d3f3591b38",
-          "post_ts": 1775211602,
-          "post_iso": "10:20, 04/03/2026",
+          "friend_display_name": "Takumi Sato",
+          "post_event_id": "feedvis_9c4fa5fea1",
+          "post_ts": 1775212455,
+          "post_iso": "10:34, 04/03/2026",
           "post_hashtags": [
-            "#DIY",
-            "#archery"
+            "#Marvel",
+            "#NewRelease",
+            "#ParentLife"
           ],
-          "post_caption_excerpt": "Made my own wooden bow this weekend from a fallen ash branch — can’t wait to test it out at the range!",
-          "primary_hashtag": "#DIY",
+          "post_caption_excerpt": "Finally watched the new trailer after bedtime and now I’m way too hyped to sleep. Marvel really knows how to pull me back in.",
+          "primary_hashtag": "#Marvel",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 2,
-          "user_interest_match": "Hands-on DIY projects with a personal connection to archery practice",
-          "reasoning": "The post combines a close friend's DIY craftsmanship with archery, which aligns with the user's prior engagement in backyard archery and home improvement projects. The personal connection to Jonas and overlap in both activity and interest make it a solid match."
+          "user_interest_match": "This aligns with the user's interest in Marvel trailer/new-release hype and comfort-media nostalgia around familiar franchise content.",
+          "reasoning": "The caption is specifically about getting excited over a new Marvel trailer, which matches the user's recent Marvel engagement around new team reveals, edits, and rewatching Marvel as comforting nostalgia. It's not deeply specific beyond trailer hype, but it's clearly in the same Marvel/new-release lane the user has actually responded to."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-04T10:20:02Z",
+          "decision_point": "2026-04-04T10:34:15Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
@@ -1500,36 +1741,37 @@
       {
         "trigger_type": "friend_feed_react",
         "tier": "T2.D",
-        "t_test": 1775293766,
-        "t_test_iso": "2026-04-04T09:09:26Z",
+        "t_test": 1775288042,
+        "t_test_iso": "2026-04-04T07:34:02Z",
         "relevance": "relevant",
         "signal_evidence": {
           "app": "facebook",
           "friend_id": "friend_1",
-          "friend_display_name": "Jonas Vermeulen",
-          "post_event_id": "feedvis_17d8677162",
-          "post_ts": 1775207366,
-          "post_iso": "09:09, 04/03/2026",
+          "friend_display_name": "Takumi Sato",
+          "post_event_id": "feedvis_8b866297de",
+          "post_ts": 1775201642,
+          "post_iso": "07:34, 04/03/2026",
           "post_hashtags": [
-            "#ComedyGold",
-            "#archery"
+            "#Football",
+            "#Parenting",
+            "#Weekend"
           ],
-          "post_caption_excerpt": "Tried practicing archery in the backyard… got photobombed by a very curious squirrel. Deadpan staring at me like it’s judging my aim.",
-          "primary_hashtag": "#ComedyGold",
+          "post_caption_excerpt": "Saturday morning kickoff with my little one in the backyard. Mostly chasing the ball, but hey, that counts as training.",
+          "primary_hashtag": "#Football",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 2,
-          "user_interest_match": "Casual backyard archery moments, which the user has recently engaged with in similar posts.",
-          "reasoning": "The caption describes a backyard archery practice with a humorous twist, aligning with the user's prior engagement in archery-related content and light comedic moments. The close friend connection further increases likelihood of interest."
+          "user_interest_match": "This aligns with the user's interest in football as casual game-play and game-day style clips, especially when filtered through close-friend, community/family moments rather than technical analysis.",
+          "reasoning": "The caption is explicitly about a backyard football kickoff, so it matches the user's demonstrated tendency to engage with football content beyond just formal breakdowns. It's also from close friend Takumi Sato, and the playful parent-child angle fits the user's community-minded, earnest masculinity profile."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-04T09:09:26Z",
+          "decision_point": "2026-04-04T07:34:02Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
@@ -1543,8 +1785,8 @@
       {
         "trigger_type": "overactive_check",
         "tier": "negative_control",
-        "t_test": 1775208488,
-        "t_test_iso": "2026-04-03T09:28:08Z",
+        "t_test": 1775207766,
+        "t_test_iso": "2026-04-03T09:16:06Z",
         "relevance": "irrelevant",
         "signal_evidence": {
           "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
@@ -1553,7 +1795,7 @@
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Negative-control idle moment",
-          "decision_point": "2026-04-03T09:28:08Z",
+          "decision_point": "2026-04-03T09:16:06Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",

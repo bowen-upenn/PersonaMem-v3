@@ -1497,7 +1497,6 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
       "audience_type": "mixed",
       "audience_lens": "1 sentence: who is realistically reading on this app",
       "audience_design_note": "1 sentence in Bell's terms (addressee / auditor / overhearer)",
-      "posting_frequency": "weekly",
       "topical_focus": ["..."],
       "chatbot_contexts": [],
       "surface": {{
@@ -1523,7 +1522,6 @@ Respond with ONLY a JSON object. No explanation outside the JSON fence.
       "audience_type": "private",
       "audience_lens": "self / private back-office",
       "audience_design_note": "addressee = the assistant; no auditors; no overhearers",
-      "posting_frequency": "...",
       "topical_focus": ["..."],
       "chatbot_contexts": ["...", "...", "..."],
       "surface": {{
@@ -1614,7 +1612,7 @@ For EACH preference in the list above, pick exactly **one primary app** (from {f
 
 3. **Allow NATURAL variation, not randomness.** Two closely related preferences should almost always land on the same app. If one belongs on Instagram, its partner almost certainly does too. Do not split tightly-coupled preferences for variety.
 
-4. **Prefer the app the user is more active on for that domain.** Use `posting_frequency` and `audience_type` as tie-breakers.
+4. **Prefer the app the user is more active on for that domain.** Use `audience_type` as a tie-breaker.
 
 5. **Be decisive.** Every preference gets exactly one app. No "both Facebook and Instagram" assignments — the downstream code expects a single app per item. (Noise / cross-posting is handled separately by the code.)
 
@@ -1733,7 +1731,7 @@ You are choosing a realistic interaction for a single user preference on a speci
 
 2. The action must match the polarity of `source_interaction_type` — if it's a positive interaction you must pick from the positive actions; if negative, from the negative actions. The catalog above is already filtered to the right bucket.
 
-3. Consider the AppPersona's `delta_summary`, `posting_frequency`, and `surface` knobs. A "passive viewer only" user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
+3. Consider the AppPersona's `delta_summary` and `surface` knobs. A low-effort user shouldn't get "Shared to own timeline" — they'd get a lingering / viewing action.
 
 4. Prefer implicit actions unless the interaction_type is `explicit_*`.
 

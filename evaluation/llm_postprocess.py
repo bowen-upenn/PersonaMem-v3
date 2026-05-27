@@ -48,6 +48,7 @@ _PERSONALIZATION_TASKS = {
     "daily_personalized_briefing",
     "short_vs_long_term_lifecycle",
     "active_mistake_prevention",
+    "preference_shift_followthrough",
     "agentic_user_tone_post",
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest",
@@ -1057,8 +1058,8 @@ _VOICE_DEPENDENT_WRITE_TASKS = {
 def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
     """Build a voice-anchored grounding block for write tasks.
 
-    Pulls the target_app's `style_description` / `topical_focus` /
-    `posting_frequency` from `profile.app_personas`, the user's top
+    Pulls the target_app's `style_description` / `topical_focus`
+    from `profile.app_personas`, the user's top
     hashtags on that app, and the 2-3 most recent self-posts. Each
     task adds its own specific input (the update / context / source
     post / inbound DM) so the gold has both voice anchor and the
@@ -1070,7 +1071,7 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
     t_test = int(inst.get("t_test") or 0)
     horizon = t_test or 9999999999
 
-    # 1. style_description / topical_focus / posting_frequency from app_personas
+    # 1. style_description / topical_focus from app_personas
     # plus the user's shared writing voice (caps, palette, phrases, ...) — the
     # same person types this on every app, so the gold-gen LLM needs both
     # blocks to mimic the voice correctly.
@@ -1208,9 +1209,6 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
     topical = app_persona.get("topical_focus") or []
     if topical:
         lines.append(f"Topical focus on {target_app}: " + ", ".join(topical[:6]))
-    freq = (app_persona.get("posting_frequency") or "").strip()
-    if freq:
-        lines.append(f"Posting frequency: {freq}")
     top_tags = [t for t, _ in tag_counts.most_common(8)]
     if top_tags:
         lines.append("Top hashtags: " + ", ".join("#" + t for t in top_tags))

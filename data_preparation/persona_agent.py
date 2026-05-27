@@ -227,7 +227,6 @@ class AppPersona:
     audience_type: str = "mixed"                           # "private" | "public" | "mixed"
     audience_lens: str = ""                                # 1 sentence: WHO is realistically reading here
     audience_design_note: str = ""                         # 1 sentence in Bell's terms (addressee/auditor/overhearer)
-    posting_frequency: str = "weekly"                      # "daily" | "weekly" | "rarely" | "passive viewer only"
     topical_focus: list[str] = field(default_factory=list) # 3-5 domains — subset filter for THIS audience
     chatbot_contexts: list[str] = field(default_factory=list)  # Chatbot only; picked from CHATBOT_CONTEXTS
 
@@ -5379,7 +5378,6 @@ class PersonaAgent:
                     audience_type=entry.get("audience_type", "mixed"),
                     audience_lens=str(entry.get("audience_lens", "")),
                     audience_design_note=str(entry.get("audience_design_note", "")),
-                    posting_frequency=entry.get("posting_frequency", "weekly"),
                     topical_focus=list(entry.get("topical_focus", [])),
                     chatbot_contexts=list(entry.get("chatbot_contexts", [])) if app_name == "Chatbot" else [],
                     surface=surface,
@@ -6555,13 +6553,11 @@ class PersonaAgent:
                 app_personas_dict[app_name] = {
                     "use_purposes": persona.use_purposes,
                     "topical_focus": persona.topical_focus,
-                    "posting_frequency": persona.posting_frequency,
                 }
             elif isinstance(persona, dict):
                 app_personas_dict[app_name] = {
                     "use_purposes": persona.get("use_purposes", []),
                     "topical_focus": persona.get("topical_focus", []),
-                    "posting_frequency": persona.get("posting_frequency", ""),
                 }
 
         preference_list = [

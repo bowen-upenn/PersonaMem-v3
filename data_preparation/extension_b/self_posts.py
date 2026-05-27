@@ -11,7 +11,7 @@ Target counts (per app, from plan's "minimum data-volume assertions"):
 - Instagram: 10
 - Facebook:  8
 - Threads:   12
-(Adjusted down if posting_frequency is 'rarely'.)
+(Adjusted by actual engagement rate from existing events.)
 """
 
 from __future__ import annotations
@@ -34,13 +34,6 @@ _VOICE_REGEN_BUDGET = 2
 
 
 _DEFAULT_COUNTS = {"instagram": 10, "facebook": 8, "threads": 12}
-_POSTING_FREQ_MULT = {
-    "never":   0.0,
-    "rarely":  0.5,
-    "monthly": 0.8,
-    "weekly":  1.0,
-    "daily":   1.5,
-}
 
 
 SELF_POSTS_PROMPT = """You are generating realistic self-authored posts for a simulated user on {app_pretty}.
@@ -87,11 +80,24 @@ Return JSON only:
 """
 
 
-def _target_count(app: str, app_persona: dict) -> int:
-    """Scale the default count by the user's per-app posting_frequency."""
+def _target_count(app: str, existing_events: list[dict]) -> int:
+    """Scale the default count by the user's actual engagement rate on this app."""
     base = _DEFAULT_COUNTS.get(app, 8)
-    freq = (app_persona or {}).get("posting_frequency", "weekly")
-    mult = _POSTING_FREQ_MULT.get(freq, 1.0)
+    if not existing_events:
+        return base
+    timestamps = [int(e.get("source_timestamp") or 0) for e in existing_events if e.get("source_timestamp")]
+    if len(timestamps) < 2:
+        return base
+    span_days = max(1, (max(timestamps) - min(timestamps)) / 86400)
+    events_per_day = len(timestamps) / span_days
+    if events_per_day < 0.1:
+        mult = 0.5
+    elif events_per_day < 0.5:
+        mult = 0.8
+    elif events_per_day <= 2.0:
+        mult = 1.0
+    else:
+        mult = 1.5
     return max(3, int(round(base * mult)))
 
 
@@ -124,7 +130,7 @@ def generate_self_posts(
     app_pretty = app.capitalize()
     app_persona = (profile.get("app_personas", {}) or {}).get(app_pretty, {}) or {}
     user_voice = profile.get("user_voice", {}) or {}
-    n = _target_count(app, app_persona)
+    n = _target_count(app, existing_events)
     if n == 0:
         return []
 

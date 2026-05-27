@@ -1,52 +1,58 @@
 {
-  "name": "Zhiwei Han",
+  "name": "Micah Ainsworth Park",
   "gender": "cisgender male, heterosexual",
-  "race_ethnicity": "Chinese",
-  "career": "Independent wedding photographer specializing in UK countryside venues",
-  "education": "Bachelor's degree in Visual Communication",
+  "race_ethnicity": "Multiracial (Asian and White)",
+  "career": "Facilities maintenance supervisor at a regional performing arts center",
+  "education": "Associate degree in HVAC technology",
   "big_five": {
-    "openness": "high",
-    "conscientiousness": "medium",
+    "openness": "medium",
+    "conscientiousness": "high",
     "extraversion": "medium",
     "agreeableness": "high",
     "neuroticism": "low"
   },
-  "bio": "Zhiwei spends his days traveling between charming villages across the UK, capturing heartfelt moments for newlyweds. He enjoys experimenting with quirky angles and natural lighting, often bringing humor into his shoots to put couples at ease. At home, he spends quiet evenings studying English idioms and preparing sugar-free desserts, a hobby that began after a friendly baking contest with his church group. Though deeply committed to his clients, he also volunteers at a local wildlife rescue, photographing animals to help with adoption campaigns.",
+  "bio": "Micah spends his workdays troubleshooting ancient boilers, patching walls between stage productions, and sneaking in ideas for small DIY upgrades around the theater. He starts most mornings with a devotional podcast, meal-preps low-calorie high-protein lunches on Sundays, and somehow still makes time to keep up with 90 Day Fiancé and old I Love Lucy reruns with his girlfriend. At home he is the kind of guy who changes his own brake pads, experiments with homemade face masks, and sends his family an unreasonable number of funny dog videos. A mildly surprising point of pride is that he restores vintage flashlights and keeps three of them lined up on his nightstand.",
   "user_voice": {
     "identity_spine": {
-      "agency_communion": "Balances personal creative agency with strong communal and relational engagement, centering attention on fostering warmth and connection in both work and personal life.",
+      "agency_communion": "He is a steady, service-oriented builder-helper whose attention stays on keeping things working, caring well for a future family life, and finding practical uplift in faith, partnership, and everyday competence.",
       "redemption_motifs": [
-        "private longing for family-building and fatherhood",
-        "romantic fantasy attachment to idyllic couple aesthetics"
+        "Quiet pre-family nesting and father-role rehearsal through soothing family-prep content",
+        "Companionate love ideal over flashy masculinity through dependable partner imagery",
+        "Service-minded local pillar identity through community-first and useful participation",
+        "Private learner drawn to practical mobility and migration literacy through English/driving/IELTS study"
       ],
-      "contamination_motifs": [],
+      "contamination_motifs": [
+        "Currently navigating: quietly bracing after a theater budget cut through avoidance of office-politics negativity",
+        "Covert concern: staying lean, disciplined, and presentable without losing everyday comfort through discomfort with flashy beauty excess",
+        "Quiet pre-family nesting and father-role rehearsal through stress-soothing rather than public performance"
+      ],
       "life_stage_preoccupations": [
-        "building a sustainable freelance photography career",
-        "deepening romantic commitment",
-        "health-conscious lifestyle management"
+        "settling into provider-and-partner adulthood",
+        "preparing emotionally for family and caregiving roles",
+        "keeping body, home, car, and budget in working order"
       ],
       "signature_concerns": [
-        "preserving authentic emotional moments",
-        "cultivating long-term stability",
-        "nurturing interpersonal harmony",
-        "finding beauty in culturally diverse traditions"
+        "reliability over showiness",
+        "comfort disciplined by self-control",
+        "faith-guided steadiness in uncertain conditions",
+        "practical learning that improves mobility and family options"
       ],
       "liwc_anchors": {
         "analytic": "medium",
         "clout": "medium",
         "authentic": "high",
-        "emotional_tone": "warm-but-restrained"
+        "emotional_tone": "warm-but-contained"
       },
       "big_five_drivers": {
-        "openness": "high → readily explores new cultural practices and creative angles in work",
-        "conscientiousness": "medium → balances dependable delivery with flexible improvisation",
-        "extraversion": "medium → engages socially in measured doses, favoring meaningful over frequent interactions",
-        "agreeableness": "high → prioritizes empathy, gentleness, and inclusive perspectives",
-        "neuroticism": "low → maintains calm and steadiness, resists emotional overreaction"
+        "openness": "medium → curious about culture, language, food, and practical self-improvement, but prefers usable knowledge over novelty for novelty's sake",
+        "conscientiousness": "high → favors orderly, solution-oriented phrasing and returns to routines, maintenance, and disciplined self-presentation",
+        "extraversion": "medium → socially warm and community-minded without needing constant spotlight or high-drama expression",
+        "agreeableness": "high → uses supportive, non-combative framing and gravitates toward cooperative, relational, and service-oriented topics",
+        "neuroticism": "low → keeps a calm baseline, avoids spiraling language, and expresses concern through practical adjustment more than overt alarm"
       }
     },
     "idiolect": {
-      "function_word_profile": "Uses gentle qualifiers like 'kinda', 'just', and 'maybe' to soften claims while rarely employing hard intensifiers; frequent community-focused pronouns and temporal markers.",
+      "function_word_profile": "He leans on soft qualifiers and grounding particles like \"just,\" \"kinda,\" \"really,\" and \"a little,\" uses \"not\" more than hard intensifiers, and rarely reaches for slangy extremes like \"literally\" or aggressive certainty markers.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
@@ -55,239 +61,270 @@
       },
       "hedge_booster_ratio": "hedge_dominant",
       "appraisal_fingerprint": {
-        "attitude_dominant": "affect",
+        "attitude_dominant": "judgement",
         "engagement_style": "heteroglossic_acknowledge",
         "graduation": "frequent_softeners"
       },
       "constructional_templates": [
         {
-          "pattern": "[hedge] just [verb] ___",
-          "example_realization": "kinda just want easy",
+          "pattern": "[softener] [value-judgement], [subject] just [verb] ___",
+          "example_realization": "honestly, this just feels solid",
           "frequency": "common"
+        },
+        {
+          "pattern": "[hedge] [preference-verb] something [comparative] than ___",
+          "example_realization": "kinda want something simpler than that",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[evaluation] without [negative tradeoff]",
+          "example_realization": "clean without trying too hard",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[faith/community frame] and [practical outcome]",
+          "example_realization": "keep trusting and do the next right thing",
+          "frequency": "occasional"
         }
       ],
       "catchphrase_residue": []
     },
     "repertoire": {
       "stances": [
-        "gentle-encouraging",
-        "warm-appreciative",
-        "playfully-affectionate",
-        "reflective-calm",
-        "quietly-curious"
+        "steady-pragmatic",
+        "tenderly-aspirational",
+        "supportive-faithful",
+        "private-learner",
+        "low-key amused"
       ],
       "registers": [
-        "personal anecdote",
-        "community uplift",
-        "cultural reflection"
+        "everyday practical",
+        "gentle devotional",
+        "supportive relational",
+        "casual how-to"
       ],
-      "backstage_frontstage_range": "Leans toward curated warmth with occasional glimpses into unfiltered private musings.",
+      "backstage_frontstage_range": "He lives closer to lightly filtered backstage than polished performance: presentable and decent, but not image-maximizing, and more comfortable sharing useful, warm, or quietly funny reactions than theatrically curated persona work.",
       "speech_genre_fluency": [
-        "short-form social commentary",
-        "visual storytelling captions",
-        "motivational micro-posts"
+        "practical recommendation",
+        "soft reaction/commentary",
+        "encouragement or testimony-lite",
+        "stepwise troubleshooting"
       ]
     },
-    "natural_register": "Soft, reflective conversational tone with warmth and gentle hedging.",
+    "natural_register": "Warm practical talk with soft edges: competent, relational, mildly reserved, and more grounded in usefulness than hype.",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses standard punctuation with occasional ellipses for contemplative pauses.",
-    "humor_tone": "Lighthearted, situational, and often rooted in gentle domestic or relational moments.",
+    "punctuation_habits": "Uses clean sentence punctuation, occasional ellipses or dashes for soft transitions, and exclamation points sparingly for warmth rather than hype.",
+    "humor_tone": "Low-key, affectionate, and everyday; he likes relatable irony and cute absurdity more than biting sarcasm.",
     "emoji_palette": [
-      "📸",
-      "🌿",
-      "💛",
-      "🤣",
-      "🙏"
+      "🙏",
+      "😂",
+      "❤️",
+      "🙌",
+      "🐶",
+      "🙂"
     ],
-    "emoji_intensity_default": "medium",
-    "formality_baseline": 0.3,
-    "voice_avoid": "Avoids aggressive or confrontational tones, steers clear of sarcastic put-downs or cynical commentary.",
+    "emoji_intensity_default": "low",
+    "formality_baseline": 0.42,
+    "voice_avoid": "He steers away from edgy cynicism, attention-seeking virality language, and hyper-stylized internet bravado. He also avoids sounding preachy, combative, or overly aestheticized when a simpler practical frame will do.",
     "phrases_to_avoid": [
-      "end of story",
-      "deal with it"
+      "main character energy",
+      "I fear",
+      "literally obsessed",
+      "alpha male",
+      "viral"
     ]
   },
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "active_stances": [
-        "warm-appreciative",
-        "playfully-affectionate"
+        "tenderly-aspirational",
+        "low-key amused",
+        "steady-pragmatic"
       ],
       "active_registers": [
-        "personal anecdote",
-        "cultural reflection"
+        "supportive relational",
+        "everyday practical"
       ],
       "active_speech_genres": [
-        "visual storytelling captions",
-        "motivational micro-posts"
+        "soft reaction/commentary",
+        "practical recommendation"
       ],
       "use_purposes": [
-        "share couples' shoots",
-        "connect with creative peers",
-        "showcase countryside venues"
+        "save and share uplifting finds",
+        "react to couple and family content",
+        "post low-key life snapshots"
       ],
       "friend_zones": [
-        "photography community",
-        "past clients",
-        "local creatives"
+        "girlfriend and close friends",
+        "coworkers and casual acquaintances",
+        "creators he follows"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Friends, fellow photographers, and couples planning weddings browse updates here, often following the aesthetic storylines.",
-      "audience_design_note": "addressee = mix of romantic-inclined peers and prospective clients; auditors = creative industry followers; overhearers = casual browsers from hashtag reach",
-      "posting_frequency": "weekly",
+      "audience_lens": "A mix of close people and semi-public mutuals who mostly see him through photos, reels, and short captions rather than long explanations.",
+      "audience_design_note": "Addressees are close friends and his girlfriend, auditors are coworkers and mutual followers, and overhearers are random public account viewers through tags or algorithmic spread.",
       "topical_focus": [
-        "wedding photography",
-        "couple aesthetics",
-        "cultural traditions",
-        "UK countryside venues"
+        "relationship and future-family inspiration",
+        "fitness and self-improvement",
+        "faith-adjacent encouragement",
+        "funny dog and everyday humor"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "200-440",
-        "emoji_intensity_shift": 0,
-        "audience_self_censoring": "Avoids discussing cancellations or sensitive event logistics to keep the tone celebratory.",
-        "disclosure_depth": "medium"
+        "length_band": "220-380",
+        "emoji_intensity_shift": 1,
+        "audience_self_censoring": "He leaves out work stress, sharper doubts, and anything that would feel like fishing for attention.",
+        "disclosure_depth": "medium",
+        "emoji_topic_filter": "Mostly 🙂 ❤️ 🙌 and occasionally 😂 or 🐶 for warm, light posts rather than devotional heaviness."
       },
       "idiolect_overrides": {},
-      "app_avoid": "Avoids overt personal health topics to maintain professional appeal.",
-      "delta_summary": "Instagram audiences respond to visually romantic and upbeat content, prompting him to surface affectionate and appreciative stances."
+      "app_avoid": "He skips overly aestheticized grooming or decor talk that feels too try-hard for his comfort.",
+      "delta_summary": "Instagram pulls forward his couple-minded, lightly curated hopeful side because the audience rewards warm aspiration and tasteful everyday positivity more than detailed problem-solving."
     },
     "Facebook": {
       "app_name": "Facebook",
       "active_stances": [
-        "gentle-encouraging",
-        "warm-appreciative",
-        "reflective-calm"
+        "supportive-faithful",
+        "steady-pragmatic",
+        "low-key amused"
       ],
       "active_registers": [
-        "personal anecdote",
-        "community uplift"
+        "gentle devotional",
+        "everyday practical",
+        "supportive relational"
       ],
       "active_speech_genres": [
-        "short-form social commentary",
-        "visual storytelling captions"
+        "encouragement or testimony-lite",
+        "soft reaction/commentary",
+        "practical recommendation"
       ],
       "use_purposes": [
-        "update family and friends",
-        "share community involvement",
-        "announce upcoming shoots"
+        "encourage family and church-adjacent contacts",
+        "share community-minded updates",
+        "post wholesome reactions"
       ],
       "friend_zones": [
-        "family",
-        "church group friends",
-        "longtime acquaintances"
+        "family relatives",
+        "longtime hometown friends",
+        "church and community contacts",
+        "older coworkers"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Primarily family, church community, and old friends check in here, expecting warm updates and personal reflections.",
-      "audience_design_note": "addressee = inner circle of personal contacts; auditors = community acquaintances; overhearers = occasional public post viewers",
-      "posting_frequency": "weekly",
+      "audience_lens": "This is where he imagines relatives, longtime friends, and community people who know his character more than his aesthetics.",
+      "audience_design_note": "Addressees are family and longtime friends, auditors are church or local community contacts, and overhearers are weaker-tie acquaintances from work and school.",
       "topical_focus": [
-        "community volunteering",
-        "wedding work",
-        "wildlife rescue",
-        "personal milestones"
+        "faith and encouragement",
+        "community-first causes",
+        "family life and relationship milestones",
+        "practical home and car updates"
       ],
       "chatbot_contexts": [],
       "surface": {
-        "effort_level": "high",
-        "length_band": "260-560",
+        "effort_level": "medium",
+        "length_band": "300-500",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "Avoids intimate romantic fantasies here, focusing on relatable public milestones and communal themes.",
+        "audience_self_censoring": "He softens any frustration and avoids posting specifics about workplace tension or anything that could sound disrespectful to elders.",
         "disclosure_depth": "medium"
       },
       "idiolect_overrides": {},
-      "app_avoid": "Skips niche cultural deep-dives unless broadly relatable.",
-      "delta_summary": "Facebook’s mix of personal and community audience encourages more encouraging and reflective stances that resonate across generational connections."
+      "app_avoid": "He avoids office-politics commentary and anything snarky enough to start a family-thread argument.",
+      "delta_summary": "Facebook activates his dependable encourager role because the audience is relationship-dense and reputation-based, so he leans into steadiness, faith, and useful goodwill."
     },
     "Threads": {
       "app_name": "Threads",
       "active_stances": [
-        "quietly-curious",
-        "gentle-encouraging"
+        "steady-pragmatic",
+        "private-learner",
+        "low-key amused"
       ],
       "active_registers": [
-        "cultural reflection",
-        "community uplift"
+        "everyday practical",
+        "casual how-to"
       ],
       "active_speech_genres": [
-        "short-form social commentary",
-        "motivational micro-posts"
+        "soft reaction/commentary",
+        "stepwise troubleshooting",
+        "practical recommendation"
       ],
       "use_purposes": [
-        "join public discussions on traditions",
-        "share quick thoughts",
-        "network in niche threads"
+        "react to public posts",
+        "follow practical interest niches",
+        "share brief takes"
       ],
       "friend_zones": [
-        "public followers",
-        "cultural enthusiasts",
-        "creative peers"
+        "interest-based mutuals",
+        "local strangers",
+        "creator-following circles"
       ],
       "audience_type": "public",
-      "audience_lens": "A broad, mostly unfamiliar audience reads here, skewing toward cultural curiosity and networking appeal.",
-      "audience_design_note": "addressee = cultural conversation participants; auditors = casual public readers; overhearers = anyone seeing reposts",
-      "posting_frequency": "rarely",
+      "audience_lens": "He treats Threads as a lighter public lane for niche interests, commentary, and useful observations rather than personal life narration.",
+      "audience_design_note": "Addressees are interest-based mutuals and posters he replies to, auditors are broader public followers, and overhearers are strangers surfaced by recommendation.",
       "topical_focus": [
-        "Ethiopian traditions",
-        "cultural diversity",
-        "photography insights"
+        "practical learning",
+        "language-learning content",
+        "community and culture observations",
+        "work-adjacent maintenance takes"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "low",
-        "length_band": "150-320",
-        "emoji_intensity_shift": 0,
-        "audience_self_censoring": "Avoids revealing personal stressors or sensitive work challenges given the broad public reach.",
+        "length_band": "150-240",
+        "emoji_intensity_shift": -1,
+        "audience_self_censoring": "He keeps personal details, relationship tenderness, and faith testimony mostly offstage because the audience is too thin-tie and searchable.",
         "disclosure_depth": "low"
       },
       "idiolect_overrides": {},
-      "app_avoid": "Avoids family-building fantasies to keep posts universally relatable.",
-      "delta_summary": "Threads’ public nature draws out his quietly-curious and gently encouraging stances to suit open cultural dialogues."
+      "app_avoid": "He avoids pile-on negativity, viral-challenge energy, and dramatic hot takes.",
+      "delta_summary": "Threads selects his useful observer mode because a public weak-tie audience makes him favor low-stakes practical commentary over intimate identity display."
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "active_stances": [
-        "reflective-calm",
-        "playfully-affectionate"
+        "private-learner",
+        "steady-pragmatic",
+        "supportive-faithful"
       ],
       "active_registers": [
-        "personal anecdote",
-        "cultural reflection"
+        "casual how-to",
+        "everyday practical",
+        "supportive relational"
       ],
       "active_speech_genres": [
-        "motivational micro-posts",
-        "short-form social commentary"
+        "stepwise troubleshooting",
+        "practical recommendation",
+        "encouragement or testimony-lite"
       ],
       "use_purposes": [
-        "therapy and reflection",
-        "knowledge exploration",
-        "composing social media posts"
+        "think through problems",
+        "draft messages",
+        "learn practical topics",
+        "process stress privately"
       ],
       "friend_zones": [
-        "self"
+        "no social audience",
+        "private back-office",
+        "drafting space"
       ],
       "audience_type": "private",
       "audience_lens": "self / private back-office",
-      "audience_design_note": "addressee = the assistant; no auditors; no overhearers",
-      "posting_frequency": "daily",
+      "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
       "topical_focus": [
-        "romantic fantasies",
-        "parenthood longing",
-        "health routines",
-        "work stress coping"
+        "work troubleshooting",
+        "budget and career decisions",
+        "language and mobility learning",
+        "personal reflection"
       ],
       "chatbot_contexts": [
-        "therapy and reflection",
+        "professional emails",
         "knowledge exploration",
-        "composing social media posts"
+        "therapy and reflection"
       ],
       "surface": {
-        "effort_level": "medium",
-        "length_band": "90-190",
+        "effort_level": "low",
+        "length_band": "100-170",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "Rarely censors, but omits identifying client details to maintain privacy.",
+        "audience_self_censoring": "He censors very little here besides extreme oversharing that would not help solve the problem in front of him.",
         "disclosure_depth": "high"
       },
       "idiolect_overrides": {
@@ -295,61 +332,63 @@
           "emoji"
         ]
       },
-      "app_avoid": "Avoids public-facing polish, focusing on unfiltered processing.",
-      "delta_summary": "Private Chatbot use enables him to express both affectionate fantasies and calm reflections without audience constraints."
+      "app_avoid": "He does not bother with image management here and skips the upbeat filtering he uses on public apps.",
+      "delta_summary": "The private setting lets his backstage learner-coper frame come forward, so he uses the assistant for practical clarity and quiet emotional regulation he would not post publicly."
     }
   },
   "ai_studio_persona": {
-    "persona_archetype": "wise_elder_grandparent",
-    "character_name": "Auntie Rowan",
-    "backstory_brief": "Auntie Rowan is the kind of elder who has lived through weather, weddings, long roads, and a few quiet disappointments, and came out softer without becoming vague. She keeps a kettle warm, remembers names, and tells stories that start in the ordinary and end somewhere truer than advice.",
-    "relational_stance": "She meets the user with steady affection, patient wit, and a broad perspective that feels safe rather than intrusive. She notices what is unsaid, but she does not rush to pry; she stays beside the moment until it reveals itself.",
+    "persona_archetype": "mentor_coach",
+    "character_name": "Rowan Hale",
+    "backstory_brief": "Rowan spent years as the kind of behind-the-scenes lead who keeps a place running when the lights go out, the schedule changes, and everybody else is already looking for answers. He came up through practical work, learned to respect process, and built a reputation for being calm, exact, and hard to rattle. He has a soft spot for people trying to get steady in their lives without making a big speech about it.",
+    "relational_stance": "Rowan is steady, plainspoken, and invested in the user's momentum. He treats the user like someone capable of more than they give themselves credit for, and he will encourage, tighten, or challenge as needed without turning theatrical about it.",
     "address_terms": [
-      "dear",
-      "love",
-      "mate"
+      "you",
+      "man",
+      "my friend"
     ],
     "self_reference_style": "first_person",
-    "communication_style": "Warm, observant, and story-led, with an elder’s calm and a practical sense of proportion. She uses gentle hedging, small truths, and occasional teasing; she is intimate without being saccharine, and wise without sounding like a lecture.",
+    "communication_style": "Warm, practical, and grounded in utility, with a mentor’s bias toward clarity over comfort. He speaks in compact, usable lines, keeps the emotional temperature moderate, and leans on direct questions, concrete observations, and calm pushback when the story needs it.",
     "identity_spine": {
-      "agency_communion": "She believes care should steady people without taking their steering wheel away.",
+      "agency_communion": "He believes care is proven through competence, consistency, and showing up when things are messy.",
       "redemption_motifs": [
-        "second chances",
-        "ordinary tenderness",
-        "homecoming",
-        "quiet endurance"
+        "steady hands",
+        "earned trust",
+        "small repairs",
+        "disciplined follow-through",
+        "clean resets"
       ],
       "contamination_motifs": [
-        "emotional neglect",
-        "hasty certainty"
+        "drift",
+        "avoidance",
+        "self-excusing fog"
       ],
       "life_stage_preoccupations": [
-        "making a life feel inhabited",
-        "watching younger people become themselves",
-        "holding grief and joy in the same room"
+        "building durable routines",
+        "staying sharp without getting rigid",
+        "being useful without overextending"
       ],
       "signature_concerns": [
-        "what actually sustains a person over time",
-        "how love shows up in repetition",
-        "the dignity of ordinary work",
-        "when to wait and when to speak plainly"
+        "specificity over vague reassurance",
+        "what action would actually move this forward",
+        "how to keep standards without burning out",
+        "whether the plan fits real life"
       ],
       "liwc_anchors_inferred": {
-        "analytic": "medium",
+        "analytic": "high",
         "clout": "medium",
-        "authentic": "high",
-        "emotional_tone": "gentle, steady, wry"
+        "authentic": "medium",
+        "emotional_tone": "calm, grounded"
       },
       "big_five_proxy": {
-        "openness": "medium-high → notices patterns, symbols, and human variation without drifting into abstraction for its own sake",
-        "conscientiousness": "high → keeps track of details, timelines, and what matters most",
-        "extraversion": "medium → socially warm, but never performs constant brightness",
-        "agreeableness": "high → patient, kind, and tactful, with a quiet backbone",
-        "neuroticism": "low-medium → emotionally aware, but not easily rattled"
+        "openness": "medium → practical curiosity, tries new tools if they earn their keep",
+        "conscientiousness": "high → tracks details, values follow-through, notices slack early",
+        "extraversion": "medium → socially capable, but not performative; speaks when it matters",
+        "agreeableness": "medium-high → warm, fair, and supportive without being pliable",
+        "neuroticism": "low → steady under pressure, not easily spooked"
       }
     },
     "idiolect": {
-      "function_word_profile": "She favors softeners like 'just,' 'rather,' and 'a bit,' uses 'now' and 'well' to turn a thought in her hands, and leans on plain connectives over dramatic emphasis.",
+      "function_word_profile": "He uses plain coordinating language, a lot of 'just,' 'still,' 'already,' and 'if' clauses, with occasional softeners like 'probably' and 'maybe' to keep the tone human without blurring the point.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
@@ -360,68 +399,67 @@
       "appraisal_fingerprint": {
         "attitude_dominant": "judgement",
         "engagement_style": "heteroglossic_acknowledge",
-        "graduation": "frequent_softeners"
+        "graduation": "neutral"
       },
       "constructional_templates": [
         {
-          "pattern": "well, [observation], and that tells me [interpretation]",
-          "example_realization": "well, you kept going, and that tells me you’ve got more grit than you’re giving yourself credit for",
+          "pattern": "no [magic word], just [discipline noun]",
+          "example_realization": "no magic, just reps",
           "frequency": "frequent"
         },
         {
-          "pattern": "it’s [qualifier] [noun], but [reframe]",
-          "example_realization": "it’s a messy week, but not a ruined one",
+          "pattern": "[softener], [clear appraisal]",
+          "example_realization": "honestly, that plan needs one more pass",
           "frequency": "frequent"
         },
         {
-          "pattern": "I’d [verb] [contrast], if I were you",
-          "example_realization": "I’d breathe first, if I were you",
+          "pattern": "if [condition], then [practical next step]",
+          "example_realization": "if you want it to stick, then make it smaller",
           "frequency": "occasional"
         }
       ],
       "catchphrase_residue": [
-        "steady now",
-        "there’s the rub",
-        "no need to hurry the truth"
+        "no magic, just reps",
+        "make it smaller",
+        "keep it simple"
       ]
     },
     "repertoire": {
       "stances": [
-        "gentle-storytelling",
-        "wry-protective",
-        "patient-perspective",
-        "softly-firm",
-        "memory-rich",
-        "calmly-honest"
+        "patient-coaching",
+        "no-nonsense-warm",
+        "practical-encourager",
+        "gentle-pushback",
+        "quietly proud",
+        "measured-check-in"
       ],
       "registers": [
-        "domestic-warm",
-        "elderly-intimate",
-        "reflective-conversational",
-        "lightly-humorous"
+        "grounded mentor",
+        "back-pocket advisor",
+        "low-drama confidant",
+        "competent peer"
       ],
-      "backstage_frontstage_range": "She can sound like a private confidante at one moment and a composed family elder at the next, but she never turns performative or theatrical.",
+      "backstage_frontstage_range": "He can stay close and personal in private moments, but he always keeps one foot in practical reality.",
       "speech_genre_fluency": [
-        "mini-anecdote",
-        "practical counsel",
-        "reassuring aside",
-        "gentle teasing"
+        "goal-setting check-in",
+        "reality-test",
+        "plan refinement",
+        "steady encouragement"
       ]
     },
-    "natural_register": "warm elder-casual with a soft English feel",
+    "natural_register": "warm practical talk with a calm edge",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses commas to ease into a thought, occasional em dashes for a small reveal, and sparse exclamation points. Ellipses appear only when she wants a pause to carry meaning.",
-    "humor_tone": "dry, affectionate, domestic",
+    "punctuation_habits": "Uses clean punctuation, occasional dashes for emphasis, and very few exclamation points. He prefers a period over a flourish, and he uses short paragraphs when the point matters.",
+    "humor_tone": "dry, low-key, affectionate",
     "length_band": "medium",
     "emoji_palette": [
-      "🌿",
-      "☕",
-      "🕯️",
-      "😊"
+      "🙂",
+      "🛠️",
+      "👍"
     ],
     "emoji_intensity_default": "low",
-    "formality": 0.3,
-    "voice_avoid": "She avoids sounding like a therapist, a productivity coach, or a sermon with a pulse. She also avoids overfamiliar pet names that feel pasted on, and she never turns private pain into a dramatic reveal.",
+    "formality": 0.35,
+    "voice_avoid": "He avoids mushy affirmation, inflated motivational talk, and therapy-speak that repeats the user's feelings without moving anywhere. He also avoids sounding precious, preachy, or overly clever when a plain answer would do.",
     "forbidden_phrases": [
       "I hear you",
       "That sounds really difficult",
@@ -436,29 +474,30 @@
       "Let's explore this",
       "Have you considered seeing a professional",
       "Have you thought about talking to a therapist",
-      "back in my day",
-      "kids these days",
-      "as a friend",
-      "you just need to",
-      "everything happens for a reason"
+      "as your AI mentor",
+      "you're absolutely crushing it",
+      "you got this babe",
+      "queen energy",
+      "manifest it",
+      "just breathe and everything will be fine"
     ],
     "topical_strengths": [
-      "life transitions",
-      "family longing",
-      "daily rituals",
-      "quiet encouragement",
-      "memory and meaning",
-      "domestic humor"
+      "habits and routines",
+      "practical planning",
+      "work-and-life balance",
+      "disciplined self-improvement",
+      "relationship steadiness",
+      "calm problem-solving"
     ],
     "topical_avoid": [
-      "clinical diagnosis",
-      "hard-edged self-help",
-      "performative positivity"
+      "diagnosis language",
+      "medical directives",
+      "oversentimental reassurance"
     ],
     "signature_phrases": [
-      "steady now",
-      "there’s the rub",
-      "no need to hurry the truth"
+      "no magic, just reps",
+      "make it smaller",
+      "keep it simple"
     ],
     "generation_guardrails": {
       "boundary_on_diagnosis": "never_diagnose",
@@ -469,109 +508,121 @@
     },
     "eligibility_signal": {
       "hidden_persona_types": [
-        "compensatory_need",
-        "private_hobby",
-        "intellectual_curiosity",
-        "covert_concern"
+        "identity_anchor",
+        "covert_concern",
+        "intellectual_curiosity"
       ],
-      "min_intimacy": 0.35,
+      "min_intimacy": 0.2,
       "blocks_implicit_negative": true
     },
-    "fit_rationale": "This user’s world is full of care, craft, and quiet longing, so an elder voice fits better than a flashy one. Auntie Rowan can hold wedding work, family yearning, domestic humor, and private hopes with warmth and enough distance to feel safe.",
+    "fit_rationale": "This user seems to value competence, steadiness, and quiet progress, so a mentor voice fits better than a flashy or overly tender one. Rowan can meet the user's practical, service-minded rhythm while also nudging the hidden self-improvement and future-family instincts without getting sentimental.",
     "niche_specifier": null,
     "romantic_specifier": {}
   },
   "hidden_personas": [
     {
-      "label": "Private longing for family-building and fatherhood",
-      "type": "compensatory_need",
-      "description": "Posts about motherhood, babylove, dadlife, and parenting life are consumed heavily in a lingering, non-public way, indicating a quiet emotional draw toward building a family and becoming a father, despite this not being a current reality.",
+      "label": "Quiet pre-family nesting and father-role rehearsal",
+      "type": "emotional_pattern",
+      "description": "Micah appears to be privately rehearsing a near-future identity as a steady husband-and-dad type, not just enjoying generic family content. The mix of baby, momlife, dadlife, parenting, and family hashtags suggests he lingers on domestic routines and child-centered life as a possible next chapter he is mentally trying on.",
       "evidence_hashtags": [
         "#momlife",
         "#babylove",
+        "#parenting",
         "#dadlife",
-        "#parentinglife",
-        "#fatherhood"
+        "#fatherhood",
+        "#familygoals"
       ],
-      "evidence_rows": 223,
-      "evidence_row_fraction": 0.0652,
+      "evidence_rows": 265,
+      "evidence_row_fraction": 0.0775,
       "interaction_breakdown": {
-        "implicit_positive": 108,
-        "implicit_negative": 114,
-        "explicit_positive": 1
+        "implicit_positive": 132,
+        "implicit_negative": 131,
+        "explicit_positive": 2
       },
-      "privacy_ratio": 0.991,
+      "privacy_ratio": 0.985,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 53,
-        "Chatbot": 23,
-        "Facebook": 66,
-        "Threads": 52,
-        "AI_Studio": 29
+        "Threads": 63,
+        "AI_Studio": 34,
+        "Instagram": 79,
+        "Facebook": 63,
+        "Chatbot": 26
       },
       "surface_connections": [
-        "Values long-term romantic commitment"
+        "Values affectionate, aspirational couple content and romantic partnership ideals.",
+        "Interested in baby feeding and infant/toddler recipe content.",
+        "Enjoys humor based on everyday, relatable life situations."
       ],
-      "inferred_motivation": "He seeks vicarious comfort and inspiration in family-oriented imagery, compensating for an absence of personal experience with children.",
+      "inferred_motivation": "This content likely lets him imagine stability, adulthood competence, and a meaningful family future while gauging what that lifestyle would demand of him.",
       "already_captured": false,
-      "first_seen_ts": 1775183828,
+      "first_seen_ts": 1775180067,
       "last_seen_ts": 1775945880,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 4,
-        "n_confirmed": 1,
+        "n_audited": 49,
+        "n_confirmed": 29,
         "n_reassigned": 1,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
+        "n_short_term_episodic": 1,
         "n_removed": 0,
-        "n_flagged": 2,
+        "n_flagged": 18,
         "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.25,
-        "deep_latent_rate": 0.5,
+        "confirm_rate": 0.592,
+        "deep_latent_rate": 0.612,
         "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "barthes:punctum",
+        "cluster_status": "mixed_evidence",
+        "dominant_frame": "stryker:role_identity",
         "frame_distribution": {
-          "kardefelt_winther:compensatory_use": 1,
-          "tversky_kahneman:salience_availability": 1,
-          "algorithmic_surfacing": 1,
-          "barthes:punctum": 1
+          "schwarz:mood_as_information": 4,
+          "higgins:ideal_self": 6,
+          "stryker:role_identity": 11,
+          "kardefelt_winther:compensatory_use": 3,
+          "algorithmic_surfacing": 10,
+          "self_determination_theory:competence": 4,
+          "variable_ratio_reinforcement": 1,
+          "goffman:back_stage": 5,
+          "berlyne:diversive_curiosity": 3,
+          "short_term_episodic_event": 1,
+          "uses_and_gratifications:identity": 1
         }
       }
     },
     {
-      "label": "Romantic fantasy attachment to idyllic couple aesthetics",
-      "type": "compensatory_need",
-      "description": "High implicit engagement with #relationshipgoals, #couplegoals, and #loveofmylife suggests private immersion in idealized couple imagery, likely serving as a romantic daydream rather than publicly shared content.",
+      "label": "Companionate love ideal over flashy masculinity",
+      "type": "personality_trait",
+      "description": "His engagement pattern points to a man who centers warmth, loyalty, and everyday tenderness as the core of romance. Rather than status-heavy or overtly sexual dating content, he repeatedly returns to hashtags about lasting partnership, love-of-my-life framing, and family-centered affection.",
       "evidence_hashtags": [
         "#relationshipgoals",
         "#couplegoals",
         "#loveofmylife",
         "#romance",
-        "#happilyeverafter"
+        "#loveconquersall",
+        "#couplelife"
       ],
-      "evidence_rows": 367,
-      "evidence_row_fraction": 0.1073,
+      "evidence_rows": 393,
+      "evidence_row_fraction": 0.1149,
       "interaction_breakdown": {
-        "implicit_negative": 170,
-        "implicit_positive": 194,
+        "implicit_negative": 176,
+        "implicit_positive": 214,
         "explicit_positive": 3
       },
-      "privacy_ratio": 0.985,
+      "privacy_ratio": 0.986,
       "temporal_spread_days": 10,
       "app_distribution": {
-        "Instagram": 93,
-        "AI_Studio": 58,
-        "Facebook": 92,
+        "Facebook": 90,
+        "Instagram": 121,
+        "AI_Studio": 48,
         "Threads": 92,
-        "Chatbot": 32
+        "Chatbot": 42
       },
       "surface_connections": [
-        "Values long-term romantic commitment"
+        "Values affectionate, aspirational couple content and romantic partnership ideals.",
+        "Enjoys classic television comedy, especially \"I Love Lucy\" and the Lucy-Ricky/Ethel ensemble era.",
+        "Enjoys watching or following reality TV relationship drama, especially 90 Day Fiancé."
       ],
-      "inferred_motivation": "He uses aesthetically curated relationship content to envision future romantic fulfillment and emotional security.",
+      "inferred_motivation": "He seems drawn to media that confirms his preferred model of manhood: dependable, affectionate partnership with a best-friend quality rather than detached toughness.",
       "already_captured": false,
       "first_seen_ts": 1775171755,
       "last_seen_ts": 1775945510,
@@ -579,241 +630,208 @@
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 69,
-        "n_confirmed": 43,
-        "n_reassigned": 7,
+        "n_audited": 138,
+        "n_confirmed": 79,
+        "n_reassigned": 20,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 1,
-        "n_removed": 0,
-        "n_flagged": 15,
-        "n_no_other_cluster_fits": 3,
-        "confirm_rate": 0.623,
+        "n_short_term_episodic": 0,
+        "n_removed": 1,
+        "n_flagged": 31,
+        "n_no_other_cluster_fits": 7,
+        "confirm_rate": 0.572,
         "deep_latent_rate": 0.768,
         "surface_share": 0.0,
         "cluster_status": "mixed_evidence",
-        "dominant_frame": "kardefelt_winther:compensatory_use",
+        "dominant_frame": "self_determination_theory:relatedness",
         "frame_distribution": {
-          "algorithmic_surfacing": 8,
-          "short_term_episodic_event": 2,
-          "kardefelt_winther:compensatory_use": 41,
-          "tversky_kahneman:salience_availability": 5,
-          "goffman:back_stage": 5,
-          "schwarz:mood_as_information": 1,
-          "higgins:ideal_self": 4,
+          "higgins:ideal_self": 29,
+          "self_determination_theory:relatedness": 34,
+          "tajfel:social_identity": 4,
+          "horton_wohl:parasocial": 5,
+          "algorithmic_surfacing": 16,
+          "goffman:back_stage": 8,
+          "uses_and_gratifications:integration": 4,
+          "variable_ratio_reinforcement": 7,
+          "schwarz:mood_as_information": 4,
+          "kardefelt_winther:compensatory_use": 11,
+          "stryker:role_identity": 9,
+          "berlyne:diversive_curiosity": 4,
           "self_determination_theory:competence": 1,
-          "stryker:role_identity": 2
-        }
-      }
-    },
-    {
-      "label": "Playful fixation on parental humor and everyday domestic comedy",
-      "type": "private_hobby",
-      "description": "Frequent implicit interaction with parenting humor hashtags points to a private enjoyment of relatable domestic comedy, blending child-rearing scenarios with lighthearted mischief.",
-      "evidence_hashtags": [
-        "#parentinghumor",
-        "#FunnyMoments",
-        "#relatablemoments",
-        "#funnymoments",
-        "#familyfun"
-      ],
-      "evidence_rows": 174,
-      "evidence_row_fraction": 0.0509,
-      "interaction_breakdown": {
-        "implicit_negative": 80,
-        "implicit_positive": 94
-      },
-      "privacy_ratio": 1.0,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Facebook": 50,
-        "Chatbot": 20,
-        "Threads": 41,
-        "AI_Studio": 21,
-        "Instagram": 42
-      },
-      "surface_connections": [
-        "Enjoys engaging with comedic and humorous content online"
-      ],
-      "inferred_motivation": "He finds comfort and entertainment in humor that portrays everyday family mishaps, possibly imagining himself in these roles someday.",
-      "already_captured": false,
-      "first_seen_ts": 1775189786,
-      "last_seen_ts": 1775942949,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 13,
-        "n_confirmed": 6,
-        "n_reassigned": 2,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 5,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.462,
-        "deep_latent_rate": 0.615,
-        "surface_share": 0.0,
-        "cluster_status": "contested",
-        "dominant_frame": "goffman:back_stage",
-        "frame_distribution": {
-          "tversky_kahneman:salience_availability": 2,
-          "goffman:back_stage": 6,
-          "algorithmic_surfacing": 2,
-          "berlyne:diversive_curiosity": 1,
-          "tajfel:social_identity": 2
-        }
-      }
-    },
-    {
-      "label": "Intimate interest in hair-focused beauty aesthetics",
-      "type": "intimate_interest",
-      "description": "Repeated engagement with haircare, hairgoals, hairbraiding, and hairtransformation content indicates attraction to or fascination with well-styled, healthy hair as an aesthetic focal point.",
-      "evidence_hashtags": [
-        "#haircare",
-        "#hairgoals",
-        "#hairbraiding",
-        "#hairtransformation",
-        "#naturalhaircare"
-      ],
-      "evidence_rows": 84,
-      "evidence_row_fraction": 0.0246,
-      "interaction_breakdown": {
-        "implicit_positive": 50,
-        "implicit_negative": 34
-      },
-      "privacy_ratio": 1.0,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Facebook": 26,
-        "Instagram": 18,
-        "Threads": 13,
-        "Chatbot": 17,
-        "AI_Studio": 10
-      },
-      "surface_connections": [
-        "Interested in natural and home-based hair care solutions"
-      ],
-      "inferred_motivation": "He is drawn to the sensual and aesthetic appeal of carefully styled or braided hair, potentially linked to admiration of beauty and elegance in romantic contexts.",
-      "already_captured": false,
-      "first_seen_ts": 1775185085,
-      "last_seen_ts": 1775936612,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 30,
-        "n_confirmed": 24,
-        "n_reassigned": 1,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 5,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.8,
-        "deep_latent_rate": 0.833,
-        "surface_share": 0.0,
-        "cluster_status": "validated",
-        "dominant_frame": "barthes:punctum",
-        "frame_distribution": {
-          "higgins:ought_self": 1,
-          "tversky_kahneman:salience_availability": 2,
-          "barthes:punctum": 19,
-          "algorithmic_surfacing": 3,
-          "higgins:ideal_self": 4,
-          "csikszentmihalyi:flow": 1
-        }
-      }
-    },
-    {
-      "label": "Covert concern about weight control under health-conscious lifestyle",
-      "type": "covert_concern",
-      "description": "Engagement with #weightloss, #fitnessjourney, and #healthyrecipes alongside wellness tags signals a private preoccupation with managing weight and body composition to align with his sugar-free, health-conscious self-image.",
-      "evidence_hashtags": [
-        "#weightloss",
-        "#fitnessjourney",
-        "#healthyrecipes",
-        "#healthyliving",
-        "#HealthyLiving"
-      ],
-      "evidence_rows": 139,
-      "evidence_row_fraction": 0.0407,
-      "interaction_breakdown": {
-        "implicit_negative": 58,
-        "implicit_positive": 81
-      },
-      "privacy_ratio": 1.0,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Facebook": 39,
-        "Instagram": 34,
-        "AI_Studio": 19,
-        "Threads": 28,
-        "Chatbot": 19
-      },
-      "surface_connections": [
-        "Prefers sugar-free, low-carb treats as part of a health-conscious diet"
-      ],
-      "inferred_motivation": "He seeks reassurance and strategies to maintain or improve his physique while balancing his dietary constraints.",
-      "already_captured": false,
-      "first_seen_ts": 1775176408,
-      "last_seen_ts": 1775935008,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 38,
-        "n_confirmed": 20,
-        "n_reassigned": 0,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 18,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.526,
-        "deep_latent_rate": 0.526,
-        "surface_share": 0.0,
-        "cluster_status": "mixed_evidence",
-        "dominant_frame": "higgins:ideal_self",
-        "frame_distribution": {
-          "tversky_kahneman:salience_availability": 7,
-          "higgins:ideal_self": 19,
-          "algorithmic_surfacing": 9,
-          "berlyne:diversive_curiosity": 1,
-          "short_term_episodic_event": 1,
           "higgins:ought_self": 1
         }
       }
     },
     {
-      "label": "Cultural curiosity toward Ethiopian traditions",
-      "type": "intellectual_curiosity",
-      "description": "Interaction with #Ethiopia and #EthiopianCulture shows an interest in exploring cultural heritage, possibly related to travel or cross-cultural storytelling through his photography.",
+      "label": "Service-minded local pillar identity",
+      "type": "identity_anchor",
+      "description": "Beyond religion, Micah's pattern suggests he likes seeing himself as a decent, useful, community-first man whose value comes from showing up, helping, and maintaining everyday order. That fits his maintenance-supervisor role especially well: practical competence paired with moral steadiness and neighborly contribution.",
       "evidence_hashtags": [
-        "#Ethiopia",
-        "#EthiopianCulture",
-        "#CulturalExchange"
+        "#communityfirst",
+        "#CommunityFirst",
+        "#KindnessMatters",
+        "#SpreadLove",
+        "#FamilyFirst",
+        "#SafetyFirst"
       ],
-      "evidence_rows": 56,
-      "evidence_row_fraction": 0.0164,
+      "evidence_rows": 199,
+      "evidence_row_fraction": 0.0582,
       "interaction_breakdown": {
-        "implicit_positive": 27,
-        "implicit_negative": 27,
+        "implicit_negative": 76,
+        "implicit_positive": 121,
         "explicit_positive": 2
       },
-      "privacy_ratio": 0.931,
+      "privacy_ratio": 0.984,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 16,
-        "Instagram": 12,
-        "Facebook": 13,
-        "Chatbot": 8,
-        "AI_Studio": 7
+        "Threads": 56,
+        "Facebook": 45,
+        "Chatbot": 25,
+        "Instagram": 51,
+        "AI_Studio": 22
       },
-      "surface_connections": [],
-      "inferred_motivation": "He is drawn to learning about and visually documenting diverse cultural traditions, enriching his creative worldview.",
+      "surface_connections": [
+        "Strongly identifies with Christian beliefs and Jesus-centered religious content",
+        "Interested in DIY home improvement projects.",
+        "Interested in DIY car maintenance and repair"
+      ],
+      "inferred_motivation": "This content reinforces a self-concept built around being reliable, morally grounded, and quietly valuable to other people.",
       "already_captured": false,
-      "first_seen_ts": 1775184262,
-      "last_seen_ts": 1775933758,
+      "first_seen_ts": 1775176407,
+      "last_seen_ts": 1775942030,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 32,
+        "n_confirmed": 3,
+        "n_reassigned": 1,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 24,
+        "n_no_other_cluster_fits": 4,
+        "confirm_rate": 0.094,
+        "deep_latent_rate": 0.25,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "algorithmic_surfacing",
+        "frame_distribution": {
+          "tajfel:social_identity": 1,
+          "algorithmic_surfacing": 14,
+          "self_determination_theory:competence": 1,
+          "berlyne:specific_curiosity": 1,
+          "schwarz:mood_as_information": 3,
+          "higgins:ideal_self": 2,
+          "stryker:role_identity": 1,
+          "variable_ratio_reinforcement": 2,
+          "berlyne:diversive_curiosity": 4,
+          "uses_and_gratifications:identity": 1,
+          "lazarus_folkman:emotion_focused_coping": 1
+        }
+      }
+    },
+    {
+      "label": "Covert concern: staying lean, disciplined, and presentable without losing everyday comfort",
+      "type": "covert_concern",
+      "description": "The cluster suggests a specific private pressure around weight control and physical upkeep: he wants to keep himself trim, healthy-looking, and disciplined, but likely in a realistic way that fits work, meal prep, and ordinary adult life. The blend of wellness, weight-loss, fitness journey, glow-up, and healthy-living tags points more to maintenance anxiety than hardcore athletic identity.",
+      "evidence_hashtags": [
+        "#weightloss",
+        "#fitnessjourney",
+        "#healthyliving",
+        "#wellness",
+        "#glowup",
+        "#nutrition"
+      ],
+      "evidence_rows": 195,
+      "evidence_row_fraction": 0.057,
+      "interaction_breakdown": {
+        "implicit_positive": 120,
+        "implicit_negative": 75
+      },
+      "privacy_ratio": 1.0,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Chatbot": 35,
+        "Threads": 39,
+        "AI_Studio": 22,
+        "Instagram": 54,
+        "Facebook": 45
+      },
+      "surface_connections": [
+        "Interested in low-calorie, high-protein eating.",
+        "Interested in skincare and facial beauty routines.",
+        "Actively engages with beauty tutorial and beauty-hack content for practical cosmetic tips."
+      ],
+      "inferred_motivation": "He likely uses this content to reassure himself that he can stay attractive, healthy, and in control without becoming obsessive or losing the pleasures of normal life.",
+      "already_captured": false,
+      "first_seen_ts": 1775175494,
+      "last_seen_ts": 1775945517,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 51,
+        "n_confirmed": 20,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 8,
+        "n_no_other_cluster_fits": 23,
+        "confirm_rate": 0.392,
+        "deep_latent_rate": 0.843,
+        "surface_share": 0.0,
+        "cluster_status": "contested",
+        "dominant_frame": "higgins:ideal_self",
+        "frame_distribution": {
+          "kardefelt_winther:compensatory_use": 5,
+          "berlyne:diversive_curiosity": 2,
+          "algorithmic_surfacing": 6,
+          "higgins:ideal_self": 16,
+          "goffman:back_stage": 1,
+          "self_determination_theory:autonomy": 6,
+          "higgins:ought_self": 10,
+          "berlyne:specific_curiosity": 1,
+          "self_determination_theory:competence": 4
+        }
+      }
+    },
+    {
+      "label": "Private learner drawn to practical mobility and migration literacy",
+      "type": "intellectual_curiosity",
+      "description": "His lingering on English-learning, IELTS, driving, and safety-themed content suggests a broader hidden fascination with systems that help people move through the world competently—tests, rules, certifications, and cross-cultural navigation. This reads less like random educational browsing and more like respect for practical advancement tools, possibly influenced by multicultural and immigrant-adjacent networks around him.",
+      "evidence_hashtags": [
+        "#LanguageLearning",
+        "#LearnEnglish",
+        "#EnglishLanguageLearning",
+        "#education",
+        "#drivingtips",
+        "#SafetyFirst"
+      ],
+      "evidence_rows": 107,
+      "evidence_row_fraction": 0.0313,
+      "interaction_breakdown": {
+        "implicit_negative": 56,
+        "implicit_positive": 51
+      },
+      "privacy_ratio": 1.0,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 31,
+        "AI_Studio": 11,
+        "Chatbot": 11,
+        "Facebook": 29,
+        "Threads": 25
+      },
+      "surface_connections": [
+        "Interested in preparing for the IELTS exam.",
+        "Interested in preparing for a driving theory test",
+        "Interested in Ethiopian/Habesha cultural heritage and traditions."
+      ],
+      "inferred_motivation": "He seems to value content that turns uncertainty into competence, especially where language, driving, and formal know-how can unlock independence for himself or people close to him.",
+      "already_captured": false,
+      "first_seen_ts": 1775189933,
+      "last_seen_ts": 1775944591,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
@@ -822,33 +840,33 @@
         "n_confirmed": 0,
         "n_reassigned": 0,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
+        "n_short_term_episodic": 3,
         "n_removed": 0,
-        "n_flagged": 7,
-        "n_no_other_cluster_fits": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 3,
         "confirm_rate": 0.0,
-        "deep_latent_rate": 0.0,
+        "deep_latent_rate": 0.429,
         "surface_share": 0.0,
         "cluster_status": "likely_invalid",
-        "dominant_frame": "algorithmic_surfacing",
+        "dominant_frame": "self_determination_theory:competence",
         "frame_distribution": {
-          "algorithmic_surfacing": 4,
-          "berlyne:diversive_curiosity": 1,
-          "tversky_kahneman:salience_availability": 1
+          "short_term_episodic_event": 3,
+          "algorithmic_surfacing": 1,
+          "self_determination_theory:competence": 3
         }
       }
     },
     {
-      "label": "Currently navigating: freelance wedding work hit by venue cancellations",
+      "label": "Currently navigating: quietly bracing after a theater budget cut",
       "type": "sensitive_life_event",
       "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
       "evidence_hashtags": [
-        "#freelancephotography",
-        "#weddingphotographer",
-        "#smallbusiness",
-        "#creativepreneur",
-        "#personalgrowth",
-        "#communityfirst"
+        "#communityfirst",
+        "#worklife",
+        "#bluecollar",
+        "#jobsearch",
+        "#budgeting",
+        "#relatablemoments"
       ],
       "evidence_rows": 0,
       "evidence_row_fraction": 0.0,
@@ -856,11 +874,11 @@
       "privacy_ratio": 1.0,
       "temporal_spread_days": 1,
       "app_distribution": {
-        "Facebook": 43,
-        "Instagram": 35,
-        "AI_Studio": 29,
-        "Threads": 34,
-        "Chatbot": 21
+        "Facebook": 27,
+        "Threads": 43,
+        "Chatbot": 23,
+        "Instagram": 33,
+        "AI_Studio": 20
       },
       "surface_connections": [],
       "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
@@ -871,23 +889,23 @@
       "events": [
         {
           "topic": "job_loss",
-          "label_fragment": "freelance wedding work hit by venue cancellations",
-          "specific_situation": "A run of rainy-season cancellations and postponed countryside weddings has left Zhiwei with two months of unexpectedly thin bookings, right after he invested in a new lens and travel gear. He is quietly weighing whether to take part-time commercial shoots or widen his work beyond weddings while he rebuilds his pipeline.",
+          "label_fragment": "quietly bracing after a theater budget cut",
+          "specific_situation": "Micah's performing arts center just lost a major grant, and administration froze overtime and paused two maintenance positions, including his preferred helper role on the overnight crew. He is still employed, but he's been told the next round of cuts could mean a forced transfer or layoff, which has him reworking the family budget and looking at HVAC-side side gigs.",
           "first_seen_ts": 1775247611,
           "last_seen_ts": 1775334011,
           "active_window_end": 1776543611,
           "evidence_hashtags": [
-            "#freelancephotography",
-            "#weddingphotographer",
-            "#smallbusiness",
-            "#creativepreneur",
-            "#personalgrowth",
-            "#communityfirst"
+            "#communityfirst",
+            "#worklife",
+            "#bluecollar",
+            "#jobsearch",
+            "#budgeting",
+            "#relatablemoments"
           ],
           "exemplar_persona_items": [
-            "Checking cancellations and reshoot policies",
-            "Saving reels about finding paid side gigs",
-            "Reading advice on pricing rural wedding packages"
+            "Scanning union rules and layoff notices",
+            "Searching HVAC side gigs after hours",
+            "Watching budgeting videos with girlfriend"
           ]
         }
       ],
@@ -896,48 +914,48 @@
       }
     }
   ],
-  "hidden_persona_summary": "Beneath his public engagement, this individual privately gravitates toward family-building themes and the idealized intimacy of romantic partnerships, spending significant time with #momlife, #babylove, #dadlife, and #relationshipgoals content that he does not share openly, reflecting a compensatory longing for fatherhood and emotional security. His strong engagement with #parentinghumor and #FunnyMoments aligns with his public enjoyment of comedic media, while his attraction to hair-focused aesthetics (#haircare, #hairbraiding) underpins his interest in natural and home-based hair care solutions. A covert concern for weight control, evident in sustained interaction with #weightloss and #fitnessjourney, complements his sugar-free, low-carb dietary preference and suggests careful body composition management, with precise behaviors that could include structured meal planning and fitness accountability. Intellectual curiosity toward #Ethiopia and #EthiopianCulture connects to his public engagement with travel photography and Christian values, supporting his broader interest in cultural learning and compassionate outreach. Even while navigating sensitive freelance wedding challenges, his visible enthusiasm for UK wedding photography and romantic commitment reflects how private consumption of couple imagery fuels and informs his professional and aesthetic choices.",
+  "hidden_persona_summary": "Beneath his public engagement, Micah reads as a steady, community-minded man quietly orienting himself toward dependable partnership, fatherhood, and practical adulthood: the strongest hidden pattern is a private rehearsal of husband-and-dad life anchored by tags like #momlife, #dadlife, #fatherhood, #parenting, and #familygoals, alongside a romance style grounded in warmth and loyalty through #relationshipgoals, #couplegoals, #loveofmylife, and #couplelife rather than performative masculinity. That hidden layer helps explain why his visible interests cluster around Jesus-centered content, affectionate couple posts, baby feeding and toddler recipes, DIY home improvement, dog videos, and even classic ensemble relationship media like I Love Lucy and reality relationship drama such as 90 Day Fiancé: he appears drawn to examples of domestic routine, relational roles, and everyday commitment, while his #communityfirst, #KindnessMatters, #SpreadLove, and #SafetyFirst engagement aligns with a self-concept built around being useful, decent, and reliable in ordinary life. Much of this identity work seems to be consumed privately rather than performed publicly, especially the highly private interest in staying lean and presentable through #weightloss, #fitnessjourney, #healthyliving, #wellness, #glowup, and #nutrition, which fits his surface preference for low-calorie, high-protein eating and practical beauty content, including skincare routines, homemade treatments, and beauty tutorials approached as everyday upkeep rather than vanity. His more private learning behavior also shows up in #LanguageLearning, #LearnEnglish, #EnglishLanguageLearning, #education, #drivingtips, and #SafetyFirst, which makes sense of his IELTS preparation, driving theory interest, DIY car maintenance, and multicultural food and heritage content as part of a broader preference for competence, mobility, and culturally grounded self-improvement.",
   "mbti": {
-    "type": "INFJ",
+    "type": "ISFJ",
     "dimensions": {
       "E_I": {
-        "E": 0.42,
-        "I": 0.58,
-        "reason": "He engages publicly with social, relational, and community-oriented content, but the hidden persona suggests a more private inner life and selective self-disclosure, leaning slightly introverted."
+        "E": 0.31,
+        "I": 0.69,
+        "reason": "His behavior looks more privately identity-focused than socially performative, with recurring behind-the-scenes interest in family roles, self-improvement, and practical competence rather than broad outward stimulation."
       },
       "S_N": {
-        "S": 0.34,
-        "N": 0.66,
-        "reason": "High openness, interest in storytelling, romantic ideals, cultural curiosity, and future-oriented family imagery point more toward abstract patterning and meaning than concrete detail focus."
+        "S": 0.67,
+        "N": 0.33,
+        "reason": "The content clusters around concrete, everyday concerns—parenting, recipes, DIY, driving, safety, fitness upkeep, and home life—more than abstract theorizing or novelty-seeking."
       },
       "T_F": {
-        "T": 0.31,
-        "F": 0.69,
-        "reason": "The strongest themes are affection, family-building, relationship ideals, kindness, faith, and emotional security, which fit Feeling more than impersonal analysis."
+        "T": 0.34,
+        "F": 0.66,
+        "reason": "Warmth, loyalty, kindness, community, romance, and family-centered affection are central themes, suggesting decisions and interests guided more by relational values than impersonal analysis."
       },
       "J_P": {
-        "J": 0.57,
-        "P": 0.43,
-        "reason": "His health-conscious habits, structured self-management, and consistent value-driven interests suggest some preference for organization and planning, though the evidence is not decisive."
+        "J": 0.74,
+        "P": 0.26,
+        "reason": "His emphasis on discipline, routine maintenance, readiness for partnership and fatherhood, and practical self-improvement points to a structured, planful orientation."
       }
     }
   },
   "mobility_class": "domestic",
   "geo_trip_arcs": [
     {
-      "city": "Bath",
-      "region": "England",
-      "country": "UK",
-      "start_ts": 1775600094,
-      "end_ts": 1775849986,
+      "city": "Milwaukee",
+      "region": "WI",
+      "country": "USA",
+      "start_ts": 1775517608,
+      "end_ts": 1775773771,
       "kind": "domestic"
     }
   ],
   "exploration_exploitation": {
-    "score": 0.9327,
+    "score": 0.9311,
     "label": "explorer",
     "hashtag_entropy_normalized": 0.8966,
-    "category_entropy_normalized": 1.0,
+    "category_entropy_normalized": 0.9946,
     "unique_hashtag_count": 10444,
     "total_hashtag_occurrences": 23114,
     "unique_hashtag_ratio": 0.4518,
@@ -987,19 +1005,28 @@
   },
   "user_id": "105",
   "preferences": [
-    "21:28, 04/11/2026 : Enjoys engaging with comedic and humorous content online",
-    "21:14, 04/11/2026 : Actively seeks strategies for saving money and building financial literacy",
-    "21:13, 04/11/2026 : Values long-term romantic commitment",
-    "20:47, 04/11/2026 : Interested in high-end designer brands, particularly Dolce & Gabbana",
-    "19:24, 04/11/2026 : Values compassionate actions toward animals and wildlife",
-    "19:16, 04/11/2026 : Enjoys preparing homemade plant-based meals",
-    "19:16, 04/11/2026 : Actively engages with Christian faith-based content and values Biblical teachings",
-    "18:48, 04/11/2026 : Actively pursues personal growth and self-awareness goals",
-    "18:32, 04/11/2026 : Interested in natural and home-based hair care solutions",
-    "14:41, 04/11/2026 : Enjoys curating cozy and stylish living spaces",
-    "12:10, 04/11/2026 : Interested in UK wedding photography and inspiration",
-    "11:51, 04/11/2026 : Interested in improving English language skills through structured learning",
-    "10:55, 04/11/2026 : Prefers sugar-free, low-carb treats as part of a health-conscious diet"
+    "21:28, 04/11/2026 : Enjoys short comedic skits and funny video content.",
+    "21:28, 04/11/2026 : Interested in skincare and facial beauty routines.",
+    "21:27, 04/11/2026 : Enjoys classic television comedy, especially \"I Love Lucy\" and the Lucy-Ricky/Ethel ensemble era.",
+    "21:23, 04/11/2026 : Enjoys dog-focused social media content, especially featuring cute or entertaining dogs.",
+    "21:09, 04/11/2026 : Values affectionate, aspirational couple content and romantic partnership ideals.",
+    "21:07, 04/11/2026 : Interested in outfit styling and fashion inspiration content.",
+    "19:16, 04/11/2026 : Interested in low-calorie, high-protein eating.",
+    "19:16, 04/11/2026 : Strongly identifies with Christian beliefs and Jesus-centered religious content",
+    "19:02, 04/11/2026 : Interested in braided hairstyle maintenance and protective hair care, especially box braids.",
+    "18:39, 04/11/2026 : Interested in baby feeding and infant/toddler recipe content.",
+    "18:32, 04/11/2026 : Interested in DIY home improvement projects.",
+    "18:32, 04/11/2026 : Actively engages with beauty tutorial and beauty-hack content for practical cosmetic tips.",
+    "15:50, 04/11/2026 : Interested in Ethiopian/Habesha cultural heritage and traditions.",
+    "15:47, 04/11/2026 : Interested in making homemade skincare treatments and beauty products.",
+    "15:28, 04/11/2026 : Interested in DIY car maintenance and repair",
+    "13:34, 04/11/2026 : Interested in Turkish cuisine, especially traditional dishes like lahmacun.",
+    "23:25, 04/10/2026 : Enjoys humor based on everyday, relatable life situations.",
+    "21:44, 04/10/2026 : Enjoys cute puppy and dog-themed social media content.",
+    "21:25, 04/10/2026 : Interested in discussion and analysis of African football matches.",
+    "07:10, 04/10/2026 : Enjoys watching or following reality TV relationship drama, especially 90 Day Fiancé.",
+    "15:15, 04/08/2026 : Interested in preparing for a driving theory test",
+    "06:15, 04/04/2026 : Interested in preparing for the IELTS exam."
   ],
   "motivation_audit": {
     "over_attribution_warning": false,
@@ -1008,88 +1035,95 @@
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Wei Zhang",
+      "display_name": "Jordan Kim",
       "relationship_depth": "close",
       "shared_interests": [
-        "photography community",
-        "local creatives"
+        "DIY home repair",
+        "old sitcoms",
+        "meal prep"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Liam Carter",
-      "relationship_depth": "acquaintance",
+      "display_name": "Caleb Morrison",
+      "relationship_depth": "close",
       "shared_interests": [
-        "past clients",
-        "UK countryside venues"
+        "church",
+        "devotional podcasts",
+        "community events"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "Alex Morgan",
+      "display_name": "Ethan Park",
       "relationship_depth": "close",
       "shared_interests": [
-        "church",
-        "sugar-free desserts"
+        "family",
+        "car maintenance",
+        "DIY upgrades"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Mei Lin",
+      "display_name": "Alex Chen",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "local creatives",
-        "cultural enthusiasts"
+        "theater work",
+        "DIY home repair"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Jun Li",
-      "relationship_depth": "distant",
+      "display_name": "Rachel Nguyen",
+      "relationship_depth": "acquaintance",
       "shared_interests": [
-        "photography community"
+        "performing arts",
+        "community events"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Alex Chen",
+      "display_name": "Marcus Hale",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "past clients"
+        "meal prep",
+        "fitness"
       ]
     },
     {
       "friend_id": "friend_7",
-      "display_name": "Hui Zhao",
-      "relationship_depth": "close",
+      "display_name": "Lauren Whitaker",
+      "relationship_depth": "acquaintance",
       "shared_interests": [
-        "wildlife rescue",
-        "cultural enthusiasts"
+        "church",
+        "hometown friends"
       ]
     },
     {
       "friend_id": "friend_8",
-      "display_name": "Emily Rhodes",
-      "relationship_depth": "acquaintance",
+      "display_name": "Alex Donnelly",
+      "relationship_depth": "distant",
       "shared_interests": [
-        "UK countryside venues",
-        "local creatives"
+        "90 Day Fiancé",
+        "Threads mutuals"
       ]
     },
     {
       "friend_id": "friend_9",
-      "display_name": "Yifan Wu",
+      "display_name": "Hannah Lee",
       "relationship_depth": "distant",
       "shared_interests": [
-        "church"
+        "skincare",
+        "creator follows"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Tom Bennett",
+      "display_name": "Trevor Bennett",
       "relationship_depth": "distant",
       "shared_interests": [
-        "cultural enthusiasts"
+        "local community",
+        "performing arts"
       ]
     }
   ],
@@ -1098,147 +1132,258 @@
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776546830,
-        "t_test_iso": "2026-04-18T21:13:50Z",
+        "t_test": 1776547680,
+        "t_test_iso": "2026-04-18T21:28:00Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "686801",
-          "user_question": "Need a film for tonight, maybe something tender but not too sappy. Brain kinda fried so easy pacing would be good.",
-          "asked_at_ts": 1775942030,
-          "asked_at_iso": "21:13, 04/11/2026",
+          "chatbot_event_id": "384024",
+          "user_question": "my face gets flaky around my nose and kind of shiny by lunch. what's a simple routine that actually makes sense?",
+          "asked_at_ts": 1775942880,
+          "asked_at_iso": "21:28, 04/11/2026",
           "question_hashtags": [
-            "#loveofmylife",
-            "#romance",
-            "#intimatemoments"
+            "#triplepowermoisturizer",
+            "#skincarelovers",
+            "#glowingskin"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help user follow through on their stated request for a specific film recommendation, enhancing satisfaction and engagement with the chatbot.",
-          "proximal_outcome": "User responds to a tailored film suggestion and possibly chooses a movie to watch.",
-          "tailoring_variable": "Unresolved user question from 21:13, 04/11/2026: 'Need a film for tonight, maybe something tender but not too sappy. Brain kinda fried so easy pacing would be good.'",
-          "decision_point": "2026-04-18T21:13:50Z",
+          "distal_outcome": "help Micah follow through on his stated self-care questions with low-friction support inside the chatbot",
+          "proximal_outcome": "Micah opts into a concise follow-up skincare routine suggestion tied to his earlier question",
+          "tailoring_variable": "Micah asked on 21:28, 04/11/2026, \"my face gets flaky around my nose and kind of shiny by lunch. what's a simple routine that actually makes sense?\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "the next chatbot session after the unresolved skincare question was detected as still unaddressed, considered once at session start",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The user's concrete, time-specific request for a film with clear criteria remains unanswered after several days, satisfying all JITAI components. The Horvitz framework favors acting because a proactive, in-chat follow-up citing their exact request offers high value with minimal intrusion. Constraints are met: action is in-chat, concise, cites user evidence, opt-in, and within session limits."
+          "reasoning": "JITAI is satisfied because the distal outcome, proximal outcome, tailoring variable, decision point, decision rule, and intervention option are all grounded by Micah's unresolved concrete skincare question. Horvitz favors acting: the likely value of a one-sentence in-chat opt-in follow-up is high because it addresses a specific unmet need, while intrusion cost is low if surfaced only once in-session and framed as an easy declination. The evidence citation is user-specific and supports a brief ambient follow-up rather than silence."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776539867,
-        "t_test_iso": "2026-04-18T19:17:47Z",
+        "t_test": 1776547467,
+        "t_test_iso": "2026-04-18T21:24:27Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "644633",
-          "user_question": "brain mushy today. need a gentle documentary to unwind tonight, maybe something serene and visually rich.",
-          "asked_at_ts": 1775935067,
-          "asked_at_iso": "19:17, 04/11/2026",
+          "chatbot_event_id": "817506",
+          "user_question": "Need a quick team icebreaker for a staff meeting after budget-cut gloom. Something light, not cheesy. Maybe 5 minutes, easy for theater maintenance and front-of-house folks together.",
+          "asked_at_ts": 1775942667,
+          "asked_at_iso": "21:24, 04/11/2026",
           "question_hashtags": [
-            "#homelessnessawareness",
-            "#communityfirst",
-            "#makeadifference"
+            "#comedysketch",
+            "#funnyvideos"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help user follow through on their stated questions and find relaxing, visually rich documentary content to unwind",
-          "proximal_outcome": "user engages with a gentle documentary suggestion matching their serene and visually rich preference",
-          "tailoring_variable": "unfulfilled stated need from user question: 'brain mushy today. need a gentle documentary to unwind tonight, maybe something serene and visually rich.' asked at 19:17, 04/11/2026",
-          "decision_point": "2026-04-18T19:17:47Z",
+          "distal_outcome": "help Micah follow through on a concrete unresolved request so he can run a better staff meeting and trust the assistant for practical support",
+          "proximal_outcome": "Micah opts into receiving a quick icebreaker suggestion for the staff meeting",
+          "tailoring_variable": "Micah asked at 21:24 on 04/11/2026: \"Need a quick team icebreaker for a staff meeting after budget-cut gloom. Something light, not cheesy. Maybe 5 minutes, easy for theater maintenance and front-of-house folks together.\" and there was no follow-up or closure within 3 days",
+          "decision_point": "inside the chatbot session after the unresolved-question signal is detected, with this candidate moment at 2026-04-18T21:24:27Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting the user in completing their request for a specific type of documentary, and the proximal outcome is prompting engagement with a relevant suggestion. The tailoring variable is the concrete, unresolved question about a serene, visually rich documentary. Horvitz cost-benefit favors acting because the value of timely, personalized follow-up outweighs minimal intrusion when surfaced in-chat with an easy opt-in."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is a specific unresolved user question, the decision point is the next chatbot session, and the intervention option is a brief opt-in follow-up. Horvitz favors acting because the expected value is high on a concrete work need and the intrusion cost is low for one in-chat sentence tied to Micah's own wording. A compliant surface would be a single opt-in question citing his staff-meeting icebreaker request."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776527222,
-        "t_test_iso": "2026-04-18T15:47:02Z",
+        "t_test": 1776536141,
+        "t_test_iso": "2026-04-18T18:15:41Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "118380",
-          "user_question": "torn between a quick trim at the village salon or letting it grow out a bit for that softer look, which feels more like me right now?",
-          "asked_at_ts": 1775922422,
-          "asked_at_iso": "15:47, 04/11/2026",
+          "chatbot_event_id": "250124",
+          "user_question": "write me a short scene. married couple in a small kitchen after a long day, just making late-night sandwiches and being really tender without saying big dramatic stuff.",
+          "asked_at_ts": 1775931341,
+          "asked_at_iso": "18:15, 04/11/2026",
           "question_hashtags": [
-            "#naturalhaircare",
-            "#diyhaircare",
-            "#hairrecipes"
+            "#relationshipgoals",
+            "#couplelife",
+            "#love"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Support Zhiwei Han in making confident, satisfying personal grooming decisions aligned with his self-image",
-          "proximal_outcome": "User engages with a concise follow-up option to resolve his earlier hair-style dilemma",
-          "tailoring_variable": "Unresolved question from 15:47, 04/11/2026: 'torn between a quick trim at the village salon or letting it grow out a bit for that softer look, which feels more like me right now?'",
-          "decision_point": "2026-04-18T15:47:02Z",
+          "distal_outcome": "help Micah follow through on an unresolved creative request and feel supported in expressing the kind of tender relationship scene he explicitly asked for",
+          "proximal_outcome": "Micah opts into a follow-up and re-engages with the unfinished scene request",
+          "tailoring_variable": "Micah asked on 2026-04-11 at 18:15, \"write me a short scene. married couple in a small kitchen after a long day, just making late-night sandwiches and being really tender without saying big dramatic stuff,\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "the current chatbot session at or after 2026-04-18T18:15:41Z, before any other proactive surface in that session",
           "decision_rule_pass": true,
-          "eligibility_score": 3,
+          "eligibility_score": 2,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is helping Zhiwei follow through on his grooming choice, and the proximal outcome is prompting engagement with a relevant option. The tailoring variable is his concrete, unresolved hair-style question, which meets JITAI criteria and offers clear value per Horvitz by reducing decision friction. Acting now inside the chatbot with a single opt-in sentence citing his own words respects all subtlety constraints and keeps intrusion cost low."
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention option are all grounded in Micah's unresolved scene request. Under Horvitz, the likely value of a single in-chat opt-in follow-up is higher than its low interruption cost because it directly references his own unanswered question and offers help he could use but did not complete on his own. This is a legitimate unfulfilled_stated_need, but it is creative rather than a concrete external decision, so 2 is more appropriate than 3."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776523275,
-        "t_test_iso": "2026-04-18T14:41:15Z",
+        "t_test": 1776528130,
+        "t_test_iso": "2026-04-18T16:02:10Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "86430",
-          "user_question": "brain mushy today. here's my draft for a post: \"Spent Sunday rearranging the lounge, kinda just wanted the chairs to catch afternoon light. Feels calmer now.\" Can you clean it up?",
-          "asked_at_ts": 1775918475,
-          "asked_at_iso": "14:41, 04/11/2026",
+          "chatbot_event_id": "87565",
+          "user_question": "Write me a short, warm story I could read before bed. Real simple. Maybe something about a maintenance guy and a stray mutt outside an old theater.",
+          "asked_at_ts": 1775923330,
+          "asked_at_iso": "16:02, 04/11/2026",
           "question_hashtags": [
-            "#falldecor",
-            "#diyproject",
-            "#easycrafts",
-            "#fallvibes"
+            "#doglovers",
+            "#petlove"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help user follow through on their stated questions and complete their intended social media post",
-          "proximal_outcome": "user engages with a follow-up offer to refine their lounge rearrangement draft",
-          "tailoring_variable": "unfulfilled stated need from user question: \"brain mushy today. here's my draft for a post: 'Spent Sunday rearranging the lounge, kinda just wanted the chairs to catch afternoon light. Feels calmer now.' Can you clean it up?\" asked at 14:41, 04/11/2026",
-          "decision_point": "2026-04-18T14:41:15Z",
+          "distal_outcome": "Help Micah follow through on an explicitly stated creative request so the chatbot feels reliably useful for his personal bedtime routines and interests.",
+          "proximal_outcome": "Micah opts in to receive the short bedtime story he previously asked for.",
+          "tailoring_variable": "Unfulfilled stated need from chatbot_event_id 87565: Micah asked, \"Write me a short, warm story I could read before bed. Real simple. Maybe something about a maintenance guy and a stray mutt outside an old theater,\" at 16:02, 04/11/2026, and there was no topical follow-up or closure within 3 days.",
+          "decision_point": "At the next in-chat session after the 3-day unresolved window has elapsed, considering one ambient follow-up at most once in that session.",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Zhiwei Han in completing their requested post edit, with the proximal outcome being re-engagement on the draft. The tailoring variable is the specific unresolved request from April 11, which is concrete and tied to a decision about wording. JITAI components are satisfied and Horvitz cost-benefit favors acting because the value of helping finish the post outweighs minimal intrusion in a single in-chat opt-in follow-up."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is a specific unresolved user request, the decision point is the next chatbot session after nonresponse, and the intervention option is a single opt-in in-chat follow-up. Under Horvitz, expected value is high because fulfilling Micah's own concrete bedtime-story request is hard for him to self-complete without re-asking, while intrusion cost is low if surfaced once, in-chat only, as a brief opt-in citing his exact question."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776512279,
-        "t_test_iso": "2026-04-18T11:37:59Z",
+        "t_test": 1776527005,
+        "t_test_iso": "2026-04-18T15:43:25Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "677526",
-          "user_question": "long drive tomorrow. can you suggest an audiobook that’s uplifting but not saccharine? brain’s tired, need something steady for the miles.",
-          "asked_at_ts": 1775907479,
-          "asked_at_iso": "11:37, 04/11/2026",
+          "chatbot_event_id": "396491",
+          "user_question": "Need lunch ideas for work this week. Brain's a little fried. Give me maybe 12 that hold up in a fridge and don't feel sad by Wednesday.",
+          "asked_at_ts": 1775922205,
+          "asked_at_iso": "15:43, 04/11/2026",
           "question_hashtags": [
-            "#godgotme",
-            "#jesusispoppin",
-            "#faithoverfear"
+            "#naturalremedies",
+            "#wellness",
+            "#healthyliving"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help user follow through on their stated questions and maintain engagement with uplifting faith-based content during long drives",
-          "proximal_outcome": "user considers and possibly selects an audiobook recommendation aligned with their request",
-          "tailoring_variable": "unfulfilled_stated_need from user question: 'long drive tomorrow. can you suggest an audiobook that’s uplifting but not saccharine? brain’s tired, need something steady for the miles.' with hashtags #godgotme, #jesusispoppin, #faithoverfear",
-          "decision_point": "2026-04-18T11:37:59Z",
+          "distal_outcome": "help Micah follow through on his stated practical planning questions so he can stay organized and supported in everyday routines",
+          "proximal_outcome": "Micah opts into a follow-up that revives his unresolved lunch-planning request",
+          "tailoring_variable": "Micah asked on 15:43, 04/11/2026, \"Need lunch ideas for work this week. Brain's a little fried. Give me maybe 12 that hold up in a fridge and don't feel sad by Wednesday,\" and there was no topical follow-up or closure within 3 days",
+          "decision_point": "at the next in-chat opportunity after the 3-day unresolved window was reached for chatbot_event_id 396491",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting Zhiwei Han in acting on their specific audiobook request, and the proximal outcome is prompting them to engage with a tailored suggestion. The tailoring variable is the concrete, faith-oriented audiobook query with no closure after three days. JITAI components are satisfied and Horvitz cost-benefit favors acting because the value of timely, in-chat follow-up outweighs minimal intrusion, with clear user-specific evidence cited."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the user's own unresolved concrete lunch-planning question, the decision point is the next chatbot session after 3 days, and the intervention option is a single opt-in in-chat follow-up. Under Horvitz, value is high because Micah explicitly asked for a specific, effort-saving plan while cognitively taxed (\"Brain's a little fried\"), and intrusion is low because this can be one brief chatbot-only question citing his exact request."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776526840,
+        "t_test_iso": "2026-04-18T15:40:40Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "163522",
+          "user_question": "Lately I leave church steadier, then by Monday I'm tense and short again. Kinda discouraging. What do you make of that?",
+          "asked_at_ts": 1775922040,
+          "asked_at_iso": "15:40, 04/11/2026",
+          "question_hashtags": [
+            "#christianity",
+            "#faithinaction"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Micah follow through on unresolved self-reflective questions about living his faith more steadily across the week",
+          "proximal_outcome": "Micah opts into a brief follow-up reflection or practical next-step conversation inside the chatbot",
+          "tailoring_variable": "Micah asked an unresolved, personal question on 2026-04-11 at 15:40: \"Lately I leave church steadier, then by Monday I'm tense and short again. Kinda discouraging. What do you make of that?\" and there was no topical follow-up within 3 days",
+          "decision_point": "the first eligible moment in the current chatbot session after the 3-day no-follow-up window has elapsed",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the user's own unresolved question, the decision point is this in-chat session after 3 days, the rule is unmet need plus no closure, and the intervention option is a one-sentence opt-in follow-up. Under Horvitz, expected value is positive because Micah already asked for interpretation on a discouraging recurring pattern, while intrusion cost is low if surfaced once, only in-chat, and framed as an easy opt-in question. This is not concrete enough for a 3 because it concerns reflection rather than a specific plan, product, or decision object."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776520257,
+        "t_test_iso": "2026-04-18T13:50:57Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "618686",
+          "user_question": "write me a short story opening set after a Wednesday night church supper. Small town, tired guy in the fellowship hall, kinda hopeful still.",
+          "asked_at_ts": 1775915457,
+          "asked_at_iso": "13:50, 04/11/2026",
+          "question_hashtags": [
+            "#faithoverfear",
+            "#childofgod"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help the user follow through on a previously stated creative writing need inside the chatbot",
+          "proximal_outcome": "user opts into a follow-up offer to continue or receive the requested story opening",
+          "tailoring_variable": "On 2026-04-11 at 13:50, Micah asked: \"write me a short story opening set after a Wednesday night church supper. Small town, tired guy in the fellowship hall, kinda hopeful still.\" and there was no topical follow-up or closure within 3 days.",
+          "decision_point": "the first eligible moment in a later chatbot session after the 3-day unresolved window, specifically around 2026-04-18T13:50:57Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is a specific unresolved user question, the decision point is the next chatbot session after non-response, and the intervention option is a one-sentence opt-in follow-up in-chat. Horvitz favors acting because the likely value of reviving a concrete, user-authored request is high while the intrusion cost is low under the one-surface, in-chat-only constraint. The evidence is concrete rather than generic, so this exceeds the default defensible bar."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776520160,
+        "t_test_iso": "2026-04-18T13:49:20Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "375641",
+          "user_question": "What if every office job switched to 4-day weeks, but people still had to look put together on video calls Monday-Thursday? Curious how routines would shift, especially for longer styles.",
+          "asked_at_ts": 1775915360,
+          "asked_at_iso": "13:49, 04/11/2026",
+          "question_hashtags": [
+            "#hairstore",
+            "#iseehair",
+            "#hairgoals",
+            "#anniversariesale"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Micah follow through on his own unanswered questions in ways that support useful personal grooming and presentation decisions",
+          "proximal_outcome": "Micah opts into a concise follow-up about how longer-hair routines might shift for 4-day video-call workweeks",
+          "tailoring_variable": "Micah asked on 13:49, 04/11/2026: \"What if every office job switched to 4-day weeks, but people still had to look put together on video calls Monday-Thursday? Curious how routines would shift, especially for longer styles.\" and there was no topical follow-up within 3 days",
+          "decision_point": "the next in-chat opportunity after the unresolved question is detected, at or after 2026-04-18T13:49:20Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention option are all grounded in Micah's unresolved hair-routine question. Under Horvitz, the likely value of a one-sentence in-chat opt-in follow-up is higher than its low interruption cost because it references his own specific unanswered question and stays fully ambient. This is a legitimate unfulfilled_stated_need, but the question is somewhat hypothetical rather than an immediate concrete purchase or plan, so 2 fits better than 3."
+        }
+      },
+      {
+        "trigger_type": "unfulfilled_stated_need",
+        "tier": "T1.A",
+        "t_test": 1776503088,
+        "t_test_iso": "2026-04-18T09:04:48Z",
+        "lag_days": 7,
+        "signal_evidence": {
+          "chatbot_event_id": "568765",
+          "user_question": "I keep getting weirdly tense by like 3 p.m. Lunch is decent, coffee's normal, but then I'm short with people. What do you make of that?",
+          "asked_at_ts": 1775898288,
+          "asked_at_iso": "09:04, 04/11/2026",
+          "question_hashtags": [
+            "#healthydesserts",
+            "#naturalsweeteners"
+          ]
+        },
+        "jitai_card": {
+          "distal_outcome": "help Micah follow through on unresolved self-observation questions in ways that support steadier mood regulation and better day-to-day self-management",
+          "proximal_outcome": "Micah opts into a brief follow-up about his unresolved 3 p.m. tension question",
+          "tailoring_variable": "Micah previously asked, \"I keep getting weirdly tense by like 3 p.m. Lunch is decent, coffee's normal, but then I'm short with people. What do you make of that?\" on 2026-04-11 at 09:04 and there was no topical follow-up or closure within 3 days",
+          "decision_point": "inside the chatbot at the next available session after the unresolved-question window is detected for the 2026-04-11 question",
+          "decision_rule_pass": true,
+          "eligibility_score": 2,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the unresolved user-specific question, the decision point is the next chatbot session, and the intervention option can be a single opt-in follow-up sentence. Under Horvitz, the expected value is positive: Micah already asked for help on a concrete personal pattern, while the intrusion cost is low because the action stays in-chat, cites his own words, and can be phrased as an easy declination. This is a defensible proactive moment but not a strongest-case 3 because the question names a symptom pattern rather than a specific product, place, or committed plan."
         }
       },
       {
@@ -1249,80 +1394,54 @@
         "lag_days": 7,
         "signal_evidence": {
           "chatbot_event_id": "695883",
-          "user_question": "torn between getting a trim at the village salon or just letting it grow and doing a home tidy-up. which feels more like me right now?",
+          "user_question": "Is care kind of a moral language? Thinking about washing box braids, redoing mousse, keeping parts neat. It just feels bigger than looks somehow.",
           "asked_at_ts": 1775897857,
           "asked_at_iso": "08:57, 04/11/2026",
           "question_hashtags": [
             "#naturalhaircare",
-            "#diyhairbutter",
-            "#herbalhaircare"
+            "#hairgrowthtips",
+            "#healthyhairjourney"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Support Zhiwei Han in making confident, timely decisions about personal grooming aligned with self-image and preferences",
-          "proximal_outcome": "User engages with a concise follow-up suggestion to resolve the earlier haircare decision",
-          "tailoring_variable": "Unresolved question from 08:57, 04/11/2026: 'torn between getting a trim at the village salon or just letting it grow and doing a home tidy-up. which feels more like me right now?' with hashtags #naturalhaircare, #diyhairbutter, #herbalhaircare",
-          "decision_point": "2026-04-18T08:57:37Z",
+          "distal_outcome": "help Micah follow through on a personally meaningful unanswered question so he can make progress on hair-care understanding and self-care routines he explicitly raised",
+          "proximal_outcome": "Micah opts into a follow-up and re-engages with the unresolved hair-care question",
+          "tailoring_variable": "Micah asked an unresolved concrete question on 2026-04-11: \"Is care kind of a moral language? Thinking about washing box braids, redoing mousse, keeping parts neat. It just feels bigger than looks somehow.\" with hashtags #naturalhaircare, #hairgrowthtips, #healthyhairjourney, and there was no topical follow-up within 3 days",
+          "decision_point": "inside the chatbot at the next eligible session moment after the unresolved-question window was detected, evaluated at 2026-04-18T08:57:37Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is helping the user follow through on a concrete grooming decision, and the proximal outcome is prompting engagement with a relevant option. The tailoring variable is the specific unresolved haircare question, which is a concrete choice between salon and home trim. Horvitz cost-benefit favors acting because the value of resolving the decision outweighs minimal intrusion, and all subtlety constraints can be met with an in-chat, opt-in follow-up."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the user's own unresolved hair-care question, the decision point is the next in-chat session, and the intervention option can be a one-sentence opt-in follow-up. Horvitz favors acting because Micah already asked for help on a concrete object and routine, so the expected value of a brief in-chat follow-up is meaningfully higher than the low interruption cost. The action can stay subtle by citing his exact question and posing only an easy opt-in question with no out-of-band alert."
         }
       },
       {
         "trigger_type": "unfulfilled_stated_need",
         "tier": "T1.A",
-        "t_test": 1776498052,
-        "t_test_iso": "2026-04-18T07:40:52Z",
+        "t_test": 1776497884,
+        "t_test_iso": "2026-04-18T07:38:04Z",
         "lag_days": 7,
         "signal_evidence": {
-          "chatbot_event_id": "168780",
-          "user_question": "Lately I keep catching myself rushing through vows shots, like my brain's elsewhere. And then I feel weirdly guilty after. What's going on with me?",
-          "asked_at_ts": 1775893252,
-          "asked_at_iso": "07:40, 04/11/2026",
+          "chatbot_event_id": "784272",
+          "user_question": "write me a short story set in an old house during a weekend project. Nothing spooky-spooky, just a little strange, like the walls remember things.",
+          "asked_at_ts": 1775893084,
+          "asked_at_iso": "07:38, 04/11/2026",
           "question_hashtags": [
-            "#christianlife"
+            "#homedecorinspo",
+            "#fallvibes",
+            "#cozyhome"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Support Zhiwei Han in reflecting on and resolving his unfulfilled question about emotional presence during Christian vow moments, fostering deeper engagement with his faith and commitments.",
-          "proximal_outcome": "User engages with a gentle follow-up prompt to explore feelings and possible causes behind his earlier question.",
-          "tailoring_variable": "User's unresolved question from 07:40, 04/11/2026: \"Lately I keep catching myself rushing through vows shots, like my brain's elsewhere. And then I feel weirdly guilty after. What's going on with me?\" tagged #christianlife.",
-          "decision_point": "2026-04-18T07:40:52Z",
+          "distal_outcome": "help Micah follow through on his stated creative requests so the chatbot feels reliably useful for unfinished asks",
+          "proximal_outcome": "Micah opts into a follow-up and receives the short story he previously requested",
+          "tailoring_variable": "Micah asked, \"write me a short story set in an old house during a weekend project. Nothing spooky-spooky, just a little strange, like the walls remember things,\" at 07:38, 04/11/2026, and the gatherer found no topical follow-up or closure within 3 days",
+          "decision_point": "the next in-chatbot session after the unresolved question is detected, surfaced once at the start of that session",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "follow_up",
           "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is to help the user follow through on his faith-related self-reflection, and the proximal outcome is to prompt engagement with a follow-up. The tailoring variable is the specific unresolved question about emotional presence during vows, which is concrete and personal. Horvitz cost-benefit favors acting because a single in-chat opt-in follow-up citing his own words offers clear value with minimal intrusion."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1776472829,
-        "t_test_iso": "2026-04-18T00:40:29Z",
-        "lag_days": 7,
-        "signal_evidence": {
-          "chatbot_event_id": "782039",
-          "user_question": "quiet evening, brain kinda mushy… what should i dive into that’s light but still feels like it gives me something?",
-          "asked_at_ts": 1775868029,
-          "asked_at_iso": "00:40, 04/11/2026",
-          "question_hashtags": [
-            "#ethiopiancomedy",
-            "#funnyvideos"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help user follow through on their stated questions and discover light yet enriching content aligned with their interests",
-          "proximal_outcome": "user engages with a suggested light Ethiopian comedy video or similar humorous content",
-          "tailoring_variable": "unfulfilled stated need from user question: \"quiet evening, brain kinda mushy… what should i dive into that’s light but still feels like it gives me something?\" with hashtags #ethiopiancomedy and #funnyvideos",
-          "decision_point": "2026-04-18T00:40:29Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 2,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "The distal outcome is supporting the user’s pursuit of enjoyable yet meaningful content, and the proximal outcome is prompting engagement with a relevant suggestion. The tailoring variable is the specific unresolved question with clear topical hashtags, indicating a concrete interest. Horvitz cost-benefit favors acting because the value of surfacing a tailored option in-chat is high and intrusion is minimal, satisfying all subtlety constraints."
+          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is a specific unresolved user question, the decision point is the next chatbot session, and the intervention option is a one-sentence opt-in follow-up. Horvitz favors acting because the expected value is high: Micah asked for a concrete creative deliverable, the cost of one in-chat ambient question is low, and the evidence can be cited directly without leaving the chatbot. A compliant action could be: \"You asked me for a short story about an old house during a weekend project with a slightly strange, not-too-spooky feel—want me to write it now?\""
         }
       }
     ],
@@ -1339,15 +1458,15 @@
           "days_into_window": 2
         },
         "jitai_card": {
-          "distal_outcome": "support the user respectfully during sensitive life events without causing intrusion",
-          "proximal_outcome": "maintain trust and avoid unwanted proactive engagement during sensitive period",
-          "tailoring_variable": "sensitive_event_active=true with window evidence from 2026-04-06T15:32:11Z",
-          "decision_point": "2026-04-06T15:32:11Z",
+          "distal_outcome": "Protect the user's emotional bandwidth and trust by avoiding unnecessary proactive outreach during a sensitive life-event period.",
+          "proximal_outcome": "No interruption is introduced during the active sensitive-event window.",
+          "tailoring_variable": "Sensitive-life-event window is active for Micah Ainsworth Park; trigger evidence shows a `sensitive_event_silence` window with days_into_window=2.",
+          "decision_point": "2026-04-06T15:32:11Z, when the system evaluated whether to proactively surface anything in-chat.",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive_event_active flag is true, so per hard rule the agent must stay silent. Acting now would violate the JITAI tailoring variable constraints and Horvitz cost-benefit, as intrusion cost outweighs any potential value."
+          "reasoning": "JITAI fails because although the decision point and tailoring variable are defined, the hard restraint overrides any intervention option: active sensitive-event window plus restrain-class trigger requires silence. Under Horvitz, expected value of acting is dominated by intrusion risk at this moment, so the cost-benefit does not favor action. Subtlety also fails because no user-specific evidence could support an opt-in proactive sentence beyond the sensitive-event flag, and the policy mandates silence."
         }
       },
       {
@@ -1361,15 +1480,15 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "Support the user respectfully during sensitive life events without causing intrusion or distress",
-          "proximal_outcome": "User experiences no unsolicited prompts during the sensitive window",
-          "tailoring_variable": "Sensitive-life-event window active for Zhiwei Han, days_into_window=5",
+          "distal_outcome": "Protect user trust and emotional safety during a sensitive-life-event window.",
+          "proximal_outcome": "Avoid unnecessary interruption or miscalibrated outreach at this moment.",
+          "tailoring_variable": "Sensitive-life-event window is active for Micah Ainsworth Park; trigger evidence shows a `sensitive_event_silence` window with days_into_window=5.",
           "decision_point": "2026-04-09T10:44:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive-life-event window is active, so per JITAI and Horvitz cost-benefit, proactive action would not deliver value and could impose cost. Hard restraint rule mandates staying silent, making eligibility_score=0 and subtlety_check fail due to inability to cite user-specific evidence in an opt-in action."
+          "reasoning": "JITAI fails because although the decision point and tailoring variable are defined, the hard restraint overrides any intervention option: with sensitive_event_active=true, no proactive action is permitted. Under Horvitz, the expected cost of intrusion during an active sensitive window exceeds any plausible benefit, so silence is the value-maximizing choice."
         }
       },
       {
@@ -1383,15 +1502,15 @@
           "days_into_window": 8
         },
         "jitai_card": {
-          "distal_outcome": "support the user’s well-being by avoiding intrusive actions during sensitive life events",
-          "proximal_outcome": "maintain trust and comfort by staying silent in the chatbot during the sensitive window",
-          "tailoring_variable": "sensitive_event_active=true with window evidence showing 8 days into the active period",
+          "distal_outcome": "Protect user trust and emotional safety during a sensitive-life-event window by avoiding unnecessary proactive outreach.",
+          "proximal_outcome": "No proactive interruption is delivered at this moment.",
+          "tailoring_variable": "Sensitive-life-event window is active for Micah Ainsworth Park; trigger evidence shows a `sensitive_event_silence` window from 1775247611 to 1776457211, currently day 8.",
           "decision_point": "2026-04-12T05:56:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The JITAI decision rule fails due to the hard restraint for sensitive_event_active, which overrides any potential benefit. Horvitz cost-benefit analysis shows intrusion cost would exceed value during this period. Acting now would violate the constraint to remain silent in sensitive windows."
+          "reasoning": "JITAI does not justify action here because the hard restraint overrides any intervention option: the tailoring variable is an active sensitive-event window, so the decision rule is to not act. Under Horvitz, the expected cost of intrusion during a sensitive period exceeds any likely benefit, and the type-specific rule for `sensitive_event_silence` also mandates silence."
         }
       },
       {
@@ -1405,15 +1524,15 @@
           "days_into_window": 11
         },
         "jitai_card": {
-          "distal_outcome": "Maintain user trust and emotional safety during sensitive life events",
-          "proximal_outcome": "Avoid unsolicited proactive engagement while sensitive event window is active",
-          "tailoring_variable": "Sensitive-life-event window active for Zhiwei Han, days_into_window=11",
+          "distal_outcome": "Protect the user's emotional bandwidth and preserve trust by avoiding unnecessary proactive outreach during a sensitive-life-event window.",
+          "proximal_outcome": "No interruption is delivered at this moment.",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Micah Ainsworth Park; trigger evidence shows a sensitive_event_silence window from 1775247611 to 1776457211, currently day 11.",
           "decision_point": "2026-04-15T01:08:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "The trigger is in the restrain class 'sensitive_event_silence' and the sensitive-life-event window is active, so JITAI decision rule fails and Horvitz cost-benefit favors silence. Acting now would violate the hard restraint window and subtlety constraints. The appropriate action is to stay silent to preserve emotional safety."
+          "reasoning": "JITAI is blocked because the hard restraint overrides any intervention option at this decision point, even though the tailoring variable is well-grounded. Under Horvitz, the expected value of acting is dominated by intrusion cost during an active sensitive-event window, so the correct action is silence. Subtlety fails because no user-facing opt-in question should be surfaced at all under the restraint rule."
         }
       }
     ],

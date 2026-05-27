@@ -1238,11 +1238,13 @@ def build_task_b_arms(
     # Phase J.4: persona-internal contradiction probes — find canonicals where
     # the user's stance has flipped over time; ask about the topic; agent
     # must surface the CURRENT (later) stance, not the old one.
-    contradictions = build_persona_contradiction_probes(bq, user_id, profile)
+    contradictions = build_persona_contradiction_probes(bq, user_id, profile,
+                                                        discovery_llm=discovery_llm)
 
     # Phase J.5: stale-vs-fresh probes — short-term prefs past their
     # expected_stop_ts; agent must NOT surface them as if still active.
-    stale = build_stale_vs_fresh_probes(bq, user_id)
+    stale = build_stale_vs_fresh_probes(bq, user_id, profile=profile,
+                                        discovery_llm=discovery_llm)
 
     # Funnel summary — useful when chatbot_personalized_response comes in
     # under floor and you need to see WHERE candidates were dropped.
@@ -1268,7 +1270,49 @@ def build_task_b_arms(
     }
 
 
-def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: dict) -> list[dict]:
+_VOICED_QUERY_PROMPT = """Generate a natural, casual chatbot message from a user asking about {topic}.
+
+User context:
+- Name: {name}
+- Career: {career}
+
+Constraints:
+- 5-20 words, lowercase casual, like a real phone message
+- Ask about the topic naturally — don't mention preferences or history
+- No "I know you..." or "based on your..." framings
+- Open-ended question that invites recommendations or discussion
+- Must sound like THIS specific user typing, not a generic template
+
+Return ONLY a JSON object:
+```json
+{{"query": "the user's message"}}
+```"""
+
+
+def _generate_voiced_query(
+    discovery_llm, topic: str, profile: dict,
+) -> str | None:
+    """Generate a natural user query about a topic using the discovery LLM."""
+    from data_preparation.utils import extract_json_from_response
+    prompt = _VOICED_QUERY_PROMPT.format(
+        topic=topic,
+        name=profile.get("name", "the user"),
+        career=profile.get("career", ""),
+    )
+    try:
+        raw = discovery_llm.query_llm(prompt)
+        parsed = extract_json_from_response(raw) or {}
+        if isinstance(parsed, dict):
+            q = (parsed.get("query") or "").strip()
+            if q and 3 <= len(q.split()) <= 25:
+                return q
+    except Exception:
+        pass
+    return None
+
+
+def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: dict,
+                                       discovery_llm=None) -> list[dict]:
     """Phase J.4: probes where the user's recent activity contradicts an
     earlier preference. Tests which signal the agent prioritizes.
 
@@ -1328,8 +1372,7 @@ def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: 
     formatted = utils.unix_to_formatted(latest_ts) if hasattr(utils, "unix_to_formatted") else ""
 
     out: list[dict] = []
-    # Templates: ask about the TOPIC of the flipped pref. Different framings.
-    QUERY_TEMPLATES = [
+    _FALLBACK_TEMPLATES = [
         "What's a good {topic} to look at this week?",
         "Anything in {topic} you'd flag for me right now?",
         "How do you feel about {topic} these days?",
@@ -1337,10 +1380,13 @@ def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: 
     for i, p in enumerate(contradicted_prefs[:3]):
         topic = (p.get("category") or "").lower()
         if not topic:
-            # Fall back to a hashtag if no category
             tags = p.get("hashtags") or []
             topic = tags[0].lstrip("#").lower() if tags else "this topic"
-        q = QUERY_TEMPLATES[i % len(QUERY_TEMPLATES)].format(topic=topic)
+        q = None
+        if discovery_llm is not None:
+            q = _generate_voiced_query(discovery_llm, topic, profile)
+        if not q:
+            q = _FALLBACK_TEMPLATES[i % len(_FALLBACK_TEMPLATES)].format(topic=topic)
         out.append({
             "source_object_id": f"contradiction_{user_id}_{i:02d}",
             "source_timestamp": latest_ts - (60 * (i + 1)),
@@ -1359,7 +1405,9 @@ def build_persona_contradiction_probes(bq: BackendQuery, user_id: str, profile: 
     return out
 
 
-def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str) -> list[dict]:
+def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str,
+                                profile: dict | None = None,
+                                discovery_llm=None) -> list[dict]:
     """Phase J.5: probes where a short-term preference has expired.
 
     Walk all events; find prefs with `time_horizon == "short_term"` and a
@@ -1407,7 +1455,7 @@ def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str) -> list[dict]:
 
     out: list[dict] = []
     DAY = 86400
-    QUERY_TEMPLATES = [
+    _FALLBACK_TEMPLATES = [
         "What should I be looking at right now in {topic}?",
         "Got any {topic} suggestions for the next few days?",
         "Anything new in {topic} I should care about?",
@@ -1419,7 +1467,11 @@ def build_stale_vs_fresh_probes(bq: BackendQuery, user_id: str) -> list[dict]:
         if not topic:
             tags = p.get("hashtags") or []
             topic = tags[0].lstrip("#").lower() if tags else "current topics"
-        q = QUERY_TEMPLATES[i % len(QUERY_TEMPLATES)].format(topic=topic)
+        q = None
+        if discovery_llm is not None and profile:
+            q = _generate_voiced_query(discovery_llm, topic, profile)
+        if not q:
+            q = _FALLBACK_TEMPLATES[i % len(_FALLBACK_TEMPLATES)].format(topic=topic)
         formatted = utils.unix_to_formatted(t_test) if hasattr(utils, "unix_to_formatted") else ""
         out.append({
             "source_object_id": f"stale_{user_id}_{i:02d}",
@@ -4197,15 +4249,14 @@ def build_benchmark(
     # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
 
     # Step 4.5 — preference_shift_followthrough (chatbot + recsys flavors).
-    # Scaffolded builder; emits instances only when the user has shift
-    # candidates in their canonicals. Discovery-LLM wiring lands later;
-    # for now the audit step drops empty-user_query rows automatically.
+    # Emits instances only when the user has shift candidates in their
+    # canonicals. Discovery LLM populates user_query / example / inferior.
     try:
         from evaluation.tasks.preference_shift_followthrough import (
             build_preference_shift_followthrough,
         )
         preference_shift_instances = build_preference_shift_followthrough(
-            bq, user_id, t_probe, discovery_llm=None, rng_seed=rng_seed,
+            bq, user_id, t_probe, discovery_llm=discovery_llm, rng_seed=rng_seed,
         )
     except Exception as exc:
         preference_shift_instances = []
@@ -4253,7 +4304,10 @@ def build_benchmark(
     agentic_buckets: dict[str, list[dict]] = {}
     for task_id, builder in _AGENTIC_BUILDERS.items():
         try:
-            proactive = builder(bq, user_id, t_probe)
+            import inspect as _inspect
+            _sig = _inspect.signature(builder)
+            _kwargs = {"discovery_llm": discovery_llm} if "discovery_llm" in _sig.parameters else {}
+            proactive = builder(bq, user_id, t_probe, **_kwargs)
             # Workstream E: if the builder fixed every instance at t_probe,
             # replace t_test with anchors spread across the user's window.
             if proactive and all(i.get("t_test") == t_probe for i in proactive):
@@ -4293,7 +4347,8 @@ def build_benchmark(
         print(f"[build_benchmark] WARN: personalized_recommendation builder failed: {exc}")
     try:
         from evaluation.tasks.agentic_tasks import build_t7_moment_recommendation
-        moment_instances = build_t7_moment_recommendation(bq, user_id, t_probe)
+        moment_instances = build_t7_moment_recommendation(bq, user_id, t_probe,
+                                                           discovery_llm=discovery_llm)
         e4_instances = list(e4_instances) + moment_instances
     except Exception as exc:
         print(f"[build_benchmark] WARN: moment-recommendation merge into "
