@@ -48,7 +48,6 @@ _PERSONALIZATION_TASKS = {
     "daily_personalized_briefing",
     "short_vs_long_term_lifecycle",
     "active_mistake_prevention",
-    "preference_shift_followthrough",
     "agentic_user_tone_post",
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest",
