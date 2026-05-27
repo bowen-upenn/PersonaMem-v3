@@ -1148,16 +1148,16 @@ def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int)
     if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
         return []
     updates = [
-        "finally wrapped up that project I've been grinding on",
-        "great run this morning",
-        "saw something today that reminded me how weirdly competitive i get",
+        ("instagram", "finally wrapped up that project I've been grinding on"),
+        ("facebook",  "great run this morning"),
+        ("threads",   "saw something today that reminded me how weirdly competitive i get"),
     ]
     return [
         {"instance_id": f"t12_{app}_{i}", "task_id": "agentic_send_post", "entry_point": "app_native",
          "target_app": app, "update": u, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 1", f"count('{app}_send_dm') == 0"],
          "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1}}}
-        for app in SOCIAL_APPS for i, u in enumerate(updates)
+        for i, (app, u) in enumerate(updates)
     ]
 
 
@@ -1186,27 +1186,6 @@ def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[d
          "lift I've been chasing for weeks, then got a decent shot in the mirror "
          "after. Wanting to post the photo with a caption that's hype but not "
          "preachy, just a real moment."),
-        ("facebook",
-         "Last night's family dinner was actually one of the good ones — my niece "
-         "made the dessert from scratch, my uncle finally stopped arguing about "
-         "politics for a whole hour, and we ended up looking at old photos until "
-         "almost midnight. Want to share something for the family group, warm but "
-         "not corny."),
-        ("threads",
-         "This 'algorithm vs taste' debate keeps coming up and I keep biting my "
-         "tongue. People are blaming the algorithm for stuff that's just lazy "
-         "scrolling — your taste is whatever you're willing to sit with for more "
-         "than three seconds. Quick take to post, sharper than usual."),
-        ("instagram",
-         "Took an iced-coffee-on-the-bookshelf shot this afternoon — the light was "
-         "nice, the spine of the book I'm halfway through is in frame, and the mug "
-         "is the chipped one I refuse to throw out. Want a minimal caption to go "
-         "with it, nothing precious."),
-        ("facebook",
-         "The neighborhood food drive is happening this weekend and last year was "
-         "kind of underwhelming on volunteer turnout. Trying to nudge my friends "
-         "list to actually show up this time — drop-off spot is the church on the "
-         "corner, Saturday 10–2. Keep it warm, not naggy."),
     ]
     return [
         {"instance_id": f"t13_{i}", "task_id": "agentic_send_post", "entry_point": "chatbot_routed",

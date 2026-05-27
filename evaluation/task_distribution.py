@@ -88,7 +88,7 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
 
     # Agentic — uniform target across 14 tasks
     "agentic_community_post":                {"min": 5,  "max": 5},
-    "agentic_send_post":                     {"min": 10, "max": 11},
+    "agentic_send_post":                     {"min": 5,  "max": 5},
     # agentic_moment_recommendation merged into personalized_recommendation
     # — quota for moment instances now lands inside personalized_recommendation.
     "agentic_dm_digest":                      {"min": 5,  "max": 8},
