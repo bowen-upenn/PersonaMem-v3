@@ -639,6 +639,11 @@ def _collect_moment_engagements(bq: BackendQuery, user_id: str, t_anchor: int,
                 proj = _summarize_post_for_slate(e, app)
                 if proj is None:
                     continue
+                prefs = e.get("preferences") or []
+                if prefs:
+                    first_pref = prefs[0]
+                    proj["_held_out_persona_item"] = (first_pref.get("persona_item") or "").strip()
+                    proj["_held_out_category"] = (first_pref.get("category") or "").strip()
                 dt = _dt.datetime.fromtimestamp(ts, tz=_dt.timezone.utc)
                 in_win = _hour_in_window(dt.hour, win)
                 if day_filter is not None and dt.weekday() not in day_filter:

@@ -203,6 +203,8 @@ def build_slate_instance(test: TestItem, bq: BackendQuery, rng: random.Random) -
     held_out = _content_to_item(test.content, test.source_hashtags, test.content.get("content_type") or "text")
     held_out["_origin"] = "held_out"
     held_out["_origin_ts"] = int(test.source_timestamp or 0)
+    held_out["_held_out_persona_item"] = test.persona_item
+    held_out["_held_out_category"] = test.category
     candidates.append(held_out)
 
     # 3x topically-irrelevant

@@ -944,17 +944,21 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
             "is_held_out": False,
             "ts_delta_label": _ts_delta_label(c.get("source_timestamp"), ref_ts),
         } for i, c in enumerate(cands)]
+        held_pref = ""
+        if 0 <= held_idx < len(cands):
+            held_pref = (cands[held_idx].get("_held_out_persona_item") or "").strip()
+        gt_lines = [f"Top item: {_truncate(held_title, 140)}"]
+        if held_pref:
+            gt_lines.append(f"Groundtruth preference: {_truncate(held_pref, 180)}")
+        if hard_negs:
+            gt_lines.append("Hard negatives:\n  - " + "\n  - ".join(_truncate(t, 100) for t in hard_negs))
         return {
             "example_response": (
                 f"Ranking with held-out item (idx={held_idx}) at rank 1, "
                 f"hard negatives (idxs={hard_neg_idxs}) ranked at the bottom "
                 f"after all correct items and fillers."
             ),
-            "groundtruth_preference": (
-                f"Top item: {_truncate(held_title, 140)}\n"
-                + (f"Hard negatives:\n  - " + "\n  - ".join(_truncate(t, 100) for t in hard_negs)
-                   if hard_negs else "")
-            ),
+            "groundtruth_preference": "\n".join(gt_lines),
             "candidates": cand_list,
             "rubric_tags": _registry_display_rubric("personalized_recommendation"),
         }
