@@ -377,16 +377,22 @@ def _verify_trending_alert(inst: dict, response: str, writes: list) -> dict:
 # Registry
 # ---------------------------------------------------------------------------
 
+def _verify_send_post_merged(inst: dict, response: str, writes: list) -> dict:
+    """Merged verifier for composed_post + send_post."""
+    if inst.get("context"):
+        return _verify_send_post(inst, response, writes)
+    return _verify_composed_post(inst, response, writes)
+
+
 OUTPUT_VERIFIERS: dict[str, Callable[[dict, str, list], dict]] = {
-    "agentic_user_tone_post":          _verify_user_tone_post,
+    "agentic_community_post":           _verify_user_tone_post,
+    "agentic_send_post":                _verify_send_post_merged,
     # agentic_moment_recommendation merged into personalized_recommendation
     # (deterministic ranking metrics; no agentic verifier needed).
     "agentic_dm_digest":                _verify_dm_digest,
     "agentic_cross_app_repost":         _verify_cross_app_repost,
     "agentic_auto_reply":               _verify_auto_reply,
     "agentic_vague_refind":             _verify_vague_refind,
-    "agentic_composed_post":            _verify_composed_post,
-    "agentic_send_post":                _verify_send_post,
     "agentic_draft_audit":              _verify_draft_audit,
     "agentic_group_dm_summary":         _verify_group_dm_summary,
     "agentic_wrong_recipient_check":    _verify_wrong_recipient_check,

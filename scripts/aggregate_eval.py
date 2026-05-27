@@ -176,9 +176,7 @@ _TASK_FAMILY_MAP = {
     "proactive_trending_feed_react": "proactive",
     "restraint_sensitive_event_silence": "proactive",
     # Agentic (T6-T19)
-    "agentic_user_tone_post": "agentic",
     "agentic_auto_reply": "agentic",
-    "agentic_composed_post": "agentic",
     "agentic_cross_app_repost": "agentic",
     "agentic_dm_digest": "agentic",
     "agentic_group_dm_summary": "agentic",

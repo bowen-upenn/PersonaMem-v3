@@ -273,7 +273,8 @@ def required_reads_for_task(task_id: str, target_app: str | None) -> list[str]:
 
     # Agentic T6–T19 (single-app tasks read from `target_app`).
     AGENTIC: dict[str, list[str]] = {
-        "agentic_user_tone_post":           [f"{app}_get_feed"] if is_social else [],
+        "agentic_community_post":           [f"{app}_get_feed"] if is_social else [],
+        "agentic_send_post":                [f"{app}_get_feed"] if is_social else [],
         "agentic_dm_digest":                [f"{app}_list_dms"] if is_social else [],
         "agentic_cross_app_repost":         [f"{app}_get_feed"] if is_social else [],
         "agentic_auto_reply":               [f"{app}_get_feed"] if is_social else [],
@@ -281,8 +282,6 @@ def required_reads_for_task(task_id: str, target_app: str | None) -> list[str]:
             "instagram_search", "facebook_search", "threads_search",
             "chatbot_search_history",
         ],
-        "agentic_composed_post":            [f"{app}_get_feed"] if is_social else [],
-        "agentic_send_post":                [f"{app}_get_feed"] if is_social else [],
         "agentic_group_dm_summary":         [f"{app}_get_feed"] if is_social else [],
         "agentic_wrong_recipient_check":    [f"{app}_list_dms"] if is_social else [],
         "agentic_proactive_daily_catchup":  [

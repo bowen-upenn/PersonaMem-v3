@@ -87,19 +87,14 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "new_suggestions_chatbot":                 {"min": 1, "max": 2, "data_dependent": True},
 
     # Agentic — uniform target across 14 tasks
-    "agentic_user_tone_post":                {"min": 5,  "max": 5},
+    "agentic_community_post":                {"min": 5,  "max": 5},
+    "agentic_send_post":                     {"min": 10, "max": 11},
     # agentic_moment_recommendation merged into personalized_recommendation
     # — quota for moment instances now lands inside personalized_recommendation.
     "agentic_dm_digest":                      {"min": 5,  "max": 8},
     "agentic_cross_app_repost":               {"min": 5,  "max": 5},
     "agentic_auto_reply":                     {"min": 5,  "max": 5},
     "agentic_vague_refind":                   {"min": 5,  "max": 5},
-    # agentic_composed_post absorbs the old agentic_send_post quotas (5/5).
-    # Merged in Step 4.2 — same write-a-post intent, two flavors:
-    # app-native compose vs chatbot-dispatched compose. Instances carry
-    # `flavor ∈ {composed, dispatched}` in the instance JSON.
-    "agentic_composed_post":                  {"min": 10, "max": 11},
-    # agentic_send_post merged into agentic_composed_post (see task_registry).
     # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
     "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},

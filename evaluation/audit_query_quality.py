@@ -88,10 +88,9 @@ GT_ALIGNMENT_APPLICABLE = {
 # example_response carries that frame's signature. Self-skips when bq
 # is None or no frames can be resolved for the user.
 FRAME_CONSISTENCY_TASKS = {
-    "agentic_composed_post",
+    "agentic_community_post",
     "agentic_send_post",
     "agentic_cross_app_repost",
-    "agentic_user_tone_post",
     "agentic_auto_reply",
     "chatbot_personalized_response",
 }
@@ -102,13 +101,12 @@ FRAME_CONSISTENCY_TASKS = {
 # `mcp_tools_allowed: "none"` in TASK_TYPE_META and ranks from time-masked
 # history alone). The dimension self-skips for any task NOT in this set.
 TOOL_CALL_VALIDITY_TASKS = {
-    "agentic_user_tone_post",
+    "agentic_community_post",
+    "agentic_send_post",
     "agentic_dm_digest",
     "agentic_cross_app_repost",
     "agentic_auto_reply",
     "agentic_vague_refind",
-    "agentic_composed_post",
-    "agentic_send_post",
     "agentic_group_dm_summary",
     "agentic_wrong_recipient_check",
     "agentic_proactive_daily_catchup",
@@ -782,7 +780,7 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
         "evidence_fn": _evidence_geo_shift,
     },
     # ---- Agentic voice (contrasting register) ------------------------
-    "agentic_user_tone_post":   {"axis_name": "uses_contrasting_voice_register",
+    "agentic_community_post":   {"axis_name": "uses_contrasting_voice_register",
                                   "axis_description":
                                     "The user-voiced gold matches the user's natural voice for the target app "
                                     "(opener / idiolect / stance / vocabulary). The foil must paraphrase the "
@@ -790,16 +788,11 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
                                     "gold should be UNDER 0.6. Emoji density is NOT the differentiator; the "
                                     "contrast must land on opener, idiolect template, stance, or vocabulary.",
                                   "kind": "llm", "evidence_fn": _evidence_voice_register},
-    "agentic_composed_post":    {"axis_name": "uses_contrasting_voice_register",
-                                  "axis_description":
-                                    "Compose-task gold = user voice. Foil = contrasting register, same "
-                                    "factual content, Jaccard<0.6 on tokens, contrast on opener/idiolect/"
-                                    "stance/vocabulary (NOT emoji count).",
-                                  "kind": "llm", "evidence_fn": _evidence_voice_register},
     "agentic_send_post":        {"axis_name": "uses_contrasting_voice_register",
                                   "axis_description":
-                                    "Same axis as composed_post — gold in user voice, foil in contrasting "
-                                    "register.",
+                                    "Gold = user voice on the target app. Foil = contrasting register, same "
+                                    "factual content, Jaccard<0.6 on tokens, contrast on opener/idiolect/"
+                                    "stance/vocabulary (NOT emoji count).",
                                   "kind": "llm", "evidence_fn": _evidence_voice_register},
     "agentic_cross_app_repost": {"axis_name": "uses_contrasting_voice_register",
                                   "axis_description":
@@ -1419,8 +1412,13 @@ def _setup_text_for(inst: dict, task_type: str) -> str:
     the flattened CSV-derived instance dict (where some fields may be JSON
     strings instead of dicts)."""
     app = inst.get("target_app") or inst.get("app") or ""
-    if task_type == "agentic_user_tone_post":
+    if task_type == "agentic_community_post":
         return f"draft a community-digest post in user voice on {app}"
+    if task_type == "agentic_send_post":
+        ctx = inst.get("context") or inst.get("update") or ""
+        if ctx:
+            return f"compose a post on {app} about: {ctx}"[:300]
+        return f"compose a post in user voice on {app}"
     if task_type == "agentic_dm_digest":
         return f"summarize the user's DM threads on {app}"
     if task_type == "agentic_cross_app_repost":
@@ -1432,10 +1430,6 @@ def _setup_text_for(inst: dict, task_type: str) -> str:
         return f"auto-reply on {app}: {inst.get('inbound_message') or ''}"[:300]
     if task_type == "agentic_vague_refind":
         return f"refind a post about {inst.get('topic') or ''}"
-    if task_type == "agentic_composed_post":
-        return f"compose a post on {app} about: {inst.get('update') or ''}"[:300]
-    if task_type == "agentic_send_post":
-        return f"chatbot-routed post to {app}: {inst.get('context') or ''}"[:300]
     if task_type == "agentic_group_dm_summary":
         return f"summarize a group DM on {app}"
     if task_type == "agentic_wrong_recipient_check":

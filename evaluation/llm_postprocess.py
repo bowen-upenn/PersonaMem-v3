@@ -49,14 +49,13 @@ _PERSONALIZATION_TASKS = {
     "short_vs_long_term_lifecycle",
     "active_mistake_prevention",
     "hidden_persona_recommendation",
-    "agentic_user_tone_post",
+    "agentic_community_post",
+    "agentic_send_post",
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest",
     "agentic_cross_app_repost",
     "agentic_auto_reply",
     "agentic_vague_refind",
-    "agentic_composed_post",
-    "agentic_send_post",
     "agentic_group_dm_summary",
     "agentic_wrong_recipient_check",
     "agentic_proactive_daily_catchup",
@@ -315,18 +314,12 @@ def _validate_no_creepy_phrasing(
 
 
 _COMPOSE_TASKS = {
-    "agentic_composed_post",
     "agentic_send_post",
     "agentic_cross_app_repost",
     "agentic_auto_reply",
 }
 
-# Tasks where the voice-evidence smoke test runs (overlap with _COMPOSE_TASKS
-# today; kept separate so the set can grow without changing length-band logic).
-# `agentic_user_tone_post` (T6) tests voice fidelity against a seed_topic but
-# is NOT in _COMPOSE_TASKS to keep its length band on the generic 1–4-sentence
-# default rather than the compose-task per-app caption length.
-_VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_user_tone_post"}
+_VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_community_post"}
 
 
 # Stance / register surface markers — same lexicon used by the GT
@@ -1238,8 +1231,7 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
 # Voice-dependent agentic write tasks. Their gold is graded on `voice_match`,
 # so the gold-gen LLM must see the user's actual voice for the target_app.
 _VOICE_DEPENDENT_WRITE_TASKS = {
-    "agentic_user_tone_post",
-    "agentic_composed_post",
+    "agentic_community_post",
     "agentic_send_post",
     "agentic_cross_app_repost",
     "agentic_auto_reply",
@@ -1431,14 +1423,10 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
     )
 
     # 3. Per-task specific input.
-    if task_id == "agentic_composed_post":
-        update = (inst.get("update") or "").strip()
-        if update:
-            lines.append(f"User's life-update brief to post: \"{update}\"")
-    elif task_id == "agentic_send_post":
-        ctx = (inst.get("context") or "").strip()
-        if ctx:
-            lines.append(f"Chat context to dispatch as a post: \"{ctx}\"")
+    if task_id == "agentic_send_post":
+        body = (inst.get("context") or inst.get("update") or "").strip()
+        if body:
+            lines.append(f"User's input to post: \"{body}\"")
     elif task_id == "agentic_cross_app_repost":
         sp = inst.get("source_post") or {}
         cap = (sp.get("caption") or sp.get("title") or "").strip()
@@ -1634,8 +1622,8 @@ _FLAW_KINDS_VOICE = ("voice_mismatch",)
 # Summarization / digest / lookup tasks need factual flaws; mechanically
 # inserting "Follows mixed martial arts as a fan." into a DM digest reads
 # absurdly because the gold doesn't have a preference reference to replace.
-# Write/compose tasks (agentic_user_tone_post, agentic_composed_post,
-# agentic_send_post, agentic_cross_app_repost, agentic_auto_reply) get
+# Write/compose tasks (agentic_send_post, agentic_cross_app_repost,
+# agentic_auto_reply) get
 # voice_mismatch — the rubric grades voice_match, so the natural failure
 # is wrong tone register, not a hashtag splice.
 _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
@@ -1654,8 +1642,7 @@ _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     "agentic_proactive_daily_catchup": ("disliked_recent", "factual_error"),
     "agentic_trending_alert":          ("disliked_recent", "factual_error"),
     "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
-    "agentic_user_tone_post":          _FLAW_KINDS_VOICE,
-    "agentic_composed_post":           _FLAW_KINDS_VOICE,
+    "agentic_community_post":          _FLAW_KINDS_VOICE,
     "agentic_send_post":               _FLAW_KINDS_VOICE,
     "agentic_cross_app_repost":        _FLAW_KINDS_VOICE,
     "agentic_auto_reply":              _FLAW_KINDS_VOICE,

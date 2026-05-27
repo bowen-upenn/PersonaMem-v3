@@ -76,7 +76,7 @@ _HOLLOW_BY_DESIGN = {
     "agentic_group_dm_summary",
     "agentic_proactive_daily_catchup",
     "agentic_trending_alert",
-    "agentic_user_tone_post",
+    "agentic_community_post",
     "daily_personalized_briefing",
     "personalized_search_ranking",
 }
@@ -103,8 +103,7 @@ _AGENTIC_PRECONDITION_HINTS = {
     "agentic_auto_reply":            "a real inbound DM (sender_id + inbound_message)",
     "agentic_wrong_recipient_check": "a name collision (recipient_name + draft + collision_friend_ids)",
     "agentic_cross_app_repost":      "a source post (source_post)",
-    "agentic_send_post":             "a brief from chat (context)",
-    "agentic_composed_post":         "a life-update string (update)",
+    "agentic_send_post":             "post content (context or update)",
     "agentic_draft_audit":           "a draft to audit (draft + draft_label)",
     "agentic_vague_refind":          "a topic the user vaguely remembers (topic)",
     # agentic_moment_recommendation merged into personalized_recommendation
@@ -340,8 +339,8 @@ _AGENTIC_REQUIRED_FIELDS: dict[str, tuple[str, ...]] = {
     "agentic_auto_reply":            ("sender_id", "inbound_message"),
     "agentic_wrong_recipient_check": ("recipient_name", "draft"),
     "agentic_cross_app_repost":      ("source_post",),
-    "agentic_send_post":             ("context",),
-    "agentic_composed_post":         ("update",),
+    # agentic_send_post: merged from composed_post (update) + send_post (context);
+    # either field satisfies the precondition, so omitted from the strict check.
     "agentic_draft_audit":           ("draft",),
     "agentic_vague_refind":          ("topic",),
     # agentic_moment_recommendation merged into personalized_recommendation
@@ -376,8 +375,7 @@ def check_agentic_preconditions(record: dict) -> list[Finding]:
 _AGENTIC_NEEDS_USER_QUERY_CONTENT = {
     "agentic_auto_reply",            # needs the inbound DM body
     "agentic_vague_refind",          # needs the topic
-    "agentic_composed_post",         # needs the user's update
-    "agentic_send_post",             # needs the chat context to dispatch
+    "agentic_send_post",             # context/update/topic flavors
     "agentic_cross_app_repost",      # needs the source-post caption
     "agentic_wrong_recipient_check", # needs the draft
 }

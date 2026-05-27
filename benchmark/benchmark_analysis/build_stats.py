@@ -51,8 +51,6 @@ NO_EXPLICIT_QUERY_TASKS = {
     "at_ai_directive_followup",
     "new_suggestions_recsys",
     "daily_personalized_briefing",
-    "agentic_user_tone_post",
-    "agentic_composed_post",
     "agentic_send_post",
     "agentic_cross_app_repost",
     "agentic_dm_digest",

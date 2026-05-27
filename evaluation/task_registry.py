@@ -76,8 +76,9 @@ OLD_TO_NEW: dict[str, str] = {
     "e6_active_mistake_prevention":  "active_mistake_prevention",
     # Phase L.B.4: renamed — task is "compose an advisory post in the user's
     # voice", not a community trends summary. Old aliases keep working.
-    "t6_community_digest":           "agentic_user_tone_post",
-    "agentic_community_digest":      "agentic_user_tone_post",
+    "t6_community_digest":           "agentic_community_post",
+    "agentic_community_digest":      "agentic_community_post",
+    "agentic_user_tone_post":        "agentic_community_post",
     # t7_moment_recommendation merged into personalized_recommendation
     # (slate-based ranking). Old CSV rows resolve to the new type so
     # aggregators still parse historical benchmarks.
@@ -87,14 +88,9 @@ OLD_TO_NEW: dict[str, str] = {
     "t9_cross_app_repost":           "agentic_cross_app_repost",
     "t10_auto_reply":                "agentic_auto_reply",
     "t11_vague_refind":              "agentic_vague_refind",
-    "t12_agent_composed_post":       "agentic_composed_post",
-    # `agentic_send_post` (formerly `t13_chatbot_dispatch`) merged into
-    # `agentic_composed_post` — same write-a-post intent, only the
-    # entry-point differs (app-native compose vs chatbot-dispatched
-    # compose). The merged task keeps both flavors; instances tag which
-    # one via the `flavor` field in the instance JSON.
-    "t13_chatbot_dispatch":          "agentic_composed_post",
-    "agentic_send_post":             "agentic_composed_post",
+    "t12_agent_composed_post":       "agentic_send_post",
+    "agentic_composed_post":         "agentic_send_post",
+    "t13_chatbot_dispatch":          "agentic_send_post",
     # agentic_draft_audit dropped — old strings still resolve so historical
     # CSVs parse, but the task type is no longer in TASK_TYPE_META.
     "t14_draft_audit":               "agentic_draft_audit",
@@ -293,9 +289,15 @@ _DISPLAY_RUBRIC_PROACTIVE = [
 # Per-agentic-task display rubric. The TELEGRAPH_AVOIDANCE_TAG is appended
 # by the _gt_agentic function in visualize.py.
 AGENTIC_DISPLAY_RUBRICS: dict[str, list[str]] = {
-    "agentic_user_tone_post": [
+    "agentic_community_post": [
         "(+) Match the user's voice.",
         "(+) Reference what they've recently engaged with.",
+        "(-) Don't include anything they wouldn't post publicly.",
+    ],
+    "agentic_send_post": [
+        "(+) Compose the post in the user's voice on the target app.",
+        "(+) Call create_post on the target app exactly once.",
+        "(-) Don't post on any other app.",
         "(-) Don't include anything they wouldn't post publicly.",
     ],
     "agentic_cross_app_repost": [
@@ -307,15 +309,7 @@ AGENTIC_DISPLAY_RUBRICS: dict[str, list[str]] = {
         "(+) Send the DM exactly once.",
         "(-) Don't make commitments the user hasn't implied.",
     ],
-    "agentic_composed_post": [
-        "(+) Rewrite the user's update in their voice for this app.",
-        "(+) Call create_post exactly once.",
-    ],
-    "agentic_send_post": [
-        "(+) Compose the post in the user's voice on the target app.",
-        "(+) Call create_post on the target app exactly once.",
-        "(-) Don't post on any other app.",
-    ],
+    # agentic_composed_post merged into agentic_send_post.
     "agentic_dm_digest": [
         "(+) Summarize the relevant DM threads accurately.",
         "(-) Don't surface private content the user wouldn't share.",
@@ -607,7 +601,7 @@ TASK_TYPE_META: dict[str, dict] = {
     # ------------------------------------------------------------------
     # Agentic T6–T19  (T14 agentic_draft_audit dropped per workstream F)
     # ------------------------------------------------------------------
-    "agentic_user_tone_post": {
+    "agentic_community_post": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",
         "state_write_policy": "writes_ok",       # exactly 1 create_post
@@ -617,11 +611,28 @@ TASK_TYPE_META: dict[str, dict] = {
             "negative_leakage", "stale_preference_use", "voice_match",
             "tool_call_match", "behavioral_hit", "telegraph_avoidance",
         ],
-        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_user_tone_post"] + [TELEGRAPH_AVOIDANCE_TAG],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_community_post"] + [TELEGRAPH_AVOIDANCE_TAG],
         "rubric_tags": [
             "preference_alignment", "avoid_overpersonalization",
             "negative_leakage", "stale_preference_use", "voice_match",
             "tool_call_match", "behavioral_hit",
+        ],
+    },
+    "agentic_send_post": {
+        "task_family": "agentic",
+        "mcp_tools_allowed": "all",
+        "state_write_policy": "writes_ok",       # exactly 1 create_post
+        "expected_response_kind": "agentic_writes",
+        "scoring_dimensions": [
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "voice_match",
+            "tool_call_match", "telegraph_avoidance",
+        ],
+        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_send_post"] + [TELEGRAPH_AVOIDANCE_TAG],
+        "rubric_tags": [
+            "preference_alignment", "avoid_overpersonalization",
+            "negative_leakage", "stale_preference_use", "voice_match",
+            "tool_call_match",
         ],
     },
     # agentic_moment_recommendation removed — merged into
@@ -687,28 +698,7 @@ TASK_TYPE_META: dict[str, dict] = {
             "tool_call_match", "behavioral_hit",
         ],
     },
-    "agentic_composed_post": {
-        "task_family": "agentic",
-        # `all` covers both flavors: app-native compose (social tools only)
-        # and chatbot-dispatched compose (chatbot routes a write to a target
-        # social app). Pre-merge the dispatched flavor lived under
-        # `agentic_send_post` with `mcp_tools_allowed: all`.
-        "mcp_tools_allowed": "all",
-        "state_write_policy": "writes_ok",        # exactly 1 create_post per instance
-        "expected_response_kind": "agentic_writes",
-        "scoring_dimensions": [
-            "preference_alignment", "avoid_overpersonalization",
-            "negative_leakage", "stale_preference_use", "voice_match",
-            "tool_call_match", "telegraph_avoidance",
-        ],
-        "display_rubric": AGENTIC_DISPLAY_RUBRICS["agentic_composed_post"] + [TELEGRAPH_AVOIDANCE_TAG],
-        "rubric_tags": [
-            "preference_alignment", "avoid_overpersonalization",
-            "negative_leakage", "stale_preference_use", "voice_match",
-            "tool_call_match",
-        ],
-    },
-    # agentic_send_post merged into agentic_composed_post (see OLD_TO_NEW).
+    # agentic_composed_post + agentic_community_post merged into agentic_send_post.
     # agentic_draft_audit removed — too subjective for benchmark grading
     "agentic_group_dm_summary": {
         "task_family": "agentic",
@@ -1010,15 +1000,13 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "short_vs_long_term_lifecycle":           "proactive_recommendation",
     "active_mistake_prevention":              "proactive_assistance",
     "local_recommendation_geo_shift":         "user_query",
-    "agentic_user_tone_post":                "agentic_task",
+    "agentic_community_post":                "agentic_task",
+    "agentic_send_post":                     "agentic_task",
     # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                      "agentic_task",
     "agentic_cross_app_repost":               "agentic_task",
     "agentic_auto_reply":                     "agentic_task",
     "agentic_vague_refind":                   "user_query",
-    "agentic_composed_post":                  "agentic_task",
-    # agentic_send_post merged into agentic_composed_post; alias only.
-    # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":               "agentic_task",
     "agentic_wrong_recipient_check":          "proactive_assistance",
     "agentic_proactive_daily_catchup":        "proactive_recommendation",
@@ -1049,14 +1037,13 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "short_vs_long_term_lifecycle":           "proactive_recommend",
     "active_mistake_prevention":              "proactive_assist",
     "local_recommendation_geo_shift":         "personalize",
-    "agentic_user_tone_post":                "agentic_action",
+    "agentic_community_post":                "agentic_action",
+    "agentic_send_post":                     "agentic_action",
     # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                      "agentic_action",
     "agentic_cross_app_repost":               "agentic_action",
     "agentic_auto_reply":                     "agentic_action",
     "agentic_vague_refind":                   "agentic_action",
-    "agentic_composed_post":                  "agentic_action",
-    # agentic_send_post merged into agentic_composed_post; alias only.
     "agentic_group_dm_summary":               "agentic_action",
     "agentic_wrong_recipient_check":          "proactive_assist",
     "agentic_proactive_daily_catchup":        "proactive_recommend",
@@ -1152,14 +1139,13 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # preference_alignment + over_personalization + voice_match + hard-
     # rule gates — which is what a personalization benchmark should
     # report as the headline.
-    "agentic_user_tone_post":           ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_community_post":           ("pr_combined_personalization_score", "pr_combined"),
+    "agentic_send_post":                ("pr_combined_personalization_score", "pr_combined"),
     # agentic_moment_recommendation removed (merged into personalized_recommendation)
     "agentic_dm_digest":                 ("pr_combined_personalization_score", "pr_combined"),
     "agentic_cross_app_repost":          ("pr_combined_personalization_score", "pr_combined"),
     "agentic_auto_reply":                ("pr_combined_personalization_score", "pr_combined"),
     "agentic_vague_refind":              ("pr_combined_personalization_score", "pr_combined"),
-    "agentic_composed_post":             ("pr_combined_personalization_score", "pr_combined"),
-    # agentic_send_post merged into agentic_composed_post; alias only.
     "agentic_draft_audit":               ("pr_combined_personalization_score", "pr_combined"),
     "agentic_group_dm_summary":          ("pr_combined_personalization_score", "pr_combined"),
     "agentic_wrong_recipient_check":     ("pr_combined_personalization_score", "pr_combined"),

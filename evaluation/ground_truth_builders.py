@@ -27,8 +27,8 @@ _DAY = 24 * 3600
 _SOCIAL_APPS = ("instagram", "facebook", "threads")
 _ALL_APPS = ("instagram", "facebook", "threads", "chatbot")
 
-# Voice-mimic compose tasks (agentic_user_tone_post, agentic_composed_post,
-# agentic_send_post, agentic_cross_app_repost, agentic_auto_reply) require
+# Voice-mimic compose tasks (agentic_send_post, agentic_cross_app_repost,
+# agentic_auto_reply) require
 # at least this many user-voiced samples in history before t_test. Below
 # the floor, the AI under evaluation has insufficient evidence of how the
 # user writes — `profile.user_voice` is firewalled at test time, so the
@@ -548,13 +548,12 @@ def _t19_trending_alert(bq: BackendQuery, user_id: str, t_test: int, inst: dict)
 
 
 _DISPATCH = {
-    "agentic_user_tone_post":            _t6_user_tone_post,
+    "agentic_community_post":            _t6_user_tone_post,
+    "agentic_send_post":                 _t12_composed_post,
     "agentic_dm_digest":                 _t8_dm_digest,
     "agentic_cross_app_repost":          _t9_cross_app_repost,
     "agentic_auto_reply":                _t10_auto_reply,
     "agentic_vague_refind":              _t11_vague_refind,
-    "agentic_composed_post":             _t12_composed_post,
-    "agentic_send_post":                 _t13_send_post,
     "agentic_group_dm_summary":          _t16_group_dm_summary,
     "agentic_wrong_recipient_check":     _t17_wrong_recipient,
     "agentic_proactive_daily_catchup":   _t18_proactive_daily,

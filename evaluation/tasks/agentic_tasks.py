@@ -539,7 +539,7 @@ def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int,
     out: list[dict] = []
     for app in SOCIAL_APPS:
         inst = {
-            "instance_id": f"t6_{app}_native", "task_id": "agentic_user_tone_post",
+            "instance_id": f"t6_{app}_native", "task_id": "agentic_community_post",
             "entry_point": "app_native", "target_app": app, "t_test": t_anchor,
             "tool_call_rules": [f"count('{app}_create_post') <= 1", f"count('{app}_send_dm') == 0"],
             "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
@@ -550,7 +550,7 @@ def build_t6_user_tone_post(bq: BackendQuery, user_id: str, t_anchor: int,
         out.append(inst)
     for app in SOCIAL_APPS:
         inst = {
-            "instance_id": f"t6_{app}_chatbot", "task_id": "agentic_user_tone_post",
+            "instance_id": f"t6_{app}_chatbot", "task_id": "agentic_community_post",
             "entry_point": "chatbot_routed", "target_app": app, "t_test": t_anchor,
             "tool_call_rules": [f"count('{app}_create_post') <= 1"],
             "final_state_expected": {"must_not_contain": [f"{a}_create_post" for a in SOCIAL_APPS if a != app]},
@@ -1153,7 +1153,7 @@ def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int)
         "saw something today that reminded me how weirdly competitive i get",
     ]
     return [
-        {"instance_id": f"t12_{app}_{i}", "task_id": "agentic_composed_post", "entry_point": "app_native",
+        {"instance_id": f"t12_{app}_{i}", "task_id": "agentic_send_post", "entry_point": "app_native",
          "target_app": app, "update": u, "t_test": t_anchor,
          "tool_call_rules": [f"count('{app}_create_post') == 1", f"count('{app}_send_dm') == 0"],
          "final_state_expected": {"must_contain_count": {f"{app}_create_post": 1}}}
@@ -1347,8 +1347,16 @@ def build_t19_trending_alert(bq: BackendQuery, user_id: str, t_anchor: int) -> l
     ]
 
 
+def _build_send_post_merged(bq, user_id, t_anchor, **kwargs):
+    """Merged builder: T12 (seed→post) + T13 (narration→post)."""
+    out = build_t12_agent_composed_post(bq, user_id, t_anchor)
+    out += build_t13_send_post(bq, user_id, t_anchor)
+    return out
+
+
 ALL_BUILDERS: dict[str, Callable] = {
-    "agentic_user_tone_post":         build_t6_user_tone_post,
+    "agentic_community_post":           build_t6_user_tone_post,
+    "agentic_send_post":                _build_send_post_merged,
     # agentic_moment_recommendation was merged into personalized_recommendation
     # (slate-based ranking) — build_t7_moment_recommendation is now called
     # directly from build_benchmark.py and its output appended to e4_instances.
@@ -1356,8 +1364,6 @@ ALL_BUILDERS: dict[str, Callable] = {
     "agentic_cross_app_repost":         build_t9_cross_app_repost,
     "agentic_auto_reply":               build_t10_auto_reply,
     "agentic_vague_refind":             build_t11_vague_refind,
-    "agentic_composed_post":            build_t12_agent_composed_post,
-    "agentic_send_post":                build_t13_send_post,
     # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":         build_t16_group_dm_summary,
     "agentic_wrong_recipient_check":    build_t17_wrong_recipient,
@@ -1421,14 +1427,18 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
 
 def _query_text_for(task_id: str, inst: dict) -> str:
     """Extract a representative query string per task for rubric ground-truth building."""
+    if task_id == "agentic_community_post":
+        return (inst.get("user_query")
+                or f"compose a post in the user's voice on {inst.get('target_app')}")
+    if task_id == "agentic_send_post":
+        return (inst.get("context")
+                or inst.get("update")
+                or f"compose a post in the user's voice on {inst.get('target_app')}")
     return {
-        "agentic_user_tone_post": f"compose a post in the user's voice on {inst.get('target_app')}",
         "agentic_dm_digest": f"dm digest on {inst.get('target_app')}",
         "agentic_cross_app_repost": inst.get("source_post", {}).get("caption", ""),
         "agentic_auto_reply": inst.get("inbound_message", ""),
         "agentic_vague_refind": f"find post about {inst.get('topic', '')}",
-        "agentic_composed_post": inst.get("update", ""),
-        "agentic_send_post": inst.get("context", ""),
         "agentic_draft_audit": inst.get("draft", ""),
         "agentic_group_dm_summary": "group dm summary",
         "agentic_wrong_recipient_check": inst.get("draft", ""),
@@ -1448,21 +1458,13 @@ def _prompt_for(task_id: str):
     pa = prompts_agentic
 
     def t6(inst, h, **kw): return pa.t6_user_tone_post(inst["target_app"], h, **kw)
-    # t7_moment_recommendation removed — moment instances now ride
-    # personalized_recommendation_prompt with a voiced query_text.
+    def t_send_post(inst, h, **kw):
+        body = inst.get("context") or inst.get("update") or ""
+        return pa.t12_agent_composed_post(inst["target_app"], body, h, **kw)
     def t8(inst, h, **kw): return pa.t8_dm_digest(inst["target_app"], h, **kw)
     def t9(inst, h, **kw): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h, **kw)
     def t10(inst, h, **kw): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"), **kw)
     def t11(inst, h, **kw): return pa.t11_vague_refind(inst["topic"], h, **kw)
-    def t12(inst, h, **kw):
-        # agentic_composed_post + agentic_send_post merged in task_registry —
-        # the merged instance set carries the post-body under either `update`
-        # (compose-from-scratch builder) or `context` (chatbot-dispatch
-        # builder). Accept either to avoid KeyError on the normalized
-        # task_type.
-        body = inst.get("update") or inst.get("context") or ""
-        return pa.t12_agent_composed_post(inst["target_app"], body, h, **kw)
-    def t13(inst, h, **kw): return pa.t13_send_post(inst["target_app"], inst["context"], h, **kw)
     def t14(inst, h, **kw): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
     def t16(inst, h, **kw): return pa.t16_group_dm_summary(inst["thread_id"], h, target_app=inst.get("target_app", "instagram"), **kw)
     def t17(inst, h, **kw): return pa.t17_wrong_recipient(inst["draft"], inst["recipient_name"], h, target_app=inst.get("target_app", "instagram"), **kw)
@@ -1470,9 +1472,10 @@ def _prompt_for(task_id: str):
     def t19(inst, h, **kw): return pa.t19_trending_alert(h, **kw)
 
     return {
-        "agentic_user_tone_post": t6, "agentic_dm_digest": t8,
+        "agentic_community_post": t6, "agentic_send_post": t_send_post,
+        "agentic_dm_digest": t8,
         "agentic_cross_app_repost": t9, "agentic_auto_reply": t10, "agentic_vague_refind": t11,
-        "agentic_composed_post": t12, "agentic_send_post": t13, "agentic_draft_audit": t14,
+        "agentic_draft_audit": t14,
         "agentic_group_dm_summary": t16, "agentic_wrong_recipient_check": t17,
         "agentic_proactive_daily_catchup": t18, "agentic_trending_alert": t19,
     }.get(task_id)

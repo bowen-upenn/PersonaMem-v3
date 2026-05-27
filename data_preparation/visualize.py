@@ -1055,7 +1055,7 @@ def _build_agentic_tool_call(inst: dict, example_text: str = "") -> list[dict]:
     task_id = inst.get("task_id", "")
     app = inst.get("target_app") or ""
     src_app = inst.get("source_app") or ""
-    if task_id == "agentic_user_tone_post":
+    if task_id in ("agentic_community_post", "agentic_send_post"):
         return [{"tool": f"{app}_create_post",
                  "args": {"text": "<string: composed post body>"}}]
     # agentic_moment_recommendation merged into personalized_recommendation —
@@ -1081,12 +1081,7 @@ def _build_agentic_tool_call(inst: dict, example_text: str = "") -> list[dict]:
     if task_id == "agentic_vague_refind":
         return [{"tool": "chatbot_search_history",
                  "args": {"topic": inst.get("topic", "")}}]
-    if task_id == "agentic_composed_post":
-        return [{"tool": f"{app}_create_post",
-                 "args": {"text": "<string: composed post body>"}}]
-    if task_id == "agentic_send_post":
-        return [{"tool": f"{app}_create_post",
-                 "args": {"text": "<string: composed post body>"}}]
+    # agentic_composed_post merged into agentic_send_post (handled above)
     if task_id == "agentic_group_dm_summary":
         return [{"tool": f"{app}_get_dm_thread",
                  "args": {"thread_id": inst.get("thread_id", "")}}]
@@ -1503,11 +1498,17 @@ def _gt_agentic(inst: dict) -> dict:
     # Final user-facing response text only — no "should match user's voice"
     # commentary, no length guidance, no tool counts.
     example_responses: dict[str, str] = {
-        "agentic_user_tone_post": (
+        "agentic_community_post": (
             f"Catching up after the week — {top_hashtags[0] if top_hashtags else 'top topic'} "
             f"had a few good moments, the {top_hashtags[1] if len(top_hashtags) > 1 else 'second topic'} "
             f"crowd is heating up, and a few new {top_cats[0] if top_cats else 'interest'} clips "
             f"dropped. Anyone else watching?"
+        ),
+        # agentic_composed_post merged into agentic_send_post.
+        "agentic_send_post": (
+            voice_sample[:120] if voice_sample else
+            f"{inst.get('context') or inst.get('update', '<update>')[:80]} "
+            f"#{top_hashtags[0] if top_hashtags else 'tag'}"
         ),
         # agentic_moment_recommendation merged into personalized_recommendation
         # (slate-based ranking) — example_response is now a ranked-indexes
@@ -1527,17 +1528,6 @@ def _gt_agentic(inst: dict) -> dict:
         "agentic_vague_refind": (
             f"Found it — your post on {inst.get('topic','that topic')} from a few days back "
             f"(source_object_id=…). One-line summary of what was in it."
-        ),
-        "agentic_composed_post": (
-            voice_sample[:120] if voice_sample else
-            f"{inst.get('update', '<update>')[:80]} #{top_hashtags[0] if top_hashtags else 'tag'}"
-        ),
-        # Fallback only — the LLM-gen path produces the real, in-context
-        # post. Kept short and obviously placeholder so it's clear when
-        # the LLM-gen step was skipped.
-        "agentic_send_post": (
-            f"[draft for {target}] {inst.get('context', '<context>')[:80]} "
-            f"#{top_hashtags[0] if top_hashtags else 'tag'}"
         ),
         "agentic_group_dm_summary": (
             "Three friends in the thread discussed plans and a recent event. "
@@ -1573,9 +1563,8 @@ def _gt_agentic(inst: dict) -> dict:
         # the rubric grades voice_match against this signal, so a
         # reviewer needs to see what's being graded against.
         _VOICE_DEPENDENT = {
-            "agentic_user_tone_post", "agentic_composed_post",
-            "agentic_send_post", "agentic_cross_app_repost",
-            "agentic_auto_reply",
+            "agentic_community_post", "agentic_send_post",
+            "agentic_cross_app_repost", "agentic_auto_reply",
         }
         if task_id in _VOICE_DEPENDENT:
             ap_map = _PERSONA_CONTEXT.get("app_personas") or {}
@@ -1767,10 +1756,10 @@ def _gt_agentic(inst: dict) -> dict:
                     "(none — no explicit-negative engagements in window)"
                 )
 
-        # User-tone-post — private / self-censored topics list so the
+        # Send-post — private / self-censored topics list so the
         # (-) "Don't include anything they wouldn't post publicly" tag
         # is judgeable.
-        if task_id == "agentic_user_tone_post":
+        if task_id in ("agentic_community_post", "agentic_send_post"):
             self_cens = []
             uv2 = _PERSONA_CONTEXT.get("user_voice") or {}
             ap2_map = _PERSONA_CONTEXT.get("app_personas") or {}
@@ -1921,7 +1910,7 @@ def _gt_agentic(inst: dict) -> dict:
         # topic. Pulls from `_t6_seed` which keys off instance_id, so the
         # same persona_item shown here is the one the User Query topic
         # was derived from.
-        if task_id == "agentic_user_tone_post":
+        if task_id == "agentic_community_post":
             t6_seed = _t6_seed(inst)
             if t6_seed.get("persona_item"):
                 gtp_lines.append(
@@ -2655,14 +2644,14 @@ TEST_GT_EXTRACTORS = {
     "proactive_friend_feed_react":         _gt_proactive_friend_feed_react,
     "proactive_trending_feed_react":       _gt_proactive_trending_feed_react,
     "proactive_overactive_check":          _gt_proactive_overactive_check,
-    "agentic_user_tone_post":            _gt_agentic,
+    "agentic_community_post":            _gt_agentic,
+    # agentic_composed_post merged into agentic_send_post
+    "agentic_send_post":                   _gt_agentic,
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest":                   _gt_agentic,
     "agentic_cross_app_repost":            _gt_agentic,
     "agentic_auto_reply":                  _gt_agentic,
     "agentic_vague_refind":                _gt_agentic,
-    "agentic_composed_post":               _gt_agentic,
-    "agentic_send_post":                   _gt_agentic,
     "agentic_group_dm_summary":            _gt_agentic,
     "agentic_wrong_recipient_check":       _gt_agentic,
     "agentic_proactive_daily_catchup":     _gt_agentic,
@@ -2720,7 +2709,7 @@ def _q_active_mistake_prevention(inst: dict) -> str:
 
 def _t6_seed(inst: dict) -> dict:
     """Deterministically pick a seed topic + underlying persona_item for an
-    `agentic_user_tone_post` instance.
+    `agentic_send_post` instance.
 
     Index by hash of `instance_id` so different T6 instances of the same
     user get different topics. Returns:
@@ -2765,22 +2754,15 @@ def _t6_seed(inst: dict) -> dict:
     return {"topic": topic, "persona_item": chosen_pi}
 
 
-def _q_agentic_user_tone_post(inst: dict) -> str:
-    """First-person, scope-narrowed query. The user names a topic so the
-    agent has something concrete to write about. Seed comes from the user's
-    own engagement history (see `_t6_seed`).
-
-    Falls back to the legacy generic form when no seed is available (e.g.
-    sparse user data).
-    """
+def _q_agentic_community_post(inst: dict) -> str:
+    """Topic-based voice-matched post: the user names a topic."""
     seed = _t6_seed(inst)
     topic = (seed.get("topic") or "").lstrip("#")
     app = (inst.get("target_app") or "").strip()
     entry = (inst.get("entry_point") or "").strip()
+    target = app or "the target app"
     if not topic:
-        return f"[agentic] compose a post in the user's voice on {app}"
-    # Pick a template based on app + entry_point to vary phrasing across
-    # the 6 T6 instances per user without going random.
+        return f"can you post something for me on {target}?"
     templates = {
         ("instagram", "app_native"):    "wanna post about {topic} on instagram, write it for me",
         ("instagram", "chatbot_routed"): "draft me an instagram caption about {topic}",
@@ -2830,22 +2812,14 @@ def _q_agentic_vague_refind(inst: dict) -> str:
     return f"find that post I saw about {inst.get('topic', '')}"
 
 
-def _q_agentic_composed_post(inst: dict) -> str:
-    return f"[agentic] post on {inst.get('target_app', '')}: {inst.get('update', '')}"
-
-
 def _q_agentic_send_post(inst: dict) -> str:
-    ctx = (inst.get("context") or "").strip()
+    """Context/update-based post: the user provides a seed or narration."""
+    ctx = (inst.get("context") or inst.get("update") or "").strip()
     target = inst.get("target_app") or "the target app"
-    if not ctx:
-        return f"can you post something for me on {target}?"
-    # The user dictates context to the chatbot, then asks for a post.
-    # First-person, scope-narrowed: the user names what they want posted
-    # and explicitly delegates the writing to the chatbot. Strip a trailing
-    # period from the dictated context so the joiner doesn't produce an
-    # awkward double-period like "...vibes. — write that up...".
-    ctx_clean = ctx.rstrip(".!?")
-    return f"{ctx_clean} — write that up as a post on {target} for me, in my voice."
+    if ctx:
+        ctx_clean = ctx.rstrip(".!?")
+        return f"{ctx_clean} — write that up as a post on {target} for me, in my voice."
+    return f"can you post something for me on {target}?"
 
 
 # _q_agentic_draft_audit removed in workstream F.
@@ -2895,14 +2869,14 @@ TEST_QUERY_EXTRACTORS = {
     "e2_at_ai_followup":                   _q_at_ai_directive,
     "active_mistake_prevention":           _q_active_mistake_prevention,
     "e6_active_mistake_prevention":        _q_active_mistake_prevention,
-    "agentic_user_tone_post":            _q_agentic_user_tone_post,
+    "agentic_community_post":            _q_agentic_community_post,
+    # agentic_composed_post merged into agentic_send_post
+    "agentic_send_post":                   _q_agentic_send_post,
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest":                   _q_agentic_dm_digest,
     "agentic_cross_app_repost":            _q_agentic_cross_app_repost,
     "agentic_auto_reply":                  _q_agentic_auto_reply,
     "agentic_vague_refind":                _q_agentic_vague_refind,
-    "agentic_composed_post":               _q_agentic_composed_post,
-    "agentic_send_post":                   _q_agentic_send_post,
     # agentic_draft_audit removed in workstream F.
     "agentic_group_dm_summary":            _q_agentic_group_dm_summary,
     "agentic_wrong_recipient_check":       _q_agentic_wrong_recipient_check,
@@ -3037,8 +3011,8 @@ def _load_test_samples(
             _RENDER_FROM_EXTRACTOR = {
                 "at_ai_directive_followup", "e2_at_ai_followup",
                 # Voice-dependent agentic write tasks (existing)
-                "agentic_user_tone_post", "agentic_composed_post",
-                "agentic_send_post", "agentic_cross_app_repost",
+                "agentic_community_post", "agentic_send_post",
+                "agentic_cross_app_repost",
                 "agentic_auto_reply",
                 # D6 agentic tasks that gained windowed/inst evidence
                 "agentic_proactive_daily_catchup", "agentic_trending_alert",
