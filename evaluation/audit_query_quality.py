@@ -845,13 +845,6 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
                                           "trending hashtag the user actually disliked.",
                                         "kind": "llm", "evidence_fn": _evidence_disliked_today},
     # ---- Proactive actions (act vs restrain) -------------------------
-    "proactive_unfulfilled_stated_need": {"axis_name": "wrong_act_restrain_decision",
-                                          "axis_description":
-                                            "Gold acts with a one-sentence follow-up citing the user's prior "
-                                            "question. Foil either stays silent (failure to act) or acts in a "
-                                            "way that violates the subtlety constraints (over-long, fabricated, "
-                                            "directive instead of opt-in).",
-                                          "kind": "llm", "evidence_fn": _evidence_proactive_decision},
     "proactive_close_friend_update":     {"axis_name": "wrong_act_restrain_decision",
                                           "axis_description":
                                             "Gold acts with a one-sentence alert naming the friend. Foil "
@@ -1555,7 +1548,6 @@ def _dim_telegraph_avoidance(inst: dict, llm) -> DimensionResult:
         # daily_personalized_briefing removed in Step 4.3.
         "over_personalization_chatbot_text",
         "over_personalization_repetition_chatbot",
-        "proactive_unfulfilled_stated_need",
         "proactive_close_friend_update",
         "new_suggestions_chatbot",
     }
@@ -1640,7 +1632,59 @@ def _dim_no_rubric_leak(inst: dict, llm) -> DimensionResult:
     )
 
 
+def _dim_completeness(inst: dict, llm) -> DimensionResult:
+    """Every instance must have non-empty example_response. Tasks that
+    carry user-facing queries must also have a user_query. Dict-typed
+    groundtruth_preference is allowed for structured tasks but flagged
+    if the task is not in the known set."""
+    task_type = inst.get("task_type") or inst.get("task_id") or ""
+    missing: list[str] = []
+
+    ex = inst.get("example_response", "")
+    if isinstance(ex, dict):
+        ex = ex.get("text") or ex.get("response") or ""
+    if not str(ex).strip():
+        missing.append("example_response")
+
+    inf = inst.get("inferior_response", "")
+    if isinstance(inf, dict):
+        inf = inf.get("text") or ""
+    if not str(inf).strip():
+        missing.append("inferior_response")
+
+    _NO_QUERY_TASKS = {
+        "personalized_recommendation", "hidden_persona_recommendation",
+        "at_ai_directive_followup", "daily_personalized_briefing",
+        "short_vs_long_term_lifecycle",
+        "over_personalization_repetition_recsys",
+        "over_personalization_repetition_chatbot",
+        "restraint_sensitive_event_silence",
+    }
+    _PROACTIVE_PREFIXES = ("proactive_", "agentic_")
+    is_no_query = (task_type in _NO_QUERY_TASKS
+                   or any(task_type.startswith(p) for p in _PROACTIVE_PREFIXES))
+    if not is_no_query:
+        uq = inst.get("user_query") or inst.get("user_message") or inst.get("query") or ""
+        if not str(uq).strip():
+            missing.append("user_query")
+
+    gt = inst.get("groundtruth_preference", "")
+    if not gt and gt != 0:
+        missing.append("groundtruth_preference")
+
+    if missing:
+        return DimensionResult(
+            name="completeness", passed=False, score=0.0,
+            reason=f"empty fields: {', '.join(missing)}"[:240],
+        )
+    return DimensionResult(
+        name="completeness", passed=True, score=1.0,
+        reason="all required fields populated",
+    )
+
+
 _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
+    _dim_completeness,            # deterministic — empty-field check
     _dim_schema_sanity,           # deterministic, run first
     _dim_sensitive_probe_placement,  # deterministic
     _dim_telegraph_avoidance,     # deterministic (regex + substring)
