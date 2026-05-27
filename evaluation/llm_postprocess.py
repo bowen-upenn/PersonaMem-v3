@@ -351,18 +351,45 @@ _STANCE_REGISTER_LEXICON: dict[str, list[str]] = {
 }
 
 
+_GENERIC_STOP = frozenset({
+    "a", "an", "the", "of", "for", "in", "on", "to", "and", "but", "or",
+    "is", "be", "as", "at", "by", "it", "no", "not", "too", "so", "how",
+    "do", "did", "can", "has", "had", "was", "were", "am", "are", "than",
+    "more", "most", "very", "also", "like", "with", "from", "that", "this",
+    "what", "when", "who", "her", "his", "she", "he", "they", "them",
+    "low", "key", "high", "good", "bad", "new", "old", "big", "long",
+    "first", "last", "group", "fan", "talk", "dry", "self",
+})
+
+
 def _dynamic_keywords_for_label(label: str) -> list[str]:
-    """Generate keywords from a stance/register label when not in static lexicon."""
+    """Generate keywords from a stance/register label when not in static lexicon.
+
+    Splits on spaces first, preserving hyphenated compounds (e.g. "low-key"
+    stays intact). Individual parts shorter than 4 chars are dropped.
+    """
     if not label:
         return []
-    parts = re.split(r'[-_\s]+', label.lower())
-    stop = {"a", "an", "the", "of", "for", "in", "on", "to", "and", "but",
-            "or", "is", "be", "as", "at", "by", "it", "no"}
-    return [p for p in parts if len(p) >= 3 and p not in stop]
+    result: list[str] = []
+    for part in label.lower().split():
+        if part in _GENERIC_STOP:
+            continue
+        if "-" in part:
+            result.append(part)
+            for sub in part.split("-"):
+                if len(sub) >= 4 and sub not in _GENERIC_STOP:
+                    result.append(sub)
+        elif len(part) >= 4 and part not in _GENERIC_STOP:
+            result.append(part)
+    return result
 
 
 def _extract_function_word_tokens(user_voice: dict) -> list[str]:
-    """Extract quoted words/phrases from function_word_profile."""
+    """Extract quoted words/phrases from function_word_profile.
+
+    Filters out ultra-common single words that appear in any text.
+    Multi-word phrases (e.g. "a little", "low-key") pass regardless.
+    """
     idio = user_voice.get("idiolect") or {}
     fwp = idio.get("function_word_profile", "") if isinstance(idio, dict) else ""
     if not isinstance(fwp, str) or not fwp:
@@ -371,7 +398,11 @@ def _extract_function_word_tokens(user_voice: dict) -> list[str]:
     result = []
     for t in tokens:
         t = t.rstrip('.,;:!? ')
-        if t and len(t) >= 2:
+        if not t:
+            continue
+        if " " in t or "-" in t:
+            result.append(t)
+        elif len(t) >= 3 and t.lower() not in _GENERIC_STOP:
             result.append(t)
     return result
 
@@ -450,13 +481,32 @@ def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
             _add(text[idx:idx + len(needle)])
             idx = text_lower.find(needle, idx + len(needle))
 
+    # 1b. Constructional template example realizations — high-value,
+    #     user-specific voice patterns. Full substring match.
+    for ex in _extract_template_example_tokens(user_voice):
+        needle = ex.lower()
+        idx = text_lower.find(needle)
+        while idx != -1:
+            _add(text[idx:idx + len(needle)])
+            idx = text_lower.find(needle, idx + len(needle))
+
+    # 1c. Function word tokens — distinctive function words/phrases
+    #     from the user's idiolect profile (e.g. "just", "kinda",
+    #     "a little"). Word-boundary-guarded to avoid noise.
+    for tok in _extract_function_word_tokens(user_voice):
+        needle = tok.lower()
+        idx = text_lower.find(needle)
+        while idx != -1:
+            left_ok = idx == 0 or not text_lower[idx - 1].isalnum()
+            right_idx = idx + len(needle)
+            right_ok = right_idx == len(text_lower) or not text_lower[right_idx].isalnum()
+            if left_ok and right_ok:
+                _add(text[idx:right_idx])
+            idx = text_lower.find(needle, idx + len(needle))
+
     # 2. Stance / register surface markers — pulled from the user_voice's
-    #    repertoire + idiolect blocks. We collect short keyword tokens
-    #    associated with each labeled stance / register, then case-insens
-    #    substring-match against the text. This is what makes the contrast
-    #    visible when the gold lands "yeah, this one did its job. clean
-    #    lines, no filler" and the foil shifts to "as a read on the
-    #    composition, this succeeds".
+    #    repertoire + idiolect blocks. Static lexicon lookup with dynamic
+    #    label-derived keyword fallback for labels not in the lexicon.
     repertoire = user_voice.get("repertoire") or {}
     stance_labels: list[str] = []
     for s in (repertoire.get("active_stances") or repertoire.get("stances") or []):
@@ -472,6 +522,8 @@ def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
                 stance_labels.append(s)
     for label in stance_labels:
         kws = _STANCE_REGISTER_LEXICON.get(label.lower(), [])
+        if not kws:
+            kws = _dynamic_keywords_for_label(label)
         for kw in kws:
             needle = kw.lower()
             idx = text_lower.find(needle)
@@ -2883,6 +2935,8 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
     n_voice_check_passed = 0
     n_voice_check_failed = 0
     n_voice_check_regen = 0
+    n_voice_align_passed = 0
+    n_voice_align_failed = 0
 
     # Lazy-build persona ctx once per t_test so we don't re-scan per instance.
     _ctx_cache: dict[int, dict] = {}
@@ -3039,6 +3093,17 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                 _spans = _extract_voice_evidence_spans(example, _uv_block or {})
                 if _spans:
                     inst["example_response_voice_evidence"] = _spans
+                n_feats = len(_spans) if _spans else 0
+                passed = n_feats >= MIN_VOICE_FEATURES_EXAMPLE
+                inst["voice_alignment_check"] = {
+                    "passed": passed,
+                    "n_features": n_feats,
+                    "min_required": MIN_VOICE_FEATURES_EXAMPLE,
+                }
+                if passed:
+                    n_voice_align_passed += 1
+                else:
+                    n_voice_align_failed += 1
 
             # Workstream I: self-check. Skip for deterministic-gold tasks —
             # the gold is structured JSON, not natural-language prose, so
@@ -3194,6 +3259,8 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
               f"voice_check_passed={n_voice_check_passed} "
               f"voice_check_failed={n_voice_check_failed} "
               f"voice_check_regen={n_voice_check_regen} "
+              f"voice_align_passed={n_voice_align_passed} "
+              f"voice_align_failed={n_voice_align_failed} "
               f"chatbot_triplet_built={n_chatbot_triplet_built} "
               f"chatbot_triplet_failed={n_chatbot_triplet_failed}")
     bm["postprocess_stats"] = {
@@ -3206,5 +3273,7 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
         "voice_check_passed": n_voice_check_passed,
         "voice_check_failed": n_voice_check_failed,
         "voice_check_regen": n_voice_check_regen,
+        "voice_align_passed": n_voice_align_passed,
+        "voice_align_failed": n_voice_align_failed,
     }
     return bm

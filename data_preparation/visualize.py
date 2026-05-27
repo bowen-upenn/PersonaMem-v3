@@ -16,6 +16,7 @@ from __future__ import annotations
 import csv
 import os
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -1162,6 +1163,68 @@ _FORMAL_REGISTER_MARKERS: list[str] = [
 ]
 
 
+_GENERIC_STOP = frozenset({
+    "a", "an", "the", "of", "for", "in", "on", "to", "and", "but", "or",
+    "is", "be", "as", "at", "by", "it", "no", "not", "too", "so", "how",
+    "do", "did", "can", "has", "had", "was", "were", "am", "are", "than",
+    "more", "most", "very", "also", "like", "with", "from", "that", "this",
+    "what", "when", "who", "her", "his", "she", "he", "they", "them",
+    "low", "key", "high", "good", "bad", "new", "old", "big", "long",
+    "first", "last", "group", "fan", "talk", "dry", "self",
+})
+
+
+def _dynamic_keywords_for_label(label: str) -> list[str]:
+    """Generate keywords from a stance/register label when not in static lexicon."""
+    if not label:
+        return []
+    result: list[str] = []
+    for part in label.lower().split():
+        if part in _GENERIC_STOP:
+            continue
+        if "-" in part:
+            result.append(part)
+            for sub in part.split("-"):
+                if len(sub) >= 4 and sub not in _GENERIC_STOP:
+                    result.append(sub)
+        elif len(part) >= 4 and part not in _GENERIC_STOP:
+            result.append(part)
+    return result
+
+
+def _extract_function_word_tokens(user_voice: dict) -> list[str]:
+    """Extract quoted words/phrases from function_word_profile."""
+    idio = user_voice.get("idiolect") or {}
+    fwp = idio.get("function_word_profile", "") if isinstance(idio, dict) else ""
+    if not isinstance(fwp, str) or not fwp:
+        return []
+    tokens = re.findall(r'"([^"]+)"', fwp)
+    result = []
+    for t in tokens:
+        t = t.rstrip('.,;:!? ')
+        if not t:
+            continue
+        if " " in t or "-" in t:
+            result.append(t)
+        elif len(t) >= 3 and t.lower() not in _GENERIC_STOP:
+            result.append(t)
+    return result
+
+
+def _extract_template_example_tokens(user_voice: dict) -> list[str]:
+    """Extract example realizations from constructional_templates."""
+    idio = user_voice.get("idiolect") or {}
+    templates = (idio.get("constructional_templates") or []) if isinstance(idio, dict) else []
+    result = []
+    for t in templates:
+        if not isinstance(t, dict):
+            continue
+        ex = t.get("example_realization", "")
+        if isinstance(ex, str) and ex.strip():
+            result.append(ex.strip())
+    return result
+
+
 def _annotate_voice_features(
     voice_block: str,
     example_text: str,
@@ -1212,6 +1275,8 @@ def _annotate_voice_features(
                      if isinstance(p, str) and p.strip()]
     active_stances = (app_persona or {}).get("active_stances") or []
     active_registers = (app_persona or {}).get("active_registers") or []
+    func_word_tokens = _extract_function_word_tokens(user_voice or {})
+    template_examples = _extract_template_example_tokens(user_voice or {})
 
     def _has(text_lc: str, tok: str) -> bool:
         return bool(tok) and tok.lower() in text_lc
@@ -1307,18 +1372,37 @@ def _annotate_voice_features(
                 new_line += "]"
                 n_inf_violate += 1
 
-        # Idiolect template line — pattern-shape heuristic
+        # Idiolect template line — pattern-shape heuristic + template
+        # example keyword detection. When the opener heuristic misses
+        # (e.g. the example doesn't start with a stance marker but still
+        # uses the user's template structure), fall through to keyword
+        # matching against template example realizations.
         elif "idiolect template" in lc:
             ex_p = _idiolect_pattern_hit(ex)
             inf_p = _idiolect_pattern_hit(inf)
             if ex_p and inf_p:
                 new_line += " [honored-by-both]"
+                n_ex_honor += 1
             elif ex_p and not inf_p:
                 new_line += " [honored-by-example] [dropped-by-inferior]"
                 n_ex_honor += 1
                 n_inf_drop += 1
             elif inf_p and not ex_p:
                 new_line += " [present-only-in-inferior]"
+            else:
+                tmpl_tags: list[str] = []
+                for tmpl_ex in template_examples:
+                    ex_hit = _has(ex_lc, tmpl_ex)
+                    inf_hit = _has(inf_lc, tmpl_ex)
+                    if ex_hit and not inf_hit:
+                        tmpl_tags.append(f'"{tmpl_ex[:30]}"')
+                        n_ex_honor += 1
+                        n_inf_drop += 1
+                    elif ex_hit and inf_hit:
+                        tmpl_tags.append(f'"{tmpl_ex[:30]}" (both)')
+                        n_ex_honor += 1
+                if tmpl_tags:
+                    new_line += f" [template-example honored: {', '.join(tmpl_tags[:2])}]"
 
         # Per-app stances line — aggregate stance-lexicon hits
         elif "stances=[" in lc:
@@ -1326,6 +1410,8 @@ def _annotate_voice_features(
             dropped: list[str] = []
             for st in active_stances:
                 kws = _STANCE_REGISTER_LEXICON.get(str(st).lower(), [])
+                if not kws:
+                    kws = _dynamic_keywords_for_label(st)
                 if not kws:
                     continue
                 ex_hit = any(_has(ex_lc, k) for k in kws)
@@ -1344,21 +1430,41 @@ def _annotate_voice_features(
 
         # Per-app registers line — same logic as stances
         elif "registers=[" in lc and "active_registers" not in lc:
-            # Some renderers emit `registers=[...]` on the same line as
-            # `stances=[...]`. Skip duplicate annotation if stances line
-            # was already handled above.
             if "stances=[" not in lc:
                 honored = []
                 for rg in active_registers:
                     kws = _STANCE_REGISTER_LEXICON.get(str(rg).lower(), [])
                     if not kws:
+                        kws = _dynamic_keywords_for_label(rg)
+                    if not kws:
                         continue
                     ex_hit = any(_has(ex_lc, k) for k in kws)
-                    if ex_hit:
+                    inf_hit = any(_has(inf_lc, k) for k in kws)
+                    if ex_hit and not inf_hit:
                         honored.append(rg)
+                        n_ex_honor += 1
+                        n_inf_drop += 1
+                    elif ex_hit and inf_hit:
+                        honored.append(f"{rg} (both)")
                         n_ex_honor += 1
                 if honored:
                     new_line += f" [honored-by-example: {', '.join(honored[:3])}]"
+
+        # Idiolect markers line — check function word tokens
+        elif "idiolect markers" in lc:
+            fw_honored: list[str] = []
+            for tok in func_word_tokens:
+                ex_hit = _has(ex_lc, tok)
+                inf_hit = _has(inf_lc, tok)
+                if ex_hit and not inf_hit:
+                    fw_honored.append(f'"{tok}"')
+                    n_ex_honor += 1
+                    n_inf_drop += 1
+                elif ex_hit and inf_hit:
+                    fw_honored.append(f'"{tok}" (both)')
+                    n_ex_honor += 1
+            if fw_honored:
+                new_line += f" [function-words honored: {', '.join(fw_honored[:4])}]"
 
         annotated.append(new_line)
 
