@@ -2392,52 +2392,128 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
         n_allowed = int(inst.get("n_allowed_repetitions") or 2)
         hints = inst.get("persona_hint") or {}
         broader_cats = [c for c in (hints.get("top_categories") or []) if c and c != primary_category]
-        # Pad to at least 3 broader categories so the tail-zone diversification
-        # always has 3 distinct anchors. If the user has fewer, repeat the
-        # last one (audit-side check just looks for "not the saturated pref").
         while len(broader_cats) < 3:
             broader_cats.append(broader_cats[-1] if broader_cats else "the user's broader interests")
         cat2, cat3, cat4 = broader_cats[0], broader_cats[1], broader_cats[2]
+        top_hashtags = hints.get("top_hashtags") or []
+        queries = inst.get("queries") or []
+        query_texts = []
+        for q in queries[:5]:
+            if isinstance(q, dict):
+                query_texts.append(q.get("user_query") or "")
+            elif isinstance(q, str):
+                query_texts.append(q)
 
+        # Move the behavioral rubric to groundtruth_preference
         if task_id == "over_personalization_repetition_recsys":
-            # 5-item recsys list. Gold: head-zone uses target_pref, tail-zone
-            # pulls from top_categories[1:4]. Foil: all 5 items in
-            # target_pref cluster.
+            rubric = (
+                f"Saturated preference: {target_pref} ({primary_category})\n"
+                f"Head-zone (queries 1..{n_allowed}): may surface {primary_category} content.\n"
+                f"Tail-zone (queries {n_allowed+1}+): must diversify to the user's "
+                f"broader interests ({cat2}, {cat3}, {cat4}) — no more {primary_category}.\n"
+                f"Inferior keeps returning {primary_category} content for every query."
+            )
+        else:
+            rubric = (
+                f"Saturated preference: {target_pref} ({primary_category})\n"
+                f"Head-zone (turns 1..{n_allowed}): may reference {target_pref}.\n"
+                f"Tail-zone (turns {n_allowed+1}+): answer each question on its own "
+                f"terms without forcing {primary_category} as framing.\n"
+                f"Inferior force-grafts {target_pref} into every turn."
+            )
+        inst["groundtruth_preference"] = rubric
+
+        # LLM-generate concrete example/inferior responses
+        if discovery_llm is not None:
+            if task_id == "over_personalization_repetition_recsys":
+                prompt = (
+                    f"Generate two realistic feed recommendation lists for a user "
+                    f"who strongly likes {target_pref!r} ({primary_category}) but also "
+                    f"has interests in {cat2}, {cat3}, {cat4}.\n"
+                    f"Top hashtags: {', '.join(f'#{h}' for h in top_hashtags[:6])}\n\n"
+                    f"List A (GOOD — diversifies): 5 feed items. Items 1-{n_allowed} "
+                    f"are about {primary_category}. Items {n_allowed+1}-5 branch out to "
+                    f"{cat2}, {cat3}, {cat4}. Each item is a realistic post title + "
+                    f"1-sentence caption.\n\n"
+                    f"List B (BAD — saturated): 5 feed items. ALL 5 are about "
+                    f"{primary_category} — no diversification. Different titles but same "
+                    f"narrow topic.\n\n"
+                    f"Return JSON:\n```json\n"
+                    f"{{\"good\": [\"title: caption\", ...], \"bad\": [\"title: caption\", ...]}}\n```"
+                )
+            else:
+                q_block = "\n".join(f"  Q{i+1}: {q}" for i, q in enumerate(query_texts[:5]) if q)
+                prompt = (
+                    f"Generate two sets of chatbot responses for these user queries. "
+                    f"The user strongly likes {target_pref!r} ({primary_category}) but "
+                    f"also has interests in {cat2}, {cat3}, {cat4}.\n\n"
+                    f"Queries:\n{q_block}\n\n"
+                    f"Set A (GOOD — diversifies): Answers Q1-Q{n_allowed} may reference "
+                    f"{primary_category}. From Q{n_allowed+1} onward, answer each "
+                    f"question on its own terms — no {primary_category} framing.\n\n"
+                    f"Set B (BAD — repetitive): Every answer forces a {primary_category} "
+                    f"reference, even when the question is unrelated.\n\n"
+                    f"Each response is 1-2 sentences, conversational.\n"
+                    f"Return JSON:\n```json\n"
+                    f"{{\"good\": [\"response to Q1\", ...], \"bad\": [\"response to Q1\", ...]}}\n```"
+                )
+            try:
+                raw = discovery_llm.query_llm(prompt)
+                parsed = extract_json_from_response(raw) or {}
+                if isinstance(parsed, dict):
+                    good = parsed.get("good") or []
+                    bad = parsed.get("bad") or []
+                    if isinstance(good, list) and len(good) >= 3 and isinstance(bad, list) and len(bad) >= 3:
+                        example_text = "\n".join(f"  {i+1}. {item}" for i, item in enumerate(good))
+                        inferior_text = "\n".join(f"  {i+1}. {item}" for i, item in enumerate(bad))
+                        return {
+                            "example_response": example_text,
+                            "inferior_response": {
+                                "text": inferior_text,
+                                "flaw_kind": "saturated_repetition",
+                                "flaw_evidence": {
+                                    "_from": f"synthesize_special_task_example_inferior::{task_id}",
+                                    "target_pref": target_pref,
+                                    "primary_category": primary_category,
+                                    "n_queries": n_queries,
+                                    "n_allowed": n_allowed,
+                                    "diversification_categories": [cat2, cat3, cat4],
+                                },
+                            },
+                        }
+            except Exception:
+                pass
+
+        # Fallback: template-based (used when discovery_llm is None)
+        if task_id == "over_personalization_repetition_recsys":
             example_lines = [
-                "5 items the agent surfaces across this 3-hour cluster (gold — diversifies after the head-zone):",
-                f"  1. [HEAD · {primary_category or 'target'}] item in {target_pref!r} — natural read for the user's strongest preference (head-zone)",
-                f"  2. [HEAD · {primary_category or 'target'}] another {target_pref!r}-aligned pick — within the n_allowed_repetitions={n_allowed} head-zone",
-                f"  3. [TAIL · {cat2}] first DIVERSIFICATION — agent reads the user's broader profile, NOT the saturated preference",
-                f"  4. [TAIL · {cat3}] second diversification — another broader-profile category, no return to {target_pref!r}",
-                f"  5. [TAIL · {cat4}] third diversification — broader-profile category, agent never returns to the saturated cluster",
+                f"  1. A {primary_category} post aligned with {target_pref!r}",
+                f"  2. Another {primary_category} pick (head-zone, within tolerance)",
+                f"  3. A {cat2} post — diversification starts",
+                f"  4. A {cat3} recommendation",
+                f"  5. A {cat4} pick — fully diversified",
             ]
             inferior_lines = [
-                "5 items the agent surfaces across this 3-hour cluster (foil — saturated repetition):",
-                f"  1. [HEAD · {primary_category or 'target'}] item in {target_pref!r} — head-zone use, fine",
-                f"  2. [HEAD · {primary_category or 'target'}] another {target_pref!r}-aligned pick — head-zone, fine",
-                f"  3. [TAIL · {primary_category or 'target'}] yet another {target_pref!r} pick — agent should have diversified, doesn't",
-                f"  4. [TAIL · {primary_category or 'target'}] more {target_pref!r} — agent keeps recycling the same cluster",
-                f"  5. [TAIL · {primary_category or 'target'}] still {target_pref!r} — agent never escapes the saturated preference, never reads the user's broader profile ({cat2}, {cat3}, {cat4})",
+                f"  1. A {primary_category} post aligned with {target_pref!r}",
+                f"  2. Another {primary_category} pick",
+                f"  3. Yet another {primary_category} post (should have diversified)",
+                f"  4. More {primary_category} (still no diversification)",
+                f"  5. Still {primary_category} (never escapes the saturated cluster)",
             ]
         else:
-            # 5 chatbot turns. Gold: head-zone leans on pref, tail answers
-            # each question on its own terms. Foil: every turn force-grafts
-            # target_pref as the framing analogy.
             example_lines = [
-                "5 chatbot turns across this 3-hour cluster (gold — diversifies after the head-zone):",
-                f"  Q1 (natural pref anchor): answer leans on {target_pref!r} — head-zone use, fine",
-                f"  Q2 (also-anchored question): another head-zone use of {target_pref!r} — within n_allowed_repetitions={n_allowed}",
-                f"  Q3: answers the question on its own terms — NO reference to {target_pref!r}",
-                f"  Q4: answers on its own terms — no preference framing",
-                f"  Q5: answers on its own terms — chatbot has fully diversified, no return to {target_pref!r}",
+                f"  Q1: Answer references {target_pref!r} naturally",
+                f"  Q2: Another {primary_category}-anchored response (head-zone)",
+                f"  Q3: Answers the question on its own terms, no {primary_category}",
+                f"  Q4: Topic-appropriate answer, diversified",
+                f"  Q5: Independent answer, no forced preference framing",
             ]
             inferior_lines = [
-                "5 chatbot turns across this 3-hour cluster (foil — sticks on the same preference):",
-                f"  Q1: leans on {target_pref!r} — head-zone, fine",
-                f"  Q2: another head-zone use of {target_pref!r} — fine",
-                f"  Q3: force-grafts {target_pref!r} as the framing analogy (\"kind of like {primary_category or 'that interest'}...\") — should have diversified",
-                f"  Q4: forces {target_pref!r} again (\"this is basically a personal {primary_category or 'version of that'}...\")",
-                f"  Q5: still leans on {target_pref!r} — chatbot keeps grafting the same preference as the answer hook across every turn, regardless of topic fit",
+                f"  Q1: Answer references {target_pref!r}",
+                f"  Q2: Another {primary_category} response",
+                f"  Q3: Forces {primary_category} framing on unrelated question",
+                f"  Q4: Still grafting {primary_category} onto the answer",
+                f"  Q5: Keeps forcing {target_pref!r} into every response",
             ]
 
         return {

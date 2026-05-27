@@ -4400,18 +4400,28 @@ def build_benchmark(
     # Attach GT extractor output (example/inferior/groundtruth) to c1c, c1d,
     # and geo_shift instances. These task types are not in _PERSONALIZATION_TASKS
     # so the postprocess loop skips them — we must populate the fields here.
+    # When discovery_llm is available, use LLM-generated concrete
+    # example/inferior instead of the rubric-style templates.
     try:
         from data_preparation.visualize import (
             _gt_over_personalization_repetition_recsys,
             _gt_over_personalization_repetition_chatbot,
             _gt_local_recommendation_geo_shift,
         )
+        from evaluation.llm_postprocess import synthesize_special_task_example_inferior
         for inst in c1c_clusters:
             try:
                 gt = _gt_over_personalization_repetition_recsys(inst)
                 for k in ("example_response", "inferior_response", "groundtruth_preference", "rubric_tags"):
                     if k in gt and gt[k] is not None:
                         inst[k] = gt[k]
+                synth = synthesize_special_task_example_inferior(
+                    inst, "over_personalization_repetition_recsys",
+                    discovery_llm=discovery_llm,
+                )
+                if synth:
+                    inst["example_response"] = synth["example_response"]
+                    inst["inferior_response"] = synth["inferior_response"]
             except Exception:
                 pass
         for inst in c1d_chatbot_clusters:
@@ -4420,6 +4430,13 @@ def build_benchmark(
                 for k in ("example_response", "inferior_response", "groundtruth_preference", "rubric_tags"):
                     if k in gt and gt[k] is not None:
                         inst[k] = gt[k]
+                synth = synthesize_special_task_example_inferior(
+                    inst, "over_personalization_repetition_chatbot",
+                    discovery_llm=discovery_llm,
+                )
+                if synth:
+                    inst["example_response"] = synth["example_response"]
+                    inst["inferior_response"] = synth["inferior_response"]
             except Exception:
                 pass
         for inst in geo_shift_instances:

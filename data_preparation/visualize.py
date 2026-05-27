@@ -723,12 +723,10 @@ def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
     )
 
     return {
-        "example_response": (
-            f"Across {n_queries} surface-diverse chatbot turns where each "
-            f"naturally invites '{target_pref}', invoke it freely on "
-            f"turns 1..{head_window}; from turn #{tail_start} onward "
-            f"answer the user's question without falling back to the "
-            f"preference, even if it's a tempting anchor."
+        "example_response": inst.get("example_response") or (
+            f"Turns 1..{head_window} may reference '{target_pref}'. "
+            f"From turn #{tail_start} onward, answer each question on "
+            f"its own terms without forcing the preference."
         ),
         "groundtruth_preference": (
             f"Target preference (must be backed off after {n_allowed + 1} uses): "
@@ -795,14 +793,10 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
     tail_start = head_window + 1  # query #tail_start onward must diversify
 
     return {
-        "example_response": (
-            f"Queries 1..{head_window} (the {n_allowed}-repetition tolerance) may "
-            f"freely lean on '{target_pref}'. From query #{tail_start} onward, "
-            f"use NEW persona-aligned hashtags — no overlap with any prior "
-            f"response in the cluster, < 30% reuse of the head's hashtag "
-            f"pool, < 0.5 token Jaccard with prior titles+captions, and "
-            f"hashtags must still fit this user (not the off-persona "
-            f"distractor pool)."
+        "example_response": inst.get("example_response") or (
+            f"Queries 1..{head_window} may lean on '{target_pref}'. "
+            f"From query #{tail_start} onward, diversify to the user's "
+            f"broader interests."
         ),
         "groundtruth_preference": (
             f"Target preference: {target_pref}\n"
