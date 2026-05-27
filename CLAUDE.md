@@ -6,8 +6,12 @@
 - Key milestones include: new features, pipeline changes, bug fixes, data reprocessing with code changes
 - Always push to the current branch after committing
 
-## Regeneration
-- **NEVER** start the persona pipeline (reprocess/regenerate data) without explicitly asking the user first. LLM calls are expensive and other sessions may be editing code concurrently.
+## Regeneration & Evaluation
+- **NEVER** start any of the following without explicitly asking the user first and receiving a clear "yes":
+  - Persona pipeline (`scripts/run_persona_pipeline.py`)
+  - Query regeneration (`scripts/prepare_eval_data.py`)
+  - Evaluation runs (`evaluation/run_eval.py`)
+- LLM calls are expensive and other sessions may be editing code concurrently. Even if the user says "regen" or "run eval" in the same message as other instructions, **ask before launching**.
 - When running a regen (via `scripts/run_persona_pipeline.py` or similar), always redirect stdout + stderr to files under `/tmp/persona_regen/{user_id}.{stdout,stderr}` AND launch a tmux session named `persona{user_id}` that tails both so the user can watch progress live. tqdm progress bars write to stderr, so stderr is the stream that carries real-time per-row progress. Example:
   ```bash
   mkdir -p /tmp/persona_regen
