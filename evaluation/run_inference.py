@@ -255,7 +255,7 @@ def main():
     parser.add_argument("--enable_llm_judge", action="store_true", help="Enable LLM-as-judge optional layer")
     parser.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"), help="Baseline (llm_longctx) model — QueryLLM backend (Azure/OpenAI/Claude/Gemini)")
     parser.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"), help="Claude Code subagent model for agent_tools (haiku, sonnet, opus)")
-    parser.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "claude-opus"), help="Judge model (QueryLLM)")
+    parser.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.4"), help="Judge model (QueryLLM)")
     parser.add_argument("--context_budget", type=int, default=None, help="Token budget for long-context modes")
     parser.add_argument("--rate_limit", type=int, default=50, help="LLM rate limit per minute")
     parser.add_argument("--dry_run", action="store_true", help="Build prompts without calling LLMs")
