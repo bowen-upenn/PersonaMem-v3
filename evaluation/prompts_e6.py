@@ -140,11 +140,18 @@ FORBIDDEN patterns (never produce):
 - Meta-framing verbs: troubleshoot, figure out, work through, navigate
 - Long noun phrases — say things plainly
 
-Good examples (form only):
-- "what time should I leave for the airport tomorrow?"
+Good examples (form only — DO NOT reuse these verbatim):
 - "can you draft something quick to dani about saturday?"
 - "what's a good takeout pick near here?"
+- "did that appointment ever get confirmed?"
 - (proactive — empty string, agent volunteers the alert on its own)
+
+DIVERSITY RULE (CRITICAL): Each candidate pair must use a DIFFERENT
+archetype (A–E above) or a different form (1–8 above). Do NOT produce
+multiple "what time should I leave" / departure-time / transit queries.
+Do NOT produce multiple "can I squeeze X in before Y" scheduling queries.
+Spread across the full range: calendar conflicts, geo mismatches,
+stale preferences, DM contradictions, double-bookings, etc.
 
 ```json
 [

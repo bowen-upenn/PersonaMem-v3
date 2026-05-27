@@ -415,6 +415,7 @@ def build_e6_active_mistake_prevention(
     harvested = {"t_anchor": t_anchor}
     surviving: list[dict] = []
     seen_summaries: set[str] = set()
+    seen_queries: set[str] = set()
     for i, c in enumerate(candidates):
         if not _validate_signal_grounding(c, harvested):
             continue
@@ -427,7 +428,6 @@ def build_e6_active_mistake_prevention(
             if summary_norm == existing:
                 dup = True
                 break
-            # Simple token-overlap dedupe
             set_a = set(summary_norm.split())
             set_b = set(existing.split())
             if set_a and set_b:
@@ -437,7 +437,24 @@ def build_e6_active_mistake_prevention(
                     break
         if dup:
             continue
+        # Query diversity: reject if the triggering_user_query is too
+        # similar to an already-accepted query (catches repetitive
+        # "what time should I leave" / "can I squeeze X in" patterns).
+        query_norm = _normalize_text(c.get("triggering_user_query", ""))
+        if query_norm and seen_queries:
+            query_tokens = set(query_norm.split())
+            for eq in seen_queries:
+                eq_tokens = set(eq.split())
+                if query_tokens and eq_tokens:
+                    q_overlap = len(query_tokens & eq_tokens) / max(1, min(len(query_tokens), len(eq_tokens)))
+                    if q_overlap > 0.6:
+                        dup = True
+                        break
+        if dup:
+            continue
         seen_summaries.add(summary_norm)
+        if query_norm:
+            seen_queries.add(query_norm)
         surviving.append(c)
 
     # ---- cap at 10 pairs ----
