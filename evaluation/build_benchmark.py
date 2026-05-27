@@ -1157,12 +1157,17 @@ def build_task_b_arms(
             )
         t_test = c["source_timestamp"]
         all_prefs = _dedup_user_prefs(bq, user_id, t_test)
-        # Phase L.9: strict topical-alignment filter on top-K (cap k=3).
-        # Control arm has no held_out, so only query-token alignment applies.
+        # Restraint arms test over-personalization on OFF-TOPIC queries —
+        # topical alignment would zero out the pool (the query is
+        # intentionally unrelated). Use unfiltered top-engaged prefs so the
+        # GT always names what the agent must NOT surface.
+        is_restraint = arm in ("control", "adversarial", "stale",
+                               "conversational_drift", "distractor_reject")
         top_k = _build_top_k_relevant_prefs(
             all_prefs, c["user_query"], c["source_hashtags"],
-            k=3, held_out_preference=c.get("held_out_preference"),
-            require_topical_alignment=True,
+            k=5 if is_restraint else 3,
+            held_out_preference=c.get("held_out_preference"),
+            require_topical_alignment=not is_restraint,
         )
         # Build target list = held_out + top_k (deduplicated). This becomes
         # the `gt_slice.target` consumed by score_response_against_slice.
