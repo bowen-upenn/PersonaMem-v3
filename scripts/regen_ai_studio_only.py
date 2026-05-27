@@ -95,7 +95,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--user_id", required=True)
     parser.add_argument("--backend_dir", default="backend")
-    parser.add_argument("--model", default=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5.4"))
+    parser.add_argument("--model", default=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-5.5"))
     parser.add_argument("--mini_model", default="gpt-5.4-mini")
     parser.add_argument("--rate_limit", type=int, default=50)
     parser.add_argument("--verbose", action="store_true")

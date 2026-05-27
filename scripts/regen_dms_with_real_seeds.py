@@ -38,7 +38,7 @@ except Exception:
 
 def _build_llm_client():
     from query_llm import QueryLLM
-    model = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME") or "gpt-5.4"
+    model = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME") or "gpt-5.5"
     client = QueryLLM({"models": {"llm_model": model}}, rate_limit_per_min=120)
     print(f"[regen_dms] LLM client ready (model={model})")
     return client

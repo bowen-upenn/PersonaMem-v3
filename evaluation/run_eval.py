@@ -110,7 +110,7 @@ def _parse_args() -> argparse.Namespace:
                    help="Baseline LLM model for llm_longctx mode")
     p.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"),
                    help="Claude Code subagent model (haiku/sonnet/opus)")
-    p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.4"))
+    p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.5"))
     p.add_argument("--rate_limit", type=int, default=50)
     # Phase I.1: judge is ON by default — chatbot tasks need pr_held_out_score
     # which is judge-based; without it, chatbot_personalized_response
