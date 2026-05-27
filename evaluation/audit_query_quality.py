@@ -1589,10 +1589,39 @@ def _dim_telegraph_avoidance(inst: dict, llm) -> DimensionResult:
     )
 
 
+def _dim_no_refusal(inst: dict, llm) -> DimensionResult:
+    """Agentic example/inferior must not refuse or claim lack of access.
+    Deterministic regex check — no LLM call."""
+    task_type = inst.get("task_type") or inst.get("task_id") or ""
+    if not task_type.startswith("agentic_"):
+        return DimensionResult(
+            name="no_refusal", passed=True, skipped=True,
+            skip_reason="non-agentic task",
+        )
+    from evaluation.llm_postprocess import _validate_no_refusal
+    for field in ("example_response", "inferior_response"):
+        text = inst.get(field) or ""
+        if isinstance(text, dict):
+            text = text.get("text") or ""
+        if not text:
+            continue
+        passed, reason = _validate_no_refusal(str(text), task_type)
+        if not passed:
+            return DimensionResult(
+                name="no_refusal", passed=False, score=0.0,
+                reason=f"{field}: {reason}"[:240],
+            )
+    return DimensionResult(
+        name="no_refusal", passed=True, score=1.0,
+        reason="no refusal language detected",
+    )
+
+
 _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_schema_sanity,           # deterministic, run first
     _dim_sensitive_probe_placement,  # deterministic
     _dim_telegraph_avoidance,     # deterministic (regex + substring)
+    _dim_no_refusal,              # deterministic (regex)
     _dim_naturalness,
     _dim_context_required,
     _dim_context_restraint,

@@ -177,6 +177,34 @@ _TELEGRAPH_PHRASE_RE = re.compile(
 )
 
 
+_REFUSAL_RE = re.compile(
+    r"(i don.t have (direct )?access to your|"
+    r"can.t (access|read|view|see) your (dm|message|thread|inbox|mail)|"
+    r"share (the |a )?(thread|screenshot|conversation) (here|with me|so i)|"
+    r"paste (the |it |them )?(here|below|in)|"
+    r"upload .{0,20}(here|below)|"
+    r"you.ll need to (share|paste|send|provide|copy) (the |your )|"
+    r"once you (share|send|paste) (it|the|your)|"
+    r"if you (share|paste|send) (it|the|me|your))",
+    re.IGNORECASE,
+)
+
+
+def _validate_no_refusal(
+    response: str,
+    task_type: str,
+) -> tuple[bool, str]:
+    """Agentic tasks must not refuse — the agent HAS tool access to the
+    user's data. Refusals like 'I can't access your DMs' or 'share the
+    thread here' indicate the gold-gen LLM missed the grounding context."""
+    if not response or not task_type.startswith("agentic_"):
+        return True, ""
+    m = _REFUSAL_RE.search(response)
+    if m:
+        return False, f"refusal_phrase: {m.group(0)!r}"
+    return True, ""
+
+
 def _validate_no_creepy_phrasing(
     response: str,
     held_out_pref: dict | str | None = None,
@@ -729,9 +757,10 @@ def _generate_example_response(llm: Callable[[str], str],
                 "Rewrite so the topic CHOICE itself is the personalization "
                 "signal — do NOT self-reference what you know about the "
                 "user (no \"I know you...\", \"since you like X\", \"I "
-                "remember when you...\", \"based on your...\"), and do NOT "
+                "remember when you...\", \"based on your...\"), do NOT "
                 "paste the persona description / preference text verbatim "
-                "into the response.\n"
+                "into the response, and do NOT refuse or claim you can't "
+                "access the user's data (you CAN — use the tools).\n"
                 f"Previous draft (DO NOT REUSE):\n\"\"\"{text}\"\"\""
             )
         raw = llm(prompt)
@@ -741,13 +770,14 @@ def _generate_example_response(llm: Callable[[str], str],
             return None
         text = candidate.strip()
         passed, reason = _validate_no_creepy_phrasing(text, held_out_pref)
-        if passed:
-            return text
-        last_reason = reason
-    # Both attempts failed the creepy-phrasing gate. Hard-reject by
-    # returning None — the caller drops this instance / falls back to
-    # a placeholder. M1 acceptance: zero shipped example_responses
-    # match the regex.
+        if not passed:
+            last_reason = reason
+            continue
+        passed_refusal, refusal_reason = _validate_no_refusal(text, task_type)
+        if not passed_refusal:
+            last_reason = refusal_reason
+            continue
+        return text
     return None
 
 
@@ -876,6 +906,35 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
                         f"- Thread with {parts}: \"{snippet[:100]}\""
                     )
             return "\n".join(lines) if len(lines) > 3 else ""
+
+        if task_id == "agentic_group_dm_summary":
+            target_app = (inst.get("target_app") or "").strip()
+            thread_id = (inst.get("thread_id") or "").strip()
+            if not target_app:
+                return ""
+            lines = [
+                f"The agent HAS tool access to {target_app}_get_dm_thread. "
+                f"It should USE this tool to read the group thread, then "
+                f"produce a per-participant summary with decision points. "
+                f"The example must NOT say 'I can't access your DMs' or "
+                f"ask the user to share/paste/upload — the agent can and "
+                f"should read the thread directly.",
+                "",
+            ]
+            if thread_id:
+                thread = bq.get_dm_thread(
+                    user_id=user_id, app=target_app, thread_id=thread_id,
+                ) or {}
+                participants = thread.get("participants") or []
+                messages = thread.get("results") or []
+                if participants:
+                    lines.append(f"Participants: {', '.join(participants[:6])}")
+                for m in messages[:8]:
+                    sender = m.get("sender") or m.get("sender_id") or "?"
+                    text = (m.get("text") or m.get("content") or "")[:100]
+                    if text:
+                        lines.append(f"- {sender}: \"{text}\"")
+            return "\n".join(lines) if len(lines) > 2 else ""
 
         if task_id == "agentic_wrong_recipient_check":
             collision_ids = list(inst.get("collision_friend_ids") or [])
