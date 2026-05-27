@@ -10070,8 +10070,7 @@ class PersonaAgent:
         framework (Nahum-Shani et al., 2018) and Horvitz mixed-initiative
         principles (CHI 1999).
 
-        Three Phase-1 trigger types:
-          - T1.A `unfulfilled_stated_need`  — chatbot question N days unresolved.
+        Two Phase-1 trigger types:
           - T3.A `close_friend_update`      — close friend DM with no reply.
           - T4.A `sensitive_event_silence`  — restraint window during synthetic
                                               sensitive_life_event.
@@ -10118,10 +10117,6 @@ class PersonaAgent:
 
         sensitive_periods = self._gather_sensitive_event_periods(profile)
         candidates_by_type = {
-            "unfulfilled_stated_need": self._gather_unfulfilled_stated_needs(
-                app_events.get("chatbot", []), app_events,
-                sensitive_periods=sensitive_periods,
-            ),
             "close_friend_update": self._gather_close_friend_dms(
                 app_events, profile,
                 sensitive_periods=sensitive_periods,
@@ -10167,7 +10162,6 @@ class PersonaAgent:
         #   (3) Pass-through: overactive_check (negative control) needs
         #       no LLM; by construction the user is in an idle moment.
         JITAI_SCORED_TYPES = {
-            "unfulfilled_stated_need",
             "close_friend_update",
             "sensitive_event_silence",
         }
@@ -10305,95 +10299,6 @@ class PersonaAgent:
         periods: list[tuple[int, int]],
     ) -> bool:
         return any(start <= ts <= end for start, end in periods)
-
-    def _gather_unfulfilled_stated_needs(
-        self,
-        chatbot_events: list[dict],
-        all_app_events: dict[str, list[dict]],
-        sensitive_periods: list[tuple[int, int]] | None = None,
-    ) -> list[dict]:
-        """T1.A — chatbot questions whose hashtags weren't covered by any
-        subsequent event within `_PROACTIVE_RESOLUTION_WINDOW` days, AND
-        whose conversation didn't end with an explicit closure action.
-        """
-        candidates: list[dict] = []
-        # Pre-compute (ts, tag_set) per event across all apps, sorted by ts.
-        # We need per-event tag-sets (not the old hashtag→ts inverted map) so
-        # the resolution check can require ≥ N shared tags between the
-        # chatbot question and a single subsequent event.
-        all_events_flat: list[tuple[int, set[str]]] = []
-        for app, events in all_app_events.items():
-            for ev2 in events:
-                ts = int(ev2.get("source_timestamp") or 0)
-                tag_set = {h.lower() for h in (ev2.get("source_hashtags") or []) if h}
-                if ts and tag_set:
-                    all_events_flat.append((ts, tag_set))
-        all_events_flat.sort(key=lambda x: x[0])
-
-        for ev in chatbot_events:
-            if ev.get("is_dm") or ev.get("is_ad"):
-                continue
-            convo = ev.get("conversation") or []
-            if not convo:
-                continue
-            # Skip events whose interaction action is a closure / non-personalize.
-            action = (ev.get("interaction_format") or {}).get("action", "")
-            if action in self._PROACTIVE_CHATBOT_CLOSURE_ACTIONS:
-                continue
-            # Find the FIRST user turn (the standalone question this event represents).
-            first_user_msg = None
-            for m in convo:
-                if m.get("role") == "user" and (m.get("content") or "").strip():
-                    first_user_msg = m.get("content", "").strip()
-                    break
-            if not first_user_msg or len(first_user_msg) < 8:
-                continue
-            tags = [h.lower() for h in (ev.get("source_hashtags") or [])]
-            if not tags:
-                continue
-            tag_set = set(tags)
-            q_ts = int(ev.get("source_timestamp") or 0)
-            # Resolved if SOME subsequent event in the window shares ≥ N tags
-            # with the question. The N≥2 floor stops broad-cluster noise from
-            # marking nearly every question "resolved".
-            resolved = False
-            cutoff = q_ts + self._PROACTIVE_RESOLUTION_WINDOW
-            min_overlap = self._PROACTIVE_RESOLUTION_MIN_HASHTAG_OVERLAP
-            for ts, ev_tags in all_events_flat:
-                if ts <= q_ts:
-                    continue
-                if ts > cutoff:
-                    break  # sorted ascending — no further events in window
-                if len(tag_set & ev_tags) >= min_overlap:
-                    resolved = True
-                    break
-            if resolved:
-                continue
-            # Emit one candidate per lag tier (1d, 3d, 7d).
-            for lag in self._PROACTIVE_TRIGGER_LAGS:
-                t_test = q_ts + lag
-                candidates.append({
-                    "trigger_type": "unfulfilled_stated_need",
-                    "tier": "T1.A",
-                    "t_test": t_test,
-                    "t_test_iso": _unix_to_iso(t_test),
-                    "lag_days": lag // 86400,
-                    "signal_evidence": {
-                        "chatbot_event_id": ev.get("source_object_id"),
-                        "user_question": first_user_msg[:280],
-                        "asked_at_ts": q_ts,
-                        "asked_at_iso": ev.get("formatted_timestamp", ""),
-                        "question_hashtags": tags,
-                    },
-                })
-        # Drop candidates whose t_test falls inside any sensitive-life-event
-        # window — the hard restraint rule would kill them at Stage 2
-        # regardless, so produce them at gather time is wasted LLM cost.
-        candidates = self._drop_inside_sensitive(candidates, sensitive_periods)
-        # Cap to a manageable number; prefer the most recent unresolved questions
-        # since they are most actionable.
-        candidates.sort(key=lambda c: c["signal_evidence"]["asked_at_ts"], reverse=True)
-        return candidates[: self._PROACTIVE_MAX_CANDIDATES_PER_TYPE]
 
     def _gather_close_friend_dms(
         self,

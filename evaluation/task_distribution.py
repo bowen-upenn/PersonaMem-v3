@@ -113,7 +113,6 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # boundary is actually tested. `data_dependent` floors are advisory
     # — if the user's trigger catalog has < 4 candidates of a type, the
     # task family emits whatever exists (the audit doesn't fail).
-    "proactive_unfulfilled_stated_need":      {"min": 4, "max": 6, "data_dependent": True},
     "proactive_close_friend_update":          {"min": 4, "max": 6, "data_dependent": True},
     "restraint_sensitive_event_silence":      {"min": 4, "max": 6, "data_dependent": True},
     "proactive_friend_feed_react":            {"min": 4, "max": 8, "data_dependent": True},

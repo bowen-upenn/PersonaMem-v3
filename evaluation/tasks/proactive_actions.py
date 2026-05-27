@@ -1,7 +1,6 @@
-"""Proactive Actions (Phase 1) — three task builders + a single runner.
+"""Proactive Actions (Phase 1) — two task builders + a single runner.
 
 Phase-1 task types (from the approved plan):
-    - proactive_unfulfilled_stated_need     (T1.A, expected_behavior=act)
     - proactive_close_friend_update         (T3.A, expected_behavior=act)
     - restraint_sensitive_event_silence     (T4.A, expected_behavior=restrain)
 
@@ -35,7 +34,6 @@ from evaluation.inference_utils import dispatch_agent_run
 # score statistically meaningless. The new floors target n ≥ 4 per
 # polarity-arm so the headline is discriminating.
 _QUOTAS: dict[str, tuple[int, int]] = {
-    "proactive_unfulfilled_stated_need": (4, 6),
     "proactive_close_friend_update":     (4, 6),
     "restraint_sensitive_event_silence": (4, 6),
     "proactive_friend_feed_react":       (4, 8),  # split ≥2 per polarity
@@ -109,7 +107,6 @@ def _get_gt_extractor(task_type: str):
             _gt_proactive_friend_feed_react,
             _gt_proactive_trending_feed_react,
             _gt_proactive_overactive_check,
-            _gt_proactive_unfulfilled_stated_need,
             _gt_proactive_close_friend_update,
             _gt_proactive_sensitive_event_silence,
         )
@@ -117,7 +114,6 @@ def _get_gt_extractor(task_type: str):
             "proactive_friend_feed_react":      _gt_proactive_friend_feed_react,
             "proactive_trending_feed_react":    _gt_proactive_trending_feed_react,
             "proactive_overactive_check":       _gt_proactive_overactive_check,
-            "proactive_unfulfilled_stated_need": _gt_proactive_unfulfilled_stated_need,
             "proactive_close_friend_update":    _gt_proactive_close_friend_update,
             "restraint_sensitive_event_silence": _gt_proactive_sensitive_event_silence,
         }
@@ -211,69 +207,6 @@ def _load_proactive_catalog(bq: BackendQuery, user_id: str) -> dict[str, list[di
             _PROACTIVE_MISSING_WARNED.add(user_id)
         return {}
     return profile.get("proactive_trigger_candidates") or {}
-
-
-def _synthesize_restrain_unfulfilled(
-    bq: BackendQuery, user_id: str, act_cands: list[dict], n: int,
-) -> list[dict]:
-    """Generate restrain candidates for unfulfilled_stated_need.
-
-    Restrain reasons: (a) question is stale (>7 days ago), (b) question
-    touches a sensitive_event topic during its active window.
-    """
-    if not act_cands:
-        return []
-    profile = bq.get_full_profile(user_id) or {}
-    restrain: list[dict] = []
-    # Strategy A: stale questions — reuse act candidates but shift t_test
-    # forward by 10+ days so the question is too old to re-surface.
-    for c in act_cands[:n]:
-        asked_ts = c.get("signal_evidence", {}).get("asked_at_ts", 0)
-        if not asked_ts:
-            continue
-        synth = dict(c)
-        synth["signal_evidence"] = dict(c.get("signal_evidence", {}))
-        synth["t_test"] = asked_ts + 10 * 86400  # 10 days later = stale
-        synth["relevance"] = "irrelevant"
-        synth["_restrain_reason"] = "stale_question_over_7_days"
-        restrain.append(synth)
-        if len(restrain) >= n:
-            break
-    return restrain[:n]
-
-
-def build_proactive_unfulfilled_stated_need(
-    bq: BackendQuery,
-    user_id: str,
-    t_probe: int,
-    discovery_llm=None,
-) -> list[dict]:
-    """T1.A — chatbot questions N days unresolved.
-
-    Generates both act (question should be re-surfaced) and restrain
-    (question is stale / should NOT be re-surfaced) instances.
-    """
-    cat = _load_proactive_catalog(bq, user_id)
-    act_cands = cat.get("unfulfilled_stated_need") or []
-    restrain_cands = _synthesize_restrain_unfulfilled(bq, user_id, act_cands, n=3)
-    # Tag relevance on act candidates so _split_by_polarity_for_quota works
-    for c in act_cands:
-        c.setdefault("relevance", "relevant")
-    all_cands = act_cands + restrain_cands
-    picked = _split_by_polarity_for_quota(all_cands, "proactive_unfulfilled_stated_need")
-    out: list[dict] = []
-    for i, c in enumerate(picked):
-        expected = _polarity_for_relevance(c.get("relevance", "relevant"))
-        inst = _candidate_to_instance(
-            c, "proactive_unfulfilled_stated_need", expected, user_id, i,
-            discovery_llm=discovery_llm,
-        )
-        if c.get("polarity_imbalanced"):
-            inst["polarity_imbalanced"] = True
-        if c.get("_restrain_reason"):
-            inst["_restrain_reason"] = c["_restrain_reason"]
-        out.append(inst)
-    return out
 
 
 def _synthesize_restrain_close_friend(
@@ -604,10 +537,8 @@ def build_all_proactive_instances(
     t_probe: int,
     discovery_llm=None,
 ) -> dict[str, list[dict]]:
-    """Convenience: build all six proactive task types in one call."""
+    """Convenience: build all five proactive task types in one call."""
     return {
-        "proactive_unfulfilled_stated_need":
-            build_proactive_unfulfilled_stated_need(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "proactive_close_friend_update":
             build_proactive_close_friend_update(bq, user_id, t_probe, discovery_llm=discovery_llm),
         "restraint_sensitive_event_silence":

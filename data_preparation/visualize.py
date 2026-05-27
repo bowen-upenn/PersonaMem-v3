@@ -36,9 +36,8 @@ APPS = ["Instagram", "Facebook", "Threads", "Chatbot", "AI_Studio"]
 # reference the user's actual recent preferences / hashtags / categories.
 _PERSONA_CONTEXT: dict = {}
 
-# Per-render chatbot-event lookup by `source_object_id` — used by the
-# proactive_unfulfilled_stated_need extractor to surface the original
-# user→AI exchange as a prior-conversation chat thread on the test card.
+# Per-render chatbot-event lookup by `source_object_id` — used by
+# proactive extractors to surface original user→AI exchanges on test cards.
 _CHATBOT_EVENT_BY_OID: dict = {}
 
 
@@ -1996,7 +1995,6 @@ def _proactive_query_no_leak(inst: dict) -> str:
 # Aliases — each proactive task type uses the same renderer. The label
 # differentiation happens inside `_proactive_query_no_leak` from
 # `inst.task_type`.
-_proactive_query_for_unfulfilled_stated_need = _proactive_query_no_leak
 _proactive_query_for_close_friend_update     = _proactive_query_no_leak
 _proactive_query_for_sensitive_event_silence = _proactive_query_no_leak
 _proactive_query_for_friend_feed_react       = _proactive_query_no_leak
@@ -2223,81 +2221,6 @@ def _gt_proactive_overactive_check(inst: dict, discovery_llm=None) -> dict:
                 "_from": "deterministic_overactive_inferior",
             },
         },
-        "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
-    }
-
-
-def _gt_proactive_unfulfilled_stated_need(inst: dict, discovery_llm=None) -> dict:
-    sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
-    q = (sig.get("user_question") or "").strip()
-    snippet = q[:80] + ("…" if len(q) > 80 else "")
-    ago = _hours_ago_phrase(sig.get("asked_at_ts"), inst.get("t_test"))
-    t_test_iso = inst.get("t_test_iso") or ""
-
-    preamble = (
-        f"{ago.capitalize()} earlier, in the chatbot session at "
-        f"{sig.get('asked_at_iso') or 'an earlier time'}, the user asked: "
-        f"\"{snippet}\" — and never got a satisfying follow-up. At "
-        f"{t_test_iso}, the AI should open its next chatbot session with one "
-        f"ambient sentence quoting that prior question."
-    ) if q else (
-        f"{ago.capitalize()} earlier the user asked the AI a question that "
-        f"never got a satisfying follow-up. At {t_test_iso}, the AI should open "
-        f"its next chatbot session with one ambient callback to that question."
-    )
-    expected_body = (
-        "EXPECTED: act with one ambient sentence at the start of the next "
-        "chatbot session that quotes the user's prior unanswered question."
-    )
-    example_text = (
-        f'"Earlier you asked: \'{snippet}\'. Want me to share what\'s relevant now?"'
-        if q else
-        "Brief one-sentence follow-up that quotes the user's prior question."
-    )
-    flaw_kind = "heavy_followup_not_ambient"
-    fallback_inferior = (
-        f'"Following up on your question from {ago} ago! I researched this in '
-        f'depth — here are five detailed options with pros and cons for each, '
-        f'plus a comparison table to help you decide. Option 1: [...]. Option '
-        f'2: [...]. Option 3: [...]. Want me to dig deeper on any of these?"'
-    )
-    context = (
-        f"User's prior unanswered question: \"{snippet}\". "
-        f"Time since question: {ago}. Expected behavior: act with ONE ambient sentence."
-    )
-    inferior_text = _llm_generate_proactive_inferior(
-        discovery_llm, example_text, flaw_kind, context,
-    ) or fallback_inferior
-
-    # Render the original chatbot exchange as a prior-conversation chat
-    # thread so the reviewer can SEE the user's question in the same chat-
-    # bubble format the agent will see at eval time. Pulls the source
-    # event from the persona_context bank if available, else falls back
-    # to a single user-bubble built from the cited question.
-    prior = []
-    cb_event_id = str(sig.get("chatbot_event_id") or "")
-    src_event = _CHATBOT_EVENT_BY_OID.get(cb_event_id) if cb_event_id else None
-    if src_event:
-        for m in (src_event.get("conversation") or [])[:6]:
-            role = m.get("role")
-            content = (m.get("content") or "").strip()
-            if role in ("user", "assistant") and content:
-                prior.append({"role": role, "content": content[:500]})
-    if not prior and q:
-        prior = [{"role": "user", "content": q[:500]}]
-
-    return {
-        "groundtruth_preference": preamble + "\n\n" + expected_body,
-        "example_response": example_text,
-        "inferior_response": {
-            "text": inferior_text,
-            "flaw_kind": "heavy_followup_not_ambient",
-            "flaw_evidence": {
-                "user_question_snippet": snippet,
-                "asked_at_iso": sig.get("asked_at_iso"),
-            },
-        },
-        "prior_conversation": prior,
         "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
     }
 
@@ -2726,7 +2649,6 @@ TEST_GT_EXTRACTORS = {
     # All agentic_* tasks share the generic agentic extractor.
     # agentic_draft_audit removed in workstream F.
     # Proactive Actions (Phase 1)
-    "proactive_unfulfilled_stated_need":   _gt_proactive_unfulfilled_stated_need,
     "proactive_close_friend_update":       _gt_proactive_close_friend_update,
     "restraint_sensitive_event_silence":   _gt_proactive_sensitive_event_silence,
     # Phase 2 — feed-react + overactive-check.
@@ -2987,7 +2909,6 @@ TEST_QUERY_EXTRACTORS = {
     "agentic_proactive_daily_catchup":     _q_agentic_proactive_daily_catchup,
     "agentic_trending_alert":              _q_agentic_trending_alert,
     # Proactive Actions (Phase 1)
-    "proactive_unfulfilled_stated_need":   _proactive_query_for_unfulfilled_stated_need,
     "proactive_close_friend_update":       _proactive_query_for_close_friend_update,
     "restraint_sensitive_event_silence":   _proactive_query_for_sensitive_event_silence,
     "proactive_friend_feed_react":         _proactive_query_for_friend_feed_react,
@@ -3040,9 +2961,8 @@ def _load_test_samples(
     # concrete expected-answer shapes when the instance itself is sparse.
     global _PERSONA_CONTEXT, _CHATBOT_EVENT_BY_OID
     _PERSONA_CONTEXT = _build_persona_context(uid, backend_dir)
-    # Build a chatbot-event-by-source_object_id lookup — used by the
-    # proactive_unfulfilled_stated_need extractor to render the original
-    # user→AI exchange as a prior-conversation chat thread on the test card.
+    # Build a chatbot-event-by-source_object_id lookup — used by proactive
+    # extractors to render original user→AI exchanges on test cards.
     _CHATBOT_EVENT_BY_OID = {}
     chatbot_path = os.path.join(backend_dir, str(uid), "chatbot.json")
     if os.path.exists(chatbot_path):

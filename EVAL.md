@@ -58,7 +58,6 @@ Index from the paper's Section 3 tables to the internal task code-names used in 
 
 | Paper name | Internal code-name |
 |---|---|
-| Unresolved-need follow-up | `proactive_unfulfilled_stated_need` |
 | Close-friend DM update | `proactive_close_friend_update` |
 | Sensitive-event silence | `restraint_sensitive_event_silence` |
 | Friend-post update * | `proactive_friend_feed_react` |
@@ -273,7 +272,7 @@ A full per-query audit of `benchmark/115/queries.csv` (211 rows, 29 task types) 
 
 **CRITICAL:**
 
-1. **Three proactive tasks have zero restrain instances.** `close_friend_update` (6/6 act), `friend_feed_react` (5/5 act), `unfulfilled_stated_need` (6/6 act). The `_split_by_polarity_for_quota` function exists but these builders don't generate restrain candidates. Both models score `decision_correct=0%` because the judge penalizes response style, not the act/restrain decision. Fix: generate restrain-polarity candidates (acquaintance messages, stale questions, off-topic friend posts).
+1. **Two proactive tasks have zero restrain instances.** `close_friend_update` (6/6 act), `friend_feed_react` (5/5 act). The `_split_by_polarity_for_quota` function exists but these builders don't generate restrain candidates. Both models score `decision_correct=0%` because the judge penalizes response style, not the act/restrain decision. Fix: generate restrain-polarity candidates (acquaintance messages, off-topic friend posts).
 
 2. **`chatbot_personalized_response` is all proactive arm (30/30).** Adversarial, drift, sensitive_event, stale, and distractor arm builders exist in `build_benchmark.py` but aren't reaching `queries.csv`. Meanwhile `over_personalization_chatbot_text` correctly has 4 arms (5 drift + 3 control + 6 distractor + 6 adversarial). Fix: trace `build_task_b_arms` → CSV emission; target ~15 proactive + 15 restraint arms.
 
@@ -540,11 +539,10 @@ The agent decides **on its own** whether to initiate contact at a moment the use
 6. No notifications, badges, or unread counts in the message.
 7. Easy declination — opt-in question, never directive.
 
-**Task types** (priority order: `restraint > unfulfilled_stated_need > close_friend_update > feed_react > overactive_check`):
+**Task types** (priority order: `restraint > close_friend_update > feed_react > overactive_check`):
 
 *Phase 1 — chatbot-anchored triggers:*
 
-- **`proactive_unfulfilled_stated_need` (T1.A)** — chatbot question N days ago (1d/3d/7d lags) with no observable resolution event since (no save/post/return-question on same hashtags). Skipped if convo closed via `asked_to_change_topic` or `corrected_assumption`. Expected behavior: `act` with one-sentence follow-up citing the user's own question. Grounding: MapDia interpersonal memory + Horvitz "genuine value".
 - **`proactive_close_friend_update` (T3.A)** — incoming DM from a close friend (`relationship_depth="close"` in `profile.friends[]`) with no reply within 24h. Expected behavior: `act` with one-sentence alert naming the friend. Grounding: notification-urgency calibration + relationship-grounded justification.
 - **`restraint_sensitive_event_silence` (T4.A)** — restraint moment inside the first ~14 days of a synthetic `sensitive_life_event` hidden persona window. Expected behavior: `restrain` (`should_act=false`). Grounding: Horvitz cost-benefit + ethics literature.
 
@@ -813,7 +811,7 @@ For `agent_tools` mode, the agent autonomously decides which files to Read. The 
 
 Feed-react tasks (`proactive_friend_feed_react`, `proactive_trending_feed_react`) have both act and restrain variants based on `relevance`. The builder enforces ≥2 instances per polarity when candidates exist; instances from users with insufficient candidates for one arm are tagged `polarity_imbalanced=True` and flagged in the aggregator. A model that always-acts collapses on irrelevant candidates; one that always-restrains collapses on relevant ones.
 
-**Known polarity gaps (v3.2 audit):** three proactive tasks currently lack restrain candidates entirely on user 115: `proactive_close_friend_update` (6/6 act), `proactive_friend_feed_react` (5/5 act), `proactive_unfulfilled_stated_need` (6/6 act). Only `proactive_trending_feed_react` (2 act / 6 restrain) and `restraint_sensitive_event_silence` (4/4 restrain, no act companion) have non-trivial polarity. See "Query quality audit" section for remediation plan.
+**Known polarity gaps (v3.2 audit):** two proactive tasks currently lack restrain candidates entirely on user 115: `proactive_close_friend_update` (6/6 act), `proactive_friend_feed_react` (5/5 act). Only `proactive_trending_feed_react` (2 act / 6 restrain) and `restraint_sensitive_event_silence` (4/4 restrain, no act companion) have non-trivial polarity. See "Query quality audit" section for remediation plan.
 
 ## Extending the harness
 

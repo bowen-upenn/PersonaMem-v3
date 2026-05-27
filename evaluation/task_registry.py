@@ -857,25 +857,6 @@ TASK_TYPE_META: dict[str, dict] = {
     # types; agent surfaces only inside the chatbot (subtlety constraint).
     # See plan: /lcars/home/y/yyuan86/.claude/plans/rippling-honking-donut.md
     # ------------------------------------------------------------------
-    "proactive_unfulfilled_stated_need": {
-        "task_family": "proactive_actions",
-        "mcp_tools_allowed": "chatbot",
-        "state_write_policy": "read_only",
-        "expected_response_kind": "text_with_tool_calls",
-        "scoring_dimensions": [
-            "trigger_detection_correctness", "content_length_ok",
-            "preference_alignment", "avoid_overpersonalization", "voice_match",
-            "negative_leakage", "stale_preference_use", "telegraph_avoidance",
-            "restraint_justification",
-            "proactive_action_score",
-        ],
-        "display_rubric": _DISPLAY_RUBRIC_PROACTIVE,
-        "rubric_tags": [
-            "trigger_detection_correctness",
-            "preference_alignment", "avoid_overpersonalization", "voice_match",
-            "negative_leakage", "stale_preference_use",
-        ],
-    },
     "proactive_close_friend_update": {
         "task_family": "proactive_actions",
         "mcp_tools_allowed": "chatbot",
@@ -1043,7 +1024,6 @@ QUERY_KIND_BY_TASK: dict[str, str] = {
     "agentic_proactive_daily_catchup":        "proactive_recommendation",
     "agentic_trending_alert":                 "proactive_recommendation",
     # Proactive Actions (Phase 1) — system decides whether to initiate.
-    "proactive_unfulfilled_stated_need":      "proactive_assistance",
     "proactive_close_friend_update":          "proactive_assistance",
     "restraint_sensitive_event_silence":      "proactive_assistance",
 }
@@ -1082,7 +1062,6 @@ EXPECTED_BEHAVIOR_BY_TASK: dict[str, str] = {
     "agentic_proactive_daily_catchup":        "proactive_recommend",
     "agentic_trending_alert":                 "proactive_recommend",
     # Proactive Actions: act on user evidence, OR stay silent (restraint).
-    "proactive_unfulfilled_stated_need":      "proactive_assist",
     "proactive_close_friend_update":          "proactive_assist",
     "restraint_sensitive_event_silence":      "restrain",
 }
@@ -1188,7 +1167,6 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "agentic_trending_alert":            ("pr_combined_personalization_score", "pr_combined"),
     # Proactive Actions (Phase 1): composite proactive_action_score in [0,1]
     # produced by judge_proactive_action averaged across the 5 rubric dims.
-    "proactive_unfulfilled_stated_need": ("proactive_action_score", "fraction"),
     "proactive_close_friend_update":     ("proactive_action_score", "fraction"),
     "restraint_sensitive_event_silence": ("proactive_action_score", "fraction"),
     # Phase 2 proactive — same composite as Phase 1.

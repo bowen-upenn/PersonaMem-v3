@@ -4491,7 +4491,6 @@ def build_benchmark(
                                                           discovery_llm=discovery_llm)
     except Exception as exc:
         proactive_buckets = {
-            "proactive_unfulfilled_stated_need": [],
             "proactive_close_friend_update": [],
             "restraint_sensitive_event_silence": [],
             "proactive_friend_feed_react": [],
@@ -4540,7 +4539,6 @@ def build_benchmark(
         "local_recommendation_geo_shift":         geo_shift_instances,
         **agentic_buckets,
         # Proactive Actions (Phase 1)
-        "proactive_unfulfilled_stated_need":      proactive_buckets["proactive_unfulfilled_stated_need"],
         "proactive_close_friend_update":          proactive_buckets["proactive_close_friend_update"],
         "restraint_sensitive_event_silence":      proactive_buckets["restraint_sensitive_event_silence"],
         # Proactive Actions (Phase 2) — feed-react + overactive-check.

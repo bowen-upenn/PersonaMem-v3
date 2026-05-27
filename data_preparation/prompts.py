@@ -4916,8 +4916,7 @@ Score this candidate. Return a single JITAI card. The bar is "would a thoughtful
 
 **Type-specific defaults** when the deterministic gatherer flagged a candidate:
 
-- `unfulfilled_stated_need`: the user asked a real question that wasn't followed up by any topical engagement within 3 days AND didn't end with closure. That's already a legitimate signal — score AT LEAST 2 (defensible) unless the question is generic / chitchat / hypothetical. Score 3 if the question carries a concrete object or decision (place, product, plan, choice).
-- `close_friend_update`: the user left a close-friend inbound message unanswered for 6+ hours. That's also a legitimate signal — score AT LEAST 2 unless the message is throwaway (one-word, emoji-only) or the friend graph shows they routinely go that long. Score 3 if the friend's message is substantive (carries content, request, or invitation).
+- `close_friend_update`: the user left a close-friend inbound message unanswered for 6+ hours. That's a legitimate signal — score AT LEAST 2 unless the message is throwaway (one-word, emoji-only) or the friend graph shows they routinely go that long. Score 3 if the friend's message is substantive (carries content, request, or invitation).
 - `sensitive_event_silence`: this is the restrain class — score MUST be 0 with `recommended_action_class = "stay_silent"`. Same hard rule when `sensitive_event_active=true` regardless of trigger_type.
 
 A score of 0 outside the restrain class should be reserved for cases where the evidence genuinely doesn't justify action — not as a default for ambiguity. Borderline cases land at 2.

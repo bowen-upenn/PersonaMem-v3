@@ -172,7 +172,6 @@ _TASK_FAMILY_MAP = {
     # Proactive act + restraint
     "proactive_close_friend_update": "proactive",
     "proactive_friend_feed_react": "proactive",
-    "proactive_unfulfilled_stated_need": "proactive",
     "proactive_overactive_check": "proactive",
     "proactive_trending_feed_react": "proactive",
     "restraint_sensitive_event_silence": "proactive",
