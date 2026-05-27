@@ -48,6 +48,7 @@ _PERSONALIZATION_TASKS = {
     "daily_personalized_briefing",
     "short_vs_long_term_lifecycle",
     "active_mistake_prevention",
+    "hidden_persona_recommendation",
     "agentic_user_tone_post",
     # agentic_moment_recommendation merged into personalized_recommendation
     "agentic_dm_digest",
@@ -90,6 +91,7 @@ _TASKS_ALREADY_CONCRETE: set[str] = set()
 # computed without LLM.
 _RANKING_TASKS = {
     "personalized_recommendation",
+    "hidden_persona_recommendation",
     "at_ai_directive_followup",
     "short_vs_long_term_lifecycle",
 }
@@ -1270,7 +1272,7 @@ def _compute_ranking_example(inst: dict, task_type: str) -> str:
     """Deterministic ranked-index 'example_response' for ranking tasks.
     Returns a compact list of ints with the held-out at rank 1, hard
     negatives last, fillers in between."""
-    if task_type == "personalized_recommendation":
+    if task_type in ("personalized_recommendation", "hidden_persona_recommendation"):
         cands = inst.get("candidates") or []
         held = inst.get("held_out_idx")
         hard_negs = set(inst.get("hard_negative_idxs") or [])
@@ -1316,7 +1318,7 @@ def _compute_ranking_inferior(inst: dict, task_type: str) -> str:
 
     No LLM call. The example/inferior pair differ ONLY in index order, so
     a grader cannot win on surface features (length, tone, format)."""
-    if task_type == "personalized_recommendation":
+    if task_type in ("personalized_recommendation", "hidden_persona_recommendation"):
         cands = inst.get("candidates") or []
         held = inst.get("held_out_idx")
         hard_negs = set(inst.get("hard_negative_idxs") or [])
