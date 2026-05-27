@@ -1617,11 +1617,35 @@ def _dim_no_refusal(inst: dict, llm) -> DimensionResult:
     )
 
 
+def _dim_no_rubric_leak(inst: dict, llm) -> DimensionResult:
+    """Example/inferior must read as natural AI responses, not internal
+    rubric instructions or behavioral pattern descriptions.
+    Deterministic regex check — no LLM call."""
+    from evaluation.llm_postprocess import _validate_no_rubric_leak
+    for field in ("example_response", "inferior_response"):
+        text = inst.get(field) or ""
+        if isinstance(text, dict):
+            text = text.get("text") or ""
+        if not text:
+            continue
+        passed, reason = _validate_no_rubric_leak(str(text))
+        if not passed:
+            return DimensionResult(
+                name="no_rubric_leak", passed=False, score=0.0,
+                reason=f"{field}: {reason}"[:240],
+            )
+    return DimensionResult(
+        name="no_rubric_leak", passed=True, score=1.0,
+        reason="no rubric language detected in responses",
+    )
+
+
 _DIMENSIONS: list[Callable[[dict, Any], DimensionResult]] = [
     _dim_schema_sanity,           # deterministic, run first
     _dim_sensitive_probe_placement,  # deterministic
     _dim_telegraph_avoidance,     # deterministic (regex + substring)
     _dim_no_refusal,              # deterministic (regex)
+    _dim_no_rubric_leak,          # deterministic (regex)
     _dim_naturalness,
     _dim_context_required,
     _dim_context_restraint,

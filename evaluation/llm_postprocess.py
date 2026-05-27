@@ -205,6 +205,40 @@ def _validate_no_refusal(
     return True, ""
 
 
+_RUBRIC_LEAK_RE = re.compile(
+    r"(queries? \d+\.\.\d+.{0,30}(may |must |freely )|"
+    r"turns? \d+\.\.\d+.{0,30}(may |must |invoke)|"
+    r"\bhead.zone\b|\btail.zone\b|"
+    r"\bn_allowed_repetitions\b|"
+    r"\btoken [Jj]accard\b|"
+    r"\bhashtag overlap\b.{0,20}%|"
+    r"\bheld.out.*(idx|index)\b|"
+    r"\bhard.negative\b.{0,20}\brank\b|"
+    r"\bpersona-aligned hashtags\b|"
+    r"\boff-persona distractor\b|"
+    r"\bthe agent\b.{0,40}\b(correctly|should|must|reads the|keeps|never escapes)\b|"
+    r"\binfer the current city\b|"
+    r"\bthe user.s query is intentionally\b|"
+    r"\banchors on the user.s previous location\b|"
+    r"\bdetecting the geo-shift\b|"
+    r"\bRecommend \w+ options in .{1,30} that fit the user.s general persona\b)",
+    re.IGNORECASE,
+)
+
+
+def _validate_no_rubric_leak(
+    response: str,
+) -> tuple[bool, str]:
+    """Example/inferior responses must read as natural AI replies, not
+    internal rubric instructions or behavioral descriptions."""
+    if not response:
+        return True, ""
+    m = _RUBRIC_LEAK_RE.search(response)
+    if m:
+        return False, f"rubric_leak: {m.group(0)!r}"
+    return True, ""
+
+
 def _validate_no_creepy_phrasing(
     response: str,
     held_out_pref: dict | str | None = None,
@@ -317,14 +351,52 @@ _STANCE_REGISTER_LEXICON: dict[str, list[str]] = {
 }
 
 
+def _dynamic_keywords_for_label(label: str) -> list[str]:
+    """Generate keywords from a stance/register label when not in static lexicon."""
+    if not label:
+        return []
+    parts = re.split(r'[-_\s]+', label.lower())
+    stop = {"a", "an", "the", "of", "for", "in", "on", "to", "and", "but",
+            "or", "is", "be", "as", "at", "by", "it", "no"}
+    return [p for p in parts if len(p) >= 3 and p not in stop]
+
+
+def _extract_function_word_tokens(user_voice: dict) -> list[str]:
+    """Extract quoted words/phrases from function_word_profile."""
+    idio = user_voice.get("idiolect") or {}
+    fwp = idio.get("function_word_profile", "") if isinstance(idio, dict) else ""
+    if not isinstance(fwp, str) or not fwp:
+        return []
+    tokens = re.findall(r'"([^"]+)"', fwp)
+    result = []
+    for t in tokens:
+        t = t.rstrip('.,;:!? ')
+        if t and len(t) >= 2:
+            result.append(t)
+    return result
+
+
+def _extract_template_example_tokens(user_voice: dict) -> list[str]:
+    """Extract example realizations from constructional_templates."""
+    idio = user_voice.get("idiolect") or {}
+    templates = (idio.get("constructional_templates") or []) if isinstance(idio, dict) else []
+    result = []
+    for t in templates:
+        if not isinstance(t, dict):
+            continue
+        ex = t.get("example_realization", "")
+        if isinstance(ex, str) and ex.strip():
+            result.append(ex.strip())
+    return result
+
+
+MIN_VOICE_FEATURES_EXAMPLE = 3
+
+
 def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
     """Heuristically extract substrings of `text` that carry the user's voice
-    signal: catchphrase residue, stance/register surface markers, AND palette
-    emoji. Reordered so emoji is no longer the dominant signal — when the
-    response also lands a stance/register marker, the example/inferior pair
-    will differ on structural axes (register, stance) rather than just emoji
-    presence, fixing the prior `example_voice_evidence == inferior_voice_evidence`
-    failure mode.
+    signal: catchphrase residue, constructional template examples, function
+    word tokens, stance/register surface markers, AND palette emoji.
 
     Used to bold spans in the rendered Example Response so a reviewer can
     see *which* voice features actually surfaced. This is a visual aid;
@@ -332,11 +404,14 @@ def _extract_voice_evidence_spans(text: str, user_voice: dict) -> list[str]:
     scores Layer-2 fidelity.
 
     Detection order (so the most distinguishing signal lands first):
-      1. Catchphrase residue substrings (high-value, user-specific)
-      2. Stance / register surface markers (mid-value, app-scoped)
-      3. Idiolect template opener pattern (stance-marker-first opening)
-      4. Palette emoji (low-value on its own — both gold and foil tend
-         to keep the same emoji, so it's the LAST tiebreaker)
+      1.  Catchphrase residue substrings (high-value, user-specific)
+      1b. Constructional template example realizations (high-value)
+      1c. Function word tokens from idiolect profile (mid-value)
+      2.  Stance / register surface markers — static lexicon + dynamic
+          label-derived keywords (mid-value, app-scoped)
+      3.  Idiolect template opener pattern (stance-marker-first opening)
+      4.  Palette emoji (low-value on its own — both gold and foil tend
+          to keep the same emoji, so it's the LAST tiebreaker)
 
     Backward-compatible: also reads the legacy `user_voice.personal_phrases`
     field for old snapshots. Empty list when nothing matches.
@@ -776,6 +851,10 @@ def _generate_example_response(llm: Callable[[str], str],
         passed_refusal, refusal_reason = _validate_no_refusal(text, task_type)
         if not passed_refusal:
             last_reason = refusal_reason
+            continue
+        passed_rubric, rubric_reason = _validate_no_rubric_leak(text)
+        if not passed_rubric:
+            last_reason = rubric_reason
             continue
         return text
     return None
@@ -2531,6 +2610,50 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
                 },
             },
         }
+
+    if task_id == "local_recommendation_geo_shift":
+        current_city = (inst.get("current_city") or "").strip()
+        prior_city = (inst.get("prior_city") or "").strip()
+        category = (inst.get("category") or "").strip()
+        user_query = (inst.get("user_query") or "").strip()
+        if not current_city or not category:
+            return None
+
+        if discovery_llm is not None:
+            prompt = (
+                f"A user in {current_city} asks: \"{user_query}\"\n\n"
+                f"Generate two short AI assistant responses (2-3 sentences each):\n\n"
+                f"Response A (CORRECT): Recommend specific {category} options in "
+                f"{current_city}. Name 2-3 real or plausible places. Natural, helpful tone.\n\n"
+                f"Response B (WRONG): Recommend {category} options in {prior_city} "
+                f"instead — the agent failed to detect the user moved to {current_city} "
+                f"and is still anchored on the old location. Also name 2-3 places.\n\n"
+                f"Return JSON:\n```json\n"
+                f"{{\"correct\": \"...\", \"wrong\": \"...\"}}\n```"
+            )
+            try:
+                raw = discovery_llm.query_llm(prompt)
+                parsed = extract_json_from_response(raw) or {}
+                if isinstance(parsed, dict):
+                    correct = (parsed.get("correct") or "").strip()
+                    wrong = (parsed.get("wrong") or "").strip()
+                    if correct and wrong and len(correct) > 20 and len(wrong) > 20:
+                        return {
+                            "example_response": correct,
+                            "inferior_response": {
+                                "text": wrong,
+                                "flaw_kind": "stale_geo_anchor",
+                                "flaw_evidence": {
+                                    "_from": "synthesize_special_task::geo_shift",
+                                    "prior_city": prior_city,
+                                    "current_city": current_city,
+                                    "category": category,
+                                },
+                            },
+                        }
+            except Exception:
+                pass
+        return None
 
     if task_id == "restraint_sensitive_event_silence":
         evidence = inst.get("trigger_evidence") or {}

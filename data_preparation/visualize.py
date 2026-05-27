@@ -1009,12 +1009,9 @@ def _gt_local_recommendation_geo_shift(inst: dict) -> dict:
     category = inst.get("category") or ""
     transition_idx = inst.get("transition_idx") or "?"
     return {
-        "example_response": (
-            f"Recommend {category} options in {current_city or '<current city>'} that "
-            "fit the user's general persona profile (cuisine / hobby / dietary cues "
-            "from their broader history). Infer the current city silently from "
-            "the most recent events in the user's time-masked history; the user's "
-            "query is intentionally city-agnostic."
+        "example_response": inst.get("example_response") or (
+            f"Recommend specific {category} options in "
+            f"{current_city or '<current city>'}."
         ),
         "groundtruth_preference": (
             f"Current city (inferred from latest event_location.city): "

@@ -1205,13 +1205,18 @@ def build_task_b_arms(
         # default empty — the dedicated build_c3_instance handles its own pool.
         privacy_flagged: list[dict] = c.get("privacy_flagged_prefs") or []
         source_b = _build_post_test_window(bq, user_id, t_test)
+        # Proactive arm: strip prior conversation — it's incidental context
+        # from where the held-out turn landed mid-conversation, not an eval
+        # signal.  Keeping it adds noise and an uncontrolled confound.
+        # Drift arm intentionally keeps it (the prior conv IS the stimulus).
+        prior = c["prior_conversation"] if arm == "conversational_drift" else []
         return {
             "test_id": c["source_object_id"],
             "arm": arm,
             "source_timestamp": t_test,
             "formatted_timestamp": c["formatted_timestamp"],
             "user_query": c["user_query"],
-            "prior_conversation": c["prior_conversation"],
+            "prior_conversation": prior,
             "action": c["action"],
             "source_hashtags": c["source_hashtags"],
             "held_out_preference": c.get("held_out_preference"),
@@ -4445,6 +4450,13 @@ def build_benchmark(
                 for k in ("example_response", "inferior_response", "groundtruth_preference", "rubric_tags"):
                     if k in gt and gt[k] is not None:
                         inst[k] = gt[k]
+                synth = synthesize_special_task_example_inferior(
+                    inst, "local_recommendation_geo_shift",
+                    discovery_llm=discovery_llm,
+                )
+                if synth:
+                    inst["example_response"] = synth["example_response"]
+                    inst["inferior_response"] = synth["inferior_response"]
             except Exception:
                 pass
     except ImportError:
