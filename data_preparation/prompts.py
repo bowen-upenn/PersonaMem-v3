@@ -481,10 +481,64 @@ Respond with ONLY a JSON array. No explanation.
 ```"""
 
 
+def assign_education_level_prompt(
+    personas: list[str],
+    distribution: dict[str, float],
+) -> str:
+    """Mini-tier LLM picks the highest education level for this user, using
+    the population distribution as a PRIOR and the persona traits as
+    EVIDENCE. Returns one level verbatim from the distribution.
+
+    The single hard constraint: do NOT assign a professional degree
+    (JD/MD/DDS/etc.) unless persona traits show a plausible adjacency
+    to law, medicine, dentistry, veterinary, pharmacy, or related
+    practitioner fields. A user whose only signals are sports + cooking
+    + dogs should not be assigned a JD.
+    """
+    personas_list = "\n".join(f"- {p}" for p in personas)
+    dist_lines = "\n".join(
+        f"  - {label}: {weight:.0%} prior" for label, weight in distribution.items()
+    )
+    levels_csv = " | ".join(f'"{k}"' for k in distribution.keys())
+    return f"""\
+You are assigning a realistic highest-education level to a synthetic user.
+
+## Inferred persona traits (this is the EVIDENCE)
+{personas_list}
+
+## Population distribution (this is the PRIOR — what the level is BEFORE you look at the persona)
+{dist_lines}
+
+## How to decide
+
+Treat the distribution as a base rate. Then update based on how well the persona traits fit each level:
+
+- Default to the prior unless persona signals push you elsewhere. A persona with no strong career / academic / professional signal stays close to the modal "Bachelor's degree".
+- Strong signals of advanced research / academic / specialized professional content shift you up (Master's, PhD).
+- Strong vocational / hands-on / trade signals (HVAC, welding, cosmetology, hairstyling, automotive, culinary) shift you down (Associate, vocational certificate).
+- Strong adult-learner / GED / self-taught signals justify "High school diploma only" or "Some college, no degree".
+
+## HARD CONSTRAINT — professional degrees
+
+Do NOT assign "Professional degree (JD/MD/DDS/etc.)" unless at least one persona trait shows real adjacency to law, medicine, dentistry, veterinary, pharmacy, optometry, or another licensed practitioner field. Engaging with general health / legal-drama content does NOT qualify on its own — there must be a signal the user is plausibly a practitioner, student, or otherwise embedded in one of these fields. When in doubt, skip this bucket.
+
+## Output
+
+Respond with ONE fenced JSON block, nothing else. `level` must be one of: {levels_csv}.
+
+```json
+{{{{
+  "level": "<one of the labels above, verbatim>",
+  "reason": "<one short sentence — what in the persona pushed you toward this level>"
+}}}}
+```"""
+
+
 def generate_user_profile_prompt(
     personas: list[str],
     gender_orientation: str,
     race_ethnicity: str,
+    education_level: str,
 ) -> str:
     """Build a prompt that generates a synthetic user profile from final personas."""
 
@@ -496,6 +550,7 @@ You are creating a realistic synthetic user profile based on inferred persona tr
 ## Assigned Demographics (pre-sampled — do not change these)
 - **Gender & Sexual Orientation**: {gender_orientation}
 - **Race/Ethnicity**: {race_ethnicity}
+- **Highest education level**: {education_level}
 
 ## Inferred Persona Traits
 {personas_list}
@@ -505,8 +560,8 @@ You are creating a realistic synthetic user profile based on inferred persona tr
 Generate a synthetic user profile that is **consistent with some but not all** of the above personas. Rules:
 
 1. **Name**: Choose a culturally appropriate first and last name for the assigned gender and race/ethnicity. Be diverse in naming — avoid the most common/default names.
-2. **Career**: Pick a realistic career. It can relate to some personas but does NOT need to satisfy all of them. Surprising or unconventional career choices are welcome.
-3. **Education**: Highest level of education and field of study. Be varied — not everyone has a college degree.
+2. **Career**: Pick a realistic career. It can relate to some personas but does NOT need to satisfy all of them. Surprising or unconventional career choices are welcome. The career should be plausible given the assigned education level (don't pair a PhD with a job that wouldn't typically require one, unless the persona signals a career change or an over-credentialed-for-the-role situation).
+3. **Education**: Use the assigned highest education level VERBATIM as the level (e.g. "Master's degree in X"). You only choose the FIELD OF STUDY (and optionally the school type), not the level. Field should fit the persona traits and feed into the career.
 4. **Big Five personality**: Rate each dimension as "low", "medium", or "high". Let the personas inform this but do NOT mechanically map every persona to a trait. Some personality dimensions should be unrelated to the personas.
 5. **Bio**: Write exactly 3-5 sentences. Paint a vivid picture of this person's daily life. Reference some personas naturally but leave others unmentioned. Include at least one detail that is surprising or not directly derivable from the personas.
 6. **Diversity**: Actively avoid stereotypical combinations. A {race_ethnicity} person who is {gender_orientation} can have any career, any hobby, any personality. Do not default to the most "expected" profile — be creative and realistic.

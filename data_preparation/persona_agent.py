@@ -1083,6 +1083,24 @@ GENDER_ORIENTATION_DISTRIBUTION = {
     "agender, asexual": 0.005,
 }
 
+# Highest education level distribution. Pre-sampled per user and passed
+# into the profile-generation prompt as a fixed constraint (same pattern
+# as gender/race). LLM picks the field-of-study and any school detail
+# consistent with both the sampled level and the user's persona traits.
+# Skewed toward bachelor+ with a meaningful graduate tail; master and
+# PhD are distinguished so downstream tasks can model them separately.
+# bachelor-or-above ≈ 75%, graduate-or-above ≈ 30%.
+EDUCATION_DISTRIBUTION = {
+    "High school diploma only":              0.05,
+    "Some college, no degree":               0.04,
+    "Vocational / trade certificate":        0.04,
+    "Associate degree":                      0.12,
+    "Bachelor's degree":                     0.45,
+    "Master's degree":                       0.20,
+    "Professional degree (JD/MD/DDS/etc.)":  0.05,
+    "PhD / doctorate":                       0.05,
+}
+
 # Detailed race/ethnicity distribution (intentionally diversified)
 RACE_ETHNICITY_DISTRIBUTION = {
     "White American": 0.15,
@@ -4172,14 +4190,52 @@ class PersonaAgent:
     # LLM Call #4: Generate synthetic user profile
     # ------------------------------------------------------------------
 
+    def _assign_education_level(self, personas: list[str]) -> str:
+        """Pick the user's highest education level via a mini-tier LLM call
+        that treats EDUCATION_DISTRIBUTION as a prior and the personas as
+        evidence. Enforces the JD/MD-adjacency constraint (no professional
+        degree unless persona signals law / medicine / dentistry / vet /
+        pharmacy). Falls back to weighted random sampling when the LLM
+        call fails or returns an out-of-vocabulary level."""
+        valid_levels = set(EDUCATION_DISTRIBUTION.keys())
+        try:
+            prompt = prompts.assign_education_level_prompt(
+                personas=personas,
+                distribution=EDUCATION_DISTRIBUTION,
+            )
+            raw = self._query_mini_with_retry(prompt)
+            if raw:
+                parsed = utils.extract_json_from_response(raw)
+                if isinstance(parsed, dict):
+                    picked = (parsed.get("level") or "").strip()
+                    if picked in valid_levels:
+                        if self.verbose:
+                            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                                  f"Education (LLM-picked): {picked} — "
+                                  f"{parsed.get('reason', '')}{utils.Colors.ENDC}")
+                        return picked
+                    if self.verbose:
+                        print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                              f"Education LLM returned out-of-vocab level "
+                              f"{picked!r}; falling back to random sample.{utils.Colors.ENDC}")
+        except Exception as e:
+            if self.verbose:
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
+                      f"Education LLM call raised {type(e).__name__}: {e}; "
+                      f"falling back to random sample.{utils.Colors.ENDC}")
+        return _sample_from_distribution(EDUCATION_DISTRIBUTION)
+
     def generate_user_profile(self) -> None:
         """Generate a synthetic user profile (name, gender, race, career, education,
         Big Five personality, bio) from all available personas (positive + negative).
 
         Gender and race/ethnicity are randomly sampled from predefined distributions
-        and passed to the LLM as constraints. The LLM generates everything else to
-        be consistent with the personas — but is explicitly told to be diverse and
-        avoid satisfying every persona to prevent stereotyping.
+        and passed to the LLM as constraints. Education level is picked by a
+        mini-tier LLM call that weighs EDUCATION_DISTRIBUTION as a prior against
+        the persona traits (and enforces the no-JD/MD-without-adjacency rule).
+        The flagship profile LLM then generates everything else to be consistent
+        with the personas — but is explicitly told to be diverse and avoid
+        satisfying every persona to prevent stereotyping.
         """
         all_personas = list(self.cross_referenced_personas) + list(self.negative_personas)
         if not all_personas:
@@ -4193,10 +4249,18 @@ class PersonaAgent:
         sampled_race = _sample_from_distribution(RACE_ETHNICITY_DISTRIBUTION)
 
         personas_summary = [p.persona_item for p in all_personas]
+
+        # Education level: LLM-picked, with EDUCATION_DISTRIBUTION as a
+        # population prior. The LLM weighs the prior against the persona
+        # traits and enforces the JD/MD-adjacency constraint. Falls back
+        # to weighted random sampling if the mini-tier call fails.
+        sampled_education_level = self._assign_education_level(personas_summary)
+
         prompt = prompts.generate_user_profile_prompt(
             personas=personas_summary,
             gender_orientation=sampled_gender_orientation,
             race_ethnicity=sampled_race,
+            education_level=sampled_education_level,
         )
 
         response = self._query_llm_with_retry(prompt)
