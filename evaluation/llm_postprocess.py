@@ -325,6 +325,13 @@ _COMPOSE_TASKS = {
 # — otherwise the foil leans on a stale top-of-history signal and the
 # "over-personalization" failure isn't credible.
 _OVER_PERS_RECENT_WINDOW_DAYS = 7
+# Hard ceiling on how stale a category can be before we drop the instance
+# entirely. Audit (2026-05-28) found a row whose foil leaned on a 30.8-day-old
+# "film and television fandom" category because the nearest-recent fallback
+# below allowed an arbitrarily-old pick. Better to lose the row than ship an
+# unfair test where the foil leans on month-old signal a competent agent
+# would never reach for.
+_OVER_PERS_HARD_MAX_DAYS = 30
 
 _VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_community_post"}
 
@@ -2370,14 +2377,25 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
                 if recent_pool:
                     pool = recent_pool
                 else:
-                    # No category is within the strict window — fall back
-                    # to the nearest-recent category overall so the foil
-                    # still leans on the freshest available signal rather
-                    # than a random ancient one.
-                    pool = sorted(
+                    # No category is within the strict 7-day window.
+                    # Fall back to the nearest-recent category, but only
+                    # if its age is under the hard 30-day ceiling — a
+                    # foil leaning on a >30-day-old category isn't a
+                    # credible over-pers failure. If nothing clears the
+                    # ceiling, drop the instance (return None) rather
+                    # than ship an unfair test.
+                    aged_pool = sorted(
                         pool,
                         key=lambda kv: query_ts - int(cat_recent_ts.get(kv[0], 0)),
-                    )[:max(1, len(pool) // 2)]
+                    )
+                    hard_max = _OVER_PERS_HARD_MAX_DAYS * 24 * 3600
+                    aged_pool = [
+                        kv for kv in aged_pool
+                        if 0 < (query_ts - int(cat_recent_ts.get(kv[0], 0))) <= hard_max
+                    ]
+                    if not aged_pool:
+                        return None
+                    pool = aged_pool[:max(1, len(aged_pool) // 2)]
             chosen = rng.choice(pool)
             chosen_ts = int(cat_recent_ts.get(chosen[0], 0)) if cat_recent_ts else 0
             evidence: dict = {"persona_item": chosen[0]}
