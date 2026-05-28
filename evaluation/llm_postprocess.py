@@ -2641,6 +2641,74 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
     return None
 
 
+_LIST_TASK_FACTUAL_ERROR_TASKS = {
+    "agentic_proactive_daily_catchup",
+    "agentic_trending_alert",
+    "agentic_dm_digest",
+    "agentic_group_dm_summary",
+}
+
+# Named-entity extractors for the list/digest factual_error validator.
+# A real wrong-event foil must differ from the gold on at least one of
+# these axes — paraphrasing alone trivially fails the test.
+_THREAD_ID_RE = re.compile(
+    r"\b(?:[a-z]{2}_thr_\d+_\d+|in_thr_\d+_\d+|fa_thr_\d+_\d+|th_thr_\d+_\d+|ch_thr_\d+_\d+)\b",
+    re.IGNORECASE,
+)
+_FRIEND_RE = re.compile(r"\bfriend_\d+\b", re.IGNORECASE)
+_QUOTED_RE = re.compile(r"[\"“”]([^\"“”\n]{20,200})[\"”\"]")
+
+
+def _extract_named_entities(text: str) -> dict[str, set[str]]:
+    """Pull the wrong-event axes a foil needs to swap on: thread ids,
+    `friend_N` labels, and quoted strings (≥20 chars). Quotes are
+    normalized to lowercase and trimmed to first 60 chars so a minor
+    re-quote doesn't masquerade as a swap. Returns a dict of sets.
+    """
+    if not text:
+        return {"threads": set(), "friends": set(), "quotes": set()}
+    return {
+        "threads": {m.lower() for m in _THREAD_ID_RE.findall(text)},
+        "friends": {m.lower() for m in _FRIEND_RE.findall(text)},
+        "quotes": {
+            " ".join(q.lower().split())[:60]
+            for q in _QUOTED_RE.findall(text)
+        },
+    }
+
+
+def _list_task_inferior_swaps_entity(example: str, inferior: str) -> bool:
+    """For list/digest factual_error foils: confirm the inferior actually
+    swaps at least one named entity (thread id / friend label / quoted
+    string). A foil that only paraphrases the gold's prose fails this
+    check — there's no detectable factual difference.
+    """
+    if not example or not inferior:
+        return False
+    ex_ents = _extract_named_entities(example)
+    in_ents = _extract_named_entities(inferior)
+    # An entity was "swapped" if it appears in one but not both.
+    for axis in ("threads", "friends", "quotes"):
+        only_ex = ex_ents[axis] - in_ents[axis]
+        only_in = in_ents[axis] - ex_ents[axis]
+        # A real swap means SOMETHING was substituted: a value present
+        # in the gold is gone from the foil, AND a different value appears
+        # in the foil. Otherwise the foil either dropped or added a name
+        # without substitution (the "drop one item" variant) — which still
+        # counts as a real swap as long as the dropped/added side is
+        # non-empty AND the texts aren't a strict subset/superset.
+        if only_ex and only_in:
+            return True
+        if only_ex and len(ex_ents[axis]) > 1:
+            # Dropped one of several gold items — counts as a swap if
+            # the inferior didn't just truncate the prose wholesale.
+            ex_word_count = len(example.split())
+            in_word_count = len(inferior.split())
+            if in_word_count >= int(ex_word_count * 0.7):
+                return True
+    return False
+
+
 _SENSITIVE_EVENT_PREAMBLE_RE = re.compile(
     r"^\s*(?:as\s+(?:a|an|someone)\b[^.,;:\n]{0,160}[,.;:]\s*"
     r"|since\s+you[^.,;:\n]{0,160}[,.;:]\s*"
@@ -3475,6 +3543,29 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                         )
                         if text2 and not _preamble_stripped_too_similar(text2, example):
                             text = text2
+                    # List/digest factual_error wrong-event check. The LLM
+                    # ignores the "swap one identifier" directive ~67% of
+                    # the time and ships paraphrases. Run a deterministic
+                    # entity-swap check and regen up to twice; drop the
+                    # row if all 3 attempts share every named entity with
+                    # the gold.
+                    if (text
+                            and flaw_kind == "factual_error"
+                            and task_id in _LIST_TASK_FACTUAL_ERROR_TASKS
+                            and not _list_task_inferior_swaps_entity(example, text)):
+                        for _retry in range(2):
+                            text2 = _generate_inferior(
+                                inferior_llm, example, flaw_kind, evidence,
+                                task_id, user_query=user_query,
+                            )
+                            if text2 and _list_task_inferior_swaps_entity(example, text2):
+                                text = text2
+                                break
+                        else:
+                            # All 3 attempts produced paraphrases. Don't
+                            # ship a foil whose factual error reviewers
+                            # can't point to.
+                            text = ""
                     if text:
                         inst["inferior_response"] = {
                             "text": text,

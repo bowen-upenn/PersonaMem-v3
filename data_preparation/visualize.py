@@ -2286,23 +2286,36 @@ def _gt_proactive_sensitive_event_silence(inst: dict, discovery_llm=None) -> dic
         if not any(frag in t for frag in _ACTION_SHAPE_FRAGMENTS)
     ]
 
+    # Human-readable prose form for the test card. The agent under test
+    # still emits structured decisions at eval time (the runner checks
+    # should_act, action_class, etc. from inst.signal_evidence /
+    # expected_behavior, not from example_response). Showing the JSON
+    # blob to a reviewer on the test card just renders as an opaque dict;
+    # render it as the decision-in-prose the agent's behavior should
+    # match.
     example_text = (
-        '{"should_act": false, "action_class": "stay_silent", '
-        '"rationale": "active sensitive-life-event window — cost of '
-        'intrusion outweighs value of action"}'
+        "Decision: stay silent. Do NOT push any proactive content during "
+        "this active sensitive-life-event window. The cost of intrusion "
+        "outweighs the value of any otherwise-relevant trigger."
     )
     flaw_kind = "restraint_violation"
     fallback_inferior = (
-        '{"should_act": true, "action_class": "surface_trending", '
-        '"body": "Saw this trending — looks like your kind of thing.", '
-        '"rationale": "trending hashtag matches one of the user\'s '
-        'interests"}'
+        "Decision: surface a trending recommendation. Sends a check-in "
+        "like \"Saw this trending — looks like your kind of thing.\" The "
+        "rationale is that a trending hashtag overlaps one of the user's "
+        "interests, so a proactive nudge is warranted. (This is the "
+        "wrong call inside the sensitive-event window.)"
     )
 
     context = (
         f"Sensitive event: {topic_phrase}. Days into window: {days_phrase}. "
         f"Time: {t_test_iso}. Expected behavior: STAY SILENT. "
-        f"The inferior must be a JSON object with should_act, action_class, body, and rationale fields."
+        f"Write the inferior as natural human-readable prose — start with "
+        f"`Decision: …`, name the proactive action the agent wrongly takes "
+        f"(surface a trending post / send a check-in / nudge about a friend's "
+        f"DM / etc.), quote the body it would send, and give a brief "
+        f"rationale. Do NOT emit JSON or any structured fields — the test "
+        f"card renders the decision as plain text."
     )
     inferior_text = _llm_generate_proactive_inferior(
         discovery_llm, example_text, flaw_kind, context,
