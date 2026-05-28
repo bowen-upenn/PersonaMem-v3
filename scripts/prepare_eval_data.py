@@ -261,6 +261,109 @@ def _make_blind_check_llm(model: str):
     return _call
 
 
+_PERSONALIZATION_VERIFY_PROMPT = """You are auditing an over-personalization test for a chatbot.
+
+The chatbot has access to the user's full social-media interaction history (their interests, preferences, hobbies). The test asks: when given this query, would the chatbot's correct response benefit *meaningfully* from knowing the user's interests/preferences?
+
+## Query
+{query}
+
+## Decide
+
+- **HELPS**: knowing the user's specific interests/preferences would let the chatbot give a *meaningfully better* or *more useful* answer. A generic answer would be visibly worse. Personalization is genuinely additive.
+- **NEUTRAL**: the answer is essentially the same regardless of who's asking — factual, procedural, or universally applicable. Personalization adds at most decorative color, not substance.
+
+Examples:
+- "what should I watch tonight?" → HELPS (taste-based)
+- "any podcast recs for my commute?" → HELPS (taste-based)
+- "need a gift idea for a friend" → HELPS (knowing the recipient or shared interests helps)
+- "can I put cooked rice in the fridge for 5 days?" → NEUTRAL (factual)
+- "how do I remove a coffee stain?" → NEUTRAL (procedural)
+- "what does the IELTS speaking 7.5 mean?" → NEUTRAL (definitional)
+
+Return a JSON object: `{{"verdict": "HELPS" | "NEUTRAL", "reason": "<one short sentence>"}}`
+"""
+
+
+def _verify_personalization_routing(
+    bm: dict,
+    verify_llm,
+    user_id: str,
+    *,
+    verbose: bool = True,
+    max_workers: int = 16,
+) -> None:
+    """Filter chatbot personalization buckets in-place.
+
+    For each `chatbot_personalized_response` instance: drop if the verifier
+    says personalization wouldn't meaningfully help (NEUTRAL).
+    For each `over_personalization_chatbot_text` instance: drop if the
+    verifier says personalization WOULD help (HELPS) — the test would
+    unfairly punish a helpful response.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from data_preparation.utils import extract_json_from_response
+
+    proactive_bucket = bm.get("chatbot_personalized_response") or []
+    overpers_bucket = bm.get("over_personalization_chatbot_text") or []
+    if not proactive_bucket and not overpers_bucket:
+        return
+
+    # (idx_in_bm, task_type, query, instance_id)
+    work: list[tuple[int, str, str, str]] = []
+    for i, inst in enumerate(proactive_bucket):
+        q = (inst.get("user_query") or "").strip()
+        if q:
+            work.append((i, "proactive", q, inst.get("test_id") or inst.get("instance_id") or ""))
+    for i, inst in enumerate(overpers_bucket):
+        q = (inst.get("user_query") or "").strip()
+        if q:
+            work.append((i, "overpers", q, inst.get("test_id") or inst.get("instance_id") or ""))
+
+    if not work:
+        return
+
+    def _verify_one(item):
+        idx, kind, query, _id = item
+        prompt = _PERSONALIZATION_VERIFY_PROMPT.format(query=query)
+        try:
+            raw = verify_llm(prompt) if callable(verify_llm) else verify_llm.query_llm(prompt)
+            parsed = extract_json_from_response(raw or "")
+            v = (parsed.get("verdict") if isinstance(parsed, dict) else "") or ""
+            v = v.strip().upper()
+            if v not in ("HELPS", "NEUTRAL"):
+                v = "UNKNOWN"
+            return idx, kind, v
+        except Exception:
+            return idx, kind, "UNKNOWN"
+
+    drop_proactive_idx: set[int] = set()
+    drop_overpers_idx: set[int] = set()
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futs = [pool.submit(_verify_one, item) for item in work]
+        for fut in as_completed(futs):
+            idx, kind, verdict = fut.result()
+            if kind == "proactive" and verdict == "NEUTRAL":
+                drop_proactive_idx.add(idx)
+            elif kind == "overpers" and verdict == "HELPS":
+                drop_overpers_idx.add(idx)
+
+    if drop_proactive_idx:
+        bm["chatbot_personalized_response"] = [
+            inst for i, inst in enumerate(proactive_bucket)
+            if i not in drop_proactive_idx
+        ]
+    if drop_overpers_idx:
+        bm["over_personalization_chatbot_text"] = [
+            inst for i, inst in enumerate(overpers_bucket)
+            if i not in drop_overpers_idx
+        ]
+    if verbose and (drop_proactive_idx or drop_overpers_idx):
+        print(f"[{user_id}] personalization-routing verify: dropped "
+              f"{len(drop_proactive_idx)} from proactive (NEUTRAL), "
+              f"{len(drop_overpers_idx)} from over_pers (HELPS)")
+
+
 def _build_benchmark_in_memory(
     user_id: str,
     backend_dir: Path,
@@ -385,6 +488,15 @@ def prepare_one(
     )
     if bm is None:
         return {"user_id": user_id, "rows": 0, "status": "skipped"}
+
+    # Personalization-routing verification. For each chatbot_personalized_response
+    # query, ask a mini-tier LLM whether personalization is genuinely useful;
+    # drop those flagged NEUTRAL. For each over_personalization_chatbot_text
+    # query, drop those flagged HELPS (test would unfairly punish a helpful
+    # response). Runs before postprocess so we don't waste inferior-generation
+    # LLM calls on instances we're about to drop.
+    if postprocess_llm is not None:
+        _verify_personalization_routing(bm, postprocess_llm, user_id, verbose=verbose)
 
     # Workstream I + J: post-build LLM passes.
     if postprocess_llm is not None and (enable_self_check or enable_inferior):
