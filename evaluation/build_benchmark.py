@@ -2543,7 +2543,10 @@ def build_c1c_same_preference_clusters(
 # grows from 2 → 4 so the diversification metric can actually fail.
 _C1D_QUERIES_PER_CLUSTER = 6
 _C1D_N_ALLOWED_REPETITIONS = 2
-_C1D_WINDOW_SECONDS = 3 * 3600
+# 3h → 12h (2026-05-28), same reasoning as _C1C_WINDOW_SECONDS — the
+# diversification test now spans a fuller day instead of compressing
+# into one short stretch.
+_C1D_WINDOW_SECONDS = 12 * 3600
 _C1D_MAX_INSTANCES_PER_USER = 2
 
 
@@ -2798,21 +2801,42 @@ def build_c1d_chatbot_diverse_clusters(
         queries = _interleave_with_fillers(target_queries, filler_texts)
 
         cluster_id = f"{user_id}_c1d_{anchor_ts[0]}"
-        out.append({
-            "cluster_id": cluster_id,
-            "instance_id": cluster_id,
-            "task_id": "over_personalization_repetition_chatbot",
-            "task_type": "over_personalization_repetition_chatbot",
-            "target_pref": target_pref,
-            "primary_category": primary_category,
-            "target_hashtags": target_hashtags[:8],
-            "anchor_timestamps": anchor_ts,
-            "queries": queries,
-            "t_test": anchor_ts[-1],
-            "window_seconds": window_seconds,
-            "n_queries": len(queries),
-            "n_allowed_repetitions": n_allowed_repetitions,
-        })
+        # Split cluster into N rows — one per TARGET query. Same shape +
+        # rationale as the c1c (repetition_recsys) split: each row is its
+        # own test card with its own user_query / ts / head-or-tail-zone
+        # example_response. Runner dedupes by cluster_id and reads
+        # cached responses for sibling rows (see run_task_c1d's
+        # _C1D_CLUSTER_CACHE).
+        target_qs = [
+            (i, q) for i, q in enumerate(queries) if q.get("is_target", True)
+        ]
+        if not target_qs:
+            target_qs = [(0, queries[0])] if queries else []
+        n_target = len(target_qs)
+        head_size = n_allowed_repetitions + 1
+        for target_idx, (orig_idx, tq) in enumerate(target_qs):
+            is_head_zone = target_idx < head_size
+            out.append({
+                "cluster_id": cluster_id,
+                "instance_id": f"{cluster_id}_q{target_idx}",
+                "task_id": "over_personalization_repetition_chatbot",
+                "task_type": "over_personalization_repetition_chatbot",
+                "query_index": target_idx,
+                "is_head_zone": is_head_zone,
+                "n_target_queries": n_target,
+                "head_window": head_size,
+                "tail_start": head_size + 1,
+                "target_pref": target_pref,
+                "primary_category": primary_category,
+                "target_hashtags": target_hashtags[:8],
+                "anchor_timestamps": anchor_ts,
+                "queries": queries,
+                "t_test": int(tq["ts"]),
+                "user_query": tq["user_query"],
+                "window_seconds": window_seconds,
+                "n_queries": len(queries),
+                "n_allowed_repetitions": n_allowed_repetitions,
+            })
     return out
 
 

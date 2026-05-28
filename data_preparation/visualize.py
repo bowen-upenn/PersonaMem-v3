@@ -710,6 +710,7 @@ def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
     target_pref = inst.get("target_pref", "")
     primary_category = inst.get("primary_category", "")
     n_queries = int(inst.get("n_queries") or 0)
+    n_target = int(inst.get("n_target_queries") or 0)
     n_allowed = int(inst.get("n_allowed_repetitions") or 2)
     head_window = n_allowed + 1
     tail_start = head_window + 1
@@ -719,36 +720,83 @@ def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
         for i, q in enumerate(queries[:5])
     )
 
-    return {
-        "example_response": inst.get("example_response") or (
+    # The split refactor (2026-05-28) emits N rows per cluster tagged
+    # with query_index + is_head_zone. Each row's example/inferior is
+    # tailored to whether THIS specific turn is in the head-zone
+    # (invoking the target pref is fine) or the tail-zone (the agent
+    # must back off and answer on the question's own terms). Legacy
+    # single-row clusters with no query_index fall back to the meta
+    # narrative.
+    query_index = inst.get("query_index")
+    is_head_zone = inst.get("is_head_zone")
+    if query_index is None:
+        example_text = inst.get("example_response") or (
             f"Turns 1..{head_window} may reference '{target_pref}'. "
             f"From turn #{tail_start} onward, answer each question on "
             f"its own terms without forcing the preference."
-        ),
+        )
+        inferior_text = (
+            f"Across all {n_queries} turns, keeps invoking "
+            f"'{_truncate(target_pref, 100)}' on every reply — "
+            f"including turns {tail_start}..{n_target or n_queries}, where the "
+            f"agent should have backed off and answered without "
+            f"leaning on this preference."
+        )
+    else:
+        q_one = int(query_index) + 1
+        total_target = n_target or (q_one + 1)
+        if is_head_zone:
+            example_text = (
+                f"Turn {q_one} of {total_target} (HEAD ZONE — first "
+                f"{head_window} turns may invoke '{target_pref}'). Answer "
+                f"the user's question naturally; if it has a plausible "
+                f"anchor for the preference, weaving the preference in is "
+                f"fine here — the agent earns no penalty for using the "
+                f"preference in the first {head_window} responses."
+            )
+            inferior_text = (
+                f"Turn {q_one}: invokes '{_truncate(target_pref, 80)}' "
+                f"again. (Still inside the head zone — a competent agent "
+                f"could legitimately do the same; the failure only becomes "
+                f"visible at turn #{tail_start} and beyond, when the agent "
+                f"should stop leaning on the preference.)"
+            )
+        else:
+            example_text = (
+                f"Turn {q_one} of {total_target} (TAIL ZONE — from turn "
+                f"#{tail_start} on, must NOT invoke '{target_pref}'). "
+                f"Answer the user's question on its OWN terms. Even if the "
+                f"question has a plausible preference-anchor, the agent has "
+                f"already used the preference in the head zone — recycling "
+                f"it now signals over-personalization."
+            )
+            inferior_text = (
+                f"Turn {q_one}: STILL invokes '{_truncate(target_pref, 80)}'. "
+                f"The agent should have backed off by now — leaning on the "
+                f"target preference on a tail-zone turn is the saturation "
+                f"failure this task tests."
+            )
+
+    return {
+        "example_response": example_text,
         "groundtruth_preference": (
             f"Target preference (must be backed off after {n_allowed + 1} uses): "
             f"{target_pref}\n"
             + (f"Primary category: {primary_category}\n" if primary_category else "")
-            + f"Tolerance: turns 1..{head_window} may invoke; "
-            + f"turns {tail_start}..{n_queries} must NOT invoke.\n"
+            + f"Tolerance: target turns 1..{head_window} may invoke; "
+            + f"target turns {tail_start}..{n_target or n_queries} must NOT invoke.\n"
             + (f"Sample queries (each has a natural pref-anchor):\n{sample_queries}"
                if sample_queries else "")
         ),
-        # D4: cluster-shape task — the LLM-rewrite inferior path doesn't
-        # fire for these, so emit a representative failure pattern in
-        # the GT itself so test cards aren't missing the Inferior block.
         "inferior_response": {
-            "text": (
-                f"Across all {n_queries} turns, keeps invoking "
-                f"'{_truncate(target_pref, 100)}' on every reply — "
-                f"including turns {tail_start}..{n_queries}, where the "
-                f"agent should have backed off and answered without "
-                f"leaning on this preference."
-            ),
+            "text": inferior_text,
             "flaw_kind": "preference_repetition",
             "flaw_evidence": {"_from": "deterministic_cluster_inferior",
                               "target_pref": target_pref,
+                              "query_index": query_index,
+                              "is_head_zone": is_head_zone,
                               "n_queries": n_queries,
+                              "n_target_queries": n_target,
                               "head_window": head_window,
                               "tail_start": tail_start},
         },
