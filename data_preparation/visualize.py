@@ -353,6 +353,17 @@ def _gt_chatbot_restraint(inst: dict) -> dict:
     over-personalizes on a generic question."""
     top_k = [p.get("persona_item") for p in (inst.get("top_k_relevant_prefs") or [])[:5] if p.get("persona_item")]
     surfaced = _inferior_surfaced_pref(inst)
+    # The Forbidden list MUST include the specific item the paired Inferior
+    # leans on — that item IS the failure mode the test grades. If the
+    # foil's persona_item isn't already in top_k (which is built from the
+    # generic top-K relevant preferences and may not overlap the foil's
+    # recency-filtered pick), hoist it to the front so the judge sees the
+    # specific item it should penalize the over-personalizing agent for.
+    if surfaced:
+        norm = surfaced.strip().lower()
+        already_listed = any(norm == (p or "").strip().lower() for p in top_k)
+        if not already_listed:
+            top_k = [surfaced] + top_k
     surfaced_suffix = f", like {_truncate(surfaced, 80)}" if surfaced else ""
     rubric_line = f"(-) Don't surface any personal preferences{surfaced_suffix}."
     # D4: populate GT with the negative-space — the preferences in the
@@ -836,6 +847,19 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
 def _gt_context_shift_scenarios(inst: dict) -> dict:
     forbidden = [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]]
     surfaced = _inferior_surfaced_pref(inst)
+    # The Forbidden list MUST include the specific item the paired Inferior
+    # actually surfaces — that item IS the failure the test grades. The
+    # scenario's forbidden_items list is built up-front from privacy-flagged
+    # candidates; the foil generator may pick a top-category pref that's
+    # outside that pre-baked list, leaving the judge without an explicit
+    # entry to anchor the penalty on. Hoist the foil's pick to the front so
+    # the Forbidden list always names what the Inferior actually says.
+    if surfaced:
+        surfaced_trunc = _truncate(surfaced, 100)
+        norm = surfaced.strip().lower()
+        already_listed = any(norm == (f or "").strip().lower() for f in forbidden)
+        if not already_listed:
+            forbidden = [surfaced_trunc] + forbidden
     surfaced_suffix = f", like {_truncate(surfaced, 80)}" if surfaced else ""
     return {
         "example_response": (

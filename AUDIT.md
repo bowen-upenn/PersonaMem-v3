@@ -49,6 +49,7 @@ Quality dimensions per row:
 4. Same-domain trap check on `over_personalization_context_shift`: does the LLM-declared `chosen_pref_domain` actually differ from `query_domain`? Are domain labels too generic ("lifestyle", "general", "content")?
 5. Recency check on over_pers foils: `flaw_evidence.recency_delta_seconds` should be ≤ 30 days from t_test (the hard ceiling in `evaluation/llm_postprocess.py:_OVER_PERS_HARD_MAX_DAYS`).
 6. Preamble-stripped inferior body should differ materially from example body (≥30% token diff) for restraint arms.
+7. **Foil pick must be in the Forbidden list**: for `over_personalization_chatbot_text` and `over_personalization_context_shift`, the persona_item the Inferior leans on (`inferior_response.flaw_evidence.persona_item`) MUST appear in the row's `groundtruth_preference` "Forbidden items" / "must NOT be surfaced" list. If the foil leans on a top-recency category that's outside the pre-baked list (top-K relevant prefs / scenario-curated forbidden_items), the judge has no anchor to penalize that specific leak. `data_preparation/visualize.py::_gt_chatbot_restraint` and `_gt_context_shift_scenarios` hoist the surfaced item into the list when missing.
 
 ### Slice B — Recommendation / agentic content quality
 
