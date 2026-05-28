@@ -4518,13 +4518,10 @@ def build_benchmark(
         }
         print(f"[build_benchmark] WARN: proactive_actions builder failed: {exc}")
 
-    # Persist Phase D audit report.
-    try:
-        out_dir = Path("benchmark") / user_id
-        out_dir.mkdir(parents=True, exist_ok=True)
-        auditor.write(out_dir)
-    except Exception as exc:
-        print(f"[build_benchmark] WARN: failed to write build_audit.json: {exc}")
+    # Phase D audit stats are surfaced in the returned bm["build_audit"]
+    # block below (consumed by callers that want them). The legacy
+    # benchmark/{uid}/build_audit.json file is no longer written —
+    # benchmark/ is no longer produced.
 
     # Apply per-task quotas (stratified random truncation when over cap).
     # Floor enforcement is the synthesis layer's job — this only caps.

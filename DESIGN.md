@@ -167,7 +167,7 @@ Recent additions on top of the base pipeline, roughly in dependency order:
 - **R1 — Cross-polarity contradiction causality gate (Step 7):** the positive/negative cross-ref pipelines are now cross-checked. Pos/neg canonical pairs sharing ≥2 hashtags are LLM-confirmed as semantically opposite, then must pass a temporal-precedent rule: the later stance survives only with ≥ `MIN_STANCE_FLIP_PRIOR` same-polarity rows before the first opposing row. Failed gates drop the later canonical; `update_history` entries carry `resolution: "suppressed_insufficient_precedent"` or `"stance_shift_with_precedent"`. Fixes the 115-boxing bug (stance flip 1h apart with no prior evidence).
 - **R5 — Per-session geolocation + calendar modification stream (Steps 15, 16):** each event carries `event_location` shared across all rows in its session. `backend/{uid}/calendar.json` holds an add/update/remove stream for synthetic calendar events. `BackendQuery.get_calendar_state(T)` folds modifications with `ts ≤ T` into the live calendar state at time T. Home-only + up to 2 travel cities cap for an 8-day window.
 - **R8 — Drop split / over_personalization_irrelevant:** the data-gen output is pure history. Eval picks its own test moments dynamically by cutting the timeline — no pre-flagged train/test partition.
-- **R9 — Benchmark CSV + contradiction-aware GT:** `build_benchmark` additionally emits `benchmark/{uid}/benchmark.csv` for HuggingFace publication. `BackendQuery.get_preferences(..., include_superseded=False)` filters canonicals superseded at T (via the `"stance_shift_with_precedent"` update_history entry).
+- **R9 — Test set under backend/ + contradiction-aware GT:** `scripts/prepare_eval_data.py` emits `backend/{uid}/test.json` as the single canonical test-set artifact (one JSON list per user; each item carries `query_id`, `task_type`, `ts`, `user_query`, `example_response`, `inferior_response`, `groundtruth_preference`, `instance_full`). `evaluation/run_eval.py` reads it directly. The legacy `benchmark/{uid}/queries.csv` is no longer produced. `BackendQuery.get_preferences(..., include_superseded=False)` filters canonicals superseded at T (via the `"stance_shift_with_precedent"` update_history entry).
 
 See EVAL.md for the corresponding E2/E3/E4/E5 evaluation tasks that consume these signals.
 
@@ -1085,13 +1085,13 @@ Each app JSON is served by a mock MCP server under `evaluation/mcp_servers/`. Se
 
 ## 19. Per-query Benchmark Audit (automated quality gate)
 
-After `scripts/prepare_eval_data.py` writes `benchmark/{uid}/queries.csv`, every row can be auto-checked against eight quality dimensions via:
+After `scripts/prepare_eval_data.py` writes `backend/{uid}/test.json`, every instance can be auto-checked against eight quality dimensions via:
 
 ```bash
 python scripts/audit_benchmark_queries.py --user_id {uid}
 ```
 
-The script is idempotent and read-only against the benchmark — it writes its own output to `benchmark/{uid}/runs/{ts}/audit_queries.{jsonl,_summary.json,_summary.md}`. Six dimensions are mini-tier (`gpt-5.4-mini`) LLM checks; two are deterministic. Implementation: `evaluation/audit_query_quality.py`.
+The script is idempotent and read-only against the test set. Six dimensions are mini-tier (`gpt-5.4-mini`) LLM checks; two are deterministic. Implementation: `evaluation/audit_query_quality.py`.
 
 ### Dimensions
 

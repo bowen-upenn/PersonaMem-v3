@@ -2889,8 +2889,17 @@ def _load_test_samples(
     benchmark_dir: str = "benchmark",
     backend_dir: str = "backend",
     include_instance_full: bool = False,
+    precomputed_rows: list[dict] | None = None,
 ) -> list[dict]:
-    """Walk benchmark/{uid}/queries.csv → list of test-sample dicts.
+    """Walk benchmark/{uid}/queries.csv (or `precomputed_rows`) → list of
+    test-sample dicts.
+
+    `precomputed_rows`, when provided, is a list of CSV-row-shaped dicts
+    (same keys `_project_row` emits — `query_id`, `task_type`, `ts`,
+    `instance_json`, etc.). Used by `scripts/prepare_eval_data.py` to
+    build test.json directly from the in-memory `pairs` list without
+    writing queries.csv to disk. When None, falls back to reading the
+    CSV (legacy path; still works if a queries.csv exists).
 
     Each test sample is rendered as a STANDALONE timeline card at its own
     timestamp (sorted alongside regular events + calendar mods), with a
@@ -2913,10 +2922,7 @@ def _load_test_samples(
     every field the builder emitted (blind_check_score, arm, polarity,
     etc.).
     """
-    qcsv = os.path.join(benchmark_dir, str(uid), "queries.csv")
     out: list[dict] = []
-    if not os.path.exists(qcsv):
-        return out
     # Build the persona context bank ONCE; extractors use it to fill in
     # concrete expected-answer shapes when the instance itself is sparse.
     global _PERSONA_CONTEXT, _CHATBOT_EVENT_BY_OID
@@ -2934,12 +2940,24 @@ def _load_test_samples(
                         _CHATBOT_EVENT_BY_OID[oid] = ev
         except (ValueError, OSError):
             pass
-    csv.field_size_limit(10_000_000)
-    with open(qcsv, "r", encoding="utf-8") as f:
-        first = f.readline()
-        if not first.startswith("#"):
-            f.seek(0)
-        for r in csv.DictReader(f):
+
+    # Row source: in-memory list (preferred) OR queries.csv (legacy).
+    if precomputed_rows is not None:
+        row_iter: list[dict] = precomputed_rows
+    else:
+        qcsv = os.path.join(benchmark_dir, str(uid), "queries.csv")
+        if not os.path.exists(qcsv):
+            return out
+        csv.field_size_limit(10_000_000)
+        row_iter = []
+        with open(qcsv, "r", encoding="utf-8") as f:
+            first = f.readline()
+            if not first.startswith("#"):
+                f.seek(0)
+            for r in csv.DictReader(f):
+                row_iter.append(r)
+    for r in row_iter:
+        if True:
             try:
                 inst = json.loads(r.get("instance_json") or "{}")
             except Exception:
@@ -3229,14 +3247,24 @@ def dump_test_samples_json(
     output_path: str | None = None,
     benchmark_dir: str = "benchmark",
     backend_dir: str = "backend",
+    precomputed_rows: list[dict] | None = None,
 ) -> str:
     """Build backend/{uid}/test.json — every test query in one place.
 
     See the plan in /vast/home/b/bwjiang/.claude/plans/ for the schema.
+
+    `precomputed_rows` (optional) is the in-memory list of CSV-row dicts
+    produced by `scripts/prepare_eval_data.py`'s `_project_row`. When
+    provided, test.json is built directly from those rows — no
+    queries.csv on disk is required.
     """
     from evaluation import task_registry as _tr
 
-    samples = _load_test_samples(uid, benchmark_dir, backend_dir, include_instance_full=True)
+    samples = _load_test_samples(
+        uid, benchmark_dir, backend_dir,
+        include_instance_full=True,
+        precomputed_rows=precomputed_rows,
+    )
     records: list[dict] = []
     for s in samples:
         task_type = s["task_type"]
@@ -3392,7 +3420,11 @@ def _load_profile(user_dir: str) -> dict | None:
         return json.load(f)
 
 
-def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
+def generate_persona_html(
+    user_id: str,
+    backend_dir: str = "backend",
+    precomputed_rows: list[dict] | None = None,
+) -> str:
     """Read backend/{user_id}/ JSON files and produce a self-contained HTML file."""
     user_dir = os.path.join(backend_dir, str(user_id))
 
@@ -3440,10 +3472,12 @@ def generate_persona_html(user_id: str, backend_dir: str = "backend") -> str:
     profile_json = json.dumps(profile) if profile else "null"
     calendar_json = json.dumps(calendar_mods)
 
-    # Test-sample annotation: load benchmark/{uid}/queries.csv (when present).
-    # Each test sample becomes a standalone timeline card at its own ts +
-    # nearest preceding event's geo location, with a distinct background color.
-    test_samples = _load_test_samples(user_id)
+    # Test-sample annotation: source from `precomputed_rows` when the caller
+    # already has the row list in memory (prepare_eval_data.py); else fall
+    # back to reading benchmark/{uid}/queries.csv if present.
+    test_samples = _load_test_samples(
+        user_id, backend_dir=backend_dir, precomputed_rows=precomputed_rows,
+    )
     test_samples_json = json.dumps(test_samples)
 
     # Counts
@@ -4703,7 +4737,7 @@ if (eventsData.length === 0) {{
         sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
       }}
       // Normalize inferior_response: some tasks (e.g. preference_shift_followthrough)
-      // emit a plain string; the dict-shape path expects {text, flaw_kind, ...}.
+      // emit a plain string; the dict-shape path expects an object with text + flaw_kind keys.
       const _infRaw = t.inferior_response;
       const _infObj = (typeof _infRaw === 'string')
         ? {{text: _infRaw}}

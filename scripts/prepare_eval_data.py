@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
-"""Build the per-persona eval benchmark as ONE CSV per user.
+"""Build the per-persona eval test set, output to backend/{uid}/test.json.
 
-This is the SINGLE entry point for benchmark construction — no separate
-`benchmark.json` step. The CSV at `benchmark/{uid}/queries.csv` contains
-both:
+This is the SINGLE entry point for test-set construction. The canonical
+on-disk artifact is `backend/{uid}/test.json` — a JSON list with one
+structured dict per test instance. The eval harness (`evaluation/run_eval.py`)
+reads test.json directly; no derived CSV or sidecar is produced.
 
-  - Narrow scannable columns (query_id, task_type, ts, query_text, etc.)
-    for the HuggingFace-facing view of the benchmark.
-  - An `instance_json` column with the full instance payload the runner
-    needs for scoring. This makes the CSV the single source of truth
-    for both eval ordering and eval execution — no JSON sidecar.
+The legacy `benchmark/{uid}/queries.csv` file is no longer written
+(the benchmark/ folder is no longer produced). test.json carries the
+same instances in the same order; each item has `query_id`, `task_type`,
+`ts`, `user_query`, `example_response`, `inferior_response`,
+`groundtruth_preference`, and an `instance_full` block carrying the
+runner-side payload.
 
 E6 (Active Mistake Prevention) is built INLINE here, same as every
 other task family. An LLM client is built from env config automatically
@@ -25,8 +27,8 @@ CLI:
     python scripts/prepare_eval_data.py --user_range 100-200 --parallel 8
     python scripts/prepare_eval_data.py --all --parallel 16
 
-Missing `backend/{uid}` → user is skipped and logged to
-`benchmark/_prepare_eval_data.skipped.txt`.
+Missing `backend/{uid}` → user is skipped; the skip reason is written
+to stderr (no cumulative log file).
 """
 
 from __future__ import annotations
@@ -113,15 +115,15 @@ def _build_llm_client() -> object | None:
         return None
 
 
-def _skipped_log_path() -> Path:
-    return Path("benchmark") / "_prepare_eval_data.skipped.txt"
-
-
 def _append_skipped(user_id: str, reason: str) -> None:
-    path = _skipped_log_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as f:
-        f.write(f"{dt.datetime.now(dt.timezone.utc).isoformat()}\t{user_id}\t{reason}\n")
+    """Log a user-skip reason to stderr. The legacy
+    benchmark/_prepare_eval_data.skipped.txt cumulative log is no longer
+    written — benchmark/ is no longer produced. Per-run stdout/stderr
+    captures the same information at the moment of failure."""
+    print(
+        f"[prepare_eval_data] SKIPPED user {user_id}: {reason}",
+        file=sys.stderr,
+    )
 
 
 def _extract_ts(inst: dict) -> int:
@@ -522,16 +524,17 @@ def _drop_invalid_tool_call_instances(
         bm[task_type] = kept
 
     if dropped and verbose:
-        print(f"[{user_id}] tool-call gate dropped {len(dropped)} instance(s) — "
-              f"see benchmark/{user_id}/build_benchmark.dropped.jsonl")
-    out_path = Path("benchmark") / user_id / "build_benchmark.dropped.jsonl"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    # Always write (truncate) so the file reflects the LATEST run, not a
-    # cumulative log. Empty file when nothing was dropped — useful as a
-    # heartbeat that the gate ran.
-    with out_path.open("w", encoding="utf-8") as f:
-        for row in dropped:
-            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+        # benchmark/{uid}/build_benchmark.dropped.jsonl is no longer
+        # produced. Log the dropped instances inline so the reasons
+        # appear in stdout instead.
+        print(f"[{user_id}] tool-call gate dropped {len(dropped)} instance(s):")
+        for row in dropped[:20]:
+            print(
+                f"  - {row.get('task_type','?')}/{row.get('instance_id','?')}: "
+                f"{row.get('drop_reason','?')}"
+            )
+        if len(dropped) > 20:
+            print(f"  ... and {len(dropped) - 20} more")
 
 
 def prepare_one(
@@ -788,66 +791,42 @@ def prepare_one(
               f"{dropped_no_inferior} missing inferior_response, "
               f"{dropped_no_query} missing user_query (user-message task)")
 
-    # Emit CSV
-    csv_path = Path("benchmark") / user_id / "queries.csv"
-    csv_path.parent.mkdir(parents=True, exist_ok=True)
-    with csv_path.open("w", encoding="utf-8", newline="") as f:
-        # Version header comment; run_eval.py asserts this line on load.
-        f.write(f"# queries_csv_version={QUERIES_CSV_VERSION}\n")
-        writer = csv.DictWriter(f, fieldnames=COLUMNS)
-        writer.writeheader()
-        for seq, (task_type, inst, ts) in enumerate(pairs):
-            row = _project_row(seq, task_type, inst, user_id, ts)
-            writer.writerow(row)
+    # benchmark/{uid}/queries.csv is no longer produced — backend/{uid}/test.json
+    # (written by dump_test_samples_json below) is the sole canonical
+    # artifact. run_eval.py reads test.json directly. Build the in-memory
+    # row list now and hand it to the renderers below.
+    rows: list[dict] = []
+    for seq, (task_type, inst, ts) in enumerate(pairs):
+        rows.append(_project_row(seq, task_type, inst, user_id, ts))
 
     if unknown_task_types and verbose:
         print(f"[{user_id}] WARNING: {len(unknown_task_types)} task_type(s) "
               f"not in TASK_TYPE_META — register them in "
               f"evaluation/task_registry.py: {sorted(unknown_task_types)}")
 
-    # One-shot post-write artifacts: test.json dump, persona.html
-    # re-render (so the timeline reflects the new buckets), and a
-    # snapshot audit. All cheap, no LLM calls — kept inline so a
-    # single ``prepare_eval_data.py`` invocation produces every artifact
-    # a reviewer might want, no follow-up commands needed.
+    # Post-build artifacts: test.json (the eval-harness input) and
+    # persona.html (the reviewer view). Both write under backend/{uid}/.
     test_json_path: str | None = None
     persona_html_path: str | None = None
-    audit_md_path: str | None = None
 
     try:
         from data_preparation.visualize import dump_test_samples_json, generate_persona_html
-        test_json_path = dump_test_samples_json(user_id)
+        test_json_path = dump_test_samples_json(user_id, precomputed_rows=rows)
         if verbose:
             print(f"[{user_id}] wrote {test_json_path}")
-        persona_html_path = generate_persona_html(user_id)
+        persona_html_path = generate_persona_html(user_id, precomputed_rows=rows)
         if verbose:
             print(f"[{user_id}] wrote {persona_html_path}")
     except Exception as exc:
         if verbose:
             print(f"[{user_id}] WARNING: post-write dump/render failed: {exc}")
 
-    try:
-        # Inline-call the audit driver — keeps the public CLI in
-        # ``scripts/audit_test_queries.py`` for ad-hoc use without
-        # forking a subprocess for every persona.
-        from scripts.audit_test_queries import _run_audit
-        audit_md_path, _ = _run_audit(str(user_id), "snapshot",
-                                       benchmark_dir="benchmark",
-                                       backend_dir="backend")
-        if verbose:
-            print(f"[{user_id}] wrote {audit_md_path}")
-    except Exception as exc:
-        if verbose:
-            print(f"[{user_id}] WARNING: audit failed: {exc}")
-
     return {
         "user_id": user_id,
         "rows": len(pairs),
         "status": "ok",
-        "csv_path": str(csv_path),
         "test_json_path": test_json_path,
         "persona_html_path": persona_html_path,
-        "audit_md_path": audit_md_path,
         "unknown_task_types": sorted(unknown_task_types),
     }
 

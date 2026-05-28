@@ -1,6 +1,8 @@
 # Eval data quality audit guide
 
-Procedural guide for auditing `benchmark/{user_id}/queries.csv` after a regen. The audit catches problems the unit-level self-checks and verifiers cannot — silent task-type loss, schema drift, unfair test pairs, jargon / template leaks, GT/query mismatches, voice drift across rows, and distribution gaps.
+Procedural guide for auditing `backend/{user_id}/test.json` after a regen. The audit catches problems the unit-level self-checks and verifiers cannot — silent task-type loss, schema drift, unfair test pairs, jargon / template leaks, GT/query mismatches, voice drift across rows, and distribution gaps.
+
+`test.json` is a JSON list of test-instance dicts. Each item carries `query_id`, `task_type`, `ts`, `user_query`, `example_response`, `inferior_response`, `groundtruth_preference`, `rubric_tags`, and an `instance_full` block with the runner-side payload. (The legacy `benchmark/{uid}/queries.csv` is no longer produced.)
 
 This document is methodology only. It contains no findings from any specific audit. Run the procedure below after every regen and write the findings into a separate report.
 
@@ -109,13 +111,13 @@ The drop counts are emitted to `/tmp/eval_regen/{uid}.stdout`. **Read those line
 
 | # | Check | Location | Drops what | Post-gen audit method |
 |---|---|---|---|---|
-| 1 | Empty-GT filter | `:575` | rows where `groundtruth_preference ∈ {"", "(none identified)"}` | `grep -c '(none identified)' benchmark/*/queries.csv` → 0 |
+| 1 | Empty-GT filter | `:575` | rows where `groundtruth_preference ∈ {"", "(none identified)"}` | `grep -c '(none identified)' backend/*/test.json` → 0 |
 | 2 | History-floor filter | `:596–604` | rows whose `t_test` falls before the 20% mark of user's engagement history | python: for every row, confirm `ts ≥ engagement_ts[len(events)//5]` |
 | 3 | Sensitive-event coverage check | `:606–672` | `over_personalization_sensitive_event` rows whose planted episode topic / hashtags / label_fragment never appear in chatbot / ai_studio events before `t_test` | sample 3 surviving sensitive-event rows; confirm the episode topic appears in some pre-T_test chatbot / ai_studio event |
 | 4 | Format-verify gate (a) | `:682–697` | rows where `inferior_response` is empty (string `""` OR dict with empty `.text`) | python: for every row, `inferior_response` is non-empty string OR dict with non-empty `.text` |
 | 5 | Format-verify gate (b) | `:698–706` | `USER_MESSAGE_TASKS` rows with no `query` / `user_message` / `user_query` field populated | python: for every USER_MESSAGE_TASKS row, at least one of those three keys is non-empty |
 | 6 | Personalization-routing verify | `:293–367` | `chatbot_personalized_response` NEUTRAL + `over_personalization_chatbot_text` HELPS via mini-LLM judge | check post-routing counts ≥ floor (e.g. ≥10 per user for chatbot_personalized) — a collapse is a signal the verifier is too strict |
-| 7 | Tool-call gate | `:422–465` | agentic / E3 / E6 instances with invalid `tool_call` payloads. Each dropped instance is logged to `benchmark/{uid}/build_benchmark.dropped.jsonl` | every agentic row has non-empty `tool_call` matching its `tool_call_rules`; spot-check the `.dropped.jsonl` log for unexpected reasons |
+| 7 | Tool-call gate | `:422–465` | agentic / E3 / E6 instances with invalid `tool_call` payloads. Drop reasons now print to stdout inline (no on-disk log file) | every agentic row in test.json has non-empty `tool_call` matching its `tool_call_rules`; the stdout drop reasons should align with what's missing |
 | 8 | Per-instance self-check | `llm_postprocess.py:1607` | `_run_self_check(task_type, query, response)` — task-specific LLM-judge that catches off-task example responses; failed responses get regenerated once before being dropped | log lines `self_check_failed=N` — a high N relative to total self_checks is a prompt regression |
 | 9 | Voice-evidence distinguishability | `llm_postprocess.py:600` | agentic compose rows where example_response and inferior_response voice-evidence sets are too similar to support a fair voice_match grade | log lines `voice_check_failed=N` + `voice_check_regen=M`; sample 3 surviving rows, confirm example/inferior carry visibly different voice anchors |
 | 10 | Triplet self-check | `llm_postprocess.py:778` | chatbot personalized response triplets (proactive / control / adversarial) where the triplet doesn't satisfy the held-out alignment criteria | log lines `chatbot_triplet_built=N chatbot_triplet_failed=M`; failure count > 0 is a signal |
@@ -182,9 +184,14 @@ Each agentic task has a verifier that emits a checklist of `(check_name, pass / 
 
 Three durable logs per regen tell you what was lost:
 
-- `benchmark/{uid}/build_benchmark.dropped.jsonl` — every instance dropped by the tool-call gate, with reason.
-- `benchmark/_prepare_eval_data.skipped.txt` — cumulative log of users skipped entirely (missing backend, build_benchmark exception, etc.).
-- `/tmp/eval_regen/{uid}.stdout` — the `dropped … queries with empty GT`, `dropped … queries before the 20% engagement-history mark`, `sensitive-event coverage: dropped …`, `format-verify dropped …`, `personalization-routing verify: dropped …` lines per user.
+- `/tmp/eval_regen/{uid}.stdout` — the canonical per-run log. Carries:
+  - tool-call gate drops (printed inline, was `build_benchmark.dropped.jsonl`)
+  - per-user skip reasons (printed to stderr, was `_prepare_eval_data.skipped.txt`)
+  - `dropped … queries with empty GT`
+  - `dropped … queries before the 20% engagement-history mark`
+  - `sensitive-event coverage: dropped …`
+  - `format-verify dropped …`
+  - `personalization-routing verify: dropped …`
 
 **Audit step zero**: read all three before sampling individual rows. A regression in any automated check should manifest as a delta in these counts vs. the prior regen.
 
@@ -235,26 +242,23 @@ After a regen, run these spot-checks before declaring the audit closed:
 # All 5 users have non-zero context_shift rows
 for u in 105 115 229 282 760; do
   echo -n "$u: "
-  grep -c context_shift benchmark/$u/queries.csv
+  grep -c context_shift backend/$u/test.json
 done
 
 # No un-substituted placeholders or known leaks
 grep -E '\{privacy_rubric_line\}|\{surfaced_suffix\}|\{warmup_window\}|\{monitored_start\}|\{head_window\}|\{tail_start\}|\{target_pref\}|\{gold_idx\}|n_allowed_repetitions|token Jaccard|\(none identified\)' \
-  benchmark/*/queries.csv | wc -l   # should be 0
+  backend/*/test.json | wc -l   # should be 0
 
 # Compose-task word floor
 python3 -c "
-import csv, json, sys
-csv.field_size_limit(sys.maxsize)
+import json
 COMPOSE = {'agentic_send_post','agentic_community_post','agentic_cross_app_repost','agentic_auto_reply'}
 for u in ['105','115','229','282','760']:
     counts = []
-    with open(f'benchmark/{u}/queries.csv') as f:
-        next(f); rdr = csv.DictReader(f)
-        for r in rdr:
-            if r['task_type'] not in COMPOSE: continue
-            ij = json.loads(r['instance_json'])
-            ex = ij.get('example_response')
+    with open(f'backend/{u}/test.json') as f:
+        for r in json.load(f):
+            if r.get('task_type') not in COMPOSE: continue
+            ex = r.get('example_response') or (r.get('instance_full') or {}).get('example_response')
             if isinstance(ex, dict): ex = ex.get('text','')
             counts.append(len((ex or '').split()))
     if counts:
@@ -263,16 +267,16 @@ for u in ['105','115','229','282','760']:
 "
 
 # Empty display_rubric on active_mistake_prevention
+# (display_rubric is no longer a top-level column; check the instance's
+# rubric_tags array carries non-empty entries instead)
 python3 -c "
-import csv, sys
-csv.field_size_limit(sys.maxsize)
+import json
 for u in ['105','115','229','282','760']:
     empty = 0
-    with open(f'benchmark/{u}/queries.csv') as f:
-        next(f); rdr = csv.DictReader(f)
-        for r in rdr:
-            if r['task_type'] != 'active_mistake_prevention': continue
-            if not r['display_rubric'].strip(): empty += 1
+    with open(f'backend/{u}/test.json') as f:
+        for r in json.load(f):
+            if r.get('task_type') != 'active_mistake_prevention': continue
+            if not (r.get('rubric_tags') or []): empty += 1
     print(f'{u}: amp_empty_rubric={empty}')
 "
 ```

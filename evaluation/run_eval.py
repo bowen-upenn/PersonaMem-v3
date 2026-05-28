@@ -1,6 +1,7 @@
 """Per-persona sequential evaluation harness.
 
-Reads `benchmark/{uid}/queries.csv`, iterates rows in `seq` order, dispatches
+Reads `backend/{uid}/test.json` (a list of structured test instances written
+by `scripts/prepare_eval_data.py`), iterates items in list order, dispatches
 each query to its task-specific runner via `run_eval_dispatch.dispatch_single`,
 and writes per-row results to `{run_dir}/results.csv` and a per-persona summary.
 
@@ -8,8 +9,12 @@ Strictly sequential within a persona — agentic writes accumulate across querie
 via a single persistent MCP overlay file. Cross-persona parallelism happens at
 the shell level (see `scripts/run_eval_all.sh`).
 
+Legacy `benchmark/{uid}/queries.csv` is still loaded as a fallback if
+present, but the benchmark/ folder is no longer produced by the build
+pipeline. Each item's `instance_full` field becomes the runner's `inst`.
+
 CLI:
-    python -m evaluation.run_eval --user_id 115 --run_dir benchmark/115/runs/<ts>
+    python -m evaluation.run_eval --user_id 115 --run_dir runs/<ts>
         [--mode llm_longctx|mcp_agent|agent_tools]
         [--limit N] [--resume] [--dry_run]
         [--enable_llm_judge]
@@ -151,22 +156,62 @@ def _build_llm_clients(args: argparse.Namespace):
 
 
 def _load_queries(queries_path: Path) -> list[dict]:
-    with queries_path.open("r", encoding="utf-8") as f:
-        first = f.readline().rstrip("\n")
-        if not first.startswith("#"):
-            # No version header — treat first line as data header.
-            f.seek(0)
-        else:
-            # Sanity: queries_csv_version=N
-            if f"queries_csv_version={QUERIES_CSV_VERSION}" not in first:
-                print(f"[run_eval] WARN: CSV version mismatch — header={first!r}, "
-                      f"expected queries_csv_version={QUERIES_CSV_VERSION}")
-        reader = csv.DictReader(f)
-        rows = list(reader)
+    """Load the eval test set.
+
+    Reads `backend/{uid}/test.json` (a list of structured instance dicts,
+    written by `scripts/prepare_eval_data.py`). The downstream code path
+    expects each row to look like the legacy `queries.csv` row shape —
+    i.e. carry `query_id` / `seq` / `task_type` / `ts` columns plus an
+    `instance_json` string the dispatcher will parse. Project each test
+    item to that shape: index in the list becomes `seq`, and the dict's
+    `instance_full` field (the original `inst` payload that ran through
+    the postprocess) becomes `instance_json`.
+
+    Legacy CSV path is also supported (file ending in `.csv`) so an
+    existing queries.csv still loads if it's the file the user points at.
+    """
+    if queries_path.suffix == ".csv":
+        with queries_path.open("r", encoding="utf-8") as f:
+            first = f.readline().rstrip("\n")
+            if not first.startswith("#"):
+                f.seek(0)
+            else:
+                if f"queries_csv_version={QUERIES_CSV_VERSION}" not in first:
+                    print(f"[run_eval] WARN: CSV version mismatch — header={first!r}, "
+                          f"expected queries_csv_version={QUERIES_CSV_VERSION}")
+            reader = csv.DictReader(f)
+            rows = list(reader)
+    else:
+        # JSON path: test.json carries a list of dicts; project each into
+        # the row shape downstream consumers expect.
+        import json as _json
+        with queries_path.open("r", encoding="utf-8") as f:
+            items = _json.load(f)
+        if not isinstance(items, list):
+            raise ValueError(
+                f"{queries_path} must be a JSON list of test instances "
+                f"(got {type(items).__name__})"
+            )
+        rows = []
+        for i, item in enumerate(items):
+            if not isinstance(item, dict):
+                continue
+            inst_full = item.get("instance_full") or item
+            rows.append({
+                "query_id": item.get("query_id", f"unknown:{i:04d}"),
+                "seq": str(i),
+                "user_id": item.get("user_id", ""),
+                "task_family": item.get("task_family", ""),
+                "task_type": item.get("task_type", ""),
+                "instance_id": item.get("instance_id", ""),
+                "ts": str(item.get("ts", 0)),
+                "ts_iso": item.get("ts_iso", ""),
+                "instance_json": _json.dumps(inst_full, ensure_ascii=False),
+            })
     # Assert sort-by-seq
     seqs = [int(r["seq"]) for r in rows]
     if seqs != sorted(seqs):
-        print("[run_eval] WARN: queries.csv is not sorted by seq ascending — "
+        print("[run_eval] WARN: test set is not sorted by seq ascending — "
               "the runner will still iterate in file order.")
     return rows
 
@@ -514,14 +559,20 @@ def _summarize_by_task(rows: list[dict]) -> dict:
 def main() -> int:
     args = _parse_args()
 
-    queries_path = Path(args.backend_dir).parent / "benchmark" / args.user_id / "queries.csv"
-    # Real on-disk location is benchmark/{uid}/queries.csv — not under backend_dir.
-    queries_path = Path("benchmark") / args.user_id / "queries.csv"
+    # Source of truth: backend/{uid}/test.json (a list of test-instance
+    # dicts written by scripts/prepare_eval_data.py). Legacy
+    # benchmark/{uid}/queries.csv path still loads if present, but the
+    # benchmark/ folder is no longer produced.
+    queries_path = Path(args.backend_dir) / args.user_id / "test.json"
     if not queries_path.exists():
-        print(f"[run_eval] queries.csv missing at {queries_path} — "
-              f"build it first: python scripts/prepare_eval_data.py --user_id {args.user_id}",
-              file=sys.stderr)
-        return 2
+        legacy_csv = Path("benchmark") / args.user_id / "queries.csv"
+        if legacy_csv.exists():
+            queries_path = legacy_csv
+        else:
+            print(f"[run_eval] test.json missing at {queries_path} — "
+                  f"build it first: python scripts/prepare_eval_data.py --user_id {args.user_id}",
+                  file=sys.stderr)
+            return 2
 
     run_dir = Path(args.run_dir)
     run_dir.mkdir(parents=True, exist_ok=True)
