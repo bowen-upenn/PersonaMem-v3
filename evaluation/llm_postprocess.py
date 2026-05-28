@@ -247,7 +247,7 @@ def _validate_compose_length(response: str, task_type: str) -> tuple[bool, str]:
     the existing verifier in tasks/agentic_verifiers.py scored the
     failure but didn't gate generation, so short outputs always
     shipped. Adding the check to the generator validator chain so
-    the regen path retries once with explicit length feedback.
+    the regen path retries with explicit length feedback.
     """
     if task_type not in (
         "agentic_cross_app_repost",
@@ -260,10 +260,15 @@ def _validate_compose_length(response: str, task_type: str) -> tuple[bool, str]:
         return True, ""
     n_words = len(response.split())
     if n_words < _MIN_COMPOSE_WORDS_FLOOR:
+        deficit = _MIN_COMPOSE_WORDS_FLOOR - n_words
         return False, (
-            f"under_compose_floor: {n_words} words < {_MIN_COMPOSE_WORDS_FLOOR}. "
-            f"Expand the body — add specific topical content, voice-point "
-            f"phrases, and concrete details. Do NOT pad with filler."
+            f"under_compose_floor: only {n_words} words; need at least "
+            f"{_MIN_COMPOSE_WORDS_FLOOR}. Add ~{deficit} more words of "
+            f"SUBSTANTIVE content — concrete details, specific anecdotes, "
+            f"recommendations, or voice-point phrases. Do NOT pad with "
+            f"filler like \"anyway\", \"in any case\", \"as I was saying\". "
+            f"The post must read as a substantive social-media caption, "
+            f"NOT a one-paragraph blurb."
         )
     return True, ""
 
@@ -984,8 +989,11 @@ def _generate_example_response(llm: Callable[[str], str],
             continue
         return text
     # All attempts exhausted. For compose tasks, ship the longest
-    # surviving draft anyway (better than dropping the row entirely —
-    # the verifier dimension will still grade the failure loudly).
+    # surviving draft if it clears 80 words — short of the 100 floor
+    # but close enough that the verifier dimension still produces
+    # useful signal. Below 80 words, drop the row entirely (round-2
+    # audit found the prior ≥30-word fallback was too lenient: most
+    # compose rows shipped at 50-90 words).
     if (text
             and task_type in (
                 "agentic_cross_app_repost",
@@ -993,7 +1001,7 @@ def _generate_example_response(llm: Callable[[str], str],
                 "agentic_community_post",
                 "agentic_auto_reply",
             )
-            and len(text.split()) >= 30):
+            and len(text.split()) >= 80):
         return text
     return None
 
@@ -1524,10 +1532,29 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
         sp = inst.get("source_post") or {}
         cap = (sp.get("caption") or sp.get("title") or "").strip()
         src_app = (inst.get("source_app") or sp.get("source_app") or "").strip()
+        tgt_app = (inst.get("target_app") or "").strip()
         if cap:
             lines.append(
                 f"Source post" + (f" from {src_app}" if src_app else "") + f": \"{cap[:240]}\""
             )
+        # FRAME RULE for the example generator. Audit (2026-05-28) found
+        # 0/25 cross_app_repost example_responses acknowledged the source
+        # app — the LLM was producing what read as organic original posts.
+        # Add an explicit, top-of-input directive: the first sentence MUST
+        # name the source app or carry a "crossposting" / "saw this on" /
+        # "originally on" marker.
+        src_label = src_app or "the source app"
+        lines.append(
+            f"FRAME RULE: the first sentence of your response MUST "
+            f"acknowledge that this is a cross-post FROM {src_label}"
+            + (f" TO {tgt_app}" if tgt_app else "")
+            + f". Use a natural opener like `saw this on {src_label},`, "
+            f"`crossposting from {src_label}:`, `this was originally a "
+            f"{src_label} post:`, or `originally posted on {src_label} — `. "
+            f"A repost without this acknowledgment reads as an organic "
+            f"original and FAILS the cross-app provenance check the eval "
+            f"grades on."
+        )
     elif task_id == "agentic_auto_reply":
         sender = (inst.get("sender_id") or "").strip()
         msg = (inst.get("inbound_message") or "").strip()
