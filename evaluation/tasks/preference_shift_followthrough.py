@@ -47,7 +47,9 @@ T_TEST_MIN_LAG_DAYS = 1
 DAY_SECONDS = 24 * 60 * 60
 
 # Hard cap on emitted instances per user (chatbot + recsys combined).
-INSTANCES_PER_USER_CAP = 4
+# Bumped from 4 → 6 because audit found 3/5 users were emitting only
+# 0-1 surviving rows after `_pick_t_test` + discovery-LLM attrition.
+INSTANCES_PER_USER_CAP = 6
 # Require this many distinct categories per user before emitting.
 MIN_DISTINCT_CATEGORIES = 2
 
@@ -116,15 +118,27 @@ def _harvest_shift_candidates(
                     continue
                 key_base = persona_item.lower()
 
-                # Stance shifts via update_history `contradicted` entries.
+                # Stance shifts via update_history `contradicted` /
+                # `shifted` entries. Audit (2026-05-28) found 0 surviving
+                # `stance_shift_with_precedent` resolutions in all 5
+                # users' data (the precedent gate is strict; most
+                # contradictions land as `suppressed_weak_minority`),
+                # so harvest from a wider set: also include `shifted`
+                # entries (LLM-emitted cross-ref shifts where the
+                # canonical changed form).
                 for h in (p.get("update_history") or []):
                     if not isinstance(h, dict):
                         continue
-                    if h.get("update_type") != "contradicted":
-                        continue
+                    ut = h.get("update_type")
                     res = h.get("resolution")
-                    if res not in ("stance_shift_with_precedent",
-                                   "suppressed_insufficient_precedent"):
+                    accepted = (
+                        ut == "contradicted"
+                        and res in (
+                            "stance_shift_with_precedent",
+                            "suppressed_insufficient_precedent",
+                        )
+                    ) or ut == "shifted"
+                    if not accepted:
                         continue
                     t_shift = h.get("timestamp") or 0
                     if not t_shift:
@@ -138,7 +152,7 @@ def _harvest_shift_candidates(
                     seen_keys.add(key)
                     out.append({
                         "kind": "stance_shift",
-                        "resolution": res,
+                        "resolution": res or ut,
                         "category": p.get("category", ""),
                         "t_shift": int(t_shift),
                         "new_preference": {
@@ -180,12 +194,28 @@ def _harvest_shift_candidates(
 
 
 def _pick_t_test(t_shift: int, t_now: int, rng: random.Random) -> int:
-    """Pick T_test ∈ (T_shift + min_lag, min(T_shift + window, T_now)]."""
+    """Pick T_test ∈ (T_shift + min_lag, min(T_shift + window, T_now)].
+
+    Audit (2026-05-28) found user 760 had 10 short_term_expiration
+    candidates with `expected_stop_ts` in the future relative to
+    `t_now` — the original strict window returned 0 for every one
+    (lo > hi), zeroing out preference_shift_followthrough for the
+    user. For those candidates we still want a usable test moment:
+    fall back to a point just before the projected expiration so the
+    test reads as "agent is asked while the pref is fading; the
+    inferior preemptively treats it as already gone, the example
+    still leans on it normally." Clamped at `t_now - 1h` so we
+    never project past the latest event the agent can observe.
+    """
     lo = t_shift + T_TEST_MIN_LAG_DAYS * DAY_SECONDS
     hi = min(t_shift + T_TEST_WINDOW_DAYS * DAY_SECONDS, t_now)
-    if hi <= lo:
-        return 0
-    return rng.randint(lo, hi)
+    if hi > lo:
+        return rng.randint(lo, hi)
+    # Fallback: t_shift is in the future relative to t_now (predicted
+    # expiration that hasn't happened yet). Test just before t_now.
+    if t_shift > t_now:
+        return max(t_now - 60 * 60, 1)
+    return 0
 
 
 def _build_instance(
