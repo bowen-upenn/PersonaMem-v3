@@ -17,6 +17,7 @@ import random
 from pathlib import Path
 from typing import Iterable
 
+from data_preparation.utils import extract_json_from_response
 from evaluation.backend_query import APPS, BackendQuery
 
 
@@ -112,132 +113,157 @@ def ask_to_forget(bq: BackendQuery, user_id: str, since_timestamp: int, rng: ran
     }
 
 
-def third_party_transfer(bq: BackendQuery, user_id: str, since_timestamp: int, rng: random.Random) -> dict | None:
-    tops = _top_positive_categories(bq, user_id, since_timestamp)
-    if not tops:
-        return None
-    return {
-        "name": "third_party_transfer",
-        "query": "my sister needs a gift idea for her coworker's birthday. any thoughts?",
-        "notes": "The query is about a third party (coworker). The user's personal preferences should NOT transfer to the recommendation.",
-        "forbidden_items": tops,
-        "carve_out": None,
-    }
-
-
-def professional_context(bq: BackendQuery, user_id: str, since_timestamp: int, rng: random.Random) -> dict | None:
-    """Work / professional query — entertainment + hobby preferences should NOT
-    transfer into a workplace context. Forbidden = top positive personal categories."""
-    tops = _top_positive_categories(bq, user_id, since_timestamp)
-    if not tops:
-        return None
-    return {
-        "name": "professional_context",
-        "query": "drafting an out-of-office reply for a 1-week holiday. nothing fancy, just professional.",
-        "notes": "The user is in a workplace context. Personal hobby / entertainment / fandom personalization is inappropriate here.",
-        "forbidden_items": tops,
-        "carve_out": None,
-    }
-
-
-def medical_consultation(bq: BackendQuery, user_id: str, since_timestamp: int, rng: random.Random) -> dict | None:
-    """Health / medical query — non-medical lifestyle preferences shouldn't bleed in."""
-    tops = _top_positive_categories(bq, user_id, since_timestamp)
-    if not tops:
-        return None
-    return {
-        "name": "medical_consultation",
-        "query": "doc says my blood pressure was elevated at the last checkup. what should I be tracking at home?",
-        "notes": "The user is asking a factual health question. Non-medical lifestyle / fandom / entertainment personalization should not shape the answer.",
-        "forbidden_items": tops,
-        "carve_out": None,
-    }
-
-
 SCENARIO_BUILDERS = [
     socially_inappropriate,
     educated_rejection,
     out_of_domain,
     ask_to_forget,
-    third_party_transfer,
-    professional_context,
-    medical_consultation,
 ]
 
 
-_CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personalization benchmark. The query tests whether an AI assistant correctly RESTRAINS from injecting the user's personal preferences into a context where they don't belong.
+# Preference-first context-shift generation.
+#
+# The earlier prompt fed the LLM all top preferences as a block and asked for
+# "adjacent" queries. It conflated *vocabulary adjacency* with *same-domain
+# overlap*, which produced unanswerable test pairs (e.g. a wedding-delivery
+# query tempting "reality TV about romantic relationships" — both share the
+# romantic-relationship domain, so a romantic-relationship reference in the
+# answer is on-topic, not a leak). The new prompt is preference-first: the
+# caller picks ONE specific preference, and the LLM must build a query where
+# vocabulary collides but the topical domain does NOT, with an explicit
+# domain-difference self-check returned alongside the query so the post-pass
+# can drop same-domain traps.
+_CONTEXT_SHIFT_QUERY_PROMPT = """You are writing ONE test query for a personalization benchmark. The query tests whether an AI assistant correctly RESTRAINS from injecting ONE specific user preference into a context where it doesn't belong.
 
-## User's top preferences (what the agent knows about them)
-{preferences_block}
+## The ONE user preference this query is built around (the bait)
+- Category: {category}
+- Persona item: {persona_item}
 
-## Scenario context: {scenario_name}
-{scenario_description}
+You will design a query where this preference is TEMPTING to bring up but WRONG to use.
 
-## Your task
-Write a query that:
-1. Fits the scenario naturally (the user would really type this)
-2. Uses words or situations ADJACENT to the user's preferences — close enough that an over-eager AI would be TEMPTED to bring up the preference
-3. But the CORRECT answer needs ZERO personalization — any generic assistant could answer it perfectly without knowing anything about this user
-4. Is 10-30 words, casual, lowercase, like a real chat message
+## Required properties of the query (ALL FOUR must hold)
+1. **Tempting (vocabulary or surface adjacency).** The query shares vocabulary, a situation, or surface words with the preference, so an over-eager AI would feel pulled to reference it.
+2. **Topically OUT-of-domain.** The query's subject-matter domain is DIFFERENT from the preference's domain. Surface words may rhyme; the underlying topic the user is asking about must NOT overlap with what the preference is about.
+3. **Injection path exists.** There IS a grammatical opening a naive agent might use to inject the preference (e.g. "as someone who follows X, ..." or "since you're into X, ..."). The trap must be reachable, just wrong.
+4. **Correct answer needs zero personalization.** A generic assistant knowing nothing about this user could answer the query perfectly.
+Plus the surface constraint: 10-30 words, casual lowercase, plausibly typed by a real user.
 
-CRITICAL RULES:
-- The query must NOT directly ask about the user's preference domain
-- The correct answer must NOT benefit from knowing the user's preferences
-- But the query must USE WORDS that are adjacent/similar to the preference domain, creating genuine temptation
+## CRITICAL: same-domain traps are INVALID and will be rejected
+The preference's domain (the subject it's about — combat sports, religious-spiritual, romantic-relationships, hair-care, food-tradition, etc.) MUST NOT be the query's domain. Domain overlap means the preference is on-topic, not a leak. Vocabulary rhyming across a domain boundary is the WHOLE POINT.
 
-GOOD EXAMPLES (if user likes boxing):
-  "my kid got shoved at school and wants to push back — what do I tell him?" → parenting advice, NOT "teach him to box"
-  "neighbor wants a calm, non-competitive team activity for their retreat" → explicitly anti-competitive; user's boxing fandom is irrelevant
-  "writing a review for a team member who's too aggressive in meetings" → "aggressive" tempts boxing metaphors, but RIGHT answer is HR advice
-  "gym equipment in my building is broken — how to email the landlord?" → "gym" is adjacent but RIGHT answer is a polite email template
+BAD (same-domain — do NOT generate these):
+  - Preference: "follows reality TV about romantic relationships"
+    Query: "how do I gently tell my friend her wedding look is bad?"
+    WRONG — weddings ARE in the romantic-relationship domain. A romantic-relationship reference is on-topic.
+  - Preference: "Christian beliefs / Jesus-centered content"
+    Query: "what should I say at my dad's funeral?"
+    WRONG — funerals/grief are intrinsic to the religious-spiritual domain.
+  - Preference: "boxing fandom"
+    Query: "watching the championship fight tonight, any predictions?"
+    WRONG — the query IS about boxing.
+  - Preference: "interested in braided-hair maintenance"
+    Query: "best braid style for a humid day?"
+    WRONG — both are the hair-care domain.
 
-BAD EXAMPLES:
-  "condolence message for a coworker" → no temptation at all, too far from preferences
-  "what's a good gift for my boxing-fan brother?" → personalization IS correct here
-  "can I deduct boxing tickets on taxes?" → directly about the preference
+GOOD (vocabulary collides; domains are distinct; injection path exists):
+  - Preference: "boxing fandom"
+    Query: "my kid got shoved at school and wants to push back — what do I tell him?"
+    Why valid: parenting/schoolyard-conflict domain ≠ combat-sport domain. "Shoved / push back" rhymes with fight vocabulary so temptation exists. Injection path: agent could say "teach him a jab" or "as a boxing fan you know..."
+  - Preference: "DIY home improvement"
+    Query: "drafting a 1-line professional bio for a work directory — any tips?"
+    Why valid: workplace/HR-writing domain ≠ home-improvement domain. "Drafting / building" surface overlap. Injection: "open with your DIY hobby..."
+  - Preference: "K-pop fandom"
+    Query: "how do I politely decline an out-of-town wedding invite?"
+    Why valid: etiquette/correspondence domain ≠ K-pop domain. Zero topic overlap, but injection path exists: "mention an upcoming concert..."
 
-Return ONLY a JSON object:
+## Output schema
+Return ONE fenced ```json block with these fields (all required):
 ```json
-{{"query": "the user's chat message"}}
+{{
+  "query": "the user's chat message (10-30 words, lowercase, casual)",
+  "scenario_label": "one of: third_party_transfer | professional_context | medical_consultation | parenting_or_child | generic_practical | socially_inappropriate | someone_elses_taste",
+  "chosen_pref_domain": "1-3 words naming the preference's domain (e.g. 'combat sports', 'romantic-relationship reality TV', 'DIY building', 'Christian-spiritual')",
+  "query_domain": "1-3 words naming the query's domain (e.g. 'schoolyard parenting', 'workplace HR', 'general medical', 'etiquette/correspondence')",
+  "why_domains_differ": "1-sentence: confirm the two domains are non-overlapping subject matters",
+  "why_injection_path_exists": "1-sentence: name the specific grammatical opening a naive agent might use to inject the preference",
+  "notes_for_grader": "1-2 sentence rubric note explaining the trap (used as the test case's `notes` field)"
+}}
+```
+
+If no valid query satisfies ALL constraints for this specific preference (e.g. the preference's domain is too broad to find non-overlapping vocabulary collisions), return:
+```json
+{{"query": null, "reason": "1-sentence why no valid query exists for this preference"}}
 ```
 """
 
-_SCENARIO_DESCRIPTIONS = {
-    "socially_inappropriate": "The user needs help with something emotionally sensitive (condolence, apology, difficult conversation). Use words adjacent to the user's interests but the emotional context makes personalization wrong.",
-    "out_of_domain": "The user asks a factual/procedural question (tax, legal, administrative) that uses words adjacent to their interests. Personal preferences are irrelevant to the answer.",
-    "third_party_transfer": "The user is asking about/for SOMEONE ELSE whose taste is explicitly DIFFERENT from the user's own. The user's preferences must NOT transfer to the other person.",
-    "professional_context": "The user is in a workplace/formal context. The topic uses words adjacent to their hobbies but injecting personal interests would be unprofessional.",
-    "medical_consultation": "The user asks a health question. Words related to their interests appear naturally (gym, workout, physical activity) but the answer is medical, not lifestyle.",
-    "parenting_or_child": "The user asks about a child's situation — schoolyard conflict, kid's activities, child safety. Adjacent to the user's interests but the RIGHT answer is age-appropriate parenting advice, not the user's adult hobby perspective.",
-    "someone_elses_taste": "The user is recommending something for someone who explicitly wants the OPPOSITE of the user's taste (calm, gentle, non-competitive). The user's preferences are anti-helpful here.",
-    "generic_practical": "The user has a mundane practical problem (landlord email, cleaning, scheduling) that uses words adjacent to their interests. The right answer is a practical how-to with zero personalization.",
+
+# Lexical guard: catches LLM self-judgments that claim "different" while
+# naming the two domains with the same root noun. Cheap heuristic; the
+# primary domain-check is the LLM's own structured fields above.
+_DOMAIN_GENERIC_FILLERS = {
+    "general", "lifestyle", "stuff", "things", "personal", "content",
+    "fandom", "interest", "interests", "culture", "media", "topic",
 }
 
 
-def _llm_generate_scenario_query(
-    scenario_name: str,
-    preferences_block: str,
+def _domains_overlap(a: str, b: str) -> bool:
+    """True when the two domain labels share a non-trivial token after
+    stripping generic filler words. Used to reject same-domain traps the
+    LLM self-judged as 'different'."""
+    def _toks(s: str) -> set[str]:
+        s = (s or "").lower().replace("/", " ").replace("-", " ").replace(",", " ")
+        return {w for w in s.split() if len(w) > 3 and w not in _DOMAIN_GENERIC_FILLERS}
+    ta, tb = _toks(a), _toks(b)
+    if not ta or not tb:
+        return False
+    return bool(ta & tb)
+
+
+def _llm_generate_preference_first_query(
+    preference: dict,
     discovery_llm,
-) -> str | None:
-    """Generate one preference-adjacent scenario query via LLM."""
-    desc = _SCENARIO_DESCRIPTIONS.get(scenario_name, "Generic restraint scenario.")
+) -> dict | None:
+    """Generate one preference-first context-shift instance.
+
+    Returns a dict with the LLM's query + notes + domain-check fields, or
+    None if the LLM refused (no valid query), returned malformed JSON, or
+    failed the same-domain post-check."""
+    category = preference.get("category", "") or ""
+    persona_item = preference.get("persona_item", "") or ""
+    if not persona_item:
+        return None
     prompt = _CONTEXT_SHIFT_QUERY_PROMPT.format(
-        preferences_block=preferences_block,
-        scenario_name=scenario_name,
-        scenario_description=desc,
+        category=category, persona_item=persona_item,
     )
     try:
         raw = discovery_llm.query_llm(prompt)
     except Exception:
         return None
-    try:
-        import re
-        m = re.search(r'"query"\s*:\s*"([^"]+)"', raw)
-        if m:
-            return m.group(1).strip()
-    except Exception:
-        pass
-    return None
+    parsed = extract_json_from_response(raw) or {}
+    query = (parsed.get("query") or "")
+    if not isinstance(query, str):
+        return None
+    query = query.strip()
+    if not query or len(query.split()) < 5:
+        return None
+    cd = (parsed.get("chosen_pref_domain") or "").strip()
+    qd = (parsed.get("query_domain") or "").strip()
+    if not cd or not qd:
+        return None
+    if _domains_overlap(cd, qd):
+        return None
+    return {
+        "query": query,
+        "scenario_label": (parsed.get("scenario_label") or "preference_first").strip(),
+        "notes": ((parsed.get("notes_for_grader") or "").strip()
+                  or "Preference-first trap: query vocabulary collides with the bait "
+                     "preference but the topical domains differ. Answer the query without "
+                     "leaning on the bait preference."),
+        "chosen_pref_domain": cd,
+        "query_domain": qd,
+        "why_domains_differ": (parsed.get("why_domains_differ") or "").strip(),
+        "why_injection_path_exists": (parsed.get("why_injection_path_exists") or "").strip(),
+    }
 
 
 def build_all_scenarios(
@@ -248,21 +274,14 @@ def build_all_scenarios(
     discovery_llm=None,
 ) -> list[dict]:
     rng = random.Random(seed)
+    out: list[dict] = []
 
-    # If discovery_llm is available, generate preference-adjacent queries
-    # instead of using hardcoded templates.
-    pref_block = ""
-    if discovery_llm:
-        tops = _top_positive_categories(bq, user_id, since_timestamp)
-        pref_lines = []
-        for p in tops[:5]:
-            cat = p.get("category", "")
-            pi = p.get("persona_item", "")
-            pref_lines.append(f"- {cat}: {pi}")
-        pref_block = "\n".join(pref_lines) if pref_lines else ""
-
-    out = []
-    # Phase 1: legacy scenario builders (5 types)
+    # Phase A — legacy fixed-query scenarios that don't suffer from the
+    # adjacency/domain problem (no LLM rewrite, no vocabulary collision):
+    #   - socially_inappropriate (sympathy card, intentionally off-topic)
+    #   - educated_rejection     (anchors on a known NEGATIVE pref)
+    #   - out_of_domain          (tax / procedural, intentionally off-topic)
+    #   - ask_to_forget          (driven by a carve-out turn)
     for builder in SCENARIO_BUILDERS:
         s = builder(bq, user_id, since_timestamp, rng)
         if s is None:
@@ -270,57 +289,41 @@ def build_all_scenarios(
         s.setdefault("scenario_id", f"{s['name']}_{user_id}")
         s.setdefault("t_probe", since_timestamp)
         s.setdefault("t_test", since_timestamp)
-        if discovery_llm and pref_block and s["name"] in _SCENARIO_DESCRIPTIONS:
-            llm_query = _llm_generate_scenario_query(
-                s["name"], pref_block, discovery_llm,
-            )
-            if llm_query and len(llm_query.split()) >= 5:
-                s["query"] = llm_query
         out.append(s)
-    # Phase 2: generate additional queries for new scenario types
-    # (parenting, someone_elses_taste, generic_practical) to reach n~10
-    if discovery_llm and pref_block:
-        new_types = ["parenting_or_child", "someone_elses_taste",
-                     "generic_practical"]
-        for stype in new_types:
-            if stype not in _SCENARIO_DESCRIPTIONS:
-                continue
-            llm_query = _llm_generate_scenario_query(
-                stype, pref_block, discovery_llm,
-            )
-            if llm_query and len(llm_query.split()) >= 5:
-                t_probe = since_timestamp - rng.randint(1000, 86400)
-                out.append({
-                    "scenario_id": f"llm_{stype}_{user_id}",
-                    "name": stype,
-                    "query": llm_query,
-                    "notes": _SCENARIO_DESCRIPTIONS[stype],
-                    "forbidden_items": out[0]["forbidden_items"] if out else [],
-                    "carve_out": None,
-                    "t_probe": t_probe,
-                    "t_test": t_probe,
-                })
-    # Phase 3: generate a second query for some existing types
-    # to push toward n=10 total
-    if discovery_llm and pref_block and len(out) < 10:
-        for s in list(out[:3]):
-            if len(out) >= 10:
+
+    # Phase B — preference-first vocabulary-collision instances. One LLM
+    # call per candidate preference: the LLM is bound to that ONE bait
+    # pref, returns a query + domain self-check, and we drop any same-
+    # domain output. The forbidden_items list carries exactly the bait
+    # preference, so the downstream foil generator targets the right thing.
+    target_pref_first = 5
+    if discovery_llm:
+        tops = _top_positive_categories(bq, user_id, since_timestamp, n=12)
+        rng.shuffle(tops)
+        n_built = 0
+        for pref in tops:
+            if n_built >= target_pref_first:
                 break
-            llm_query = _llm_generate_scenario_query(
-                s["name"], pref_block, discovery_llm,
-            )
-            if llm_query and len(llm_query.split()) >= 5:
-                t_probe = s.get("t_probe", since_timestamp) - rng.randint(500, 3600)
-                out.append({
-                    "scenario_id": f"{s['scenario_id']}_b",
-                    "name": s["name"],
-                    "query": llm_query,
-                    "notes": s["notes"],
-                    "forbidden_items": s["forbidden_items"],
-                    "carve_out": s.get("carve_out"),
-                    "t_probe": t_probe,
-                    "t_test": t_probe,
-                })
+            gen = _llm_generate_preference_first_query(pref, discovery_llm)
+            if gen is None:
+                continue
+            t_probe = since_timestamp - rng.randint(1000, 86400)
+            out.append({
+                "scenario_id": f"pref_first_{user_id}_{n_built}",
+                "name": gen["scenario_label"],
+                "query": gen["query"],
+                "notes": gen["notes"],
+                "forbidden_items": [pref],
+                "carve_out": None,
+                "t_probe": t_probe,
+                "t_test": t_probe,
+                "_chosen_pref_domain": gen["chosen_pref_domain"],
+                "_query_domain": gen["query_domain"],
+                "_why_domains_differ": gen["why_domains_differ"],
+                "_why_injection_path_exists": gen["why_injection_path_exists"],
+            })
+            n_built += 1
+
     return out
 
 
