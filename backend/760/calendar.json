@@ -2,46 +2,518 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775184600,
-      "formatted_timestamp": "09:30, 04/01/2026",
+      "ts": 1775181300,
+      "formatted_timestamp": "05:15, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Wildlife corridor grant check-in",
-        "start_ts": 1775184600,
-        "end_ts": 1775188200,
+        "title": "Pre-dawn plant shift: filtration checks",
+        "start_ts": 1775181300,
+        "end_ts": 1775188500,
         "location": {
-          "city": "Minneapolis",
-          "region": "MN",
+          "city": "Philadelphia",
+          "region": "PA",
           "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
+          "lat": 39.9526,
+          "lon": -75.1652,
           "precision": "city"
         },
         "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_002",
+      "ts": 1775202300,
+      "formatted_timestamp": "11:05, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_002",
+        "title": "Lunch break: self-improvement podcast catch-up",
+        "start_ts": 1775202300,
+        "end_ts": 1775204100,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
         "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
+          "Interested in personal development and self-improvement content."
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_002",
-      "ts": 1775200800,
-      "formatted_timestamp": "14:00, 04/01/2026",
+      "mod_id": "mod_003",
+      "ts": 1775212800,
+      "formatted_timestamp": "14:00, 04/03/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_002",
-        "title": "Physical therapy for shoulder",
-        "start_ts": 1775200800,
-        "end_ts": 1775204400,
+        "entry_id": "cal_003",
+        "title": "PTO request: early train to Pittsburgh",
+        "start_ts": 1775212800,
+        "end_ts": 1775220000,
         "location": {
-          "city": "Minneapolis",
-          "region": "MN",
+          "city": "Philadelphia",
+          "region": "PA",
           "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_004",
+      "ts": 1775213400,
+      "formatted_timestamp": "14:10, 04/03/2026",
+      "action": "updated",
+      "entry_id": "cal_003",
+      "diff": {
+        "end_ts": {
+          "from": 1775220000,
+          "to": 1775218200
+        },
+        "notes": {
+          "from": "",
+          "to": "Pack charger and work boots before leaving."
+        }
+      }
+    },
+    {
+      "mod_id": "mod_005",
+      "ts": 1775218800,
+      "formatted_timestamp": "15:40, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_004",
+        "title": "Hotel check-in and unpack",
+        "start_ts": 1775218800,
+        "end_ts": 1775222400,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_006",
+      "ts": 1775236800,
+      "formatted_timestamp": "20:40, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_005",
+        "title": "Dinner with plant supervisor and Ana",
+        "start_ts": 1775236800,
+        "end_ts": 1775244000,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "related",
+        "attendees": [
+          "self",
+          "Ana",
+          "Miguel"
+        ]
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775260800,
+      "formatted_timestamp": "03:20, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_006",
+        "title": "Return train to Philadelphia",
+        "start_ts": 1775260800,
+        "end_ts": 1775273400,
+        "location": {
+          "city": "Pittsburgh",
+          "region": "PA",
+          "country": "USA",
+          "lat": 40.4406,
+          "lon": -79.9959,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775281800,
+      "formatted_timestamp": "09:30, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Family breakfast and weekend planning",
+        "start_ts": 1775281800,
+        "end_ts": 1775287200,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Likely a parent or primary caregiver who relates to everyday parenting challenges."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775311200,
+      "formatted_timestamp": "17:40, 04/04/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "NBA 2K session after dinner",
+        "start_ts": 1775311200,
+        "end_ts": 1775318400,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Interested in basketball video games, especially NBA 2K."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775346000,
+      "formatted_timestamp": "03:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Car inspection appointment",
+        "start_ts": 1775346000,
+        "end_ts": 1775351400,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775366400,
+      "formatted_timestamp": "09:00, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Movie night prep: Marvel rewatch snacks",
+        "start_ts": 1775366400,
+        "end_ts": 1775373600,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Enjoys Iron Man and the Marvel Cinematic Universe."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775377200,
+      "formatted_timestamp": "12:00, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_010",
+      "diff": {
+        "end_ts": {
+          "from": 1775373600,
+          "to": 1775375400
+        },
+        "notes": {
+          "from": "",
+          "to": "Pick up extra popcorn and the good soda."
+        }
+      }
+    },
+    {
+      "mod_id": "mod_013",
+      "ts": 1775386800,
+      "formatted_timestamp": "14:40, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Hot dog cook-off recipe test: kimchi chili-cheese dog",
+        "start_ts": 1775386800,
+        "end_ts": 1775397600,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Enjoys healthy eating.",
+          "Interested in food experiments and hot dog cook-offs."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775415600,
+      "formatted_timestamp": "22:40, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Piano lesson video practice",
+        "start_ts": 1775415600,
+        "end_ts": 1775421000,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Interested in personal development and self-improvement content."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775446800,
+      "formatted_timestamp": "07:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Sunday sketching session",
+        "start_ts": 1775446800,
+        "end_ts": 1775457600,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Interested in creating or closely following hyperrealistic portrait drawing."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775462400,
+      "formatted_timestamp": "11:40, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Grocery run and meal prep",
+        "start_ts": 1775462400,
+        "end_ts": 1775469600,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Enjoys healthy eating."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775485200,
+      "formatted_timestamp": "18:00, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Family movie night: suspense thriller",
+        "start_ts": 1775485200,
+        "end_ts": 1775499600,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "Enjoys thriller and suspense films."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775521200,
+      "formatted_timestamp": "04:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Water plant maintenance shutdown review",
+        "start_ts": 1775521200,
+        "end_ts": 1775532000,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775535600,
+      "formatted_timestamp": "08:00, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Gym class: light cardio and stretch",
+        "start_ts": 1775535600,
+        "end_ts": 1775541000,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [
+          "Interested in light fitness and wellness wins."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775563200,
+      "formatted_timestamp": "15:40, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Phone call with cousin about Penn State and the Nuggets",
+        "start_ts": 1775563200,
+        "end_ts": 1775566800,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "Follows Penn State college football."
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related",
+        "attendees": [
+          "self",
+          "Darren"
+        ]
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775599200,
+      "formatted_timestamp": "01:40, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "Dentist cleaning",
+        "start_ts": 1775599200,
+        "end_ts": 1775604600,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
           "precision": "city"
         },
         "type": "health",
@@ -51,25 +523,68 @@
       }
     },
     {
-      "mod_id": "mod_003",
-      "ts": 1775233800,
-      "formatted_timestamp": "23:10, 04/01/2026",
+      "mod_id": "mod_022",
+      "ts": 1775630400,
+      "formatted_timestamp": "10:20, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_003",
-        "title": "Call with Ana about weekend plans",
-        "start_ts": 1775233800,
-        "end_ts": 1775235600,
+        "entry_id": "cal_020",
+        "title": "Short shift handoff and safety notes",
+        "start_ts": 1775630400,
+        "end_ts": 1775637600,
         "location": {
-          "city": "Minneapolis",
-          "region": "MN",
+          "city": "Philadelphia",
+          "region": "PA",
           "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
+          "lat": 39.9526,
+          "lon": -75.1652,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775649000,
+      "formatted_timestamp": "15:30, 04/08/2026",
+      "action": "updated",
+      "entry_id": "cal_020",
+      "diff": {
+        "end_ts": {
+          "from": 1775637600,
+          "to": 1775641200
+        },
+        "notes": {
+          "from": "",
+          "to": "Need to stay for chlorine alarm walk-through."
+        }
+      }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775691600,
+      "formatted_timestamp": "03:20, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_021",
+        "title": "Community preparedness meeting",
+        "start_ts": 1775691600,
+        "end_ts": 1775698800,
+        "location": {
+          "city": "Philadelphia",
+          "region": "PA",
+          "country": "USA",
+          "lat": 39.9526,
+          "lon": -75.1652,
           "precision": "city"
         },
         "type": "social",
-        "linked_preferences": [],
+        "linked_preferences": [
+          "Values healthy, respectful romantic partnerships."
+        ],
         "is_preference_driven": false,
         "relation_to_social": "related",
         "attendees": [
@@ -79,588 +594,78 @@
       }
     },
     {
-      "mod_id": "mod_004",
-      "ts": 1775278800,
-      "formatted_timestamp": "11:40, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_004",
-        "title": "Inventory audit and field gear packing",
-        "start_ts": 1775278800,
-        "end_ts": 1775286000,
-        "location": {
-          "city": "Chicago",
-          "region": "IL",
-          "country": "USA",
-          "lat": 41.8781,
-          "lon": -87.6298,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_005",
-      "ts": 1775289600,
-      "formatted_timestamp": "14:40, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_005",
-        "title": "Lunch near the riverwalk",
-        "start_ts": 1775289600,
-        "end_ts": 1775291400,
-        "location": {
-          "city": "Chicago",
-          "region": "IL",
-          "country": "USA",
-          "lat": 41.8781,
-          "lon": -87.6298,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_006",
-      "ts": 1775314800,
-      "formatted_timestamp": "21:40, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_006",
-        "title": "Return train to Minneapolis",
-        "start_ts": 1775314800,
-        "end_ts": 1775336400,
-        "location": {
-          "city": "Chicago",
-          "region": "IL",
-          "country": "USA",
-          "lat": 41.8781,
-          "lon": -87.6298,
-          "precision": "city"
-        },
-        "type": "travel",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_007",
-      "ts": 1775365200,
-      "formatted_timestamp": "11:40, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_007",
-        "title": "Team sprint review",
-        "start_ts": 1775365200,
-        "end_ts": 1775370600,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_008",
-      "ts": 1775392800,
-      "formatted_timestamp": "19:20, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Archery practice",
-        "start_ts": 1775392800,
-        "end_ts": 1775399100,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys practicing and engaging with archery as a recreational activity"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_009",
-      "ts": 1775436000,
-      "formatted_timestamp": "07:20, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_009",
-        "title": "Morning gym class",
-        "start_ts": 1775436000,
-        "end_ts": 1775439600,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_010",
-      "ts": 1775460900,
-      "formatted_timestamp": "14:15, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_010",
-        "title": "Lunch with district partner",
-        "start_ts": 1775460900,
-        "end_ts": 1775468100,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "adjacent",
-        "attendees": [
-          "self",
-          "Marisol"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_011",
-      "ts": 1775499600,
-      "formatted_timestamp": "00:20, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_011",
-        "title": "Draft donor update email",
-        "start_ts": 1775499600,
-        "end_ts": 1775501400,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_012",
-      "ts": 1775543400,
-      "formatted_timestamp": "12:30, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_012",
-        "title": "Vikings game watch with friends",
-        "start_ts": 1775543400,
-        "end_ts": 1775554200,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "Strongly supports the Minnesota Vikings football team"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_013",
-      "ts": 1775580000,
-      "formatted_timestamp": "22:40, 04/05/2026",
-      "action": "updated",
-      "entry_id": "cal_011",
-      "diff": {
-        "end_ts": {
-          "from": 1775501400,
-          "to": 1775503200
-        },
-        "notes": {
-          "from": "",
-          "to": "add county figures before sending"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_014",
-      "ts": 1775623200,
-      "formatted_timestamp": "10:40, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_013",
-        "title": "Vet appointment for the dog",
-        "start_ts": 1775623200,
-        "end_ts": 1775628600,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_015",
-      "ts": 1775651400,
-      "formatted_timestamp": "18:30, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_014",
-        "title": "Dinner with family",
-        "start_ts": 1775651400,
-        "end_ts": 1775662200,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_016",
-      "ts": 1775695200,
-      "formatted_timestamp": "06:40, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_015",
-        "title": "Morning run at the park",
-        "start_ts": 1775695200,
-        "end_ts": 1775699400,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_017",
-      "ts": 1775718000,
-      "formatted_timestamp": "13:00, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_016",
-        "title": "Project troubleshooting with field staff",
-        "start_ts": 1775718000,
-        "end_ts": 1775725200,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_018",
-      "ts": 1775746800,
-      "formatted_timestamp": "21:00, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_017",
-        "title": "Late-night conspiracy forum browse",
-        "start_ts": 1775746800,
-        "end_ts": 1775750400,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Interested in conspiracy theories and narratives about government or institutional cover-ups"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_019",
-      "ts": 1775781000,
-      "formatted_timestamp": "06:30, 04/08/2026",
-      "action": "updated",
-      "entry_id": "cal_016",
-      "diff": {
-        "start_ts": {
-          "from": 1775718000,
-          "to": 1775716200
-        },
-        "notes": {
-          "from": "",
-          "to": "move earlier for East Coast call"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_020",
-      "ts": 1775808000,
-      "formatted_timestamp": "14:00, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_018",
-        "title": "Haircut",
-        "start_ts": 1775808000,
-        "end_ts": 1775811600,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_021",
-      "ts": 1775831400,
-      "formatted_timestamp": "20:30, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "NBA highlights and Curry clips",
-        "start_ts": 1775831400,
-        "end_ts": 1775835600,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys following NBA basketball, particularly Stephen Curry"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_022",
-      "ts": 1775872800,
-      "formatted_timestamp": "08:00, 04/09/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_020",
-        "title": "Budget review with finance",
-        "start_ts": 1775872800,
-        "end_ts": 1775879100,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_024",
-      "ts": 1775916000,
-      "formatted_timestamp": "20:00, 04/09/2026",
+      "mod_id": "mod_025",
+      "ts": 1775720400,
+      "formatted_timestamp": "11:20, 04/09/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_022",
-        "title": "Evening walk and podcast",
-        "start_ts": 1775916000,
-        "end_ts": 1775921400,
+        "title": "Evening walk and dog clip scrolling break",
+        "start_ts": 1775720400,
+        "end_ts": 1775725000,
         "location": {
-          "city": "Minneapolis",
-          "region": "MN",
+          "city": "Philadelphia",
+          "region": "PA",
           "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
+          "lat": 39.9526,
+          "lon": -75.1652,
           "precision": "city"
         },
         "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_025",
-      "ts": 1775930400,
-      "formatted_timestamp": "00:00, 04/10/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_023",
-        "title": "Prepare slides for conservation board",
-        "start_ts": 1775930400,
-        "end_ts": 1775935800,
-        "location": {
-          "city": "Minneapolis",
-          "region": "MN",
-          "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
-          "precision": "city"
-        },
-        "type": "work",
         "linked_preferences": [
-          "Supports initiatives to protect natural landscapes and wildlife habitats"
+          "Enjoys humorous dog content on social media.",
+          "Enjoys dog-focused social media content."
         ],
         "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_026",
-      "ts": 1775937600,
-      "formatted_timestamp": "02:00, 04/10/2026",
-      "action": "updated",
-      "entry_id": "cal_023",
-      "diff": {
-        "end_ts": {
-          "from": 1775935800,
-          "to": 1775937600
-        },
-        "notes": {
-          "from": "",
-          "to": "add last-minute habitat map"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_027",
-      "ts": 1775941200,
-      "formatted_timestamp": "03:40, 04/10/2026",
+      "ts": 1775785200,
+      "formatted_timestamp": "05:20, 04/10/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_024",
-        "title": "Breakfast with colleague Ana",
-        "start_ts": 1775941200,
-        "end_ts": 1775947200,
+        "entry_id": "cal_023",
+        "title": "Parent-teacher conference",
+        "start_ts": 1775785200,
+        "end_ts": 1775790600,
         "location": {
-          "city": "Minneapolis",
-          "region": "MN",
+          "city": "Philadelphia",
+          "region": "PA",
           "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
+          "lat": 39.9526,
+          "lon": -75.1652,
           "precision": "city"
         },
         "type": "social",
-        "linked_preferences": [],
+        "linked_preferences": [
+          "Likely a parent or primary caregiver who relates to everyday parenting challenges."
+        ],
         "is_preference_driven": false,
-        "relation_to_social": "adjacent",
+        "relation_to_social": "related",
         "attendees": [
           "self",
-          "Ana"
+          "Ms. Rivera"
         ]
       }
     },
     {
-      "mod_id": "mod_rep_028",
-      "ts": 1775945730,
-      "formatted_timestamp": "22:15, 04/11/2026",
-      "action": "removed",
-      "entry_id": "cal_022",
-      "removal_reason": "Rescheduled at last minute"
-    },
-    {
-      "mod_id": "mod_028",
-      "ts": 1775947200,
-      "formatted_timestamp": "05:20, 04/10/2026",
+      "mod_id": "mod_027",
+      "ts": 1775833200,
+      "formatted_timestamp": "18:40, 04/10/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_025",
-        "title": "Flight to Chicago",
-        "start_ts": 1775947200,
-        "end_ts": 1775954400,
+        "entry_id": "cal_024",
+        "title": "Pittsburgh trip hold: cancelable hotel backup",
+        "start_ts": 1775833200,
+        "end_ts": 1775840400,
         "location": {
-          "city": "Minneapolis",
-          "region": "MN",
+          "city": "Philadelphia",
+          "region": "PA",
           "country": "USA",
-          "lat": 44.9778,
-          "lon": -93.265,
+          "lat": 39.9526,
+          "lon": -75.1652,
           "precision": "city"
         },
         "type": "travel",
@@ -668,6 +673,14 @@
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
+    },
+    {
+      "mod_id": "mod_028",
+      "ts": 1775929800,
+      "formatted_timestamp": "21:10, 04/11/2026",
+      "action": "removed",
+      "entry_id": "cal_024",
+      "removal_reason": "canceled: travel plans shifted after the work schedule changed."
     }
   ]
 }

@@ -2,49 +2,51 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775175600,
-      "formatted_timestamp": "09:00, 04/01/2026",
+      "ts": 1775185200,
+      "formatted_timestamp": "09:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Morning admin sprint and inbox cleanup",
-        "start_ts": 1775175600,
-        "end_ts": 1775179200,
+        "title": "Morning devotional podcast and coffee",
+        "start_ts": 1775185200,
+        "end_ts": 1775187100,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_002",
-      "ts": 1775192400,
-      "formatted_timestamp": "13:40, 04/01/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_002",
-        "title": "English idioms practice and note review",
-        "start_ts": 1775192400,
-        "end_ts": 1775196000,
-        "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "education"
+          "Christian faith and Jesus-centered religious content"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_002",
+      "ts": 1775221800,
+      "formatted_timestamp": "19:10, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_002",
+        "title": "Meal prep for high-protein lunches",
+        "start_ts": 1775221800,
+        "end_ts": 1775227200,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "low-calorie, high-protein eating"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -52,25 +54,25 @@
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775257200,
-      "formatted_timestamp": "07:40, 04/02/2026",
+      "ts": 1775268000,
+      "formatted_timestamp": "08:00, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "Train to Bath for venue scouting",
-        "start_ts": 1775257200,
-        "end_ts": 1775270400,
+        "title": "Boiler room inspection and supply walk-through",
+        "start_ts": 1775268000,
+        "end_ts": 1775275200,
         "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
-        "type": "travel",
+        "type": "work",
         "linked_preferences": [
-          "weddings"
+          "work troubleshooting"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -78,238 +80,115 @@
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775278800,
-      "formatted_timestamp": "14:00, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_004",
-        "title": "Countryside venue walkthrough at Prior Park",
-        "start_ts": 1775278800,
-        "end_ts": 1775289600,
-        "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "weddings"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_005",
-      "ts": 1775293200,
-      "formatted_timestamp": "18:00, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_005",
-        "title": "Call with Ana about spring shoot mood board",
-        "start_ts": 1775293200,
-        "end_ts": 1775296800,
-        "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "weddings"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related",
-        "attendees": [
-          "self",
-          "Ana"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_006",
-      "ts": 1775318400,
-      "formatted_timestamp": "00:00, 04/03/2026",
+      "ts": 1775286000,
+      "formatted_timestamp": "13:00, 04/04/2026",
       "action": "updated",
-      "entry_id": "cal_004",
+      "entry_id": "cal_003",
       "diff": {
         "end_ts": {
-          "from": 1775289600,
-          "to": 1775293200
+          "from": 1775275200,
+          "to": 1775278800
         },
         "notes": {
           "from": "",
-          "to": "Extended to cover golden-hour shots"
+          "to": "extra time for a leaking valve check"
         }
       }
     },
     {
-      "mod_id": "mod_007",
-      "ts": 1775350800,
-      "formatted_timestamp": "09:00, 04/03/2026",
+      "mod_id": "mod_005",
+      "ts": 1775300400,
+      "formatted_timestamp": "17:00, 04/04/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_006",
-        "title": "Client gallery edit block",
-        "start_ts": 1775350800,
-        "end_ts": 1775365200,
+        "entry_id": "cal_004",
+        "title": "Quick gym lift and stretch",
+        "start_ts": 1775300400,
+        "end_ts": 1775304900,
         "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "weddings"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_008",
-      "ts": 1775376000,
-      "formatted_timestamp": "16:00, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_007",
-        "title": "Gym class: mobility and core",
-        "start_ts": 1775376000,
-        "end_ts": 1775381400,
-        "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "health",
-        "linked_preferences": [
-          "wellness"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_009",
-      "ts": 1775432400,
-      "formatted_timestamp": "08:40, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Wildlife rescue photo session",
-        "start_ts": 1775432400,
-        "end_ts": 1775443200,
-        "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "community engagement"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_010",
-      "ts": 1775455200,
-      "formatted_timestamp": "15:00, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_009",
-        "title": "Haircut and beard tidy-up",
-        "start_ts": 1775455200,
-        "end_ts": 1775459400,
-        "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
-          "precision": "city"
-        },
-        "type": "personal",
         "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_011",
-      "ts": 1775520000,
-      "formatted_timestamp": "09:20, 04/05/2026",
+      "mod_id": "mod_006",
+      "ts": 1775349600,
+      "formatted_timestamp": "07:40, 04/05/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_010",
-        "title": "Church group sugar-free dessert tasting",
-        "start_ts": 1775520000,
-        "end_ts": 1775527200,
+        "entry_id": "cal_005",
+        "title": "Church volunteer setup",
+        "start_ts": 1775349600,
+        "end_ts": 1775355000,
         "location": {
-          "city": "Bath",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.3811,
-          "lon": -2.359,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Christian faith and Jesus-centered religious content"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775386800,
+      "formatted_timestamp": "18:00, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_006",
+        "title": "Dinner with girlfriend and TV catch-up",
+        "start_ts": 1775386800,
+        "end_ts": 1775397600,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "social",
         "linked_preferences": [
-          "wellness"
+          "romantic partnership ideals",
+          "90 Day Fiancé",
+          "classic television comedy"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_012",
-      "ts": 1775538000,
-      "formatted_timestamp": "14:20, 04/05/2026",
-      "action": "updated",
-      "entry_id": "cal_010",
-      "diff": {
-        "end_ts": {
-          "from": 1775527200,
-          "to": 1775530800
-        },
-        "notes": {
-          "from": "",
-          "to": "Added extra cleanup time after tasting"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_013",
-      "ts": 1775602800,
-      "formatted_timestamp": "08:20, 04/06/2026",
+      "mod_id": "mod_008",
+      "ts": 1775422800,
+      "formatted_timestamp": "04:00, 04/06/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_011",
-        "title": "Return train to London",
-        "start_ts": 1775602800,
-        "end_ts": 1775616000,
+        "entry_id": "cal_007",
+        "title": "Amtrak to Milwaukee",
+        "start_ts": 1775422800,
+        "end_ts": 1775433600,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Milwaukee",
+          "region": "WI",
+          "country": "USA",
+          "lat": 43.0389,
+          "lon": -87.9065,
           "precision": "city"
         },
         "type": "travel",
@@ -319,47 +198,145 @@
       }
     },
     {
-      "mod_id": "mod_014",
-      "ts": 1775628000,
-      "formatted_timestamp": "15:20, 04/06/2026",
+      "mod_id": "mod_009",
+      "ts": 1775439000,
+      "formatted_timestamp": "08:30, 04/06/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_012",
-        "title": "Client contract review and pricing notes",
-        "start_ts": 1775628000,
-        "end_ts": 1775635200,
+        "entry_id": "cal_008",
+        "title": "Site walk and facilities sync with Ana",
+        "start_ts": 1775439000,
+        "end_ts": 1775446200,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Milwaukee",
+          "region": "WI",
+          "country": "USA",
+          "lat": 43.0389,
+          "lon": -87.9065,
           "precision": "city"
         },
         "type": "work",
+        "attendees": [
+          "self",
+          "Ana"
+        ],
         "linked_preferences": [
-          "personal finance"
+          "work troubleshooting"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775473200,
+      "formatted_timestamp": "18:00, 04/06/2026",
+      "action": "updated",
+      "entry_id": "cal_008",
+      "diff": {
+        "end_ts": {
+          "from": 1775446200,
+          "to": 1775449800
+        },
+        "notes": {
+          "from": "",
+          "to": "Added a quick punch-list review after the walk"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775517608,
+      "formatted_timestamp": "22:00, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Return bus to Chicago",
+        "start_ts": 1775517608,
+        "end_ts": 1775532000,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "travel",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775579400,
+      "formatted_timestamp": "15:10, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Brake pads and tire rotation",
+        "start_ts": 1775579400,
+        "end_ts": 1775588400,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "DIY car maintenance and repair"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_015",
-      "ts": 1775694000,
-      "formatted_timestamp": "10:00, 04/07/2026",
+      "mod_id": "mod_013",
+      "ts": 1775613000,
+      "formatted_timestamp": "00:30, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_013",
-        "title": "Dentist cleaning",
-        "start_ts": 1775694000,
-        "end_ts": 1775697600,
+        "entry_id": "cal_011",
+        "title": "Chatbot session: budget for flashlight restoration parts",
+        "start_ts": 1775613000,
+        "end_ts": 1775615400,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "budget and career decisions",
+          "personal reflection"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_014",
+      "ts": 1775660400,
+      "formatted_timestamp": "13:40, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Dentist cleaning",
+        "start_ts": 1775660400,
+        "end_ts": 1775664100,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "health",
@@ -369,53 +346,81 @@
       }
     },
     {
-      "mod_id": "mod_016",
-      "ts": 1775710800,
-      "formatted_timestamp": "14:40, 04/07/2026",
+      "mod_id": "mod_015",
+      "ts": 1775700000,
+      "formatted_timestamp": "00:00, 04/09/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_014",
-        "title": "Video call with church volunteer team",
-        "start_ts": 1775710800,
-        "end_ts": 1775716200,
+        "entry_id": "cal_013",
+        "title": "Language-learning practice and driving theory review",
+        "start_ts": 1775700000,
+        "end_ts": 1775705400,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
-        "type": "social",
+        "type": "personal",
         "linked_preferences": [
-          "community engagement",
-          "christian faith"
+          "IELTS exam preparation",
+          "driving theory test preparation",
+          "language-learning content"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "related"
+        "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_017",
-      "ts": 1775779200,
-      "formatted_timestamp": "10:40, 04/08/2026",
+      "mod_id": "mod_016",
+      "ts": 1775746800,
+      "formatted_timestamp": "13:00, 04/09/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_015",
-        "title": "Location scouting walk in Hampstead",
-        "start_ts": 1775779200,
-        "end_ts": 1775787000,
+        "entry_id": "cal_014",
+        "title": "Wall patching and paint touch-up",
+        "start_ts": 1775746800,
+        "end_ts": 1775754000,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "work",
         "linked_preferences": [
-          "weddings"
+          "work troubleshooting"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775796600,
+      "formatted_timestamp": "02:50, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Face mask prep and skincare reset",
+        "start_ts": 1775796600,
+        "end_ts": 1775799300,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "skincare and facial beauty routines",
+          "DIY beauty"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -423,176 +428,205 @@
     },
     {
       "mod_id": "mod_018",
-      "ts": 1775803200,
-      "formatted_timestamp": "17:20, 04/08/2026",
-      "action": "updated",
-      "entry_id": "cal_015",
-      "diff": {
-        "end_ts": {
-          "from": 1775787000,
-          "to": 1775783400
-        },
-        "notes": {
-          "from": "",
-          "to": "Shortened after rain moved in"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_019",
-      "ts": 1775851200,
-      "formatted_timestamp": "07:20, 04/09/2026",
+      "ts": 1775842200,
+      "formatted_timestamp": "15:30, 04/10/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_016",
-        "title": "Morning Bible study and reflections",
-        "start_ts": 1775851200,
-        "end_ts": 1775856600,
+        "title": "Supply pickup for theater maintenance",
+        "start_ts": 1775842200,
+        "end_ts": 1775847600,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [
-          "christian faith",
-          "self-improvement"
-        ],
-        "is_preference_driven": true,
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_020",
-      "ts": 1775872800,
-      "formatted_timestamp": "13:20, 04/09/2026",
+      "mod_id": "mod_019",
+      "ts": 1775869200,
+      "formatted_timestamp": "23:00, 04/10/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_017",
-        "title": "Facebook post draft: wildlife rescue adoption campaign",
-        "start_ts": 1775872800,
-        "end_ts": 1775878200,
+        "title": "Dog video catch-up and folder cleanup",
+        "start_ts": 1775869200,
+        "end_ts": 1775872800,
         "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "community engagement"
+          "dog-focused social media content",
+          "viral social media content"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775902200,
+      "formatted_timestamp": "08:10, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "One-on-one with operations manager",
+        "start_ts": 1775902200,
+        "end_ts": 1775906400,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "work",
+        "attendees": [
+          "self",
+          "Jordan"
+        ],
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775913000,
+      "formatted_timestamp": "11:10, 04/11/2026",
+      "action": "updated",
+      "entry_id": "cal_018",
+      "diff": {
+        "end_ts": {
+          "from": 1775906400,
+          "to": 1775908200
+        },
+        "notes": {
+          "from": "",
+          "to": "Added follow-up on weekend coverage"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775943600,
+      "formatted_timestamp": "21:00, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "Family dinner and Lucy reruns",
+        "start_ts": 1775943600,
+        "end_ts": 1775950800,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "classic television comedy",
+          "family life and relationship milestones"
         ],
         "is_preference_driven": true,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_021",
-      "ts": 1775894400,
-      "formatted_timestamp": "19:20, 04/09/2026",
-      "action": "removed",
-      "entry_id": "cal_017",
-      "removal_reason": "canceled: rescue team changed the campaign timing"
-    },
-    {
-      "mod_id": "mod_022",
-      "ts": 1775923200,
-      "formatted_timestamp": "03:20, 04/10/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_018",
-        "title": "Sugar-free dessert experiment",
-        "start_ts": 1775923200,
-        "end_ts": 1775928600,
-        "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "wellness",
-          "cooking"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_023",
-      "ts": 1775928600,
-      "formatted_timestamp": "04:50, 04/10/2026",
-      "action": "updated",
-      "entry_id": "cal_018",
-      "diff": {
-        "end_ts": {
-          "from": 1775928600,
-          "to": 1775930400
-        },
-        "notes": {
-          "from": "",
-          "to": "Added cooling time for the ganache"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_024",
-      "ts": 1775935800,
-      "formatted_timestamp": "06:50, 04/10/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "One-on-one with editor about album layout",
-        "start_ts": 1775935800,
-        "end_ts": 1775941200,
-        "location": {
-          "city": "London",
-          "region": "England",
-          "country": "UK",
-          "lat": 51.5074,
-          "lon": -0.1278,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "weddings"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_025",
-      "ts": 1775944800,
-      "formatted_timestamp": "09:20, 04/10/2026",
-      "action": "updated",
-      "entry_id": "cal_019",
-      "diff": {
-        "end_ts": {
-          "from": 1775941200,
-          "to": 1775943000
-        },
-        "notes": {
-          "from": "",
-          "to": "Extended to confirm print specs"
-        }
-      }
-    },
-    {
-      "mod_id": "mod_rep_026",
+      "mod_id": "mod_rep_027",
       "ts": 1775946438,
       "formatted_timestamp": "22:27, 04/11/2026",
       "action": "removed",
       "entry_id": "cal_018",
       "removal_reason": "Rescheduled at last minute"
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775946600,
+      "formatted_timestamp": "21:50, 04/11/2026",
+      "action": "updated",
+      "entry_id": "cal_019",
+      "diff": {
+        "end_ts": {
+          "from": 1775950800,
+          "to": 1775952600
+        },
+        "notes": {
+          "from": "",
+          "to": "Moved later because dinner ran long"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_025",
+      "ts": 1775948100,
+      "formatted_timestamp": "22:15, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_020",
+        "title": "Late walk and reset",
+        "start_ts": 1775952600,
+        "end_ts": 1775955000,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_026",
+      "ts": 1775948200,
+      "formatted_timestamp": "22:16, 04/11/2026",
+      "action": "updated",
+      "entry_id": "cal_020",
+      "diff": {
+        "end_ts": {
+          "from": 1775955000,
+          "to": 1775954400
+        },
+        "notes": {
+          "from": "",
+          "to": "Shortened to keep the night open"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_027",
+      "ts": 1775948220,
+      "formatted_timestamp": "22:17, 04/11/2026",
+      "action": "updated",
+      "entry_id": "cal_020",
+      "diff": {
+        "title": {
+          "from": "Late walk and reset",
+          "to": "Late walk"
+        }
+      }
     }
   ]
 }
