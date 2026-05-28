@@ -201,7 +201,7 @@ _DISPLAY_RUBRIC_REPETITION_RECSYS = [
     "(+) From query #{tail_start} on: pick NEW hashtags persona-aligned with the user "
     "(you may invent tags beyond the user's existing set).",
     "(-) Don't reuse a hashtag that appeared in any prior response within the cluster.",
-    "(-) Don't recycle > 30% of head-zone hashtags into a tail response.",
+    "(-) From query #{tail_start} on, at most ~30% of your hashtags may overlap with any one of your earlier answers in this cluster — the rest must be new.",
     "(-) Don't reach for the off-persona distractor pool.",
     "(-) Don't produce near-duplicate titles or captions across the cluster.",
 ]
