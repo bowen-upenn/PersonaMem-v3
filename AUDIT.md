@@ -100,20 +100,27 @@ A human audit is COMPLEMENTARY, not redundant, to the automated checks the pipel
 
 ### Build-time gates in `scripts/prepare_eval_data.py`
 
-| # | Check | Location | Drops what |
-|---|---|---|---|
-| 1 | Empty-GT filter | `:575` | rows where `groundtruth_preference ∈ {"", "(none identified)"}` |
-| 2 | History-floor filter | `:596–604` | rows whose `t_test` falls before the 20% mark of user's engagement history |
-| 3 | Sensitive-event coverage check | `:606–672` | `over_personalization_sensitive_event` rows whose planted episode topic / hashtags / label_fragment never appear in chatbot / ai_studio events before `t_test` |
-| 4 | Format-verify gate (a) | `:682–697` | rows where `inferior_response` is empty (string `""` OR dict with empty `.text`) |
-| 5 | Format-verify gate (b) | `:698–706` | `USER_MESSAGE_TASKS` rows with no `query` / `user_message` / `user_query` field populated |
-| 6 | Personalization-routing verify | `:293–367` | `chatbot_personalized_response` NEUTRAL + `over_personalization_chatbot_text` HELPS via mini-LLM judge |
-| 7 | Tool-call gate | `:422–465` | agentic / E3 / E6 instances with invalid `tool_call` payloads. Each dropped instance is logged to `benchmark/{uid}/build_benchmark.dropped.jsonl` |
-| 8 | Per-instance self-check | `llm_postprocess.py:1607` | `_run_self_check(task_type, query, response)` — task-specific LLM-judge that catches off-task example responses; failed responses get regenerated once before being dropped |
-| 9 | Voice-evidence distinguishability | `llm_postprocess.py:600` | agentic compose rows where example_response and inferior_response voice-evidence sets are too similar to support a fair voice_match grade |
-| 10 | Triplet self-check | `llm_postprocess.py:778` | chatbot personalized response triplets (proactive / control / adversarial) where the triplet doesn't satisfy the held-out alignment criteria |
-| 11 | Compose-length validator | `llm_postprocess.py:_validate_compose_length` | example_response is below 100 words on any of the 4 compose tasks; triggers a regen pass during generation |
-| 12 | Sensitive-event preamble guard | `llm_postprocess.py:_preamble_stripped_too_similar` | sensitive-event inferior whose body (with leading "as a [ROLE], …" preamble stripped) shares ≥0.7 token Jaccard with example — regenerates the inferior |
+These gates execute during build, BUT they are also **post-generation audit checkpoints**. For each gate, the auditor must verify two things after a regen:
+
+1. **The gate fired correctly**: nothing that SHOULD have been dropped slipped through into `queries.csv`. Re-run the gate's logic over the shipped rows and confirm zero violations remain (e.g. `grep -c '(none identified)'` returns 0, no `USER_MESSAGE_TASKS` row has empty `user_query`, etc.).
+2. **The gate didn't over-drop**: the drop count makes sense in context. A 0% drop rate is suspicious (gate may be silently no-op'ing); an unexpectedly high drop rate (e.g. >50% of one task type) means the gate is misconfigured or its precision regressed. Compare drop counts against the prior regen as a baseline — a sudden jump is a finding.
+
+The drop counts are emitted to `/tmp/eval_regen/{uid}.stdout`. **Read those lines as part of every audit.**
+
+| # | Check | Location | Drops what | Post-gen audit method |
+|---|---|---|---|---|
+| 1 | Empty-GT filter | `:575` | rows where `groundtruth_preference ∈ {"", "(none identified)"}` | `grep -c '(none identified)' benchmark/*/queries.csv` → 0 |
+| 2 | History-floor filter | `:596–604` | rows whose `t_test` falls before the 20% mark of user's engagement history | python: for every row, confirm `ts ≥ engagement_ts[len(events)//5]` |
+| 3 | Sensitive-event coverage check | `:606–672` | `over_personalization_sensitive_event` rows whose planted episode topic / hashtags / label_fragment never appear in chatbot / ai_studio events before `t_test` | sample 3 surviving sensitive-event rows; confirm the episode topic appears in some pre-T_test chatbot / ai_studio event |
+| 4 | Format-verify gate (a) | `:682–697` | rows where `inferior_response` is empty (string `""` OR dict with empty `.text`) | python: for every row, `inferior_response` is non-empty string OR dict with non-empty `.text` |
+| 5 | Format-verify gate (b) | `:698–706` | `USER_MESSAGE_TASKS` rows with no `query` / `user_message` / `user_query` field populated | python: for every USER_MESSAGE_TASKS row, at least one of those three keys is non-empty |
+| 6 | Personalization-routing verify | `:293–367` | `chatbot_personalized_response` NEUTRAL + `over_personalization_chatbot_text` HELPS via mini-LLM judge | check post-routing counts ≥ floor (e.g. ≥10 per user for chatbot_personalized) — a collapse is a signal the verifier is too strict |
+| 7 | Tool-call gate | `:422–465` | agentic / E3 / E6 instances with invalid `tool_call` payloads. Each dropped instance is logged to `benchmark/{uid}/build_benchmark.dropped.jsonl` | every agentic row has non-empty `tool_call` matching its `tool_call_rules`; spot-check the `.dropped.jsonl` log for unexpected reasons |
+| 8 | Per-instance self-check | `llm_postprocess.py:1607` | `_run_self_check(task_type, query, response)` — task-specific LLM-judge that catches off-task example responses; failed responses get regenerated once before being dropped | log lines `self_check_failed=N` — a high N relative to total self_checks is a prompt regression |
+| 9 | Voice-evidence distinguishability | `llm_postprocess.py:600` | agentic compose rows where example_response and inferior_response voice-evidence sets are too similar to support a fair voice_match grade | log lines `voice_check_failed=N` + `voice_check_regen=M`; sample 3 surviving rows, confirm example/inferior carry visibly different voice anchors |
+| 10 | Triplet self-check | `llm_postprocess.py:778` | chatbot personalized response triplets (proactive / control / adversarial) where the triplet doesn't satisfy the held-out alignment criteria | log lines `chatbot_triplet_built=N chatbot_triplet_failed=M`; failure count > 0 is a signal |
+| 11 | Compose-length validator | `llm_postprocess.py:_validate_compose_length` | example_response is below 100 words on any of the 4 compose tasks; triggers a regen pass during generation | python: median word count per compose task ≥ 100 per user; flag if `under_100` > 20% of compose rows |
+| 12 | Sensitive-event preamble guard | `llm_postprocess.py:_preamble_stripped_too_similar` | sensitive-event inferior whose body (with leading "as a [ROLE], …" preamble stripped) shares ≥0.7 token Jaccard with example — regenerates the inferior | sample 5 sensitive-event rows; strip the leading "as a [ROLE], " preamble from each inferior; confirm Jaccard against example < 0.7 |
 
 ### Structural and contamination checks in `evaluation/audit_helpers.py`
 
