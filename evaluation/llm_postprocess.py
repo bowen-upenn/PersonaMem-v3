@@ -319,6 +319,13 @@ _COMPOSE_TASKS = {
     "agentic_auto_reply",
 }
 
+# Recency window for picking the over_personalization foil's lean-on category
+# in `over_personalization_chatbot_text`. The picked category's most-recent
+# engagement must be within this many days BEFORE the query's source_timestamp
+# — otherwise the foil leans on a stale top-of-history signal and the
+# "over-personalization" failure isn't credible.
+_OVER_PERS_RECENT_WINDOW_DAYS = 7
+
 _VOICE_EVIDENCE_TASKS = set(_COMPOSE_TASKS) | {"agentic_community_post"}
 
 
@@ -2341,8 +2348,44 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
         cats = persona_ctx.get("top_categories") or []
         if cats:
             pool = cats[:min(6, len(cats))]
+            # over_personalization_chatbot_text: the foil leans on a top
+            # category to fail restraint. The failure mode only makes sense
+            # if that category was engaged with RECENTLY relative to the
+            # query — a stale top-of-history category isn't a credible
+            # over-personalization (a competent agent wouldn't reach for
+            # week-old signal on an off-topic question). Filter the pool
+            # to categories with a recent engagement before the query, and
+            # propagate the recency timestamp into the evidence dict for
+            # downstream auditability.
+            query_ts = int(inst.get("source_timestamp") or inst.get("t_test") or 0)
+            cat_recent_ts = persona_ctx.get("cat_recent_ts") or {}
+            chosen_ts = 0
+            if task_id == "over_personalization_chatbot_text" and query_ts > 0 and cat_recent_ts:
+                # Categories engaged within OVER_PERS_RECENT_WINDOW_DAYS before the query.
+                recent_pool = [
+                    (cat, n) for (cat, n) in pool
+                    if 0 < (query_ts - int(cat_recent_ts.get(cat, 0)))
+                       <= _OVER_PERS_RECENT_WINDOW_DAYS * 24 * 3600
+                ]
+                if recent_pool:
+                    pool = recent_pool
+                else:
+                    # No category is within the strict window — fall back
+                    # to the nearest-recent category overall so the foil
+                    # still leans on the freshest available signal rather
+                    # than a random ancient one.
+                    pool = sorted(
+                        pool,
+                        key=lambda kv: query_ts - int(cat_recent_ts.get(kv[0], 0)),
+                    )[:max(1, len(pool) // 2)]
             chosen = rng.choice(pool)
-            return {"persona_item": chosen[0]}
+            chosen_ts = int(cat_recent_ts.get(chosen[0], 0)) if cat_recent_ts else 0
+            evidence: dict = {"persona_item": chosen[0]}
+            if chosen_ts:
+                evidence["source_timestamp"] = chosen_ts
+                if query_ts:
+                    evidence["recency_delta_seconds"] = max(0, query_ts - chosen_ts)
+            return evidence
         return None
     if flaw_kind == "factual_error":
         grounding: dict = {"_from": "factual_error_grounding"}
@@ -2853,11 +2896,20 @@ def _synthesize_user_query(inst: dict, task_id: str) -> str:
 def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
     """Lightweight persona context for inferior generation: top prefs,
     top categories, real negative engagements in the last 48h, and the
-    per-app voice registers (app_personas) for voice_mismatch foils."""
+    per-app voice registers (app_personas) for voice_mismatch foils.
+
+    Also tracks `cat_recent_ts` / `pref_recent_ts` (max source_timestamp
+    per category / persona_item before t_test) so the over_personalization
+    flaw-evidence picker can constrain its choice to RECENT engagements —
+    a foil that leans on a stale top-of-history category isn't a credible
+    over-personalization failure (a competent agent wouldn't lean on a
+    stale signal anyway)."""
     from collections import Counter
     DAY = 24 * 3600
     pref_counts: Counter = Counter()
     cat_counts: Counter = Counter()
+    cat_recent_ts: dict[str, int] = {}
+    pref_recent_ts: dict[str, int] = {}
     recent_negs: list[dict] = []
     # app_personas — capitalized keys in profile.json: Instagram/Facebook/Threads/Chatbot.
     # Normalize to lowercase keys to match inst["target_app"].
@@ -2886,8 +2938,12 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
                 cat = (pref.get("category") or "").strip()
                 if pi:
                     pref_counts[pi] += 1
+                    if ts > pref_recent_ts.get(pi, 0):
+                        pref_recent_ts[pi] = ts
                 if cat:
                     cat_counts[cat] += 1
+                    if ts > cat_recent_ts.get(cat, 0):
+                        cat_recent_ts[cat] = ts
             if (e.get("source_interaction_type") or "") == "explicit_negative" \
                and (t_test - 2 * DAY) <= ts < t_test:
                 content = e.get("content") or {}
@@ -2901,6 +2957,8 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
     return {
         "top_prefs": pref_counts.most_common(8),
         "top_categories": cat_counts.most_common(6),
+        "cat_recent_ts": cat_recent_ts,
+        "pref_recent_ts": pref_recent_ts,
         "recent_negatives": recent_negs,
         "app_personas": app_personas,
         "user_voice": user_voice,
