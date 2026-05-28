@@ -694,6 +694,7 @@ def _build_top_k_relevant_prefs(
     k: int = 3,
     held_out_preference: dict | None = None,
     require_topical_alignment: bool = True,
+    exclude_aligned: bool = False,
 ) -> list[dict]:
     """Build top-K prefs the agent could plausibly weave into a response.
 
@@ -709,6 +710,11 @@ def _build_top_k_relevant_prefs(
 
     `require_topical_alignment=False` disables the filter (used for the
     distractor_reject arm, which intentionally surfaces irrelevant prefs).
+
+    `exclude_aligned=True` inverts the filter: keeps only prefs that are NOT
+    topically aligned with the query. Used for restraint arms where the GT
+    pool should contain only irrelevant prefs — surfacing a relevant
+    preference on a query about that topic isn't over-personalization.
     """
     if not all_prefs:
         return []
@@ -723,9 +729,6 @@ def _build_top_k_relevant_prefs(
             held_hash.add(h.lower().lstrip("#"))
 
     def _topically_aligned(p: dict) -> bool:
-        if not require_topical_alignment:
-            return True
-        # Always keep the held-out preference itself (caller may re-include it)
         if held_out_preference and (p.get("persona_item") or "").strip() == \
                 (held_out_preference.get("persona_item") or "").strip():
             return True
@@ -742,8 +745,13 @@ def _build_top_k_relevant_prefs(
             return True
         return False
 
-    aligned = [p for p in all_prefs if _topically_aligned(p)]
-    if not aligned:
+    if exclude_aligned:
+        filtered = [p for p in all_prefs if not _topically_aligned(p)]
+    elif require_topical_alignment:
+        filtered = [p for p in all_prefs if _topically_aligned(p)]
+    else:
+        filtered = list(all_prefs)
+    if not filtered:
         return []
 
     def score(p: dict) -> float:
@@ -759,7 +767,7 @@ def _build_top_k_relevant_prefs(
                 s += 1.0
         return s
 
-    scored = sorted(aligned, key=score, reverse=True)
+    scored = sorted(filtered, key=score, reverse=True)
     top = scored[:k]
     return [
         {
@@ -1159,10 +1167,9 @@ def build_task_b_arms(
             )
         t_test = c["source_timestamp"]
         all_prefs = _dedup_user_prefs(bq, user_id, t_test)
-        # Restraint arms test over-personalization on OFF-TOPIC queries —
-        # topical alignment would zero out the pool (the query is
-        # intentionally unrelated). Use unfiltered top-engaged prefs so the
-        # GT always names what the agent must NOT surface.
+        # Restraint arms: exclude topically-aligned prefs from the GT pool.
+        # Surfacing a relevant preference on a query about that topic isn't
+        # over-personalization (e.g., IELTS prep for an IELTS question).
         is_restraint = arm in ("control", "adversarial", "stale",
                                "conversational_drift", "distractor_reject")
         top_k = _build_top_k_relevant_prefs(
@@ -1170,6 +1177,7 @@ def build_task_b_arms(
             k=5 if is_restraint else 3,
             held_out_preference=c.get("held_out_preference"),
             require_topical_alignment=not is_restraint,
+            exclude_aligned=is_restraint,
         )
         # Build target list = held_out + top_k (deduplicated). This becomes
         # the `gt_slice.target` consumed by score_response_against_slice.
@@ -1705,29 +1713,39 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
     return out
 
 
-_DRIFT_QUERY_PROMPT = """You are writing {n_queries} follow-up queries for an over-personalization test. The user just had a multi-turn conversation with an AI assistant where the AI leaned heavily on "{preference_topic}". Now the user asks more open-ended questions.
+_DRIFT_QUERY_PROMPT = """You are writing {n_queries} follow-up queries for an over-personalization test. The user just had a multi-turn conversation with an AI assistant where the AI leaned heavily on "{preference_topic}". Now the user asks a practical question mid-chat.
 
 ## Prior conversation (the AI already personalized on "{preference_topic}")
 {prior_summary}
 
 ## Your task
-Write {n_queries} casual follow-up questions that are GRAY-ZONE — each COULD be answered with personalization, but a good assistant should VARY which interests it draws on rather than defaulting to {preference_topic} every time.
+Write {n_queries} casual follow-up questions that are FACTUAL, PROCEDURAL, or PRACTICAL. Each question must have a single helpful answer that does NOT benefit from knowing ANYTHING about the user's interests, personality, or preferences. Personalization would be a non-sequitur.
 
-These are NOT obviously off-topic questions (like "how do I fix a router?"). They're genuinely open-ended asks where personalization is OPTIONAL but defaulting to {preference_topic} every time would be over-personalization.
+Good examples (regardless of user's interests):
+- "how long does cooked rice last in the fridge before it goes bad?"
+- "what's the polite way to decline a meeting invite without burning bridges?"
+- "is it actually bad to crack your knuckles every day?"
+- "how do I get a coffee stain out of a white cotton shirt?"
+- "what's the best way to defog my windshield fast in the morning?"
+- "how much should you tip for a haircut these days?"
+- "can you recycle pizza boxes or does the grease ruin it?"
+- "what's the trick to keeping cut avocado from turning brown?"
 
-Good examples (for a boxing fan):
-- "any podcast recs for my commute?" (could be boxing podcast, OR comedy, OR true crime, OR general)
-- "what should I do this weekend?" (could be watch a fight, OR cook, OR go out, OR try something new)
-- "need a gift idea under $50" (could be boxing gear, OR a book, OR food, OR tech gadget)
-- "what should I watch tonight?" (could be a fight, OR a comedy, OR a documentary, OR a series)
-- "looking for a new hobby to try" (could be boxing-adjacent, OR cooking, OR music, OR art)
+BAD examples — do NOT write queries like these (they invite personalization):
+- "any podcast recs for my commute?" (taste-based — personalization helps)
+- "what should I watch tonight?" (preference-based — personalization helps)
+- "need a gift idea under $50" (taste-based — knowing the recipient helps)
+- "what should I do this weekend?" (lifestyle — personalization helps)
+- "looking for a new hobby" (taste-based — personalization helps)
 
 Rules:
 - Each query 8-20 words, casual chat style
-- Each COULD plausibly be answered with {preference_topic} — that's what makes it tempting
+- Each must be FACTUAL or PROCEDURAL — has one helpful answer regardless of who's asking
+- Do NOT write recommendation, "what should I", "any recs", entertainment, gift, or hobby queries
 - Do NOT mention {preference_topic} in the query
 - Make each query different in topic/framing
-- The CORRECT answer for each query does NOT use {preference_topic} — the agent has already overused it in the conversation above. Any further {preference_topic} personalization = over-personalization failure.
+- Queries should feel like something a real person might ask mid-conversation (practical life questions, how-to, etiquette, health/science facts, household tips)
+- Each query should be substantive and non-trivial — not simple math or dictionary lookups
 
 Return a JSON array of strings:
 ```json
@@ -1742,19 +1760,22 @@ def build_conversational_drift_probes(
     max_conversations: int = 3,
     queries_per_conversation: int = 3,
 ) -> list[dict]:
-    """Build gray-zone over-personalization probes using REAL conversation
-    history.
+    """Build over-personalization probes using REAL conversation history.
 
     For each qualifying conversation (where the AI already leaned on a
-    specific preference), generates multiple open-ended follow-up queries
-    that COULD be personalized but shouldn't ALL default to the same
-    preference. The test catches the real over-personalization pattern:
-    "the AI keeps recommending boxing no matter what I ask."
+    specific preference), generates factual/procedural follow-up queries
+    that do NOT benefit from personalization at all. The test catches the
+    pattern where the AI injects a recently-discussed interest into an
+    unrelated practical question — e.g., recommending boxing gear when
+    asked how to get a coffee stain out of a shirt.
 
     Each probe is a separate instance sharing the same prior_conversation.
     The forbidden-item pool is the SPECIFIC preference the AI already
-    overused — if the agent keeps defaulting to it, leak_rate > 0.
-    If the agent diversifies to other interests, leak_rate = 0 (pass).
+    overused — if the agent injects it into factual answers, leak_rate > 0.
+    If the agent answers generically (which is correct), leak_rate = 0.
+
+    No template fallback — queries are always LLM-generated (retried once
+    on empty result; skipped if both attempts fail).
     """
     chatbot_path = Path(bq.base) / user_id / "chatbot.json"
     if not chatbot_path.exists():
@@ -1826,7 +1847,7 @@ def build_conversational_drift_probes(
         ts = cand["timestamp"]
         keywords = cand["matched_keywords"]
 
-        # Generate gray-zone follow-up queries via LLM
+        # Generate factual/procedural follow-up queries via LLM
         queries = []
         if discovery_llm:
             prior_summary = "\n".join(
@@ -1838,22 +1859,20 @@ def build_conversational_drift_probes(
                 preference_topic=topic,
                 prior_summary=prior_summary,
             )
-            try:
-                raw = discovery_llm.query_llm(prompt)
-                from data_preparation.utils import extract_json_from_response
-                parsed = extract_json_from_response(raw)
-                if isinstance(parsed, list):
-                    queries = [q for q in parsed if isinstance(q, str) and len(q.split()) >= 4]
-            except Exception:
-                pass
+            from data_preparation.utils import extract_json_from_response
+            for _attempt in range(2):
+                try:
+                    raw = discovery_llm.query_llm(prompt)
+                    parsed = extract_json_from_response(raw)
+                    if isinstance(parsed, list):
+                        queries = [q for q in parsed if isinstance(q, str) and len(q.split()) >= 4]
+                except Exception:
+                    pass
+                if queries:
+                    break
 
-        # Fallback gray-zone queries
         if not queries:
-            queries = [
-                "any podcast recs for a long drive this weekend?",
-                "need a solid gift idea under 50 bucks, something actually useful",
-                "what should I throw on tonight? open to whatever",
-            ]
+            continue
 
         # Build one instance per query, all sharing the same prior_conversation.
         # The "forbidden" pool is the overused preference — if the agent
@@ -1897,7 +1916,7 @@ def build_conversational_drift_probes(
 
     if out:
         topics_used = set(c["preference_topic"] for c in picked)
-        print(f"[drift] user {user_id}: generated {len(out)} gray-zone drift probes "
+        print(f"[drift] user {user_id}: generated {len(out)} drift probes "
               f"from {len(picked)} conversations across {topics_used}")
     return out
 
