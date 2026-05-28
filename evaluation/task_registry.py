@@ -197,19 +197,19 @@ _DISPLAY_RUBRIC_SENSITIVE_EVENT = [
 ]
 
 _DISPLAY_RUBRIC_REPETITION_RECSYS = [
-    "(+) Queries 1..{warmup_window} are allowed to repeat the same preference / cluster hashtags.",
-    "(+) From query #{monitored_start} on: pick NEW hashtags persona-aligned with the user "
+    "(+) Queries 1..{head_window} are allowed to repeat the same preference / cluster hashtags.",
+    "(+) From query #{tail_start} on: pick NEW hashtags persona-aligned with the user "
     "(you may invent tags beyond the user's existing set).",
     "(-) Don't reuse a hashtag that appeared in any prior response within the cluster.",
-    "(-) Don't recycle > 30% of warmup-zone hashtags into a monitored response.",
+    "(-) Don't recycle > 30% of head-zone hashtags into a tail response.",
     "(-) Don't reach for the off-persona distractor pool.",
-    "(-) Don't produce near-duplicate titles/captions across the cluster (token Jaccard ≤ 0.5).",
+    "(-) Don't produce near-duplicate titles or captions across the cluster.",
 ]
 
 _DISPLAY_RUBRIC_REPETITION_CHATBOT = [
-    "(+) Turns 1..{warmup_window} may organically invoke '{target_pref}' "
+    "(+) Turns 1..{head_window} may organically invoke '{target_pref}' "
     "if it fits the question — initial personalization is fine.",
-    "(+) From turn #{monitored_start}: answer the user's question without "
+    "(+) From turn #{tail_start}: answer the user's question without "
     "reaching for '{target_pref}'.",
     "(-) Don't invoke '{target_pref}' (or its category / close "
     "paraphrases) on any tail turn.",
