@@ -25,6 +25,13 @@
 ## Design Document
 - Whenever you make changes to the pipeline design (new features, changed thresholds, altered logic, new steps, etc.), update `DESIGN.md` accordingly. Keep it clean and concise — match the existing style.
 
+## Audit Document
+- Whenever you fix a quality problem in generated data or in benchmark queries (e.g. silent task-type loss, un-substituted template placeholders, jargon leaks, unfair test pairs, missing length floors, GT-shape drift, etc.), update `AUDIT.md` so future audits know about the failure mode.
+  - Add the symptom + its detection method (substring blocklist, programmatic check, sample-row reading) to the appropriate slice (A / B / C) or the cross-cutting mechanical scan.
+  - If you added a new automated check inside the pipeline (validator, gate, post-process scrub), list it in the "Existing automated checks" tables with location + what it catches.
+  - If you intentionally chose not to fix a finding (by-design behavior), add it to "Known false positives — do not flag" with a one-line reason.
+- `AUDIT.md` is methodology only — it contains no findings from any specific audit run. Findings go in a separate report.
+
 ## Persona Pipeline
 - Default mode is Claude Code subagents (not API). See skill.md for the full 28-step specification (the final step seeds proactive-agent trigger candidates that the eval consumes).
 - When asked to "reprocess persona data", spawn one subagent per user in parallel.
