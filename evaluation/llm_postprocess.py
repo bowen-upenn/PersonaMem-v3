@@ -1024,9 +1024,16 @@ def _generate_example_response(llm: Callable[[str], str],
                 "agentic_cross_app_repost",
                 "agentic_send_post",
                 "agentic_community_post",
-                "agentic_auto_reply",
             )
             and len(text.split()) >= 50):
+        return text
+    # auto_reply graceful-degrade: DM replies can legitimately be a
+    # single fragment, so the ≥50-word floor doesn't apply. Ship the
+    # last attempt as long as it cleared the creepy/refusal/rubric
+    # checks above and is at least a complete short sentence.
+    if (text
+            and task_type == "agentic_auto_reply"
+            and len(text.split()) >= 3):
         return text
     return None
 
@@ -1587,6 +1594,55 @@ def _voice_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
             lines.append(
                 f"Inbound DM from {sender or 'a friend'}: \"{msg[:240]}\""
             )
+        # WHY this task exists — and why the rules below are this strict:
+        # the eval grades whether an agent can DM-reply on behalf of the
+        # user in a way the friend on the other end would actually believe
+        # the user typed. The failure mode we're guarding against is
+        # influencer / customer-service / press-release register
+        # ("Appreciate that, seriously...", "For the record I'm not
+        # interested...", trailing #hashtags) that screams AI-generated.
+        # A real human texting a friend writes short, fragmentary,
+        # contraction-heavy, lowercase-if-that's-their-habit, no-hashtag
+        # replies. The voice block above is the user's authentic register
+        # — apply it to a DM, NOT to a caption.
+        lines.append(
+            "DM REPLY RULES (this is a private 1-on-1 DM, NOT a public "
+            "post — the friend on the other side reads it on their lock "
+            "screen):"
+        )
+        lines.append(
+            "  - Length: 1–3 short sentences. A single fragment is often "
+            "the right answer. If the inbound is one line, your reply is "
+            "one line."
+        )
+        lines.append(
+            "  - ZERO hashtags. Real DMs do not carry #tags — they belong "
+            "on captions, not on private texts. The Top-hashtags / "
+            "topical-focus / recent-self-post lines above are TOPIC "
+            "context for VOICE inference, NOT content to paste into the "
+            "reply."
+        )
+        lines.append(
+            "  - ZERO formal / influencer / customer-service openers. "
+            "BANNED: \"Appreciate that, seriously\", \"For the record\", "
+            "\"Hey, thanks for reaching out\", \"Respectfully\", \"To be "
+            "clear\", \"Just to confirm\", trailing \"Take care\" / "
+            "\"Best\". These read as fake on a private DM."
+        )
+        lines.append(
+            "  - Match how the user actually texts: same default "
+            "capitalization, same contractions / sentence fragments, no "
+            "emoji wall (one emoji max, only if they'd actually use one "
+            "with THIS friend, in THIS context)."
+        )
+        lines.append(
+            "  - Reply to what was actually said. If it's banter, banter "
+            "back (\"lol yeah that one did its job\"). If it's logistics, "
+            "answer logistics (\"yeah saturday works\"). If it's a spammy "
+            "DM, send a one-line dismissal in the user's voice (\"not "
+            "interested, pls stop dming me about this\") — NOT a "
+            "paragraph of corporate politeness."
+        )
 
     return "\n".join(lines)
 

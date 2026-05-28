@@ -931,6 +931,23 @@ Already used:
     return f"""\
 You are crafting ONE test card for a personalization benchmark. Output JSON only.
 
+## Why this test exists (read this before writing anything)
+
+This card asks: **does a chatbot with access to the user's memory give a
+visibly different answer than a memory-blind chatbot?** Two assistants
+get the same `user_query`. The `example_response` is what a chatbot
+that read the user's memory would write. The `inferior_response` is
+what the SAME query gets from a memory-blind baseline chatbot — a
+competent, polite, on-topic answer that has no idea who this user is.
+
+The eval is graded by judges that look at the DELTA between the two
+responses on the held-out preference axis. If the example and inferior
+are paraphrases of each other (same suggestions, same emotional
+register, same vocabulary, just reworded), the test produces NO signal
+— a memory-using model and a memory-blind model both look correct, and
+the benchmark can't distinguish them. The pair MUST diverge on the
+preference axis.
+
 ## Held-out user preference (the GROUND TRUTH the assistant should weave in)
 "{held_out_preference}"
 
@@ -944,7 +961,7 @@ You are crafting ONE test card for a personalization benchmark. Output JSON only
 A JSON object with three fields:
 1. `user_query` — what the user types to the chatbot at the test moment.
 2. `example_response` — the GOOD response that subtly weaves in the held-out preference through CONTENT CHOICE.
-3. `inferior_response` — a plausible GENERIC response that ignores the preference (same length, same tone, but any user could get it).
+3. `inferior_response` — a plausible BASELINE response from a memory-blind chatbot. Same query, same length, same tone, but DIFFERENT CONTENT — it visibly missed the preference axis.
 
 ## Rules for `user_query`
 
@@ -959,7 +976,7 @@ A JSON object with three fields:
 ## Rules for `example_response`
 
 - 2–4 sentences, ≤ 80 words.
-- The response should weave in the held-out preference IMPLICITLY through CONTENT — what the assistant suggests, which option it leans toward, which detail it foregrounds. The personalization shows up in the THING the assistant says, not in the META-FRAME about knowing the user.
+- The response weaves the held-out preference IMPLICITLY through CONTENT — which specific suggestion, which detail it foregrounds, which emotional register it leans into. The personalization shows up in the THING the assistant says, not in a meta-frame about knowing the user.
 - FORBIDDEN telegraph phrases — these advertise that you have a profile and tank the rubric:
   • "as a fan of X"
   • "since you love X" / "since you like X" / "since you're into X"
@@ -971,22 +988,30 @@ A JSON object with three fields:
   • "based on your preferences"
 - Match the user's voice register but stay in the assistant's frame (the assistant talks WITH the user, not AS them).
 - Concrete suggestions, not vague advice. Name the thing.
-- It must NOT mention the held-out preference label verbatim ("hip-hop culture", "NFL football"). It SHOULD reference what the preference IMPLIES (a specific artist, a specific game, a specific aesthetic).
+- It must NOT mention the held-out preference label verbatim ("hip-hop culture", "NFL football"). It SHOULD reference what the preference IMPLIES (a specific artist, a specific game, a specific aesthetic, a specific emotional frame).
 
-## Rules for `inferior_response`
+## Rules for `inferior_response` (READ CAREFULLY — most failures happen here)
 
-- Same length and structure as the example_response — within ±20 words.
-- A plausible, generic, on-topic answer to the same query that any user could get. NOT wrong; just generic.
-- It must NOT be a refusal, a clarifying question, or an obvious mistake.
-- It must NOT touch on the held-out preference (no overlap of suggested content with the example_response's preference-anchored content).
-- The inferior is graded as "missed the personalization opportunity" — make it look as competent as the example minus the personalization.
+The inferior is NOT a paraphrase of the example. It is what a DIFFERENT
+assistant (one that never saw this user's memory) would write to the
+SAME query. It must:
+
+- Be the same LENGTH and STRUCTURE as the example_response (±20 words, same sentence count, similarly concrete).
+- Be plausible, polite, on-topic, and competent — NOT a refusal, NOT a clarifying question, NOT obviously wrong. A memory-blind baseline chatbot answers crisply; it just answers a generic version of the question.
+- DIVERGE FROM THE EXAMPLE on the preference axis. This is the load-bearing constraint:
+  • Identify what specific anchor in the example carries the preference signal (the romantic-couple frame, the boxing reference, the hip-hop track, the queer-coded aesthetic, etc.). That anchor is OFF-LIMITS for the inferior — drop it entirely.
+  • Drop the supporting vocabulary too. If the example talks about "handwritten notes about what you admire in them" for a romantic-affection preference, the inferior must NOT include handwritten notes, admiration framing, or "thoughtful warmth" language at all. Swap to a different content axis the same question opens up — practical / commerce / utility / utility-aesthetic / hobby-based / social, whichever fits the prompt and doesn't recreate the preference signal.
+  • If the question is "small anniversary gift?" and the preference is romantic/affection, the example might recommend a framed photo + handwritten note; the inferior should recommend something neutral like "a nice bottle of wine or a small kitchen gadget, depending on their style — keep it around $40-60" — utility/commerce frame, no emotional anchor.
+  • If the question is "weekend plans?" and the preference is boxing-fandom, the example mentions a card or a sparring class; the inferior suggests a brunch / hike / movie — neutral leisure, no combat-sports frame.
+- Self-test: if you read ONLY the inferior, a judge should not be able to guess what the held-out preference was. If they can, the inferior is leaking the signal and you need to rewrite.
+- Vocabulary distance: at most 30% lexical overlap (excluding stopwords) with the example_response. If three+ content words from the example reappear in the inferior, the foil is too similar.
 
 ## Self-check before returning
 
 - If the user_query starts with any of {{"clean up", "tighten", "edit", "fix", "polish", "rewrite", "translate", "proofread", "make it sound", "need a text", "for my friend"}}, REWRITE it.
 - If the user_query mentions the preference's keywords (the actual nouns from "{held_out_preference}"), REWRITE it.
 - If the example_response contains any forbidden telegraph phrase, REWRITE it.
-- If the inferior_response touches on the same preference content as the example_response, REWRITE it.
+- **Inferior contrast check:** read the inferior in isolation. Could a memory-blind chatbot have produced it for this query? If yes, good. Does it still mention or imply the held-out preference? If yes (e.g. for an "affectionate-couple" preference, the inferior still talks about "admiring", "handwritten", "personal", "warm", "for them"), REWRITE it on a different content axis. The inferior must MISS the personalization, not soft-paraphrase it.
 
 ## Output format
 
@@ -996,7 +1021,7 @@ Respond with ONE fenced JSON block, nothing else:
 {{
   "user_query": "<the user's casual question>",
   "example_response": "<the subtly personalized answer>",
-  "inferior_response": "<the plausible generic answer>"
+  "inferior_response": "<the plausible generic answer from a memory-blind baseline>"
 }}
 ```
 """
