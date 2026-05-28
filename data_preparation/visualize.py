@@ -2978,6 +2978,20 @@ def _load_test_samples(
                 q_text = q_extractor(inst) or ""
             except Exception:
                 q_text = ""
+            # Tasks with no live user message (ranking, proactive, agentic
+            # writes triggered by an event) ship with empty q_text — but
+            # they DO have a fixed `[system prompt] …` directive driving
+            # the agent. Mirror scripts/prepare_eval_data.py:204-207 so
+            # the persona.html test card carries the same fallback the
+            # eval row carries, instead of rendering an empty User Query.
+            if not q_text.strip():
+                try:
+                    from evaluation.task_registry import get_system_prompt
+                    sys_prompt = get_system_prompt(task_type) or ""
+                except Exception:
+                    sys_prompt = ""
+                if sys_prompt:
+                    q_text = f"[system prompt] {sys_prompt}"
             try:
                 ts_int = int(r.get("ts") or 0)
             except Exception:
