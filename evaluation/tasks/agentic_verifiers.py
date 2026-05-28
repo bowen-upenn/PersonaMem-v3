@@ -192,14 +192,18 @@ def _verify_dm_digest(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_cross_app_repost(inst: dict, response: str, writes: list) -> dict:
-    """Repost must reference source-post hashtag or topic + meet length floor."""
+    """Repost must reference source-post hashtag or topic + meet length floor +
+    acknowledge the source app in the first sentence (so the post reads as a
+    cross-post, not as an organic original)."""
     source = inst.get("source_post") or {}
     target_app = inst.get("target_app") or "threads"
+    source_app = (inst.get("source_app") or "").lower()
     posts = _writes_for(writes, f"{target_app}_create_post")
     if not posts:
-        return _mk(0, 2, [
+        return _mk(0, 3, [
             ("repost_was_created", "fail (no post)"),
             (f"length_>={MIN_COMPOSE_WORDS}_words", "fail (no post)"),
+            ("source_app_acknowledged", "fail (no post)"),
         ])
     captions = _captions_from_writes(posts)
     written_hashtags = _hashtag_set(_hashtags_from_writes(posts))
@@ -223,6 +227,29 @@ def _verify_cross_app_repost(inst: dict, response: str, writes: list) -> dict:
         passed += 1
     else:
         details.append((f"length_>={MIN_COMPOSE_WORDS}_words", f"fail ({wc})"))
+        failed += 1
+    # Source-app acknowledgment: the first sentence (~first 200 chars) must
+    # name the source app, mention "crossposting" / "from" / "originally" /
+    # "on {app}" / similar. The eval failure pattern surfaced by the
+    # 2026-05-28 audit was reposts that read as organic originals.
+    first_chunk = written_text[:240].lower()
+    ack_markers = [
+        "crosspost", "cross-post", "cross post",
+        "from instagram", "from facebook", "from threads",
+        "on instagram", "on facebook", "on threads",
+        "saw this on", "originally on", "originally a", "originally posted",
+        "reposting", "repost from", "sharing from", "sharing this from",
+    ]
+    if source_app and source_app in first_chunk:
+        ack_ok = True
+    else:
+        ack_ok = any(m in first_chunk for m in ack_markers)
+    if ack_ok:
+        details.append(("source_app_acknowledged", "pass"))
+        passed += 1
+    else:
+        details.append((f"source_app_acknowledged (looked for {source_app!r} or "
+                        f"crosspost markers)", "fail"))
         failed += 1
     return _mk(passed, failed, details)
 

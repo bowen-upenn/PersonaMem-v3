@@ -265,7 +265,8 @@ part of this task; do NOT call `send_dm`.
 def t9_cross_app_repost(source_post: dict, target_app: str, history_block: str | None = None,
                         ground_truth_block: str | None = None,
                         allow_extra_tools: bool = False,
-                        text_only: bool = False) -> str:
+                        text_only: bool = False,
+                        source_app: str | None = None) -> str:
     import json
     src = json.dumps({"caption": source_post.get("caption", ""), "hashtags": source_post.get("hashtags", [])}, ensure_ascii=False)
     if ground_truth_block:
@@ -278,18 +279,28 @@ def t9_cross_app_repost(source_post: dict, target_app: str, history_block: str |
                                   what="the adapted post")
     content_fields = ('"final_answer": "<the adapted caption text in the user’s voice>",'
                       ' "hashtags": ["#..."]')
+    src_app_label = source_app or "the other app"
+    src_app_clause = (
+        f"\n\nFRAME RULE: the first sentence of the adapted post MUST acknowledge "
+        f"the cross-post explicitly — e.g. `saw this on {src_app_label}, sharing "
+        f"it here`, `crossposting from {src_app_label}`, `this was originally a "
+        f"{src_app_label} post`, or another natural phrasing that names "
+        f"{src_app_label}. A repost that omits the source-app reference looks "
+        f"like an organic original post; the eval graders this task on whether "
+        f"the agent surfaces the cross-app provenance."
+    )
     return f"""# Task T9: Cross-app repost with style adaptation
 
-The user wants to repost content from another app onto {target_app}, but phrased
+The user wants to repost content from {src_app_label} onto {target_app}, but phrased
 the way they normally would on {target_app} (different voice, length, format
 conventions).
 
-Source post (from a different app):
+Source post (from {src_app_label}):
 ```json
 {src}
 ```
 {_ground_truth_block(ground_truth_block)}
-Adapt it for {target_app} while preserving the core point. {voice_directive}
+Adapt it for {target_app} while preserving the core point. {voice_directive}{src_app_clause}
 
 {COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}

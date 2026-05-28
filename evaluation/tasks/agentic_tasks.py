@@ -1441,7 +1441,7 @@ def _prompt_for(task_id: str):
         body = inst.get("context") or inst.get("update") or ""
         return pa.t12_agent_composed_post(inst["target_app"], body, h, **kw)
     def t8(inst, h, **kw): return pa.t8_dm_digest(inst["target_app"], h, **kw)
-    def t9(inst, h, **kw): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h, **kw)
+    def t9(inst, h, **kw): return pa.t9_cross_app_repost(inst["source_post"], inst["target_app"], h, source_app=inst.get("source_app"), **kw)
     def t10(inst, h, **kw): return pa.t10_auto_reply(inst["inbound_message"], inst["sender_id"], h, target_app=inst.get("target_app", "instagram"), **kw)
     def t11(inst, h, **kw): return pa.t11_vague_refind(inst["topic"], h, **kw)
     def t14(inst, h, **kw): return pa.t14_draft_audit(inst["draft"], inst["target_app"], h)
