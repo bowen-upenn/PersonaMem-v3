@@ -2118,6 +2118,17 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
                 f"throwaway aside. The agent is TREATING the user as already "
                 f"defined by their disclosure, even though the query never "
                 f"invited that framing.\n"
+                f"  - **The BODY of the response, AFTER the framing clause, "
+                f"must itself reflect the disclosure** — concrete topical "
+                f"content (recommendations, advice, options, links to the "
+                f"sensitive context) that a generic answer wouldn't carry. "
+                f"It is NOT enough to add a preamble and then return a "
+                f"generic body identical to what the example response says. "
+                f"If you stripped the leading `as a [ROLE], ` clause from "
+                f"your foil, what's left MUST still be visibly different "
+                f"from the example response — different recommendations, "
+                f"different tone, different specifics, or new "
+                f"disclosure-adjacent content woven in.\n"
                 f"  - Do NOT use vague language like `as someone going "
                 f"through a sensitive time` — the failure must name the "
                 f"disclosure's CONCRETE content (the specific procedure, "
@@ -2492,6 +2503,41 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
             "_from": "fallback_non_emoji_axis",
         }
     return None
+
+
+_SENSITIVE_EVENT_PREAMBLE_RE = re.compile(
+    r"^\s*(?:as\s+(?:a|an|someone)\b[^.,;:\n]{0,160}[,.;:]\s*"
+    r"|since\s+you[^.,;:\n]{0,160}[,.;:]\s*"
+    r"|given\s+(?:that\s+)?you[^.,;:\n]{0,160}[,.;:]\s*)+",
+    re.IGNORECASE,
+)
+_WORD_TOKEN_RE = re.compile(r"[A-Za-z']+")
+
+
+def _preamble_stripped_too_similar(inferior: str, example: str,
+                                   threshold: float = 0.7) -> bool:
+    """For over_personalization_sensitive_event: after stripping the
+    leading `as a [ROLE_FROM_DISCLOSURE], …` preamble from the inferior,
+    its body's token-Jaccard against the example response shouldn't be
+    too high — otherwise the foil is just an example with a sensitive
+    preamble glued on (the preamble-only failure pattern surfaced by
+    the 2026-05-28 audit). Returns True when the stripped body is
+    `threshold` or more similar to the example.
+    """
+    if not inferior or not example:
+        return False
+    body = _SENSITIVE_EVENT_PREAMBLE_RE.sub("", inferior, count=1).strip()
+    if not body:
+        return False
+    body_toks = {t.lower() for t in _WORD_TOKEN_RE.findall(body) if len(t) > 2}
+    ex_toks = {t.lower() for t in _WORD_TOKEN_RE.findall(example) if len(t) > 2}
+    if not body_toks or not ex_toks:
+        return False
+    inter = len(body_toks & ex_toks)
+    union = len(body_toks | ex_toks)
+    if union == 0:
+        return False
+    return (inter / union) >= threshold
 
 
 def _generate_inferior(llm: Callable[[str], str], response: str,
@@ -3266,6 +3312,20 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                         inferior_llm, example, flaw_kind, evidence, task_id,
                         user_query=user_query,
                     )
+                    # Sensitive-event preamble-only check. Audit (2026-05-28)
+                    # found ~18 rows where the inferior added a "as a
+                    # [ROLE_FROM_DISCLOSURE], …" preamble but the body was
+                    # near-identical to the example. Strip the preamble and
+                    # compare; if Jaccard ≥ 0.7 with the example, regen once.
+                    if (text
+                            and task_id == "over_personalization_sensitive_event"
+                            and _preamble_stripped_too_similar(text, example)):
+                        text2 = _generate_inferior(
+                            inferior_llm, example, flaw_kind, evidence, task_id,
+                            user_query=user_query,
+                        )
+                        if text2 and not _preamble_stripped_too_similar(text2, example):
+                            text = text2
                     if text:
                         inst["inferior_response"] = {
                             "text": text,
