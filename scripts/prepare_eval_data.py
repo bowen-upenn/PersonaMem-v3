@@ -695,7 +695,20 @@ def prepare_one(
         if not _has_inferior(inst):
             dropped_no_inferior += 1
             continue
-        if tt in _USER_MSG_TASKS and not (inst.get("user_query") or "").strip():
+        # USER_MSG_TASKS legitimately carry the query under any of
+        # `user_query` (chatbot/over_pers builders), `user_message`, or
+        # `query` (preference-first context_shift scenarios in
+        # evaluation/scenarios.py). Mirror the multi-key resolver the
+        # CSV column writer already uses at line 203 — checking only
+        # `user_query` here silently drops every context_shift instance
+        # since they ship under the `query` key.
+        q = (
+            inst.get("user_query")
+            or inst.get("user_message")
+            or inst.get("query")
+            or ""
+        ).strip()
+        if tt in _USER_MSG_TASKS and not q:
             dropped_no_query += 1
             continue
         kept.append((tt, inst, ts))
