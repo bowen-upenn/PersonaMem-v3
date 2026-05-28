@@ -24,7 +24,15 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # selector's 15-cap (since decoupled in build_task_b_arms — see
     # _pick_held_out_for_event) and (b) the cap itself was below the count
     # needed for stat power on par with personalized_recommendation (40).
-    "chatbot_personalized_response":          {"min": 20, "max": 30},
+    # Cap raised 30 → 60 (2026-05-28): the personalization-routing
+    # verifier added in commit a5f9aba drops ~67% of survivors as
+    # NEUTRAL (cases where personalization wouldn't help) on the way
+    # to queries.csv. With the old cap of 30, post-routing supply
+    # collapsed to 1-9 per user (audit). The min stays at 20 since
+    # data_dependent isn't set; the higher max lets the routing
+    # filter pass ≥10 survivors per user without forcing a floor
+    # gap.
+    "chatbot_personalized_response":          {"min": 20, "max": 60},
     # over_personalization_chatbot_text absorbs the old
     # over_personalization_distractor_reject quotas (8/10) — merged in
     # Step 4.7. Same open-ended chatbot leak-rate test, distractor is
