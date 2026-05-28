@@ -807,7 +807,7 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
                    if cluster_hashtags else "")
                 + f" — no diversification on queries #{tail_start}..{n_queries}, "
                 f">30% hashtag overlap with prior responses, and near-duplicate "
-                f"titles/captions across the cluster (token Jaccard > 0.7)."
+                f"titles or captions across the cluster."
             ),
             "flaw_kind": "cluster_no_diversification",
             "flaw_evidence": {"_from": "deterministic_cluster_inferior",

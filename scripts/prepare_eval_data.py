@@ -227,11 +227,11 @@ def _project_row(
     else:
         drub_list = meta.get("display_rubric") or []
     display_rubric = ";".join(drub_list)
-    # `hidden_persona_implicit_qa`'s rubric carries a literal
-    # `{privacy_rubric_line}` placeholder (see task_registry.py:276) that
-    # was only being substituted by data_preparation/visualize.py:2497 —
-    # never by the CSV writer. Mirror visualize.py's substitution so the
-    # placeholder doesn't ship to reviewers verbatim.
+    # Several display_rubric templates carry literal {placeholder}
+    # strings that were only being substituted by the HTML renderer
+    # (data_preparation/visualize.py) — never by the CSV writer.
+    # Reviewers were seeing the raw placeholders. Substitute them
+    # here per-task-type using the same logic as visualize.py.
     if "{privacy_rubric_line}" in display_rubric:
         gt = inst.get("groundtruth_preference") or {}
         hp = gt.get("hidden_persona") if isinstance(gt, dict) else None
@@ -243,6 +243,43 @@ def _project_row(
         display_rubric = display_rubric.replace(
             "{privacy_rubric_line}", privacy_rubric_line,
         )
+    if "{head_window}" in display_rubric or "{tail_start}" in display_rubric:
+        # over_personalization_repetition_recsys / _chatbot: head =
+        # n_allowed_repetitions + 1, tail_start = head + 1.
+        n_allowed = int(inst.get("n_allowed_repetitions") or 2)
+        head_window = n_allowed + 1
+        tail_start = head_window + 1
+        display_rubric = (
+            display_rubric
+            .replace("{head_window}", str(head_window))
+            .replace("{tail_start}", str(tail_start))
+        )
+    if "{target_pref}" in display_rubric:
+        target_pref = (inst.get("target_pref") or "").strip()
+        display_rubric = display_rubric.replace(
+            "{target_pref}", target_pref or "the saturated preference",
+        )
+    if "{surfaced_suffix}" in display_rubric:
+        # over_personalization_chatbot_text / _context_shift: list the
+        # forbidden persona items, joined with commas, prefixed by
+        # ", like " (mirrors visualize.py:356-357 + 839).
+        surfaced_items = (
+            inst.get("top_k_relevant_prefs")
+            or inst.get("privacy_flagged_prefs")
+            or inst.get("forbidden_items")
+            or []
+        )
+        names: list[str] = []
+        for x in surfaced_items[:5] if isinstance(surfaced_items, list) else []:
+            if isinstance(x, dict):
+                pi = (x.get("persona_item") or "").strip()
+            else:
+                pi = str(x).strip()
+            if pi:
+                names.append(pi)
+        joined = ", ".join(names)[:140]
+        suffix = f", like {joined}" if joined else ""
+        display_rubric = display_rubric.replace("{surfaced_suffix}", suffix)
     return {
         "query_id": f"{user_id}:{seq:04d}:{instance_id}",
         "seq": seq,
