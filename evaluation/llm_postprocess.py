@@ -238,6 +238,36 @@ def _validate_no_rubric_leak(
     return True, ""
 
 
+_MIN_COMPOSE_WORDS_FLOOR = 100  # mirror agentic_verifiers.MIN_COMPOSE_WORDS
+
+
+def _validate_compose_length(response: str, task_type: str) -> tuple[bool, str]:
+    """Hard 100-word floor for compose tasks. Audit (2026-05-28) found
+    96 / 96 sampled compose-task example_responses below 100 words —
+    the existing verifier in tasks/agentic_verifiers.py scored the
+    failure but didn't gate generation, so short outputs always
+    shipped. Adding the check to the generator validator chain so
+    the regen path retries once with explicit length feedback.
+    """
+    if task_type not in (
+        "agentic_cross_app_repost",
+        "agentic_send_post",
+        "agentic_community_post",
+        "agentic_auto_reply",
+    ):
+        return True, ""
+    if not response:
+        return True, ""
+    n_words = len(response.split())
+    if n_words < _MIN_COMPOSE_WORDS_FLOOR:
+        return False, (
+            f"under_compose_floor: {n_words} words < {_MIN_COMPOSE_WORDS_FLOOR}. "
+            f"Expand the body — add specific topical content, voice-point "
+            f"phrases, and concrete details. Do NOT pad with filler."
+        )
+    return True, ""
+
+
 def _validate_no_creepy_phrasing(
     response: str,
     held_out_pref: dict | str | None = None,
@@ -755,7 +785,18 @@ def _length_guidance(task_type: str, inst: dict | None = None,
         # prompts_agentic.COMPOSE_LENGTH_AND_VOICE_RULE). Bump the char band
         # low end if needed so the gold example doesn't fail its own floor.
         extra = ""
-        if task_type in ("agentic_cross_app_repost", "agentic_send_post"):
+        # All four compose tasks carry the same ≥100-word hard floor:
+        # cross_app_repost / send_post (original), plus community_post /
+        # auto_reply (added 2026-05-28 — audit found ALL 96 compose-task
+        # examples below 100 words across all 5 users). The floor is
+        # enforced via _validate_compose_length below; this directive
+        # tells the LLM the floor up-front so it won't have to regen.
+        if task_type in (
+            "agentic_cross_app_repost",
+            "agentic_send_post",
+            "agentic_community_post",
+            "agentic_auto_reply",
+        ):
             lo = max(lo, 620)  # ≈100 words at ~6 chars/word incl. spaces
             hi = max(hi, lo + 200)
             extra = (
@@ -899,19 +940,24 @@ def _generate_example_response(llm: Callable[[str], str],
     )
     text: str | None = None
     last_reason = ""
-    for attempt in range(2):
+    # 3 attempts (was 2) so the compose-length validator gets a real
+    # regen pass even after a creepy / refusal / rubric retry has been
+    # spent.
+    for attempt in range(3):
         prompt = base_prompt
         if attempt > 0 and text is not None:
             prompt = base_prompt + (
-                "\n\nYour previous draft was REJECTED by the creepy-phrasing "
-                f"validator. Reason: {last_reason}.\n"
+                "\n\nYour previous draft was REJECTED by a validator. "
+                f"Reason: {last_reason}.\n"
                 "Rewrite so the topic CHOICE itself is the personalization "
                 "signal — do NOT self-reference what you know about the "
                 "user (no \"I know you...\", \"since you like X\", \"I "
                 "remember when you...\", \"based on your...\"), do NOT "
                 "paste the persona description / preference text verbatim "
                 "into the response, and do NOT refuse or claim you can't "
-                "access the user's data (you CAN — use the tools).\n"
+                "access the user's data (you CAN — use the tools). When "
+                "a length floor is named, hit it — pad with specific "
+                "topical content, NOT with filler.\n"
                 f"Previous draft (DO NOT REUSE):\n\"\"\"{text}\"\"\""
             )
         raw = llm(prompt)
@@ -932,6 +978,22 @@ def _generate_example_response(llm: Callable[[str], str],
         if not passed_rubric:
             last_reason = rubric_reason
             continue
+        passed_length, length_reason = _validate_compose_length(text, task_type)
+        if not passed_length:
+            last_reason = length_reason
+            continue
+        return text
+    # All attempts exhausted. For compose tasks, ship the longest
+    # surviving draft anyway (better than dropping the row entirely —
+    # the verifier dimension will still grade the failure loudly).
+    if (text
+            and task_type in (
+                "agentic_cross_app_repost",
+                "agentic_send_post",
+                "agentic_community_post",
+                "agentic_auto_reply",
+            )
+            and len(text.split()) >= 30):
         return text
     return None
 
