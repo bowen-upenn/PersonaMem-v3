@@ -989,11 +989,13 @@ def _generate_example_response(llm: Callable[[str], str],
             continue
         return text
     # All attempts exhausted. For compose tasks, ship the longest
-    # surviving draft if it clears 80 words — short of the 100 floor
-    # but close enough that the verifier dimension still produces
-    # useful signal. Below 80 words, drop the row entirely (round-2
-    # audit found the prior ≥30-word fallback was too lenient: most
-    # compose rows shipped at 50-90 words).
+    # surviving LLM draft if it clears 50 words — short of the 100
+    # floor but the verifier dimension still produces useful signal,
+    # AND the LLM output is always better than the 9-29-word
+    # template stub from data_preparation/visualize.py:1486 that
+    # would otherwise survive (the calling loop only OVERWRITES
+    # inst["example_response"] when generated is truthy; returning
+    # None leaves the stub in place).
     if (text
             and task_type in (
                 "agentic_cross_app_repost",
@@ -1001,7 +1003,7 @@ def _generate_example_response(llm: Callable[[str], str],
                 "agentic_community_post",
                 "agentic_auto_reply",
             )
-            and len(text.split()) >= 80):
+            and len(text.split()) >= 50):
         return text
     return None
 
@@ -3290,6 +3292,19 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     example = generated
                     inst["example_response"] = example
                     n_example_llm_gen += 1
+                elif task_id in _COMPOSE_TASKS:
+                    # _generate_example_response returned None — meaning even
+                    # after 3 retries the LLM couldn't produce a compose-task
+                    # response above the ≥50-word floor. The template-stub
+                    # example_response from data_preparation/visualize.py is
+                    # 9-29 words and would otherwise survive into queries.csv.
+                    # Clear BOTH example and inferior_response so the
+                    # format-verify gate (a) at prepare_eval_data.py:682
+                    # drops the row — better to lose a compose row than ship
+                    # a stub that fails the verifier on every run.
+                    inst["example_response"] = ""
+                    inst["inferior_response"] = ""
+                    example = ""
 
             if not example:
                 continue
