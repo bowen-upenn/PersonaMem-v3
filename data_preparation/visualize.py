@@ -4716,22 +4716,28 @@ if (eventsData.length === 0) {{
       if (t.example_response) {{
         sections += `<div class="ts-section"><div class="ts-label">Example Response</div><div class="ts-body" style="white-space:pre-wrap;">${{escapeHtml(t.example_response)}}</div></div>`;
       }}
-      if (t.inferior_response && t.inferior_response.text) {{
-        const flaw = t.inferior_response.flaw_kind || '';
+      // Normalize inferior_response: some tasks (e.g. preference_shift_followthrough)
+      // emit a plain string; the dict-shape path expects {text, flaw_kind, ...}.
+      const _infRaw = t.inferior_response;
+      const _infObj = (typeof _infRaw === 'string')
+        ? {{text: _infRaw}}
+        : (_infRaw && typeof _infRaw === 'object' ? _infRaw : null);
+      if (_infObj && _infObj.text) {{
+        const flaw = _infObj.flaw_kind || '';
         // The voice-evidence smoke check status is build-time QA metadata
         // (`voice_evidence_smoke_check`) — kept on the instance for debugging
         // but intentionally NOT rendered on the user-facing test card.
         const smoke = '';
-        const regen = (t.inferior_response.regen_reason)
-          ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(t.inferior_response.regen_reason)}})</small>` : '';
+        const regen = (_infObj.regen_reason)
+          ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(_infObj.regen_reason)}})</small>` : '';
         // Highlight violations (only daily_personalized_briefing for now —
         // the disliked_recent flaw injects a specific topic into the gold,
         // so the topic_hint / persona_item from flaw_evidence pinpoints
         // exactly what the agent should NOT have surfaced. Render-only
         // bolding; the underlying inferior_response.text is unmodified.
-        let infBody = escapeHtml(t.inferior_response.text);
+        let infBody = escapeHtml(_infObj.text);
         if (t.task_type === 'daily_personalized_briefing') {{
-          const ev = t.inferior_response.flaw_evidence || {{}};
+          const ev = _infObj.flaw_evidence || {{}};
           const spans = [];
           if (ev.topic_hint) spans.push(ev.topic_hint);
           if (ev.persona_item && ev.persona_item !== ev.topic_hint) spans.push(ev.persona_item);
@@ -4740,9 +4746,9 @@ if (eventsData.length === 0) {{
           if (spans.length > 0) infBody = boldVoiceEvidence(infBody, spans);
         }}
         const violationHint = (t.task_type === 'daily_personalized_briefing'
-                               && t.inferior_response.flaw_evidence
-                               && (t.inferior_response.flaw_evidence.topic_hint
-                                   || t.inferior_response.flaw_evidence.persona_item))
+                               && _infObj.flaw_evidence
+                               && (_infObj.flaw_evidence.topic_hint
+                                   || _infObj.flaw_evidence.persona_item))
           ? ` <small style="color:#92400E;font-weight:normal;">(bold = violates user preferences)</small>`
           : '';
         sections += `<div class="ts-section" style="background:#FEF7E0;border-color:#FDE68A;"><div class="ts-label">Inferior Response <small style="color:#92400E;">[${{escapeHtml(flaw)}}]</small>${{smoke}}${{regen}}${{violationHint}}</div><div class="ts-body" style="white-space:pre-wrap;color:#78350F;">${{infBody}}</div></div>`;

@@ -8402,6 +8402,12 @@ class PersonaAgent:
             "n_step9_dropped_specificity": self._n_step9_dropped_specificity,
             "total_time_seconds": round(time.time() - pipeline_start, 1),
         }
+        # ai_studio_memory.json is generation-time scratch state, not consumed
+        # by eval — drop it now that all per-persona generation has finished.
+        mem_path = os.path.join(self.backend_dir, self.user_id, "ai_studio_memory.json")
+        if os.path.exists(mem_path):
+            os.remove(mem_path)
+
         total_time = time.time() - pipeline_start
         mins, secs = divmod(total_time, 60)
         print(f"{utils.Colors.OKGREEN}[User {self.user_id}] Pipeline complete in {int(mins)}m {secs:.0f}s: {summary}{utils.Colors.ENDC}")

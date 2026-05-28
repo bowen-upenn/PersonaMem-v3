@@ -458,6 +458,34 @@ def prepare_one(
         print(f"[{user_id}] dropped {pre_filter - len(pairs)} queries with "
               f"empty GT ('(none identified)')")
 
+    # Drop instances whose t_test falls in the first 20% of the user's
+    # engagement history — the agent needs enough prior signal to ground
+    # personalization, and queries that land before/early in the history
+    # have insufficient context to grade fairly.
+    engagement_ts: list[int] = []
+    for app in ("instagram", "facebook", "threads", "chatbot", "ai_studio"):
+        app_path = backend_dir / user_id / f"{app}.json"
+        if not app_path.exists():
+            continue
+        try:
+            with app_path.open() as af:
+                events = json.load(af)
+            for ev in events:
+                ets = int(ev.get("source_timestamp") or 0)
+                if ets > 0:
+                    engagement_ts.append(ets)
+        except (json.JSONDecodeError, OSError):
+            continue
+    if engagement_ts:
+        engagement_ts.sort()
+        threshold_20pct = engagement_ts[len(engagement_ts) // 5]
+        pre_floor = len(pairs)
+        pairs = [(tt, inst, ts) for tt, inst, ts in pairs if ts >= threshold_20pct]
+        if len(pairs) < pre_floor and verbose:
+            print(f"[{user_id}] dropped {pre_floor - len(pairs)} queries before "
+                  f"the 20% engagement-history mark "
+                  f"({dt.datetime.fromtimestamp(threshold_20pct).isoformat()})")
+
     # Emit CSV
     csv_path = Path("benchmark") / user_id / "queries.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
