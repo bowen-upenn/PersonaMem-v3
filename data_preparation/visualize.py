@@ -2683,10 +2683,12 @@ def _q_chatbot(inst: dict) -> str:
 def _q_at_ai_directive(inst: dict) -> str:
     # E2 simulates a proactive recsys feed served at T_test (24h/72h/7d after
     # the user's past @ai comment). The user is NOT typing anything at T_test
-    # — the directive lives in the past as context. Render the live query as
-    # `[recsys]` to make that explicit; the past @ai comment is rendered in
+    # — the directive lives in the past as context. Returning empty here lets
+    # the `[system prompt] …` fallback (driven by SYSTEM_PROMPT_BY_TASK fire
+    # in _load_test_samples, matching how every other ranking task surfaces
+    # its directive on the test card. The past @ai comment is rendered in
     # its own "Prior @ai comment" section by `_gt_at_ai_directive`.
-    return "[recsys]"
+    return ""
 
 
 def _q_active_mistake_prevention(inst: dict) -> str:

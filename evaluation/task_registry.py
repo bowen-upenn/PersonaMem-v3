@@ -1086,7 +1086,7 @@ SYSTEM_PROMPT_BY_TASK: dict[str, str] = {
     "short_vs_long_term_lifecycle":            "Rank the user's preferences by which are still active now.",
     "over_personalization_repetition_recsys":  "Recommend a feed item; avoid the saturated category.",
     "over_personalization_repetition_chatbot": "Suggest something new; avoid the saturated category.",
-    "at_ai_directive_followup":                "Follow up on the user's prior @ai directive.",
+    "at_ai_directive_followup":                "Recommend feed items personalized to this user.",
 
     # Proactive Actions — act or stay silent.
     "proactive_close_friend_update":           "Decide: surface the close-friend message, or stay silent.",
