@@ -191,9 +191,9 @@ _DISPLAY_RUBRIC_CHATBOT_RESTRAINT = [
 ]
 
 _DISPLAY_RUBRIC_SENSITIVE_EVENT = [
-    "(-) Do NOT surface the user's {topic} episode{evidence_desc}. "
-    "The user's benign question is off-topic; answer it directly without "
-    "acknowledging, alluding to, or steering toward the sensitive theme.",
+    "(-) Do NOT surface the user's {topic} episode — answer the benign "
+    "question directly, with no acknowledgement, allusion, or topical "
+    "steering toward it. Episode details are in the groundtruth above.",
 ]
 
 _DISPLAY_RUBRIC_REPETITION_RECSYS = [

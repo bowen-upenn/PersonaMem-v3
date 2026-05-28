@@ -598,6 +598,108 @@ def prepare_one(
                   f"the 20% engagement-history mark "
                   f"({dt.datetime.fromtimestamp(threshold_20pct).isoformat()})")
 
+    # Sensitive-event coverage check: for `over_personalization_sensitive_event`
+    # instances, require that the sensitive episode has been referenced (via
+    # hashtag overlap or topic keyword) in at least one chatbot or ai_studio
+    # event BEFORE T_test. Without that, the agent has no signal to surface
+    # at test time, so the test is vacuous.
+    sensitive_in_pairs = any(
+        tt == "over_personalization_sensitive_event" for tt, _, _ in pairs
+    )
+    if sensitive_in_pairs:
+        chat_ai_events: list[tuple[int, set, str]] = []
+        for app in ("chatbot", "ai_studio"):
+            path = backend_dir / user_id / f"{app}.json"
+            if not path.exists():
+                continue
+            try:
+                with path.open() as af:
+                    events = json.load(af)
+                for ev in events:
+                    ets = int(ev.get("source_timestamp") or 0)
+                    if ets <= 0:
+                        continue
+                    hashtags = {
+                        h.lower().lstrip("#")
+                        for h in (ev.get("source_hashtags") or [])
+                    }
+                    conv = ev.get("conversation") or []
+                    text_blob = " ".join(
+                        (t.get("content") or "").lower()
+                        for t in conv if isinstance(t, dict)
+                    )
+                    chat_ai_events.append((ets, hashtags, text_blob))
+            except (json.JSONDecodeError, OSError):
+                continue
+        dropped_no_cov = 0
+        new_pairs: list[tuple[str, dict, int]] = []
+        for tt, inst, ts in pairs:
+            if tt != "over_personalization_sensitive_event":
+                new_pairs.append((tt, inst, ts))
+                continue
+            topic_kw = (inst.get("_sensitive_event_topic") or "").replace("_", " ").lower()
+            label_kw = (inst.get("_sensitive_event_label_fragment") or "").lower()
+            ev_hashtags = {
+                h.lower().lstrip("#")
+                for h in (inst.get("_sensitive_event_evidence_row_hashtags") or [])
+            }
+            covered = False
+            for ets, hashtags, text in chat_ai_events:
+                if ets >= ts:
+                    continue
+                if ev_hashtags and (hashtags & ev_hashtags):
+                    covered = True
+                    break
+                if topic_kw and topic_kw in text:
+                    covered = True
+                    break
+                if label_kw and len(label_kw) >= 4 and label_kw in text:
+                    covered = True
+                    break
+            if covered:
+                new_pairs.append((tt, inst, ts))
+            else:
+                dropped_no_cov += 1
+        pairs = new_pairs
+        if dropped_no_cov and verbose:
+            print(f"[{user_id}] sensitive-event coverage: dropped "
+                  f"{dropped_no_cov} instance(s) without prior chatbot / "
+                  f"ai_studio reference")
+
+    # Format-correctness verification:
+    #   (a) every instance must have a non-empty inferior_response
+    #       (string OR dict with non-empty .text)
+    #   (b) USER_MESSAGE_TASKS instances must have a non-empty user_query
+    #       (other task families legitimately have empty user_query — slate
+    #       ranking, agentic writes triggered by an event, proactive pushes)
+    from evaluation.audit_query_quality import USER_MESSAGE_TASKS as _USER_MSG_TASKS
+
+    def _has_inferior(inst: dict) -> bool:
+        inf = inst.get("inferior_response")
+        if isinstance(inf, str):
+            return bool(inf.strip())
+        if isinstance(inf, dict):
+            return bool((inf.get("text") or "").strip())
+        return False
+
+    pre_fmt = len(pairs)
+    dropped_no_inferior = 0
+    dropped_no_query = 0
+    kept: list[tuple[str, dict, int]] = []
+    for tt, inst, ts in pairs:
+        if not _has_inferior(inst):
+            dropped_no_inferior += 1
+            continue
+        if tt in _USER_MSG_TASKS and not (inst.get("user_query") or "").strip():
+            dropped_no_query += 1
+            continue
+        kept.append((tt, inst, ts))
+    pairs = kept
+    if pre_fmt != len(pairs) and verbose:
+        print(f"[{user_id}] format-verify dropped {pre_fmt - len(pairs)}: "
+              f"{dropped_no_inferior} missing inferior_response, "
+              f"{dropped_no_query} missing user_query (user-message task)")
+
     # Emit CSV
     csv_path = Path("benchmark") / user_id / "queries.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
