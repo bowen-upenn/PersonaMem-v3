@@ -62,7 +62,7 @@ Task types to sample:
 - `local_recommendation_geo_shift` — adapts to inferred city
 - `at_ai_directive_followup` — **`expected_response_kind = "ranking"`** (do NOT flag the ranked-indexes format as a bug)
 - `active_mistake_prevention` — proactive warning
-- `agentic_*` family: `community_post`, `send_post`, `cross_app_repost`, `auto_reply`, `dm_digest`, `group_dm_summary`, `vague_refind`, `trending_alert`, `proactive_daily_catchup`, `wrong_recipient_check`
+- `agentic_*` family: `community_post`, `send_post`, `cross_app_repost`, `auto_reply`, `dm_digest`, `group_dm_summary`, `vague_refind`, `trending_alert`, `proactive_daily_catchup`
 
 Quality dimensions per row:
 
@@ -167,7 +167,6 @@ Each agentic task has a verifier that emits a checklist of `(check_name, pass / 
 | `agentic_dm_digest` | `_verify_dm_digest` | digest covers required threads, doesn't fabricate |
 | `agentic_group_dm_summary` | `_verify_group_dm_summary` | summary respects group privacy |
 | `agentic_vague_refind` | `_verify_vague_refind` | refind targets the right item |
-| `agentic_wrong_recipient_check` | `_verify_wrong_recipient_check` | warns on cross-thread leak |
 | `agentic_proactive_daily_catchup` | `_verify_proactive_daily_catchup` | catchup hits required threads |
 | `agentic_trending_alert` | `_verify_trending_alert` | alert lands on a real trending topic |
 | `t14_draft_audit` | `t14_draft_audit` in `prompts_agentic.py:411` | mini-tier LLM audits the draft for voice + safety before commit |

@@ -717,6 +717,9 @@ TASK_TYPE_META: dict[str, dict] = {
             "voice_match", "tool_call_match",
         ],
     },
+    # REMOVED — task retired. Quota at task_distribution.py is 0 so no
+    # candidates are emitted; this meta block is kept for back-compat in
+    # case any legacy code reads it. Safe to delete in a follow-up.
     "agentic_wrong_recipient_check": {
         "task_family": "agentic",
         "mcp_tools_allowed": "social",

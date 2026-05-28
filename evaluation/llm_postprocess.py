@@ -851,6 +851,79 @@ _CHATBOT_TRIPLET_FORBIDDEN_OPENERS = (
 )
 
 
+# Common English stopwords + chat-question fillers — excluded from the
+# topic-redundancy check so a query like "what's a good ..." doesn't
+# false-positive on a preference like "what makes ..." just because of
+# question words.
+_TOPIC_REDUNDANCY_STOP = frozenset({
+    "a", "an", "the", "of", "for", "in", "on", "to", "and", "but", "or",
+    "is", "be", "as", "at", "by", "it", "no", "not", "too", "so", "how",
+    "do", "did", "can", "has", "had", "was", "were", "am", "are", "with",
+    "from", "that", "this", "what", "when", "who", "why", "where",
+    "i", "you", "they", "we", "my", "your", "their", "our", "its", "me",
+    "i'm", "you're", "they're", "it's", "that's", "there", "there's",
+    "want", "like", "love", "good", "best", "really", "very", "just",
+    "actually", "honestly", "kind", "kinda", "sort", "sorta", "thing",
+    "things", "ideas", "idea", "advice", "tips", "help", "way", "ways",
+    "something", "anything", "anyone", "someone", "everyone", "people",
+    "any", "some", "much", "more", "less", "few", "many",
+    "interested", "enjoys", "follows", "interest", "into", "fan", "fans",
+    "content", "user", "preference", "preferences",
+    "today", "tonight", "tomorrow", "weekend", "morning", "evening",
+    "make", "makes", "made", "find", "found", "feel", "feels", "feeling",
+})
+
+
+def _topic_stem(word: str) -> str:
+    """Cheap suffix-strip for the topic-redundancy check. Catches plural
+    `s`, gerund `ing`, past-tense `ed`, and adverbial `ly`. Not a real
+    stemmer — just enough so 'outfits'/'outfit' and 'styling'/'style'
+    both reduce to a short common form."""
+    w = word.lower()
+    for suf in ("ings", "ing", "edly", "ied", "ies", "ers", "er", "ed", "es", "ly", "s"):
+        if w.endswith(suf) and len(w) > len(suf) + 2:
+            w = w[: -len(suf)]
+            break
+    return w[:5] if len(w) >= 5 else w
+
+
+def _topic_content_tokens(text: str) -> set[str]:
+    """Extract content-bearing topic tokens from `text` for the
+    redundancy check: lowercase content words, filter the stopword set,
+    apply `_topic_stem`. Hyphen-bearing words (hip-hop, fight-night,
+    sci-fi, etc.) are kept whole and exempt from the 4-char floor so
+    short compound topics still register."""
+    import re as _re
+    out: set[str] = set()
+    for w in _re.findall(r"[a-zA-Z][a-zA-Z'\-]*", text.lower()):
+        if w in _TOPIC_REDUNDANCY_STOP:
+            continue
+        # Hyphenated compounds always count as topic tokens. Plain words
+        # need ≥4 chars to escape the noise floor (avoids matching on
+        # "get"/"new"/"top"/etc.).
+        if "-" not in w and len(w) < 4:
+            continue
+        out.add(_topic_stem(w))
+    return out
+
+
+def _query_preference_topic_redundant(user_query: str, held_out_preference: str) -> bool:
+    """Return True when the user_query and held_out_preference share at
+    least one stemmed topic token — meaning the query asks directly about
+    the preference's domain and the test produces no memory-vs-baseline
+    signal (any competent answer must be on that topic).
+
+    Example failure caught: preference="Interested in outfit styling and
+    fashion inspiration content" + query="how would you build a couple
+    outfits from basics?" — both reduce to a token starting with `outfi`.
+    """
+    if not user_query or not held_out_preference:
+        return False
+    qt = _topic_content_tokens(user_query)
+    pt = _topic_content_tokens(held_out_preference)
+    return bool(qt & pt)
+
+
 def _triplet_passes_self_check(triplet: dict, held_out_preference: str) -> bool:
     """Quick deterministic checks on a chatbot triplet before accepting it."""
     if not isinstance(triplet, dict):
@@ -862,6 +935,13 @@ def _triplet_passes_self_check(triplet: dict, held_out_preference: str) -> bool:
         return False
     uq_low = uq.lower()
     if any(uq_low.startswith(p) for p in _CHATBOT_TRIPLET_FORBIDDEN_OPENERS):
+        return False
+    # Topic-redundancy guard: if the query asks directly about the
+    # preference's domain, the test produces no signal (memory-using and
+    # memory-blind chatbots both land on the same topic). The triplet
+    # generator's prompt warns against this; this is a deterministic
+    # backstop that triggers a regen.
+    if _query_preference_topic_redundant(uq, held_out_preference):
         return False
     # Creepy-phrasing guard on the example response — regex
     # telegraph-phrase check PLUS verbatim pref-insertion check.

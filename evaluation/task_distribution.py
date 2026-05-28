@@ -105,7 +105,9 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_vague_refind":                   {"min": 5,  "max": 5},
     # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
-    "agentic_wrong_recipient_check":          {"min": 5,  "max": 8, "data_dependent": True},
+    # agentic_wrong_recipient_check removed — task retired (kept code paths
+    # intact for now in case it needs to be re-enabled; zero quota stops
+    # emission).
     "agentic_proactive_daily_catchup":        {"min": 5,  "max": 8},
     "agentic_trending_alert":                 {"min": 5,  "max": 8},
 
