@@ -2021,11 +2021,13 @@ def build_chatbot_instance(bq: BackendQuery, test: TestItem) -> dict | None:
 # agent produces meaningfully different titles + DIFFERENT hashtag sets
 # across the cluster while staying persona-aligned.
 
-# Window in which the cluster's queries fire. 3 hours is empirically
-# tight enough to feel "spammy" if the agent repeats but loose enough
-# that real users have multiple natural anchor moments (lunch / commute
-# / wind-down).
-_C1C_WINDOW_SECONDS = 3 * 3600
+# Window in which the cluster's queries fire. Widened 3h → 12h
+# (2026-05-28) so the diversification test exercises a fuller
+# stretch of the user's day — short enough to read as a single
+# active session (morning to evening), long enough to give the
+# agent room to surface multiple naturally distinct preferences
+# instead of leaning on one cluster.
+_C1C_WINDOW_SECONDS = 12 * 3600
 
 # Number of successive queries per cluster. 5 = 1 original + 2 allowed
 # repetitions + 2 must-diversify queries. Bumped from the originally-
