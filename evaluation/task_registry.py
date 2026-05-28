@@ -296,12 +296,14 @@ AGENTIC_DISPLAY_RUBRICS: dict[str, list[str]] = {
     ],
     "agentic_send_post": [
         "(+) Compose the post in the user's voice on the target app.",
+        "(+) Post is ≥ 100 words and covers 3-5 distinct user voice points.",
         "(+) Call create_post on the target app exactly once.",
         "(-) Don't post on any other app.",
         "(-) Don't include anything they wouldn't post publicly.",
     ],
     "agentic_cross_app_repost": [
         "(+) Adapt the source post to the target app's voice; preserve the core point.",
+        "(+) Adapted post is ≥ 100 words and covers 3-5 distinct user voice points.",
         "(+) Call create_post on the target app exactly once.",
     ],
     "agentic_auto_reply": [
@@ -1060,6 +1062,61 @@ def get_query_kind(task_type: str) -> str:
 
 def get_expected_behavior(task_type: str) -> str:
     return EXPECTED_BEHAVIOR_BY_TASK.get(task_type, "personalize")
+
+
+# ---------------------------------------------------------------------------
+# Fixed [system prompt] text per task_type for instances with no real user
+# message. When `prepare_eval_data._project_row` finds `query_text` empty
+# (no `query` / `user_query` / `user_message` on the instance), it falls
+# back to `[system prompt] {SYSTEM_PROMPT_BY_TASK[task_type]}` so the CSV
+# row carries a stable, readable description of what the agent is being
+# asked to do at that moment. One fixed string per task type — no per-
+# instance interpolation; instance-specific context (target_app, draft,
+# inbound message, etc.) already rides in `instance_json` and the runner
+# pulls it from there.
+#
+# Tasks NOT listed here are user-message tasks (chatbot turns, e6 probes,
+# etc.) where an empty query_text is a build bug, not a legitimate case.
+# ---------------------------------------------------------------------------
+
+SYSTEM_PROMPT_BY_TASK: dict[str, str] = {
+    # Recsys slates.
+    "personalized_recommendation":             "Rank the candidate slate for this user.",
+    "hidden_persona_recommendation":           "Rank the candidate slate using the user's hidden-persona signals.",
+    "short_vs_long_term_lifecycle":            "Rank the user's preferences by which are still active now.",
+    "over_personalization_repetition_recsys":  "Pick a slate item; avoid the saturated category.",
+    "over_personalization_repetition_chatbot": "Suggest something new; avoid the saturated category.",
+    "at_ai_directive_followup":                "Follow up on the user's prior @ai directive.",
+
+    # Proactive Actions — act or stay silent.
+    "proactive_close_friend_update":           "Decide: surface the close-friend message, or stay silent.",
+    "restraint_sensitive_event_silence":       "Decide: send a proactive message, or stay silent.",
+    "proactive_friend_feed_react":             "Decide: nudge the friend's feed post, or stay silent.",
+    "proactive_trending_feed_react":           "Decide: nudge the trending item, or stay silent.",
+    "proactive_overactive_check":              "Decide: ping again, or stay silent.",
+
+    # Proactive assistance — watch and warn.
+    "active_mistake_prevention":               "Warn the user if this action looks like a mistake; else stay quiet.",
+    "agentic_wrong_recipient_check":           "Confirm the recipient matches the draft; warn if mismatched.",
+
+    # Agentic tasks.
+    "agentic_proactive_daily_catchup":         "Give a short daily catch-up.",
+    "agentic_trending_alert":                  "Alert the user to trending content matching their interests.",
+    "agentic_dm_digest":                       "Summarize the user's recent DMs on the target app.",
+    "agentic_group_dm_summary":                "Summarize the group thread.",
+    "agentic_auto_reply":                      "Draft a reply to the inbound DM in the user's voice.",
+    "agentic_cross_app_repost":                "Repost to the target app, adapted to the user's voice.",
+    "agentic_community_post":                  "Draft a post on the target app in the user's voice.",
+    "agentic_send_post":                       "Draft a post on the target app from the update, in the user's voice.",
+    "agentic_vague_refind":                    "Find the post the user is trying to refind.",
+}
+
+
+def get_system_prompt(task_type: str) -> str:
+    """Return the fixed `[system prompt]` body for a task_type, or '' if the
+    task type expects a real user message in `query_text`.
+    """
+    return SYSTEM_PROMPT_BY_TASK.get(task_type, "")
 
 
 # ---------------------------------------------------------------------------

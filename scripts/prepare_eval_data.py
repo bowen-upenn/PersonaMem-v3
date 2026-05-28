@@ -61,6 +61,7 @@ from evaluation.task_registry import (  # noqa: E402
     QUERIES_CSV_VERSION,
     TASK_TYPE_META,
     get_meta,
+    get_system_prompt,
 )
 
 
@@ -200,6 +201,10 @@ def _project_row(
         default=f"{task_type}_{seq}",
     )
     query_text = _inst_field(inst, "query", "user_message", "user_query")
+    if not query_text:
+        sys_prompt = get_system_prompt(task_type)
+        if sys_prompt:
+            query_text = f"[system prompt] {sys_prompt}"
     app_context = _inst_field(inst, "app", "target_app")
     entry_point = _inst_field(inst, "entry_point", "query_type")
     # instance_json — full payload for the runner. Separator compact to
