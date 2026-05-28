@@ -1082,7 +1082,7 @@ def get_expected_behavior(task_type: str) -> str:
 SYSTEM_PROMPT_BY_TASK: dict[str, str] = {
     # Recsys / feed recommendations.
     "personalized_recommendation":             "Recommend feed items personalized to this user.",
-    "hidden_persona_recommendation":           "Recommend feed items using the user's hidden-persona signals.",
+    "hidden_persona_recommendation":           "Recommend feed items personalized to this user.",
     "short_vs_long_term_lifecycle":            "Rank the user's preferences by which are still active now.",
     "over_personalization_repetition_recsys":  "Recommend a feed item; avoid the saturated category.",
     "over_personalization_repetition_chatbot": "Suggest something new; avoid the saturated category.",
