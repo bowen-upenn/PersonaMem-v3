@@ -3079,6 +3079,7 @@ def _load_test_samples(
                 # emits the negative-space preferences / leak pool / cluster
                 # tolerance windows; cached value is the pre-D4 empty string.
                 "over_personalization_chatbot_text",
+                "over_personalization_context_shift",
                 "over_personalization_distractor_reject",
                 "over_personalization_sensitive_event",
                 "over_personalization_repetition_chatbot",
