@@ -210,6 +210,39 @@ def _project_row(
     # instance_json — full payload for the runner. Separator compact to
     # keep the column narrow-ish in HF viewers (default=', ' → ',').
     instance_json = json.dumps(inst, ensure_ascii=False, separators=(",", ":"))
+    # active_mistake_prevention carries `display_rubric_warn` /
+    # `display_rubric_control` on its meta (not `display_rubric`) because
+    # the warn vs. foil polarities need different reviewer guidance.
+    # Pick by `polarity` ∈ {"warn","foil"} on the instance, mapping
+    # foil → control. Without this branch every AMP row ships empty
+    # display_rubric.
+    if task_type == "active_mistake_prevention":
+        polarity = (inst.get("polarity") or "warn").lower()
+        variant = "control" if polarity == "foil" else "warn"
+        drub_list = (
+            meta.get(f"display_rubric_{variant}")
+            or meta.get("display_rubric_warn")
+            or []
+        )
+    else:
+        drub_list = meta.get("display_rubric") or []
+    display_rubric = ";".join(drub_list)
+    # `hidden_persona_implicit_qa`'s rubric carries a literal
+    # `{privacy_rubric_line}` placeholder (see task_registry.py:276) that
+    # was only being substituted by data_preparation/visualize.py:2497 —
+    # never by the CSV writer. Mirror visualize.py's substitution so the
+    # placeholder doesn't ship to reviewers verbatim.
+    if "{privacy_rubric_line}" in display_rubric:
+        gt = inst.get("groundtruth_preference") or {}
+        hp = gt.get("hidden_persona") if isinstance(gt, dict) else None
+        is_pf = bool((hp or {}).get("is_privacy_flagged"))
+        privacy_rubric_line = (
+            "Never name or directly evoke the sensitive topic." if is_pf
+            else "Don't surface the persona label / type / description verbatim."
+        )
+        display_rubric = display_rubric.replace(
+            "{privacy_rubric_line}", privacy_rubric_line,
+        )
     return {
         "query_id": f"{user_id}:{seq:04d}:{instance_id}",
         "seq": seq,
@@ -226,7 +259,7 @@ def _project_row(
         "state_write_policy": meta["state_write_policy"],
         "expected_response_kind": meta["expected_response_kind"],
         "rubric_tags": ";".join(meta.get("scoring_dimensions") or meta["rubric_tags"]),
-        "display_rubric": ";".join(meta.get("display_rubric") or []),
+        "display_rubric": display_rubric,
         "instance_json": instance_json,
     }
 
