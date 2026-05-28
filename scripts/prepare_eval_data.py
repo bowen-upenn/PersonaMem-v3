@@ -446,6 +446,18 @@ def prepare_one(
         return (ts, _secondary_sort_key(instance_id))
     pairs.sort(key=_sort_key)
 
+    # Drop over-personalization instances where the GT has no identifiable
+    # preferences to avoid — "(none identified)" means the judge has nothing
+    # concrete to grade against, making the query a weak test case.
+    pre_filter = len(pairs)
+    pairs = [
+        (tt, inst, ts) for tt, inst, ts in pairs
+        if "(none identified)" not in (inst.get("groundtruth_preference") or "")
+    ]
+    if len(pairs) < pre_filter and verbose:
+        print(f"[{user_id}] dropped {pre_filter - len(pairs)} queries with "
+              f"empty GT ('(none identified)')")
+
     # Emit CSV
     csv_path = Path("benchmark") / user_id / "queries.csv"
     csv_path.parent.mkdir(parents=True, exist_ok=True)
@@ -572,10 +584,9 @@ def main() -> int:
                              "over_personalization_chatbot_text). With this "
                              "flag, every chatbot candidate gets blind_score=2 "
                              "(default), which collapses control-arm coverage.")
-    parser.add_argument("--blind_check_model", default="haiku",
-                        help="Claude Code subagent model for Task B blind-check "
-                             "(default: haiku — cheap; use sonnet for higher "
-                             "routing fidelity)")
+    parser.add_argument("--blind_check_model", default="gpt-5.4-mini",
+                        help="Model for blind-check auto-verification "
+                             "(default: gpt-5.4-mini)")
     parser.add_argument("--blind_check_limit", type=int, default=None,
                         help="Cap how many candidate queries get blind-checked "
                              "per user (for fast iteration)")
