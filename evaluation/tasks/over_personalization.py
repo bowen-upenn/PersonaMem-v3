@@ -303,6 +303,34 @@ def run_task_c1c(
         if not queries:
             continue
 
+        # Cluster-id memoization. The 2026-05-28 split refactor emits N
+        # rows per cluster (one per target query). Without dedup the
+        # runner would fire the full multi-query sequence N times,
+        # producing N² agent calls. Cache the cluster-level result by
+        # cluster_id; subsequent rows of the same cluster get a row-
+        # specific view of the cached responses without re-dispatching.
+        cluster_id = cluster.get("cluster_id", "")
+        query_index = cluster.get("query_index")
+        if cluster_id and query_index is not None:
+            cached = _C1C_CLUSTER_CACHE.get(cluster_id)
+            if cached is not None:
+                row_result = dict(cached)
+                row_result["query_index"] = query_index
+                row_result["is_head_zone"] = bool(cluster.get("is_head_zone"))
+                row_result["user_query"] = cluster.get("user_query", "")
+                if isinstance(cached.get("responses"), list):
+                    full_responses = cached["responses"]
+                    target_indices = [
+                        i for i, q in enumerate(queries)
+                        if q.get("is_target", True)
+                    ]
+                    if 0 <= query_index < len(target_indices):
+                        orig_idx = target_indices[query_index]
+                        if 0 <= orig_idx < len(full_responses):
+                            row_result["response_for_row"] = full_responses[orig_idx]
+                results.append(row_result)
+                continue
+
         # Snapshot at the FINAL anchor when in long-context modes.
         # Earlier anchors share the same snapshot — the agent's
         # behavior under repetition isn't grounded by the marginal
@@ -397,7 +425,7 @@ def run_task_c1c(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
         )
 
-        results.append({
+        cluster_result = {
             "task": "c1c_same_preference_cluster",
             "cluster_id": cluster["cluster_id"],
             "mode": mode,
@@ -410,8 +438,37 @@ def run_task_c1c(
             "tool_calls": total_turns,
             "subagent_stats": stats_per_query,
             "metrics": overuse,
-        })
+        }
+        # Cache for sibling rows of this cluster (the split-refactor
+        # emits N rows per cluster; only the first row through the
+        # runner actually dispatches the agent — the rest read here).
+        if cluster.get("cluster_id"):
+            _C1C_CLUSTER_CACHE[cluster["cluster_id"]] = cluster_result
+        # Per-row view for THIS dispatch (query_index None on legacy
+        # single-row clusters).
+        query_index = cluster.get("query_index")
+        if query_index is not None:
+            row_result = dict(cluster_result)
+            row_result["query_index"] = query_index
+            row_result["is_head_zone"] = bool(cluster.get("is_head_zone"))
+            row_result["user_query"] = cluster.get("user_query", "")
+            target_indices = [
+                i for i, q in enumerate(queries) if q.get("is_target", True)
+            ]
+            if 0 <= query_index < len(target_indices):
+                orig_idx = target_indices[query_index]
+                if 0 <= orig_idx < len(responses):
+                    row_result["response_for_row"] = responses[orig_idx]
+            results.append(row_result)
+        else:
+            results.append(cluster_result)
     return results
+
+
+# Process-local cluster cache for the c1c (repetition_recsys) split
+# refactor. Keyed by cluster_id. Cleared per eval process; no need
+# for TTL since each persona run is short-lived.
+_C1C_CLUSTER_CACHE: dict[str, dict] = {}
 
 
 # --- Task C1d: chatbot same-pref repetition (varied surface) -------------

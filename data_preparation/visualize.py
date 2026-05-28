@@ -778,6 +778,7 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
     target_pref = inst.get("target_pref", "")
     primary_category = inst.get("primary_category", "")
     n_queries = int(inst.get("n_queries") or 0)
+    n_target = int(inst.get("n_target_queries") or 0)
     n_allowed = int(inst.get("n_allowed_repetitions") or 2)
     window_hours = int(inst.get("window_seconds") or 0) / 3600
     cluster_hashtags = (inst.get("cluster_hashtags") or [])[:8]
@@ -789,18 +790,82 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
     head_window = n_allowed + 1   # 1-indexed: queries 1..head_window may repeat
     tail_start = head_window + 1  # query #tail_start onward must diversify
 
-    return {
-        "example_response": inst.get("example_response") or (
+    # The builder splits each cluster into N rows tagged with query_index
+    # (0-indexed position in the target-query sequence). Each row's
+    # example_response and inferior describe what the agent should do at
+    # THIS specific query — head-zone (use target pref freely) or tail-
+    # zone (diversify). Pre-split clusters with no query_index fall back
+    # to the legacy meta-narrative.
+    query_index = inst.get("query_index")
+    is_head_zone = inst.get("is_head_zone")
+    if query_index is None:
+        legacy_example = (
             f"Queries 1..{head_window} may lean on '{target_pref}'. "
             f"From query #{tail_start} onward, diversify to the user's "
             f"broader interests."
-        ),
+        )
+        legacy_inferior = (
+            f"All {n_queries} queries return the same head-zone hashtags "
+            + (f"({', '.join('#' + h for h in cluster_hashtags[:5])})"
+               if cluster_hashtags else "")
+            + f" — no diversification on queries #{tail_start}..{n_target or n_queries}, "
+            f">30% hashtag overlap with prior responses, and near-duplicate "
+            f"titles or captions across the cluster."
+        )
+        example_text = inst.get("example_response") or legacy_example
+        inferior_text = legacy_inferior
+    else:
+        q_one = int(query_index) + 1  # 1-indexed for display
+        total_target = n_target or (q_one + 1)
+        cluster_hashtag_str = (
+            ", ".join("#" + h for h in cluster_hashtags[:4])
+            if cluster_hashtags else "the target preference's hashtags"
+        )
+        if is_head_zone:
+            example_text = (
+                f"Query {q_one} of {total_target} (HEAD ZONE — first {head_window} "
+                f"queries may repeat). Recommend a single feed item aligned with "
+                f"'{target_pref}'. Reaching for {cluster_hashtag_str} here is fine; "
+                f"the agent earns no penalty for using the target preference in "
+                f"the first {head_window} responses."
+            )
+            inferior_text = (
+                f"Query {q_one}: another '{target_pref}' pick using "
+                f"{cluster_hashtag_str}. (This is still inside the head zone, so "
+                f"a competent agent could legitimately do the same — the failure "
+                f"only becomes visible at query #{tail_start} and beyond when the "
+                f"agent should diversify.)"
+            )
+        else:
+            top_cat_alts = (
+                ", ".join(top_cats[:3])
+                if top_cats else "the user's broader interest categories"
+            )
+            example_text = (
+                f"Query {q_one} of {total_target} (TAIL ZONE — from query "
+                f"#{tail_start} on, must diversify). Recommend a feed item "
+                f"from a DIFFERENT persona category (e.g. {top_cat_alts}) using "
+                f"NEW hashtags that don't overlap with any prior response in the "
+                f"cluster. Do NOT reuse {cluster_hashtag_str} from the head-zone "
+                f"picks; do NOT reach for the off-persona distractor pool."
+            )
+            inferior_text = (
+                f"Query {q_one}: still another '{target_pref}' pick using "
+                f"{cluster_hashtag_str}. The agent should have diversified by "
+                f"now — recycling the same head-zone hashtags on a tail-zone "
+                f"query is the saturation failure this task tests."
+            )
+
+    return {
+        "example_response": example_text,
         "groundtruth_preference": (
             f"Target preference: {target_pref}\n"
             + (f"Primary category: {primary_category}\n" if primary_category else "")
-            + f"Cluster window: {window_hours:.1f}h, {n_queries} successive queries\n"
-            + f"Tolerance: queries 1..{head_window} may repeat freely; "
-            + f"queries {tail_start}..{n_queries} must diversify\n"
+            + f"Cluster window: {window_hours:.1f}h, {n_queries} successive queries"
+            + (f" ({n_target} target + {n_queries - n_target} filler)" if n_target else "")
+            + "\n"
+            + f"Tolerance: target queries 1..{head_window} may repeat freely; "
+            + f"target queries {tail_start}..{n_target or n_queries} must diversify\n"
             + (f"Cluster hashtags (head zone): {', '.join('#' + h for h in cluster_hashtags)}\n"
                if cluster_hashtags else "")
             + (f"Top persona categories: {', '.join(top_cats)}\n" if top_cats else "")
@@ -809,21 +874,15 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
             + (f"Off-persona distractors (do NOT reach for these): "
                f"{', '.join('#' + h for h in distractors)}" if distractors else "")
         ),
-        # D4: cluster-shape task — emit a representative failure pattern
-        # since the LLM-rewrite inferior path doesn't fire for these.
         "inferior_response": {
-            "text": (
-                f"All {n_queries} queries return the same head-zone hashtags "
-                + (f"({', '.join('#' + h for h in cluster_hashtags[:5])})"
-                   if cluster_hashtags else "")
-                + f" — no diversification on queries #{tail_start}..{n_queries}, "
-                f">30% hashtag overlap with prior responses, and near-duplicate "
-                f"titles or captions across the cluster."
-            ),
+            "text": inferior_text,
             "flaw_kind": "cluster_no_diversification",
             "flaw_evidence": {"_from": "deterministic_cluster_inferior",
                               "target_pref": target_pref,
+                              "query_index": query_index,
+                              "is_head_zone": is_head_zone,
                               "n_queries": n_queries,
+                              "n_target_queries": n_target,
                               "cluster_hashtags": cluster_hashtags[:8],
                               "head_window": head_window,
                               "tail_start": tail_start},

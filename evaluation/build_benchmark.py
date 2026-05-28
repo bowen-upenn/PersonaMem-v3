@@ -2478,27 +2478,52 @@ def build_c1c_same_preference_clusters(
         queries = _interleave_with_fillers(target_queries, filler_texts)
 
         cluster_id = f"{user_id}_c1c_{anchor_ts[0]}"
-        out.append({
-            "cluster_id": cluster_id,
-            "instance_id": cluster_id,
-            "task_id": "over_personalization_repetition_recsys",
-            "task_type": "over_personalization_repetition_recsys",
-            "target_pref": target_pref,
-            "primary_category": primary_category,
-            "all_persona_items_in_cluster": cluster["persona_items"][:5],
-            "cluster_hashtags": cluster["hashtags"],
-            "off_persona_distractor_hashtags": off_persona_distractors,
-            "persona_hint": {
-                "top_categories": [c for c, _ in top_persona_categories],
-                "top_hashtags":   [h for h, _ in top_persona_hashtags],
-            },
-            "anchor_timestamps": anchor_ts,
-            "queries": queries,
-            "t_test": anchor_ts[-1],   # final anchor = last query moment
-            "window_seconds": window_seconds,
-            "n_queries": len(queries),
-            "n_allowed_repetitions": n_allowed_repetitions,
-        })
+        # Split cluster into N rows — one per TARGET query (fillers stay
+        # background context for the runner, not standalone rows). Each
+        # row has its own user_query / ts and a per-query example_response
+        # describing whether THIS query lands in the head-zone (using the
+        # target preference is fine) or the tail-zone (must diversify).
+        # Rows share cluster_id so the runner can dedupe and run the full
+        # multi-query sequence once per cluster.
+        target_qs = [
+            (i, q) for i, q in enumerate(queries) if q.get("is_target", True)
+        ]
+        if not target_qs:
+            # All queries somehow ended up as fillers — fall back to one
+            # row for the whole cluster so we don't drop the data.
+            target_qs = [(0, queries[0])] if queries else []
+        n_target = len(target_qs)
+        head_size = n_allowed_repetitions + 1
+        persona_hint_obj = {
+            "top_categories": [c for c, _ in top_persona_categories],
+            "top_hashtags":   [h for h, _ in top_persona_hashtags],
+        }
+        for target_idx, (orig_idx, tq) in enumerate(target_qs):
+            is_head_zone = target_idx < head_size
+            out.append({
+                "cluster_id": cluster_id,
+                "instance_id": f"{cluster_id}_q{target_idx}",
+                "task_id": "over_personalization_repetition_recsys",
+                "task_type": "over_personalization_repetition_recsys",
+                "query_index": target_idx,
+                "is_head_zone": is_head_zone,
+                "n_target_queries": n_target,
+                "head_window": head_size,
+                "tail_start": head_size + 1,
+                "target_pref": target_pref,
+                "primary_category": primary_category,
+                "all_persona_items_in_cluster": cluster["persona_items"][:5],
+                "cluster_hashtags": cluster["hashtags"],
+                "off_persona_distractor_hashtags": off_persona_distractors,
+                "persona_hint": persona_hint_obj,
+                "anchor_timestamps": anchor_ts,
+                "queries": queries,
+                "t_test": int(tq["ts"]),
+                "user_query": tq["user_query"],
+                "window_seconds": window_seconds,
+                "n_queries": len(queries),
+                "n_allowed_repetitions": n_allowed_repetitions,
+            })
     return out
 
 
