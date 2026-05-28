@@ -93,6 +93,18 @@ def _mk(passed: int, failed: int, details: list) -> dict:
     }
 
 
+# Hard-rule floor for tasks that compose a post in the user's voice
+# (agentic_cross_app_repost, agentic_send_post). Mirrors the directive added
+# to t9/t12/t13 prompts: ≥100 words covering 3-5 user voice points. Word count
+# is mechanically verifiable here; voice-point coverage is graded by the
+# voice_match judge (see personalization_rubric).
+MIN_COMPOSE_WORDS = 100
+
+
+def _word_count(text: str) -> int:
+    return len((text or "").split())
+
+
 # ---------------------------------------------------------------------------
 # Per-task verifiers — one function per task_id
 # ---------------------------------------------------------------------------
@@ -180,12 +192,15 @@ def _verify_dm_digest(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_cross_app_repost(inst: dict, response: str, writes: list) -> dict:
-    """Repost must reference source-post hashtag or topic."""
+    """Repost must reference source-post hashtag or topic + meet length floor."""
     source = inst.get("source_post") or {}
     target_app = inst.get("target_app") or "threads"
     posts = _writes_for(writes, f"{target_app}_create_post")
     if not posts:
-        return _mk(0, 1, [("repost_was_created", "fail (no post)")])
+        return _mk(0, 2, [
+            ("repost_was_created", "fail (no post)"),
+            (f"length_>={MIN_COMPOSE_WORDS}_words", "fail (no post)"),
+        ])
     captions = _captions_from_writes(posts)
     written_hashtags = _hashtag_set(_hashtags_from_writes(posts))
     src_hashtags = _hashtag_set(source.get("hashtags") or [])
@@ -194,9 +209,22 @@ def _verify_cross_app_repost(inst: dict, response: str, writes: list) -> dict:
     written_tokens = _tokens(written_text)
     h_overlap = len(src_hashtags & written_hashtags)
     t_jacc = _jaccard(src_tokens, written_tokens)
+    wc = _word_count(written_text)
+    details: list = []
+    passed = failed = 0
     if h_overlap >= 1 or t_jacc >= 0.3:
-        return _mk(1, 0, [(f"references_source (h={h_overlap}, t_jacc={t_jacc:.2f})", "pass")])
-    return _mk(0, 1, [(f"references_source", f"fail (h={h_overlap}, t_jacc={t_jacc:.2f})")])
+        details.append((f"references_source (h={h_overlap}, t_jacc={t_jacc:.2f})", "pass"))
+        passed += 1
+    else:
+        details.append((f"references_source", f"fail (h={h_overlap}, t_jacc={t_jacc:.2f})"))
+        failed += 1
+    if wc >= MIN_COMPOSE_WORDS:
+        details.append((f"length_>={MIN_COMPOSE_WORDS}_words (got {wc})", "pass"))
+        passed += 1
+    else:
+        details.append((f"length_>={MIN_COMPOSE_WORDS}_words", f"fail ({wc})"))
+        failed += 1
+    return _mk(passed, failed, details)
 
 
 def _verify_auto_reply(inst: dict, response: str, writes: list) -> dict:
@@ -242,13 +270,14 @@ def _verify_vague_refind(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_composed_post(inst: dict, response: str, writes: list) -> dict:
-    """Post must reflect inst.update content + match user voice (length-ratio)."""
+    """Post must reflect inst.update content + match user voice + meet length floor."""
     target_app = inst.get("target_app") or ""
     posts = _writes_for(writes, f"{target_app}_create_post")
     if not posts:
-        return _mk(0, 2, [
+        return _mk(0, 3, [
             ("post_was_created", "fail (no post)"),
             ("reflects_update", "fail (no post)"),
+            (f"length_>={MIN_COMPOSE_WORDS}_words", "fail (no post)"),
         ])
     update = inst.get("update") or ""
     captions = _captions_from_writes(posts)
@@ -256,23 +285,37 @@ def _verify_composed_post(inst: dict, response: str, writes: list) -> dict:
     upd_tokens = _tokens(update)
     wri_tokens = _tokens(written_text)
     shared = upd_tokens & wri_tokens
-    created_check = ("post_was_created", "pass")
+    wc = _word_count(written_text)
+    details: list = [("post_was_created", "pass")]
+    passed = 1
+    failed = 0
     # Pass if the post shares ≥ 2 content tokens with the user's update
     # (or the update has very few content words to share). Strict Jaccard
     # was too punishing on creative paraphrases.
     if len(shared) >= 2 or len(upd_tokens) <= 3:
-        return _mk(2, 0, [created_check, (f"reflects_update (shared={sorted(shared)})", "pass")])
-    return _mk(1, 1, [created_check, (f"reflects_update", f"fail (only {len(shared)} content words shared)")])
+        details.append((f"reflects_update (shared={sorted(shared)})", "pass"))
+        passed += 1
+    else:
+        details.append((f"reflects_update", f"fail (only {len(shared)} content words shared)"))
+        failed += 1
+    if wc >= MIN_COMPOSE_WORDS:
+        details.append((f"length_>={MIN_COMPOSE_WORDS}_words (got {wc})", "pass"))
+        passed += 1
+    else:
+        details.append((f"length_>={MIN_COMPOSE_WORDS}_words", f"fail ({wc})"))
+        failed += 1
+    return _mk(passed, failed, details)
 
 
 def _verify_send_post(inst: dict, response: str, writes: list) -> dict:
-    """Dispatched post must be on the right app + content addresses context."""
+    """Dispatched post must be on the right app + content addresses context + meet length floor."""
     target_app = inst.get("target_app") or ""
     posts = _writes_for(writes, f"{target_app}_create_post")
     if not posts:
-        return _mk(0, 2, [
+        return _mk(0, 3, [
             ("post_on_target_app", "fail (no post)"),
             ("addresses_context", "fail (no post)"),
+            (f"length_>={MIN_COMPOSE_WORDS}_words", "fail (no post)"),
         ])
     context = inst.get("context") or ""
     captions = _captions_from_writes(posts)
@@ -280,10 +323,23 @@ def _verify_send_post(inst: dict, response: str, writes: list) -> dict:
     ctx_tokens = _tokens(context)
     wri_tokens = _tokens(written_text)
     shared = ctx_tokens & wri_tokens
-    target_check = ("post_on_target_app", "pass")
+    wc = _word_count(written_text)
+    details: list = [("post_on_target_app", "pass")]
+    passed = 1
+    failed = 0
     if len(shared) >= 2 or len(ctx_tokens) <= 3:
-        return _mk(2, 0, [target_check, (f"addresses_context (shared={sorted(shared)})", "pass")])
-    return _mk(1, 1, [target_check, (f"addresses_context", f"fail (only {len(shared)} shared)")])
+        details.append((f"addresses_context (shared={sorted(shared)})", "pass"))
+        passed += 1
+    else:
+        details.append((f"addresses_context", f"fail (only {len(shared)} shared)"))
+        failed += 1
+    if wc >= MIN_COMPOSE_WORDS:
+        details.append((f"length_>={MIN_COMPOSE_WORDS}_words (got {wc})", "pass"))
+        passed += 1
+    else:
+        details.append((f"length_>={MIN_COMPOSE_WORDS}_words", f"fail ({wc})"))
+        failed += 1
+    return _mk(passed, failed, details)
 
 
 def _verify_draft_audit(inst: dict, response: str, writes: list) -> dict:

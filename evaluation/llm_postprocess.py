@@ -735,10 +735,27 @@ def _length_guidance(task_type: str, inst: dict | None = None,
         if band is None:
             band = (90, 200)  # generic fallback
         lo, hi = band
+        # cross_app_repost / send_post carry a hard floor of ≥100 words
+        # covering 3-5 user voice points (mirrors the verifier in
+        # tasks/agentic_verifiers.MIN_COMPOSE_WORDS and the directive in
+        # prompts_agentic.COMPOSE_LENGTH_AND_VOICE_RULE). Bump the char band
+        # low end if needed so the gold example doesn't fail its own floor.
+        extra = ""
+        if task_type in ("agentic_cross_app_repost", "agentic_send_post"):
+            lo = max(lo, 620)  # ≈100 words at ~6 chars/word incl. spaces
+            hi = max(hi, lo + 200)
+            extra = (
+                " HARD FLOOR: the post MUST be at least **100 words** and "
+                "visibly cover **3-5 distinct user voice points** (recurring "
+                "phrases, register, signature opinions, topical anchors, "
+                "emoji/punctuation habits) — a short post does NOT satisfy "
+                "this task."
+            )
         return (
             f"Length: ~{lo}–{hi} characters (a real social-media post / "
             f"reply — full caption, not a one-liner). Use multiple short "
             f"sentences or a sentence + 1–3 hashtags as natural for this app."
+            f"{extra}"
         )
     return "Length: 1–4 sentences."
 

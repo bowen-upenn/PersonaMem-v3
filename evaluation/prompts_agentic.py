@@ -166,6 +166,20 @@ def _publish_directive(target_app: str, write_tool: str, text_only: bool,
     return f"\nThen publish {what} by calling `{fq}`.\n"
 
 
+# Shared length / voice-coverage requirement for tasks that compose a message
+# in the user's voice (T9 cross-app repost, T12/T13 send_post). The agent must
+# write a substantive post — not a one-liner — that genuinely reflects multiple
+# facets of the user's voice (recurring phrases, register, topical anchors,
+# emoji/punctuation habits, signature opinions).
+COMPOSE_LENGTH_AND_VOICE_RULE = (
+    "**Length & voice-coverage requirement**: the message MUST be at least "
+    "**100 words** long and visibly cover **3-5 distinct user voice points** "
+    "(e.g. recurring phrases, register, signature opinions, topical anchors, "
+    "emoji/punctuation habits) drawn from the user's history. A short one- or "
+    "two-line post does NOT satisfy this task."
+)
+
+
 # =========================================================================
 # Per-task templates
 # =========================================================================
@@ -276,6 +290,8 @@ Source post (from a different app):
 ```
 {_ground_truth_block(ground_truth_block)}
 Adapt it for {target_app} while preserving the core point. {voice_directive}
+
+{COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}
 {_action_or_final(target_app, "create_post", text_only, content_fields)}"""
 
@@ -357,6 +373,8 @@ The user has asked you to publish the following update on {app} on their behalf:
 > {update}
 {_ground_truth_block(ground_truth_block)}
 {voice_directive}
+
+{COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}
 {_action_or_final(app, "create_post", text_only, content_fields)}"""
 
@@ -384,6 +402,8 @@ Here's the chat context:
 {_ground_truth_block(ground_truth_block)}
 Generate the post content appropriate for {target_app} — in the user's voice on
 that platform. {voice_directive}
+
+{COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}
 {_action_or_final(target_app, "create_post", text_only, content_fields)}"""
 
