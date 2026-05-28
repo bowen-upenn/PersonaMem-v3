@@ -2874,6 +2874,33 @@ class PersonaAgent:
         # ==============================================================
         self._cross_reference_negatives(groups_factory=_defaultdict)
 
+    def _sanitize_expected_stop_ts(self, raw_ts: int, last_ts: int) -> int:
+        """Clamp `expected_stop_ts` to a sane window so downstream eval (Step
+        `preference_shift_followthrough`) doesn't fire test queries before
+        the user's engagement history exists.
+
+        Rules (in order):
+          - If raw_ts <= 0 OR raw_ts < last_ts (LLM hallucinated an expiry
+            BEFORE the preference's last observation), fall back to
+            `last_ts + 14 days`. A preference can't expire before its last
+            evidence point.
+          - If raw_ts >= last_event_ts + 30 days (LLM predicted far into the
+            future, way past the user's recorded engagement), clamp to
+            `last_event_ts + 30 days`.
+          - Otherwise pass raw_ts through unchanged.
+
+        Returns a positive integer Unix timestamp.
+        """
+        # User's last recorded interaction — cached once per call.
+        last_event_ts = 0
+        if self.interactions:
+            last_event_ts = int(self.interactions[-1].interaction_time or 0)
+        if raw_ts <= 0 or (last_ts > 0 and raw_ts < last_ts):
+            return (last_ts or last_event_ts) + 14 * 86400
+        if last_event_ts > 0 and raw_ts > last_event_ts + 30 * 86400:
+            return last_event_ts + 30 * 86400
+        return raw_ts
+
     def classify_horizons_and_stop_conditions(self) -> None:
         """Step 4: LLM classification of time-horizon labels + stop conditions.
 
@@ -3043,8 +3070,9 @@ class PersonaAgent:
                             stop_ts = int(raw_ts) if raw_ts is not None else 0
                         except (TypeError, ValueError):
                             stop_ts = 0
-                        if stop_ts <= 0:
-                            stop_ts = int(c.get("_last_ts") or 0) + 14 * 86400
+                        stop_ts = self._sanitize_expected_stop_ts(
+                            stop_ts, last_ts=int(c.get("_last_ts") or 0)
+                        )
                         cr.stop_condition = {
                             "type": sc.get("type", "event"),
                             "description": sc.get("description", ""),
@@ -3056,7 +3084,9 @@ class PersonaAgent:
                         cr.stop_condition = {
                             "type": "event",
                             "description": "Auto-default (LLM omitted stop_condition).",
-                            "expected_stop_ts": int(c.get("_last_ts") or 0) + 14 * 86400,
+                            "expected_stop_ts": self._sanitize_expected_stop_ts(
+                                0, last_ts=int(c.get("_last_ts") or 0)
+                            ),
                         }
                     n_confirmed += 1
                 else:
