@@ -2249,6 +2249,51 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
             f"because the writing is bad."
         )
     if flaw_kind == "factual_error":
+        # Agentic list/digest tasks (daily_catchup, trending_alert) ground
+        # their gold in REAL events from the user's recent window. The
+        # platform/app for each item is anchored to the event source, so
+        # a "wrong platform" foil produces an impossible event — the agent
+        # can't introspect the example and just swap an app name without
+        # the substitution being visibly fabricated. The credible failure
+        # mode for these tasks is WRONG EVENT: the agent claims a stale or
+        # nonexistent event is part of the catch-up. Use a list-task-
+        # specific directive that swaps the AXIS from "wrong app" to
+        # "wrong / stale event".
+        if task_id in (
+            "agentic_proactive_daily_catchup",
+            "agentic_trending_alert",
+            "agentic_dm_digest",
+            "agentic_group_dm_summary",
+        ):
+            return (
+                "Introduce ONE subtle factual error inside the foil's content "
+                "by SWAPPING a real catch-up / digest item for a wrong-event "
+                "stand-in. The error should make the foil claim that a stale "
+                "or nonexistent event belongs in today's window.\n"
+                "  - Pick ONE item the gold lists by a concrete identifier "
+                "(thread id like `fa_thr_105_005`, post title in quotes, "
+                "named friend) and REPLACE it with a fabricated-but-plausible "
+                "stand-in of the SAME shape (a different thread id with a "
+                "different trailing number, a different plausible post title, "
+                "or a different name) that is NOT part of the real catch-up "
+                "window. Keep the other items in the gold UNCHANGED.\n"
+                "  - The swap must be a single concrete entity, not a "
+                "vibe-shift. After the swap the foil should differ from the "
+                "gold on at least ONE explicit named identifier — anyone "
+                "diffing the two side-by-side should be able to point to "
+                "the WHICH-EVENT difference.\n"
+                "  - Do NOT change the PLATFORM (Instagram / Facebook / "
+                "Threads / chatbot) of any item. The platform is anchored to "
+                "the real event and can't be inferred wrong without the "
+                "substitution becoming obviously impossible. Stay on the "
+                "event/identifier axis.\n"
+                "  - Preserve the gold's overall structure, length, and the "
+                "list of unaffected items. The error should read like a "
+                "careless summary mistake — wrong item — not a stylistic "
+                "rewrite or topical drift.\n"
+                "  - Do NOT introduce any persona reference. Do NOT add "
+                "disclaimers about the error."
+            )
         hints: list[str] = []
         wrong_app = evidence.get("wrong_app")
         if wrong_app:
