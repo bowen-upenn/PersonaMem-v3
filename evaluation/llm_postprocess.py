@@ -253,8 +253,10 @@ def _validate_compose_length(response: str, task_type: str) -> tuple[bool, str]:
         "agentic_cross_app_repost",
         "agentic_send_post",
         "agentic_community_post",
-        "agentic_auto_reply",
     ):
+        # auto_reply intentionally excluded — DMs are 1–3 sentences, the
+        # 100-word floor produced fake formal replies. DM-shape is enforced
+        # via length guidance + per-task rules, not a word-count gate.
         return True, ""
     if not response:
         return True, ""
@@ -770,6 +772,27 @@ def _length_guidance(task_type: str, inst: dict | None = None,
         return "Length: 3–5 short bullet items."
     if task_type == "active_mistake_prevention":
         return "Length: 1–3 sentences."
+    if task_type == "agentic_auto_reply":
+        # WHY this branch is separate from _COMPOSE_TASKS: a DM reply is NOT
+        # a public-feed post — it's one person texting one friend back.
+        # The eval is grading whether the agent can SOUND like the user in a
+        # private conversation, NOT whether it can pad a caption to 100
+        # words. Real DMs are 1–3 short sentences (often a single fragment).
+        # Padding to caption length produces fake "Appreciate that, seriously,
+        # the setup and footwork really make the whole thing work..." replies
+        # that no human friend would ever actually send.
+        return (
+            "Length: 1–3 short sentences (often just one fragment). Reply "
+            "like you're texting a friend back from your phone — NOT like "
+            "you're writing a caption. ZERO hashtags. ZERO promotional / "
+            "customer-service openers (\"Appreciate that, seriously\", "
+            "\"For the record\", \"Hey, thanks for reaching out\", "
+            "\"Respectfully\"). NO emoji wall. If the inbound is a one-liner, "
+            "your reply is a one-liner. Match the user's natural texting "
+            "register exactly — same capitalization habits, same contractions "
+            "or fragments, an emoji ONLY if they'd actually use one in a DM "
+            "to this friend."
+        )
     if task_type in _COMPOSE_TASKS:
         # Compose tasks emit real social-media posts (or DM auto-replies) —
         # caption-length, not chatbot one-liners. Use the user's per-app
@@ -790,17 +813,17 @@ def _length_guidance(task_type: str, inst: dict | None = None,
         # prompts_agentic.COMPOSE_LENGTH_AND_VOICE_RULE). Bump the char band
         # low end if needed so the gold example doesn't fail its own floor.
         extra = ""
-        # All four compose tasks carry the same ≥100-word hard floor:
-        # cross_app_repost / send_post (original), plus community_post /
-        # auto_reply (added 2026-05-28 — audit found ALL 96 compose-task
-        # examples below 100 words across all 5 users). The floor is
-        # enforced via _validate_compose_length below; this directive
-        # tells the LLM the floor up-front so it won't have to regen.
+        # Three compose tasks carry the ≥100-word hard floor:
+        # cross_app_repost / send_post / community_post — all of which
+        # write a real public-feed CAPTION. auto_reply is excluded:
+        # DMs are private 1–3 sentence texts, and the 100-word floor was
+        # producing fake formal "Appreciate that, seriously..." replies
+        # no human would actually send (handled by the dedicated
+        # `agentic_auto_reply` branch above with DM-shaped guidance).
         if task_type in (
             "agentic_cross_app_repost",
             "agentic_send_post",
             "agentic_community_post",
-            "agentic_auto_reply",
         ):
             lo = max(lo, 620)  # ≈100 words at ~6 chars/word incl. spaces
             hi = max(hi, lo + 200)
@@ -1762,7 +1785,16 @@ _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     # is a plausible recommendation for some user just not for this one
     # at this moment), (3) not a structural / format difference.
     "agentic_proactive_daily_catchup": ("disliked_recent", "factual_error"),
-    "agentic_trending_alert":          ("disliked_recent", "factual_error"),
+    # trending_alert: drop factual_error from the flaw rotation. The
+    # canonical failure mode is the agent flagging a hashtag the user
+    # explicitly disliked (the rubric's "Don't flag explicitly disliked
+    # topics" line is the only graded restraint axis). Swapping a tag
+    # for a near-spelling stand-in (e.g. #relationshipgoals → #friendshipgoals)
+    # was producing inferiors whose only diff was an invented tag the
+    # user never engaged with positively OR negatively — neither a real
+    # restraint failure nor a credible factual error. disliked_recent
+    # grounds the foil on the user's own explicit_negative history.
+    "agentic_trending_alert":          ("disliked_recent",),
     "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
     "agentic_community_post":          _FLAW_KINDS_VOICE,
     "agentic_send_post":               _FLAW_KINDS_VOICE,
@@ -2106,6 +2138,45 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
                 f"  - You MAY paraphrase the OTHER bullets slightly "
                 f"(preserving meaning) so the foil doesn't share long "
                 f"word-for-word stretches with the gold."
+            )
+        if task_id == "agentic_trending_alert":
+            # trending_alert responses are LISTS of hashtag tokens
+            # ("#funnyvideos, #relationshipgoals, …"). The foil should
+            # surface ONE hashtag the user explicitly disliked recently,
+            # interleaved with the gold's other trending tags. Hashtag
+            # tokens are required for this task — the no-# rule that
+            # applies to bulleted briefings does NOT apply here.
+            ht_candidates = (evidence.get("source_hashtags")
+                              or [t.lstrip("#") for t in
+                                  (evidence.get("topic_hint", "") or "").split("/") if t.strip()])
+            disliked_tag = ""
+            for h in ht_candidates:
+                h_clean = (h or "").strip().lstrip("#").replace(" ", "")
+                if h_clean:
+                    disliked_tag = h_clean
+                    break
+            if not disliked_tag:
+                # Fall back to a topic-derived single-token tag
+                disliked_tag = (topic_hint or "").split("/")[0].strip().replace(" ", "")
+            return (
+                f"INDEPENDENTLY write a new trending-alert response in the "
+                f"SAME shape as the gold (a comma-separated list of #hashtag "
+                f"tokens with engagement counts), but INCLUDE this hashtag in "
+                f"the trending list: `#{disliked_tag}`. The user explicitly "
+                f"DISLIKED this hashtag in the recent past — a competent "
+                f"agent would never surface it as something the user 'cares "
+                f"about'. That is the failure mode this task tests.\n"
+                f"  - The `#{disliked_tag}` token MUST appear in the foil's "
+                f"trending list, with a plausible engagement count.\n"
+                f"  - Keep ALL the gold's other trending tags. Only ADD the "
+                f"disliked tag (or swap one of the gold's tags for it if the "
+                f"gold's list is at its natural cap).\n"
+                f"  - Do NOT echo the gold's opening words verbatim. Vary the "
+                f"introductory sentence so the foil reads as a separately-"
+                f"authored alert.\n"
+                f"  - Do NOT meta-flag the disliked tag (no `(disliked!)` "
+                f"or `note: the user disliked this`). The failure mode is "
+                f"the agent treating the disliked tag as on-trend, full stop."
             )
         return (
             f"INDEPENDENTLY write a new response to the user query above "
@@ -2462,6 +2533,10 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
             "persona_item":    topic_hint,
             "topic_hint":      topic_hint,
             "content_snippet": snippet,
+            # trending_alert's disliked_recent branch needs the raw
+            # hashtag tokens so it can substitute one into the foil's
+            # trending list. Other tasks ignore this field.
+            "source_hashtags": hashtags,
             "source_object_id": evidence.get("source_object_id", ""),
             "source_timestamp": evidence.get("ts", 0),
             "source_app":       evidence.get("app", ""),
