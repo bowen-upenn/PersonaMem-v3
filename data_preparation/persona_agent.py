@@ -8496,6 +8496,60 @@ class PersonaAgent:
             "n_step9_dropped_specificity": self._n_step9_dropped_specificity,
             "total_time_seconds": round(time.time() - pipeline_start, 1),
         }
+        # --- Completeness guard ---------------------------------------------
+        # Flag a persona that came out structurally incomplete (no profile, no
+        # hidden personas, empty chatbot or empty AI-Studio). For a user with
+        # enough source rows this is a likely pipeline regression; for a thin
+        # source it is expected sparsity. Either way, surface it LOUDLY so a
+        # degenerate persona is never silently folded into a large batch (the
+        # 2026-05 batch shipped users 7/15 with 0 hidden personas / 0 chatbot /
+        # 0 AI-Studio). The ~2500-row floor matches the empirical point below
+        # which chatbot/AI-Studio routing starves; selection should avoid it.
+        _MIN_COMPLETE_SOURCE_ROWS = 2500
+        try:
+            udir = os.path.join(self.backend_dir, self.user_id)
+
+            def _n_events(fn: str) -> int:
+                p = os.path.join(udir, fn)
+                if not os.path.exists(p):
+                    return 0
+                try:
+                    with open(p) as _f:
+                        d = json.load(_f)
+                    return len(d) if isinstance(d, list) else 0
+                except Exception:
+                    return 0
+
+            n_hp = 0
+            ppath = os.path.join(udir, "profile.json")
+            has_profile = os.path.exists(ppath)
+            if has_profile:
+                try:
+                    with open(ppath) as _f:
+                        n_hp = len(json.load(_f).get("hidden_personas") or [])
+                except Exception:
+                    pass
+            n_cb, n_ais = _n_events("chatbot.json"), _n_events("ai_studio.json")
+            n_src = len(self.interactions)
+            incomplete = (not has_profile) or n_hp == 0 or n_cb == 0 or n_ais == 0
+            if incomplete:
+                sev = ("LOW-DATA (expected for thin source — consider dropping/"
+                       "replacing this persona)" if n_src < _MIN_COMPLETE_SOURCE_ROWS
+                       else "*** INCOMPLETE despite sufficient source rows — LIKELY "
+                            "PIPELINE REGRESSION ***")
+                print(f"{utils.Colors.WARNING}[User {self.user_id}] COMPLETENESS "
+                      f"{sev}: src_rows={n_src} hidden_personas={n_hp} "
+                      f"chatbot_events={n_cb} ai_studio_events={n_ais} "
+                      f"profile={'yes' if has_profile else 'NONE'}.{utils.Colors.ENDC}")
+                summary["completeness_warning"] = {
+                    "src_rows": n_src, "hidden_personas": n_hp,
+                    "chatbot_events": n_cb, "ai_studio_events": n_ais,
+                    "has_profile": has_profile,
+                    "likely_regression": n_src >= _MIN_COMPLETE_SOURCE_ROWS,
+                }
+        except Exception as _exc:
+            print(f"[User {self.user_id}] completeness guard error: {_exc}")
+
         # ai_studio_memory.json is generation-time scratch state, not consumed
         # by eval — drop it now that all per-persona generation has finished.
         mem_path = os.path.join(self.backend_dir, self.user_id, "ai_studio_memory.json")
