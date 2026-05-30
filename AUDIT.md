@@ -67,7 +67,7 @@ Task types to sample:
 Quality dimensions per row:
 
 1. Ranking tasks: `example_response` = exactly `"Ranked indexes: [0..15]"` with 16 distinct indices; held_out_idx is in position 0; hard_negative_idxs are at the bottom.
-2. Compose tasks: word count ≥ `MIN_COMPOSE_WORDS` (currently 100). Distribution sanity (min, p25, median, p75, max).
+2. Compose tasks: word count ≥ `MIN_COMPOSE_WORDS` (currently **60** — relaxed from 100 on 2026-05-30; `agentic_auto_reply` is exempt, DMs are short). Distribution sanity (min, p25, median, p75, max).
 3. Voice match: response feels like the user's idiolect (emoji density, lowercase / capitalization, register, signature phrases). Check `backend/{uid}/profile.json::user_voice` for the canonical voice.
 4. Tool call shape matches `tool_call_rules`. Each agentic instance should have a non-empty `tool_call`.
 5. Geo-shift: target city differs from user's home city. (Same city across rows IS by design — diversity is on the category axis, not the city axis. The builder emits per-(transition × category).)
@@ -122,8 +122,35 @@ The drop counts are emitted to `/tmp/eval_regen/{uid}.stdout`. **Read those line
 | 8 | Per-instance self-check | `llm_postprocess.py:1607` | `_run_self_check(task_type, query, response)` — task-specific LLM-judge that catches off-task example responses; failed responses get regenerated once before being dropped | log lines `self_check_failed=N` — a high N relative to total self_checks is a prompt regression |
 | 9 | Voice-evidence distinguishability | `llm_postprocess.py:600` | agentic compose rows where example_response and inferior_response voice-evidence sets are too similar to support a fair voice_match grade | log lines `voice_check_failed=N` + `voice_check_regen=M`; sample 3 surviving rows, confirm example/inferior carry visibly different voice anchors |
 | 10 | Triplet self-check | `llm_postprocess.py:778` | chatbot personalized response triplets (proactive / control / adversarial) where the triplet doesn't satisfy the held-out alignment criteria | log lines `chatbot_triplet_built=N chatbot_triplet_failed=M`; failure count > 0 is a signal |
-| 11 | Compose-length validator | `llm_postprocess.py:_validate_compose_length` | example_response is below 100 words on any of the 4 compose tasks; triggers a regen pass during generation | python: median word count per compose task ≥ 100 per user; flag if `under_100` > 20% of compose rows |
+| 11 | Compose-length validator | `llm_postprocess.py:_validate_compose_length` | example_response is below **60** words on `community_post`/`cross_app_repost`/`send_post` (auto_reply exempt); triggers a regen pass during generation | python: median word count per compose task ≥ 60 per user; flag if `under_60` > 20% of compose rows |
 | 12 | Sensitive-event preamble guard | `llm_postprocess.py:_preamble_stripped_too_similar` | sensitive-event inferior whose body (with leading "as a [ROLE], …" preamble stripped) shares ≥0.7 token Jaccard with example — regenerates the inferior | sample 5 sensitive-event rows; strip the leading "as a [ROLE], " preamble from each inferior; confirm Jaccard against example < 0.7 |
+
+### Cost-saving flags that silently collapse task types — CHECK THESE FIRST
+
+The single most damaging audit finding (2026-05-30) was that **five task types
+shipped with zero rows** because the regen ran with cost-saving flags. These
+flags are legitimate for fast iteration but MUST be off for a real benchmark:
+
+- `--skip_e6` (`prepare_eval_data.py`): historically disabled the **shared
+  `discovery_llm` client**, which zeroed all FIVE discovery-gated task types
+  (`active_mistake_prevention`, `hidden_persona_recommendation`,
+  `hidden_persona_implicit_qa`, `preference_shift_followthrough`,
+  `over_personalization_sensitive_event`). Decoupled 2026-05-30 so it now skips
+  ONLY the E6 builder. Always build the discovery client for a real benchmark.
+- `--skip_blind_check`: forces `blind_score=2` for every chatbot candidate,
+  collapsing the `over_personalization_chatbot_text` **control arm** (floor 16 →
+  ~4 actual). Must be off for a real benchmark.
+- `--skip_self_check` / `--skip_inferior`: skip foil generation + self-check.
+
+Persona-pipeline analogue: trending feed content (`is_trending` posts) is only
+generated when the data-gen LLM client carries a `web_search` callable; without
+it, `proactive_trending_feed_react` and `agentic_trending_alert` starve.
+
+**Loud guard** (`build_benchmark.py`, end of `build_benchmark`): emits a
+`*** COVERAGE-LOSS ***` line + `coverage_warnings` on the returned bm whenever a
+discovery-gated task type is zeroed; `prepare_one` echoes it to stderr. A clean
+regen has empty `coverage_warnings`. **Audit step: `grep -E 'COVERAGE-LOSS|no
+discovery_llm|skip_blind_check' /tmp/eval_regen/*.stdout` must be empty.**
 
 ### Structural and contamination checks in `evaluation/audit_helpers.py`
 
@@ -252,7 +279,7 @@ grep -E '\{privacy_rubric_line\}|\{surfaced_suffix\}|\{warmup_window\}|\{monitor
 # Compose-task word floor
 python3 -c "
 import json
-COMPOSE = {'agentic_send_post','agentic_community_post','agentic_cross_app_repost','agentic_auto_reply'}
+COMPOSE = {'agentic_send_post','agentic_community_post','agentic_cross_app_repost'}  # auto_reply exempt (short DMs)
 for u in ['105','115','229','282','760']:
     counts = []
     with open(f'backend/{u}/test.json') as f:
@@ -263,7 +290,7 @@ for u in ['105','115','229','282','760']:
             counts.append(len((ex or '').split()))
     if counts:
         counts.sort()
-        print(f'{u}: n={len(counts)} median={counts[len(counts)//2]} under_100={sum(1 for w in counts if w<100)}')
+        print(f'{u}: n={len(counts)} median={counts[len(counts)//2]} under_60={sum(1 for w in counts if w<60)}')
 "
 
 # Empty display_rubric on active_mistake_prevention
@@ -285,7 +312,7 @@ Expected results after a clean regen:
 
 - Every user has ≥ 5 `context_shift` rows.
 - Substring blocklist grep returns 0.
-- Median compose-task word count ≥ 100 per user.
+- Median compose-task word count ≥ 60 per user (auto_reply excluded — short by design).
 - All `active_mistake_prevention` rows carry non-empty `display_rubric`.
 
 ## Anti-patterns
