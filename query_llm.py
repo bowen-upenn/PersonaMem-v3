@@ -498,7 +498,22 @@ class QueryLLM:
             }
             if temperature is not None:
                 _openai_kwargs["temperature"] = temperature
-            response = self.client.chat.completions.create(**_openai_kwargs)
+            try:
+                response = self.client.chat.completions.create(**_openai_kwargs)
+            except Exception as _temp_exc:
+                # Some newer deployments (e.g. gpt-5.5) reject any non-default
+                # temperature: "Unsupported value: 'temperature' does not
+                # support 0.0 ... Only the default (1) value is supported."
+                # Deterministic callers pass temperature=0.0; without this guard
+                # the ENTIRE call 400s and the caller silently loses its result
+                # (this silently zeroed Step 29 proactive triggers + any other
+                # temperature=0 flagship call). Retry once without temperature.
+                _m = str(_temp_exc).lower()
+                if "temperature" in _m and "temperature" in _openai_kwargs:
+                    _openai_kwargs.pop("temperature", None)
+                    response = self.client.chat.completions.create(**_openai_kwargs)
+                else:
+                    raise
 
             # Extract content
             try:
