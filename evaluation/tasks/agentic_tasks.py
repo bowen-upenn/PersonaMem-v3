@@ -1345,7 +1345,10 @@ ALL_BUILDERS: dict[str, Callable] = {
     "agentic_vague_refind":             build_t11_vague_refind,
     # agentic_draft_audit removed — workstream F.
     "agentic_group_dm_summary":         build_t16_group_dm_summary,
-    "agentic_wrong_recipient_check":    build_t17_wrong_recipient,
+    # agentic_wrong_recipient_check retired (task_distribution.py:108). The
+    # builder (build_t17_wrong_recipient) + runner code paths are kept, but it
+    # must NOT be in ALL_BUILDERS or it leaks ~1 untargeted row per user into
+    # test.json (caught in the 2026-05-30 validation regen of user 105).
     "agentic_proactive_daily_catchup":  build_t18_proactive_daily,
     "agentic_trending_alert":           build_t19_trending_alert,
 }
