@@ -173,10 +173,11 @@ def _publish_directive(target_app: str, write_tool: str, text_only: bool,
 # emoji/punctuation habits, signature opinions).
 COMPOSE_LENGTH_AND_VOICE_RULE = (
     "**Length & voice-coverage requirement**: the message MUST be at least "
-    "**100 words** long and visibly cover **3-5 distinct user voice points** "
+    "**60 words** long and visibly cover **3-5 distinct user voice points** "
     "(e.g. recurring phrases, register, signature opinions, topical anchors, "
     "emoji/punctuation habits) drawn from the user's history. A short one- or "
-    "two-line post does NOT satisfy this task."
+    "two-line post does NOT satisfy this task. Do not pad past a natural "
+    "caption length just to add words."
 )
 
 

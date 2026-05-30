@@ -238,16 +238,16 @@ def _validate_no_rubric_leak(
     return True, ""
 
 
-_MIN_COMPOSE_WORDS_FLOOR = 100  # mirror agentic_verifiers.MIN_COMPOSE_WORDS
+_MIN_COMPOSE_WORDS_FLOOR = 60  # mirror agentic_verifiers.MIN_COMPOSE_WORDS
 
 
 def _validate_compose_length(response: str, task_type: str) -> tuple[bool, str]:
-    """Hard 100-word floor for compose tasks. Audit (2026-05-28) found
-    96 / 96 sampled compose-task example_responses below 100 words —
-    the existing verifier in tasks/agentic_verifiers.py scored the
-    failure but didn't gate generation, so short outputs always
-    shipped. Adding the check to the generator validator chain so
-    the regen path retries with explicit length feedback.
+    """Natural-length floor for compose tasks. The old 100-word floor was
+    breached by 100% of shipped rows (medians: community_post 83,
+    cross_app_repost 73, send_post 90) — and a 100-word social post reads
+    as padded, not natural. Audit (2026-05-30) relaxed the floor to 60
+    words: long enough to require substance, short enough to stay a real
+    caption. auto_reply stays exempt (DMs are 1-3 sentences).
     """
     if task_type not in (
         "agentic_cross_app_repost",
@@ -807,32 +807,32 @@ def _length_guidance(task_type: str, inst: dict | None = None,
         if band is None:
             band = (90, 200)  # generic fallback
         lo, hi = band
-        # cross_app_repost / send_post carry a hard floor of ≥100 words
-        # covering 3-5 user voice points (mirrors the verifier in
-        # tasks/agentic_verifiers.MIN_COMPOSE_WORDS and the directive in
-        # prompts_agentic.COMPOSE_LENGTH_AND_VOICE_RULE). Bump the char band
-        # low end if needed so the gold example doesn't fail its own floor.
+        # cross_app_repost / send_post / community_post carry a natural-length
+        # floor of ≥60 words covering 3-5 user voice points (mirrors the
+        # verifier in tasks/agentic_verifiers.MIN_COMPOSE_WORDS and the
+        # directive in prompts_agentic.COMPOSE_LENGTH_AND_VOICE_RULE). Bump the
+        # char band low end if needed so the gold example doesn't fail its
+        # own floor.
         extra = ""
-        # Three compose tasks carry the ≥100-word hard floor:
-        # cross_app_repost / send_post / community_post — all of which
-        # write a real public-feed CAPTION. auto_reply is excluded:
-        # DMs are private 1–3 sentence texts, and the 100-word floor was
-        # producing fake formal "Appreciate that, seriously..." replies
-        # no human would actually send (handled by the dedicated
+        # Three compose tasks carry the ≥60-word floor: cross_app_repost /
+        # send_post / community_post — all write a real public-feed CAPTION.
+        # Relaxed from 100 → 60 on 2026-05-30: the 100-word floor was breached
+        # by 100% of rows and read as padded. auto_reply is excluded: DMs are
+        # private 1–3 sentence texts (handled by the dedicated
         # `agentic_auto_reply` branch above with DM-shaped guidance).
         if task_type in (
             "agentic_cross_app_repost",
             "agentic_send_post",
             "agentic_community_post",
         ):
-            lo = max(lo, 620)  # ≈100 words at ~6 chars/word incl. spaces
+            lo = max(lo, 380)  # ≈60 words at ~6 chars/word incl. spaces
             hi = max(hi, lo + 200)
             extra = (
-                " HARD FLOOR: the post MUST be at least **100 words** and "
+                " FLOOR: the post MUST be at least **60 words** and "
                 "visibly cover **3-5 distinct user voice points** (recurring "
                 "phrases, register, signature opinions, topical anchors, "
                 "emoji/punctuation habits) — a short post does NOT satisfy "
-                "this task."
+                "this task. Do not pad past a natural caption length."
             )
         return (
             f"Length: ~{lo}–{hi} characters (a real social-media post / "

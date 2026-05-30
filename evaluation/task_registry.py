@@ -296,14 +296,14 @@ AGENTIC_DISPLAY_RUBRICS: dict[str, list[str]] = {
     ],
     "agentic_send_post": [
         "(+) Compose the post in the user's voice on the target app.",
-        "(+) Post is ≥ 100 words and covers 3-5 distinct user voice points.",
+        "(+) Post is ≥ 60 words and covers 3-5 distinct user voice points.",
         "(+) Call create_post on the target app exactly once.",
         "(-) Don't post on any other app.",
         "(-) Don't include anything they wouldn't post publicly.",
     ],
     "agentic_cross_app_repost": [
         "(+) Adapt the source post to the target app's voice; preserve the core point.",
-        "(+) Adapted post is ≥ 100 words and covers 3-5 distinct user voice points.",
+        "(+) Adapted post is ≥ 60 words and covers 3-5 distinct user voice points.",
         "(+) Call create_post on the target app exactly once.",
     ],
     "agentic_auto_reply": [
