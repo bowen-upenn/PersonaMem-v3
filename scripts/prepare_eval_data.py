@@ -445,6 +445,7 @@ def _build_benchmark_in_memory(
     user_id: str,
     backend_dir: Path,
     discovery_llm=None,
+    skip_e6: bool = False,
     blind_check_llm=None,
     blind_check_limit: int | None = None,
 ) -> dict | None:
@@ -462,6 +463,7 @@ def _build_benchmark_in_memory(
             backend_dir=str(backend_dir),
             user_id=user_id,
             discovery_llm=discovery_llm,
+            skip_e6=skip_e6,
             blind_check_llm=blind_check_llm,
             blind_check_limit=blind_check_limit,
         )
@@ -541,6 +543,7 @@ def prepare_one(
     user_id: str,
     backend_dir: Path,
     discovery_llm=None,
+    skip_e6: bool = False,
     blind_check_llm=None,
     blind_check_limit: int | None = None,
     postprocess_llm=None,
@@ -561,11 +564,18 @@ def prepare_one(
     bm = _build_benchmark_in_memory(
         user_id, backend_dir,
         discovery_llm=discovery_llm,
+        skip_e6=skip_e6,
         blind_check_llm=blind_check_llm,
         blind_check_limit=blind_check_limit,
     )
     if bm is None:
         return {"user_id": user_id, "rows": 0, "status": "skipped"}
+
+    # Surface silent-task-loss warnings loudly on stderr (the stream tailed
+    # in tmux). build_benchmark records these when a discovery-gated task type
+    # zeroes out — the failure mode that lost 5 task types in the prior regen.
+    for _w in (bm.get("coverage_warnings") or []):
+        print(f"[{user_id}] *** COVERAGE WARNING *** {_w}", file=sys.stderr)
 
     # Personalization-routing verification. For each chatbot_personalized_response
     # query, ask a mini-tier LLM whether personalization is genuinely useful;
@@ -842,12 +852,19 @@ def _prepare_one_worker(
 ) -> dict:
     """ProcessPool entry. Each worker rebuilds its own LLM clients from
     env (QueryLLM / claude-code subagent helpers don't pickle across processes)."""
-    discovery = None if skip_e6 else _build_llm_client()
+    # ALWAYS build the discovery client: it feeds FIVE discovery-gated task
+    # types (active_mistake_prevention, hidden_persona_recommendation,
+    # hidden_persona_implicit_qa, preference_shift_followthrough,
+    # over_personalization_sensitive_event), not just E6. `skip_e6` now gates
+    # ONLY the E6 builder downstream — it must NOT disable the shared client
+    # (doing so silently zeroed all five task types in the 2026-05-28 regen).
+    discovery = _build_llm_client()
     blind = _make_blind_check_llm(blind_check_model) if blind_check_model else None
     postprocess = blind if (not skip_self_check or not skip_inferior) else None
     return prepare_one(
         user_id, Path(backend_dir_str),
         discovery_llm=discovery,
+        skip_e6=skip_e6,
         blind_check_llm=blind,
         blind_check_limit=blind_check_limit,
         postprocess_llm=postprocess,
@@ -886,8 +903,14 @@ def main() -> int:
     parser.add_argument("--parallel", type=int, default=1,
                         help="Cross-user parallelism (ProcessPool)")
     parser.add_argument("--skip_e6", action="store_true",
-                        help="Skip E6 discovery (saves the per-user LLM call "
-                             "for paired warn/foil scenarios)")
+                        help="Skip ONLY the E6 (active_mistake_prevention) "
+                             "builder, saving its per-user warn/foil discovery "
+                             "call. Does NOT disable the shared discovery LLM "
+                             "client — the other four discovery-gated task "
+                             "types (hidden_persona_recommendation / "
+                             "hidden_persona_implicit_qa / "
+                             "preference_shift_followthrough / "
+                             "over_personalization_sensitive_event) still build.")
     parser.add_argument("--skip_blind_check", action="store_true",
                         help="Skip Task B blind-check routing (proactive vs "
                              "over_personalization_chatbot_text). With this "
@@ -918,8 +941,12 @@ def main() -> int:
 
     # Two LLM hooks at benchmark-build time:
     #   - blind_check (Task B routing) — Claude Code subagent on `--blind_check_model`
-    #   - E6 discovery (paired warn/foil) — QueryLLM via _build_llm_client()
-    # Both are optional; flag a user out with --skip_blind_check / --skip_e6.
+    #   - discovery LLM — QueryLLM via _build_llm_client(); feeds FIVE
+    #     discovery-gated task types (active_mistake_prevention,
+    #     hidden_persona_recommendation, hidden_persona_implicit_qa,
+    #     preference_shift_followthrough, over_personalization_sensitive_event).
+    #     ALWAYS built. `--skip_e6` skips only the E6 builder, `--skip_blind_check`
+    #     skips Task B routing — neither disables the discovery client.
     print(f"Preparing queries.csv for {len(user_ids)} user(s) "
           f"(parallel={args.parallel}, "
           f"blind_check={'off' if args.skip_blind_check else args.blind_check_model}, "
@@ -927,7 +954,10 @@ def main() -> int:
 
     reports: list[dict] = []
     if args.parallel <= 1 or len(user_ids) == 1:
-        discovery = None if args.skip_e6 else _build_llm_client()
+        # ALWAYS build the discovery client (see _prepare_one_worker note):
+        # it feeds five discovery-gated task types, not just E6. `--skip_e6`
+        # now gates only the E6 builder, never the shared client.
+        discovery = _build_llm_client()
         blind = _make_blind_check_llm(blind_check_model) if blind_check_model else None
         # Workstream I + J: reuse the blind-check client for the self-check
         # and inferior-generation passes — same gpt-5.4-mini deployment, no
@@ -938,6 +968,7 @@ def main() -> int:
                 reports.append(prepare_one(
                     uid, backend_dir,
                     discovery_llm=discovery,
+                    skip_e6=args.skip_e6,
                     blind_check_llm=blind,
                     blind_check_limit=args.blind_check_limit,
                     postprocess_llm=postprocess,

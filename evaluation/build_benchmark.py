@@ -4278,12 +4278,20 @@ def build_benchmark(
     blind_check_llm=None,
     blind_check_limit: int | None = None,
     discovery_llm=None,
+    skip_e6: bool = False,
 ) -> dict:
     """Build the full per-user benchmark.
 
-    `discovery_llm` — optional LLM client used by E6 (active mistake
-    prevention) for per-user discovery of paired (warn, foil) scenarios.
-    When None, E6 yields zero instances; other tasks are unaffected.
+    `discovery_llm` — LLM client used by FIVE discovery-gated task types:
+    E6 active_mistake_prevention, hidden_persona_recommendation,
+    hidden_persona_implicit_qa, preference_shift_followthrough, and
+    over_personalization_sensitive_event. When None, ALL FIVE yield zero
+    instances (this is the silent task-type loss that the loud guard at the
+    end of this function now surfaces). Pass a live client to build them.
+
+    `skip_e6` — when True, skip ONLY the E6 builder (saves its per-user
+    warn/foil discovery call) while the other four discovery tasks still
+    build. It does NOT and must NOT disable `discovery_llm`.
     """
     bq = BackendQuery(backend_dir)
     test_items = load_test_items(backend_dir, user_id)
@@ -4447,7 +4455,11 @@ def build_benchmark(
     # Task E6 — active mistake prevention (paired warn/foil discovery)
     try:
         from evaluation.tasks.e6_active_mistake_prevention import build_e6_active_mistake_prevention
-        if discovery_llm is None:
+        if skip_e6:
+            print("[build_benchmark] e6: --skip_e6 set — skipping E6 builder only "
+                  "(other discovery tasks unaffected)")
+            e6_instances = []
+        elif discovery_llm is None:
             print("[build_benchmark] e6: no discovery_llm — skipping E6 instances")
             e6_instances = []
         else:
@@ -4624,6 +4636,39 @@ def build_benchmark(
         # enough candidates and needs investigation.
         print(f"[build_benchmark] floor gaps (supply-side; investigate if persistent): {floor_gaps}")
 
+    # --- Loud silent-task-loss guard -------------------------------------
+    # The five DISCOVERY-GATED task types all collapse to 0 rows the instant
+    # `discovery_llm` is None — and four of them are `data_dependent`, so
+    # `report_floor_gaps` deliberately stays quiet (a 0 count is "data shape"
+    # for those). That is exactly how the 2026-05-28 regen shipped with five
+    # task types missing and no alarm. This guard makes that condition LOUD
+    # and records it in the returned bm so prepare_one can surface it.
+    _counts = {k: len(v) for k, v in capped_buckets.items() if isinstance(v, list)}
+    DISCOVERY_GATED = (
+        "active_mistake_prevention",
+        "hidden_persona_recommendation",
+        "hidden_persona_implicit_qa",
+        "preference_shift_followthrough",
+        "over_personalization_sensitive_event",
+    )
+    _zeroed = [t for t in DISCOVERY_GATED
+               if _counts.get(t, 0) == 0
+               and not (t == "active_mistake_prevention" and skip_e6)]
+    coverage_warnings: list[str] = []
+    if _zeroed:
+        if discovery_llm is None:
+            msg = (f"discovery_llm is None — discovery-gated task types ZEROED "
+                   f"(SILENT TASK-TYPE LOSS): {_zeroed}. Build the client via "
+                   f"_build_llm_client() so they populate.")
+            print(f"[build_benchmark] *** COVERAGE-LOSS (user {user_id}) *** {msg}")
+        else:
+            msg = (f"discovery_llm wired but 0 rows for: {_zeroed} — verify "
+                   f"user {user_id} has the prerequisite data (hidden personas / "
+                   f"sensitive_life_event / shift candidates). If present, this "
+                   f"is a builder bug, not sparsity.")
+            print(f"[build_benchmark] COVERAGE-CHECK (user {user_id}) {msg}")
+        coverage_warnings.append(msg)
+
     return {
         "benchmark_version": BENCHMARK_VERSION,
         "user_id": user_id,
@@ -4637,6 +4682,7 @@ def build_benchmark(
             **{k: len(v) for k, v in capped_buckets.items()},
         },
         "floor_gaps": floor_gaps,
+        "coverage_warnings": coverage_warnings,
         **capped_buckets,
     }
 
