@@ -1008,7 +1008,9 @@ def main() -> int:
     print("=== prepare_eval_data summary ===")
     print(f"  ok      {len(ok):>5d}  ({total_rows} query rows total)")
     print(f"  empty   {len(empty):>5d}")
-    print(f"  skipped {len(skipped):>5d}  (see {_skipped_log_path()})")
+    # NB: skip reasons are printed to stderr at the moment of skip via
+    # _append_skipped (the legacy on-disk skipped-log file was removed).
+    print(f"  skipped {len(skipped):>5d}  (skip reasons logged to stderr above)")
     print(f"  error   {len(errors):>5d}")
     if errors:
         for r in errors[:10]:
