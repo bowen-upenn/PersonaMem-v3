@@ -1869,6 +1869,19 @@ Candidate response:
 def _run_self_check(llm: Callable[[str], str], task_type: str, query: str, response: str) -> dict:
     if not llm or not response:
         return {"score": 3, "passed": True, "reason": "(no llm available; defaulted to pass)"}
+    # Query-aware: the self-check grades whether the response ADDRESSES the
+    # user query. Query-less / non-conversational tasks (ranking slates,
+    # proactive decisions, agentic compose, empty-query proactive AMP) have no
+    # literal question to address, so this check mis-fires on every one of them
+    # ("does not address the empty query") — it failed 800+ rows and silently
+    # disabled the example-quality gate for most of the benchmark (audit
+    # 2026-05-31). Those tasks carry their own verifiers (ranking format,
+    # compose length/voice, proactive decision), so skip the query-addressing
+    # check here rather than fail them spuriously.
+    q = (query or "").strip()
+    if not q or q.startswith(("[system prompt]", "[agentic]", "[proactive]", "[recsys]")):
+        return {"score": 3, "passed": True,
+                "reason": "query-less / non-conversational task — query-addressing self-check N/A"}
     raw = llm(_SELF_CHECK_PROMPT.format(
         query=(query or "")[:1500],
         response=response[:1500],
@@ -2453,6 +2466,14 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
             f"  - The aside must be a grammatical clause integrated into "
             f"the prose, NOT a separate fact-statement, NOT a "
             f"prepended/appended fragment, NOT a tail tacked onto the gold.\n"
+            f"  - Do NOT introduce the aside via an analogy / comparison "
+            f"framing — e.g. \"think of it like {{X}}\", \"much like {{X}}\", "
+            f"\"same energy as {{X}}\", \"kind of like a good {{X}}\". These "
+            f"comparison markers are a lexical TELL: the gold never uses them, "
+            f"so a grader could distinguish the foil by string-matching the "
+            f"simile instead of judging the over-personalization. Reference the "
+            f"off-topic category as DIRECT topical content (a recommendation, "
+            f"detail, or follow-up about it), woven in naturally.\n"
             f"  - Do NOT echo the gold's opening words. Do NOT borrow the "
             f"gold's specific phrasing. The foil should read as a "
             f"separately-authored response.\n"
@@ -2507,10 +2528,10 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
                 "disclaimers about the error."
             )
         hints: list[str] = []
-        wrong_app = evidence.get("wrong_app")
-        if wrong_app:
-            hints.append(
-                f"swap the platform/app name to '{wrong_app}' (the gold uses a different app)")
+        # No app/platform-swap hint: the platform is anchored to the real
+        # event and swapping it makes the foil obviously impossible. The
+        # wrong-event branch above already forbids it. Mutate on the
+        # entity/identifier/hashtag/title axis instead.
         mutated_tags = evidence.get("mutated_hashtags")
         if mutated_tags:
             hints.append(
@@ -2770,11 +2791,14 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
         return None
     if flaw_kind == "factual_error":
         grounding: dict = {"_from": "factual_error_grounding"}
-        source_app = (inst.get("source_app") or inst.get("target_app") or "").strip()
-        if source_app:
-            wrong_apps = [a for a in ("Instagram", "Facebook", "Threads") if a.lower() != source_app.lower()]
-            if wrong_apps:
-                grounding["wrong_app"] = rng.choice(wrong_apps)
+        # NB: do NOT fabricate a `wrong_app`. Every factual_error task
+        # (dm_digest / group_dm_summary / daily_catchup) uses the wrong-EVENT
+        # branch of _flaw_instruction_body, which forbids platform swaps and
+        # requires an identifier/event swap. A randomly-chosen `wrong_app`
+        # was decoupled from the actual mutation — the foil text kept the
+        # correct app while flaw_evidence claimed a different one (audit
+        # 2026-05-31). The real mutation axis is recorded by the foil rewrite
+        # itself, not pre-chosen here.
         hashtags = list(inst.get("source_hashtags") or [])
         if hashtags and len(hashtags) >= 2:
             mutated = list(hashtags)
