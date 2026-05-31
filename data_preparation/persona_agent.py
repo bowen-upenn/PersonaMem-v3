@@ -5547,6 +5547,54 @@ class PersonaAgent:
                 f"{n_idio_overrides}/{len(app_personas)} apps with idiolect_overrides).{utils.Colors.ENDC}"
             )
 
+    # Hidden-persona signal → AI Studio archetype(s). Deterministic routing
+    # (below) spreads the cohort across the 10-archetype catalog; the LLM left
+    # to choose collapsed ~everyone onto mentor_coach / older_sibling
+    # (audit 2026-05-31: only 3 of 10 archetypes used across 20 personas).
+    _AI_STUDIO_TYPE_TO_ARCHETYPE: dict = {
+        "parasocial_attachment": ["anime_or_fandom_character"],
+        "intimate_interest": ["romantic_partner"],
+        "intellectual_curiosity": ["historical_or_philosophical_voice", "mentor_coach"],
+        "private_hobby": ["niche_expert_creator_ai"],
+        "medical_aesthetic_concern": ["therapist_companion_reflective"],
+        "compensatory_need": ["hype_affirmation_friend"],
+        "covert_concern": ["therapist_companion_reflective", "late_night_best_friend"],
+        "aspiration": ["mentor_coach", "hype_affirmation_friend"],
+        "emotional_pattern": ["late_night_best_friend"],
+        "personality_trait": ["older_sibling_figure", "mentor_coach"],
+        "identity_anchor": ["wise_elder_grandparent", "older_sibling_figure"],
+    }
+    _AI_STUDIO_FALLBACK_ARCHETYPES = [
+        "mentor_coach", "older_sibling_figure", "wise_elder_grandparent",
+        "late_night_best_friend", "hype_affirmation_friend",
+    ]
+
+    def _route_ai_studio_archetype(self, hp_types, has_high_acuity_active_sle: bool) -> str:
+        """Deterministically pick an AI Studio archetype from the user's
+        hidden-persona signals so the cohort spreads across the catalog.
+        Distinctive rare signals take priority (parasocial → fandom character,
+        intimate → romantic partner); otherwise hash-pick from the union of
+        eligible archetypes implied by the present signals (a user_id hash
+        spreads personas with overlapping signals). Hashed fallback rotation
+        when no signal maps. romantic_partner is filtered out under a
+        high-acuity active sensitive_life_event (the downstream auto-disable
+        is the final guard)."""
+        import hashlib
+        present = {t for t in (hp_types or []) if t}
+        if "parasocial_attachment" in present:
+            return "anime_or_fandom_character"
+        if "intimate_interest" in present and not has_high_acuity_active_sle:
+            return "romantic_partner"
+        eligible = sorted({
+            a for t in present
+            for a in self._AI_STUDIO_TYPE_TO_ARCHETYPE.get(t, [])
+            if not (a == "romantic_partner" and has_high_acuity_active_sle)
+        })
+        if not eligible:
+            eligible = list(self._AI_STUDIO_FALLBACK_ARCHETYPES)
+        h = int(hashlib.md5(str(self.user_id).encode()).hexdigest(), 16)
+        return eligible[h % len(eligible)]
+
     def generate_ai_studio_persona(self) -> None:
         """Step 11C — pick ONE AI Studio persona archetype for this user and
         write the full AIStudioPersona block onto profile.json.
@@ -5648,6 +5696,13 @@ class PersonaAgent:
                 if acu == "high" and active_end:
                     has_high_acuity_active_sle = True
 
+        # Deterministic archetype routing for cohort diversity (the LLM is
+        # then hard-constrained to this archetype; see _route_ai_studio_archetype).
+        routed_archetype = self._route_ai_studio_archetype(
+            [hp.type for hp in (self.user_profile.hidden_personas or [])],
+            has_high_acuity_active_sle,
+        )
+
         # Locale country — mode of event_location countries if available, else "US"
         locale_country = self._infer_locale_country()
 
@@ -5669,6 +5724,7 @@ class PersonaAgent:
                 archetypes_menu=archetypes_menu,
                 rogers_cliche_baseline=ROGERS_CLICHE_BLOCKLIST,
                 locale_country=locale_country,
+                forced_archetype=routed_archetype,
             )
             response = self._query_mini_with_retry(prompt_text)
             parsed = utils.extract_json_from_response(response) if response else None
@@ -5683,8 +5739,14 @@ class PersonaAgent:
             return
 
         # ---- Validation + sanitization ----------------------------------
+        # Deterministic routing wins over the LLM's self-chosen archetype: the
+        # prompt was hard-constrained to `routed_archetype`, and overriding here
+        # guarantees the cohort spreads across the catalog even if the LLM
+        # drifted. (The LLM still authored the character DNA for this archetype.)
         archetype = parsed.get("persona_archetype") or ""
-        if archetype not in AI_STUDIO_ARCHETYPES:
+        if routed_archetype in AI_STUDIO_ARCHETYPES:
+            archetype = routed_archetype
+        elif archetype not in AI_STUDIO_ARCHETYPES:
             if self.verbose:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: invalid archetype {archetype!r}; falling back to late_night_best_friend.{utils.Colors.ENDC}")
             archetype = "late_night_best_friend"

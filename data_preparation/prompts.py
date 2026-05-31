@@ -4092,6 +4092,7 @@ def personalize_ai_studio_persona_prompt(
     archetypes_menu: list[dict],
     rogers_cliche_baseline: list[str],
     locale_country: str = "US",
+    forced_archetype: str = "",
 ) -> str:
     """Step 11C — pick ONE AI Studio persona archetype for THIS user and
     write the FULL 4-layer character voice (mirrors `generate_voice_core_prompt`'s
@@ -4139,6 +4140,19 @@ def personalize_ai_studio_persona_prompt(
         line += f"\n     inspiration: {arch.get('inspiration', '')}"
         arch_lines.append(line)
     arch_str = "\n".join(arch_lines)
+    if forced_archetype:
+        # The archetype is deterministically pre-selected from the user's
+        # hidden-persona signals (in persona_agent._route_ai_studio_archetype)
+        # to guarantee diversity across the cohort — the LLM left to its own
+        # devices collapses ~everyone onto mentor_coach / older_sibling. Hard-
+        # require the routed archetype; the LLM only writes the character DNA.
+        arch_str = (
+            f"*** REQUIRED: set `persona_archetype` EXACTLY to "
+            f"'{forced_archetype}'. This archetype was deterministically chosen "
+            f"from THIS user's hidden-persona signals for cohort diversity — do "
+            f"NOT pick a different one. Generate the full 4-layer character for "
+            f"'{forced_archetype}'. ***\n\n" + arch_str
+        )
 
     # Hidden persona brief
     hp_str = "\n".join(

@@ -100,6 +100,7 @@ Mandatory checks (write a single Python script using `csv.DictReader` + `csv.fie
    - **Over-personalization foil lexical separability**: for `over_personalization*`, the inferior must not be distinguishable from the example by a fixed marker the example lacks (analogy similes, a stock preamble). Strip/compare and confirm.
 9. **Compose-task length distribution**: for each compose task type, compute `min/p25/median/p75/max` word counts and `count_under_floor`.
 10. **Phrase variety on sensitive_event queries**: count rows where `user_query` starts with stock fillers (e.g. "low-key way to", "without making it"). Flag if >10% of any user's sensitive_event rows share an opener.
+11. **Cross-persona diversity** (runs across ALL personas, the load-bearing check before scaling): tally `profile.json::ai_studio_persona.persona_archetype` across the cohort — no single archetype should dominate (>~40% is a routing regression; the LLM left unconstrained collapses onto `mentor_coach`/`older_sibling_figure`). Archetypes are deterministically routed from hidden-persona signals by `persona_agent._route_ai_studio_archetype` (distinctive rare signals → distinctive archetypes; hashed spread for the rest), so a collapsed distribution means the router was bypassed. Also spot-check demographic spread (gender, race_ethnicity, career) and `user_voice` sameness (emoji palette, capitalization, signature phrases) across personas — at 200× scale, voice/archetype sameness is the dominant quality risk.
 
 ## Existing automated checks — what the pipeline already enforces
 
