@@ -211,7 +211,30 @@ def build_personalized_recommendation(
             # meaningful ranking task — skip this anchor.
             continue
 
-        # Fillers: random pre-t_test events with NO hashtag overlap (noise).
+        # Title de-dup (audit 2026-05-31): the held-out target's title must
+        # appear EXACTLY ONCE in the slate. A hard-neg / filler sharing its
+        # title makes the target text-guessable (the agent can pick the
+        # duplicated title without reasoning). Drop title-collisions; the
+        # filler backfill below keeps the slate at SLATE_SIZE.
+        def _title_of(row: dict) -> str:
+            return (_content_summary(row).get("title") or "").strip().lower()
+
+        seen_titles: set[str] = set()
+        _ho_title = _title_of(held_out)
+        if _ho_title:
+            seen_titles.add(_ho_title)
+        _negs_dedup: list[dict] = []
+        for n in hard_negatives:
+            t = _title_of(n)
+            if t and t in seen_titles:
+                continue
+            if t:
+                seen_titles.add(t)
+            _negs_dedup.append(n)
+        hard_negatives = _negs_dedup
+
+        # Fillers: random pre-t_test events with NO hashtag overlap (noise),
+        # and NO title collision with held_out / hard_negs / each other.
         used_ids = {held_out.get("source_object_id")} | {
             n.get("source_object_id") for n in hard_negatives
         }
@@ -223,7 +246,16 @@ def build_personalized_recommendation(
         ]
         rng.shuffle(filler_pool)
         n_fillers = SLATE_SIZE - 1 - len(hard_negatives)
-        fillers = filler_pool[:n_fillers]
+        fillers = []
+        for e in filler_pool:
+            if len(fillers) >= n_fillers:
+                break
+            t = _title_of(e)
+            if t and t in seen_titles:
+                continue
+            if t:
+                seen_titles.add(t)
+            fillers.append(e)
 
         # Assemble + shuffle the slate so held_out isn't always at idx=0.
         slate_rows: list[dict] = [held_out] + hard_negatives + fillers

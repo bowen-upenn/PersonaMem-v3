@@ -310,6 +310,13 @@ def _validate_discovery_output(
         if not (8 <= caption_wc <= 80):
             return False, f"items[{i}] caption has {caption_wc} words; expected 8-80"
 
+    # No two slate items may share a title: a duplicated title (especially
+    # the target's) makes the slate text-guessable (audit 2026-05-31). Reject
+    # so the slate regenerates with distinct titles.
+    _norm_titles = [(it.get("title") or "").strip().lower() for it in items]
+    if len(set(_norm_titles)) != len(_norm_titles):
+        return False, "duplicate item titles in slate — titles must be unique"
+
     # Hashtag diversity: at least 20 unique hashtags across all items.
     all_tags = set()
     for item in items:
