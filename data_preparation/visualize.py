@@ -2243,15 +2243,11 @@ def _gt_proactive_trending_feed_react(inst: dict, discovery_llm=None) -> dict:
     sig = inst.get("trigger_evidence") or inst.get("signal_evidence") or {}
     expected = inst.get("expected_behavior", "act")
     topic = sig.get("trending_topic") or "the trending topic"
-    # Scrub placeholder hashtags that occasionally leak from trending
-    # synthesis (e.g. a literal "#ABC" when the LLM couldn't anchor a real
-    # tag) so they never render in the gold/GT (audit 2026-05-31).
-    _raw_primary = (sig.get("primary_hashtag") or "").strip()
-    _PLACEHOLDER_TAGS = {"abc", "xyz", "abcd", "hashtag", "topic", "tag",
-                         "tagname", "example", "placeholder", "yourtag", "trend"}
-    if _raw_primary.lstrip("#").lower() in _PLACEHOLDER_TAGS:
-        _raw_primary = ""
-    primary = _raw_primary or "this kind of content"
+    # NB: do NOT blanket-scrub "placeholder-looking" hashtags here — what
+    # looked like a synthesis placeholder ("#ABC") was verified to be a REAL
+    # tag (ABC the TV network: #JimmyKimmelLive / #TVNews / #ABC). Scrubbing
+    # short/uppercase tags strips real signal. Trust the source hashtag.
+    primary = sig.get("primary_hashtag", "") or "this kind of content"
     app = (sig.get("app") or "social").capitalize()
     t_test_iso = inst.get("t_test_iso") or ""
 
