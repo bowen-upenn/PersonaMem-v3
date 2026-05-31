@@ -473,8 +473,20 @@ def build_e6_active_mistake_prevention(
         # share identical ts (one ahead of the other by 1s).
         warn_ts = t_anchor - (len(surviving) - i) * 60
         foil_ts = warn_ts + 1
-        out.append(_build_instance(pair_id, "warn", c, warn_ts, 0))
-        out.append(_build_instance(pair_id, "foil", c, foil_ts, 1))
+        warn_inst = _build_instance(pair_id, "warn", c, warn_ts, 0)
+        foil_inst = _build_instance(pair_id, "foil", c, foil_ts, 1)
+        # Proactive-primary: this task is mainly about catching mistakes the
+        # user is NOT asking about. Fire ~2/3 of pairs proactively (no user
+        # query — the agent reviews calendar/geo/schedule state and decides to
+        # warn or stay silent); keep ~1/3 query-triggered ("in some cases we
+        # still allow the user to pose a query"). Deterministic by pair index.
+        # Both arms of a pair share the same mode so warn/foil stay symmetric.
+        if i % 3 != 0:
+            for _inst in (warn_inst, foil_inst):
+                _inst["user_query"] = ""
+                _inst["entry_point"] = "proactive_idle"
+        out.append(warn_inst)
+        out.append(foil_inst)
     print(f"[e6] user {user_id}: discovered {len(surviving)} pair(s), "
           f"emitting {len(out)} instance(s)")
     return out

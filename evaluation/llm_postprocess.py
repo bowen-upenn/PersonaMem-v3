@@ -47,7 +47,12 @@ _PERSONALIZATION_TASKS = {
     "at_ai_directive_followup",
     "daily_personalized_briefing",
     "short_vs_long_term_lifecycle",
-    "active_mistake_prevention",
+    # active_mistake_prevention is intentionally NOT here: its gold must be a
+    # PROACTIVE WARNING grounded in cross-signal evidence (the agent HAS data
+    # access), the opposite of the generic personalization example-gen (which
+    # forbids self-reference and produces a deflecting "I can't check your
+    # calendar" reply). It is handled by synthesize_special_task_example_inferior
+    # (warn → proactive warning vs naive miss; foil → natural answer vs false alarm).
     "hidden_persona_recommendation",
     "agentic_community_post",
     "agentic_send_post",
@@ -3229,6 +3234,103 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
                                 },
                             },
                         }
+            except Exception:
+                pass
+        return None
+
+    if task_id == "active_mistake_prevention":
+        # The agent is a PROACTIVE assistant WITH live read-access to the
+        # user's calendar/geo/schedule/messages/activity — so the gold must
+        # surface the mistake, not deflect. warn → proactive warning (gold) vs
+        # naive miss (inferior); foil → natural answer / silence (gold) vs an
+        # over-eager false alarm (inferior). Handles both query-triggered and
+        # proactive (empty user_query) instances.
+        polarity = (inst.get("polarity") or "warn").strip()
+        summary = (inst.get("mistake_summary") or "").strip()
+        ef = inst.get("expected_warning_frame") or {}
+        must_mention = [m for m in (ef.get("must_mention") or []) if m]
+        must_not = [m for m in (ef.get("must_not_mention") or []) if m]
+        sigs = (inst.get("cross_signal_signals") or {}).get("signal_evidence") or []
+        ev_lines = [
+            f"- [{s.get('source','')}] {s.get('quote','')} (ref {s.get('ref','')}, ts {s.get('ts','')})"
+            for s in sigs[:6]
+        ]
+        evidence_block = "\n".join(ev_lines) or "(cross-signal trace on file)"
+        uq = (inst.get("user_query") or "").strip()
+        proactive = not uq
+        query_line = (
+            f'The user just asked: "{uq}"' if uq else
+            "The user has NOT asked anything — you are reviewing their state "
+            "proactively at an idle moment and decide whether to speak up."
+        )
+        access = (
+            "You are this user's proactive personal assistant with live "
+            "read-access to their calendar, geolocation, travel/schedule, "
+            "messages, and recent app activity. You CAN and SHOULD use that "
+            "data — never say you cannot see it."
+        )
+        if discovery_llm is not None:
+            if polarity == "warn":
+                mm = ", ".join(must_mention) or "the specific conflicting detail"
+                prompt = (
+                    f"{access}\n{query_line}\n\n"
+                    f"Cross-signal evidence you can see:\n{evidence_block}\n\n"
+                    f"Likely mistake the user seems unaware of: {summary}\n\n"
+                    f"Write TWO assistant responses as JSON.\n"
+                    f'"good": a PROACTIVE 1-3 sentence heads-up that flags THIS '
+                    f"specific mistake, concrete and actionable, explicitly "
+                    f"referencing: {mm}. Do NOT deflect (no \"I can't check your "
+                    f"calendar\") — you have the data. "
+                    + (f"Do NOT mention: {', '.join(must_not)}. " if must_not else "")
+                    + '\n"bad": a response that MISSES the mistake — '
+                    + (f"it just answers the surface question (\"{uq}\") helpfully and "
+                       "naively, never flagging the contradiction"
+                       if uq else
+                       "it stays silent or gives a generic 'all caught up' check-in, "
+                       "never catching the contradiction")
+                    + ". Same length/tone as good.\n"
+                    + 'Return JSON: {"good": "...", "bad": "..."}'
+                )
+                flaw_kind = "missed_mistake"
+            else:  # foil — signals are consistent; warning would be a false alarm
+                prompt = (
+                    f"{access}\n{query_line}\n\n"
+                    f"Cross-signal evidence you can see:\n{evidence_block}\n\n"
+                    f"You reviewed the signals and there is NO real conflict — the "
+                    f"context is consistent ({summary or 'nothing is actually wrong'}).\n\n"
+                    f"Write TWO assistant responses as JSON.\n"
+                    f'"good": '
+                    + (f"a natural, helpful 1-3 sentence answer to the user's question "
+                       f"(\"{uq}\")" if uq else
+                       "a brief non-intrusive note OR staying silent")
+                    + ", raising NO warning and inventing NO problem. Do NOT deflect "
+                      "about data access.\n"
+                    + '"bad": an OVER-EAGER FALSE ALARM that warns about a "conflict" or '
+                      '"mistake" that does NOT actually exist, treating the consistent '
+                      "context as a problem.\n"
+                    + 'Return JSON: {"good": "...", "bad": "..."}'
+                )
+                flaw_kind = "false_alarm"
+            try:
+                raw = discovery_llm.query_llm(prompt)
+                parsed = extract_json_from_response(raw) or {}
+                good = (parsed.get("good") or "").strip()
+                bad = (parsed.get("bad") or "").strip()
+                if good and bad and len(good) > 15 and len(bad) > 10 and good != bad:
+                    return {
+                        "example_response": good,
+                        "inferior_response": {
+                            "text": bad,
+                            "flaw_kind": flaw_kind,
+                            "flaw_evidence": {
+                                "_from": "synthesize_special_task_example_inferior::active_mistake_prevention",
+                                "polarity": polarity,
+                                "proactive": proactive,
+                                "mistake_summary": summary,
+                                "must_mention": must_mention,
+                            },
+                        },
+                    }
             except Exception:
                 pass
         return None

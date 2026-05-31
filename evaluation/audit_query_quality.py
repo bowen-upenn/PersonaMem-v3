@@ -58,7 +58,11 @@ USER_MESSAGE_TASKS = {
     "over_personalization_distractor_reject",
     "over_personalization_context_shift",
     "over_personalization_sensitive_event",
-    "active_mistake_prevention",
+    # active_mistake_prevention is PROACTIVE-primary: most instances fire with
+    # NO user query (the agent reviews calendar/geo/schedule state and warns
+    # unprompted). It must NOT be gated as a user-message task, or the
+    # format-verify gate would drop every proactive (empty-query) instance.
+    # The minority that DO carry a user query are still valid.
     "local_recommendation_geo_shift",
 }
 

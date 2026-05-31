@@ -4494,6 +4494,7 @@ def build_benchmark(
             _gt_over_personalization_repetition_recsys,
             _gt_over_personalization_repetition_chatbot,
             _gt_local_recommendation_geo_shift,
+            _gt_active_mistake_prevention,
         )
         from evaluation.llm_postprocess import synthesize_special_task_example_inferior
         for inst in c1c_clusters:
@@ -4534,6 +4535,25 @@ def build_benchmark(
                         inst[k] = gt[k]
                 synth = synthesize_special_task_example_inferior(
                     inst, "local_recommendation_geo_shift",
+                    discovery_llm=discovery_llm,
+                )
+                if synth:
+                    inst["example_response"] = synth["example_response"]
+                    inst["inferior_response"] = synth["inferior_response"]
+            except Exception:
+                pass
+        # active_mistake_prevention: gold must be a PROACTIVE WARNING grounded
+        # in the cross-signal evidence (not a deflecting "I can't check your
+        # calendar"). Attach the GT, then let the special-synth produce the
+        # real warning/miss (warn) or natural-answer/false-alarm (foil) pair.
+        for inst in e6_instances:
+            try:
+                gt = _gt_active_mistake_prevention(inst)
+                for k in ("groundtruth_preference", "rubric_tags", "signal_evidence"):
+                    if k in gt and gt[k] is not None:
+                        inst[k] = gt[k]
+                synth = synthesize_special_task_example_inferior(
+                    inst, "active_mistake_prevention",
                     discovery_llm=discovery_llm,
                 )
                 if synth:

@@ -260,6 +260,11 @@ Group findings by severity. Aim for ≤ 2000 words per slice. **Do not propose f
 - `local_recommendation_geo_shift` repeating the same city across rows — INTENTIONAL: the builder emits per-(transition × category) instances; diversity is on the category axis, not the city axis.
 - `preference_shift_followthrough` with `new_preference: null` — INTENTIONAL for `short_term_expiration` shift_kind (the preference simply expired with no replacement).
 - `groundtruth_preference` as a dict (not a string) — INTENTIONAL for tasks with structured GT (`preference_shift_followthrough`, ranking tasks, etc.). The visualize.py renderers flatten to string for display.
+- `active_mistake_prevention` with **empty `user_query`** — INTENTIONAL. It is proactive-primary: ~2/3 of instances fire with NO user query (the agent reviews calendar/geo/schedule state and warns unprompted). It is deliberately NOT in `USER_MESSAGE_TASKS`, so the format-verify gate does not drop empty-query instances.
+
+## active_mistake_prevention — what the gold MUST be (failure mode)
+
+The gold (`example_response`) for a `warn` instance MUST be a **proactive warning** that surfaces the specific mistake using the row's `cross_signal_signals` evidence + `expected_warning_frame.must_mention`, written as an agent that HAS calendar/geo/schedule access. It must NOT deflect ("I can't check your calendar") and the paired inferior must be the genuine failure (warn → misses the mistake / naive answer; foil → an over-eager false alarm). A deflecting gold or an inferior that only differs by a tacked-on distraction is a P0 — the example/inferior are produced by `synthesize_special_task_example_inferior` (NOT the generic personalization example-gen, which forbids self-reference and is wrong for this task).
 
 ## Verification commands
 
