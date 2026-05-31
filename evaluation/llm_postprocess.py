@@ -2126,6 +2126,22 @@ def _validate_inferior(example: str, inferior: str,
     b = inferior.strip()
     if a == b:
         return False, "identical_text"
+    # Over-personalization foils must not be separable from the gold by an
+    # analogy simile the gold lacks ("think of it like X", "much like", ...) —
+    # a lexical tell a grader could string-match instead of judging the
+    # over-personalization (audit 2026-05-31; the prompt-side fix cut these
+    # 40 → 7, this gate closes the residual). Reject so the retry regenerates.
+    if flaw_kind == "over_personalization":
+        _ANALOGY = ("think of it like", "much like", "same energy as",
+                    "kind of like a", "like a good ")
+        bl, al = b.lower(), a.lower()
+        tell = next((m for m in _ANALOGY if m in bl and m not in al), None)
+        if tell:
+            return False, (
+                f"analogy_tell: the foil uses '{tell}' but the gold does not — "
+                f"a lexical tell. Inject the off-topic reference as DIRECT "
+                f"topical content (a recommendation/detail about it), NOT via "
+                f"an analogy or simile.")
     if a and b and (a.startswith(b) or b.startswith(a)):
         return False, "prefix_overlap (one response is a literal prefix of the other)"
     # Normalized substring containment catches mid-string injection (e.g.

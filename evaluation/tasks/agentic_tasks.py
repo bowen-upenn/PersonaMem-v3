@@ -842,37 +842,61 @@ def build_t7_moment_recommendation(bq: BackendQuery, user_id: str, t_anchor: int
             # ranking target — otherwise the moment signal can't be tested.
             continue
 
-        # Hard negatives: in-window negatives first (most moment-relevant
-        # for ranking), then any-time negatives until we hit N_HARD_NEGATIVES.
+        # Held-out: aligned_pos[0] is already sorted by closeness to anchor.
+        held_out = aligned_pos[0]
+        held_id = held_out.get("source_object_id") or ""
+
+        def _row_title(p: dict) -> str:
+            c = p.get("content") or {}
+            return (c.get("title") or c.get("caption") or "").strip().lower()
+
+        held_title = _row_title(held_out)
+        seen_titles: set[str] = {held_title} if held_title else set()
+
+        # Hard negatives: in-window negatives first (most moment-relevant for
+        # ranking), then any-time negatives. When explicit negatives are
+        # sparse (many users have ~none), BACKFILL from neutral_pool — these
+        # are persona-liked posts that are OFF-moment, so they are the natural
+        # "hard negatives" for moment-ranking (the agent must rank the
+        # moment-aligned held-out ABOVE them using the moment signal). This
+        # both makes the ranking discriminative and ensures the GT renders a
+        # "Hard negatives:" section. Title-de-dup so the held-out's title is
+        # never duplicated in the slate (audit 2026-05-31).
         seen_neg_ids: set[str] = set()
         hard_negs: list[dict] = []
-        for src in (buckets["aligned_negative"], buckets["all_negative_pool"]):
+        for src in (buckets["aligned_negative"], buckets["all_negative_pool"],
+                    neutral_pool):
             for p in src:
                 oid = p.get("source_object_id") or ""
-                if not oid or oid in seen_neg_ids:
+                t = _row_title(p)
+                if not oid or oid in seen_neg_ids or oid == held_id:
+                    continue
+                if t and t in seen_titles:
                     continue
                 seen_neg_ids.add(oid)
+                if t:
+                    seen_titles.add(t)
                 hard_negs.append(p)
                 if len(hard_negs) >= N_HARD_NEGATIVES:
                     break
             if len(hard_negs) >= N_HARD_NEGATIVES:
                 break
 
-        # Held-out: aligned_pos[0] is already sorted by closeness to anchor.
-        held_out = aligned_pos[0]
-        held_id = held_out.get("source_object_id") or ""
-
-        # Fillers: neutral pool first (truly safe filler that's NOT moment-
-        # personalized), then leftover aligned_pos beyond the held-out so
-        # we can fill out the slate even when neutral_pool is sparse.
+        # Fillers: leftover neutral pool, then leftover aligned_pos beyond the
+        # held-out — title-unique vs held-out + hard_negs + each other.
         slate_target = SLATE_SIZE - 1 - len(hard_negs)
         fillers: list[dict] = []
         seen_filler_ids: set[str] = {held_id} | seen_neg_ids
         for p in neutral_pool + aligned_pos[1:]:
             oid = p.get("source_object_id") or ""
+            t = _row_title(p)
             if not oid or oid in seen_filler_ids:
                 continue
+            if t and t in seen_titles:
+                continue
             seen_filler_ids.add(oid)
+            if t:
+                seen_titles.add(t)
             fillers.append(p)
             if len(fillers) >= slate_target:
                 break
