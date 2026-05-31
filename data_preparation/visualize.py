@@ -1035,13 +1035,24 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
     # Preferred path (post-Batch-4 builder): instance carries
     # candidates + held_out_idx + hard_negative_idxs.
     if cands and isinstance(held_idx, int):
+        # Robust title resolution so the "Hard negatives:" GT section always
+        # renders (audit 2026-05-31: 25/541 rows had empty hard-neg titles →
+        # the section silently dropped). Fall back title → persona_item →
+        # caption → hashtags so a missing title never blanks the section.
+        def _cand_title(c: dict) -> str:
+            t = (c.get("title") or c.get("persona_item") or c.get("caption") or "").strip()
+            if not t:
+                tags = c.get("hashtags") or []
+                t = " ".join(h.lstrip("#") for h in tags[:3])
+            return t.strip()
         held_title = ""
         if 0 <= held_idx < len(cands):
-            held_title = cands[held_idx].get("title") or cands[held_idx].get("persona_item") or ""
+            held_title = _cand_title(cands[held_idx])
         hard_negs = [
-            cands[i].get("title") or cands[i].get("persona_item") or ""
+            _cand_title(cands[i])
             for i in hard_neg_idxs if 0 <= i < len(cands)
         ]
+        hard_negs = [t for t in hard_negs if t]
         ref_ts = inst.get("t_test") or 0
         cand_list = [{
             "idx": i,

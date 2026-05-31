@@ -10767,9 +10767,15 @@ class PersonaAgent:
         sensitive_periods: list[tuple[int, int]],
     ) -> list[dict]:
         """Negative-control candidates: pick 2-3 timestamps where NO other
-        task type's candidate fires within ±12h and the user is not in a
+        task type's candidate fires within ±3h and the user is not in a
         sensitive window. Each picked moment becomes one overactive_check
         instance with `expected_behavior=restrain`.
+
+        NB: the exclusion window was ±12h, but with ~20-30 other triggers
+        across an ~8-day history that covered almost the entire timeline, so
+        only ~1 in 20 users got ANY overactive_check candidate (audit
+        2026-05-31). ±3h still guarantees the idle moment has nothing else
+        firing nearby while letting most users yield candidates.
         """
         import random as _random
         # Collect every other task type's t_test values to exclude near them.
@@ -10811,8 +10817,8 @@ class PersonaAgent:
             if not in_stratum:
                 continue
             cand = rng.choice(in_stratum)
-            # Reject if too close to any forbidden t_test.
-            if any(abs(cand - f) < 12 * 3600 for f in forbidden):
+            # Reject if too close to any forbidden t_test (±3h — see docstring).
+            if any(abs(cand - f) < 3 * 3600 for f in forbidden):
                 continue
             # Reject if inside any sensitive window.
             if self._is_in_sensitive_window(cand, sensitive_periods):
