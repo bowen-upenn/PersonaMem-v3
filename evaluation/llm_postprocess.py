@@ -2520,12 +2520,18 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
                 "stand-in. The error should make the foil claim that a stale "
                 "or nonexistent event belongs in today's window.\n"
                 "  - Pick ONE item the gold lists by a concrete identifier "
-                "(thread id like `fa_thr_105_005`, post title in quotes, "
-                "named friend) and REPLACE it with a fabricated-but-plausible "
-                "stand-in of the SAME shape (a different thread id with a "
-                "different trailing number, a different plausible post title, "
-                "or a different name) that is NOT part of the real catch-up "
-                "window. Keep the other items in the gold UNCHANGED.\n"
+                "(thread id, post title in quotes, named friend) and "
+                "MIS-ATTRIBUTE it to a DIFFERENT identifier that ALREADY "
+                "appears elsewhere in the gold — e.g. swap which named friend "
+                "a message is from, or attribute one thread's content to "
+                "another thread the gold already lists. Do NOT invent a new "
+                "thread id / a new trailing number / a friend or name that "
+                "does not exist in the source: a fabricated, non-existent "
+                "entity makes the foil rejectable for the wrong reason (the "
+                "agent rejects it because the entity is fake, not because the "
+                "attribution is wrong). The error must be a WRONG-BUT-REAL "
+                "attribution — two real items confused. Keep the other items "
+                "UNCHANGED.\n"
                 "  - The swap must be a single concrete entity, not a "
                 "vibe-shift. After the swap the foil should differ from the "
                 "gold on at least ONE explicit named identifier — anyone "
@@ -2962,6 +2968,24 @@ def _list_task_inferior_swaps_entity(example: str, inferior: str) -> bool:
             in_word_count = len(inferior.split())
             if in_word_count >= int(ex_word_count * 0.7):
                 return True
+    return False
+
+
+def _list_task_inferior_fabricates_id(example: str, inferior: str) -> bool:
+    """True if the foil introduces a thread/friend ID that is ABSENT from the
+    gold — a FABRICATED, non-existent entity (e.g. a friend_N who doesn't
+    exist, a thread id with an invented trailing number). That lets a reviewer
+    or the agent reject the foil for the wrong reason (the entity is fake)
+    instead of catching the wrong attribution. A real wrong-event foil
+    mis-attributes among entities the gold already names (audit 2026-05-31).
+    """
+    if not example or not inferior:
+        return False
+    ex = _extract_named_entities(example)
+    inf = _extract_named_entities(inferior)
+    for axis in ("threads", "friends"):
+        if inf[axis] - ex[axis]:
+            return True
     return False
 
 
@@ -3905,13 +3929,16 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                     if (text
                             and flaw_kind == "factual_error"
                             and task_id in _LIST_TASK_FACTUAL_ERROR_TASKS
-                            and not _list_task_inferior_swaps_entity(example, text)):
+                            and (not _list_task_inferior_swaps_entity(example, text)
+                                 or _list_task_inferior_fabricates_id(example, text))):
                         for _retry in range(2):
                             text2 = _generate_inferior(
                                 inferior_llm, example, flaw_kind, evidence,
                                 task_id, user_query=user_query,
                             )
-                            if text2 and _list_task_inferior_swaps_entity(example, text2):
+                            if (text2
+                                    and _list_task_inferior_swaps_entity(example, text2)
+                                    and not _list_task_inferior_fabricates_id(example, text2)):
                                 text = text2
                                 break
                         else:

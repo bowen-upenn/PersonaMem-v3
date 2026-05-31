@@ -2833,7 +2833,7 @@ The conversation must naturally reveal ALL of the following preferences. Each pr
 5. **User voice — CRITICAL.** The user is a real person typing on their phone, not an essayist. Every user message must:
    - Be ≤ 30 words. (The OPENER may go up to 35 words if it's pasting a short draft to edit; otherwise hard-cap at 30.)
    - Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
-   - Vary sentence length. Mix one fragment ("brain mushy today") with one short sentence.
+   - Vary sentence length: mix a short fragment with a short sentence. INVENT the fragment fresh from THIS user's voice + the current topic — do NOT reuse a canned example phrase (in particular, never literally write "brain mushy today" or any stock fatigue fragment).
    - Skip pleasantries. Real people don't say "Can you help me troubleshoot a setup?"; they say "this keeps coming out blurry, what am I doing wrong?".
    - Anchor in the **Identity spine** + **Idiolect** blocks above — this is the same person who posts on Instagram/Facebook/Threads. Apply the user's `default_capitalization` and `punctuation_habits`. Apply the `constructional_templates` ABSTRACTLY (slot-pattern shape, not verbatim). Catchphrase residue may surface ZERO times — most turns have none. The Chatbot **On Chatbot** block sets `surface` knobs (typically more task-direct, formality up, `disclosure_depth` higher in private back-office); `idiolect_overrides.extra_forbidden` typically includes `"emoji"`. Length and naturalness rules below still hold.
    - **Respect the negatives.** The shared voice block may carry **Voice avoid** (tones / styles to never produce) and **Phrases to avoid** (literal strings to never reach for). The Chatbot AppPersona may carry `app_avoid` (audience-driven content / tone the user skips here). Treat all of these as hard constraints when present.
@@ -2962,7 +2962,7 @@ You are generating a 4-turn conversation where a user accidentally reveals a per
 
 The user is a real person typing on their phone, not an essayist. Every user message must:
 - Use contractions: don't, I'm, it's, can't, won't, that's. Never the expanded forms.
-- Vary sentence length. Mix one fragment ("brain mushy today") with one short sentence.
+- Vary sentence length: mix a short fragment with a short sentence. INVENT the fragment fresh from THIS user's voice + the current topic — do NOT reuse a canned example phrase (in particular, never literally write "brain mushy today" or any stock fatigue fragment).
 - Skip pleasantries. Real people don't say "Can you help me troubleshoot a setup?"; they say "this keeps coming out blurry, what am I doing wrong?".
 
 FORBIDDEN patterns (never produce these):

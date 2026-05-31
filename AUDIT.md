@@ -22,7 +22,7 @@ A **quick partial audit** (only Slice C, see §3) is enough for unrelated code c
 
 1. Confirm all per-user runs completed cleanly. Inspect `/tmp/eval_regen/{uid}.stderr` for `Exit status: 0` and `/tmp/eval_regen/{uid}.stdout` for the `=== prepare_eval_data summary ===` block at the bottom. Read every funnel line (`[task_distribution] capped …`, `dropped … queries with empty GT`, `dropped … queries before the 20% engagement-history mark`, `sensitive-event coverage: dropped …`, `format-verify dropped …`, `personalization-routing verify: dropped …`) and write them into a table. **Large unexpected drop counts are the first signal of a regression.**
 2. Confirm each user's `queries.csv` mtime is newer than its `backend/{uid}/profile.json`. If not, the regen didn't actually rewrite the file.
-3. Note the user-ID set you're auditing. The standard set is `{105, 115, 229, 282, 760}`; substitute as needed.
+3. Discover the persona set **dynamically** — every dir under `backend/` that is not prefixed with `_` (e.g. `ls backend | grep -vE '^_'`, or `glob.glob('backend/*/test.json')`). Do NOT hardcode a fixed user-ID set: this methodology must run unchanged over whatever personas are present (5, 20, or 200).
 
 ## Audit shape — three parallel Explore agents
 
@@ -92,6 +92,7 @@ Mandatory checks (write a single Python script using `csv.DictReader` + `csv.fie
    - `\nQ1: `, `\nQ2: `, `\nTurn 1: `, `\nResponse 1: ` — outline-shape responses.
    - `share the thread`, `paste it here`, `I can't see your`, `I don't have access` — refusals. (NB: `I can't check your calendar` in an `active_mistake_prevention` gold is a deflection bug — see that task's section.)
    - `think of it like`, `much like`, `same energy as`, `kind of like a` present in an `over_personalization*` **inferior** but absent from its **example** — a lexical foil TELL (the gold never frames the over-personalization as an analogy; a grader could win by string-matching the simile).
+   - **Prompt-seed leak** — any literal *example phrase* written into a generation prompt that the LLM then copies verbatim into many outputs. Known instance: `"brain mushy today"` (a fragment example in the chatbot user-voice prompt) appeared in 60–84% of chatbot conversations / hundreds of turns, 0 in social. Detection: for any short canonical phrase, count its frequency across one content type vs others — a single phrase saturating one channel = a copied prompt example. Fix at the prompt (abstract the example), not per-row.
    - `#yourtag`, `#tagname`, `#placeholder`, `#examplehashtag` — only genuinely-synthetic placeholder tokens. **Do NOT** blanket-scrub short/uppercase tags like `#ABC` / `#XYZ` / `#topic` / `#trend` — these are frequently REAL hashtags (`#ABC` = the ABC TV network, verified in source data). Confirm against the user's source `object_text` before flagging a hashtag as a placeholder.
    - `{privacy_rubric_line}`, `{surfaced_suffix}`, `{T}`, `{warmup_window}`, `{monitored_start}`, `{head_window}`, `{tail_start}`, `{target_pref}`, `{gold_idx}` — un-substituted templates.
 7. **Empty fields**: report rows where any required column is empty: `query_id`, `task_family`, `task_type`, `instance_id`, `ts`, `expected_response_kind`, `rubric_tags`, `display_rubric`. (Empty `query_text` is OK for tasks with `[system prompt]` fallback.)
@@ -99,7 +100,9 @@ Mandatory checks (write a single Python script using `csv.DictReader` + `csv.fie
    - **Ranking slate title uniqueness** (`personalized_recommendation`, `hidden_persona_recommendation`): within each slate, no two items may share a title — a duplicated title (esp. the held-out target's) makes the target text-guessable. Builders now de-dup; confirm 0 slates have a repeated title.
    - **Ranking GT completeness**: every `personalized_recommendation` row's GT prose must carry a non-empty "Hard negatives:" section (title resolution falls back title → persona_item → caption → hashtags, so a blank title never drops the section).
    - **`proactive_overactive_check` coverage**: it is `data_dependent` but should now appear for MOST users (the idle-moment exclusion window was relaxed ±12h → ±3h). If it is present for ≤1 of N users, the idle-moment gatherer regressed — investigate `_gather_idle_moments`.
-   - **Over-personalization foil lexical separability**: for `over_personalization*`, the inferior must not be distinguishable from the example by a fixed marker the example lacks (analogy similes, a stock preamble). Strip/compare and confirm.
+   - **Over-personalization foil lexical separability**: for `over_personalization*`, the inferior must not be distinguishable from the example by a fixed marker the example lacks (analogy similes, a stock preamble). Strip/compare and confirm. (Auto-enforced for the analogy tell in `_validate_inferior`.)
+   - **List/digest foil entity validity**: for `factual_error` foils on `agentic_dm_digest` / `group_dm_summary` / `daily_catchup` / `trending_alert`, the inferior must NOT introduce a `friend_N` / thread id ABSENT from the gold — a fabricated, non-existent entity is rejectable for the wrong reason. The real error is a wrong-but-REAL attribution (two real items confused). Auto-enforced by `_list_task_inferior_fabricates_id`; also confirm every cited friend/thread id in BOTH gold and foil exists in the user's source.
+   - **`hidden_persona_implicit_qa` `telegraph_explicit` foil**: must over-name the trait in NATURAL user-facing language ("I know you love…"), NOT paste the persona's internal type/analyst description verbatim ("…your mechanical-systems competence as a core self-image"). The latter is benchmark jargon, not a realistic assistant reply.
 9. **Compose-task length distribution**: for each compose task type, compute `min/p25/median/p75/max` word counts and `count_under_floor`.
 10. **Phrase variety on sensitive_event queries**: count rows where `user_query` starts with stock fillers (e.g. "low-key way to", "without making it"). Flag if >10% of any user's sensitive_event rows share an opener.
 11. **Cross-persona diversity** (runs across ALL personas, the load-bearing check before scaling): tally `profile.json::ai_studio_persona.persona_archetype` across the cohort — no single archetype should dominate (>~40% is a routing regression; the LLM left unconstrained collapses onto `mentor_coach`/`older_sibling_figure`). Archetypes are deterministically routed from hidden-persona signals by `persona_agent._route_ai_studio_archetype` (distinctive rare signals → distinctive archetypes; hashed spread for the rest), so a collapsed distribution means the router was bypassed. Also spot-check demographic spread (gender, race_ethnicity, career) and `user_voice` sameness (emoji palette, capitalization, signature phrases) across personas — at 200× scale, voice/archetype sameness is the dominant quality risk.
@@ -279,23 +282,26 @@ The gold (`example_response`) for a `warn` instance MUST be a **proactive warnin
 After a regen, run these spot-checks before declaring the audit closed:
 
 ```bash
-# All 5 users have non-zero context_shift rows
-for u in 105 115 229 282 760; do
+# Every persona has non-zero context_shift rows (personas discovered
+# dynamically — all backend/ dirs that aren't prefixed with "_").
+for u in $(ls backend | grep -vE '^_'); do
+  [ -f "backend/$u/test.json" ] || continue
   echo -n "$u: "
-  grep -c context_shift backend/$u/test.json
+  grep -c context_shift "backend/$u/test.json"
 done
 
 # No un-substituted placeholders or known leaks
 grep -E '\{privacy_rubric_line\}|\{surfaced_suffix\}|\{warmup_window\}|\{monitored_start\}|\{head_window\}|\{tail_start\}|\{target_pref\}|\{gold_idx\}|n_allowed_repetitions|token Jaccard|\(none identified\)' \
   backend/*/test.json | wc -l   # should be 0
 
-# Compose-task word floor
+# Compose-task word floor (personas discovered dynamically)
 python3 -c "
-import json
+import json, glob, os
 COMPOSE = {'agentic_send_post','agentic_community_post','agentic_cross_app_repost'}  # auto_reply exempt (short DMs)
-for u in ['105','115','229','282','760']:
+for p in sorted(glob.glob('backend/*/test.json')):
+    u = os.path.basename(os.path.dirname(p))
     counts = []
-    with open(f'backend/{u}/test.json') as f:
+    with open(p) as f:
         for r in json.load(f):
             if r.get('task_type') not in COMPOSE: continue
             ex = r.get('example_response') or (r.get('instance_full') or {}).get('example_response')
@@ -310,10 +316,11 @@ for u in ['105','115','229','282','760']:
 # (display_rubric is no longer a top-level column; check the instance's
 # rubric_tags array carries non-empty entries instead)
 python3 -c "
-import json
-for u in ['105','115','229','282','760']:
+import json, glob, os
+for p in sorted(glob.glob('backend/*/test.json')):
+    u = os.path.basename(os.path.dirname(p))
     empty = 0
-    with open(f'backend/{u}/test.json') as f:
+    with open(p) as f:
         for r in json.load(f):
             if r.get('task_type') != 'active_mistake_prevention': continue
             if not (r.get('rubric_tags') or []): empty += 1
