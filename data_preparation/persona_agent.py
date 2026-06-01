@@ -5353,12 +5353,14 @@ class PersonaAgent:
             if self.verbose:
                 print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Voice core cached — skipping Call A.{utils.Colors.ENDC}")
         else:
+            from data_preparation import diversity
             prompt_a = prompts.generate_voice_core_prompt(
                 profile=profile_dict,
                 top_personas=top_personas,
                 source_samples=source_samples,
                 hidden_persona_summary=hp_summary,
                 sensitive_event_topics=sle_topics,
+                voice_axes=diversity.assign_voice_axes(self.user_id),
             )
             response_a = self._query_llm_with_retry(prompt_a)
             if not response_a:

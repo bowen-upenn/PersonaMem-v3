@@ -1220,6 +1220,7 @@ def generate_voice_core_prompt(
     source_samples: list[dict] | None = None,
     hidden_persona_summary: list[dict] | None = None,
     sensitive_event_topics: list[str] | None = None,
+    voice_axes: dict | None = None,
 ) -> str:
     """Step-11 Call A — produce the stable, layered user_voice block.
 
@@ -1288,6 +1289,40 @@ def generate_voice_core_prompt(
             + "\n".join(f"- {t}" for t in sensitive_event_topics) + "\n"
         )
 
+    # Pinned per-user style axes — break the cohort voice-collapse the audit
+    # found (😂 in 20/20 palettes, "just/kinda/honestly" idiolect everywhere,
+    # "dry, avoids mean/cruel" humor in 15/20). The axes are assigned
+    # deterministically per user_id upstream; the LLM MUST realize them and is
+    # explicitly forbidden from defaulting to the collapsed center.
+    axes_block = ""
+    if voice_axes:
+        _emoji_map = {
+            "none": "This user uses ZERO emoji. `emoji_palette` MUST be `[]` and `emoji_intensity_default` MUST be \"none\". Do not add a single emoji.",
+            "minimal_1to3_palette": "Sparse emoji: a palette of 1–3 emoji max, used rarely. `emoji_intensity_default` \"low\".",
+            "moderate": "Moderate emoji use, a palette of ~4–6.",
+            "heavy": "Emoji-forward: a palette of ~6–10, used liberally.",
+        }
+        _cap_map = {
+            "all_lowercase": "Types in ALL LOWERCASE almost always (no sentence-initial caps). `default_capitalization` reflects this.",
+            "standard_sentence_case": "Standard sentence-case capitalization.",
+            "Title-ish frequent caps": "Capitalizes more than usual — Title-ish / proper-noun-heavy, sometimes Capitalizes Key Words for emphasis.",
+            "ALL CAPS for emphasis only": "Mostly sentence case but drops into ALL CAPS for emphasis/excitement.",
+        }
+        axes_block = (
+            "## PINNED STYLE AXES — you MUST realize ALL of these (they are assigned, not optional)\n\n"
+            "This user's voice is deliberately pinned to the following axes so the cohort doesn't collapse into one generic voice. Honor every one; let them shape the idiolect, repertoire, AND the soft surface fields. Where an axis conflicts with a weak source signal, the AXIS wins.\n\n"
+            f"- **Capitalization**: {_cap_map.get(voice_axes.get('capitalization',''), voice_axes.get('capitalization',''))}\n"
+            f"- **Emoji**: {_emoji_map.get(voice_axes.get('emoji_intensity',''), voice_axes.get('emoji_intensity',''))}\n"
+            f"- **Formality baseline**: {voice_axes.get('formality','')} — set `formality_baseline` and register accordingly.\n"
+            f"- **Humor mode**: {voice_axes.get('humor_mode','')} — `humor_tone` MUST embody this specific mode (NOT a generic 'dry/observational/affectionate').\n"
+            f"- **Verbosity**: {voice_axes.get('verbosity','')} — shape `syntactic_preferences.sentence_length_shape` + fragment_use to match.\n"
+            f"- **Punctuation habit**: {voice_axes.get('punctuation','')} — reflect in `punctuation_habits`.\n\n"
+            "**BANNED DEFAULTS (the cohort over-uses these — do NOT fall back to them unless the pinned axes above genuinely call for it):**\n"
+            "- Do NOT put 😂 in `emoji_palette` by reflex (it was in 20/20 personas). Pick emoji that fit THIS user's topics + intensity axis; many users should have none.\n"
+            "- `function_word_profile` must NOT default to the cluster \"just / kinda / honestly / for me / low-key\". Those were in nearly every persona. Choose function-word habits that fit the pinned formality + verbosity (a formal user leans on \"however/regarding/quite\"; a slangy user on different fillers; a terse user on almost none).\n"
+            "- `humor_tone` must NOT be the formula \"dry, observational, affectionate, avoids mean/cruel\" (15/20 personas had it). Use the pinned humor mode.\n"
+        )
+
     return f"""\
 You are inferring the **stable writing-voice core** for one synthetic user. This output is the canonical voice block. Per-app modulations are produced in a separate call and only *select* from what you produce here — they cannot introduce new stances, new templates, or new vocabulary. So this block must be coherent and self-contained.
 
@@ -1299,6 +1334,7 @@ The voice is modeled in four layers. You are responsible for layers 1, 2, 3 (and
 
 The shallow surface fields (capitalization, palette, etc.) follow from layers 1–2 and are descriptive — not mimic targets.
 
+{axes_block}
 ## Base profile
 
 ```json
