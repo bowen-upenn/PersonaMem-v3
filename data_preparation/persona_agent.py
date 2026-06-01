@@ -4919,6 +4919,12 @@ class PersonaAgent:
 
         valid_topics = {c["topic"] for c in SENSITIVE_LIFE_EVENT_TOPIC_MENU}
         try:
+            from data_preparation import diversity
+            sle_pool = diversity.assign_sle_topic_pool(
+                self.user_id,
+                [c["topic"] for c in SENSITIVE_LIFE_EVENT_TOPIC_MENU],
+                max(n_events * 3, 5),
+            )
             prompt_text = prompts.personalize_sensitive_life_event_prompt(
                 n_events=n_events,
                 topic_menu=SENSITIVE_LIFE_EVENT_TOPIC_MENU,
@@ -4931,6 +4937,7 @@ class PersonaAgent:
                 },
                 hidden_personas_brief=hp_brief,
                 top_hashtags=top_tags,
+                preferred_topics=sle_pool,
             )
             response = self._query_mini_with_retry(prompt_text)
             parsed = utils.extract_json_from_response(response) if response else None
