@@ -35,6 +35,11 @@ Per-app friend zones (from the user's own profile):
 
 Produce 10 named friends with the following constraints:
 1. Names match the user's demographic context — realistic for their region/background.
+   DIVERSITY: across the whole persona cohort these friend names collapse onto a tiny
+   pool. Do NOT use any of these OVERUSED first names: {banned_first}. Do NOT use any of
+   these OVERUSED surnames: {banned_surnames}. Pick fresh, varied, less-common names
+   (lean toward first names around the initial '{first_initial}' and surnames around
+   '{surname_initial}', loosely). The user's OWN name is "{name}" — friends must not reuse it.
 2. Relationship depths mix: ~3 "close", ~4 "acquaintance", ~3 "distant".
 3. Each friend has 1–3 shared_interests — short phrases like "NFL", "church", "ATVs".
    Draw these from the user's topical_focus (in their app personas above) so friends
@@ -55,10 +60,15 @@ Return JSON only:
 """
 
 
-def generate_friend_graph(profile: dict, llm_client) -> list[dict]:
+def generate_friend_graph(profile: dict, llm_client, user_id=None) -> list[dict]:
     """One LLM call. Returns a list of 10 friend dicts. On failure, returns a
     minimal 3-friend fallback so the rest of Extension B can still proceed.
+
+    `user_id` seeds a per-user name-freshness nudge so friend names spread
+    across the cohort (the audit found Marcus x9 / Whitaker x6 reuse).
     """
+    from data_preparation import diversity
+    nudge = diversity.name_freshness_nudge(user_id if user_id is not None else profile.get("name", "x"))
     app_personas = (profile or {}).get("app_personas", {}) or {}
     prompt = FRIEND_GRAPH_PROMPT.format(
         name=profile.get("name", "the user"),
@@ -69,6 +79,10 @@ def generate_friend_graph(profile: dict, llm_client) -> list[dict]:
         ig_zones=", ".join(app_personas.get("Instagram", {}).get("friend_zones", [])) or "n/a",
         fb_zones=", ".join(app_personas.get("Facebook", {}).get("friend_zones", [])) or "n/a",
         th_zones=", ".join(app_personas.get("Threads", {}).get("friend_zones", [])) or "n/a",
+        banned_first=", ".join(nudge["banned_first_names"]),
+        banned_surnames=", ".join(nudge["banned_surnames"]),
+        first_initial=nudge["first_initial"],
+        surname_initial=nudge["surname_initial"],
     )
     resp = llm_client.query_llm(prompt)
     parsed = extract_json_from_response(resp)

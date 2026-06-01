@@ -60,7 +60,7 @@ def run_extension_b(
     # 1) Friend graph (one LLM call) — goes into profile.json.friends[].
     if llm_client is not None and not dry_run:
         if verbose: print("[ext_b] generating friend graph …")
-        friends = generate_friend_graph(profile, llm_client)
+        friends = generate_friend_graph(profile, llm_client, user_id=user_id)
     else:
         # Dry run / no LLM: use fallback graph.
         friends = [
