@@ -4103,6 +4103,14 @@ def build_sensitive_event_instances(
 
     rng = random.Random(f"sensitive_event_eval:{user_id}:{rng_seed}")
     out: list[dict] = []
+    # Never anchor a probe before the 20%-engagement-history mark: t_test is
+    # set just after the planted evidence row, but when the sensitive episode
+    # sits at the very start of the window (early-episode users) that lands
+    # before the mark and prepare_eval_data drops every probe (observed for
+    # user 105). Clamp forward — the agent still sees the planted row (it's
+    # before the clamped t_test) and the episode is still inside its active
+    # window. No-op when the planted row is already past the mark.
+    engagement_mark = bq.engagement_history_mark(user_id)
     from data_preparation.utils import extract_json_from_response
 
     # Grab recent chatbot conversations to use as prior context.
@@ -4211,7 +4219,7 @@ def build_sensitive_event_instances(
                 continue
 
             for q_idx, user_query in enumerate(generated_queries):
-                t_test = row_ts + rng.randint(60, 600)
+                t_test = max(row_ts + rng.randint(60, 600), engagement_mark)
                 # Pick a prior conversation so this feels like a multi-turn
                 # chat, not a cold-start question.
                 prior = prior_convos[
