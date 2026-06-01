@@ -4191,39 +4191,32 @@ class PersonaAgent:
     # ------------------------------------------------------------------
 
     def _assign_education_level(self, personas: list[str]) -> str:
-        """Pick the user's highest education level via a mini-tier LLM call
-        that treats EDUCATION_DISTRIBUTION as a prior and the personas as
-        evidence. Enforces the JD/MD-adjacency constraint (no professional
-        degree unless persona signals law / medicine / dentistry / vet /
-        pharmacy). Falls back to weighted random sampling when the LLM
-        call fails or returns an out-of-vocabulary level."""
-        valid_levels = set(EDUCATION_DISTRIBUTION.keys())
-        try:
-            prompt = prompts.assign_education_level_prompt(
-                personas=personas,
-                distribution=EDUCATION_DISTRIBUTION,
-            )
-            raw = self._query_mini_with_retry(prompt)
-            if raw:
-                parsed = utils.extract_json_from_response(raw)
-                if isinstance(parsed, dict):
-                    picked = (parsed.get("level") or "").strip()
-                    if picked in valid_levels:
-                        if self.verbose:
-                            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
-                                  f"Education (LLM-picked): {picked} — "
-                                  f"{parsed.get('reason', '')}{utils.Colors.ENDC}")
-                        return picked
-                    if self.verbose:
-                        print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                              f"Education LLM returned out-of-vocab level "
-                              f"{picked!r}; falling back to random sample.{utils.Colors.ENDC}")
-        except Exception as e:
-            if self.verbose:
-                print(f"{utils.Colors.WARNING}[User {self.user_id}] "
-                      f"Education LLM call raised {type(e).__name__}: {e}; "
-                      f"falling back to random sample.{utils.Colors.ENDC}")
-        return _sample_from_distribution(EDUCATION_DISTRIBUTION)
+        """Pick the user's highest education level by a DETERMINISTIC per-user
+        weighted draw from EDUCATION_DISTRIBUTION (seeded by user_id).
+
+        The old mini-tier LLM pick was told to "default to the prior unless
+        persona signals push you elsewhere" and collapsed to the modal
+        "Bachelor's degree" for ~every user (the 2026-06 audit found 100%
+        Bachelor's across 20). A seeded draw matches the realistic population
+        mix while staying reproducible, and saves one mini call/user at scale.
+        Professional degrees (JD/MD/DDS) are re-rolled away unless persona
+        signals adjacency, preserving the old no-unjustified-professional
+        guard cheaply (a sports+cooking persona shouldn't get a JD)."""
+        from data_preparation import diversity
+        level = diversity.assign_education_level(self.user_id, EDUCATION_DISTRIBUTION)
+        if level.startswith("Professional degree"):
+            adjacency_kw = ("law", "legal", "attorney", "medic", "medical", "nurse",
+                            "doctor", "health", "dental", "dentist", "veterinar",
+                            "pharmac", "clinic", "patient")
+            blob = " ".join(personas).lower()
+            if not any(k in blob for k in adjacency_kw):
+                reduced = {k: v for k, v in EDUCATION_DISTRIBUTION.items()
+                           if not k.startswith("Professional degree")}
+                level = diversity.weighted_draw(self.user_id, reduced, salt="education_reroll")
+        if self.verbose:
+            print(f"{utils.Colors.OKBLUE}[User {self.user_id}] "
+                  f"Education (seeded draw): {level}{utils.Colors.ENDC}")
+        return level
 
     def generate_user_profile(self) -> None:
         """Generate a synthetic user profile (name, gender, race, career, education,
@@ -5584,7 +5577,12 @@ class PersonaAgent:
         if "parasocial_attachment" in present:
             return "anime_or_fandom_character"
         if "intimate_interest" in present and not has_high_acuity_active_sle:
-            return "romantic_partner"
+            # Hash-split across romantic + other intimate-compatible archetypes
+            # so romantic_partner doesn't dominate the cohort (the 2026-06 audit
+            # found 45% romantic when this returned romantic_partner for EVERY
+            # intimate_interest user). ~1/3 stay romantic; the rest spread.
+            from data_preparation import diversity
+            return diversity.intimate_interest_archetype(self.user_id)
         eligible = sorted({
             a for t in present
             for a in self._AI_STUDIO_TYPE_TO_ARCHETYPE.get(t, [])
