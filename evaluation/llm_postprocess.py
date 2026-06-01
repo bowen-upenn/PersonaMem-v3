@@ -3211,27 +3211,32 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
                 pass
 
         # Fallback: template-based (used when discovery_llm is None)
+        # NOTE: keep these fallback templates free of internal-rubric jargon
+        # ("head-zone", "tail-zone", "within tolerance", "diversification",
+        # "saturated cluster", …). They land in user-facing example_response /
+        # inferior_response text, and the no_rubric_leak audit (correctly)
+        # fails any gold that reads like internal scaffolding.
         if task_id == "over_personalization_repetition_recsys":
             example_lines = [
                 f"  1. A {primary_category} post aligned with {target_pref!r}",
-                f"  2. Another {primary_category} pick (head-zone, within tolerance)",
-                f"  3. A {cat2} post — diversification starts",
+                f"  2. Another {primary_category} pick (still fine this early)",
+                f"  3. A {cat2} post — starts varying the recommendations",
                 f"  4. A {cat3} recommendation",
-                f"  5. A {cat4} pick — fully diversified",
+                f"  5. A {cat4} pick — fully varied",
             ]
             inferior_lines = [
                 f"  1. A {primary_category} post aligned with {target_pref!r}",
                 f"  2. Another {primary_category} pick",
-                f"  3. Yet another {primary_category} post (should have diversified)",
-                f"  4. More {primary_category} (still no diversification)",
-                f"  5. Still {primary_category} (never escapes the saturated cluster)",
+                f"  3. Yet another {primary_category} post (should have varied by now)",
+                f"  4. More {primary_category} (still no variety)",
+                f"  5. Still {primary_category} (never varies away from the same topic)",
             ]
         else:
             example_lines = [
                 f"  Q1: Answer references {target_pref!r} naturally",
-                f"  Q2: Another {primary_category}-anchored response (head-zone)",
+                f"  Q2: Another {primary_category}-anchored response (still fine this early)",
                 f"  Q3: Answers the question on its own terms, no {primary_category}",
-                f"  Q4: Topic-appropriate answer, diversified",
+                f"  Q4: Topic-appropriate answer, varied",
                 f"  Q5: Independent answer, no forced preference framing",
             ]
             inferior_lines = [

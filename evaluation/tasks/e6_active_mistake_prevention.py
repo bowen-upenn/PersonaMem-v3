@@ -336,6 +336,59 @@ def _build_instance(
     }
 
 
+_DISCOVERY_MAX_ATTEMPTS = 3
+
+
+def _validate_amp_candidates(candidates: list[dict], harvested: dict) -> list[dict]:
+    """Apply signal-grounding + novelty + query-diversity gates; return up to
+    10 surviving candidates. Factored out so discovery can RETRY the LLM call
+    when a single unlucky generation grounds nothing (candidates exist but cite
+    signals that don't resolve — stochastic, not sparsity)."""
+    surviving: list[dict] = []
+    seen_summaries: set[str] = set()
+    seen_queries: set[str] = set()
+    for c in candidates:
+        if not _validate_signal_grounding(c, harvested):
+            continue
+        summary_norm = _normalize_text(c.get("mistake_summary", ""))
+        if not summary_norm:
+            continue
+        # Novelty: bail if too similar to an already-accepted summary
+        dup = False
+        for existing in seen_summaries:
+            if summary_norm == existing:
+                dup = True
+                break
+            set_a = set(summary_norm.split())
+            set_b = set(existing.split())
+            if set_a and set_b:
+                overlap = len(set_a & set_b) / max(1, min(len(set_a), len(set_b)))
+                if overlap > 0.8:
+                    dup = True
+                    break
+        if dup:
+            continue
+        # Query diversity: reject if the triggering_user_query is too similar
+        # to an already-accepted query.
+        query_norm = _normalize_text(c.get("triggering_user_query", ""))
+        if query_norm and seen_queries:
+            query_tokens = set(query_norm.split())
+            for eq in seen_queries:
+                eq_tokens = set(eq.split())
+                if query_tokens and eq_tokens:
+                    q_overlap = len(query_tokens & eq_tokens) / max(1, min(len(query_tokens), len(eq_tokens)))
+                    if q_overlap > 0.6:
+                        dup = True
+                        break
+        if dup:
+            continue
+        seen_summaries.add(summary_norm)
+        if query_norm:
+            seen_queries.add(query_norm)
+        surviving.append(c)
+    return surviving[:10]
+
+
 def build_e6_active_mistake_prevention(
     bq: BackendQuery,
     user_id: str,
@@ -395,73 +448,36 @@ def build_e6_active_mistake_prevention(
         chatbot_recent_text=chatbot_text,
         hidden_personas_text=hidden_text,
     )
-    try:
-        response = llm_client.query_llm(prompt)
-    except Exception as exc:
-        print(f"[e6] user {user_id}: LLM call failed: {exc}")
-        return []
-    if not response:
-        return []
-
-    # ---- parse ----
-    candidates = _parse_candidates_tolerant(response, user_id)
-    if not candidates:
-        return []
-
-    if not candidates:
-        return []
-
-    # ---- validation gates ----
+    # ---- discovery + validation with coverage-driven retry ----
+    # A single unlucky generation can ground 0 candidates (they exist but cite
+    # signals that don't resolve) — stochastic, not sparsity. Retry the
+    # generation a few times before giving up so a user isn't randomly left
+    # with 0 AMP instances (observed on the parallel-run for users 105 / 26).
     harvested = {"t_anchor": t_anchor}
     surviving: list[dict] = []
-    seen_summaries: set[str] = set()
-    seen_queries: set[str] = set()
-    for i, c in enumerate(candidates):
-        if not _validate_signal_grounding(c, harvested):
+    last_n_candidates = 0
+    for attempt in range(_DISCOVERY_MAX_ATTEMPTS):
+        try:
+            response = llm_client.query_llm(prompt)
+        except Exception as exc:
+            print(f"[e6] user {user_id}: LLM call failed (attempt {attempt + 1}): {exc}")
             continue
-        summary_norm = _normalize_text(c.get("mistake_summary", ""))
-        if not summary_norm:
+        if not response:
             continue
-        # Novelty: bail if too similar to an already-accepted summary
-        dup = False
-        for existing in seen_summaries:
-            if summary_norm == existing:
-                dup = True
-                break
-            set_a = set(summary_norm.split())
-            set_b = set(existing.split())
-            if set_a and set_b:
-                overlap = len(set_a & set_b) / max(1, min(len(set_a), len(set_b)))
-                if overlap > 0.8:
-                    dup = True
-                    break
-        if dup:
+        candidates = _parse_candidates_tolerant(response, user_id)
+        if not candidates:
             continue
-        # Query diversity: reject if the triggering_user_query is too
-        # similar to an already-accepted query (catches repetitive
-        # "what time should I leave" / "can I squeeze X in" patterns).
-        query_norm = _normalize_text(c.get("triggering_user_query", ""))
-        if query_norm and seen_queries:
-            query_tokens = set(query_norm.split())
-            for eq in seen_queries:
-                eq_tokens = set(eq.split())
-                if query_tokens and eq_tokens:
-                    q_overlap = len(query_tokens & eq_tokens) / max(1, min(len(query_tokens), len(eq_tokens)))
-                    if q_overlap > 0.6:
-                        dup = True
-                        break
-        if dup:
-            continue
-        seen_summaries.add(summary_norm)
-        if query_norm:
-            seen_queries.add(query_norm)
-        surviving.append(c)
+        last_n_candidates = len(candidates)
+        surviving = _validate_amp_candidates(candidates, harvested)
+        if surviving:
+            break
+        if attempt < _DISCOVERY_MAX_ATTEMPTS - 1:
+            print(f"[e6] user {user_id}: 0/{last_n_candidates} candidates survived "
+                  f"validation (attempt {attempt + 1}/{_DISCOVERY_MAX_ATTEMPTS}); retrying")
 
-    # ---- cap at 10 pairs ----
-    surviving = surviving[:10]
     if not surviving:
-        print(f"[e6] user {user_id}: 0 pairs survived validation "
-              f"(had {len(candidates)} raw candidates)")
+        print(f"[e6] user {user_id}: 0 pairs survived validation after "
+              f"{_DISCOVERY_MAX_ATTEMPTS} attempts (last had {last_n_candidates} raw candidates)")
         return []
 
     # ---- emit instances ----

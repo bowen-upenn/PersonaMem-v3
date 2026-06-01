@@ -688,15 +688,22 @@ def prepare_one(
 
     # Sensitive-event coverage check: for `over_personalization_sensitive_event`
     # instances, require that the sensitive episode has been referenced (via
-    # hashtag overlap or topic keyword) in at least one chatbot or ai_studio
-    # event BEFORE T_test. Without that, the agent has no signal to surface
-    # at test time, so the test is vacuous.
+    # hashtag overlap or topic keyword) in at least one event BEFORE T_test.
+    # Without that, the agent has no signal to surface at test time, so the
+    # test is vacuous.
+    #
+    # The episode's evidence is planted as implicit_positive rows on a SOCIAL
+    # app (Step 21b), not on chatbot/ai_studio — so the coverage scan must
+    # include the social apps, or it drops ~half the cohort's sensitive-event
+    # instances even though the agent CAN see the signal (it sees all-app
+    # history at test time). Social events carry the reference in `content`
+    # (title/caption); chatbot/ai_studio carry it in `conversation`.
     sensitive_in_pairs = any(
         tt == "over_personalization_sensitive_event" for tt, _, _ in pairs
     )
     if sensitive_in_pairs:
         chat_ai_events: list[tuple[int, set, str]] = []
-        for app in ("chatbot", "ai_studio"):
+        for app in ("chatbot", "ai_studio", "instagram", "facebook", "threads"):
             path = backend_dir / user_id / f"{app}.json"
             if not path.exists():
                 continue
@@ -712,10 +719,16 @@ def prepare_one(
                         for h in (ev.get("source_hashtags") or [])
                     }
                     conv = ev.get("conversation") or []
-                    text_blob = " ".join(
-                        (t.get("content") or "").lower()
-                        for t in conv if isinstance(t, dict)
-                    )
+                    if conv:
+                        text_blob = " ".join(
+                            (t.get("content") or "").lower()
+                            for t in conv if isinstance(t, dict)
+                        )
+                    else:
+                        c = ev.get("content") or {}
+                        text_blob = (
+                            (c.get("title") or "") + " " + (c.get("caption") or "")
+                        ).lower()
                     chat_ai_events.append((ets, hashtags, text_blob))
             except (json.JSONDecodeError, OSError):
                 continue
@@ -751,8 +764,8 @@ def prepare_one(
         pairs = new_pairs
         if dropped_no_cov and verbose:
             print(f"[{user_id}] sensitive-event coverage: dropped "
-                  f"{dropped_no_cov} instance(s) without prior chatbot / "
-                  f"ai_studio reference")
+                  f"{dropped_no_cov} instance(s) without any prior cross-app "
+                  f"reference (social/chatbot/ai_studio)")
 
     # Format-correctness verification:
     #   (a) every instance must have a non-empty inferior_response
