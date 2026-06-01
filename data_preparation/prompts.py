@@ -539,10 +539,35 @@ def generate_user_profile_prompt(
     gender_orientation: str,
     race_ethnicity: str,
     education_level: str,
+    big_five_assigned: dict | None = None,
+    career_sector: str = "",
+    name_nudge: dict | None = None,
 ) -> str:
     """Build a prompt that generates a synthetic user profile from final personas."""
 
     personas_list = "\n".join(f"- {p}" for p in personas)
+
+    bf_block = ""
+    if big_five_assigned:
+        bf_lines = "\n".join(f"  - {t}: {lvl}" for t, lvl in big_five_assigned.items())
+        bf_block = (
+            "- **Big Five (pre-assigned — use these VERBATIM, do not re-rate)**:\n"
+            + bf_lines + "\n"
+        )
+    sector_block = (
+        f"- **Career sector (pre-assigned — the career MUST fall in this sector)**: {career_sector}\n"
+        if career_sector else ""
+    )
+    name_block = ""
+    if name_nudge:
+        name_block = (
+            "- **Name freshness (avoid the cohort's overused-name collapse)**: prefer a first name "
+            f"around the initial '{name_nudge.get('first_initial','')}' and a surname around "
+            f"'{name_nudge.get('surname_initial','')}' (loosely — pick what's culturally right, but "
+            "steer off the default). Do NOT use any of these OVERUSED first names: "
+            f"{', '.join(name_nudge.get('banned_first_names', []))}. Do NOT use any of these "
+            f"OVERUSED surnames: {', '.join(name_nudge.get('banned_surnames', []))}.\n"
+        )
 
     return f"""\
 You are creating a realistic synthetic user profile based on inferred persona traits.
@@ -551,7 +576,7 @@ You are creating a realistic synthetic user profile based on inferred persona tr
 - **Gender & Sexual Orientation**: {gender_orientation}
 - **Race/Ethnicity**: {race_ethnicity}
 - **Highest education level**: {education_level}
-
+{bf_block}{sector_block}{name_block}
 ## Inferred Persona Traits
 {personas_list}
 
@@ -559,10 +584,10 @@ You are creating a realistic synthetic user profile based on inferred persona tr
 
 Generate a synthetic user profile that is **consistent with some but not all** of the above personas. Rules:
 
-1. **Name**: Choose a culturally appropriate first and last name for the assigned gender and race/ethnicity. Be diverse in naming — avoid the most common/default names.
-2. **Career**: Pick a realistic career. It can relate to some personas but does NOT need to satisfy all of them. Surprising or unconventional career choices are welcome. The career should be plausible given the assigned education level (don't pair a PhD with a job that wouldn't typically require one, unless the persona signals a career change or an over-credentialed-for-the-role situation).
-3. **Education**: Use the assigned highest education level VERBATIM as the level (e.g. "Master's degree in X"). You only choose the FIELD OF STUDY (and optionally the school type), not the level. Field should fit the persona traits and feed into the career.
-4. **Big Five personality**: Rate each dimension as "low", "medium", or "high". Let the personas inform this but do NOT mechanically map every persona to a trait. Some personality dimensions should be unrelated to the personas.
+1. **Name**: Choose a culturally appropriate, DISTINCTIVE first and last name for the assigned gender and race/ethnicity. Honor the name-freshness guidance above — avoid the overused names and lean toward the suggested initials. A real, varied surname (not a stock one).
+2. **Career**: Pick a realistic career WITHIN the pre-assigned career sector above. It can relate to some personas but does NOT need to satisfy all of them; an unconventional role within the sector is welcome. The career must be plausible given the assigned education level (don't pair a PhD with a job that wouldn't typically require one, unless the persona signals a career change or over-credentialed-for-the-role).
+3. **Education**: Use the assigned highest education level VERBATIM as the level (e.g. "Master's degree in X"). You only choose the FIELD OF STUDY (and optionally the school type), not the level. Field should fit the persona traits + career sector.
+4. **Big Five personality**: Use the pre-assigned Big Five levels above VERBATIM. (They are fixed for cohort diversity; do not re-rate them from the personas.)
 5. **Bio**: Write exactly 3-5 sentences. Paint a vivid picture of this person's daily life. Reference some personas naturally but leave others unmentioned. Include at least one detail that is surprising or not directly derivable from the personas.
 6. **Diversity**: Actively avoid stereotypical combinations. A {race_ethnicity} person who is {gender_orientation} can have any career, any hobby, any personality. Do not default to the most "expected" profile — be creative and realistic.
 

@@ -109,3 +109,74 @@ INTIMATE_ARCHETYPE_SPLIT = [
 
 def intimate_interest_archetype(user_id) -> str:
     return user_rng(user_id, salt="intimate_archetype").choice(INTIMATE_ARCHETYPE_SPLIT)
+
+
+# ---- Big Five (break the personality collapse → MBTI follows) -----------
+# Audit: 7 distinct big_five signatures / 20, modal high-O/high-C/med-E/med-A/
+# low-N in 9/20, ALL high-openness; MBTI 70% I-S-J, 100% introvert. The LLM
+# rates the "interesting open conscientious introvert" by default. Draw each
+# trait independently from a spread distribution so the cohort covers the
+# personality space (and MBTI, inferred downstream from big_five, spreads too).
+_TRAIT_LEVELS = {"low": 0.30, "medium": 0.40, "high": 0.30}
+
+
+def assign_big_five(user_id) -> dict:
+    return {
+        trait: weighted_draw(user_id, _TRAIT_LEVELS, salt=f"bf_{trait}")
+        for trait in ("openness", "conscientiousness", "extraversion",
+                      "agreeableness", "neuroticism")
+    }
+
+
+# ---- Career sector (break the civic/infrastructure skew) ----------------
+# Audit: careers skewed municipal/construction/coordinator/analyst (and 100%
+# Bachelor's). Pin a per-user sector so the cohort spans the economy. The LLM
+# still invents the specific role within the sector.
+CAREER_SECTORS = [
+    "healthcare / caregiving", "education / academia", "skilled trades / manual",
+    "arts / entertainment / media", "food service / hospitality",
+    "retail / sales", "finance / accounting", "law / public policy",
+    "technology / engineering", "science / research", "agriculture / environment",
+    "transportation / logistics", "construction / infrastructure",
+    "nonprofit / social services", "small business / self-employed / gig",
+    "government / civic", "manufacturing / industrial", "real estate / property",
+    "fitness / wellness", "beauty / personal care",
+]
+
+
+def assign_career_sector(user_id) -> str:
+    return user_rng(user_id, salt="career_sector").choice(CAREER_SECTORS)
+
+
+# ---- Names (break the small-pool reuse: Marcus×9, Whitaker×6) -----------
+# Audit: persona + friend names reuse a tiny pool. We ban the observed
+# overused names and hand the generator a per-user "freshness nudge" so it
+# samples widely instead of returning its modal favorites. A driver may ALSO
+# pass an explicit `used_names` blocklist (accumulated across the cohort) for
+# hard de-duplication of the persona's OWN name.
+OVERUSED_FIRST_NAMES = [
+    "Marcus", "Kevin", "Daniel", "Rachel", "Jason", "Tasha", "Keisha", "Emily",
+    "Priya", "Andre", "Darius", "Brian", "Andrew", "Trevor", "Malik", "Maya",
+    "Jamal", "Grace", "Hannah", "Caleb", "Derek", "Mei", "Aaliyah", "Jordan",
+]
+OVERUSED_SURNAMES = [
+    "Whitaker", "Coleman", "Bennett", "Patel", "Miller", "Price", "Carter",
+    "Chen", "Brooks", "Ellington", "Vale", "Watkins", "Monroe", "Freeman",
+    "Simmons", "Johnson", "Wong", "Ramirez", "Martinez", "Kim", "Nguyen",
+    "Liang", "Nair",
+]
+# Letter buckets the generator is nudged toward (spreads the alphabet so the
+# cohort doesn't pile onto M/K/D/J first names and common surnames).
+_ALPHA = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+
+def name_freshness_nudge(user_id) -> dict:
+    """Per-user nudge: preferred initials + a reminder to avoid overused names.
+    Used by both the persona-profile name and the friend-graph names."""
+    rng = user_rng(user_id, salt="name_nudge")
+    return {
+        "first_initial": rng.choice(_ALPHA),
+        "surname_initial": rng.choice(_ALPHA),
+        "banned_first_names": OVERUSED_FIRST_NAMES,
+        "banned_surnames": OVERUSED_SURNAMES,
+    }

@@ -4249,11 +4249,17 @@ class PersonaAgent:
         # to weighted random sampling if the mini-tier call fails.
         sampled_education_level = self._assign_education_level(personas_summary)
 
+        # Deterministic per-user diversity assignments (break the cohort
+        # personality/career/name collapses the audit found).
+        from data_preparation import diversity
         prompt = prompts.generate_user_profile_prompt(
             personas=personas_summary,
             gender_orientation=sampled_gender_orientation,
             race_ethnicity=sampled_race,
             education_level=sampled_education_level,
+            big_five_assigned=diversity.assign_big_five(self.user_id),
+            career_sector=diversity.assign_career_sector(self.user_id),
+            name_nudge=diversity.name_freshness_nudge(self.user_id),
         )
 
         response = self._query_llm_with_retry(prompt)
