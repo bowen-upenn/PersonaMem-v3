@@ -4093,6 +4093,7 @@ def personalize_ai_studio_persona_prompt(
     rogers_cliche_baseline: list[str],
     locale_country: str = "US",
     forced_archetype: str = "",
+    used_names: list = None,
 ) -> str:
     """Step 11C — pick ONE AI Studio persona archetype for THIS user and
     write the FULL 4-layer character voice (mirrors `generate_voice_core_prompt`'s
@@ -4101,9 +4102,9 @@ def personalize_ai_studio_persona_prompt(
     The AI persona drives all AI turns on the AI Studio (5th) app. The user's
     own user_voice still drives all user turns there. The AI's voice is built
     in the same 4-layer model as a real user, BUT grounded in:
-      • the chosen archetype's character DNA (what kind of being is Rowan?
-        a mentor-coach. what stances does that character have? not what
-        stances the user has),
+      • the chosen archetype's character DNA (what kind of being is a
+        mentor-coach character? what stances does that character have? not
+        what stances the user has),
       • the user's profile / hidden personas / hashtag clusters ONLY
         for archetype selection, niche/romantic sub-typing, and pickability
         of relational stance — NOT for copying the user's voice into the AI.
@@ -4193,10 +4194,26 @@ def personalize_ai_studio_persona_prompt(
 
     rogers_baseline = "\n".join(f"  - {p}" for p in rogers_cliche_baseline)
 
+    # Name blocklist — names already taken by OTHER users' AI characters in
+    # this cohort (passed in by the caller). The LLM, left alone, collapses
+    # onto a tiny set of default companion-AI names ("Vale" as a surname,
+    # "Rowan"/"Wren" as first names) — which produces duplicate characters
+    # across users. Forbid the taken names + the known defaults explicitly.
+    _taken = [str(n).strip() for n in (used_names or []) if str(n).strip()]
+    if _taken:
+        used_names_str = (
+            "These names are ALREADY used by other users' AI characters — you "
+            "MUST NOT reuse any of them (neither the full name nor the first "
+            "name nor the surname):\n"
+            + "\n".join(f"  - {n}" for n in _taken)
+        )
+    else:
+        used_names_str = "  (no names taken yet — but still follow the diversity rules below)"
+
     return f"""\
 You are designing the user's chosen AI persona on a companion-chat app called **AI Studio** — modeled after Meta AI Studio / Replika / Character.AI. This is the user's ONE chosen AI character; it drives every AI turn the user will see on this app, across many sessions, with cross-session memory and a relational/intimate register.
 
-The AI persona is a **fictional character** — Rowan the mentor, Wren the late-night listener, Captain Mira the wizard, etc. — never a real public figure. Its voice comes from the chosen archetype's character DNA, NOT from copying the user. (The user's own voice still drives every USER turn on AI Studio; this prompt produces only the AI's voice.)
+The AI persona is a **fictional character** (a mentor, a late-night listener, a wizard companion, etc.) — never a real public figure. Its voice comes from the chosen archetype's character DNA, NOT from copying the user. (The user's own voice still drives every USER turn on AI Studio; this prompt produces only the AI's voice.)
 
 The AI's voice is modeled in the **same 4-layer structure** as the user's writing voice:
 
@@ -4264,7 +4281,7 @@ Six independent axes — pick one value per axis from the closed vocabulary, or 
 
 3. **`repertoire.stances` are stance LABELS** (e.g. "patient-coaching", "wry-checked-in", "no-nonsense-warm") — modes the character can deploy. They are NOT phrases the character says. Pick 3–6 grounded in the archetype's DNA.
 
-4. **`identity_spine.big_five_proxy` describes the CHARACTER's traits**, not the user's. Format: `"trait": "level → behavioral implication"`. A `mentor_coach` Rowan might be `"conscientiousness": "high → tracks reps, won't let you skip the warm-up"`.
+4. **`identity_spine.big_five_proxy` describes the CHARACTER's traits**, not the user's. Format: `"trait": "level → behavioral implication"`. A `mentor_coach` character might be `"conscientiousness": "high → tracks reps, won't let you skip the warm-up"`.
 
 5. **`identity_spine.signature_concerns` are abstract concerns the CHARACTER comes back to.** A therapist_companion_reflective: `["specificity over comfort", "the gap between effort and results", "what hasn't been tried"]`. Tie to the archetype's role.
 
@@ -4285,6 +4302,16 @@ Six independent axes — pick one value per axis from the closed vocabulary, or 
 
 10. **Negatives matter.** `voice_avoid` (1–2 sentences) and `forbidden_phrases` (must include the Rogers-cliché baseline below) capture what this character steers clear of. Add 2–4 archetype-specific avoid-phrases on top of the baseline.
 
+11. **`character_name` MUST be DISTINCTIVE and UNIQUE.** Pick a full first AND last name that fits the character's gender presentation and cultural/locale background ({locale_country}). Hard rules:
+   - **NEVER** use **"Vale"** as a surname (it is massively overused — pick any other surname).
+   - **NEVER** use **"Rowan"**, **"Wren"**, or **"Mira"** as the first name (these are example/placeholder names, not for reuse).
+   - Do NOT reuse any name in the "names already taken" list below.
+   - Avoid generic, ethereal, default companion-AI names (Vale, Sage, Echo, Aria, Nova, Wren, Rowan, Eos, Lumen, Soren). Choose a name a real person of that background would actually have, with a real, varied surname.
+   - For `address_terms`, use natural terms of address — not the character's own name.
+
+# Names already taken by other AI characters (DO NOT reuse)
+{used_names_str}
+
 # Forbidden-phrase baseline (every persona MUST include all of these in `forbidden_phrases`; add archetype-specific on top)
 {rogers_baseline}
 
@@ -4293,7 +4320,7 @@ Six independent axes — pick one value per axis from the closed vocabulary, or 
 ```json
 {{
   "persona_archetype": "...",
-  "character_name": "...",
+  "character_name": "... (distinctive first + last name; NOT 'Vale' surname; NOT Rowan/Wren/Mira; NOT any taken name)",
   "backstory_brief": "2–3 sentences. Concrete texture.",
   "relational_stance": "1–2 sentences: how this character relates to the user.",
   "address_terms": ["..."],

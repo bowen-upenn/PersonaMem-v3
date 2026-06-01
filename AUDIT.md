@@ -106,6 +106,7 @@ Mandatory checks (write a single Python script using `csv.DictReader` + `csv.fie
 9. **Compose-task length distribution**: for each compose task type, compute `min/p25/median/p75/max` word counts and `count_under_floor`.
 10. **Phrase variety on sensitive_event queries**: count rows where `user_query` starts with stock fillers (e.g. "low-key way to", "without making it"). Flag if >10% of any user's sensitive_event rows share an opener.
 11. **Cross-persona diversity** (runs across ALL personas, the load-bearing check before scaling): tally `profile.json::ai_studio_persona.persona_archetype` across the cohort — no single archetype should dominate (>~40% is a routing regression; the LLM left unconstrained collapses onto `mentor_coach`/`older_sibling_figure`). Archetypes are deterministically routed from hidden-persona signals by `persona_agent._route_ai_studio_archetype` (distinctive rare signals → distinctive archetypes; hashed spread for the rest), so a collapsed distribution means the router was bypassed. Also spot-check demographic spread (gender, race_ethnicity, career) and `user_voice` sameness (emoji palette, capitalization, signature phrases) across personas — at 200× scale, voice/archetype sameness is the dominant quality risk.
+    - **AI-character name collision (`ai_studio_persona.character_name`)**: tally surnames and full names across the cohort. The LLM left unconstrained collapses onto a tiny default set — most notably **"Vale" as a surname** (observed 9/20) and the prompt's own example first names **"Rowan"/"Wren"/"Mira"** (→ duplicate "Rowan Vale" across multiple users). Detection: `Counter(name.split()[-1] for ...)` for surnames + `Counter(full_name)` for exact dups; any surname >~2/cohort or any repeated full name is a finding. The name is woven into the conversation bodies of `ai_studio.json`, so a collision is a visible "two users have the same AI companion" artifact, not just metadata. Guard: the Step-11C prompt (`personalize_ai_studio_persona_prompt`) now forbids "Vale"/"Rowan"/"Wren"/"Mira" and takes a `used_names` blocklist; targeted re-rolls use `scripts/rerun_ai_studio.py`, which threads a shared blocklist across users and enforces unique first+surname per character (re-rolls Step 11C + 18b only, reusing all other backend state). NOTE: `romantic_partner` over-concentration is NOT automatically a defect — the `romantic_specifier` axes (gender_presentation / sexuality_orientation / body_role_coding) differentiate them; check those vary before flagging. `relational_dynamic`/`aesthetic_vibe` mildly skewing + `explicitness_band=sensual` everywhere are by-design (erotic only on explicit adult signal).
 
 ## Existing automated checks — what the pipeline already enforces
 
@@ -293,6 +294,24 @@ done
 # No un-substituted placeholders or known leaks
 grep -E '\{privacy_rubric_line\}|\{surfaced_suffix\}|\{warmup_window\}|\{monitored_start\}|\{head_window\}|\{tail_start\}|\{target_pref\}|\{gold_idx\}|n_allowed_repetitions|token Jaccard|\(none identified\)' \
   backend/*/test.json | wc -l   # should be 0
+
+# AI-character name diversity: no overused surname (>2) and no duplicate full
+# names across the cohort (personas discovered dynamically).
+python3 -c "
+import json,glob,collections
+full=collections.Counter(); sur=collections.Counter()
+for p in glob.glob('backend/*/profile.json'):
+    if '/_' in p: continue
+    nm=(json.load(open(p)).get('ai_studio_persona') or {}).get('character_name','')
+    if not nm: continue
+    full[nm]+=1
+    parts=nm.split()
+    if len(parts)>1: sur[parts[-1]]+=1
+dup=[ (n,c) for n,c in full.items() if c>1 ]
+hot=[ (s,c) for s,c in sur.items() if c>2 ]
+print('duplicate full names:', dup or 'none')
+print('overused surnames (>2):', hot or 'none')   # both should be empty
+"
 
 # Compose-task word floor (personas discovered dynamically)
 python3 -c "

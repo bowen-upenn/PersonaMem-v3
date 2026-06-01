@@ -5725,6 +5725,7 @@ class PersonaAgent:
                 rogers_cliche_baseline=ROGERS_CLICHE_BLOCKLIST,
                 locale_country=locale_country,
                 forced_archetype=routed_archetype,
+                used_names=list(getattr(self, "ai_studio_name_blocklist", []) or []),
             )
             response = self._query_mini_with_retry(prompt_text)
             parsed = utils.extract_json_from_response(response) if response else None

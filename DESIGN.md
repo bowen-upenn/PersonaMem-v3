@@ -823,6 +823,10 @@ Every non-Chatbot, non-AI-Studio, non-stub event gets a `content_type` (`text` /
 
 AI Studio is the fifth app — a Character.AI / Replika / Meta-AI-Studio-style companion-chat surface. Like Chatbot, events are pure conversation: no `content_type`, no `content` body, `interaction_format.action = "unknown"`. Unlike Chatbot, the AI side has a persistent character (chosen archetype + voice) and the user–AI relationship deepens across sessions.
 
+### AI character identity + naming guard (Step 11C)
+
+The character's archetype is deterministically routed from the user's hidden-persona signals (`_route_ai_studio_archetype`) so the cohort spreads across the 10-archetype catalog instead of collapsing onto `mentor_coach`. The `character_name` is authored by the LLM, but left unconstrained it collapses onto a tiny default set — "Vale" as a surname and the prompt's example first names ("Rowan"/"Wren"/"Mira") — producing duplicate AI characters across users. The Step-11C prompt now (a) carries no reusable example names, (b) hard-forbids "Vale"/"Rowan"/"Wren"/"Mira" and other generic companion-AI names, and (c) accepts a `used_names` blocklist of names already taken by other users' characters. For targeted repair without a full pipeline re-run, `scripts/rerun_ai_studio.py` re-rolls **only** Step 11C + 18b for affected users (reusing all other backend state via `load_from_backend`), threading a shared blocklist across users and enforcing unique first+surname per character. The name is woven into the conversation bodies, so 18b must regenerate alongside 11C.
+
 ### SPT (Social Penetration Theory; Altman & Taylor, 1973)
 
 A four-stage model of how a relationship deepens through progressive self-disclosure — early conversations stay on the surface, deeper layers unlock as trust grows. Used here to pace what topics the AI companion is allowed to engage with as the user keeps returning.
