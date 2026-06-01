@@ -243,6 +243,9 @@ Three durable logs per regen tell you what was lost:
 6. **Cross-row diversity collapse**: sensitive-event queries all start with the same opener; compose-tasks all hit exactly 100 words to clear the floor. Each row in isolation looks fine.
 7. **Tool-call schema drift**: the gate accepts `{"tool":..., "args":...}` shape, but the runner expects `{"name":..., "input":...}` — both pass build time; eval breaks silently.
 8. **Voice drift across rows**: each row passes voice_match in isolation; reading 5 rows in a row, the user's idiolect varies more than it should.
+9. **t_test anchor vs. post-build gate interaction**: a builder anchors its `t_test` at a fixed offset (e.g. `t_now - RECENT_EVIDENCE_DAYS`), then a post-build drop (`prepare_eval_data`'s 20%-engagement-history gate) silently removes every instance whose `t_test` lands before its threshold. For short (~8-day) windows the two collide and a whole task type drops to 0 for ~40% of users — and the COVERAGE-CHECK guard stays quiet because the instances existed at `capped_buckets` time (they were gated out *later*). Detection: per-task per-user count of 0 where the persona clearly has the prerequisite data; cross-check the builder's `t_test` against `bq.engagement_history_mark(uid)`. Fixed for hidden_persona_recommendation/implicit_qa by clamping `t_test >= engagement_history_mark`.
+10. **Stochastic discovery-validation drops**: discovery-LLM builders with strict output validation (exact slate size, signal-grounding, word bands) + few retries drop ALL candidates for a user on an unlucky generation — so the SAME user can have a task type one run and 0 the next (e.g. `active_mistake_prevention` "N raw candidates, 0 survived validation"). Detection: re-run the single builder in isolation; if it populates, the parallel-run 0 was variance, not sparsity. Mitigation: prefer sequential / low-parallel re-runs for discovery-heavy builds; consider coverage-driven retry.
+11. **Internal jargon in LLM-authored gold**: an `example_response` / rubric occasionally echoes scaffolding vocabulary from its own prompt (`head-zone`, `tail-zone`). Rare (LLM artifact, not template), so it slips a structural check — only a text-field jargon scan over user-facing fields catches it (see the verification command; do NOT grep raw JSON, since `n_allowed_repetitions` is a legitimate `instance_full` key).
 
 ## Severity rubric
 
@@ -291,9 +294,26 @@ for u in $(ls backend | grep -vE '^_'); do
   grep -c context_shift "backend/$u/test.json"
 done
 
-# No un-substituted placeholders or known leaks
-grep -E '\{privacy_rubric_line\}|\{surfaced_suffix\}|\{warmup_window\}|\{monitored_start\}|\{head_window\}|\{tail_start\}|\{target_pref\}|\{gold_idx\}|n_allowed_repetitions|token Jaccard|\(none identified\)' \
+# No un-substituted braced placeholders anywhere
+grep -E '\{privacy_rubric_line\}|\{surfaced_suffix\}|\{warmup_window\}|\{monitored_start\}|\{head_window\}|\{tail_start\}|\{target_pref\}|\{gold_idx\}' \
   backend/*/test.json | wc -l   # should be 0
+
+# Internal-jargon / empty-GT leaks in USER-FACING TEXT only (NOT structured keys —
+# `n_allowed_repetitions` is a legitimate instance_full field, so grepping raw JSON
+# false-positives on the key; scope to text fields).
+python3 -c "
+import json, glob
+JARGON = ['n_allowed_repetitions', 'token Jaccard', '(none identified)', 'head-zone', 'tail-zone', 'persona-aligned hashtags']
+TEXT_FIELDS = ('query_text','user_query','example_response','inferior_response','rubric','groundtruth_preference','resonance_signal','user_grounding')
+hits = 0
+for p in glob.glob('backend/*/test.json'):
+    if '/_' in p: continue
+    for r in json.load(open(p)):
+        for k in TEXT_FIELDS:
+            v = r.get(k)
+            if isinstance(v, str) and any(j in v for j in JARGON): hits += 1
+print('jargon-in-text leaks:', hits)   # should be 0
+"
 
 # AI-character name diversity: no overused surname (>2) and no duplicate full
 # names across the cohort (personas discovered dynamically).
