@@ -22,6 +22,11 @@
   ```
   Then tell the user: `tmux attach -t persona115` (read-only: add `-r`). Detach with `Ctrl-b d`.
 
+## Cleanup of Logs & Backups
+- Regularly propose cleaning up unused/stale files that accumulate during work: regen/eval logs (e.g. under `/tmp/persona_regen/`, `/tmp/eval_regen/`), one-off backup directories (e.g. `backend/_v1_backup/`), scratch dumps, and superseded temp artifacts.
+- **NEVER `rm` (or otherwise delete/overwrite) log or backup files without explicitly asking the user first and receiving a clear "yes".** List exactly what will be removed (paths + rough sizes) and why it is safe to delete, then wait for approval. This applies even when cleanup is mentioned in the same message as other instructions — ask before deleting.
+- Stale logs are a known audit footgun (e.g. tracebacks in old `*_eval.stderr` files misread as live errors); flag them for cleanup rather than silently leaving or silently removing them.
+
 ## Design Document
 - Whenever you make changes to the pipeline design (new features, changed thresholds, altered logic, new steps, etc.), update `DESIGN.md` accordingly. Keep it clean and concise — match the existing style.
 
