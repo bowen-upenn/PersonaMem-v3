@@ -109,10 +109,10 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--run_dir", required=True,
                    help="Output directory for results.csv + writes.jsonl + summary files")
     p.add_argument("--mode",
-                   choices=("llm_longctx", "mcp_agent", "agent_tools"),
+                   choices=("llm_longctx", "mcp_agent", "agent_tools", "memory"),
                    default="llm_longctx")
     p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"),
-                   help="Baseline LLM model for llm_longctx mode")
+                   help="Baseline LLM model for llm_longctx / memory modes")
     p.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"),
                    help="Claude Code subagent model (haiku/sonnet/opus)")
     p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.5"))
@@ -124,6 +124,15 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--enable_llm_judge", action=argparse.BooleanOptionalAction, default=True,
                    help="Run the LLM judge for pr_* dimensions (default: on). --no-enable_llm_judge to disable.")
     p.add_argument("--context_budget", type=int, default=None)
+    # --- memory mode knobs (only used when --mode memory) ---
+    p.add_argument("--memory_token_cap", type=int, default=2000,
+                   help="Max tokens for the consolidated memory injected per query (memory mode)")
+    p.add_argument("--memory_chunk_k", type=int, default=40,
+                   help="Max events per memory-build LLM call (memory mode)")
+    p.add_argument("--memory_builder_model", default=None,
+                   help="Model that builds the memory (memory mode). Defaults to --model.")
+    p.add_argument("--memory_builder_temperature", type=float, default=0.0,
+                   help="Temperature for memory-build calls (memory mode; default 0.0 for determinism)")
     p.add_argument("--limit", type=int, default=None,
                    help="Cap total query rows (for quick smoke tests)")
     p.add_argument("--resume", action="store_true",
@@ -375,7 +384,7 @@ def _run_one_in_worker(payload: dict) -> dict:
             rate_limit_per_min=payload["per_worker_rate_limit"],
         )
     baseline = None
-    if payload["mode"] == "llm_longctx" and not payload["dry_run"]:
+    if payload["mode"] in ("llm_longctx", "memory") and not payload["dry_run"]:
         from query_llm import QueryLLM
         baseline = QueryLLM(
             {"models": {"llm_model": payload["model_name"]}},
@@ -383,10 +392,16 @@ def _run_one_in_worker(payload: dict) -> dict:
         )
 
     bq = BackendQuery(payload["backend_dir"])
+    # Memory mode: the per-user memory ledger was prebuilt in the parent and
+    # shipped as a picklable {T_test: memory_str} dict — attach it (no rebuild,
+    # no LLM calls in the worker).
+    worker_cache = SnapshotCache(mode=payload["mode"])
+    if payload["mode"] == "memory":
+        worker_cache.attach_memory_checkpoints(payload.get("memory_checkpoints"))
     ctx = DispatchContext(
         user_id=user_id, bq=bq,
         llm_client=baseline, judge_client=judge,
-        mode=payload["mode"], snapshot_cache=SnapshotCache(),
+        mode=payload["mode"], snapshot_cache=worker_cache,
         model_name=payload["model_name"],
         claude_model=payload["claude_model"],
         context_budget=payload["context_budget"],
@@ -436,11 +451,13 @@ def _run_one_in_worker(payload: dict) -> dict:
 
 
 def _build_payload(row: dict, args: argparse.Namespace, run_dir: Path,
-                   per_worker_rate_limit: int) -> dict:
+                   per_worker_rate_limit: int,
+                   memory_checkpoints: dict | None = None) -> dict:
     """Pack per-row args for `_run_one_in_worker` over IPC.
 
     Only picklable primitives — no live BackendQuery / SnapshotCache /
-    QueryLLM clients (each worker constructs its own).
+    QueryLLM clients (each worker constructs its own). `memory_checkpoints`
+    (memory mode) is a plain {T_test: memory_string} dict, fully picklable.
     """
     return {
         "row": row,
@@ -455,6 +472,7 @@ def _build_payload(row: dict, args: argparse.Namespace, run_dir: Path,
         "context_budget": args.context_budget,
         "dry_run": args.dry_run,
         "per_worker_rate_limit": per_worker_rate_limit,
+        "memory_checkpoints": memory_checkpoints,
     }
 
 
@@ -594,7 +612,65 @@ def main() -> int:
     # Shared dispatch objects
     bq = BackendQuery(args.backend_dir)
     llm_client, judge_client = _build_llm_clients(args)
-    snapshot_cache = SnapshotCache()
+    snapshot_cache = SnapshotCache(mode=args.mode)
+
+    # Memory mode: build the per-user memory ledger ONCE here (in the parent),
+    # snapshotting consolidated memory at every T_test boundary. Workers then
+    # serve from the prebuilt {T_test: memory} dict — no per-worker rebuild,
+    # O(events) build cost, honest token accounting in one place.
+    memory_checkpoints = None
+    memory_build_stats = None
+    if args.mode == "memory" and not args.dry_run:
+        from evaluation.memory_builder import (
+            build_checkpoints, default_memory_config, load_existing_checkpoints,
+        )
+        builder_client = llm_client
+        if args.memory_builder_model and args.memory_builder_model != args.model:
+            from query_llm import QueryLLM
+            builder_client = QueryLLM(
+                {"models": {"llm_model": args.memory_builder_model}},
+                rate_limit_per_min=args.rate_limit,
+            )
+        mem_cfg = default_memory_config()
+        mem_cfg.update({
+            "token_cap": args.memory_token_cap,
+            "chunk_k": args.memory_chunk_k,
+            "builder_temperature": args.memory_builder_temperature,
+            "builder_model": args.memory_builder_model or args.model,
+        })
+        boundaries = sorted({int(r["ts"]) for r in rows})
+        existing = load_existing_checkpoints(run_dir, args.user_id) if args.resume else None
+        _usage_before = (builder_client.get_usage_totals()
+                         if hasattr(builder_client, "get_usage_totals") else None)
+        print(f"[run_eval] memory mode: building memory ledger over {len(boundaries)} "
+              f"T_test boundaries (builder={mem_cfg['builder_model']}, "
+              f"cap={mem_cfg['token_cap']}, chunk_k={mem_cfg['chunk_k']})...", flush=True)
+        ledger = build_checkpoints(
+            bq, args.user_id, boundaries, builder_client, mem_cfg,
+            run_dir=run_dir, existing=existing,
+        )
+        memory_checkpoints = ledger.checkpoints
+        snapshot_cache.attach_memory_checkpoints(memory_checkpoints)
+        # Prefer provider-reported usage delta (includes cache reads); fall back
+        # to the builder's local token estimates if the provider didn't report.
+        memory_build_stats = {
+            "memory_build_input_tokens": ledger.build_stats.get("input_tokens", 0),
+            "memory_build_output_tokens": ledger.build_stats.get("output_tokens", 0),
+            "memory_build_calls": ledger.build_stats.get("calls", 0),
+        }
+        if _usage_before is not None and hasattr(builder_client, "get_usage_totals"):
+            _ua = builder_client.get_usage_totals()
+            _dcalls = _ua.get("calls", 0) - _usage_before.get("calls", 0)
+            if _dcalls > 0:
+                memory_build_stats = {
+                    "memory_build_input_tokens": _ua.get("input_tokens", 0) - _usage_before.get("input_tokens", 0),
+                    "memory_build_output_tokens": _ua.get("output_tokens", 0) - _usage_before.get("output_tokens", 0),
+                    "memory_build_calls": _dcalls,
+                }
+        print(f"[run_eval] memory ledger ready: {len(memory_checkpoints)} checkpoints, "
+              f"{memory_build_stats['memory_build_calls']} build calls, "
+              f"{memory_build_stats['memory_build_input_tokens']:,}+"
+              f"{memory_build_stats['memory_build_output_tokens']:,} build tokens", flush=True)
 
     ctx = DispatchContext(
         user_id=args.user_id,
@@ -734,7 +810,7 @@ def main() -> int:
             # The old `rate_limit // workers` was too conservative (3 RPM per
             # worker at 16 workers / 50 RPM → artificially slow).
             per_worker = max(args.rate_limit, args.workers)
-            payloads = [_build_payload(row, args, run_dir, per_worker)
+            payloads = [_build_payload(row, args, run_dir, per_worker, memory_checkpoints)
                         for row in parallel_rows]
             # Per-future timeout safety net. The agent_tools / mcp_agent
             # subprocess call has its own timeout_seconds=600, so a
@@ -833,6 +909,15 @@ def main() -> int:
     persona_totals["total_tokens"] = (
         persona_totals["input_tokens"] + persona_totals["output_tokens"]
     )
+    # Memory mode: fold the one-time memory-build cost into the headline totals
+    # so the cost report is honest (build is paid once per user, amortized over
+    # all query rows; per-query answer tokens are already counted above).
+    if memory_build_stats:
+        persona_totals.update(memory_build_stats)
+        persona_totals["total_tokens"] += (
+            memory_build_stats["memory_build_input_tokens"]
+            + memory_build_stats["memory_build_output_tokens"]
+        )
 
     (run_dir / "summary.json").write_text(
         json.dumps(

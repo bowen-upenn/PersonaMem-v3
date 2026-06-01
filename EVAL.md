@@ -364,7 +364,7 @@ python scripts/prepare_eval_data.py --user_id 115
 python -m evaluation.run_eval --user_id 115 --mode agent_tools \
     --run_dir benchmark/115/runs/$(date +%s) \
     --claude_model sonnet --judge_model gpt-5-chat --workers 16
-# `--mode` ∈ {mcp_agent, agent_tools, llm_longctx}; see "Modes" below.
+# `--mode` ∈ {mcp_agent, agent_tools, llm_longctx, memory}; see "Modes" below.
 # `--workers 16` parallelizes non-agentic rows; agentic writes stay sequential.
 # `--workers 1` disables parallelism (original sequential behavior).
 
@@ -573,8 +573,20 @@ The agent decides **on its own** whether to initiate contact at a moment the use
 | `agent_tools` | Real **Claude Code subagent** via `claude -p` (uses your subscription auth) | Read-only into a **time-masked filesystem snapshot** at `/tmp/pm3_eval_snapshots/{user_id}/T_{t_test}/` | Claude Code's actual filesystem-agent behavior |
 | `mcp_agent` | Claude Code subagent via `claude -p --mcp-config` with 4 mock MCP servers | Structured MCP tools: `get_feed`, `create_post`, `react`, `send_dm`, etc. per app; writes go to `writes.jsonl` overlay | Structured-API agentic behavior — comparable to real app integrations |
 | `llm_longctx` | Direct single `QueryLLM.query_llm` call (Azure/OpenAI/Claude/Gemini) | Full history concatenated + per-app token annotations | Pure long-context baseline, no agent framework |
+| `memory` | Direct single `QueryLLM.query_llm` call (same as `llm_longctx`), but the injected block is a **consolidated memory** an agent built iteratively over the history | A **bounded text-only memory** (≤ `--memory_token_cap` tokens) built by reading the cross-app history in chronological chunks and revising one markdown doc in place | Whether a self-built memory matches long-context quality at far lower per-query token cost |
 
-Running all three answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history?
+Running all four answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history? (c) does an iteratively-built memory match raw long-context at a fraction of the per-query tokens?
+
+### How the `memory` mode works (SOTA memory algorithm)
+
+`memory` follows the `llm_longctx` style (single `QueryLLM` answer call, context injected into the prompt) but, instead of dumping raw events, a memory agent **iteratively reads the cross-app event history and consolidates it into ONE bounded, plain-text memory document**, which is injected into the answering prompt in place of the raw history. Algorithm: **Chain-of-Memory (CoM, 2026)** dynamic-evolution construction grounded on **Mem0's** `ADD / UPDATE / DELETE·SUPERSEDE / NOOP` edit contract, reimplemented natively in `evaluation/memory_builder.py` against `QueryLLM` + `BackendQuery`.
+
+- **TEXT-ONLY — no RAG, no embeddings, no vector/graph store, no retrieval.** The LLM sees the *entire* current memory each build step and the *entire* final memory in the answer prompt; all dedup/merge/eviction is literal string + `[topic]`-tag + recency/occurrence logic.
+- **Firewall preserved.** Memory at `T_test` reflects only events with `source_timestamp < T_test` (same mask as `llm_longctx`); `profile.json` is never read; the builder consumes the same `_compact_event` view as the baseline (fair A/B).
+- **Multi-provider.** Both the build calls and the answer call go through `QueryLLM`, so `--model` selects the provider (OpenAI/Azure, Claude, or Gemini) for both. `--memory_builder_model` (default `=--model`) can point at a different provider for cheap-builder ablations.
+- **Cost.** The per-user memory ledger is built ONCE in the parent (snapshotting at each `T_test` boundary, persisted to `{run_dir}/memory_states/{uid}_T{t}.json` for inspection + `--resume`), then each query injects a ~`--memory_token_cap`-token block instead of the full history. Build cost is reported as `memory_build_*` tokens in `summary.json`'s `persona_totals`.
+- **Knobs:** `--memory_token_cap` (2000), `--memory_chunk_k` (40), `--memory_builder_model` (=`--model`), `--memory_builder_temperature` (0.0).
+- **Correctness gate:** `python tests/test_memory_builder.py` (persona-free synthetic smoke test — no real data, no LLM spend).
 
 ### How the `agent_tools` sandbox works
 
@@ -663,7 +675,7 @@ Each function takes a `judge: Callable[[str], str] | None` parameter. When `judg
 
 **Sensitive-topic vocabulary awareness**: `privacy_leak_check` accepts an optional `sensitive_topic` parameter that guides the judge on domain-specific vocabulary — e.g., for `job_loss`, phrases like "contract gap," "between projects," "freelance dry spell" constitute leaks even without verbatim preference text.
 
-The same LLM judge is used across all three eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`) — scores are comparable across modes.
+The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`, `memory`) — scores are comparable across modes.
 
 ## Flags reference
 
@@ -674,8 +686,12 @@ The same LLM judge is used across all three eval modes (`agent_tools`, `mcp_agen
 | `--user_id` | _(required)_ | User directory under `backend/` |
 | `--run_dir` | _(required)_ | Output directory for `results.csv` + `summary.json` + `writes.jsonl` |
 | `--backend_dir` | `backend` | Path to backend root |
-| `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx` |
-| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` mode |
+| `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx`, `memory` |
+| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` / `memory` modes |
+| `--memory_token_cap` | `2000` | Max tokens of consolidated memory injected per query (`memory` mode) |
+| `--memory_chunk_k` | `40` | Max events per memory-build LLM call (`memory` mode) |
+| `--memory_builder_model` | `=--model` | Model that builds the memory (`memory` mode) |
+| `--memory_builder_temperature` | `0.0` | Temperature for memory-build calls (`memory` mode) |
 | `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model (`haiku`/`sonnet`/`opus`) |
 | `--judge_model` | `$EVAL_JUDGE_MODEL` or `claude-opus` | LLM judge model |
 | `--workers` | `4` | Parallel worker count for non-agentic rows. Agentic writes always sequential. `--workers 1` = original sequential behavior. Max safe: 16 (32 risks Azure rate limits). |

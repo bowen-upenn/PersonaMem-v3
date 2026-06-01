@@ -1663,3 +1663,62 @@ Respond with ONE fenced JSON block:
 {{"text": "<the inferior response>"}}
 ```
 """
+
+
+# --- Memory mode: iterative memory-construction prompt ---------------------
+# Used by the `memory` eval mode (evaluation/memory_builder.py). The model
+# reads the user's cross-app history in chronological chunks and revises a
+# single bounded, plain-text memory document in place — Chain-of-Memory (CoM,
+# 2026) dynamic-evolution construction grounded on Mem0's ADD/UPDATE/DELETE/
+# NOOP edit contract. TEXT-ONLY: no retrieval, no embeddings — the whole
+# current memory is shown each step and the whole final memory is injected
+# into the answering prompt.
+#
+# NOTE on prompt caching: the stable instruction preamble below contains NO
+# `\n## ` headers, so QueryLLM's prefix-cache split (which breaks at the first
+# `\n##`) caches the entire preamble and re-sends only the volatile
+# memory/summary/chunk trailer each call.
+def memory_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
+    """One memory-evolution step. Returns a single prompt string for QueryLLM.
+
+    `memory_doc` is the current full memory markdown, `rolling_summary` a short
+    paragraph of who-the-user-is-so-far, `chunk_text` the rendered new events.
+    The model must emit the FULL updated memory + summary (whole-doc rewrite,
+    not a diff — robust, no patch-application logic).
+    """
+    return f"""You maintain a compact, durable MEMORY of ONE user, built by reading their cross-app activity (Instagram, Facebook, Threads, Chatbot) in chronological chunks. You are called many times; each call you revise the memory IN PLACE using ONLY the new events shown. The memory is later given to an assistant to personalize for this user, so it must be accurate, current, and free of noise.
+
+Revise the memory with four operations — apply them yourself by editing the document text:
+  - ADD     : a genuinely new, durable fact with no equivalent already present.
+  - UPDATE  : augment/merge a fact that elaborates or reinforces an existing line (bump its "· last MM/DD" date, strengthen it, add a nuance).
+  - SUPERSEDE (delete): the new evidence contradicts an existing line. The user is allowed to change their mind — record the SHIFT (replace the old stance with the new one + new date, or move the old to a brief superseded note). NEVER silently keep two contradictory stances.
+  - NOOP    : the events are one-off noise; change nothing.
+
+Dynamic evolution (do continuously): merge redundant lines into one (semantic consolidation); weight recent/frequent signals higher (relevance weighting); let stale, unsupported lines fade (temporal decay); reorganize lines under the right section as topics emerge.
+
+Hard rules:
+  - DURABLE over noisy: a single skip/scroll is weak evidence; a repeated pattern is durable. Do not promote one-off engagement to a stable interest.
+  - PRESERVE POLARITY: likes go under "Stable interests & likes"; dislikes, "stop recommending", and explicit-negative signals go under "Dislikes & negative signals". NEVER convert a negative into a positive. Lines about the user asking to stop personalizing are HARD-AVOID — keep them, never drop them.
+  - PRESERVE RECENCY/TIME: keep each line's "· last MM/DD" current; put time-bounded intents in "Active / short-term threads" with an inferred stop condition in prose (e.g. "until the project ships", "until the promo expires"). When an active thread's implied end has clearly passed, move it to a brief superseded note.
+  - NEVER INVENT: every line must trace to events you have actually seen. No demographics, no profile guesses, no stereotypes.
+  - STAY BOUNDED: keep the whole memory compact (a couple thousand tokens). When over budget, merge same-topic lines and drop the least-salient — but never a hard-avoid negative.
+  - Keep the section structure (the 7 "## ..." headers). Use short, atomic, dated bullet lines, each optionally tagged with a bracketed topic like [NFL] or [home improvement].
+
+Output EXACTLY this, nothing else:
+<memory>
+...the FULL updated memory markdown (all 7 sections)...
+</memory>
+<summary>
+...one short paragraph: who this user is so far + what is currently active...
+</summary>
+
+## Current memory
+{memory_doc}
+
+## Rolling summary so far
+{rolling_summary or "(none yet)"}
+
+## New events (chronological, app-tagged, time-masked)
+{chunk_text}
+
+Revise the memory now using ONLY the new events above. Emit the full updated <memory> and <summary>."""

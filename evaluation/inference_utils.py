@@ -644,9 +644,13 @@ def dispatch_agent_run(
         stats["mcp_config_path"] = str(cfg_path)
         return sub.text, sub.turns, stats
 
-    # llm_longctx — non-Claude baseline via QueryLLM.
+    # llm_longctx / memory — single QueryLLM answer call. The context block was
+    # already injected into `prompt` upstream (raw history for llm_longctx, the
+    # consolidated memory for memory mode), so dispatch is identical.
+    if mode not in ("llm_longctx", "memory"):
+        return "", 0, {"error": f"dispatch_agent_run: unhandled mode {mode!r}"}
     if llm_client is None:
-        return "", 0, {"error": "llm_longctx mode requires a QueryLLM client but none was passed"}
+        return "", 0, {"error": f"{mode} mode requires a QueryLLM client but none was passed"}
     response = llm_client.query_llm(prompt) or ""
     # Phase B: count tokens locally so the per-task metrics_json gets
     # input/output token counts even in llm_longctx mode (Claude Code modes
@@ -685,19 +689,50 @@ class SnapshotCache:
 
     MAX_ENTRIES = 8
 
-    def __init__(self, max_entries: int | None = None):
+    def __init__(self, max_entries: int | None = None, *, mode: str = "llm_longctx"):
         from collections import OrderedDict
         self._store: OrderedDict[tuple, tuple[str, dict]] = OrderedDict()
         self._lock = threading.Lock()
         self._max = max_entries if max_entries is not None else self.MAX_ENTRIES
+        # `memory` mode: the per-user memory is prebuilt once (in the parent) and
+        # attached here as {T_test: memory_string}; get_or_build then serves the
+        # consolidated memory in place of the raw history. See memory_builder.py.
+        self.mode = mode
+        self._memory_checkpoints: dict[int, str] | None = None
+
+    def attach_memory_checkpoints(self, checkpoints: dict | None) -> None:
+        """Attach the prebuilt per-user memory ledger (memory mode only)."""
+        if checkpoints:
+            self._memory_checkpoints = {int(k): v for k, v in checkpoints.items()}
+
+    def _memory_block(self, t_test: int) -> tuple[str, dict]:
+        """Consolidated memory for `t_test` (exact, else nearest boundary <= t,
+        else empty). Nearest-prior is firewall-safe — a subset of events < t."""
+        from evaluation.memory_builder import EMPTY_MEMORY
+        cps = self._memory_checkpoints or {}
+        t = int(t_test)
+        if t in cps:
+            mem = cps[t]
+        else:
+            prior = [b for b in cps if b <= t]
+            mem = cps[max(prior)] if prior else EMPTY_MEMORY
+        return mem, {
+            "total_tokens": count_tokens(mem),
+            "memory_mode": True,
+            "n_checkpoints": len(cps),
+            "per_app": {},
+        }
 
     def get_or_build(self, bq: BackendQuery, user_id: str, t_test: int, model: str | None, budget: int | None) -> tuple[str, dict]:
-        key = (user_id, t_test, model, budget)
+        key = (user_id, t_test, model, budget, self.mode)
         with self._lock:
             if key in self._store:
                 self._store.move_to_end(key)
                 return self._store[key]
-        text, stats = serialize_history_for_context(bq, user_id, t_test, model=model, budget_tokens=budget)
+        if self.mode == "memory":
+            text, stats = self._memory_block(t_test)
+        else:
+            text, stats = serialize_history_for_context(bq, user_id, t_test, model=model, budget_tokens=budget)
         with self._lock:
             self._store[key] = (text, stats)
             self._store.move_to_end(key)

@@ -354,7 +354,7 @@ def run_e2_at_ai_followup(
         candidates = inst.get("candidates") or []
         history_block = None
         history_tokens = 0
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 

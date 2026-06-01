@@ -42,7 +42,7 @@ def run_task_c2(
         t_probe = sc["t_probe"]
         history_block = None
         history_tokens = 0
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t_probe, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
@@ -151,7 +151,7 @@ def run_task_c3(
         t = inst["source_timestamp"]
         history_block = None
         history_tokens = 0
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
@@ -337,7 +337,7 @@ def run_task_c1c(
         # 90 minutes of history.
         t_test = int(cluster.get("t_test") or queries[-1]["ts"])
         history_block = None
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, _stats = snapshot_cache.get_or_build(
                 bq, user_id, t_test, model_name, context_budget,
             )
@@ -612,7 +612,7 @@ def run_task_c1d(
 
         t_test = int(cluster.get("t_test") or queries[-1]["ts"])
         history_block = None
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, _stats = snapshot_cache.get_or_build(
                 bq, user_id, t_test, model_name, context_budget,
             )
@@ -755,7 +755,7 @@ def run_task_c4(
         user_query = inst["user_query"]
         prior = inst.get("prior_conversation") or []
         history_block = None
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, _stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
 
         if dry_run:

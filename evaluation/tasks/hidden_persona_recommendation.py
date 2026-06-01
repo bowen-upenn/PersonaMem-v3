@@ -634,7 +634,7 @@ def run_hidden_persona_recommendation(
         t = inst["t_test"]
         history_block = None
         history_tokens = 0
-        if mode == "llm_longctx" and snapshot_cache is not None:
+        if mode in ("llm_longctx", "memory") and snapshot_cache is not None:
             history_block, stats = snapshot_cache.get_or_build(
                 bq, user_id, t, model_name, context_budget,
             )

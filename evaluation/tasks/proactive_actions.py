@@ -612,7 +612,7 @@ def run_proactive_task(
 
         history_block = None
         history_tokens = 0
-        if mode == "llm_longctx":
+        if mode in ("llm_longctx", "memory"):
             history_block, stats = snapshot_cache.get_or_build(
                 bq, user_id, t, model_name, context_budget,
             )
@@ -626,7 +626,7 @@ def run_proactive_task(
         prompt = prompts_agentic.proactive_action_prompt(
             user_state_summary=user_state_summary,
             history_block=history_block,
-            text_only=(mode == "llm_longctx"),
+            text_only=(mode in ("llm_longctx", "memory")),
         )
 
         if dry_run:
