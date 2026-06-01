@@ -6764,6 +6764,8 @@ class PersonaAgent:
             mobility_class=mobility_class,
             require_recent_cancellation=True,
             recent_cancellation_window_hours=E6_RECENT_CANCELLATION_WINDOW_HOURS,
+            friend_names=[f.get("display_name") for f in (getattr(self.user_profile, "friends", None) or [])
+                          if isinstance(f, dict) and f.get("display_name")],
         )
 
         response = self._query_mini_with_retry(prompt)
@@ -8134,7 +8136,7 @@ class PersonaAgent:
                             "ad_category": ev["ad_category"],
                             "cta_label": "Learn more",
                             "cta_destination_kind": "landing_page",
-                            "disclosure_label": "Ads",
+                            "disclosure_label": "Sponsored",
                         }
                     else:
                         # Normalize required fields.
@@ -8143,7 +8145,8 @@ class PersonaAgent:
                         md.setdefault("ad_category", ev["ad_category"])
                         md.setdefault("cta_label", "Learn more")
                         md.setdefault("cta_destination_kind", "landing_page")
-                        md.setdefault("disclosure_label", "Ads")
+                        # Force the documented disclosure label (fixed vocab).
+                        md["disclosure_label"] = "Sponsored"
                     # Override content + action + itype for this event.
                     self._content_by_oid[oid] = {
                         "content_type": ev["content_type"],
@@ -8607,6 +8610,29 @@ class PersonaAgent:
                     pass
             n_cb, n_ais = _n_events("chatbot.json"), _n_events("ai_studio.json")
             n_src = len(self.interactions)
+
+            # Geo silent-fail guard: Step 15 occasionally assigns NO
+            # event_location to a whole persona (audit found uid 1 with 0/333).
+            # Flag loudly when social events exist but none carry a location.
+            geo_social = geo_with_loc = 0
+            for fn in ("instagram.json", "facebook.json", "threads.json"):
+                p = os.path.join(udir, fn)
+                if not os.path.exists(p):
+                    continue
+                try:
+                    with open(p) as _f:
+                        for ev in json.load(_f):
+                            geo_social += 1
+                            if (ev.get("event_location") or {}).get("city"):
+                                geo_with_loc += 1
+                except Exception:
+                    pass
+            if geo_social >= 20 and geo_with_loc == 0:
+                print(f"{utils.Colors.FAIL}[User {self.user_id}] GEO SILENT-FAIL: "
+                      f"{geo_social} social events, 0 carry event_location — Step 15 "
+                      f"did not apply. Re-run geolocation for this persona.{utils.Colors.ENDC}")
+                summary["geo_silent_fail"] = {"social_events": geo_social, "with_location": 0}
+
             incomplete = (not has_profile) or n_hp == 0 or n_cb == 0 or n_ais == 0
             if incomplete:
                 sev = ("LOW-DATA (expected for thin source — consider dropping/"
@@ -9895,12 +9921,39 @@ class PersonaAgent:
             # sampled action; Step 16 may re-sample a different action for
             # this event (e.g. `viewed_video_75`), in which case the old
             # message must NOT leak onto a passive-view action.
+            first_cr = canonical_lookup.get(_normalize_persona_text(atoms[0].persona_item))
             if sampled_entry["action"] in (AT_AI_ACTIONS | CHATBOT_TURN_ACTIONS):
-                first_cr = canonical_lookup.get(_normalize_persona_text(atoms[0].persona_item))
                 if first_cr and first_cr.source_interaction_format:
                     stored = _parse_format(first_cr.source_interaction_format, app)
                     if stored.get("user_message"):
                         fmt["user_message"] = stored["user_message"]
+            # @ai comments are an authored surface: the event re-samples its
+            # action independently of Step 17, so the canonical's stored
+            # user_message (keyed to a DIFFERENT action) almost never matches —
+            # the 2026-06 audit found 97% of @ai events had a null user_message.
+            # Generate one inline for any at_ai event still missing it. (Chatbot
+            # turns get their text from the conversation step, not here.)
+            if (sampled_entry["action"] in AT_AI_ACTIONS
+                    and not fmt.get("user_message")
+                    and self.llm_client is not None and first_cr is not None):
+                try:
+                    msg_prompt = prompts.generate_interaction_format_prompt(
+                        persona_item=first_cr.persona_item,
+                        category=first_cr.category,
+                        interaction_type=itype,
+                        assigned_app=app,
+                        app_persona=(self.user_profile.app_personas or {}).get(app, {}),
+                        action_catalog=[{"action": sampled_entry["action"], "label": sampled_entry["label"]}],
+                        requires_user_message=True,
+                        user_voice=(self.user_profile.user_voice or {}),
+                    )
+                    resp = self._query_mini_with_retry(msg_prompt)
+                    if resp:
+                        parsed_msg = utils.extract_json_from_response(resp)
+                        if isinstance(parsed_msg, dict) and parsed_msg.get("user_message"):
+                            fmt["user_message"] = parsed_msg["user_message"]
+                except Exception:
+                    pass
 
             # Build event dict with preferences LAST for readability
             event = {

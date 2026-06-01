@@ -2220,6 +2220,7 @@ def generate_calendar_modifications_prompt(
     mobility_class: str = "domestic",
     require_recent_cancellation: bool = False,
     recent_cancellation_window_hours: int = 6,
+    friend_names: list | None = None,
 ) -> str:
     """Build a prompt that produces a timeline of calendar CRUD events.
 
@@ -2275,6 +2276,21 @@ def generate_calendar_modifications_prompt(
     else:
         cancellation_rule = ""
 
+    # Attendee names: prefer the user's OWN friends; otherwise demand a varied
+    # realistic name. The old prompt hard-coded "Ana" as the example, and the
+    # LLM copied it into ALL 20 calendars (audit finding).
+    if friend_names:
+        _fn = ", ".join(str(n) for n in friend_names[:8] if n)
+        attendee_name_rule = (
+            f"Use one of THIS user's actual friends as the attendee: {_fn}. "
+            "Do NOT invent a generic placeholder name."
+        )
+    else:
+        attendee_name_rule = (
+            "Use a varied, realistic first name that fits the user's background — "
+            "do NOT use a placeholder/default name like 'Ana'."
+        )
+
     return f"""\
 You are generating a small timeline of CALENDAR MODIFICATIONS for one
 user over their {obs_window_days:.1f}-day activity window.
@@ -2317,7 +2333,7 @@ family dinner, work sprint review, one-on-one meeting, etc.).
 ### Required diversity
 {transit_rule}
 - NAMED-ATTENDEE MEETING: add at least 1 entry with ≥ 1 non-self named
-  attendee (use entry field `attendees: ["self", "Ana"]`). Multi-attendee
+  attendee (entry field `attendees: ["self", "<name>"]`). {attendee_name_rule} Multi-attendee
   group meetings are welcome but not required.
 {cancellation_rule}
 
