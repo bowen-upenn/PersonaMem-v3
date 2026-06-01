@@ -24,11 +24,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from evaluation.backend_query import BackendQuery
 from evaluation.memory_builder import (
     EMPTY_MEMORY,
+    MEMORY_ALGOS,
     build_checkpoints,
     build_global_stream,
     consolidate_evict,
     default_memory_config,
 )
+from evaluation.prompts import com_update_prompt, mem0_update_prompt
 
 
 # ---------------------------------------------------------------------------
@@ -164,7 +166,7 @@ def test_firewall_time_mask_and_monotonic():
         fake = FakeLLM(model="builder-x")
         cfg = default_memory_config()
         cfg.update({"chunk_k": 3, "builder_model": "builder-x"})
-        ledger = build_checkpoints(bq, uid, [135, 1000], fake, cfg, run_dir=Path(rd))
+        ledger = build_checkpoints(bq, uid, [135, 1000], fake, cfg, algo="com", run_dir=Path(rd))
 
         t1 = ledger.checkpoints[135]
         t2 = ledger.checkpoints[1000]
@@ -194,9 +196,57 @@ def test_chunking_multiple_calls():
         fake = FakeLLM()
         cfg = default_memory_config()
         cfg.update({"chunk_k": 3})  # 12 events / 3 → several build calls
-        build_checkpoints(bq, uid, [1000], fake, cfg)
+        build_checkpoints(bq, uid, [1000], fake, cfg, algo="com")
         assert len(fake.calls) > 1, f"expected multiple chunked build calls, got {len(fake.calls)}"
         print(f"  ✓ chunking_multiple_calls ({len(fake.calls)} build calls)")
+
+
+def test_both_algos_build():
+    """Both faithful modes (`com` and `mem0`) build checkpoints independently and
+    are persisted under algo-namespaced filenames (no collision in one run_dir)."""
+    with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as rd:
+        base = Path(d)
+        uid = _write_fixture(base)
+        bq = BackendQuery(str(base))
+        for algo in MEMORY_ALGOS:
+            fake = FakeLLM()
+            led = build_checkpoints(bq, uid, [135, 1000], fake, default_memory_config(),
+                                    algo=algo, run_dir=Path(rd))
+            assert set(led.checkpoints) == {135, 1000}, f"{algo}: missing checkpoints"
+            assert fake.calls, f"{algo}: no build calls"
+            states = list((Path(rd) / "memory_states").glob(f"{uid}_{algo}_T*.json"))
+            assert len(states) == 2, f"{algo}: expected 2 algo-namespaced dumps, got {len(states)}"
+        # com and mem0 dumps coexist without overwriting
+        all_states = list((Path(rd) / "memory_states").glob(f"{uid}_*_T*.json"))
+        assert len(all_states) == 4, f"expected 4 total dumps (2 algos × 2 T), got {len(all_states)}"
+        print("  ✓ both_algos_build (com + mem0, algo-namespaced, no collision)")
+
+
+def test_prompts_faithful_and_distinct():
+    """`mem0` prompt uses the four discrete ops and NOT CoM evolution terms;
+    `com` prompt uses dynamic-evolution and NOT the discrete-op vocabulary.
+    Guards against re-mixing the two algorithms."""
+    m = mem0_update_prompt("MEM", "SUM", "EVENTS").lower()
+    c = com_update_prompt("MEM", "SUM", "EVENTS").lower()
+
+    # Mem0 = discrete ops, no CoM evolution vocabulary in its method section.
+    for op in ("add", "update", "delete", "noop", "extraction"):
+        assert op in m, f"mem0 prompt missing discrete-op term {op!r}"
+    for com_term in ("temporal decay", "structural reorganization", "dynamic"):
+        assert com_term not in m, f"mem0 prompt leaked CoM term {com_term!r}"
+
+    # CoM = dynamic evolution, no discrete-op vocabulary in its method section.
+    for ev in ("semantic consolidation", "temporal decay", "structural reorganization", "evolve"):
+        assert ev in c, f"com prompt missing evolution term {ev!r}"
+    assert "noop" not in c, "com prompt leaked Mem0 NOOP op"
+    assert "two phases" not in c and "phase 2" not in c, "com prompt leaked Mem0 two-phase framing"
+
+    # Shared text-only constraint: neither does retrieval/embeddings.
+    for p in (m, c):
+        for banned in ("embedding", "vector", "top-k", "cosine", "retrieve top"):
+            assert banned not in p, f"memory prompt mentions retrieval/embeddings: {banned!r}"
+    assert m != c, "the two algorithm prompts are identical — they must differ"
+    print("  ✓ prompts_faithful_and_distinct (mem0 ops vs CoM evolution, both text-only)")
 
 
 def test_provider_plumbing():
@@ -207,7 +257,7 @@ def test_provider_plumbing():
         fake = FakeLLM(model="builder-x")
         cfg = default_memory_config()
         cfg.update({"builder_temperature": 0.0, "builder_model": "builder-x"})
-        build_checkpoints(bq, uid, [1000], fake, cfg)
+        build_checkpoints(bq, uid, [1000], fake, cfg, algo="com")
         assert fake.calls, "no build calls made"
         assert all(c["temperature"] == 0.0 for c in fake.calls), "builder did not pass temperature=0.0"
         print("  ✓ provider_plumbing (temperature=0.0 honored)")
@@ -251,8 +301,9 @@ def test_debug_writes_isolated():
         before = {p.name for p in (base / uid).iterdir()}
         bq = BackendQuery(str(base))
         fake = FakeLLM()
-        build_checkpoints(bq, uid, [135, 1000], fake, default_memory_config(), run_dir=Path(rd))
-        states = list((Path(rd) / "memory_states").glob(f"{uid}_T*.json"))
+        build_checkpoints(bq, uid, [135, 1000], fake, default_memory_config(),
+                          algo="com", run_dir=Path(rd))
+        states = list((Path(rd) / "memory_states").glob(f"{uid}_com_T*.json"))
         assert len(states) == 2, f"expected 2 checkpoint dumps, got {len(states)}"
         after = {p.name for p in (base / uid).iterdir()}
         assert before == after, "backend dir was mutated by the builder!"
@@ -262,10 +313,11 @@ def test_debug_writes_isolated():
 def test_dry_run_graceful_empty():
     # No checkpoints attached → SnapshotCache memory path returns EMPTY_MEMORY (dry_run safety).
     from evaluation.inference_utils import SnapshotCache
-    sc = SnapshotCache(mode="memory")
-    text, stats = sc.get_or_build(None, "synthU", 999, None, None)
-    assert text == EMPTY_MEMORY and stats.get("memory_mode") is True
-    print("  ✓ dry_run_graceful_empty")
+    for algo in MEMORY_ALGOS:
+        sc = SnapshotCache(mode=algo)
+        text, stats = sc.get_or_build(None, "synthU", 999, None, None)
+        assert text == EMPTY_MEMORY and stats.get("memory_mode") is True, f"{algo} dry_run not graceful"
+    print("  ✓ dry_run_graceful_empty (com + mem0)")
 
 
 def _run_all():

@@ -109,10 +109,10 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--run_dir", required=True,
                    help="Output directory for results.csv + writes.jsonl + summary files")
     p.add_argument("--mode",
-                   choices=("llm_longctx", "mcp_agent", "agent_tools", "memory"),
+                   choices=("llm_longctx", "mcp_agent", "agent_tools", "com", "mem0"),
                    default="llm_longctx")
     p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"),
-                   help="Baseline LLM model for llm_longctx / memory modes")
+                   help="Baseline LLM model for llm_longctx / com / mem0 modes")
     p.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"),
                    help="Claude Code subagent model (haiku/sonnet/opus)")
     p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.5"))
@@ -126,13 +126,13 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--context_budget", type=int, default=None)
     # --- memory mode knobs (only used when --mode memory) ---
     p.add_argument("--memory_token_cap", type=int, default=2000,
-                   help="Max tokens for the consolidated memory injected per query (memory mode)")
+                   help="Max tokens for the consolidated memory injected per query (com/mem0 modes)")
     p.add_argument("--memory_chunk_k", type=int, default=40,
-                   help="Max events per memory-build LLM call (memory mode)")
+                   help="Max events per memory-build LLM call (com/mem0 modes)")
     p.add_argument("--memory_builder_model", default=None,
-                   help="Model that builds the memory (memory mode). Defaults to --model.")
+                   help="Model that builds the memory (com/mem0 modes). Defaults to --model.")
     p.add_argument("--memory_builder_temperature", type=float, default=0.0,
-                   help="Temperature for memory-build calls (memory mode; default 0.0 for determinism)")
+                   help="Temperature for memory-build calls (com/mem0 modes; default 0.0 for determinism)")
     p.add_argument("--limit", type=int, default=None,
                    help="Cap total query rows (for quick smoke tests)")
     p.add_argument("--resume", action="store_true",
@@ -384,7 +384,7 @@ def _run_one_in_worker(payload: dict) -> dict:
             rate_limit_per_min=payload["per_worker_rate_limit"],
         )
     baseline = None
-    if payload["mode"] in ("llm_longctx", "memory") and not payload["dry_run"]:
+    if payload["mode"] in ("llm_longctx", "com", "mem0") and not payload["dry_run"]:
         from query_llm import QueryLLM
         baseline = QueryLLM(
             {"models": {"llm_model": payload["model_name"]}},
@@ -392,11 +392,11 @@ def _run_one_in_worker(payload: dict) -> dict:
         )
 
     bq = BackendQuery(payload["backend_dir"])
-    # Memory mode: the per-user memory ledger was prebuilt in the parent and
+    # com / mem0 modes: the per-user memory ledger was prebuilt in the parent and
     # shipped as a picklable {T_test: memory_str} dict — attach it (no rebuild,
     # no LLM calls in the worker).
     worker_cache = SnapshotCache(mode=payload["mode"])
-    if payload["mode"] == "memory":
+    if payload["mode"] in ("com", "mem0"):
         worker_cache.attach_memory_checkpoints(payload.get("memory_checkpoints"))
     ctx = DispatchContext(
         user_id=user_id, bq=bq,
@@ -614,13 +614,14 @@ def main() -> int:
     llm_client, judge_client = _build_llm_clients(args)
     snapshot_cache = SnapshotCache(mode=args.mode)
 
-    # Memory mode: build the per-user memory ledger ONCE here (in the parent),
-    # snapshotting consolidated memory at every T_test boundary. Workers then
-    # serve from the prebuilt {T_test: memory} dict — no per-worker rebuild,
-    # O(events) build cost, honest token accounting in one place.
+    # com / mem0 modes: build the per-user memory ledger ONCE here (in the
+    # parent) with the faithful algorithm (args.mode), snapshotting consolidated
+    # memory at every T_test boundary. Workers then serve from the prebuilt
+    # {T_test: memory} dict — no per-worker rebuild, O(events) build cost, honest
+    # token accounting in one place.
     memory_checkpoints = None
     memory_build_stats = None
-    if args.mode == "memory" and not args.dry_run:
+    if args.mode in ("com", "mem0") and not args.dry_run:
         from evaluation.memory_builder import (
             build_checkpoints, default_memory_config, load_existing_checkpoints,
         )
@@ -639,15 +640,15 @@ def main() -> int:
             "builder_model": args.memory_builder_model or args.model,
         })
         boundaries = sorted({int(r["ts"]) for r in rows})
-        existing = load_existing_checkpoints(run_dir, args.user_id) if args.resume else None
+        existing = load_existing_checkpoints(run_dir, args.user_id, args.mode) if args.resume else None
         _usage_before = (builder_client.get_usage_totals()
                          if hasattr(builder_client, "get_usage_totals") else None)
-        print(f"[run_eval] memory mode: building memory ledger over {len(boundaries)} "
+        print(f"[run_eval] {args.mode} mode: building memory ledger over {len(boundaries)} "
               f"T_test boundaries (builder={mem_cfg['builder_model']}, "
               f"cap={mem_cfg['token_cap']}, chunk_k={mem_cfg['chunk_k']})...", flush=True)
         ledger = build_checkpoints(
             bq, args.user_id, boundaries, builder_client, mem_cfg,
-            run_dir=run_dir, existing=existing,
+            algo=args.mode, run_dir=run_dir, existing=existing,
         )
         memory_checkpoints = ledger.checkpoints
         snapshot_cache.attach_memory_checkpoints(memory_checkpoints)

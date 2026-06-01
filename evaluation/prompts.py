@@ -1665,53 +1665,55 @@ Respond with ONE fenced JSON block:
 """
 
 
-# --- Memory mode: iterative memory-construction prompt ---------------------
-# Used by the `memory` eval mode (evaluation/memory_builder.py). The model
-# reads the user's cross-app history in chronological chunks and revises a
-# single bounded, plain-text memory document in place — Chain-of-Memory (CoM,
-# 2026) dynamic-evolution construction grounded on Mem0's ADD/UPDATE/DELETE/
-# NOOP edit contract. TEXT-ONLY: no retrieval, no embeddings — the whole
-# current memory is shown each step and the whole final memory is injected
-# into the answering prompt.
+# --- Memory modes: faithful Mem0 and Chain-of-Memory build prompts ---------
+# Used by the `mem0` and `com` eval modes (evaluation/memory_builder.py). The
+# model reads the user's cross-app history in chronological chunks and revises a
+# single bounded, plain-text memory document. The two modes are SEPARATE and NOT
+# mixed: `mem0` uses Mem0's two-phase extract->update with the four discrete
+# operations (ADD/UPDATE/DELETE/NOOP); `com` uses Chain-of-Memory's dynamic
+# evolution (consolidation / relevance weighting / temporal decay / structural
+# reorganization) with NO discrete-op vocabulary. We do not invent a third
+# algorithm — these mirror the two papers.
 #
-# NOTE on prompt caching: the stable instruction preamble below contains NO
-# `\n## ` headers, so QueryLLM's prefix-cache split (which breaks at the first
-# `\n##`) caches the entire preamble and re-sends only the volatile
-# memory/summary/chunk trailer each call.
-def memory_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
-    """One memory-evolution step. Returns a single prompt string for QueryLLM.
+# TEXT-ONLY (shared constraint): the whole current memory is shown to the model
+# each step and the whole final memory is injected into the answer prompt; there
+# is no vector store / retrieval. For Mem0 this means its build-time "find
+# semantically similar memories" step is realized by showing the model the whole
+# (bounded, small) current memory rather than an ANN top-s lookup — the only
+# deviation from the paper, applied equally to both modes (CoM is retrieval-free
+# by design).
+#
+# Caching: the per-method preamble + shared rails + output spec contain NO
+# `\n## ` headers, so QueryLLM's prefix-cache split (first `\n##`) caches all of
+# it and re-sends only the volatile memory/summary/chunk trailer each call.
 
-    `memory_doc` is the current full memory markdown, `rolling_summary` a short
-    paragraph of who-the-user-is-so-far, `chunk_text` the rendered new events.
-    The model must emit the FULL updated memory + summary (whole-doc rewrite,
-    not a diff — robust, no patch-application logic).
-    """
-    return f"""You maintain a compact, durable MEMORY of ONE user, built by reading their cross-app activity (Instagram, Facebook, Threads, Chatbot) in chronological chunks. You are called many times; each call you revise the memory IN PLACE using ONLY the new events shown. The memory is later given to an assistant to personalize for this user, so it must be accurate, current, and free of noise.
+_MEMORY_SECTIONS_NOTE = (
+    "Organize the memory under these seven sections, always keeping all seven "
+    "headers verbatim: 'Stable interests & likes'; 'Dislikes & negative signals'; "
+    "'Active / short-term threads'; 'Places'; 'People & social context'; "
+    "'Communication style'; 'Recent salient events'. Use short, atomic bullet "
+    "lines, each optionally tagged with a bracketed topic like [NFL] or "
+    "[home improvement], with a trailing '· last MM/DD' date."
+)
 
-Revise the memory with four operations — apply them yourself by editing the document text:
-  - ADD     : a genuinely new, durable fact with no equivalent already present.
-  - UPDATE  : augment/merge a fact that elaborates or reinforces an existing line (bump its "· last MM/DD" date, strengthen it, add a nuance).
-  - SUPERSEDE (delete): the new evidence contradicts an existing line. The user is allowed to change their mind — record the SHIFT (replace the old stance with the new one + new date, or move the old to a brief superseded note). NEVER silently keep two contradictory stances.
-  - NOOP    : the events are one-off noise; change nothing.
-
-Dynamic evolution (do continuously): merge redundant lines into one (semantic consolidation); weight recent/frequent signals higher (relevance weighting); let stale, unsupported lines fade (temporal decay); reorganize lines under the right section as topics emerge.
-
-Hard rules:
-  - DURABLE over noisy: a single skip/scroll is weak evidence; a repeated pattern is durable. Do not promote one-off engagement to a stable interest.
-  - PRESERVE POLARITY: likes go under "Stable interests & likes"; dislikes, "stop recommending", and explicit-negative signals go under "Dislikes & negative signals". NEVER convert a negative into a positive. Lines about the user asking to stop personalizing are HARD-AVOID — keep them, never drop them.
-  - PRESERVE RECENCY/TIME: keep each line's "· last MM/DD" current; put time-bounded intents in "Active / short-term threads" with an inferred stop condition in prose (e.g. "until the project ships", "until the promo expires"). When an active thread's implied end has clearly passed, move it to a brief superseded note.
+_MEMORY_RAILS = """Constraints (output/format rules, identical for every method):
+  - PRESERVE POLARITY: likes go under 'Stable interests & likes'; dislikes, 'stop recommending', and explicit-negative signals go under 'Dislikes & negative signals'. NEVER convert a negative into a positive. Lines about the user asking to stop personalizing are HARD-AVOID — keep them, never drop them.
   - NEVER INVENT: every line must trace to events you have actually seen. No demographics, no profile guesses, no stereotypes.
-  - STAY BOUNDED: keep the whole memory compact (a couple thousand tokens). When over budget, merge same-topic lines and drop the least-salient — but never a hard-avoid negative.
-  - Keep the section structure (the 7 "## ..." headers). Use short, atomic, dated bullet lines, each optionally tagged with a bracketed topic like [NFL] or [home improvement].
+  - PRESERVE RECENCY/TIME: keep each line's '· last MM/DD' current; put time-bounded intents under 'Active / short-term threads' with an inferred stop condition in prose.
+  - STAY BOUNDED: keep the whole memory compact (a couple thousand tokens); when over budget, combine same-topic lines and drop the least useful — but never a hard-avoid negative.
+  - Output the FULL memory each call (whole-document rewrite, not a diff)."""
 
-Output EXACTLY this, nothing else:
+_MEMORY_OUTPUT = """Output EXACTLY this, nothing else:
 <memory>
-...the FULL updated memory markdown (all 7 sections)...
+...the FULL updated memory markdown (all seven sections)...
 </memory>
 <summary>
 ...one short paragraph: who this user is so far + what is currently active...
-</summary>
+</summary>"""
 
+
+def _memory_trailer(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
+    return f"""
 ## Current memory
 {memory_doc}
 
@@ -1721,4 +1723,46 @@ Output EXACTLY this, nothing else:
 ## New events (chronological, app-tagged, time-masked)
 {chunk_text}
 
-Revise the memory now using ONLY the new events above. Emit the full updated <memory> and <summary>."""
+Apply the method to the new events above and emit the full updated <memory> and <summary>."""
+
+
+def mem0_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
+    """Faithful Mem0 build step: two-phase extraction -> update with the four
+    discrete operations (ADD / UPDATE / DELETE / NOOP). No CoM evolution."""
+    return f"""You maintain a memory of ONE user by reading their cross-app activity (Instagram, Facebook, Threads, Chatbot) in chronological chunks, using the Mem0 method. Each call has two phases over the NEW events only:
+
+PHASE 1 — EXTRACTION: From the new events (in the context of the rolling summary and current memory), extract a concise set of salient candidate facts about the user.
+
+PHASE 2 — UPDATE: For EACH extracted candidate fact, compare it against the current memory and apply exactly ONE operation:
+  - ADD    : no semantically equivalent memory already exists -> add it as a new memory item.
+  - UPDATE : an existing memory item should be augmented with complementary information from this fact -> merge the new detail into it.
+  - DELETE : the new fact contradicts an existing memory item -> remove (supersede) the outdated item and keep the new fact.
+  - NOOP   : the fact is already captured, or is one-off noise -> change nothing.
+Decide each operation by comparing the candidate fact against the WHOLE current memory shown below.
+
+{_MEMORY_SECTIONS_NOTE}
+
+{_MEMORY_RAILS}
+
+{_MEMORY_OUTPUT}
+{_memory_trailer(memory_doc, rolling_summary, chunk_text)}"""
+
+
+def com_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
+    """Faithful Chain-of-Memory build step: maintain ONE unified, continuously
+    evolving memory via dynamic-evolution operations. No discrete Mem0 ops."""
+    return f"""You maintain a memory of ONE user by reading their cross-app activity (Instagram, Facebook, Threads, Chatbot) in chronological chunks, using the Chain-of-Memory (CoM) method. You maintain ONE unified, continuously evolving memory structure — NOT a list of discrete add/delete operations.
+
+For each new chunk, dynamically EVOLVE the memory:
+  - SEMANTIC CONSOLIDATION: merge semantically related or redundant entries into single coherent notes.
+  - RELEVANCE WEIGHTING: emphasize recent and frequently-reinforced information; keep the most salient signal prominent.
+  - TEMPORAL DECAY: let stale, contradicted, or no-longer-relevant details fade out.
+  - STRUCTURAL REORGANIZATION: reorganize the memory around the user's emerging topics/themes as they become clear, compressing across events rather than listing them.
+Continuously re-synthesize the memory so it always reflects the most coherent, current understanding of the user.
+
+{_MEMORY_SECTIONS_NOTE}
+
+{_MEMORY_RAILS}
+
+{_MEMORY_OUTPUT}
+{_memory_trailer(memory_doc, rolling_summary, chunk_text)}"""

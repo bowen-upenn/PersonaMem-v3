@@ -78,7 +78,7 @@ TASK_ALIASES = {
     **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
 }
 
-MODES = ("agent_tools", "mcp_agent", "llm_longctx", "memory")
+MODES = ("agent_tools", "mcp_agent", "llm_longctx", "com", "mem0")
 
 
 def _build_llm_clients(args):
@@ -270,9 +270,10 @@ def main():
 
     tasks = _resolve_tasks(args.task)
 
-    # Memory mode (legacy CLI parity): build the per-user memory ledger over all
-    # T_test boundaries found across the resolved tasks' instances, then attach.
-    if args.mode == "memory" and not args.dry_run:
+    # com / mem0 modes (legacy CLI parity): build the per-user memory ledger with
+    # the faithful algorithm over all T_test boundaries found across the resolved
+    # tasks' instances, then attach.
+    if args.mode in ("com", "mem0") and not args.dry_run:
         from evaluation.memory_builder import build_checkpoints, default_memory_config
         boundaries = set()
         for task_name in tasks:
@@ -283,9 +284,10 @@ def main():
         if boundaries:
             _cfg = default_memory_config()
             _cfg["builder_model"] = args.model
-            _ledger = build_checkpoints(bq, args.user_id, sorted(boundaries), llm_client, _cfg)
+            _ledger = build_checkpoints(bq, args.user_id, sorted(boundaries), llm_client,
+                                        _cfg, algo=args.mode)
             snapshot_cache.attach_memory_checkpoints(_ledger.checkpoints)
-            print(f"[eval] memory ledger: {len(_ledger.checkpoints)} checkpoints, "
+            print(f"[eval] {args.mode} ledger: {len(_ledger.checkpoints)} checkpoints, "
                   f"{_ledger.build_stats.get('calls', 0)} build calls")
     all_results: dict[str, list[dict]] = {}
     for task_name in tasks:

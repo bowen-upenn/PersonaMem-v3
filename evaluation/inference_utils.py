@@ -644,10 +644,10 @@ def dispatch_agent_run(
         stats["mcp_config_path"] = str(cfg_path)
         return sub.text, sub.turns, stats
 
-    # llm_longctx / memory — single QueryLLM answer call. The context block was
-    # already injected into `prompt` upstream (raw history for llm_longctx, the
-    # consolidated memory for memory mode), so dispatch is identical.
-    if mode not in ("llm_longctx", "memory"):
+    # llm_longctx / com / mem0 — single QueryLLM answer call. The context block
+    # was already injected into `prompt` upstream (raw history for llm_longctx,
+    # the consolidated memory for com/mem0), so dispatch is identical.
+    if mode not in ("llm_longctx", "com", "mem0"):
         return "", 0, {"error": f"dispatch_agent_run: unhandled mode {mode!r}"}
     if llm_client is None:
         return "", 0, {"error": f"{mode} mode requires a QueryLLM client but none was passed"}
@@ -694,14 +694,15 @@ class SnapshotCache:
         self._store: OrderedDict[tuple, tuple[str, dict]] = OrderedDict()
         self._lock = threading.Lock()
         self._max = max_entries if max_entries is not None else self.MAX_ENTRIES
-        # `memory` mode: the per-user memory is prebuilt once (in the parent) and
-        # attached here as {T_test: memory_string}; get_or_build then serves the
-        # consolidated memory in place of the raw history. See memory_builder.py.
+        # `com` / `mem0` modes: the per-user memory is prebuilt once (in the
+        # parent) and attached here as {T_test: memory_string}; get_or_build then
+        # serves the consolidated memory in place of the raw history. See
+        # memory_builder.py.
         self.mode = mode
         self._memory_checkpoints: dict[int, str] | None = None
 
     def attach_memory_checkpoints(self, checkpoints: dict | None) -> None:
-        """Attach the prebuilt per-user memory ledger (memory mode only)."""
+        """Attach the prebuilt per-user memory ledger (com / mem0 modes only)."""
         if checkpoints:
             self._memory_checkpoints = {int(k): v for k, v in checkpoints.items()}
 
@@ -729,7 +730,7 @@ class SnapshotCache:
             if key in self._store:
                 self._store.move_to_end(key)
                 return self._store[key]
-        if self.mode == "memory":
+        if self.mode in ("com", "mem0"):
             text, stats = self._memory_block(t_test)
         else:
             text, stats = serialize_history_for_context(bq, user_id, t_test, model=model, budget_tokens=budget)

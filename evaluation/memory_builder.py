@@ -39,7 +39,12 @@ from dataclasses import dataclass, field
 
 from evaluation.backend_query import APPS, BackendQuery
 from evaluation.inference_utils import _compact_event, count_tokens
-from evaluation.prompts import memory_update_prompt
+from evaluation.prompts import com_update_prompt, mem0_update_prompt
+
+# The two SEPARATE, faithful memory algorithms (never mixed). The mode string
+# IS the algorithm: `--mode com` / `--mode mem0`.
+MEMORY_ALGOS = ("com", "mem0")
+_PROMPT_BUILDERS = {"com": com_update_prompt, "mem0": mem0_update_prompt}
 
 # Stable tie-break so the merged stream is byte-deterministic across runs.
 APP_ORDER = {app: i for i, app in enumerate(APPS)}
@@ -212,17 +217,22 @@ def update_step(
     chunk: list[dict],
     llm_client,
     *,
+    algo: str = "com",
     temperature: float = 0.0,
     token_cap: int = 2000,
     model: str | None = None,
 ) -> tuple[str, str, int, int]:
-    """Run ONE memory-evolution LLM call over `chunk`.
+    """Run ONE memory build LLM call over `chunk` using the faithful prompt for
+    `algo` ('com' or 'mem0').
 
     Returns `(new_memory, new_summary, input_tokens, output_tokens)`. The model
     rewrites the whole doc; we then enforce the token cap with text-only
     consolidation as a safety net.
     """
-    prompt = memory_update_prompt(memory, summary, _render_chunk(chunk))
+    prompt_builder = _PROMPT_BUILDERS.get(algo)
+    if prompt_builder is None:
+        raise ValueError(f"unknown memory algo {algo!r}; expected one of {MEMORY_ALGOS}")
+    prompt = prompt_builder(memory, summary, _render_chunk(chunk))
     resp = llm_client.query_llm(prompt, temperature=temperature) or ""
     new_m, new_s = _parse_memory_summary(resp, memory, summary)
     new_m = consolidate_evict(new_m, token_cap, model=model)
@@ -344,11 +354,13 @@ def build_checkpoints(
     llm_client,
     cfg: dict | None = None,
     *,
+    algo: str = "com",
     run_dir=None,
     existing: dict[int, str] | None = None,
 ) -> MemoryLedger:
     """Walk the user's global event stream ONCE in ascending order and snapshot
-    the consolidated memory at each ascending `T_test` boundary.
+    the consolidated memory at each ascending `T_test` boundary, building memory
+    with the faithful `algo` ('com' or 'mem0').
 
     Correctness/firewall: a boundary `b`'s snapshot is taken AFTER folding every
     event with `t < b` and BEFORE folding any event with `t >= b`. Because the
@@ -358,6 +370,8 @@ def build_checkpoints(
     folds their events so later boundaries are correct, but skips re-spending on
     boundaries we already have.
     """
+    if algo not in MEMORY_ALGOS:
+        raise ValueError(f"unknown memory algo {algo!r}; expected one of {MEMORY_ALGOS}")
     cfg = {**default_memory_config(), **(cfg or {})}
     cap = cfg["token_cap"]
     model = cfg.get("builder_model")
@@ -380,7 +394,7 @@ def build_checkpoints(
         if not buffer:
             return
         memory, summary, in_tok, out_tok = update_step(
-            memory, summary, buffer, llm_client,
+            memory, summary, buffer, llm_client, algo=algo,
             temperature=cfg["builder_temperature"], token_cap=cap, model=model,
         )
         ledger.build_stats["input_tokens"] += in_tok
@@ -395,7 +409,7 @@ def build_checkpoints(
             snap = consolidate_evict(memory, cap, model=model)
             ledger.checkpoints[b] = snap
         if run_dir is not None:
-            _dump_state(run_dir, user_id, b, snap, ledger.build_stats)
+            _dump_state(run_dir, user_id, b, snap, ledger.build_stats, algo)
 
     for row in rows:
         # Before consuming a row at time t, snapshot every boundary <= t: all
@@ -415,15 +429,18 @@ def build_checkpoints(
     return ledger
 
 
-def _dump_state(run_dir, user_id: str, t_test: int, memory: str, build_stats: dict) -> None:
-    """Write a debug/resume checkpoint under run_dir ONLY (never backend/)."""
+def _dump_state(run_dir, user_id: str, t_test: int, memory: str, build_stats: dict, algo: str) -> None:
+    """Write a debug/resume checkpoint under run_dir ONLY (never backend/).
+    Namespaced by `algo` so `com` and `mem0` runs into the same run_dir never
+    collide."""
     from pathlib import Path
     states_dir = Path(run_dir) / "memory_states"
     states_dir.mkdir(parents=True, exist_ok=True)
-    (states_dir / f"{user_id}_T{t_test}.json").write_text(
+    (states_dir / f"{user_id}_{algo}_T{t_test}.json").write_text(
         json.dumps(
             {
                 "user_id": user_id,
+                "algo": algo,
                 "t_test": t_test,
                 "memory": memory,
                 "build_calls": build_stats.get("calls"),
@@ -437,14 +454,14 @@ def _dump_state(run_dir, user_id: str, t_test: int, memory: str, build_stats: di
     )
 
 
-def load_existing_checkpoints(run_dir, user_id: str) -> dict[int, str]:
-    """Reload persisted checkpoints (for --resume) so we skip rebuilding."""
+def load_existing_checkpoints(run_dir, user_id: str, algo: str) -> dict[int, str]:
+    """Reload persisted checkpoints for `algo` (for --resume) so we skip rebuilding."""
     from pathlib import Path
     states_dir = Path(run_dir) / "memory_states"
     out: dict[int, str] = {}
     if not states_dir.exists():
         return out
-    for p in states_dir.glob(f"{user_id}_T*.json"):
+    for p in states_dir.glob(f"{user_id}_{algo}_T*.json"):
         try:
             d = json.loads(p.read_text(encoding="utf-8"))
             out[int(d["t_test"])] = d["memory"]
