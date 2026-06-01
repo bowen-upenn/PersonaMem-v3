@@ -676,6 +676,11 @@ def build_hidden_persona_implicit_qa(
     if not profile:
         return []
     t_test = _t_test_anchor(profile, t_now)
+    # Never anchor before the 20%-engagement-history mark (prepare_eval_data
+    # drops such instances). See hidden_persona_recommendation for rationale.
+    _mark = bq.engagement_history_mark(user_id)
+    if _mark and t_test < _mark:
+        t_test = _mark
 
     eligible = _filter_eligible_personas(profile, t_test)
     if not eligible:

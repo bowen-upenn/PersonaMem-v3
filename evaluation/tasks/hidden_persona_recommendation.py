@@ -510,6 +510,14 @@ def build_hidden_persona_recommendation(
     if not profile:
         return []
     t_test = _t_test_anchor(profile, t_now)
+    # Never anchor before the 20%-engagement-history mark: prepare_eval_data
+    # drops any instance with t_test < that mark, and for short (~8-day)
+    # windows `t_now - RECENT_EVIDENCE_DAYS` lands before it — silently zeroing
+    # this task for ~40% of users. Clamp forward so the instance survives the
+    # gate. (No-op for users whose t_test is already past the mark.)
+    _mark = bq.engagement_history_mark(user_id)
+    if _mark and t_test < _mark:
+        t_test = _mark
 
     eligible = _filter_eligible_personas(profile, t_test)
     if not eligible:

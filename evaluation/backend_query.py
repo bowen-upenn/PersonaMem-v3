@@ -142,6 +142,29 @@ class BackendQuery:
             return []
         return sorted(p.name for p in self.base.iterdir() if p.is_dir())
 
+    def engagement_history_mark(self, user_id: str, fraction: float = 0.2) -> int:
+        """Timestamp at `fraction` into the user's engagement history.
+
+        Mirrors EXACTLY the post-build "20%-engagement-history" drop in
+        ``scripts/prepare_eval_data.py`` (same 5 apps, ``source_timestamp > 0``
+        filter, sorted, index ``len // 5`` for the 0.2 default). Builders that
+        anchor a ``t_test`` use this to avoid landing before the mark — which
+        would silently drop every instance for short (~8-day) windows. Returns
+        0 when there are no engagement timestamps.
+        """
+        ts: list[int] = []
+        for app in ("instagram", "facebook", "threads", "chatbot", "ai_studio"):
+            for e in self._load_events(user_id, app):
+                t = int(e.get("source_timestamp") or 0)
+                if t > 0:
+                    ts.append(t)
+        if not ts:
+            return 0
+        ts.sort()
+        idx = (len(ts) // 5) if abs(fraction - 0.2) < 1e-9 else int(len(ts) * fraction)
+        idx = min(idx, len(ts) - 1)
+        return ts[idx]
+
     def get_events(
         self,
         user_id: str,
