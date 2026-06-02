@@ -29,6 +29,14 @@ SOCIAL_APP_MODULES = {
 
 CHATBOT_MODULE = "evaluation.mcp_servers.chatbot_mcp_server"
 
+# Read-only context servers ALWAYS available to the mcp_agent (parity with the
+# other modes, which all expose calendar + AI Studio). Not gated by enabled_apps
+# because the agent never writes to them — they are pure read context.
+READONLY_CONTEXT_MODULES = {
+    "calendar":  "evaluation.mcp_servers.calendar_mcp_server",
+    "ai_studio": "evaluation.mcp_servers.ai_studio_mcp_server",
+}
+
 
 def build_mcp_config(
     user_id: str,
@@ -64,6 +72,14 @@ def build_mcp_config(
                 "env": {**base_env, "PM3_APP": app},
                 "cwd": repo_root,
             }
+    # Always-on read-only context (calendar + AI Studio) — no overlay needed.
+    for name, module in READONLY_CONTEXT_MODULES.items():
+        servers[name] = {
+            "command": python_exe,
+            "args": ["-m", module],
+            "env": dict(base_env),
+            "cwd": repo_root,
+        }
     return {"mcpServers": servers}
 
 
@@ -79,6 +95,9 @@ def mcp_allowed_tools(enabled_apps: tuple[str, ...]) -> list[str]:
 
     MCP tools show up as `mcp__<server_name>__<tool_name>`; we allow all
     tools from each server (path-scoping would be meaningless here since
-    the servers already scope by time-mask + overlay).
+    the servers already scope by time-mask + overlay). The always-on
+    read-only context servers (calendar, AI Studio) are always permitted.
     """
-    return [f"mcp__{app}__*" for app in enabled_apps]
+    patterns = [f"mcp__{app}__*" for app in enabled_apps]
+    patterns += [f"mcp__{name}__*" for name in READONLY_CONTEXT_MODULES]
+    return patterns
