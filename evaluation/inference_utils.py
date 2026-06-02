@@ -512,6 +512,31 @@ def merge_token_metrics(metrics: dict, *, prompt: str, response: str, stats: dic
     return metrics
 
 
+def _render_calendar_block(bq: BackendQuery, user_id: str, since_timestamp: int) -> str:
+    """Folded, time-masked calendar STATE at `since_timestamp` as compact JSON
+    lines (one per current entry). Shared by llm_longctx + the memory builders
+    so every non-agent mode sees the user's schedule (the calendar is a separate
+    modification stream, not an APPS event list)."""
+    try:
+        state = bq.get_calendar_state(user_id, since_timestamp)
+    except Exception:
+        return ""
+    lines = []
+    for _eid, entry in sorted((state or {}).items(),
+                              key=lambda kv: (kv[1] or {}).get("start_ts", 0)):
+        if not isinstance(entry, dict):
+            continue
+        loc = entry.get("location") or {}
+        lines.append(json.dumps({
+            "title": entry.get("title", ""),
+            "start": entry.get("formatted_timestamp") or entry.get("start_ts"),
+            "end": entry.get("end_ts"),
+            "location": loc.get("city", "") if isinstance(loc, dict) else loc,
+            "attendees": entry.get("attendees"),
+        }, ensure_ascii=False))
+    return "\n".join(lines)
+
+
 def serialize_history_for_context(
     bq: BackendQuery,
     user_id: str,
@@ -563,6 +588,17 @@ def serialize_history_for_context(
         running_tokens += app_tokens
         sections.append(f"\n[After {app}: running total {running_tokens}]\n")
         per_app_stats[app] = {"events": len(compacts), "tokens": app_tokens}
+
+    # Calendar (R5 modification stream) — folded to the time-masked state at
+    # `since_timestamp`. Not an APPS event list, so included separately so
+    # llm_longctx / memory see the user's schedule like the agent modes do.
+    cal_body = _render_calendar_block(bq, user_id, since_timestamp)
+    if cal_body:
+        cal_tokens = count_tokens(cal_body, model)
+        sections.append(f"\n# Calendar — current entries as of now (~{cal_tokens} tokens)\n")
+        sections.append(cal_body)
+        running_tokens += cal_tokens
+        per_app_stats["calendar"] = {"events": cal_body.count(chr(10)) + 1, "tokens": cal_tokens}
 
     text = "\n".join(sections)
     stats = {

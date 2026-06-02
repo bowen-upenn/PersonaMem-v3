@@ -703,7 +703,7 @@ def materialize_snapshot(
     snap = base / user_id / f"T_{t_test}"
     # Cheap cache: if all app files exist, reuse (profile.json deliberately
     # excluded — see the firewall comment below).
-    expected = [snap / f"{a}.json" for a in APPS]
+    expected = [snap / f"{a}.json" for a in APPS] + [snap / "calendar.json"]
     if snap.exists() and all(p.exists() for p in expected):
         return snap
 
@@ -713,15 +713,21 @@ def materialize_snapshot(
     # personalization must be inferred from the event timeline alone — no
     # demographic / app-persona scaffolding that would shortcut the test.
     # Per-app event lists, already time-masked + leak-stripped by BackendQuery.
+    app_counts: dict[str, int] = {}
     for app in APPS:
         events = bq.get_events(user_id=user_id, app=app, since_timestamp=t_test)
+        app_counts[app] = len(events)
         (snap / f"{app}.json").write_text(json.dumps(events, ensure_ascii=False, indent=2))
+    # Calendar (R5 modification stream), time-masked to mods with ts < T_test
+    # (the agent folds them itself; not an APPS event list).
+    cal_mods = bq.get_calendar_modifications(user_id, since_timestamp=t_test)
+    (snap / "calendar.json").write_text(json.dumps({"modifications": cal_mods}, ensure_ascii=False, indent=2))
     # The agent only has Read (no Glob/Grep/Bash), so this README enumerates
     # every file it can open and describes their structure.
-    instagram = json.loads((snap / "instagram.json").read_text())
-    facebook = json.loads((snap / "facebook.json").read_text())
-    threads = json.loads((snap / "threads.json").read_text())
-    chatbot = json.loads((snap / "chatbot.json").read_text())
+    _app_file_lines = "\n".join(
+        f"- `{app}.json` — {app_counts.get(app, 0)} events, time-sorted ascending."
+        for app in APPS
+    )
     (snap / "README.md").write_text(f"""# User {user_id} history snapshot (time-masked)
 
 This directory contains user {user_id}'s interaction history as of a specific
@@ -734,16 +740,18 @@ moments dynamically from the full timeline.
 
 ## Files (use `Read` to open any of them)
 
-You see only the per-app event timelines. The user's profile (demographics, app
-personas, hidden persona summary, full preference list) is intentionally NOT
-included — you must infer who this user is from their actual interactions
-across the four apps below.
+You see only the per-app event timelines (plus the calendar). The user's profile
+(demographics, app personas, hidden persona summary, full preference list) is
+intentionally NOT included — you must infer who this user is from their actual
+interactions across the apps below.
 
-- `instagram.json` — {len(instagram)} events, time-sorted ascending.
-- `facebook.json` — {len(facebook)} events.
-- `threads.json` — {len(threads)} events.
-- `chatbot.json` — {len(chatbot)} conversation events (each carries a full
-  `conversation` turn list + `interaction_format.user_message`).
+{_app_file_lines}
+- `calendar.json` — a `{{"modifications": [...]}}` CRUD stream on the user's
+  calendar entries (`added` / `updated` / `removed`, each with a `timestamp`).
+  Fold the modifications with `timestamp < T_test` to get the current schedule.
+
+Chat-style apps carry a full `conversation` turn list +
+`interaction_format.user_message` per event; feed-style apps carry `content`.
 
 ## Event schema
 
@@ -764,7 +772,7 @@ Each event is a JSON object with:
 
 Events within each app JSON are sorted oldest → newest. Read the full file
 once and scan; do not try to enumerate files by `ls` or `find` — those tools
-are not available to you. Only the five filenames above exist in this
-directory.
+are not available to you. Only the filenames listed above (and this README)
+exist in this directory.
 """)
     return snap
