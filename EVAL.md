@@ -364,7 +364,7 @@ python scripts/prepare_eval_data.py --user_id 115
 python -m evaluation.run_eval --user_id 115 --mode agent_tools \
     --run_dir benchmark/115/runs/$(date +%s) \
     --claude_model sonnet --judge_model gpt-5-chat --workers 16
-# `--mode` ∈ {mcp_agent, agent_tools, llm_longctx, com, mem0}; see "Modes" below.
+# `--mode` ∈ {mcp_agent, agent_tools, llm_longctx, llm_memory, mem0}; see "Modes" below.
 # `--workers 16` parallelizes non-agentic rows; agentic writes stay sequential.
 # `--workers 1` disables parallelism (original sequential behavior).
 
@@ -571,28 +571,30 @@ The agent decides **on its own** whether to initiate contact at a moment the use
 | Mode | Runner | Backend access | What it isolates |
 |---|---|---|---|
 | `agent_tools` | Real **Claude Code subagent** via `claude -p` (uses your subscription auth) | Read-only into a **time-masked filesystem snapshot** at `/tmp/pm3_eval_snapshots/{user_id}/T_{t_test}/` | Claude Code's actual filesystem-agent behavior |
-| `mcp_agent` | Claude Code subagent via `claude -p --mcp-config` with 4 mock MCP servers | Structured MCP tools: `get_feed`, `create_post`, `react`, `send_dm`, etc. per app; writes go to `writes.jsonl` overlay | Structured-API agentic behavior — comparable to real app integrations |
-| `llm_longctx` | Direct single `QueryLLM.query_llm` call (Azure/OpenAI/Claude/Gemini) | Full history concatenated + per-app token annotations | Pure long-context baseline, no agent framework |
-| `com` | Direct single `QueryLLM.query_llm` call (same as `llm_longctx`), but the injected block is a memory built by **Chain-of-Memory (CoM)** | A **bounded text-only memory** built by CoM's dynamic-evolution construction over the cross-app history | Whether CoM's self-built memory matches long-context quality at far lower per-query token cost |
-| `mem0` | Same as `com`, but the memory is built by **Mem0** | A **bounded text-only memory** built by Mem0's two-phase extract→update (ADD/UPDATE/DELETE/NOOP) | Whether Mem0's self-built memory matches long-context quality at far lower per-query token cost |
+| `mcp_agent` | Claude Code subagent via `claude -p --mcp-config` with mock MCP servers | Structured MCP tools per app (`get_feed`, `create_post`, `react`, `send_dm`, …) + always-on read-only `calendar` + `ai_studio` context servers; writes go to `writes.jsonl` overlay | Structured-API agentic behavior — comparable to real app integrations |
+| `llm_longctx` | Direct single `QueryLLM.query_llm` call (Azure gpt-5.5) | Full cross-app history concatenated + folded calendar state + per-app token annotations | Pure long-context baseline, no agent framework |
+| `llm_memory` | Direct single `QueryLLM.query_llm` call (same as `llm_longctx`), but the injected block is a **persona/preference-centered text memory** | A **bounded (≤2048-token), human-readable, NO-vector** memory doc distilled from the cross-app history (+ folded calendar) | Whether a compact self-built persona memory matches raw long-context at a fraction of the per-query tokens |
+| `mem0` | Same as `llm_memory`, but memory is the **real `mem0ai` library** (Azure) | Per-query **top-k semantic retrieval** over a `mem0ai` store (Azure gpt-5.5 fact extraction + `text-embedding-3-large` + local qdrant), time-masked, rendered ≤2048 tokens (+ folded calendar) | Whether a real vector-memory product matches raw long-context / a hand-written text memory |
 
-Running all five answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history? (c) does a self-built memory (CoM or Mem0) match raw long-context at a fraction of the per-query tokens — and which memory algorithm wins?
+Running all five answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history? (c) does a compact self-built memory (human-readable text vs. real `mem0ai` vector retrieval) match raw long-context at a fraction of the per-query tokens?
 
-### How the `com` / `mem0` modes work (two faithful SOTA memory algorithms)
+### How the `llm_memory` / `mem0` memory baselines work
 
-Both follow the `llm_longctx` style (single `QueryLLM` answer call, context injected into the prompt) but, instead of dumping raw events, a memory agent **reads the cross-app event history in chronological chunks and consolidates it into ONE bounded, plain-text memory document**, injected into the answering prompt in place of the raw history. The two modes are **separate and never mixed** — each faithfully implements one published algorithm (`evaluation/memory_builder.py`, prompts in `evaluation/prompts.py`):
+Both follow the `llm_longctx` style (single `QueryLLM` answer call, context injected into the prompt) but, instead of dumping raw events, inject a **bounded ≤2048-token memory** built from the cross-app history. They are two *different kinds* of memory — a hand-written text profile and a real vector-memory product — not two variants of one algorithm. **Fairness invariant: the memory-build prompts are deliberately GENERAL and are NOT engineered around the benchmark's graded dimensions** (no dislikes / restraint / "stop recommending" / over-personalization special-casing, no app-name enumeration) — special-casing those would teach the baselines to the test.
 
-- **`com` — Chain-of-Memory:** maintain ONE unified, continuously evolving memory via dynamic-evolution operations (semantic consolidation, relevance weighting, temporal decay, structural reorganization). No discrete-op vocabulary.
-- **`mem0` — Mem0:** per chunk, a two-phase **extraction** (salient candidate facts) → **update** where each fact triggers exactly one of `ADD / UPDATE / DELETE / NOOP` against the current memory. No CoM evolution clauses.
+- **`llm_memory` — persona/preference-centered text memory (no vectors).** A memory agent reads the history in chronological chunks and maintains ONE plain-text profile under four headers (`Who they are` / `Interests & preferences` / `People & places` / `Currently active`) using explicit **ADD / EDIT / REMOVE / MERGE** actions, capturing both explicit signals AND implicit preferences/patterns (grounded, not fabricated). Built once in the parent, snapshotting at each `T_test` boundary (persisted to `{run_dir}/memory_states/{uid}_llm_memory_T{t}.json` for `--resume`); eviction under the 2048-token cap is salience-based and **content-neutral** (no pinning). `evaluation/memory_builder.py` + `llm_memory_update_prompt` in `evaluation/prompts.py`.
+- **`mem0` — real `mem0ai` 2.0.4, fully on Azure.** We do NOT reimplement mem0 — `evaluation/mem0_backend.py` wraps the real library: Azure gpt-5.5 LLM (fact extraction + its own ADD/UPDATE/DELETE/NOOP), Azure `text-embedding-3-large` (3072-d) embedder, local on-disk qdrant per user. The store is built once over all events `< max(T_test)`; each query does **per-query top-k semantic search**. gpt-5.5 is registered as a reasoning model so mem0 sends only `model`+`messages` (the deployment rejects `temperature`/`max_tokens`). Runs **in-process** (`--workers` forced to 1) since the qdrant store is unpicklable.
 
-Shared properties (held constant so the only difference is the algorithm):
+Shared properties (held constant for a fair A/B):
 
-- **TEXT-ONLY — no RAG, no embeddings, no vector/graph store, no retrieval.** The LLM sees the *entire* current memory each build step and the *entire* final memory in the answer prompt; all dedup/merge/eviction is literal string + `[topic]`-tag + recency/occurrence logic. (For `mem0`, its build-time "find semantically similar memories" step is realized by showing the whole bounded memory rather than an ANN top-s lookup — the only deviation from the paper, applied equally to both.)
-- **Firewall preserved.** Memory at `T_test` reflects only events with `source_timestamp < T_test` (same mask as `llm_longctx`); `profile.json` is never read; the builder consumes the same `_compact_event` view as the baseline (fair A/B).
-- **Multi-provider.** Both the build calls and the answer call go through `QueryLLM`, so `--model` selects the provider (OpenAI/Azure, Claude, or Gemini) for both. `--memory_builder_model` (default `=--model`) can point at a different provider for cheap-builder ablations.
-- **Cost.** The per-user memory ledger is built ONCE in the parent (snapshotting at each `T_test` boundary, persisted to `{run_dir}/memory_states/{uid}_{algo}_T{t}.json` for inspection + `--resume`), then each query injects a ~`--memory_token_cap`-token block instead of the full history. Build cost is reported as `memory_build_*` tokens in `summary.json`'s `persona_totals`.
-- **Knobs:** `--memory_token_cap` (2000), `--memory_chunk_k` (40), `--memory_builder_model` (=`--model`), `--memory_builder_temperature` (0.0).
-- **Correctness gate:** `python tests/test_memory_builder.py` (persona-free synthetic smoke test — no real data, no LLM spend; covers both `com` and `mem0`).
+- **Firewall preserved.** `llm_memory` snapshots reflect only events with `source_timestamp < T_test` (clean prefix cut, same mask as `llm_longctx`). For `mem0`, every event is added with `metadata={"ts": event_ts}` (reconciled to the latest contributing event after each add), and retrieval filters `ts < T_test` — verified that the filter is honored and no future-informed fact leaks. `profile.json` is never read; both consume the same `_compact_event` view as the baseline.
+- **Calendar parity.** The folded calendar state at `T_test` is appended to both memory contexts at answer time (it is live structured state, not "activity to distill"), matching `llm_longctx` and the agent modes.
+- **Token-matched.** Both cap the injected memory at `--memory_token_cap` (2048) so the comparison isolates memory *content*, not budget.
+- **Knobs:** `--memory_token_cap` (2048), `--memory_chunk_k` (40), `--memory_builder_model` (=`--model`), `--memory_builder_temperature` (0.0, `llm_memory` only). mem0 env: `AZURE_OPENAI_DEPLOYMENT_NAME` (gpt-5.5), `AZURE_OPENAI_DEPLOYMENT_NAME_EMBED`/`_EMBEDDING` (text-embedding-3-large).
+
+### Running the full 5-config matrix
+
+`scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; agent modes use Claude Code opus (4.8). gpt-5.5 is the judge for all.
 
 ### How the `agent_tools` sandbox works
 
