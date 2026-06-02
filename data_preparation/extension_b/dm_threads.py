@@ -123,6 +123,22 @@ _THREAD_GUIDANCE = {
     ),
 }
 
+# Stranger cold-outreach archetypes — the audit found 18/20 personas got the
+# SAME "earn passive income from your phone" spam. Rotate per-thread (seeded)
+# so the cohort's spam varies like real inboxes.
+SPAM_ARCHETYPES = [
+    "a recruiter pitching a vague 'exciting remote opportunity'",
+    "a fake brand-collab / sponsorship offer ('we love your content, DM for a deal')",
+    "a romance-scam opener ('I came across your profile and felt a connection')",
+    "an account-recovery / verification phishing message ('your account will be suspended')",
+    "a crypto / forex 'investment mentor' pitch with guaranteed returns",
+    "an MLM recruiter ('be your own boss', essential-oils/leggings/supplements)",
+    "a fake giveaway / prize notification ('you've been selected to win')",
+    "a get-followers / engagement-boost service pitch",
+    "a job-offer scam with an unrealistic salary and an upfront 'training fee'",
+    "a charity / donation solicitation from an unfamiliar org",
+]
+
 
 # DM voice rendering is now unified via prompts._render_voice_for_consumer.
 # DMs foreground audience_design + active stances because per-recipient register
@@ -338,7 +354,11 @@ def generate_dm_threads(
             hashtags=", ".join(seed_hashtags[:6]) if seed_hashtags else "(no specific topic)",
             seed_caption=seed_caption or "(no specific post — cold outreach)",
             thread_kind=kind,
-            conversation_guidance=_THREAD_GUIDANCE.get(kind, ""),
+            conversation_guidance=_THREAD_GUIDANCE.get(kind, "") + (
+                f" SPAM ARCHETYPE for this stranger (use THIS one — do NOT default "
+                f"to 'earn passive income'): {rng.choice(SPAM_ARCHETYPES)}."
+                if kind == "stranger_no_reply" else ""
+            ),
         )
 
         # Voice-quality retry loop: validate the user-side messages

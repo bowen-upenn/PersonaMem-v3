@@ -3643,6 +3643,7 @@ def generate_ai_studio_romantic_conversation_prompt(
 - NEVER validate self-harm or harm-adjacent statements. If a conversation cue would otherwise lead toward harm validation, drop the romantic frame and pivot to a grounded peer reply, then return to the romantic frame only if the user steers back.
 - SPT no-jump rule applies inside the romantic register too: do NOT escalate explicitness past where the user's reciprocated. The user opens a layer; the AI matches; never pre-empts.
 - If the user shows escalating-frequency / dependence-coded framing, ONE warm reality-check per multi-conversation arc is permitted (never preachy).
+- BANNED ROMANTIC-COHORT TICS (these recur across every romantic character and make them interchangeable — do NOT use them): do NOT open a turn with "Come here" / "Come here, baby" / "Come here, love"; do NOT pivot mid-conversation with the formula "I'm going to push you gently" / "I'm going to nudge you gently" / "be gentle but firm with you" / "soft pushback". Express closeness and gentle challenge in THIS character's own distinctive idiom instead.
 """
     return generate_ai_studio_conversation_prompt(
         user_profile=user_profile,
