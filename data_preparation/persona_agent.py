@@ -7112,7 +7112,9 @@ class PersonaAgent:
             format_obj = {
                 "app": app,
                 "action": action_id,
-                "action_label": canonical_label,
+                # @ai comments: surface label is just "@ai comment"; intent is
+                # in the structured `action` + the natural `user_message`.
+                "action_label": "@ai comment" if action_id in AT_AI_ACTIONS else canonical_label,
                 "user_message": user_message if needs_msg else None,
             }
             return cr, json.dumps(format_obj)
@@ -9914,6 +9916,11 @@ class PersonaAgent:
                 "action_label": sampled_entry["label"],
                 "user_message": None,
             }
+            # @ai comments: the surface label is just "@ai comment". The intent
+            # lives in the structured `action` (for the eval) + the natural
+            # `user_message` (generated below), NOT baked into the label.
+            if sampled_entry["action"] in AT_AI_ACTIONS:
+                fmt["action_label"] = "@ai comment"
             # Carry over a stored user_message ONLY when the re-sampled action
             # is one that semantically carries a natural-language message
             # (social-media @ai comments or Chatbot chat turns). Step 12
