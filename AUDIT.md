@@ -106,7 +106,15 @@ Mandatory checks (write a single Python script using `csv.DictReader` + `csv.fie
 9. **Compose-task length distribution**: for each compose task type, compute `min/p25/median/p75/max` word counts and `count_under_floor`.
 10. **Phrase variety on sensitive_event queries**: count rows where `user_query` starts with stock fillers (e.g. "low-key way to", "without making it"). Flag if >10% of any user's sensitive_event rows share an opener.
 11. **Cross-persona diversity** (runs across ALL personas, the load-bearing check before scaling): tally `profile.json::ai_studio_persona.persona_archetype` across the cohort — no single archetype should dominate (>~40% is a routing regression; the LLM left unconstrained collapses onto `mentor_coach`/`older_sibling_figure`). Archetypes are deterministically routed from hidden-persona signals by `persona_agent._route_ai_studio_archetype` (distinctive rare signals → distinctive archetypes; hashed spread for the rest), so a collapsed distribution means the router was bypassed. Also spot-check demographic spread (gender, race_ethnicity, career) and `user_voice` sameness (emoji palette, capitalization, signature phrases) across personas — at 200× scale, voice/archetype sameness is the dominant quality risk.
+    - **Cohort-collapse axis checklist (load-bearing before any scale-up)**: single-user generation collapses onto modal defaults. Tally EACH of these across the cohort and flag any near-monoculture (>~40% one value, or far fewer distinct values than personas) — the 2026-06 survey found ALL of these collapsed and they are now seeded deterministically per-user in `data_preparation/diversity.py` (so a regression = the seeding was bypassed):
+      `education` (was 100% Bachelor's), `big_five` signature + `mbti` (was 70% I-S-J / 100% introvert / all-high-openness), `career` sector (was civic/infrastructure skew), `ai_studio_persona.persona_archetype` (was 45% romantic_partner), `user_voice` emoji_palette (😂 was in 20/20) + `humor_tone` (was "dry/avoids-mean" 15/20) + `idiolect.function_word_profile` (was "just/kinda/honestly" everywhere) + capitalization, `sensitive_life_event` topics (was 59% job_loss/parent_conflict, 8/15 topics unused), and persona+friend `name`s (was Marcus×9 / Whitaker×6). See the Verification commands for the one-liner tallies.
     - **AI-character name collision (`ai_studio_persona.character_name`)**: tally surnames and full names across the cohort. The LLM left unconstrained collapses onto a tiny default set — most notably **"Vale" as a surname** (observed 9/20) and the prompt's own example first names **"Rowan"/"Wren"/"Mira"** (→ duplicate "Rowan Vale" across multiple users). Detection: `Counter(name.split()[-1] for ...)` for surnames + `Counter(full_name)` for exact dups; any surname >~2/cohort or any repeated full name is a finding. The name is woven into the conversation bodies of `ai_studio.json`, so a collision is a visible "two users have the same AI companion" artifact, not just metadata. Guard: the Step-11C prompt (`personalize_ai_studio_persona_prompt`) now forbids "Vale"/"Rowan"/"Wren"/"Mira" and takes a `used_names` blocklist; targeted re-rolls use `scripts/rerun_ai_studio.py`, which threads a shared blocklist across users and enforces unique first+surname per character (re-rolls Step 11C + 18b only, reusing all other backend state). NOTE: `romantic_partner` over-concentration is NOT automatically a defect — the `romantic_specifier` axes (gender_presentation / sexuality_orientation / body_role_coding) differentiate them; check those vary before flagging. `relational_dynamic`/`aesthetic_vibe` mildly skewing + `explicitness_band=sensual` everywhere are by-design (erotic only on explicit adult signal).
+
+12. **Example-name copying + empty authored surfaces (prompt-seed leaks)**:
+    - **Hard-coded example names in a prompt get copied into every persona.** "Ana" was the example calendar attendee (`attendees: ["self", "Ana"]`) → "Ana" in all 20 calendars; same mechanism as the AI-character "Rowan"/"Wren". Detection: grep a candidate name across all `calendar.json` (or any surface); if it appears in ≥~half the cohort it's a seed leak. Guard: prompts now draw attendee names from the user's friend graph / forbid placeholder names.
+    - **Empty authored surfaces.** The `@ai` comment `interaction_format.user_message` was null on 97% of `at_ai_*` events (events re-sample their action independently of the canonical-level Step-17 message gen). Detection: for each `at_ai_*`-action event, assert `interaction_format.user_message` is non-empty. Guard: the save path now generates it inline for any at_ai event missing one. Same check applies to any action in `AT_AI_ACTIONS` / `CHATBOT_TURN_ACTIONS` that should carry text.
+    - **Silent per-persona pipeline-step skips.** Step 15 assigned ZERO `event_location` to a whole persona (uid 1: 0/333). Detection: per-persona, if social events ≥20 but 0 carry `event_location.city`, the geo step silently failed. Guard: `run_pipeline` now emits a loud `GEO SILENT-FAIL` + `summary["geo_silent_fail"]`.
+    - **Known false positive — `ad_metadata`**: ad events DO carry `ad_metadata`, but nested under `event["content"]["ad_metadata"]`, NOT at the event root. Check the content level before flagging it "missing". `disclosure_label` is normalized to "Sponsored".
 
 ## Existing automated checks — what the pipeline already enforces
 
@@ -332,6 +340,30 @@ hot=[ (s,c) for s,c in sur.items() if c>2 ]
 print('duplicate full names:', dup or 'none')
 print('overused surnames (>2):', hot or 'none')   # both should be empty
 "
+
+# Cohort-collapse tally: each axis should have many distinct values across the
+# cohort (a near-monoculture = the diversity.py seeding was bypassed).
+python3 -c "
+import json, glob, collections
+edu=collections.Counter(); arch=collections.Counter(); emoji_laugh=0
+mbti=collections.Counter(); sle=collections.Counter(); n=0
+for p in glob.glob('backend/*/profile.json'):
+    if '/_' in p: continue
+    d=json.load(open(p)); n+=1
+    edu[d.get('education','?').split(' in ')[0]]+=1
+    arch[(d.get('ai_studio_persona') or {}).get('persona_archetype','?')]+=1
+    m=d.get('mbti',{}); mbti[m.get('type','?') if isinstance(m,dict) else m]+=1
+    if '😂' in str((d.get('user_voice') or {}).get('emoji_palette','')): emoji_laugh+=1
+    for h in d.get('hidden_personas',[]):
+        if h.get('type')=='sensitive_life_event':
+            for e in h.get('events',[]): sle[e.get('topic','?')]+=1
+print(f'n={n}')
+print('education levels:', len(edu), dict(edu))
+print('archetypes:', len(arch), '| top:', arch.most_common(1))
+print('MBTI distinct:', len(mbti))
+print('SLE topics distinct:', len(sle), '| top:', sle.most_common(2))
+print('emoji palettes with U+1F602:', emoji_laugh, '/', n, '(should be well under n)')
+"   # flag if any single value dominates (>~40%) or distinct-count << n
 
 # Compose-task word floor (personas discovered dynamically)
 python3 -c "

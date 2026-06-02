@@ -443,9 +443,25 @@ Demographics sampled first; everything downstream (name, career, bio) must be co
 
 **Race/Ethnicity** (28 entries, key ones): White American 15%, Chinese 10%, Black/African American 8%, Indian 8%, Mexican American 8%, Filipino/Vietnamese/Korean 4% each, Japanese/MENA/Multiracial 3% each, remaining categories 1-2% each. Intentionally diversified beyond census.
 
-**LLM-generated fields:** Name (culturally appropriate), Career (consistent with *some* preferences), Big Five personality (each low/medium/high), Bio (3-5 sentences). LLM instructed to avoid stereotypical demographic-career-hobby combinations.
+**LLM-generated fields:** Name (culturally appropriate), Career (consistent with *some* preferences, **within a pre-assigned sector**), Bio (3-5 sentences). Big Five is **pre-assigned, not LLM-rated** (see Cohort diversity seeding). LLM instructed to avoid stereotypical demographic-career-hobby combinations.
 
-**Highest education level** (8 levels, key weights): Bachelor's degree 45%, Master's 20%, Associate 12%, Professional (JD/MD/DDS/etc.) 5%, PhD 5%, Vocational / trade certificate 4%, Some college (no degree) 4%, High school only 5%. Bachelor-or-above ≈ 75%, graduate-or-above ≈ 30%. A separate mini-tier LLM call (`assign_education_level_prompt`) picks the level for each user by treating this distribution as a population prior and the persona traits as evidence (advanced research signals push up; vocational / trade signals push down). Hard constraint inside the prompt: don't assign "Professional degree" unless persona traits show real adjacency to law / medicine / dentistry / vet / pharmacy. Falls back to weighted random sampling if the LLM call fails or returns an out-of-vocabulary level. The chosen level is passed verbatim into the flagship profile prompt, which only chooses the FIELD OF STUDY.
+**Highest education level** (8 levels): Bachelor's 45%, Master's 20%, Associate 12%, Professional (JD/MD/DDS) 5%, PhD 5%, Vocational/trade 4%, Some college 4%, HS only 5%. Assigned by a **deterministic per-user seeded draw** from this distribution (`diversity.assign_education_level`), not an LLM pick — the old `assign_education_level_prompt` was told to "default to the prior unless signals push you elsewhere" and collapsed to the modal Bachelor's for ~every user (audit: 100% Bachelor's across 20). Professional degrees are re-rolled away unless persona traits show law/medicine/etc. adjacency. The level is passed verbatim into the flagship profile prompt, which only chooses the FIELD OF STUDY.
+
+### Cohort diversity seeding (`data_preparation/diversity.py`)
+
+Single-user generation, asked per user with no view of the cohort, collapses onto modal defaults — the 2026-06 audit (and a follow-up survey) found **100% Bachelor's, 45% romantic_partner archetype, 😂 in 20/20 voice palettes, "just/kinda/honestly" idiolect everywhere, "dry/avoids-mean" humor in 15/20, MBTI 70% I-S-J / 100% introvert, big_five 7 signatures/20 all high-openness, careers skewed civic/infrastructure, sensitive-life-events 59% job_loss/parent_conflict, and persona/friend names reusing a tiny pool (Marcus×9, Whitaker×6, "Ana" attendee in every calendar)**. `diversity.py` gives each user a STABLE pseudo-random assignment derived from a hash of `user_id` (independent per axis via salts), injected into the relevant generation prompt as a *pinned constraint* — the LLM still authors content, but the axis is fixed, so the cohort spreads without cross-user coordination and re-runs reproduce exactly. Axes:
+
+| axis | helper | injected into |
+|---|---|---|
+| education level | `assign_education_level` | profile prompt (verbatim) |
+| Big Five (5 traits) → MBTI follows | `assign_big_five` | profile prompt (verbatim) |
+| career sector (20) | `assign_career_sector` | profile prompt |
+| persona + friend names | `name_freshness_nudge` (preferred initials + overused-name blocklist) | profile + friend-graph prompts |
+| AI Studio archetype (intimate_interest hash-split) | `intimate_interest_archetype` | `_route_ai_studio_archetype` |
+| voice (capitalization / emoji incl. zero / formality / humor / verbosity / punctuation) + banned defaults | `assign_voice_axes` | `generate_voice_core_prompt` |
+| sensitive-event topic pool | `assign_sle_topic_pool` | `personalize_sensitive_life_event_prompt` |
+
+Verified across the 20 uids: education → 7 levels, big_five → 19 distinct signatures, careers → 12 sectors, intimate→5 archetypes, SLE → 13/15 topics, voice → 5 emoji-zero personas + 6 humor modes.
 
 **Mobility class (v0 / e6 substrate):** Each user is assigned a `mobility_class ∈ {homebody, domestic, international, nomadic}` at profile generation time using an MD5-seeded per-user RNG (deterministic across regen runs). Distribution across the cohort: ~30% homebody, ~40% domestic, ~20% international, ~10% nomadic. Not every user moves around in an 8-day window — homebodies stay in their home city for the full window and are explicitly NOT forced into a trip arc. The class drives class-adaptive constraints in Step 15 (city count, home-share floor, trip-arc presence) and Step 16 (class-conditional transit entries).
 
