@@ -317,7 +317,7 @@ def run_e5_horizon_lifecycle(
         t = inst["t_test"]
         history_block = None
         history_tokens = 0
-        if mode in ("llm_longctx", "com", "mem0"):
+        if mode in ("llm_longctx", "llm_memory", "mem0"):
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
         prompt = e5_prompt(inst, history_block)

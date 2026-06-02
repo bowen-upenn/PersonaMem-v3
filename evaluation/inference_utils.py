@@ -537,6 +537,25 @@ def _render_calendar_block(bq: BackendQuery, user_id: str, since_timestamp: int)
     return "\n".join(lines)
 
 
+def _append_calendar_block(bq: BackendQuery, user_id: str, t_test: int, text: str,
+                           stats: dict, model: str | None) -> tuple[str, dict]:
+    """Append the folded calendar STATE at `t_test` to a memory-mode context so
+    the memory baselines see the user's current schedule, same as llm_longctx.
+    The calendar is live structured state (not 'activity to distill'), so it is
+    NOT folded into the memory build — it is attached here at answer time."""
+    cal = _render_calendar_block(bq, user_id, t_test)
+    if not cal:
+        return text, stats
+    cal_tokens = count_tokens(cal, model)
+    block = f"\n\n# Calendar — current entries as of now (~{cal_tokens} tokens)\n{cal}"
+    stats = dict(stats or {})
+    per_app = dict(stats.get("per_app") or {})
+    per_app["calendar"] = {"events": cal.count("\n") + 1, "tokens": cal_tokens}
+    stats["per_app"] = per_app
+    stats["total_tokens"] = int(stats.get("total_tokens", 0) or 0) + cal_tokens
+    return (text or "") + block, stats
+
+
 def serialize_history_for_context(
     bq: BackendQuery,
     user_id: str,
@@ -680,10 +699,11 @@ def dispatch_agent_run(
         stats["mcp_config_path"] = str(cfg_path)
         return sub.text, sub.turns, stats
 
-    # llm_longctx / com / mem0 — single QueryLLM answer call. The context block
-    # was already injected into `prompt` upstream (raw history for llm_longctx,
-    # the consolidated memory for com/mem0), so dispatch is identical.
-    if mode not in ("llm_longctx", "com", "mem0"):
+    # llm_longctx / llm_memory / mem0 — single QueryLLM answer call. The context
+    # block was already injected into `prompt` upstream (raw history for
+    # llm_longctx, the consolidated persona memory for llm_memory, the retrieved
+    # facts for mem0), so dispatch is identical.
+    if mode not in ("llm_longctx", "llm_memory", "mem0"):
         return "", 0, {"error": f"dispatch_agent_run: unhandled mode {mode!r}"}
     if llm_client is None:
         return "", 0, {"error": f"{mode} mode requires a QueryLLM client but none was passed"}
@@ -736,11 +756,21 @@ class SnapshotCache:
         # memory_builder.py.
         self.mode = mode
         self._memory_checkpoints: dict[int, str] | None = None
+        self._mem0_backend = None  # real mem0ai store (mode == "mem0")
+        # Per-row query for mem0's per-query retrieval. The driver sets this just
+        # before dispatching a row (single-threaded in mem0 mode); get_or_build
+        # uses it when a call site doesn't pass `query=` explicitly. Ignored by
+        # every non-mem0 mode.
+        self._pending_query: str | None = None
 
     def attach_memory_checkpoints(self, checkpoints: dict | None) -> None:
-        """Attach the prebuilt per-user memory ledger (com / mem0 modes only)."""
+        """Attach the prebuilt per-user memory ledger (llm_memory mode only)."""
         if checkpoints:
             self._memory_checkpoints = {int(k): v for k, v in checkpoints.items()}
+
+    def attach_mem0_backend(self, backend) -> None:
+        """Attach the prebuilt real-mem0 store (mode == "mem0")."""
+        self._mem0_backend = backend
 
     def _memory_block(self, t_test: int) -> tuple[str, dict]:
         """Consolidated memory for `t_test` (exact, else nearest boundary <= t,
@@ -760,14 +790,28 @@ class SnapshotCache:
             "per_app": {},
         }
 
-    def get_or_build(self, bq: BackendQuery, user_id: str, t_test: int, model: str | None, budget: int | None) -> tuple[str, dict]:
-        key = (user_id, t_test, model, budget, self.mode)
+    def get_or_build(self, bq: BackendQuery, user_id: str, t_test: int, model: str | None,
+                     budget: int | None, *, query: str | None = None) -> tuple[str, dict]:
+        # `query` only affects the `mem0` mode (per-query top-k retrieval). Most
+        # call sites don't pass it; fall back to the per-row query the driver
+        # stashed. It is part of the cache key so distinct queries at the same
+        # t_test don't alias.
+        eff_query = query if query is not None else self._pending_query
+        qkey = eff_query if self.mode == "mem0" else None
+        key = (user_id, t_test, model, budget, self.mode, qkey)
         with self._lock:
             if key in self._store:
                 self._store.move_to_end(key)
                 return self._store[key]
-        if self.mode in ("com", "mem0"):
+        if self.mode == "mem0":
+            if self._mem0_backend is not None:
+                text, stats = self._mem0_backend.retrieve(eff_query, t_test)
+            else:
+                text, stats = self._memory_block(t_test)
+            text, stats = _append_calendar_block(bq, user_id, t_test, text, stats, model)
+        elif self.mode == "llm_memory":
             text, stats = self._memory_block(t_test)
+            text, stats = _append_calendar_block(bq, user_id, t_test, text, stats, model)
         else:
             text, stats = serialize_history_for_context(bq, user_id, t_test, model=model, budget_tokens=budget)
         with self._lock:

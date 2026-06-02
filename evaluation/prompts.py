@@ -1688,24 +1688,26 @@ Respond with ONE fenced JSON block:
 # it and re-sends only the volatile memory/summary/chunk trailer each call.
 
 _MEMORY_SECTIONS_NOTE = (
-    "Organize the memory under these seven sections, always keeping all seven "
-    "headers verbatim: 'Stable interests & likes'; 'Dislikes & negative signals'; "
-    "'Active / short-term threads'; 'Places'; 'People & social context'; "
-    "'Communication style'; 'Recent salient events'. Use short, atomic bullet "
-    "lines, each optionally tagged with a bracketed topic like [NFL] or "
-    "[home improvement], with a trailing '· last MM/DD' date."
+    "Organize the memory under these four sections, always keeping all four "
+    "headers verbatim: 'Who they are' (identity, life context, traits, and how "
+    "they communicate); 'Interests & preferences' (what they care about and lean "
+    "toward, positively or negatively); 'People & places'; 'Currently active' (a "
+    "few time-bounded goals or threads, each with the condition under which it "
+    "would end). Use short, atomic bullet lines; tag a line with a bracketed "
+    "topic like [travel] or [home improvement] where it helps; mark a signal you "
+    "have seen reinforced several times with a trailing '[×N]'. This is a "
+    "persona/preference profile, NOT a chronological log of events."
 )
 
-_MEMORY_RAILS = """Constraints (output/format rules, identical for every method):
-  - PRESERVE POLARITY: likes go under 'Stable interests & likes'; dislikes, 'stop recommending', and explicit-negative signals go under 'Dislikes & negative signals'. NEVER convert a negative into a positive. Lines about the user asking to stop personalizing are HARD-AVOID — keep them, never drop them.
-  - NEVER INVENT: every line must trace to events you have actually seen. No demographics, no profile guesses, no stereotypes.
-  - PRESERVE RECENCY/TIME: keep each line's '· last MM/DD' current; put time-bounded intents under 'Active / short-term threads' with an inferred stop condition in prose.
-  - STAY BOUNDED: keep the whole memory compact (a couple thousand tokens); when over budget, combine same-topic lines and drop the least useful — but never a hard-avoid negative.
+_MEMORY_RAILS = """Constraints (output/format rules):
+  - GROUND EVERY LINE in activity you have actually observed. Do not invent demographics, profile details, or stereotypes, and do not guess beyond what the behavior supports.
+  - GENERALIZE AND CONSOLIDATE: distill recurring evidence into durable, generalized knowledge about the user; merge related or duplicate notes; let one-off incidental noise fade.
+  - STAY BOUNDED: keep the whole memory within a hard budget of 2048 tokens. When over budget, combine same-topic lines and drop the least useful detail.
   - Output the FULL memory each call (whole-document rewrite, not a diff)."""
 
 _MEMORY_OUTPUT = """Output EXACTLY this, nothing else:
 <memory>
-...the FULL updated memory markdown (all seven sections)...
+...the FULL updated memory markdown (all sections)...
 </memory>
 <summary>
 ...one short paragraph: who this user is so far + what is currently active...
@@ -1720,45 +1722,26 @@ def _memory_trailer(memory_doc: str, rolling_summary: str, chunk_text: str) -> s
 ## Rolling summary so far
 {rolling_summary or "(none yet)"}
 
-## New events (chronological, app-tagged, time-masked)
+## New activity (chronological, time-masked)
 {chunk_text}
 
-Apply the method to the new events above and emit the full updated <memory> and <summary>."""
+Apply the method to the new activity above and emit the full updated <memory> and <summary>."""
 
 
-def mem0_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
-    """Faithful Mem0 build step: two-phase extraction -> update with the four
-    discrete operations (ADD / UPDATE / DELETE / NOOP). No CoM evolution."""
-    return f"""You maintain a memory of ONE user by reading their cross-app activity (Instagram, Facebook, Threads, Chatbot) in chronological chunks, using the Mem0 method. Each call has two phases over the NEW events only:
+def llm_memory_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
+    """Persona/preference-centered, human-readable text memory (no vectors).
+    Distills a chronological activity stream into durable knowledge about the
+    user, maintained each chunk with explicit ADD / EDIT / REMOVE / MERGE
+    actions. Deliberately general — not tuned to any evaluation dimension."""
+    return f"""You maintain a compact, human-readable MEMORY of ONE user, built by reading their activity in chronological chunks. The memory is a plain-text persona/preference profile a person could read — NOT a log of events, NOT a database, and it uses no embeddings. The raw activity is a stream of timestamped engagements; distill it into durable, generalized knowledge about the user rather than retaining the events themselves.
 
-PHASE 1 — EXTRACTION: From the new events (in the context of the rolling summary and current memory), extract a concise set of salient candidate facts about the user.
+Maintain the profile each chunk with four explicit actions:
+  - ADD    : record a genuinely new durable fact about the user.
+  - EDIT   : revise a fact whose details have changed, or supersede one when newer evidence contradicts it.
+  - REMOVE : drop stale, one-off, or no-longer-relevant entries.
+  - MERGE  : fold related or duplicate entries into one coherent note, reinforcing recurring signals.
 
-PHASE 2 — UPDATE: For EACH extracted candidate fact, compare it against the current memory and apply exactly ONE operation:
-  - ADD    : no semantically equivalent memory already exists -> add it as a new memory item.
-  - UPDATE : an existing memory item should be augmented with complementary information from this fact -> merge the new detail into it.
-  - DELETE : the new fact contradicts an existing memory item -> remove (supersede) the outdated item and keep the new fact.
-  - NOOP   : the fact is already captured, or is one-off noise -> change nothing.
-Decide each operation by comparing the candidate fact against the WHOLE current memory shown below.
-
-{_MEMORY_SECTIONS_NOTE}
-
-{_MEMORY_RAILS}
-
-{_MEMORY_OUTPUT}
-{_memory_trailer(memory_doc, rolling_summary, chunk_text)}"""
-
-
-def com_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
-    """Faithful Chain-of-Memory build step: maintain ONE unified, continuously
-    evolving memory via dynamic-evolution operations. No discrete Mem0 ops."""
-    return f"""You maintain a memory of ONE user by reading their cross-app activity (Instagram, Facebook, Threads, Chatbot) in chronological chunks, using the Chain-of-Memory (CoM) method. You maintain ONE unified, continuously evolving memory structure — NOT a list of discrete add/delete operations.
-
-For each new chunk, dynamically EVOLVE the memory:
-  - SEMANTIC CONSOLIDATION: merge semantically related or redundant entries into single coherent notes.
-  - RELEVANCE WEIGHTING: emphasize recent and frequently-reinforced information; keep the most salient signal prominent.
-  - TEMPORAL DECAY: let stale, contradicted, or no-longer-relevant details fade out.
-  - STRUCTURAL REORGANIZATION: reorganize the memory around the user's emerging topics/themes as they become clear, compressing across events rather than listing them.
-Continuously re-synthesize the memory so it always reflects the most coherent, current understanding of the user.
+Capture both what the user signals outright AND the preferences, traits, and patterns you can reasonably infer from their recurring behavior — their interests and preferences (what they lean toward, positively or negatively), how they come across, the people and places that matter to them, and what they are currently working toward — at an appropriate level of generality. Stay grounded in the observed activity: infer from patterns, but do not fabricate. Let incidental noise fade. Always output the full, current profile.
 
 {_MEMORY_SECTIONS_NOTE}
 

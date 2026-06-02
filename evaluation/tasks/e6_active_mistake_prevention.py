@@ -651,7 +651,7 @@ def run_e6_active_mistake_prevention(
         t = int(inst.get("t_test") or 0)
         history_block = None
         history_tokens = 0
-        if mode in ("llm_longctx", "com", "mem0") and snapshot_cache is not None:
+        if mode in ("llm_longctx", "llm_memory", "mem0") and snapshot_cache is not None:
             history_block, stats = snapshot_cache.get_or_build(
                 bq, user_id, t, model_name, context_budget,
             )

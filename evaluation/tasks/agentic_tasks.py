@@ -355,7 +355,7 @@ def _dispatch_and_score(
     # all assume an MCP overlay that doesn't exist in this mode). Returning
     # early keeps the cross-mode comparison honest — see DESIGN.md.
     from evaluation.inference_utils import merge_token_metrics
-    if mode in ("llm_longctx", "com", "mem0"):
+    if mode in ("llm_longctx", "llm_memory", "mem0"):
         metrics = {
             **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
             "mode_grading": "final_answer_only",
@@ -1400,10 +1400,10 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
         # the model to call non-existent MCP tools.
         gt_block = ground_truth_builders.build_for_task(task_id, bq, user_id, t, inst)
         history_block = None
-        if mode in ("llm_longctx", "com", "mem0"):
+        if mode in ("llm_longctx", "llm_memory", "mem0"):
             history_block, _ = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
         allow_extra = (mode == "mcp_agent")
-        text_only = (mode in ("llm_longctx", "com", "mem0"))
+        text_only = (mode in ("llm_longctx", "llm_memory", "mem0"))
         prompt = prompt_fn(inst, history_block,
                             ground_truth_block=gt_block or None,
                             allow_extra_tools=allow_extra,

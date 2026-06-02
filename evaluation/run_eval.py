@@ -109,10 +109,10 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--run_dir", required=True,
                    help="Output directory for results.csv + writes.jsonl + summary files")
     p.add_argument("--mode",
-                   choices=("llm_longctx", "mcp_agent", "agent_tools", "com", "mem0"),
+                   choices=("llm_longctx", "llm_memory", "mem0", "mcp_agent", "agent_tools"),
                    default="llm_longctx")
     p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"),
-                   help="Baseline LLM model for llm_longctx / com / mem0 modes")
+                   help="Baseline LLM model for llm_longctx / llm_memory / mem0 modes")
     p.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"),
                    help="Claude Code subagent model (haiku/sonnet/opus)")
     p.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.5"))
@@ -384,7 +384,7 @@ def _run_one_in_worker(payload: dict) -> dict:
             rate_limit_per_min=payload["per_worker_rate_limit"],
         )
     baseline = None
-    if payload["mode"] in ("llm_longctx", "com", "mem0") and not payload["dry_run"]:
+    if payload["mode"] in ("llm_longctx", "llm_memory", "mem0") and not payload["dry_run"]:
         from query_llm import QueryLLM
         baseline = QueryLLM(
             {"models": {"llm_model": payload["model_name"]}},
@@ -392,11 +392,13 @@ def _run_one_in_worker(payload: dict) -> dict:
         )
 
     bq = BackendQuery(payload["backend_dir"])
-    # com / mem0 modes: the per-user memory ledger was prebuilt in the parent and
+    # llm_memory mode: the per-user memory ledger was prebuilt in the parent and
     # shipped as a picklable {T_test: memory_str} dict — attach it (no rebuild,
-    # no LLM calls in the worker).
+    # no LLM calls in the worker). The `mem0` mode never reaches a worker — its
+    # live qdrant store is neither picklable nor safe for concurrent processes,
+    # so it is forced to run in-process (args.workers=1).
     worker_cache = SnapshotCache(mode=payload["mode"])
-    if payload["mode"] in ("com", "mem0"):
+    if payload["mode"] == "llm_memory":
         worker_cache.attach_memory_checkpoints(payload.get("memory_checkpoints"))
     ctx = DispatchContext(
         user_id=user_id, bq=bq,
@@ -577,6 +579,14 @@ def _summarize_by_task(rows: list[dict]) -> dict:
 def main() -> int:
     args = _parse_args()
 
+    # mem0's live qdrant store is a single-process embedded DB and is not
+    # picklable, so this mode cannot use the ProcessPool — force in-process.
+    # (Cross-persona parallelism still comes from running one process per uid.)
+    if args.mode == "mem0" and args.workers != 1:
+        print(f"[run_eval] mem0 mode runs in-process; overriding --workers "
+              f"{args.workers} -> 1", flush=True)
+        args.workers = 1
+
     # Source of truth: backend/{uid}/test.json (a list of test-instance
     # dicts written by scripts/prepare_eval_data.py). Legacy
     # benchmark/{uid}/queries.csv path still loads if present, but the
@@ -621,7 +631,29 @@ def main() -> int:
     # token accounting in one place.
     memory_checkpoints = None
     memory_build_stats = None
-    if args.mode in ("com", "mem0") and not args.dry_run:
+    if args.mode == "mem0" and not args.dry_run:
+        # Real mem0ai store (Azure LLM + text-embedding-3-large + local qdrant),
+        # built ONCE over all events < max(T_test). Per-query top-k retrieval is
+        # time-masked via a `ts < T_test` filter. Runs in-process (workers=1).
+        from evaluation.mem0_backend import Mem0Backend
+        boundaries = sorted({int(r["ts"]) for r in rows})
+        t_max = (boundaries[-1] + 1) if boundaries else 0
+        llm_dep = None if args.model in (None, "gpt-5-chat") else args.model
+        print(f"[run_eval] mem0 mode: building real-mem0 store up to T={t_max} "
+              f"(LLM={llm_dep or 'AZURE_OPENAI_DEPLOYMENT_NAME'}, "
+              f"embed=text-embedding-3-large, cap={args.memory_token_cap})...", flush=True)
+        m0 = Mem0Backend(args.user_id, run_dir, llm_deployment=llm_dep,
+                         token_cap=args.memory_token_cap)
+        bstats = m0.build(bq, t_max, {"builder_model": args.model,
+                                      "chunk_k": args.memory_chunk_k})
+        snapshot_cache.attach_mem0_backend(m0)
+        memory_build_stats = {
+            "memory_build_chunks": bstats.get("n_chunks", 0),
+            "memory_build_events": bstats.get("n_events", 0),
+            "memory_build_memories": bstats.get("n_memories", 0),
+        }
+        print(f"[run_eval] mem0 store ready: {bstats}", flush=True)
+    elif args.mode == "llm_memory" and not args.dry_run:
         from evaluation.memory_builder import (
             build_checkpoints, default_memory_config, load_existing_checkpoints,
         )
@@ -748,6 +780,11 @@ def main() -> int:
                 "agent_response": "",
             }
         _set_query_env(row, run_dir, args.user_id, args.backend_dir)
+        # mem0 per-query retrieval: stash this row's query so get_or_build can use
+        # it without every task threading `query=` through (mem0 runs single-
+        # threaded in-process, so this shared slot is race-free for that mode).
+        if ctx.snapshot_cache is not None:
+            ctx.snapshot_cache._pending_query = inst.get("user_query")
         t0 = time.time()
         try:
             result = dispatch_single(row["task_type"], inst, ctx)

@@ -39,54 +39,28 @@ from dataclasses import dataclass, field
 
 from evaluation.backend_query import APPS, BackendQuery
 from evaluation.inference_utils import _compact_event, count_tokens
-from evaluation.prompts import com_update_prompt, mem0_update_prompt
+from evaluation.prompts import llm_memory_update_prompt
 
-# The two SEPARATE, faithful memory algorithms (never mixed). The mode string
-# IS the algorithm: `--mode com` / `--mode mem0`.
-MEMORY_ALGOS = ("com", "mem0")
-_PROMPT_BUILDERS = {"com": com_update_prompt, "mem0": mem0_update_prompt}
+# ONE persona/preference-centered, human-readable text memory (no vectors). The
+# real `mem0ai` library is the OTHER memory baseline and lives in
+# `mem0_backend.py` — it is NOT built through this module.
+MEMORY_ALGOS = ("llm_memory",)
 
 # Stable tie-break so the merged stream is byte-deterministic across runs.
 APP_ORDER = {app: i for i, app in enumerate(APPS)}
 
-# Phrases that pin a line as a hard-avoid (never evicted under the token cap).
-_PIN_PHRASES = (
-    "stop personalizing",
-    "stop personalising",
-    "do not personalize",
-    "do not personalise",
-    "don't personalize",
-    "stop recommending",
-    "hard-avoid",
-    "hard avoid",
-    "[pin]",
-    "explicit_negative",
-)
+EMPTY_MEMORY = """# USER MEMORY (last activity seen: none yet)
 
-_RECENT_SALIENT_HEADER = "Recent salient events"
-_DISLIKE_HEADER_KEYS = ("dislike", "negative")
-
-EMPTY_MEMORY = """# USER MEMORY (last event seen: none yet)
-
-## Stable interests & likes
+## Who they are
 (none yet)
 
-## Dislikes & negative signals
+## Interests & preferences
 (none yet)
 
-## Active / short-term threads
+## People & places
 (none yet)
 
-## Places
-(none yet)
-
-## People & social context
-(none yet)
-
-## Communication style
-(none yet)
-
-## Recent salient events
+## Currently active
 (none yet)
 """
 
@@ -94,7 +68,7 @@ EMPTY_MEMORY = """# USER MEMORY (last event seen: none yet)
 def default_memory_config() -> dict:
     """Default knobs for the memory builder. Mirrors the run_eval CLI flags."""
     return {
-        "token_cap": 2000,
+        "token_cap": 2048,
         "chunk_k": 40,
         "chunk_gap": 900,          # seconds; >15-min gap ends a chunk (if big enough)
         "chunk_tok_budget": 4000,
@@ -217,22 +191,19 @@ def update_step(
     chunk: list[dict],
     llm_client,
     *,
-    algo: str = "com",
+    algo: str = "llm_memory",
     temperature: float = 0.0,
-    token_cap: int = 2000,
+    token_cap: int = 2048,
     model: str | None = None,
 ) -> tuple[str, str, int, int]:
-    """Run ONE memory build LLM call over `chunk` using the faithful prompt for
-    `algo` ('com' or 'mem0').
+    """Run ONE memory build LLM call over `chunk` using the persona/preference
+    memory prompt.
 
     Returns `(new_memory, new_summary, input_tokens, output_tokens)`. The model
     rewrites the whole doc; we then enforce the token cap with text-only
-    consolidation as a safety net.
+    consolidation as a safety net. `algo` is retained only as a state-file label.
     """
-    prompt_builder = _PROMPT_BUILDERS.get(algo)
-    if prompt_builder is None:
-        raise ValueError(f"unknown memory algo {algo!r}; expected one of {MEMORY_ALGOS}")
-    prompt = prompt_builder(memory, summary, _render_chunk(chunk))
+    prompt = llm_memory_update_prompt(memory, summary, _render_chunk(chunk))
     resp = llm_client.query_llm(prompt, temperature=temperature) or ""
     new_m, new_s = _parse_memory_summary(resp, memory, summary)
     new_m = consolidate_evict(new_m, token_cap, model=model)
@@ -243,73 +214,40 @@ def update_step(
 # Text-only consolidation / eviction (NO embeddings)
 # ---------------------------------------------------------------------------
 
-def _has_pin_phrase(line: str) -> bool:
-    low = line.lower()
-    return any(p in low for p in _PIN_PHRASES)
-
-
 _DATE_RE = re.compile(r"·\s*last\s*(\d{1,2})/(\d{1,2})", re.I)
 _OCC_RE = re.compile(r"[×x]\s*(\d+)")
 
 
 def _line_salience(line: str) -> float:
-    """Text-derived salience: recency (from `· last MM/DD`) × log(occurrences).
-
-    Missing date → recency 0 (evicted first). Higher = keep. No embeddings."""
+    """Text-derived salience: reinforcement (from a trailing `[×N]`) and, if a
+    line happens to carry a `· last MM/DD` date, recency. Higher = keep. No
+    embeddings, and content-neutral — no line is privileged by topic/polarity."""
     recency = 0.0
     md = _DATE_RE.search(line)
     if md:
         mm, dd = int(md.group(1)), int(md.group(2))
-        recency = float(mm * 31 + dd)  # within-year ordinal; bigger = more recent
+        recency = float(mm * 31 + dd) / 400.0  # normalized within-year ordinal
     occ = 1
     mo = _OCC_RE.search(line)
     if mo:
         occ = max(1, int(mo.group(1)))
-    return recency * (1.0 + math.log(occ))
-
-
-def _trim_recent_salient(md: str, keep: int = 5) -> str:
-    """Keep only the first `keep` bullet lines under the Recent-salient section."""
-    out: list[str] = []
-    in_recent = False
-    kept = 0
-    for ln in md.split("\n"):
-        if ln.startswith("## "):
-            in_recent = _RECENT_SALIENT_HEADER.lower() in ln.lower()
-            kept = 0
-            out.append(ln)
-            continue
-        if in_recent and ln.strip().startswith("- "):
-            kept += 1
-            if kept > keep:
-                continue
-        out.append(ln)
-    return "\n".join(out)
+    return (1.0 + recency) * (1.0 + math.log(occ))
 
 
 def consolidate_evict(md: str, cap: int, model: str | None = None) -> str:
-    """Enforce the token cap with text-only logic. Pinned negatives are never
-    evicted; a positive can be. Always trims Recent-salient to 5 for hygiene."""
-    md = _trim_recent_salient(md, 5)
+    """Enforce the token cap with text-only, CONTENT-NEUTRAL logic: drop the
+    lowest-salience bullet lines until under cap. No pinning, no topic/polarity
+    privilege, no embeddings — fairness invariant for the memory baseline."""
     if count_tokens(md, model) <= cap:
         return md
 
     lines = md.split("\n")
-    cur_section = ""
     evictable: list[tuple[int, float]] = []  # (line_idx, salience)
     for i, ln in enumerate(lines):
-        if ln.startswith("## "):
-            cur_section = ln[3:].strip().lower()
-            continue
         if ln.strip().startswith("- "):
-            pinned = (
-                any(k in cur_section for k in _DISLIKE_HEADER_KEYS)
-                or _has_pin_phrase(ln)
-            )
-            if not pinned:
-                evictable.append((i, _line_salience(ln)))
+            evictable.append((i, _line_salience(ln)))
 
-    # Drop lowest-salience non-pinned bullets until under cap.
+    # Drop lowest-salience bullets until under cap.
     evictable.sort(key=lambda x: x[1])
     dropped: set[int] = set()
     for idx, _sal in evictable:
@@ -354,13 +292,13 @@ def build_checkpoints(
     llm_client,
     cfg: dict | None = None,
     *,
-    algo: str = "com",
+    algo: str = "llm_memory",
     run_dir=None,
     existing: dict[int, str] | None = None,
 ) -> MemoryLedger:
     """Walk the user's global event stream ONCE in ascending order and snapshot
-    the consolidated memory at each ascending `T_test` boundary, building memory
-    with the faithful `algo` ('com' or 'mem0').
+    the consolidated persona/preference memory at each ascending `T_test`
+    boundary.
 
     Correctness/firewall: a boundary `b`'s snapshot is taken AFTER folding every
     event with `t < b` and BEFORE folding any event with `t >= b`. Because the
@@ -431,8 +369,7 @@ def build_checkpoints(
 
 def _dump_state(run_dir, user_id: str, t_test: int, memory: str, build_stats: dict, algo: str) -> None:
     """Write a debug/resume checkpoint under run_dir ONLY (never backend/).
-    Namespaced by `algo` so `com` and `mem0` runs into the same run_dir never
-    collide."""
+    Namespaced by `algo` (the memory-mode label) for stable state filenames."""
     from pathlib import Path
     states_dir = Path(run_dir) / "memory_states"
     states_dir.mkdir(parents=True, exist_ok=True)
