@@ -8620,12 +8620,44 @@ class PersonaAgent:
             n_hp = 0
             ppath = os.path.join(udir, "profile.json")
             has_profile = os.path.exists(ppath)
+            _prof_dict = {}
             if has_profile:
                 try:
                     with open(ppath) as _f:
-                        n_hp = len(json.load(_f).get("hidden_personas") or [])
+                        _prof_dict = json.load(_f)
+                    n_hp = len(_prof_dict.get("hidden_personas") or [])
                 except Exception:
                     pass
+
+            # Diversity pin-vs-data audit: recompute each user's deterministic
+            # pin (pure fn of user_id) and compare to the FINAL profile. The
+            # soft-pin prompts let strong source evidence override a pin; a
+            # divergence here is that override happening (DESIRED — surfaced so
+            # we can spot-check that data, not noise, drove it).
+            try:
+                from data_preparation import diversity as _div
+                _div_overrides = []
+                pinned_bf = _div.assign_big_five(self.user_id)
+                final_bf = _prof_dict.get("big_five") or {}
+                bf_diffs = [t for t in pinned_bf
+                            if str(final_bf.get(t, "")).lower() != pinned_bf[t]]
+                if bf_diffs:
+                    _div_overrides.append(f"big_five{bf_diffs}")
+                pinned_edu = _div.assign_education_level(self.user_id, EDUCATION_DISTRIBUTION)
+                final_edu = str(_prof_dict.get("education", ""))
+                if pinned_edu and pinned_edu.split(" in ")[0].lower() not in final_edu.lower():
+                    _div_overrides.append(f"education({pinned_edu!r}->{final_edu[:24]!r})")
+                pinned_emoji = _div.assign_voice_axes(self.user_id).get("emoji_intensity")
+                final_palette = (_prof_dict.get("user_voice") or {}).get("emoji_palette") or []
+                if pinned_emoji == "none" and final_palette:
+                    _div_overrides.append(f"emoji(none->{len(final_palette)})")
+                if _div_overrides and self.verbose:
+                    print(f"{utils.Colors.OKBLUE}[User {self.user_id}] diversity pin "
+                          f"override (data won): {_div_overrides}{utils.Colors.ENDC}")
+                summary["diversity_pin_overrides"] = _div_overrides
+            except Exception:
+                pass
+
             n_cb, n_ais = _n_events("chatbot.json"), _n_events("ai_studio.json")
             n_src = len(self.interactions)
 
