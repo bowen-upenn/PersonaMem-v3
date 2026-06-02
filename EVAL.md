@@ -683,7 +683,7 @@ Each function takes a `judge: Callable[[str], str] | None` parameter. When `judg
 
 **Sensitive-topic vocabulary awareness**: `privacy_leak_check` accepts an optional `sensitive_topic` parameter that guides the judge on domain-specific vocabulary — e.g., for `job_loss`, phrases like "contract gap," "between projects," "freelance dry spell" constitute leaks even without verbatim preference text.
 
-The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`, `com`, `mem0`) — scores are comparable across modes.
+The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0`) — scores are comparable across modes.
 
 ## Flags reference
 
@@ -694,12 +694,12 @@ The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `l
 | `--user_id` | _(required)_ | User directory under `backend/` |
 | `--run_dir` | _(required)_ | Output directory for `results.csv` + `summary.json` + `writes.jsonl` |
 | `--backend_dir` | `backend` | Path to backend root |
-| `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx`, `com`, `mem0` |
-| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` / `com` / `mem0` modes |
-| `--memory_token_cap` | `2000` | Max tokens of consolidated memory injected per query (`com`/`mem0` modes) |
-| `--memory_chunk_k` | `40` | Max events per memory-build LLM call (`com`/`mem0` modes) |
-| `--memory_builder_model` | `=--model` | Model that builds the memory (`com`/`mem0` modes) |
-| `--memory_builder_temperature` | `0.0` | Temperature for memory-build calls (`com`/`mem0` modes) |
+| `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0` |
+| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` / `llm_memory` / `mem0` modes (maps to Azure gpt-5.5) |
+| `--memory_token_cap` | `2048` | Max tokens of memory injected per query (`llm_memory`/`mem0` modes) |
+| `--memory_chunk_k` | `40` | Max events per memory-build LLM call (`llm_memory`/`mem0` modes) |
+| `--memory_builder_model` | `=--model` | Model that builds the memory (`llm_memory`/`mem0` modes) |
+| `--memory_builder_temperature` | `0.0` | Temperature for memory-build calls (`llm_memory` mode) |
 | `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model (`haiku`/`sonnet`/`opus`) |
 | `--judge_model` | `$EVAL_JUDGE_MODEL` or `claude-opus` | LLM judge model |
 | `--workers` | `4` | Parallel worker count for non-agentic rows. Agentic writes always sequential. `--workers 1` = original sequential behavior. Max safe: 16 (32 risks Azure rate limits). |
