@@ -3950,9 +3950,25 @@ class PersonaAgent:
             for node in group.get("timeline", []):
                 if not isinstance(node, dict):
                     continue
+                # Robust timestamp coercion: the LLM sometimes emits an ISO
+                # string ("2026-04-05T17:24:00") instead of an int epoch, which
+                # crashed int() and killed the whole pipeline for the user.
+                _ts_raw = node.get("timestamp")
+                try:
+                    _ts_int = int(_ts_raw)
+                except (ValueError, TypeError):
+                    _ts_int = 0
+                    _s = str(_ts_raw or "").strip()
+                    if _s:
+                        try:
+                            import datetime as _dt
+                            _ts_int = int(_dt.datetime.fromisoformat(
+                                _s.replace("Z", "+00:00")).timestamp())
+                        except Exception:
+                            _ts_int = 0
                 timeline_nodes.append(TemporalNode(
                     persona_item=node.get("persona_item", ""),
-                    timestamp=int(node.get("timestamp") or 0),
+                    timestamp=_ts_int,
                     formatted_timestamp=node.get("formatted_timestamp", ""),
                     confidence_score_init=float(node.get("confidence_score_init") or 0.0),
                     confidence_cross_referenced=float(node.get("confidence_cross_referenced") or 0.0),
