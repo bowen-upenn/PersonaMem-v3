@@ -9,7 +9,7 @@
 # Usage:
 #   scripts/run_eval_matrix.sh [--personas "1 2 3"] [--modes "llm_longctx mem0"] \
 #       [--limit N] [--gpt-model gpt-5-chat] [--claude-model opus] \
-#       [--gpt-workers 4] [--agent-workers 1] [--jobs 1] [--no-resume]
+#       [--gpt-workers 8] [--agent-workers 1] [--jobs 1] [--no-resume]
 #
 # --limit N         cap rows per (mode,persona) — use for the smoke test.
 # --jobs N          run up to N gpt-mode (mode,persona) jobs concurrently.
@@ -27,7 +27,7 @@ MODES="llm_longctx llm_memory mem0 agent_tools mcp_agent"
 GPT_MODEL="gpt-5-chat"          # QueryLLM maps this to AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5.5
 CLAUDE_MODEL="opus"             # alias -> latest opus (opus-4.8)
 JUDGE_MODEL="gpt-5.5"
-GPT_WORKERS=4
+GPT_WORKERS=8
 AGENT_WORKERS=1
 JOBS=1
 LIMIT=""
