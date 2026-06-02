@@ -1,12 +1,15 @@
-"""Persona-free synthetic smoke test for the `memory` eval mode.
+"""Persona-free synthetic smoke test for the `llm_memory` eval mode.
 
 Verifies the implementation correctness of evaluation/memory_builder.py WITHOUT
 any real persona data and WITHOUT any real LLM spend: a tiny hand-crafted event
 stream + a deterministic FakeLLM stub. Covers the firewall/time-mask cut,
 chronological merge, chunking, monotonic accumulation, profile-never-read,
-polarity + pinned-negative survival under a forced tiny cap, text-only
-consolidation (no embeddings), provider plumbing (temperature/builder model),
-and debug-write isolation.
+content-neutral consolidation under a forced tiny cap (no pinning), the neutral
+build prompt (general, not benchmark-tuned, no app names, text-only), provider
+plumbing (temperature/builder model), and debug-write isolation.
+
+(The real `mem0ai` baseline lives in evaluation/mem0_backend.py and is NOT
+covered here — it needs the library + Azure + a vector store.)
 
 Run: `python tests/test_memory_builder.py`
 """
@@ -30,12 +33,14 @@ from evaluation.memory_builder import (
     consolidate_evict,
     default_memory_config,
 )
-from evaluation.prompts import com_update_prompt, mem0_update_prompt
+from evaluation.prompts import llm_memory_update_prompt
+
+ALGO = "llm_memory"
 
 
 # ---------------------------------------------------------------------------
 # FakeLLM — deterministic, no network. Echoes each event's unique marker into
-# the right section so checkpoints are inspectable. Records temperature/model.
+# the 4-section persona doc so checkpoints are inspectable. Records temp/model.
 # ---------------------------------------------------------------------------
 
 def _num(marker: str) -> int:
@@ -53,25 +58,22 @@ class FakeLLM:
         cur = ""
         if "## Current memory" in prompt and "## Rolling summary so far" in prompt:
             cur = prompt.split("## Current memory", 1)[1].split("## Rolling summary so far", 1)[0]
-        ev = prompt.split("## New events", 1)[1] if "## New events" in prompt else ""
+        ev = prompt.split("## New activity", 1)[1] if "## New activity" in prompt else ""
 
         pos = set(re.findall(r"EVENT_\d+", cur)) | set(re.findall(r"EVENT_\d+", ev))
         neg = set(re.findall(r"NEG_\d+", cur)) | set(re.findall(r"NEG_\d+", ev))
         stop = set(re.findall(r"STOP_\d+", cur)) | set(re.findall(r"STOP_\d+", ev))
 
-        likes = "\n".join(f"- [topic] {m} liked content · last 04/05" for m in sorted(pos, key=_num)) or "(none yet)"
-        dis = [f"- [dislike] {m} disliked content · last 04/05" for m in sorted(neg, key=_num)]
-        dis += [f"- {m}: user asked to stop personalizing the feed · last 04/05" for m in sorted(stop, key=_num)]
-        dislikes = "\n".join(dis) or "(none yet)"
+        prefs = [f"- [topic] {m} — leans toward this content" for m in sorted(pos, key=_num)]
+        prefs += [f"- [topic] {m} — leans away from this content" for m in sorted(neg, key=_num)]
+        prefs += [f"- {m} — asked not to be shown this kind of thing" for m in sorted(stop, key=_num)]
+        interests = "\n".join(prefs) or "(none yet)"
         mem = (
-            "# USER MEMORY (last event seen: fake)\n\n"
-            "## Stable interests & likes\n" + likes + "\n\n"
-            "## Dislikes & negative signals\n" + dislikes + "\n\n"
-            "## Active / short-term threads\n(none yet)\n\n"
-            "## Places\n(none yet)\n\n"
-            "## People & social context\n(none yet)\n\n"
-            "## Communication style\n(none yet)\n\n"
-            "## Recent salient events\n(none yet)\n"
+            "# USER MEMORY (last activity seen: fake)\n\n"
+            "## Who they are\n(none yet)\n\n"
+            "## Interests & preferences\n" + interests + "\n\n"
+            "## People & places\n(none yet)\n\n"
+            "## Currently active\n(none yet)\n"
         )
         return f"<memory>\n{mem}\n</memory>\n<summary>fake summary</summary>"
 
@@ -166,7 +168,7 @@ def test_firewall_time_mask_and_monotonic():
         fake = FakeLLM(model="builder-x")
         cfg = default_memory_config()
         cfg.update({"chunk_k": 3, "builder_model": "builder-x"})
-        ledger = build_checkpoints(bq, uid, [135, 1000], fake, cfg, algo="com", run_dir=Path(rd))
+        ledger = build_checkpoints(bq, uid, [135, 1000], fake, cfg, algo=ALGO, run_dir=Path(rd))
 
         t1 = ledger.checkpoints[135]
         t2 = ledger.checkpoints[1000]
@@ -182,9 +184,9 @@ def test_firewall_time_mask_and_monotonic():
             assert present in t2, f"{present} missing from T2 checkpoint"
         # sentinel never leaks
         assert "SENTINEL_SECRET_XYZ" not in t1 and "SENTINEL_SECRET_XYZ" not in t2
-        # polarity: negatives/stop under Dislikes, not Likes
-        likes_t2 = t2.split("## Dislikes")[0]
-        assert "NEG_2" not in likes_t2 and "STOP_4" not in likes_t2, "negative leaked into Likes"
+        # 4-section structure preserved
+        for header in ("## Who they are", "## Interests & preferences", "## People & places", "## Currently active"):
+            assert header in t2, f"missing section header {header!r}"
         print("  ✓ firewall_time_mask_and_monotonic")
 
 
@@ -196,57 +198,50 @@ def test_chunking_multiple_calls():
         fake = FakeLLM()
         cfg = default_memory_config()
         cfg.update({"chunk_k": 3})  # 12 events / 3 → several build calls
-        build_checkpoints(bq, uid, [1000], fake, cfg, algo="com")
+        build_checkpoints(bq, uid, [1000], fake, cfg, algo=ALGO)
         assert len(fake.calls) > 1, f"expected multiple chunked build calls, got {len(fake.calls)}"
         print(f"  ✓ chunking_multiple_calls ({len(fake.calls)} build calls)")
 
 
-def test_both_algos_build():
-    """Both faithful modes (`com` and `mem0`) build checkpoints independently and
-    are persisted under algo-namespaced filenames (no collision in one run_dir)."""
+def test_single_algo():
+    """The memory builder exposes exactly one (neutral) algorithm."""
+    assert MEMORY_ALGOS == (ALGO,), f"expected single algo {ALGO!r}, got {MEMORY_ALGOS}"
     with tempfile.TemporaryDirectory() as d, tempfile.TemporaryDirectory() as rd:
         base = Path(d)
         uid = _write_fixture(base)
         bq = BackendQuery(str(base))
-        for algo in MEMORY_ALGOS:
-            fake = FakeLLM()
-            led = build_checkpoints(bq, uid, [135, 1000], fake, default_memory_config(),
-                                    algo=algo, run_dir=Path(rd))
-            assert set(led.checkpoints) == {135, 1000}, f"{algo}: missing checkpoints"
-            assert fake.calls, f"{algo}: no build calls"
-            states = list((Path(rd) / "memory_states").glob(f"{uid}_{algo}_T*.json"))
-            assert len(states) == 2, f"{algo}: expected 2 algo-namespaced dumps, got {len(states)}"
-        # com and mem0 dumps coexist without overwriting
-        all_states = list((Path(rd) / "memory_states").glob(f"{uid}_*_T*.json"))
-        assert len(all_states) == 4, f"expected 4 total dumps (2 algos × 2 T), got {len(all_states)}"
-        print("  ✓ both_algos_build (com + mem0, algo-namespaced, no collision)")
+        fake = FakeLLM()
+        led = build_checkpoints(bq, uid, [135, 1000], fake, default_memory_config(),
+                                algo=ALGO, run_dir=Path(rd))
+        assert set(led.checkpoints) == {135, 1000}, "missing checkpoints"
+        states = list((Path(rd) / "memory_states").glob(f"{uid}_{ALGO}_T*.json"))
+        assert len(states) == 2, f"expected 2 state dumps, got {len(states)}"
+        print("  ✓ single_algo (llm_memory only, namespaced state dumps)")
 
 
-def test_prompts_faithful_and_distinct():
-    """`mem0` prompt uses the four discrete ops and NOT CoM evolution terms;
-    `com` prompt uses dynamic-evolution and NOT the discrete-op vocabulary.
-    Guards against re-mixing the two algorithms."""
-    m = mem0_update_prompt("MEM", "SUM", "EVENTS").lower()
-    c = com_update_prompt("MEM", "SUM", "EVENTS").lower()
-
-    # Mem0 = discrete ops, no CoM evolution vocabulary in its method section.
-    for op in ("add", "update", "delete", "noop", "extraction"):
-        assert op in m, f"mem0 prompt missing discrete-op term {op!r}"
-    for com_term in ("temporal decay", "structural reorganization", "dynamic"):
-        assert com_term not in m, f"mem0 prompt leaked CoM term {com_term!r}"
-
-    # CoM = dynamic evolution, no discrete-op vocabulary in its method section.
-    for ev in ("semantic consolidation", "temporal decay", "structural reorganization", "evolve"):
-        assert ev in c, f"com prompt missing evolution term {ev!r}"
-    assert "noop" not in c, "com prompt leaked Mem0 NOOP op"
-    assert "two phases" not in c and "phase 2" not in c, "com prompt leaked Mem0 two-phase framing"
-
-    # Shared text-only constraint: neither does retrieval/embeddings.
-    for p in (m, c):
-        for banned in ("embedding", "vector", "top-k", "cosine", "retrieve top"):
-            assert banned not in p, f"memory prompt mentions retrieval/embeddings: {banned!r}"
-    assert m != c, "the two algorithm prompts are identical — they must differ"
-    print("  ✓ prompts_faithful_and_distinct (mem0 ops vs CoM evolution, both text-only)")
+def test_prompt_is_neutral_and_text_only():
+    """The build prompt must be GENERAL: no app-name enumeration, no benchmark-
+    dimension special-casing, no embeddings/retrieval — but it DOES mention the
+    explicit+implicit framing, the four maintenance actions, and the token cap."""
+    p = llm_memory_update_prompt("MEM", "SUM", "EVENTS").lower()
+    # the four maintenance actions the user asked for
+    for action in ("add", "edit", "remove", "merge"):
+        assert action in p, f"prompt missing maintenance action {action!r}"
+    assert "infer" in p and "pattern" in p, "prompt must capture inferred-from-pattern preferences"
+    assert "2048" in p, "prompt should state the 2048-token budget"
+    # NOT tuned to the benchmark's graded probes (would teach to the test)
+    for probe in ("stop recommending", "stop personalizing", "do not personalize",
+                  "over-personaliz", "over personaliz", "restraint"):
+        assert probe not in p, f"prompt leaks benchmark-dimension tuning: {probe!r}"
+    # NO app-name enumeration
+    for app in ("instagram", "facebook", "threads", "chatbot"):
+        assert app not in p, f"prompt enumerates app name {app!r}"
+    # text-only: the prompt may *negate* embeddings/vectors ("uses no embeddings"),
+    # but must never INSTRUCT retrieval (top-k / ANN / cosine).
+    for banned in ("top-k", "cosine", "nearest neighbor", "retrieve top", "ann lookup"):
+        assert banned not in p, f"prompt instructs retrieval: {banned!r}"
+    assert "no embeddings" in p or "uses no embedding" in p, "prompt should state it is vector-free"
+    print("  ✓ prompt_is_neutral_and_text_only")
 
 
 def test_provider_plumbing():
@@ -257,36 +252,44 @@ def test_provider_plumbing():
         fake = FakeLLM(model="builder-x")
         cfg = default_memory_config()
         cfg.update({"builder_temperature": 0.0, "builder_model": "builder-x"})
-        build_checkpoints(bq, uid, [1000], fake, cfg, algo="com")
+        build_checkpoints(bq, uid, [1000], fake, cfg, algo=ALGO)
         assert fake.calls, "no build calls made"
         assert all(c["temperature"] == 0.0 for c in fake.calls), "builder did not pass temperature=0.0"
         print("  ✓ provider_plumbing (temperature=0.0 honored)")
 
 
-def test_pinned_negative_survives_tiny_cap():
-    # Many evictable likes + one pinned 'stop personalizing' negative + one no-date like.
-    likes = "\n".join(f"- [t] EVENT_{i} liked · last 04/0{(i % 9) + 1}" for i in range(12))
+def test_consolidation_is_content_neutral():
+    """Salience is reinforcement-driven and content-neutral: a reinforced line
+    ([×N]) outranks a one-off line, and a 'like' and a 'dislike' with identical
+    structure score IDENTICALLY (no topic/polarity privilege, no pinning). Under
+    a tiny cap, bullets are dropped lowest-salience-first until under budget."""
+    from evaluation.memory_builder import _line_salience
+    from evaluation.inference_utils import count_tokens
+
+    like = "- [topic] surfing — leans toward this"
+    dislike = "- [topic] surfing — leans away from this"
+    reinforced = "- [topic] surfing — leans toward this [×9]"
+    assert _line_salience(like) == _line_salience(dislike), "polarity changed salience (not content-neutral)"
+    assert _line_salience(reinforced) > _line_salience(like), "reinforced [×N] did not outrank one-off"
+    # A former hard-avoid 'stop personalizing' line gets NO special protection.
+    pin = "- asked to stop personalizing the feed"
+    assert _line_salience(pin) == _line_salience(like), "stop-personalizing line is privileged (pinning not removed)"
+
+    plain = "\n".join(f"- [topic] EVENT_{i} — leans toward this" for i in range(12))
     md = (
-        "# USER MEMORY\n\n"
-        "## Stable interests & likes\n" + likes + "\n- [t] EVENT_NODATE liked\n\n"
-        "## Dislikes & negative signals\n"
-        "- HARDAVOID: user asked to stop personalizing the feed · last 04/05\n\n"
-        "## Active / short-term threads\n(none yet)\n\n"
-        "## Places\n(none yet)\n\n## People & social context\n(none yet)\n\n"
-        "## Communication style\n(none yet)\n\n## Recent salient events\n(none yet)\n"
+        "## Interests & preferences\n" + plain + "\n"
+        "- [topic] EVENT_HOT — leans toward this [×9]\n"
     )
-    out = consolidate_evict(md, cap=40)  # force aggressive eviction
-    assert "stop personalizing" in out, "pinned hard-avoid negative was evicted!"
-    assert "EVENT_NODATE" not in out, "no-date (lowest-salience) like should be evicted first"
-    # at least some dated likes dropped to fit the tiny cap
-    kept_likes = len(re.findall(r"EVENT_\d+", out))
-    assert kept_likes < 12, f"expected likes to be evicted under tiny cap, kept {kept_likes}"
-    print(f"  ✓ pinned_negative_survives_tiny_cap (kept {kept_likes}/12 likes, negative pinned)")
+    out = consolidate_evict(md, cap=count_tokens(md) // 2)  # force eviction
+    assert count_tokens(out) <= count_tokens(md), "consolidation grew the doc"
+    assert "EVENT_HOT" in out, "highest-salience reinforced line was evicted before one-offs"
+    kept_plain = len(re.findall(r"EVENT_\d+", out))
+    assert kept_plain < 13, f"expected eviction under tiny cap, kept {kept_plain}/13"
+    print(f"  ✓ consolidation_is_content_neutral (polarity-neutral, no pin; kept {kept_plain}/13)")
 
 
 def test_text_only_invariant():
     src = (Path(__file__).resolve().parents[1] / "evaluation" / "memory_builder.py").read_text()
-    # strip comments/docstrings would be ideal; here we forbid actual import/call tokens
     forbidden = ["import faiss", "import chromadb", "import qdrant", "sentence_transformers",
                  "from sklearn", "cosine_similarity", "embeddings.create", ".embed("]
     for tok in forbidden:
@@ -302,8 +305,8 @@ def test_debug_writes_isolated():
         bq = BackendQuery(str(base))
         fake = FakeLLM()
         build_checkpoints(bq, uid, [135, 1000], fake, default_memory_config(),
-                          algo="com", run_dir=Path(rd))
-        states = list((Path(rd) / "memory_states").glob(f"{uid}_com_T*.json"))
+                          algo=ALGO, run_dir=Path(rd))
+        states = list((Path(rd) / "memory_states").glob(f"{uid}_{ALGO}_T*.json"))
         assert len(states) == 2, f"expected 2 checkpoint dumps, got {len(states)}"
         after = {p.name for p in (base / uid).iterdir()}
         assert before == after, "backend dir was mutated by the builder!"
@@ -311,13 +314,13 @@ def test_debug_writes_isolated():
 
 
 def test_dry_run_graceful_empty():
-    # No checkpoints attached → SnapshotCache memory path returns EMPTY_MEMORY (dry_run safety).
+    # No checkpoints attached → llm_memory path returns EMPTY_MEMORY (dry_run safety).
+    # bq=None means the calendar append is a no-op (its read fails → "" → unchanged).
     from evaluation.inference_utils import SnapshotCache
-    for algo in MEMORY_ALGOS:
-        sc = SnapshotCache(mode=algo)
-        text, stats = sc.get_or_build(None, "synthU", 999, None, None)
-        assert text == EMPTY_MEMORY and stats.get("memory_mode") is True, f"{algo} dry_run not graceful"
-    print("  ✓ dry_run_graceful_empty (com + mem0)")
+    sc = SnapshotCache(mode=ALGO)
+    text, stats = sc.get_or_build(None, "synthU", 999, None, None)
+    assert text == EMPTY_MEMORY and stats.get("memory_mode") is True, f"{ALGO} dry_run not graceful"
+    print("  ✓ dry_run_graceful_empty (llm_memory)")
 
 
 def _run_all():
