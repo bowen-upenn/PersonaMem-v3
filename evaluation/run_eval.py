@@ -648,6 +648,13 @@ def main() -> int:
                                       "chunk_k": args.memory_chunk_k})
         snapshot_cache.attach_mem0_backend(m0)
         memory_build_stats = {
+            # The real mem0ai library makes its own Azure calls (not via QueryLLM),
+            # so build token usage is NOT tracked here — reported as 0 (the
+            # n_chunks count is a proxy for build-call volume). Keys kept present
+            # so the shared summary folding below never KeyErrors.
+            "memory_build_input_tokens": 0,
+            "memory_build_output_tokens": 0,
+            "memory_build_calls": bstats.get("n_chunks", 0),
             "memory_build_chunks": bstats.get("n_chunks", 0),
             "memory_build_events": bstats.get("n_events", 0),
             "memory_build_memories": bstats.get("n_memories", 0),
@@ -953,8 +960,8 @@ def main() -> int:
     if memory_build_stats:
         persona_totals.update(memory_build_stats)
         persona_totals["total_tokens"] += (
-            memory_build_stats["memory_build_input_tokens"]
-            + memory_build_stats["memory_build_output_tokens"]
+            memory_build_stats.get("memory_build_input_tokens", 0)
+            + memory_build_stats.get("memory_build_output_tokens", 0)
         )
 
     (run_dir / "summary.json").write_text(
