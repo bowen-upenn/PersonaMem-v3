@@ -21,3 +21,14 @@ numpy>=1.26
 # Heavy: pulls torch transitively. Comment this out if you only need the
 # benchmark builder and not similarity / embedding-based scoring.
 sentence-transformers>=2.7
+
+# Eval memory baselines:
+#   - `llm_memory` mode needs nothing beyond the base deps (pure-text memory).
+#   - `mem0` mode uses the REAL mem0ai library on Azure (LLM gpt-5.5 +
+#     text-embedding-3-large) with a local qdrant vector store. azure-identity is
+#     imported at mem0's azure module top-level even when an api_key is supplied.
+mem0ai>=2.0,<3.0
+qdrant-client>=1.15
+azure-identity>=1.20
+# `mcp_agent` mode mock MCP servers:
+fastmcp>=2.0
