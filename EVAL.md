@@ -594,7 +594,14 @@ Shared properties (held constant for a fair A/B):
 
 ### Running the full 5-config matrix
 
-`scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; agent modes use Claude Code opus (4.8). gpt-5.5 is the judge for all.
+`scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; agent modes use Claude Code opus (4.8). gpt-5.5 is the judge for all. `--resume` is on by default, so a stopped run picks up where it left off (per-`query_id`).
+
+**Concurrency model (rate-limit-aware).** Defaults: `--gpt-workers 8`, `--agent-workers 1`, `--jobs 1`.
+- `llm_longctx` / `llm_memory` parallelize *intra-persona* with `$GPT_WORKERS` (8) and run personas one at a time — so concurrency stays ≈ 8 regardless of `--jobs`.
+- `mem0` is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable), so it parallelizes *across personas* with `--jobs` (each persona has its own store dir → no conflict). Use `--jobs 4` to cut its wall-time ~4× without the `$JOBS × $GPT_WORKERS` blow-up the long-context modes would suffer.
+- Agent modes (`agent_tools` / `mcp_agent`) always run one `(mode,persona)` at a time (Claude subscription + write-overlay safety).
+
+If you see Azure `429` / rate-limit errors in `results/_logs/*.stderr`, lower `--jobs` (mem0) or `--gpt-workers`, or raise `--rate_limit` only if your Azure quota allows; then re-run (–`-resume` skips finished rows).
 
 ### How the `agent_tools` sandbox works
 

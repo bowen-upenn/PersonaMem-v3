@@ -86,12 +86,18 @@ for mode in $MODES; do
     # Agent modes: strictly one (mode,persona) at a time.
     for uid in $PERSONAS; do run_one "$mode" "$uid"; done
   else
-    # GPT modes: up to $JOBS personas concurrently.
+    # GPT modes. mem0 is intra-persona SERIAL (workers=1, unpicklable qdrant
+    # store), so parallelize it across personas with $JOBS (each persona has its
+    # own store dir — no conflict). The long-context / text-memory modes already
+    # parallelize intra-persona via $GPT_WORKERS, so run their personas one at a
+    # time — otherwise $JOBS×$GPT_WORKERS would blow past the Azure rate limit.
+    if [ "$mode" = "mem0" ]; then mode_jobs="$JOBS"; else mode_jobs=1; fi
+    echo "[matrix] $mode: $mode_jobs persona(s) concurrent x $GPT_WORKERS worker(s)"
     running=0
     for uid in $PERSONAS; do
       run_one "$mode" "$uid" &
       running=$((running+1))
-      if [ "$running" -ge "$JOBS" ]; then wait -n 2>/dev/null || wait; running=$((running-1)); fi
+      if [ "$running" -ge "$mode_jobs" ]; then wait -n 2>/dev/null || wait; running=$((running-1)); fi
     done
     wait
   fi
