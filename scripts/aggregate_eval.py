@@ -473,31 +473,25 @@ def _print_token_accuracy_table(table: list[dict]) -> None:
         print("  ".join(cells))
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--run", choices=("latest", "all"), default="latest")
-    ap.add_argument("--out", default="eval_aggregate")
-    args = ap.parse_args()
-
-    runs = _pick_runs(args.run)
-    if not runs:
-        print("[aggregate] no results.csv files found under benchmark/*/runs/",
-              file=sys.stderr)
-        return 2
-
-    out_dir = REPO_ROOT / args.out
-    out_dir.mkdir(parents=True, exist_ok=True)
-
+def _gather_rows(runs_with_uid: list[tuple[str, Path]]) -> tuple[list[dict], dict[str, list[dict]]]:
+    """Load every results.csv, tagging each row with its uid + run dir."""
     all_rows: list[dict] = []
     per_persona: dict[str, list[dict]] = defaultdict(list)
-    for rcsv in runs:
-        uid = rcsv.parent.parent.parent.name
+    for uid, rcsv in runs_with_uid:
         rows = _load_rows(rcsv)
         for r in rows:
             r["_uid"] = uid
             r["_run_dir"] = str(rcsv.parent)
         all_rows.extend(rows)
         per_persona[uid].extend(rows)
+    return all_rows, per_persona
+
+
+def aggregate_run_set(all_rows: list[dict], per_persona: dict[str, list[dict]],
+                      n_runs: int, out_dir: Path, *, quiet: bool = False) -> dict:
+    """Write summary_by_task / summary_by_persona / summary_overall /
+    token_accuracy_table for one run set into `out_dir`; return the overall dict."""
+    out_dir.mkdir(parents=True, exist_ok=True)
 
     # --- by task ---
     by_task: dict[str, list[dict]] = defaultdict(list)
@@ -536,7 +530,7 @@ def main() -> int:
     # --- overall + E6 pair F1 ---
     overall = {
         "n_personas": len(per_persona),
-        "n_runs": len(runs),
+        "n_runs": n_runs,
         "n_queries": len(all_rows),
         "by_task_summary_csv": str((out_dir / "summary_by_task.csv").relative_to(REPO_ROOT)),
         "by_persona_summary_csv": str((out_dir / "summary_by_persona.csv").relative_to(REPO_ROOT)),
@@ -546,15 +540,16 @@ def main() -> int:
         json.dumps(overall, indent=2, ensure_ascii=False), encoding="utf-8",
     )
 
-    print(f"[aggregate] {overall['n_queries']} queries across "
-          f"{overall['n_personas']} persona(s), {overall['n_runs']} run(s)")
-    print(f"[aggregate] wrote {out_dir}/summary_by_task.csv + summary_by_persona.csv + summary_overall.json")
-    if overall["e6_paired"]:
-        e6 = overall["e6_paired"]
-        print(f"[aggregate] e6 paired: n={e6['n_pairs']}  "
-              f"warn_recall={e6['warn_recall']:.3f}  "
-              f"foil_precision={e6['foil_precision']:.3f}  "
-              f"macro_f1={e6['macro_f1']:.3f}")
+    if not quiet:
+        print(f"[aggregate] {overall['n_queries']} queries across "
+              f"{overall['n_personas']} persona(s), {overall['n_runs']} run(s)")
+        print(f"[aggregate] wrote {out_dir}/summary_by_task.csv + summary_by_persona.csv + summary_overall.json")
+        if overall["e6_paired"]:
+            e6 = overall["e6_paired"]
+            print(f"[aggregate] e6 paired: n={e6['n_pairs']}  "
+                  f"warn_recall={e6['warn_recall']:.3f}  "
+                  f"foil_precision={e6['foil_precision']:.3f}  "
+                  f"macro_f1={e6['macro_f1']:.3f}")
 
     # Phase C: token-vs-accuracy table — single artifact for the eval report.
     table = _build_token_accuracy_table(all_rows, overall["e6_paired"])
@@ -577,8 +572,77 @@ def main() -> int:
         writer.writeheader()
         for row in table:
             writer.writerow({k: row.get(k, "") for k in cols})
-    print(f"[aggregate] wrote {table_path.relative_to(REPO_ROOT)}")
-    _print_token_accuracy_table(table)
+    if not quiet:
+        print(f"[aggregate] wrote {table_path.relative_to(REPO_ROOT)}")
+        _print_token_accuracy_table(table)
+    return overall
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--run", choices=("latest", "all"), default="latest")
+    ap.add_argument("--out", default="eval_aggregate")
+    ap.add_argument("--results_root", default=None,
+                    help="Matrix layout root (e.g. 'results'): aggregates each "
+                         "results/{mode}/{uid}/results.csv per mode + a cross-mode "
+                         "comparison into results/aggregate/.")
+    ap.add_argument("--modes",
+                    default="llm_longctx,llm_memory,mem0,agent_tools,mcp_agent",
+                    help="Comma-separated modes to aggregate under --results_root.")
+    args = ap.parse_args()
+
+    # --- Matrix layout: per-mode aggregation + cross-mode comparison ---
+    if args.results_root:
+        root = REPO_ROOT / args.results_root
+        agg_root = root / "aggregate"
+        agg_root.mkdir(parents=True, exist_ok=True)
+        comparison: list[dict] = []
+        for mode in [m.strip() for m in args.modes.split(",") if m.strip()]:
+            runs = sorted(root.glob(f"{mode}/*/results.csv"))
+            if not runs:
+                print(f"[aggregate] mode={mode}: no results.csv — skipping")
+                continue
+            rwu = [(r.parent.name, r) for r in runs]
+            all_rows, per_persona = _gather_rows(rwu)
+            overall = aggregate_run_set(all_rows, per_persona, len(runs),
+                                        agg_root / mode, quiet=True)
+            e6 = overall.get("e6_paired") or {}
+            comparison.append({
+                "mode": mode,
+                "n_personas": overall["n_personas"],
+                "n_queries": overall["n_queries"],
+                "accuracy_pct_macro": overall.get("accuracy_pct_macro"),
+                "accuracy_pct_micro": overall.get("accuracy_pct_micro"),
+                "e6_macro_f1": round(e6["macro_f1"], 4) if e6 else "",
+            })
+            print(f"[aggregate] mode={mode:12s}  personas={overall['n_personas']:2d}  "
+                  f"queries={overall['n_queries']:4d}  "
+                  f"acc_macro={overall.get('accuracy_pct_macro','?')}  "
+                  f"acc_micro={overall.get('accuracy_pct_micro','?')}  "
+                  f"e6_f1={comparison[-1]['e6_macro_f1']}")
+        if not comparison:
+            print("[aggregate] no mode produced results", file=sys.stderr)
+            return 2
+        comp_path = agg_root / "comparison.csv"
+        cols = ["mode", "n_personas", "n_queries", "accuracy_pct_macro",
+                "accuracy_pct_micro", "e6_macro_f1"]
+        with comp_path.open("w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=cols)
+            writer.writeheader()
+            for row in comparison:
+                writer.writerow({k: row.get(k, "") for k in cols})
+        print(f"[aggregate] wrote cross-mode comparison → {comp_path.relative_to(REPO_ROOT)}")
+        return 0
+
+    # --- Legacy layout: benchmark/{uid}/runs/{ts}/results.csv ---
+    runs = _pick_runs(args.run)
+    if not runs:
+        print("[aggregate] no results.csv files found under benchmark/*/runs/",
+              file=sys.stderr)
+        return 2
+    rwu = [(r.parent.parent.parent.name, r) for r in runs]
+    all_rows, per_persona = _gather_rows(rwu)
+    aggregate_run_set(all_rows, per_persona, len(runs), REPO_ROOT / args.out)
     return 0
 
 
