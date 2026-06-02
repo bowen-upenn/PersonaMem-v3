@@ -61,8 +61,10 @@ run_one() {
   local rundir="results/$mode/$uid"
   local out="$LOGDIR/$mode.$uid.stdout" err="$LOGDIR/$mode.$uid.stderr"
   mkdir -p "$rundir"
+  # NOTE: the LLM judge is ON by default (--enable_llm_judge, BooleanOptionalAction);
+  # pass --no-enable_llm_judge to disable. Do NOT pass a hyphenated variant.
   local args=(--user_id "$uid" --backend_dir backend --run_dir "$rundir"
-              --mode "$mode" --judge_model "$JUDGE_MODEL" --enable-llm-judge
+              --mode "$mode" --judge_model "$JUDGE_MODEL"
               --memory_token_cap 2048)
   [ -n "$RESUME" ] && args+=($RESUME)
   [ -n "$LIMIT" ]  && args+=($LIMIT)
