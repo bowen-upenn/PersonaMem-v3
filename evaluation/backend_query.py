@@ -22,7 +22,7 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-APPS = ("instagram", "facebook", "threads", "chatbot")
+APPS = ("instagram", "facebook", "threads", "chatbot", "ai_studio")
 
 # Fields stripped from every event/preference before returning — these leak
 # ground-truth labels or scoring internals the agent under test must not see.
