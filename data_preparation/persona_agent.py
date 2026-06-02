@@ -8645,7 +8645,11 @@ class PersonaAgent:
                     _div_overrides.append(f"big_five{bf_diffs}")
                 pinned_edu = _div.assign_education_level(self.user_id, EDUCATION_DISTRIBUTION)
                 final_edu = str(_prof_dict.get("education", ""))
-                if pinned_edu and pinned_edu.split(" in ")[0].lower() not in final_edu.lower():
+                # Compare the level KEYWORD (first token), not the full label —
+                # "PhD / doctorate" vs "PhD in Public Policy" is the SAME level,
+                # only the field-of-study phrasing differs.
+                _edu_kw = pinned_edu.split()[0].lower() if pinned_edu else ""
+                if _edu_kw and _edu_kw not in final_edu.lower():
                     _div_overrides.append(f"education({pinned_edu!r}->{final_edu[:24]!r})")
                 pinned_emoji = _div.assign_voice_axes(self.user_id).get("emoji_intensity")
                 final_palette = (_prof_dict.get("user_voice") or {}).get("emoji_palette") or []
