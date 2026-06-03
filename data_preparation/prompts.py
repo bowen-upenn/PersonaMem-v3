@@ -4189,6 +4189,7 @@ def personalize_ai_studio_persona_prompt(
     locale_country: str = "US",
     forced_archetype: str = "",
     used_names: list = None,
+    forced_surname: str = "",
 ) -> str:
     """Step 11C — pick ONE AI Studio persona archetype for THIS user and
     write the FULL 4-layer character voice (mirrors `generate_voice_core_prompt`'s
@@ -4305,6 +4306,24 @@ def personalize_ai_studio_persona_prompt(
     else:
         used_names_str = "  (no names taken yet — but still follow the diversity rules below)"
 
+    # Deterministic per-user SURNAME (fix #4). Picked upstream by hashing the
+    # user_id against a large, origin-diverse pool so the cohort spreads across
+    # the surname space instead of collapsing onto the next modal favorite
+    # (was "Vale" 9/20, then "Mercer" 7/20). The caller ALSO rewrites the
+    # surname after generation from the same seed, so this is a strong hint —
+    # but make the LLM comply so first+surname read naturally together.
+    if forced_surname:
+        forced_surname_str = (
+            f"*** REQUIRED SURNAME: the character's LAST name MUST be EXACTLY "
+            f"'{forced_surname}'. This surname was deterministically assigned to "
+            f"THIS user for cohort diversity — do NOT substitute a different "
+            f"surname. Choose a first name that fits the character's gender "
+            f"presentation and the '{forced_surname}' surname's cultural origin, "
+            f"then set `character_name` to \"<first name> {forced_surname}\". ***"
+        )
+    else:
+        forced_surname_str = "  (no surname pinned — pick a distinctive, varied surname)"
+
     return f"""\
 You are designing the user's chosen AI persona on a companion-chat app called **AI Studio** — modeled after Meta AI Studio / Replika / Character.AI. This is the user's ONE chosen AI character; it drives every AI turn the user will see on this app, across many sessions, with cross-session memory and a relational/intimate register.
 
@@ -4397,12 +4416,16 @@ Six independent axes — pick one value per axis from the closed vocabulary, or 
 
 10. **Negatives matter.** `voice_avoid` (1–2 sentences) and `forbidden_phrases` (must include the Rogers-cliché baseline below) capture what this character steers clear of. Add 2–4 archetype-specific avoid-phrases on top of the baseline.
 
-11. **`character_name` MUST be DISTINCTIVE and UNIQUE.** Pick a full first AND last name that fits the character's gender presentation and cultural/locale background ({locale_country}). Hard rules:
-   - **NEVER** use **"Vale"** as a surname (it is massively overused — pick any other surname).
+11. **`character_name` MUST be DISTINCTIVE and UNIQUE.** Use the REQUIRED SURNAME assigned below, and pick a first name that fits the character's gender presentation and the surname's cultural origin. Hard rules:
+   - **Use EXACTLY the assigned surname** in the "required surname" section below — do NOT substitute your own.
+   - **NEVER** use **"Vale"** or **"Mercer"** as a surname (these are massively overused defaults — use the assigned surname instead).
    - **NEVER** use **"Rowan"**, **"Wren"**, or **"Mira"** as the first name (these are example/placeholder names, not for reuse).
-   - Do NOT reuse any name in the "names already taken" list below.
-   - Avoid generic, ethereal, default companion-AI names (Vale, Sage, Echo, Aria, Nova, Wren, Rowan, Eos, Lumen, Soren). Choose a name a real person of that background would actually have, with a real, varied surname.
+   - Do NOT reuse any name in the "names already taken" list below (neither the full name nor the first name).
+   - Avoid generic, ethereal, default companion-AI first names (Sage, Echo, Aria, Nova, Wren, Rowan, Eos, Lumen, Soren). Choose a first name a real person of that background would actually have.
    - For `address_terms`, use natural terms of address — not the character's own name.
+
+# Required surname (cohort-diversity pin — use EXACTLY this last name)
+{forced_surname_str}
 
 # Names already taken by other AI characters (DO NOT reuse)
 {used_names_str}
@@ -4415,7 +4438,7 @@ Six independent axes — pick one value per axis from the closed vocabulary, or 
 ```json
 {{
   "persona_archetype": "...",
-  "character_name": "... (distinctive first + last name; NOT 'Vale' surname; NOT Rowan/Wren/Mira; NOT any taken name)",
+  "character_name": "... (first name + the REQUIRED assigned surname; NOT 'Vale'/'Mercer' surname; NOT Rowan/Wren/Mira first name; NOT any taken name)",
   "backstory_brief": "2–3 sentences. Concrete texture.",
   "relational_stance": "1–2 sentences: how this character relates to the user.",
   "address_terms": ["..."],

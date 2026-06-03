@@ -1898,6 +1898,109 @@ def _run_self_check(llm: Callable[[str], str], task_type: str, query: str, respo
 
 
 # ---------------------------------------------------------------------------
+# Fix #13 — holistic per-query "good test example?" gate.
+# ---------------------------------------------------------------------------
+# Unlike _run_self_check (which only grades whether the gold ADDRESSES the
+# query), this gate looks at the WHOLE eval-facing instance — query, gold,
+# foil, GT/rubric — and asks the LLM whether it forms a genuinely good test
+# FOR ITS TASK TYPE. It is the catch-all for the failure modes that the
+# narrow per-axis validators miss: a foil that's identical/trivial/structurally
+# tell-tale, a gold that mishandles the task, an unfair restraint test whose
+# "forbidden" preference is actually on-topic and helpful.
+_HOLISTIC_TEST_QUALITY_PROMPT = """You are an expert benchmark reviewer auditing ONE \
+candidate test example for a personalization benchmark. You see everything the \
+evaluation and the data-viewer show for this row EXCEPT an actual model response \
+under test. Judge whether this is a genuinely GOOD test example FOR ITS task type.
+
+Task type:
+{task_type}
+
+User query (may be empty for proactive / ranking / compose tasks — those have no \
+literal question; judge them as good tests for their type anyway):
+\"\"\"
+{user_query}
+\"\"\"
+
+EXAMPLE_RESPONSE (the gold / preferred answer):
+\"\"\"
+{example_response}
+\"\"\"
+
+INFERIOR_RESPONSE (the worse foil the eval pairs against the gold; may be empty \
+when this task type ships without a foil — if empty, do NOT penalize for it):
+\"\"\"
+{inferior_response}
+\"\"\"
+
+GROUNDTRUTH_PREFERENCE (what the gold is supposed to anchor on):
+\"\"\"
+{groundtruth_preference}
+\"\"\"
+
+RUBRIC / scoring criteria the grader will apply:
+\"\"\"
+{rubric}
+\"\"\"
+
+Judge ALL of the following. The example is GOOD only if every applicable point holds:
+  1. The query (if any) makes sense for this task type.
+  2. The EXAMPLE_RESPONSE correctly handles the query / task — it does what a strong \
+model should do here and would itself pass the rubric.
+  3. If an INFERIOR_RESPONSE is present, it is a CREDIBLE-but-worse foil that actually \
+commits this task's labeled flaw. It must NOT be identical to the gold, NOT a no-op / \
+trivial paraphrase, and NOT trivially identifiable by a structural tell the gold lacks \
+(e.g. wildly different length, a stray label/preamble, an obviously fabricated ID) — \
+the difference should be a real quality gap on the graded axis, not a giveaway.
+  4. The GROUNDTRUTH_PREFERENCE + RUBRIC anchor a FAIR grade for this row.
+  5. CRITICAL — the test is not UNFAIR. In particular, for a restraint / \
+over-personalization test, the preference the model is supposed to WITHHOLD must \
+genuinely be off-topic / unhelpful for the query; if surfacing it would actually be \
+on-topic and helpful, the test would wrongly penalize a competent model — mark it bad.
+
+Respond with ONE fenced ```json block and nothing else:
+```json
+{{"good": true, "reason": "<one short sentence>"}}
+```"""
+
+
+def _run_holistic_test_quality_check(
+    llm: Callable[[str], str],
+    task_type: str,
+    user_query: str,
+    example_response: str,
+    inferior_text: str,
+    groundtruth_preference: str,
+    rubric,
+) -> dict:
+    """Holistic per-row gate (#13). Asks the LLM whether the full eval-facing
+    instance is a genuinely good test FOR ITS task_type. Defaults to
+    ``{"good": True}`` when no llm is available or the response can't be
+    parsed, to avoid over-dropping. Unlike ``_run_self_check`` this does NOT
+    skip query-less tasks — it judges "good test for its type" regardless.
+    """
+    if not llm or not example_response:
+        return {"good": True, "reason": "(no llm / no example; defaulted to good)"}
+    # `rubric` may arrive as a list of bullets (rubric_tags) or a string.
+    if isinstance(rubric, (list, tuple)):
+        rubric_str = "\n".join(str(r) for r in rubric)
+    else:
+        rubric_str = str(rubric or "")
+    raw = llm(_HOLISTIC_TEST_QUALITY_PROMPT.format(
+        task_type=task_type or "",
+        user_query=(user_query or "")[:1500],
+        example_response=(example_response or "")[:1800],
+        inferior_response=(inferior_text or "")[:1800],
+        groundtruth_preference=(groundtruth_preference or "")[:800],
+        rubric=rubric_str[:1200],
+    ))
+    parsed = extract_json_from_response(raw) or {}
+    good = parsed.get("good")
+    if not isinstance(good, bool):
+        return {"good": True, "reason": f"(parse failure; defaulted to good: {raw[:80]!r})"}
+    return {"good": good, "reason": (parsed.get("reason") or "")[:200]}
+
+
+# ---------------------------------------------------------------------------
 # Workstream J — inferior_response generation
 # ---------------------------------------------------------------------------
 
@@ -3699,6 +3802,13 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
     n_voice_check_regen = 0
     n_voice_align_passed = 0
     n_voice_align_failed = 0
+    # Fix #13 — holistic per-row "good test example?" gate counters.
+    n_holistic = 0
+    n_holistic_regen = 0
+    n_holistic_dropped = 0
+    # task_id -> set of instance indices flagged for DROP (still-bad after the
+    # one regen). Realized by filtering the bm[task_id] lists at the end.
+    _holistic_drop_idxs: dict[str, set[int]] = {}
 
     # Lazy-build persona ctx once per t_test so we don't re-scan per instance.
     _ctx_cache: dict[int, dict] = {}
@@ -3736,6 +3846,9 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                 gt_out = {}
             example = (gt_out.get("example_response") or "").strip()
             groundtruth = gt_out.get("groundtruth_preference") or ""
+            # Rubric for the holistic gate (#13). gt_out carries rubric_tags;
+            # the CSV-level display rubric is derived separately downstream.
+            rubric_for_holistic = gt_out.get("rubric_tags") or inst.get("rubric_tags") or []
             inst["example_response"] = example
             inst["groundtruth_preference"] = groundtruth
             if "tool_call" in gt_out:
@@ -4065,6 +4178,104 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
                             )
                             inst["voice_evidence_smoke_check_after_regen"] = check2
 
+            # ---- Fix #13: holistic per-row "good test example?" gate -------
+            # Runs AFTER example + inferior are finalized for this row. Looks
+            # at the WHOLE eval-facing instance (query, gold, foil, GT/rubric)
+            # and asks the LLM whether it's a genuinely good test FOR ITS
+            # task_type — the catch-all for failure modes the narrow per-axis
+            # validators miss (trivial/tell-tale foil, gold that mishandles
+            # the task, an unfair restraint test). regen-once-then-drop:
+            # on `good == False`, regenerate the example AND inferior once
+            # (reusing the same _generate_example_response / _generate_inferior
+            # paths the loop already uses), re-check, and DROP if still bad.
+            # Gated on self_check_llm like the other LLM gates.
+            if self_check_llm is not None and example:
+                hq_query = inst.get("user_query") or inst.get("query") or ""
+                inf_obj = inst.get("inferior_response")
+                inf_text = (inf_obj.get("text") if isinstance(inf_obj, dict) else "") or ""
+                hcheck = _run_holistic_test_quality_check(
+                    self_check_llm, task_id, hq_query, example, inf_text,
+                    groundtruth, rubric_for_holistic,
+                )
+                inst["holistic_test_quality_check"] = hcheck
+                n_holistic += 1
+                if not hcheck.get("good", True):
+                    # --- regen ONCE: gold + foil ---------------------------
+                    regen_example = example
+                    # Gold: reuse _generate_example_response with freshly
+                    # recomputed grounding (matches the example-gen block).
+                    if (task_id not in _RANKING_TASKS
+                            and task_id not in _DETERMINISTIC_GOLD_TASKS
+                            and task_id not in _TASKS_ALREADY_CONCRETE
+                            and inferior_llm is not None):
+                        try:
+                            re_grounding = _task_grounding(inst, task_id, bq, user_id)
+                            re_ap_for_len: dict | None = None
+                            if task_id in _COMPOSE_TASKS:
+                                target_app = (inst.get("target_app") or "").lower()
+                                try:
+                                    prof = bq._load_profile(user_id) if hasattr(bq, "_load_profile") else {}
+                                    for k, v in (prof.get("app_personas") or {}).items():
+                                        if isinstance(v, dict) and k.lower() == target_app:
+                                            re_ap_for_len = v
+                                            break
+                                except Exception:
+                                    re_ap_for_len = None
+                            re_gold = _generate_example_response(
+                                self_check_llm, task_id, _synthesize_user_query(inst, task_id),
+                                grounding=re_grounding, inst=inst, app_persona=re_ap_for_len,
+                            )
+                            if re_gold:
+                                regen_example = re_gold
+                                inst["example_response"] = re_gold
+                        except Exception:
+                            pass
+                    # Foil: reuse the same _generate_inferior path. Recover
+                    # flaw_kind / evidence from the finalized inferior_response
+                    # so the regen targets the same labeled flaw.
+                    regen_inf_text = inf_text
+                    if (isinstance(inf_obj, dict) and inferior_llm is not None
+                            and task_id not in _RANKING_TASKS):
+                        re_flaw = inf_obj.get("flaw_kind")
+                        re_evidence = inf_obj.get("flaw_evidence")
+                        if re_flaw and re_evidence is not None:
+                            try:
+                                re_foil = _generate_inferior(
+                                    inferior_llm, regen_example, re_flaw, re_evidence,
+                                    task_id, user_query=hq_query,
+                                )
+                                if re_foil and re_foil.strip():
+                                    regen_inf_text = re_foil
+                                    inst["inferior_response"]["text"] = re_foil
+                                    inst["inferior_response"]["regen_reason"] = "holistic_test_quality_failed"
+                            except Exception:
+                                pass
+                    n_holistic_regen += 1
+                    # --- re-check after the single regen -------------------
+                    hcheck2 = _run_holistic_test_quality_check(
+                        self_check_llm, task_id, hq_query, regen_example,
+                        regen_inf_text, groundtruth, rubric_for_holistic,
+                    )
+                    inst["holistic_test_quality_check_after_regen"] = hcheck2
+                    if not hcheck2.get("good", True):
+                        # Still bad after regen → mark for DROP. Realized by
+                        # filtering bm[task_id] below.
+                        inst["_holistic_drop"] = True
+                        inst["_holistic_drop_reason"] = (
+                            hcheck2.get("reason") or "holistic_test_quality_failed"
+                        )
+                        _holistic_drop_idxs.setdefault(task_id, set()).add(idx)
+                        n_holistic_dropped += 1
+
+    # Fix #13: realize holistic drops — rebuild each affected task list
+    # without the instances flagged still-bad after the single regen.
+    for _drop_task, _drop_set in _holistic_drop_idxs.items():
+        _bucket = bm.get(_drop_task)
+        if isinstance(_bucket, list):
+            bm[_drop_task] = [
+                _i for _j, _i in enumerate(_bucket) if _j not in _drop_set
+            ]
+
     if verbose:
         print(f"[llm_postprocess] example_llm_gen={n_example_llm_gen} "
               f"example_ranking={n_example_ranking} "
@@ -4077,7 +4288,10 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
               f"voice_align_passed={n_voice_align_passed} "
               f"voice_align_failed={n_voice_align_failed} "
               f"chatbot_triplet_built={n_chatbot_triplet_built} "
-              f"chatbot_triplet_failed={n_chatbot_triplet_failed}")
+              f"chatbot_triplet_failed={n_chatbot_triplet_failed} "
+              f"holistic={n_holistic} "
+              f"holistic_regen={n_holistic_regen} "
+              f"holistic_dropped={n_holistic_dropped}")
     bm["postprocess_stats"] = {
         "example_llm_gen": n_example_llm_gen,
         "example_ranking": n_example_ranking,
@@ -4090,5 +4304,8 @@ def postprocess_benchmark(bm: dict, bq, user_id: str,
         "voice_check_regen": n_voice_check_regen,
         "voice_align_passed": n_voice_align_passed,
         "voice_align_failed": n_voice_align_failed,
+        "holistic_total": n_holistic,
+        "holistic_regen": n_holistic_regen,
+        "holistic_dropped": n_holistic_dropped,
     }
     return bm

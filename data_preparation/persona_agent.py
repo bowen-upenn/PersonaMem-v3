@@ -1667,6 +1667,39 @@ ROGERS_CLICHE_BLOCKLIST = [
     "Have you thought about talking to a therapist",
 ]
 
+# ---- AI Studio character SURNAME pool (cohort diversity, fix #4) ----------
+# Left unconstrained, the LLM collapses the AI character's SURNAME onto a tiny
+# default set: "Vale" was 9/20, and after "Vale" was blocked it shifted to
+# "Mercer" 7/20 — a growing blocklist alone just shifts the collapse to the
+# next modal surname. So we DETERMINISTICALLY assign each user a surname drawn
+# from this large, origin-diverse pool by hashing the user_id (via
+# diversity.user_rng, the established SHA-256(user_id) seeding helper). The
+# surname is then appended after generation, guaranteeing cohort spread.
+# Excludes every name on diversity.OVERUSED_SURNAMES and the known modal
+# companion-AI surnames ("Vale", "Mercer"). 64 surnames, varied origins.
+AI_STUDIO_SURNAME_POOL = [
+    # Anglo / Celtic / Western European
+    "Ashworth", "Calloway", "Driscoll", "Fairbanks", "Hartley", "Lockhart",
+    "Pemberton", "Rutherford", "Sinclair", "Thornbury", "Whitlock", "Beaumont",
+    "Castellano", "Delacroix", "Fontaine", "Linnea", "Okonkwo", "Adeyemi",
+    # West African
+    "Mensah", "Osei", "Diallo", "Camara",
+    # South Asian
+    "Chandrasekaran", "Iyer", "Bhattacharya", "Khatri", "Saxena", "Reddy",
+    # East Asian (non-modal)
+    "Tanaka", "Fujimoto", "Hwang", "Sato", "Chiang", "Watanabe",
+    # Hispanic / Lusophone (non-modal)
+    "Quintero", "Salgado", "Carvalho", "Espinoza", "Bustamante", "Vargas",
+    # Slavic / Eastern European
+    "Novak", "Petrov", "Kowalczyk", "Sokolova", "Andrejev", "Marchetti",
+    # Middle Eastern / North African
+    "Haddad", "Najafi", "Karam", "Soliman", "Behrouzi", "Mansour",
+    # Nordic / Baltic
+    "Lindqvist", "Halvorsen", "Eriksdottir", "Virtanen", "Kalnins", "Aaltonen",
+    # Southeast Asian / Pacific
+    "Suharto", "Phan", "Kahale", "Tupou", "Sirikanya", "Damrongchai",
+]
+
 AI_STUDIO_ARCHETYPES: dict[str, dict] = {
     "anime_or_fandom_character": {
         "voice_template": (
@@ -5740,6 +5773,18 @@ class PersonaAgent:
             {"name": k, **v} for k, v in AI_STUDIO_ARCHETYPES.items()
         ]
 
+        # Deterministic per-user SURNAME (fix #4 — actively diversify the
+        # surname space rather than just blocklisting the modal collapse).
+        # diversity.user_rng is the established SHA-256(user_id) seeding helper
+        # (salted distinctly so it never perturbs other axes' draws). The LLM
+        # is told to use EXACTLY this surname; we ALSO append it after
+        # generation (taking the LLM's first name only) so the spread is
+        # guaranteed even if the LLM drifts.
+        from data_preparation import diversity
+        forced_surname = diversity.user_rng(
+            self.user_id, salt="ai_studio_surname"
+        ).choice(AI_STUDIO_SURNAME_POOL)
+
         # ---- LLM call ----------------------------------------------------
         try:
             prompt_text = prompts.personalize_ai_studio_persona_prompt(
@@ -5755,6 +5800,7 @@ class PersonaAgent:
                 locale_country=locale_country,
                 forced_archetype=routed_archetype,
                 used_names=list(getattr(self, "ai_studio_name_blocklist", []) or []),
+                forced_surname=forced_surname,
             )
             response = self._query_mini_with_retry(prompt_text)
             parsed = utils.extract_json_from_response(response) if response else None
@@ -5885,10 +5931,19 @@ class PersonaAgent:
             if type_words and not any(w in ts_lower for w in type_words):
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] AI Studio persona: topical_strengths {ts_list!r} doesn't obviously overlap any hidden_persona type {hp_types!r}; accepting anyway.{utils.Colors.ENDC}")
 
+        # Enforce the deterministic per-user surname (fix #4). The LLM was told
+        # to use `forced_surname`; we additionally REWRITE the surname here from
+        # the seeded pool, keeping only the LLM's FIRST name. This guarantees
+        # the cohort surname distribution spreads even if the LLM ignored the
+        # constraint or collapsed onto a modal default ("Vale"/"Mercer").
+        _raw_name = str(parsed.get("character_name", "")).strip()
+        _first = _raw_name.split()[0] if _raw_name else ""
+        character_name = f"{_first} {forced_surname}".strip() if _first else forced_surname
+
         # Build the dataclass (clamps defaults for any missing fields)
         ai_persona = AIStudioPersona(
             persona_archetype=archetype,
-            character_name=str(parsed.get("character_name", "")),
+            character_name=character_name,
             backstory_brief=str(parsed.get("backstory_brief", "")),
             relational_stance=str(parsed.get("relational_stance", "")),
             address_terms=list(parsed.get("address_terms", []) or [])[:3],

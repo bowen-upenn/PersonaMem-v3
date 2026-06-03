@@ -802,6 +802,22 @@ def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
                 f"failure this task tests."
             )
 
+    # FIX A: for TAIL-zone rows, surface the prior turns in this cluster so the
+    # grader can SEE the over-repetition the agent must now diversify away from.
+    prior_section = ""
+    if query_index is not None and not is_head_zone:
+        prior_qs = queries[: int(query_index)] if queries else []
+        if prior_qs:
+            prior_lines = "\n".join(
+                f"  {i+1}. {_truncate(q.get('user_query', ''), 100)}"
+                for i, q in enumerate(prior_qs)
+            )
+            prior_section = (
+                "Previously asked in this cluster (the agent has already leaned "
+                "on the target preference across these — it must now DIVERSIFY "
+                f"away from it):\n{prior_lines}\n"
+            )
+
     return {
         "example_response": example_text,
         "groundtruth_preference": (
@@ -810,6 +826,7 @@ def _gt_over_personalization_repetition_chatbot(inst: dict) -> dict:
             + (f"Primary category: {primary_category}\n" if primary_category else "")
             + f"Tolerance: target turns 1..{head_window} may invoke; "
             + f"target turns {tail_start}..{n_target or n_queries} must NOT invoke.\n"
+            + prior_section
             + (f"Sample queries (each has a natural pref-anchor):\n{sample_queries}"
                if sample_queries else "")
         ),
@@ -929,6 +946,23 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
                 f"query is the saturation failure this task tests."
             )
 
+    # FIX A: for TAIL-zone rows, surface the prior queries in this cluster so the
+    # grader can SEE the over-repetition the agent must now diversify away from.
+    refind_queries = inst.get("queries") or []
+    prior_section = ""
+    if query_index is not None and not is_head_zone:
+        prior_qs = refind_queries[: int(query_index)] if refind_queries else []
+        if prior_qs:
+            prior_lines = "\n".join(
+                f"  {i+1}. {_truncate(q.get('user_query', ''), 100)}"
+                for i, q in enumerate(prior_qs)
+            )
+            prior_section = (
+                "Previously asked in this cluster (the agent has already leaned "
+                "on the target preference across these — it must now DIVERSIFY "
+                f"away from it):\n{prior_lines}\n"
+            )
+
     return {
         "example_response": example_text,
         "groundtruth_preference": (
@@ -939,6 +973,7 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
             + "\n"
             + f"Tolerance: target queries 1..{head_window} may repeat freely; "
             + f"target queries {tail_start}..{n_target or n_queries} must diversify\n"
+            + prior_section
             + (f"Cluster hashtags (head zone): {', '.join('#' + h for h in cluster_hashtags)}\n"
                if cluster_hashtags else "")
             + (f"Top persona categories: {', '.join(top_cats)}\n" if top_cats else "")
@@ -1848,12 +1883,18 @@ def _gt_agentic(inst: dict) -> dict:
                     gtp_lines.append(f"Topical focus on {app_label}: {', '.join(focus[:6])}")
                 if audience:
                     gtp_lines.append(f"Audience: {audience}")
-        if top_hashtags:
-            gtp_lines.append(f"Top hashtags the agent may naturally use: {', '.join(top_hashtags[:5])}")
-        if top_cats:
-            gtp_lines.append(f"Top categories: {', '.join(top_cats[:3])}")
-        if voice_sample:
-            gtp_lines.append(f"Voice sample (recent post): {_truncate(voice_sample, 100)}")
+        # FIX C: vague_refind is a recall/disambiguation task — generic persona
+        # stats (top hashtags / categories / voice sample) are IRRELEVANT to it
+        # and crowd out the target-post evidence the grader actually needs. Scope
+        # these generic lines OUT of the vague_refind branch; the dedicated
+        # vague_refind block below builds the target + related posts instead.
+        if task_id != "agentic_vague_refind":
+            if top_hashtags:
+                gtp_lines.append(f"Top hashtags the agent may naturally use: {', '.join(top_hashtags[:5])}")
+            if top_cats:
+                gtp_lines.append(f"Top categories: {', '.join(top_cats[:3])}")
+            if voice_sample:
+                gtp_lines.append(f"Voice sample (recent post): {_truncate(voice_sample, 100)}")
         if inst.get("inbound_message"):
             gtp_lines.append(f"Inbound DM: {_truncate(inst['inbound_message'], 100)}")
         if inst.get("source_post"):
@@ -1986,7 +2027,10 @@ def _gt_agentic(inst: dict) -> dict:
             t_cap = (tp.get("caption") or tp.get("title")
                        or inst.get("target_caption") or "")
             t_app = tp.get("app") or inst.get("target_app") or ""
+            # Hashtags of the recalled post — drives the related-post fan-out.
+            t_tags = [str(h).lstrip("#") for h in (tp.get("hashtags") or []) if h]
             topic_str = (inst.get("topic") or "").strip()
+            target_ev = None  # the matched raw_event, if found by topic lookup
             if not (sid or t_cap) and topic_str and inst_ts:
                 # Look up the most-recent event whose hashtags / caption
                 # match the topic — that's what the user is recalling.
@@ -2001,6 +2045,10 @@ def _gt_agentic(inst: dict) -> dict:
                             or topic_lc in cap_lc:
                         t_app = ev.get("app") or t_app
                         t_cap = ev.get("caption") or t_cap
+                        if not t_tags:
+                            t_tags = [str(h).lstrip("#")
+                                      for h in (ev.get("hashtags") or []) if h]
+                        target_ev = ev
                         break
             if sid or t_cap or topic_str:
                 gtp_lines.append("Target post the user is trying to recall:")
@@ -2010,8 +2058,71 @@ def _gt_agentic(inst: dict) -> dict:
                     gtp_lines.append(f"  • app: {t_app}")
                 if sid:
                     gtp_lines.append(f"  • source_object_id: {sid}")
+                if t_tags:
+                    gtp_lines.append(
+                        f"  • hashtags: {', '.join('#' + h for h in t_tags[:8])}"
+                    )
                 if t_cap:
                     gtp_lines.append(f"  • caption snippet: {_truncate(t_cap, 140)}")
+
+                # Related candidate posts: a correct refind must surface the
+                # target and DISAMBIGUATE it from these topically-adjacent posts
+                # (other events ≤ T_test sharing ≥1 hashtag with the target, or
+                # — if the target has no hashtags — matching the topic string).
+                # Naming the right one among these is what the grader checks.
+                target_tags_lc = {h.lower() for h in t_tags}
+                topic_lc = topic_str.lower()
+                topic_norm = topic_lc.replace(" ", "")
+                related: list[dict] = []
+                seen_caps: set[str] = set()
+                for ev in reversed(_PERSONA_CONTEXT.get("raw_events") or []):
+                    if target_ev is not None and ev is target_ev:
+                        continue
+                    if int(ev.get("ts") or 0) > inst_ts:
+                        continue
+                    ev_tags = [str(h).lstrip("#") for h in (ev.get("hashtags") or []) if h]
+                    ev_tags_lc = {h.lower() for h in ev_tags}
+                    ev_cap = (ev.get("caption") or "").strip()
+                    if target_tags_lc:
+                        if not (ev_tags_lc & target_tags_lc):
+                            continue
+                    elif topic_lc:
+                        cap_lc = ev_cap.lower()
+                        if not (any(topic_lc in t or topic_norm in t for t in ev_tags_lc)
+                                or topic_lc in cap_lc):
+                            continue
+                    else:
+                        continue
+                    cap_key = ev_cap[:80].lower()
+                    if cap_key and cap_key == (_truncate(t_cap, 80) or "").lower():
+                        continue  # same caption as target — skip dup
+                    if cap_key in seen_caps:
+                        continue
+                    seen_caps.add(cap_key)
+                    related.append({
+                        "app": ev.get("app") or "",
+                        "caption": ev_cap,
+                        "hashtags": ev_tags,
+                    })
+                    if len(related) >= 4:
+                        break
+                if related:
+                    gtp_lines.append(
+                        "Related candidate posts (a correct refind must surface "
+                        "the target above and disambiguate it from these):"
+                    )
+                    for rp in related:
+                        bits = []
+                        if rp["app"]:
+                            bits.append(f"app: {rp['app']}")
+                        if rp["caption"]:
+                            bits.append(f"topic: {_truncate(rp['caption'], 90)}")
+                        if rp["hashtags"]:
+                            bits.append(
+                                "hashtags: "
+                                + ", ".join("#" + h for h in rp["hashtags"][:6])
+                            )
+                        gtp_lines.append("  • " + " · ".join(bits))
 
         # Wrong-recipient-check — candidate recipients on the contact
         # list so the (+) "ASK for disambiguation" tag has grounding.
