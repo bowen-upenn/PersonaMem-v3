@@ -1916,13 +1916,6 @@ _FLAW_KINDS_FACTUAL = ("factual_error",)
 # topic leak. The foil preserves the gold's content verbatim and only
 # swaps the voice.
 _FLAW_KINDS_VOICE = ("voice_mismatch",)
-# Compose tasks (send / community / cross_app) were voice-ONLY foils. But a foil
-# that preserves the gold's content verbatim and only swaps register is trivially
-# separable by a voice-aware judge with ZERO content retrieval (AUDIT.md Slice B
-# "voice-only foil"). Mix in content-axis flaws so a fraction of foils are
-# IN-VOICE but wrong on pref/content — the model must then get BOTH the voice AND
-# the right preference, not just the tone.
-_FLAW_KINDS_COMPOSE = ("voice_mismatch", "incorrect_personalization", "disliked_recent")
 
 # Per-task allowlist. Tasks NOT listed fall back to the personalization set.
 # Summarization / digest / lookup tasks need factual flaws; mechanically
@@ -1957,10 +1950,10 @@ _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     # grounds the foil on the user's own explicit_negative history.
     "agentic_trending_alert":          ("disliked_recent",),
     "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
-    "agentic_community_post":          _FLAW_KINDS_COMPOSE,
-    "agentic_send_post":               _FLAW_KINDS_COMPOSE,
-    "agentic_cross_app_repost":        _FLAW_KINDS_COMPOSE,
-    "agentic_auto_reply":              _FLAW_KINDS_VOICE,  # short DM — voice is the axis
+    "agentic_community_post":          _FLAW_KINDS_VOICE,
+    "agentic_send_post":               _FLAW_KINDS_VOICE,
+    "agentic_cross_app_repost":        _FLAW_KINDS_VOICE,
+    "agentic_auto_reply":              _FLAW_KINDS_VOICE,
     # daily_personalized_briefing's rubric explicitly grades
     # `negative_leakage` against `gt_avoid_engagements`. Pin the foil to
     # `disliked_recent` so the inferior response is the gold + ONE topic
