@@ -830,14 +830,18 @@ def _length_guidance(task_type: str, inst: dict | None = None,
             "agentic_send_post",
             "agentic_community_post",
         ):
-            lo = max(lo, 380)  # ≈60 words at ~6 chars/word incl. spaces
+            lo = max(lo, 440)  # ≈70 words at ~6 chars/word incl. spaces
             hi = max(hi, lo + 200)
             extra = (
-                " FLOOR: the post MUST be at least **60 words** and "
-                "visibly cover **3-5 distinct user voice points** (recurring "
-                "phrases, register, signature opinions, topical anchors, "
-                "emoji/punctuation habits) — a short post does NOT satisfy "
-                "this task. Do not pad past a natural caption length."
+                " FLOOR (HARD REQUIREMENT): write **AT LEAST 70 words** — aim "
+                "for 70-90. A post **under 60 words will be REJECTED and "
+                "regenerated**, so do NOT cut it short. Visibly cover **3-5 "
+                "distinct user voice points** (recurring phrases, register, "
+                "signature opinions, topical anchors, emoji/punctuation "
+                "habits) — a short post does NOT satisfy this task. Reach the "
+                "word count with specific topical content (concrete details, "
+                "anecdotes, recommendations), NOT filler. Do not pad past a "
+                "natural caption length (stay under ~110 words)."
             )
         return (
             f"Length: ~{lo}–{hi} characters (a real social-media post / "
@@ -1053,26 +1057,53 @@ def _generate_example_response(llm: Callable[[str], str],
     )
     text: str | None = None
     last_reason = ""
-    # 3 attempts (was 2) so the compose-length validator gets a real
-    # regen pass even after a creepy / refusal / rubric retry has been
-    # spent.
-    for attempt in range(3):
+    last_reason_was_length = False
+    # Retry budget. Creepy / refusal / rubric retries share the base loop.
+    # The compose-length validator gets its OWN dedicated budget of up to 2
+    # regen attempts (`_MAX_LENGTH_REGENS`) so a still-short draft can be
+    # re-tried even after a creepy / refusal / rubric retry has been spent —
+    # a single length regen often comes back still under the floor. Total
+    # iteration cap is generous enough to hold 3 base attempts + 2 length
+    # regens without ever spinning.
+    _MAX_LENGTH_REGENS = 2
+    length_regens_used = 0
+    max_attempts = 3 + _MAX_LENGTH_REGENS
+    for attempt in range(max_attempts):
         prompt = base_prompt
         if attempt > 0 and text is not None:
-            prompt = base_prompt + (
-                "\n\nYour previous draft was REJECTED by a validator. "
-                f"Reason: {last_reason}.\n"
-                "Rewrite so the topic CHOICE itself is the personalization "
-                "signal — do NOT self-reference what you know about the "
-                "user (no \"I know you...\", \"since you like X\", \"I "
-                "remember when you...\", \"based on your...\"), do NOT "
-                "paste the persona description / preference text verbatim "
-                "into the response, and do NOT refuse or claim you can't "
-                "access the user's data (you CAN — use the tools). When "
-                "a length floor is named, hit it — pad with specific "
-                "topical content, NOT with filler.\n"
-                f"Previous draft (DO NOT REUSE):\n\"\"\"{text}\"\"\""
-            )
+            if last_reason_was_length:
+                # Length-specific regen: be FORCEFUL about the word floor.
+                # The generic regen footer under-delivered (~42 rows still
+                # shipped short), so spell out the count and the rejection.
+                prompt = base_prompt + (
+                    "\n\nYour previous draft was REJECTED for being TOO "
+                    f"SHORT. Reason: {last_reason}.\n"
+                    "Rewrite it LONGER. The post MUST be **at least 70 "
+                    "words** (aim for 70-90) — a draft under 60 words will "
+                    "be REJECTED AGAIN. Reach the length with SPECIFIC "
+                    "topical substance (concrete details, anecdotes, "
+                    "recommendations, signature opinions), NOT filler like "
+                    "\"anyway\" or \"in any case\". Keep it a natural "
+                    "social-media caption in the user's voice; do NOT "
+                    "self-reference what you know about the user and do NOT "
+                    "paste any preference text verbatim.\n"
+                    f"Previous draft (DO NOT REUSE):\n\"\"\"{text}\"\"\""
+                )
+            else:
+                prompt = base_prompt + (
+                    "\n\nYour previous draft was REJECTED by a validator. "
+                    f"Reason: {last_reason}.\n"
+                    "Rewrite so the topic CHOICE itself is the personalization "
+                    "signal — do NOT self-reference what you know about the "
+                    "user (no \"I know you...\", \"since you like X\", \"I "
+                    "remember when you...\", \"based on your...\"), do NOT "
+                    "paste the persona description / preference text verbatim "
+                    "into the response, and do NOT refuse or claim you can't "
+                    "access the user's data (you CAN — use the tools). When "
+                    "a length floor is named, hit it — pad with specific "
+                    "topical content, NOT with filler.\n"
+                    f"Previous draft (DO NOT REUSE):\n\"\"\"{text}\"\"\""
+                )
         raw = llm(prompt)
         parsed = extract_json_from_response(raw) or {}
         candidate = parsed.get("text")
@@ -1082,23 +1113,33 @@ def _generate_example_response(llm: Callable[[str], str],
         passed, reason = _validate_no_creepy_phrasing(text, held_out_pref)
         if not passed:
             last_reason = reason
+            last_reason_was_length = False
             continue
         passed_refusal, refusal_reason = _validate_no_refusal(text, task_type)
         if not passed_refusal:
             last_reason = refusal_reason
+            last_reason_was_length = False
             continue
         passed_rubric, rubric_reason = _validate_no_rubric_leak(text)
         if not passed_rubric:
             last_reason = rubric_reason
+            last_reason_was_length = False
             continue
         passed_length, length_reason = _validate_compose_length(text, task_type)
         if not passed_length:
             last_reason = length_reason
-            continue
+            last_reason_was_length = True
+            # Only retry on length while the dedicated budget remains;
+            # otherwise fall through to graceful-degrade below.
+            if length_regens_used < _MAX_LENGTH_REGENS:
+                length_regens_used += 1
+                continue
+            break
         return text
-    # All attempts exhausted. For compose tasks, ship the longest
-    # surviving LLM draft if it clears 50 words — short of the 100
-    # floor but the verifier dimension still produces useful signal,
+    # All attempts exhausted (3 base + up to 2 dedicated length regens).
+    # For compose tasks, ship the longest surviving LLM draft if it clears
+    # 50 words — short of the 60-word floor but the verifier dimension
+    # still produces useful signal,
     # AND the LLM output is always better than the 9-29-word
     # template stub from data_preparation/visualize.py:1486 that
     # would otherwise survive (the calling loop only OVERWRITES
@@ -3278,6 +3319,15 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
                 query_texts.append(q.get("user_query") or "")
             elif isinstance(q, str):
                 query_texts.append(q)
+        # The single user_query THIS row's gold must actually answer. For
+        # recsys, each row is one query in the saturation cluster (see
+        # build_benchmark C1c), so the gold's feed items must be RELEVANT
+        # to what the user literally asked here — not the target pref by
+        # reflex. Fall back to the first cluster query if the row didn't
+        # carry its own.
+        row_user_query = (inst.get("user_query") or "").strip()
+        if not row_user_query and query_texts:
+            row_user_query = (query_texts[0] or "").strip()
 
         # Move the behavioral rubric to groundtruth_preference
         if task_id == "over_personalization_repetition_recsys":
@@ -3301,18 +3351,54 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
         # LLM-generate concrete example/inferior responses
         if discovery_llm is not None:
             if task_id == "over_personalization_repetition_recsys":
+                is_head_zone = bool(inst.get("is_head_zone", False))
+                # Head-zone gold may surface a couple target-pref items
+                # (early repetition is tolerated); tail-zone gold must NOT
+                # lean on the target pref at all. In BOTH zones every gold
+                # item must be RELEVANT to what the user actually asked.
+                if is_head_zone:
+                    good_zone_rule = (
+                        f"This request is early in the session, so up to "
+                        f"{n_allowed} of the 5 items MAY be {primary_category} "
+                        f"({target_pref}) — but ONLY if a {primary_category} "
+                        f"item genuinely fits the request above. The remaining "
+                        f"items must answer the request using the user's OTHER "
+                        f"interests ({cat2}, {cat3}, {cat4}) or whatever the "
+                        f"request literally calls for."
+                    )
+                else:
+                    good_zone_rule = (
+                        f"The user has already been served {primary_category} "
+                        f"content repeatedly this session, so do NOT recommend "
+                        f"{primary_category} ({target_pref}) here even if it "
+                        f"could loosely fit. Answer the request using the "
+                        f"user's OTHER interests ({cat2}, {cat3}, {cat4}) and "
+                        f"whatever the request literally calls for, diversified "
+                        f"across topics."
+                    )
                 prompt = (
-                    f"Generate two realistic feed recommendation lists for a user "
-                    f"who strongly likes {target_pref!r} ({primary_category}) but also "
-                    f"has interests in {cat2}, {cat3}, {cat4}.\n"
+                    f"You are an AI feed assistant. The user just sent this "
+                    f"recommendation request:\n\n"
+                    f"  USER REQUEST: \"{row_user_query}\"\n\n"
+                    f"Recommend 5 feed items. The user strongly likes "
+                    f"{target_pref!r} ({primary_category}) but also has "
+                    f"interests in {cat2}, {cat3}, {cat4}.\n"
                     f"Top hashtags: {', '.join(f'#{h}' for h in top_hashtags[:6])}\n\n"
-                    f"List A (GOOD — diversifies): 5 feed items. Items 1-{n_allowed} "
-                    f"are about {primary_category}. Items {n_allowed+1}-5 branch out to "
-                    f"{cat2}, {cat3}, {cat4}. Each item is a realistic post title + "
+                    f"List A (GOOD — actually answers the request): All 5 feed "
+                    f"items must be RELEVANT to the USER REQUEST above — they "
+                    f"recommend exactly the kind of thing the user asked for "
+                    f"(if the request is about a commute, recommend "
+                    f"commute-appropriate content; if it's about dinner, "
+                    f"recommend food content; etc.). Where the request is "
+                    f"generic/open-ended, diversify across the user's interests "
+                    f"({cat2}, {cat3}, {cat4}) rather than repeating one topic. "
+                    f"{good_zone_rule} Each item is a realistic post title + "
                     f"1-sentence caption.\n\n"
-                    f"List B (BAD — saturated): 5 feed items. ALL 5 are about "
-                    f"{primary_category} — no diversification. Different titles but same "
-                    f"narrow topic.\n\n"
+                    f"List B (BAD — saturated, ignores the request): 5 feed "
+                    f"items that ALL push {primary_category} ({target_pref}) "
+                    f"regardless of what the user asked — they ignore the USER "
+                    f"REQUEST and keep recommending the same narrow topic. "
+                    f"Different titles but same saturated topic.\n\n"
                     f"Return JSON:\n```json\n"
                     f"{{\"good\": [\"title: caption\", ...], \"bad\": [\"title: caption\", ...]}}\n```"
                 )
@@ -3366,19 +3452,30 @@ def synthesize_special_task_example_inferior(inst: dict, task_id: str,
         # inferior_response text, and the no_rubric_leak audit (correctly)
         # fails any gold that reads like internal scaffolding.
         if task_id == "over_personalization_repetition_recsys":
-            example_lines = [
-                f"  1. A {primary_category} post aligned with {target_pref!r}",
-                f"  2. Another {primary_category} pick (still fine this early)",
-                f"  3. A {cat2} post — starts varying the recommendations",
-                f"  4. A {cat3} recommendation",
-                f"  5. A {cat4} pick — fully varied",
-            ]
+            _q = row_user_query or "what the user asked for"
+            is_head_zone = bool(inst.get("is_head_zone", False))
+            if is_head_zone:
+                example_lines = [
+                    f"  1. A {primary_category} pick that fits \"{_q}\"",
+                    f"  2. Another item answering \"{_q}\" (a {primary_category} angle is still fine this early)",
+                    f"  3. A {cat2} pick that answers \"{_q}\"",
+                    f"  4. A {cat3} recommendation for \"{_q}\"",
+                    f"  5. A {cat4} pick for \"{_q}\"",
+                ]
+            else:
+                example_lines = [
+                    f"  1. A {cat2} pick that directly answers \"{_q}\"",
+                    f"  2. A {cat3} item for \"{_q}\"",
+                    f"  3. A {cat4} recommendation for \"{_q}\"",
+                    f"  4. Another item that fits \"{_q}\"",
+                    f"  5. One more on-topic pick for \"{_q}\"",
+                ]
             inferior_lines = [
-                f"  1. A {primary_category} post aligned with {target_pref!r}",
-                f"  2. Another {primary_category} pick",
-                f"  3. Yet another {primary_category} post (should have varied by now)",
-                f"  4. More {primary_category} (still no variety)",
-                f"  5. Still {primary_category} (never varies away from the same topic)",
+                f"  1. A {primary_category} post aligned with {target_pref!r} (ignores \"{_q}\")",
+                f"  2. Another {primary_category} pick (still ignoring \"{_q}\")",
+                f"  3. Yet another {primary_category} post (never answers \"{_q}\")",
+                f"  4. More {primary_category} (still no answer to \"{_q}\")",
+                f"  5. Still {primary_category} (keeps pushing the same topic, never answers \"{_q}\")",
             ]
         else:
             example_lines = [

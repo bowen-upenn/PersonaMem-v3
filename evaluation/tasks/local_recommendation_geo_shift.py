@@ -7,6 +7,15 @@ question, the chatbot should ground its recommendations in the user's
 history) while still respecting the user's general persona profile —
 without the user ever naming the new city.
 
+**Round trip, not a single hop.** Each scenario pairs TWO consecutive
+transitions: a recommendation query asked AFTER the shift to the away city
+(`leg="after_shift"`, current city = away) and a SIMILAR query (same
+category) asked AFTER shifting BACK home / onward to a different city
+(`leg="after_return"`, current city = the second hop's destination). Both
+legs share a `scenario_id`. The correct answer for each leg reflects the
+city current AT THAT leg's timestamp — so the agent must track location on
+every turn rather than latching onto the most-recent city once.
+
 This is **NOT** an over-personalization test. The correct behavior is to
 personalize *more* by reading the latest geo signal; the inferior behavior
 is to under-personalize by anchoring on stale geo context. Sits in the
@@ -249,7 +258,28 @@ def build_local_recommendation_geo_shift(
     user_id: str,
     rng_seed: int = 0,
 ) -> list[dict]:
-    """Emit per-(transition, category) instances for eligible users."""
+    """Emit ROUND-TRIP instances for eligible users.
+
+    The probe is a *round trip*, not a single hop: a model that merely
+    latches onto the most-recent city once would pass a single post-shift
+    query, so each scenario pairs TWO consecutive transitions —
+
+      - leg ``after_shift``: a recommendation query asked just after the
+        user shifts to the away city (current city = away), and
+      - leg ``after_return``: a SIMILAR query (same category) asked just
+        after the user shifts BACK home / onward to a different city
+        (current city = the second transition's destination).
+
+    Both legs share one ``scenario_id`` so downstream readers can see they
+    are a pair, and each leg's ``t_test`` / ``current_city`` is set to the
+    city current AT THAT timestamp — so the grader expects away-city recs
+    for leg #1 and home-city recs for leg #2. This tests location tracking
+    on each turn.
+
+    Per-(scenario × category) diversity is preserved: each scenario picks
+    ``_CATEGORIES_PER_TRANSITION`` categories, and each category yields the
+    two-leg pair.
+    """
     profile = bq.get_full_profile(user_id) or {}
     events = _load_events_with_location(bq, user_id)
     transitions = _detect_city_transitions(events)
@@ -257,48 +287,102 @@ def build_local_recommendation_geo_shift(
         return []
 
     instances: list[dict] = []
-    # Use 1-based transition index for human readability in instance ids.
-    # Every visible transition is "the user is now somewhere different"
-    # for the purposes of this probe — eligibility (above) already
-    # confirms the user has multi-shift evidence (either >= 2 visible
-    # transitions, or 1 visible + a trip arc that implies the missing
-    # leg). Cap at _MAX_TRANSITIONS_PER_USER so a heavy-traveler doesn't
+    # Pair consecutive transitions into round-trip scenarios. Transition i
+    # is the "outbound" hop (home -> away); transition i+1 is the "return"
+    # hop (away -> home, or away -> a different city). A scenario needs both
+    # legs, so we walk consecutive pairs (tr_out, tr_back). The 1-based
+    # scenario index is used for human-readable instance ids. Cap at
+    # _MAX_TRANSITIONS_PER_USER scenarios so a heavy-traveler doesn't
     # dominate the benchmark.
-    eligible = list(enumerate(transitions, start=1))[:_MAX_TRANSITIONS_PER_USER]
+    #
+    # If eligibility was satisfied by a single visible transition + a trip
+    # arc (i.e. the observation window started mid-trip), there is no second
+    # visible transition to anchor a return leg on, so we fall back to a
+    # single-leg scenario for that lone transition — still labeled with a
+    # scenario id, just without an after_return leg.
+    pairs: list[tuple[CityTransition, CityTransition | None]] = []
+    if len(transitions) >= 2:
+        for i in range(len(transitions) - 1):
+            pairs.append((transitions[i], transitions[i + 1]))
+    elif len(transitions) == 1:
+        pairs.append((transitions[0], None))
+    pairs = pairs[:_MAX_TRANSITIONS_PER_USER]
 
-    for transition_idx, tr in eligible:
+    def _emit_leg(
+        scenario_id: str,
+        scenario_idx: int,
+        leg: str,
+        tr: CityTransition,
+        category: str,
+        query_text: str,
+        paired_with_ts: int | None,
+    ) -> dict:
         t_test = tr.first_ts_in_new_city + _DELTA_POST_TRANSITION
-        rng_cat = random.Random(f"{rng_seed}:geo_shift_cats:{user_id}:{transition_idx}")
+        return {
+            "instance_id": f"{scenario_id}_{leg}_{category}",
+            "task_id": "local_recommendation_geo_shift",
+            "task_type": "local_recommendation_geo_shift",
+            "t_test": t_test,
+            "user_query": query_text,
+            "query_text": query_text,
+            "app_context": "chatbot",
+            "category": category,
+            # Round-trip linkage: both legs share scenario_id; `leg` marks
+            # which transition this query was asked after.
+            "scenario_id": scenario_id,
+            "scenario_idx": scenario_idx,
+            "leg": leg,
+            "paired_t_test": paired_with_ts,
+            # Current city = the destination of THIS leg's transition, as of
+            # this leg's t_test. The grader expects this city and rejects the
+            # prior city (the stale anchor for this turn).
+            "current_city": tr.new_city,
+            "current_region": tr.new_region,
+            "current_country": tr.new_country,
+            "prior_city": tr.prior_city,
+            "prior_region": tr.prior_region,
+            "prior_country": tr.prior_country,
+            "transition_first_ts": tr.first_ts_in_new_city,
+            # transition_idx retained for backward-compat readers (the audit
+            # cross-checks per-(transition × category)); equals scenario_idx.
+            "transition_idx": scenario_idx,
+            "groundtruth": {
+                "expected_city_in_response": tr.new_city,
+                "stale_anchor_city": tr.prior_city,
+                "must_align_with_persona_profile": True,
+            },
+        }
+
+    for scenario_idx, (tr_out, tr_back) in enumerate(pairs, start=1):
+        scenario_id = f"geo_shift_{user_id}_{scenario_idx}"
+        rng_cat = random.Random(f"{rng_seed}:geo_shift_cats:{user_id}:{scenario_idx}")
         chosen_cats = _pick_categories(rng_cat, _CATEGORIES_PER_TRANSITION)
         for category in chosen_cats:
-            rng_q = random.Random(f"{rng_seed}:geo_shift_q:{user_id}:{transition_idx}:{category}")
+            rng_q = random.Random(f"{rng_seed}:geo_shift_q:{user_id}:{scenario_idx}:{category}")
             query_text = _pick_query(rng_q, category)
             if not query_text:
                 continue
-            instance_id = f"geo_shift_{user_id}_{transition_idx}_{category}"
-            instances.append({
-                "instance_id": instance_id,
-                "task_id": "local_recommendation_geo_shift",
-                "task_type": "local_recommendation_geo_shift",
-                "t_test": t_test,
-                "user_query": query_text,
-                "query_text": query_text,
-                "app_context": "chatbot",
-                "category": category,
-                "current_city": tr.new_city,
-                "current_region": tr.new_region,
-                "current_country": tr.new_country,
-                "prior_city": tr.prior_city,
-                "prior_region": tr.prior_region,
-                "prior_country": tr.prior_country,
-                "transition_first_ts": tr.first_ts_in_new_city,
-                "transition_idx": transition_idx,
-                "groundtruth": {
-                    "expected_city_in_response": tr.new_city,
-                    "stale_anchor_city": tr.prior_city,
-                    "must_align_with_persona_profile": True,
-                },
-            })
+
+            out_t = tr_out.first_ts_in_new_city + _DELTA_POST_TRANSITION
+            back_t = (
+                tr_back.first_ts_in_new_city + _DELTA_POST_TRANSITION
+                if tr_back is not None
+                else None
+            )
+
+            # Leg 1: after the outbound shift (current city = away).
+            instances.append(_emit_leg(
+                scenario_id, scenario_idx, "after_shift", tr_out,
+                category, query_text, paired_with_ts=back_t,
+            ))
+            # Leg 2: after shifting back / onward (current city = home or a
+            # different city). Same category → "similar" query. Only present
+            # when a second transition exists.
+            if tr_back is not None:
+                instances.append(_emit_leg(
+                    scenario_id, scenario_idx, "after_return", tr_back,
+                    category, query_text, paired_with_ts=out_t,
+                ))
     return instances
 
 
@@ -420,6 +504,8 @@ def run_local_recommendation_geo_shift(
                 "instance_id": inst.get("instance_id"),
                 "category": inst.get("category"),
                 "transition_idx": inst.get("transition_idx"),
+                "scenario_id": inst.get("scenario_id"),
+                "leg": inst.get("leg"),
                 "current_city": current_city,
                 "prior_city": prior_city,
                 "t_test": t,
@@ -472,6 +558,8 @@ def run_local_recommendation_geo_shift(
             "instance_id": inst.get("instance_id"),
             "category": inst.get("category"),
             "transition_idx": inst.get("transition_idx"),
+            "scenario_id": inst.get("scenario_id"),
+            "leg": inst.get("leg"),
             "current_city": current_city,
             "prior_city": prior_city,
             "t_test": t,

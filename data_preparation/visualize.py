@@ -1204,15 +1204,25 @@ def _gt_local_recommendation_geo_shift(inst: dict) -> dict:
     current_region = (inst.get("current_region") or "").strip()
     category = inst.get("category") or ""
     transition_idx = inst.get("transition_idx") or "?"
+    # Round-trip linkage: leg marks which transition this query was asked
+    # after; scenario_id ties the after_shift / after_return pair together.
+    leg = inst.get("leg") or ""
+    scenario_id = inst.get("scenario_id") or ""
+    leg_label = {
+        "after_shift": "after_shift (current = away city)",
+        "after_return": "after_return (current = home / onward city)",
+    }.get(leg, leg)
     return {
         "example_response": inst.get("example_response") or (
             f"Recommend specific {category} options in "
             f"{current_city or '<current city>'}."
         ),
         "groundtruth_preference": (
-            f"Current city (inferred from latest event_location.city): "
+            f"Current city (inferred from latest event_location.city as of t_test): "
             f"{current_city}{', ' + current_region if current_region else ''}\n"
             f"Prior city (stale anchor — must NOT appear): {prior_city}\n"
+            f"Round-trip scenario: {scenario_id or '?'}"
+            f"{' — leg: ' + leg_label if leg_label else ''}\n"
             f"Transition #: {transition_idx}\n"
             f"Category: {category}\n"
             "Composite headline metric: geo_shift_correctness ∈ {0.0, 0.5, 1.0}."
