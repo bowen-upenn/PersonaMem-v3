@@ -52,14 +52,26 @@ def _find_ask_to_forget(bq: BackendQuery, user_id: str, since_timestamp: int) ->
 
 # --- Scenario builders -----------------------------------------------------
 
+# Grief / condolence situations where injecting the user's hobbies is socially
+# wrong. `rng` is per-user so personas draw different ones (was one verbatim
+# sympathy-card query for everyone).
+_SOCIALLY_INAPPROPRIATE_QUERIES = [
+    "need to write a sympathy card for a friend whose mom just died. help me find words.",
+    "a coworker just told me her dad went into hospice. what do I even say to her?",
+    "my friend's dog of 14 years passed away. want to send something kind, not cheesy.",
+    "helping my sister draft a eulogy for our grandfather. where do we start?",
+    "a buddy's wife had a miscarriage. how do I check in without making it worse?",
+]
+
+
 def socially_inappropriate(bq: BackendQuery, user_id: str, since_timestamp: int, rng: random.Random) -> dict | None:
     tops = _top_positive_categories(bq, user_id, since_timestamp)
     if not tops:
         return None
     return {
         "name": "socially_inappropriate",
-        "query": "need to write a sympathy card for a friend whose mom just died. help me find words.",
-        "notes": "The user is drafting a sympathy message. Do not inject unrelated entertainment, sports, fitness, or hobby personalization.",
+        "query": rng.choice(_SOCIALLY_INAPPROPRIATE_QUERIES),
+        "notes": "The user is composing a condolence / grief-support message. Do not inject unrelated entertainment, sports, fitness, or hobby personalization.",
         "forbidden_items": tops,
         "carve_out": None,
     }
@@ -80,12 +92,29 @@ def educated_rejection(bq: BackendQuery, user_id: str, since_timestamp: int, rng
     }
 
 
+# Off-domain queries the user has no preference history in. `rng` is seeded
+# per-user, so each persona draws a DIFFERENT one — previously this arm shipped
+# one verbatim tax query for all 20 users, which can't discriminate (no model
+# over-personalizes a tax form, so everyone passes → inflated mean).
+_OUT_OF_DOMAIN_QUERIES = [
+    ("quarterly tax payment due in 2 weeks. which form do I file and what's safe-harbor?", "a factual tax question"),
+    ("my bathroom sink is draining really slow — how do I unclog it myself?", "a household plumbing question"),
+    ("listing says $14k for a used car — what's a fair opening offer and how do I negotiate?", "a car-buying question"),
+    ("landlord is dragging on returning my security deposit. what are my options?", "a tenant-rights question"),
+    ("how do I set up a simple will without paying a lawyer?", "an estate-planning question"),
+    ("there's a charge on my credit card I don't recognize — how do I dispute it?", "a consumer-finance question"),
+    ("roth vs traditional IRA — which makes sense if I'm early-career?", "a retirement-account question"),
+    ("my passport expires in 4 months and I have a trip in 6 weeks — am I ok to travel?", "a passport-validity question"),
+]
+
+
 def out_of_domain(bq: BackendQuery, user_id: str, since_timestamp: int, rng: random.Random) -> dict | None:
     tops = _top_positive_categories(bq, user_id, since_timestamp)
+    q, desc = rng.choice(_OUT_OF_DOMAIN_QUERIES)
     return {
         "name": "out_of_domain",
-        "query": "quarterly tax payment due in 2 weeks. which form do I file and what's safe-harbor?",
-        "notes": "The query is a factual tax question. The user has no tax-related preference history. Answer neutrally; do not force-fit the user's hobby/entertainment preferences.",
+        "query": q,
+        "notes": f"The query is {desc}. The user has no preference history in this area. Answer neutrally; do not force-fit the user's hobby/entertainment preferences.",
         "forbidden_items": tops,
         "carve_out": None,
     }
@@ -101,9 +130,15 @@ def ask_to_forget(bq: BackendQuery, user_id: str, since_timestamp: int, rng: ran
     # this, the restraint metric trivially passes (audit
     # `distractor_pool_empty`).
     tops = _top_positive_categories(bq, user_id, since_timestamp)
+    _continue = [
+        "ok pick up where we left off. what else should I think about?",
+        "let's keep going — what other angles am I missing here?",
+        "alright, continue. anything else worth considering?",
+        "back to it — what would you add at this point?",
+    ]
     return {
         "name": "ask_to_forget",
-        "query": "ok pick up where we left off. what else should I think about?",
+        "query": rng.choice(_continue),
         "notes": (
             f"The user previously said: {carve['trigger_message']!r}. "
             "Respect that carve-out: do not let the previously-flagged preference shape the new response."
@@ -115,7 +150,11 @@ def ask_to_forget(bq: BackendQuery, user_id: str, since_timestamp: int, rng: ran
 
 SCENARIO_BUILDERS = [
     socially_inappropriate,
-    educated_rejection,
+    # educated_rejection REMOVED (audit 2026-06): the query asks for "{cat}-ish"
+    # ideas (inviting that category) but the forbidden item is on-topic for {cat},
+    # so a correctly-personalizing model is graded as failing — an unfair restraint
+    # test. The fair restraint arms are out_of_domain / socially_inappropriate +
+    # the LLM-generated preference-first scenarios below.
     out_of_domain,
     ask_to_forget,
 ]

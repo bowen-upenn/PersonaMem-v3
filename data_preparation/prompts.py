@@ -1213,12 +1213,14 @@ def render_voice_for_test_card(
         if app_persona.get("app_avoid"):
             lines.append(f"    • app avoid: {str(app_persona['app_avoid'])[:200]}")
 
-    # Optional motivational frame — single-line anchor on the WHY.
+    # Optional motivational frame — single-line anchor on the WHY. Show ONLY the
+    # plain-language description, never the raw academic tag (`lazarus_folkman:…`):
+    # the LLM echoes whatever it's shown, and that jargon was leaking verbatim
+    # into compose outputs / GT cards. Fix at the prompt, not per-row.
     if dominant_frame and dominant_frame != "none":
         fdesc = FRAME_DESCRIPTIONS.get(dominant_frame, "")
-        lines.append(
-            f"- **Motivational frame**: `{dominant_frame}` — {fdesc}"
-        )
+        if fdesc:
+            lines.append(f"- **What drives this engagement**: {fdesc}")
 
     return "\n".join(lines) + "\n"
 

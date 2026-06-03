@@ -239,6 +239,21 @@ def _truncate(s, n=120):
     return s[: n - 1] + "…" if len(s) > n else s
 
 
+# Raw internal handles must never reach user-facing GT text: thread IDs
+# (`in_thr_229_006`, `fa_thr_…`) and bare `(source_object_id=…)` remnants.
+_INTERNAL_ID_RE = re.compile(
+    r"\s*\(?\s*source_object_id\s*=\s*[^)\s]*\)?|\b[a-z]{2}_thr_[A-Za-z0-9_]+\b",
+    re.I,
+)
+
+
+def _scrub_internal_ids(text):
+    """Strip raw thread/object IDs from user-facing GT text (no-op on non-str)."""
+    if not isinstance(text, str) or not text:
+        return text
+    return re.sub(r"\s{2,}", " ", _INTERNAL_ID_RE.sub("", text)).strip()
+
+
 def _split_polarity(s: str) -> tuple[str, str]:
     """Strip a leading `(+)` or `(-)` polarity marker from a rubric string.
 
@@ -952,7 +967,15 @@ def _gt_over_personalization_repetition_recsys(inst: dict) -> dict:
 
 
 def _gt_context_shift_scenarios(inst: dict) -> dict:
-    forbidden = [_truncate(s, 100) for s in (inst.get("forbidden_items") or [])[:4]]
+    def _fitem(it):
+        # forbidden_items may be dicts {persona_item, category} or plain strings;
+        # render the human-readable persona_item — never a raw {'persona_item': …}
+        # dict repr (that was leaking into the user-visible Forbidden list).
+        if isinstance(it, dict):
+            return (it.get("persona_item") or it.get("category") or "").strip()
+        return str(it).strip()
+    forbidden = [t for t in (_truncate(_fitem(s), 100)
+                             for s in (inst.get("forbidden_items") or [])[:4]) if t]
     surfaced = _inferior_surfaced_pref(inst)
     # The Forbidden list MUST include the specific item the paired Inferior
     # actually surfaces — that item IS the failure the test grades. The
@@ -1654,8 +1677,9 @@ def _gt_agentic(inst: dict) -> dict:
         ),
         "agentic_auto_reply": "yeah that works, see you saturday",
         "agentic_vague_refind": (
-            f"Found it — your post on {inst.get('topic','that topic')} from a few days back "
-            f"(source_object_id=…). One-line summary of what was in it."
+            f"Found it — your post about {inst.get('topic','that topic')} from a few days "
+            f"back, the one with #{top_hashtags[0] if top_hashtags else 'thattag'}. "
+            f"Want me to open it?"
         ),
         "agentic_group_dm_summary": (
             "Three friends in the thread discussed plans and a recent event. "
@@ -3135,6 +3159,11 @@ def _load_test_samples(
             except Exception as exc:
                 gt = {"example_response": f"(extractor crashed: {type(exc).__name__})",
                       "groundtruth_preference": "", "rubric_tags": []}
+            # Scrub raw internal IDs (thread handles / source_object_id) from the
+            # user-facing GT before it ships in the test card / eval row.
+            for _k in ("example_response", "groundtruth_preference"):
+                if isinstance(gt.get(_k), str):
+                    gt[_k] = _scrub_internal_ids(gt[_k])
             try:
                 q_text = q_extractor(inst) or ""
             except Exception:

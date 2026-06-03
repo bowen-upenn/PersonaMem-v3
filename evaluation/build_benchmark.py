@@ -1562,6 +1562,54 @@ _ADVERSARIAL_SLOT_CATEGORIES = [
 ]
 
 
+_OP_VALIDITY_GATE_PROMPT = """You are validating an over-personalization TEST query. The test assumes a GENERIC, non-personalized answer is the CORRECT response and that leaning on the user's known interests would be inappropriate (presumptuous, irrelevant, or creepy). The query is only valid if that assumption holds.
+
+## The user's known preferences
+{preferences_block}
+
+## Candidate query
+"{query}"
+
+## Your task
+1. Draft the best GENERIC answer (does not use the user's preferences).
+2. Draft the best PERSONALIZED answer (leans on the user's preferences).
+3. Decide: for THIS query, is the GENERIC answer clearly the more appropriate/helpful one? If personalizing would genuinely HELP the user here, the query is INVALID for a restraint test (a correctly-personalizing model would be wrongly graded as failing).
+
+Return ONLY this JSON:
+```json
+{{"generic_answer": "<the generic answer>", "personalized_answer": "<the personalized answer>", "generic_clearly_better": true|false, "margin_0_10": <0-10 how much better generic is>, "reason": "<one sentence>"}}
+```"""
+
+
+def _op_validity_gate(discovery_llm, query: str, preferences_block: str) -> dict:
+    """Confirm a generic answer genuinely beats a personalized one for `query`.
+
+    Returns {generic_wins, generic_answer, score, reason}. An OP restraint query
+    is only fair when personalizing does NOT help — otherwise a correctly-
+    personalizing model is graded as failing. On any LLM error, fail OPEN (keep
+    the query) so a flaky judge doesn't silently drop the whole arm.
+    """
+    if discovery_llm is None:
+        return {"generic_wins": True, "generic_answer": "", "score": None, "reason": "no_llm_pass"}
+    from data_preparation.utils import extract_json_from_response
+    prompt = _OP_VALIDITY_GATE_PROMPT.format(preferences_block=preferences_block, query=query)
+    try:
+        raw = discovery_llm.query_llm(prompt)
+        parsed = extract_json_from_response(raw) or {}
+    except Exception as exc:
+        return {"generic_wins": True, "generic_answer": "", "score": None, "reason": f"gate_error_pass:{exc}"}
+    if not isinstance(parsed, dict):
+        return {"generic_wins": True, "generic_answer": "", "score": None, "reason": "gate_nonjson_pass"}
+    margin = parsed.get("margin_0_10")
+    wins = bool(parsed.get("generic_clearly_better"))
+    # Require a clear margin (≥4) on top of the binary so borderline "either way"
+    # queries — where personalization plausibly helps — are dropped.
+    if isinstance(margin, (int, float)) and margin < 4:
+        wins = False
+    return {"generic_wins": wins, "generic_answer": parsed.get("generic_answer", ""),
+            "score": margin, "reason": parsed.get("reason", "")}
+
+
 def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile: dict,
                                           base_dir: str = "backend",
                                           discovery_llm=None) -> list[dict]:
@@ -1689,9 +1737,19 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
 
     prior_convos = _get_recent_chatbot_conversations(bq, user_id)
     out: list[dict] = []
+    n_gate_dropped = 0
     for i, item in enumerate(deduped):
         category = item.get("category", "unknown")
         adjacent_to = item.get("adjacent_to", "")
+        # Validity gate (L1): keep the query ONLY if a generic answer genuinely
+        # beats a personalized one. Drops "personalization-actually-helps" queries
+        # that would unfairly grade a correctly-personalizing model as failing.
+        gate = _op_validity_gate(discovery_llm, item["query"], preferences_block)
+        if not gate["generic_wins"]:
+            n_gate_dropped += 1
+            print(f"[adversarial] user {user_id}: validity-gate dropped (personalization "
+                  f"helps): {item['query'][:60]!r} — {gate.get('reason', '')}")
+            continue
         prior = prior_convos[i % max(1, len(prior_convos))] if prior_convos else []
         out.append({
             "source_object_id": f"adv_{category}_{user_id}_{i:02d}",
@@ -1702,14 +1760,16 @@ def build_chatbot_restraint_adversarial(bq: BackendQuery, user_id: str, profile:
             "action": "asked_chatbot",
             "source_hashtags": [],
             "held_out_preference": None,
-            "blind_check_score": None,
-            "blind_check_generic_answer": None,
+            # Validity-gate verdict doubles as the golden generic answer.
+            "blind_check_score": gate.get("score"),
+            "blind_check_generic_answer": gate.get("generic_answer") or None,
             "_adversarial_kind": f"{category}:{adjacent_to[:40]}",
         })
 
     if out:
         print(f"[adversarial] user {user_id}: generated {len(out)} adversarial probes "
-              f"(dropped {len(validated) - len(deduped)} duplicates)")
+              f"(dropped {len(validated) - len(deduped)} duplicates, "
+              f"{n_gate_dropped} validity-gate rejects)")
     return out
 
 

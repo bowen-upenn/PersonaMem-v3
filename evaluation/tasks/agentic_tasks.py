@@ -1199,7 +1199,10 @@ def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[d
     """
     if not ground_truth_builders.has_enough_user_voiced_history(bq, user_id, t_anchor):
         return []
-    contexts = [
+    # Per-user deterministic selection from a diverse pool — previously every
+    # persona got the SAME 2 contexts cohort-wide (audit 2026-06), so the task
+    # couldn't discriminate beyond voice. Each user draws a rotating window of 3.
+    _pool = [
         ("threads",
          "I was just saying that discipline is what carries when motivation fades — "
          "that 5am-when-you-don't-feel-like-it streak is what actually moves the "
@@ -1210,7 +1213,37 @@ def build_t13_send_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[d
          "lift I've been chasing for weeks, then got a decent shot in the mirror "
          "after. Wanting to post the photo with a caption that's hype but not "
          "preachy, just a real moment."),
+        ("facebook",
+         "Spent the whole afternoon reorganizing my setup and finally got it the way "
+         "I've wanted it for months. Want a warm, low-key post about the quiet "
+         "satisfaction of a space that finally works — nothing performative."),
+        ("threads",
+         "Had one of those conversations that completely reframed how I think about "
+         "something I care about. Want a short, sincere threads take in my voice — "
+         "no hot-take energy, just the honest shift."),
+        ("instagram",
+         "Finally tried the thing I'd been putting off for ages this weekend and it "
+         "actually went well. Want a caption that's proud but not braggy, with the "
+         "photo I grabbed after."),
+        ("facebook",
+         "Caught up with an old friend after way too long and it hit different. Want "
+         "a genuine post about how the people you don't see enough still matter — "
+         "heartfelt, not greeting-card."),
+        ("threads",
+         "Been chewing on the gap between how things look online versus how they "
+         "actually feel day to day. Want a grounded threads post, my voice, no "
+         "preaching at anyone."),
+        ("instagram",
+         "Cooked a real meal from scratch instead of ordering in, sat down with no "
+         "phone, and it felt like a reset. Want a small, content caption about "
+         "slowing down for a second."),
     ]
+    try:
+        _seed = int(str(user_id))
+    except ValueError:
+        _seed = sum(ord(c) for c in str(user_id))
+    _n = len(_pool)
+    contexts = [_pool[(_seed + k) % _n] for k in range(3)]
     return [
         {"instance_id": f"t13_{i}", "task_id": "agentic_send_post", "entry_point": "chatbot_routed",
          "target_app": app, "context": ctx, "t_test": t_anchor,

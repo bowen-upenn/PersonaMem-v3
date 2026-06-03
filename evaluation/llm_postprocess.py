@@ -1916,6 +1916,13 @@ _FLAW_KINDS_FACTUAL = ("factual_error",)
 # topic leak. The foil preserves the gold's content verbatim and only
 # swaps the voice.
 _FLAW_KINDS_VOICE = ("voice_mismatch",)
+# Compose tasks (send / community / cross_app) were voice-ONLY foils. But a foil
+# that preserves the gold's content verbatim and only swaps register is trivially
+# separable by a voice-aware judge with ZERO content retrieval (AUDIT.md Slice B
+# "voice-only foil"). Mix in content-axis flaws so a fraction of foils are
+# IN-VOICE but wrong on pref/content — the model must then get BOTH the voice AND
+# the right preference, not just the tone.
+_FLAW_KINDS_COMPOSE = ("voice_mismatch", "incorrect_personalization", "disliked_recent")
 
 # Per-task allowlist. Tasks NOT listed fall back to the personalization set.
 # Summarization / digest / lookup tasks need factual flaws; mechanically
@@ -1950,10 +1957,10 @@ _TASK_FLAW_KINDS: dict[str, tuple[str, ...]] = {
     # grounds the foil on the user's own explicit_negative history.
     "agentic_trending_alert":          ("disliked_recent",),
     "agentic_vague_refind":            _FLAW_KINDS_FACTUAL,
-    "agentic_community_post":          _FLAW_KINDS_VOICE,
-    "agentic_send_post":               _FLAW_KINDS_VOICE,
-    "agentic_cross_app_repost":        _FLAW_KINDS_VOICE,
-    "agentic_auto_reply":              _FLAW_KINDS_VOICE,
+    "agentic_community_post":          _FLAW_KINDS_COMPOSE,
+    "agentic_send_post":               _FLAW_KINDS_COMPOSE,
+    "agentic_cross_app_repost":        _FLAW_KINDS_COMPOSE,
+    "agentic_auto_reply":              _FLAW_KINDS_VOICE,  # short DM — voice is the axis
     # daily_personalized_briefing's rubric explicitly grades
     # `negative_leakage` against `gt_avoid_engagements`. Pin the foil to
     # `disliked_recent` so the inferior response is the gold + ONE topic
@@ -2142,6 +2149,19 @@ def _validate_inferior(example: str, inferior: str,
                 f"a lexical tell. Inject the off-topic reference as DIRECT "
                 f"topical content (a recommendation/detail about it), NOT via "
                 f"an analogy or simile.")
+        # Final-sentence positional tell: the foil = gold body + an appended
+        # over-personalization clause in the CLOSING sentence (audit 2026-06:
+        # ~84% of foils landed the persona reference only in the last sentence).
+        # If stripping the foil's last sentence leaves a body near-identical to
+        # the gold, the foil is separable by position alone — reject so the retry
+        # weaves the reference mid-body.
+        b_sents = [s for s in re.split(r"(?<=[.!?])\s+", b.strip()) if s.strip()]
+        if len(b_sents) >= 2 and _token_jaccard(a, " ".join(b_sents[:-1])) >= 0.8:
+            return False, (
+                "final_sentence_tell: the foil is the gold's body with the "
+                "over-personalization appended as the closing sentence — a "
+                "positional tell. Weave the off-topic reference into an EARLY or "
+                "MIDDLE sentence so it shapes the body, not the tail.")
     if a and b and (a.startswith(b) or b.startswith(a)):
         return False, "prefix_overlap (one response is a literal prefix of the other)"
     # Normalized substring containment catches mid-string injection (e.g.
@@ -2493,6 +2513,13 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
             f"  - Do NOT echo the gold's opening words. Do NOT borrow the "
             f"gold's specific phrasing. The foil should read as a "
             f"separately-authored response.\n"
+            f"  - **Position matters: weave the off-topic reference into an "
+            f"EARLY or MIDDLE sentence so it shapes the body of the answer — do "
+            f"NOT isolate it in the final/closing sentence.** A persona reference "
+            f"that appears only as the last sentence is a positional TELL: a "
+            f"grader (or the model under test) wins just by checking whether the "
+            f"closing sentence introduces a new interest. The over-personalization "
+            f"must be load-bearing in the response, not a tacked-on closing tag.\n"
             f"  - The foil should still be a coherent, helpful response — "
             f"it's wrong because of the unsolicited topical drift, not "
             f"because the writing is bad."
@@ -2548,6 +2575,26 @@ def _flaw_instruction_body(flaw_kind: str, evidence: dict, task_id: str = "") ->
                 "rewrite or topical drift.\n"
                 "  - Do NOT introduce any persona reference. Do NOT add "
                 "disclaimers about the error."
+            )
+        if task_id == "agentic_vague_refind":
+            # The gold correctly identifies the post the vague query describes.
+            # The credible failure is finding the WRONG real post — not a
+            # paraphrase of the right one (audit 2026-06: foils cited the
+            # identical post). Force a different, real, mis-identified post.
+            return (
+                "The gold correctly identifies the user's earlier post that the "
+                "vague query is describing. Make the foil confidently surface a "
+                "DIFFERENT, WRONG post instead — a real one that ALSO exists in the "
+                "user's history but does NOT match the query's description (a "
+                "different topic, occasion, or set of hashtags). The failure mode is "
+                "the agent 'finding' the wrong real post.\n"
+                "  - The wrong post must read as a REAL prior post (a concrete "
+                "subject + snippet), NOT an invented one — a fabricated post would be "
+                "rejectable for the wrong reason.\n"
+                "  - The foil must NOT re-describe the SAME post as the gold (a "
+                "paraphrase of the right answer is a no-op foil). Its subject/snippet "
+                "must be clearly different.\n"
+                "  - Do NOT cite raw thread/object IDs. Do NOT add disclaimers."
             )
         hints: list[str] = []
         # No app/platform-swap hint: the platform is anchored to the real
