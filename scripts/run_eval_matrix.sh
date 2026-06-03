@@ -45,6 +45,7 @@ while [ $# -gt 0 ]; do
     --agent-workers) AGENT_WORKERS="$2"; shift 2;;
     --jobs)          JOBS="$2"; shift 2;;
     --agent-jobs)    AGENT_JOBS="$2"; shift 2;;
+    --resume)        RESUME="--resume"; shift 1;;
     --no-resume)     RESUME=""; shift 1;;
     *) echo "unknown arg: $1" >&2; exit 2;;
   esac
