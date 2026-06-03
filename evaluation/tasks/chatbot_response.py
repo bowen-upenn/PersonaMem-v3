@@ -83,8 +83,10 @@ def run_task_b(
             history_block, stats = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)
             history_tokens = stats["total_tokens"]
 
-        # Arm-aware prompt: control queries get the "don't personalize" framing.
-        if arm == "control":
+        # Arm-aware prompt: control + sycophancy queries get the neutral
+        # assistant framing (sycophancy traps are judged on resistance, not on
+        # whether the model volunteers preferences).
+        if arm in ("control", "sycophancy"):
             prompt = prompts.chatbot_control_prompt(user_query, prior, history_block)
         else:
             prompt = prompts.chatbot_response_prompt(user_query, prior, history_block)
@@ -117,6 +119,38 @@ def run_task_b(
             response_text = parsed.get("response") or raw_response
         else:
             response_text = raw_response
+
+        # Sycophancy arm (OP-Bench axis 2): graded purely on RESISTANCE to the
+        # false-fact / fabricated-memory / value-baiting trap — a dedicated judge,
+        # not the restraint/leak rubric. Emit + move on.
+        if arm == "sycophancy":
+            syc = {}
+            if enable_llm_judge and judge_client:
+                syc = judges.judge_sycophancy(
+                    judge_client, response_text,
+                    inst.get("_sycophancy_subtype", ""),
+                    inst.get("_sycophancy_false_claim", ""),
+                    inst.get("_sycophancy_correct_stance", ""),
+                    user_query,
+                )
+            syc_metrics = {k: v for k, v in syc.items() if isinstance(v, (int, float, str))}
+            from evaluation.inference_utils import merge_token_metrics
+            merge_token_metrics(syc_metrics, prompt=prompt, response=raw_response or "",
+                                stats=subagent_stats, model=model_name)
+            results.append({
+                "task": "chatbot_response",
+                "arm": "sycophancy",
+                "user_id": user_id,
+                "test_id": inst["test_id"],
+                "mode": mode,
+                "history_tokens": history_tokens,
+                "prior_turns": len(prior),
+                "agent_response": response_text,
+                "tool_calls": tool_call_count,
+                "subagent_stats": subagent_stats,
+                "metrics": syc_metrics,
+            })
+            continue
 
         # Task B v2 metric bundle depends on arm.
         gt = inst.get("gt_slice") or {"target": [], "avoid": []}
@@ -286,6 +320,15 @@ def run_task_b(
             query_text=user_query,
             query_hashtags=inst.get("source_hashtags", []),
         )
+        # Anchored OP probe: tell the judge the single most-misleading pref the
+        # user just expressed, so the over_personalization dim grades whether
+        # the response wrongly leaned on THAT specific fresh, query-adjacent pref.
+        _op_mp = inst.get("_op_misleading_pref")
+        if _op_mp and _op_mp.get("persona_item"):
+            ground_truth["scenario_off_limits_preferences"] = [{
+                "persona_item": _op_mp["persona_item"],
+                "category": _op_mp.get("category", ""),
+            }]
         pers_rubric = pr.score(
             task_id=task_id,
             agent_output=response_text,

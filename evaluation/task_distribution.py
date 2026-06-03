@@ -38,6 +38,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # Step 4.7. Same open-ended chatbot leak-rate test, distractor is
     # now a 4th arm alongside control/adversarial/stale.
     "over_personalization_chatbot_text":      {"min": 16, "max": 20},
+    # OP-Bench axis 2 (R13): count set by build_task_b_arms' 20% routing
+    # (~0.25 × op-chatbot count); data-dependent on the user's chatbot-session
+    # supply. Generous max so the routing — not the cap — controls the count.
+    "over_personalization_sycophancy":        {"min": 2,  "max": 12, "data_dependent": True},
     # over_personalization_distractor_reject merged into chatbot_text (see task_registry).
     # Sensitive-event task — one probe per planted evidence row
     # (2–4 rows per episode × 1–3 episodes) → up to ~12 instances.

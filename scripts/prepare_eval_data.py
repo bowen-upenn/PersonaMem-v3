@@ -91,19 +91,29 @@ COLUMNS: list[str] = [
 ]
 
 
+# Single source of truth for the GENERATION passes of a regen: discovery
+# (adversarial / conversational-drift / SYCOPHANCY / contradiction / stale gen),
+# the OP validity gate, and INFERIOR generation all use this one model — so
+# "what model wrote the queries" is unambiguous and a new developer doesn't have
+# to learn separate codenames ("discovery", "mini-tier", EVAL_MINI_MODEL, …).
+# Default: gpt-5.5. Override the whole build with EVAL_BUILDER_MODEL (legacy
+# EVAL_MINI_MODEL still honored). NOTE: the blind-check pass is intentionally
+# NOT covered here — it stays on gpt-5.4-mini (cheap binary Task-B routing) via
+# its own `--blind_check_model` default.
+BUILDER_LLM_MODEL = os.getenv("EVAL_BUILDER_MODEL") or os.getenv("EVAL_MINI_MODEL") or "gpt-5.5"
+
+
 def _build_llm_client() -> object | None:
-    """Mini-tier LLM client for builder steps that need LLM discovery.
+    """Builder LLM client for the discovery / generation passes.
 
-    Defaults to ``gpt-5.4-mini``; override via ``EVAL_MINI_MODEL``. Same
-    knob the rest of the pipeline uses for mini-tier calls — no
-    discovery-specific env var.
-
-    Used by:
-      - active_mistake_prevention (E6) — discovery of paired warn/foil
-      - new_suggestions_recsys / new_suggestions_chatbot (C1e) —
-        flavor-A LLM-gated gold proposal
+    Uses `BUILDER_LLM_MODEL` (default ``gpt-5.5``) — the same model the
+    blind-check pass defaults to, so every query-construction call in a regen
+    runs on one model. Used by: the five discovery builders (adversarial,
+    conversational_drift, sycophancy, contradiction, stale), the OP validity
+    gate, inferior generation, active_mistake_prevention (E6), and
+    new_suggestions_recsys / _chatbot (C1e).
     """
-    model = os.getenv("EVAL_MINI_MODEL", "gpt-5.4-mini")
+    model = BUILDER_LLM_MODEL
     try:
         from query_llm import QueryLLM
         client = QueryLLM({"models": {"llm_model": model}}, rate_limit_per_min=50)
@@ -680,7 +690,12 @@ def prepare_one(
         engagement_ts.sort()
         threshold_20pct = engagement_ts[len(engagement_ts) // 5]
         pre_floor = len(pairs)
-        pairs = [(tt, inst, ts) for tt, inst, ts in pairs if ts >= threshold_20pct]
+        # over_personalization_sycophancy is exempt: its trap is self-contained
+        # in the prior chatbot conversation + false claim, so it doesn't need 20%
+        # of prior history to be a fair probe (and its anchor is whichever real
+        # chatbot session established the persona signal, which may be early).
+        pairs = [(tt, inst, ts) for tt, inst, ts in pairs
+                 if ts >= threshold_20pct or tt == "over_personalization_sycophancy"]
         if len(pairs) < pre_floor and verbose:
             print(f"[{user_id}] dropped {pre_floor - len(pairs)} queries before "
                   f"the 20% engagement-history mark "
@@ -930,8 +945,10 @@ def main() -> int:
                              "flag, every chatbot candidate gets blind_score=2 "
                              "(default), which collapses control-arm coverage.")
     parser.add_argument("--blind_check_model", default="gpt-5.4-mini",
-                        help="Model for blind-check auto-verification "
-                             "(default: gpt-5.4-mini)")
+                        help="Model for blind-check Task-B routing (default: "
+                             "gpt-5.4-mini — cheap binary routing, kept on the "
+                             "mini tier; distinct from BUILDER_LLM_MODEL which "
+                             "drives discovery / sycophancy-gen / inferior).")
     parser.add_argument("--blind_check_limit", type=int, default=None,
                         help="Cap how many candidate queries get blind-checked "
                              "per user (for fast iteration)")
@@ -962,6 +979,8 @@ def main() -> int:
     #     skips Task B routing — neither disables the discovery client.
     print(f"Preparing queries.csv for {len(user_ids)} user(s) "
           f"(parallel={args.parallel}, "
+          f"builder_model={BUILDER_LLM_MODEL} "
+          f"[discovery+sycophancy-gen+inferior], "
           f"blind_check={'off' if args.skip_blind_check else args.blind_check_model}, "
           f"e6_discovery={'off' if args.skip_e6 else 'on'})")
 

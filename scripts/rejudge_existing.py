@@ -72,6 +72,11 @@ def main() -> int:
     ap.add_argument("--no-judge", dest="judge", action="store_false",
                     help="Plumbing dry-run: rebuild GT but don't call the judge LLM.")
     ap.add_argument("--limit_per_task", type=int, default=None)
+    ap.add_argument("--workers", type=int, default=8,
+                    help="Thread pool size for parallel judge calls.")
+    ap.add_argument("--tasks", default=None,
+                    help="Comma-separated task_type allowlist; only re-judge these "
+                         "(intersected with the judge-based scope).")
     ap.add_argument("--out", default="/tmp/eval_regen/rejudge_summary.json")
     args = ap.parse_args()
 
@@ -86,12 +91,20 @@ def main() -> int:
     # cluster-based fatigue tasks aren't re-judgeable per-row here
     scope -= {"over_personalization_repetition_recsys", "over_personalization_repetition_chatbot",
               "new_suggestions_recsys", "new_suggestions_chatbot"}
+    if args.tasks:
+        want = {t.strip() for t in args.tasks.split(",") if t.strip()}
+        scope &= want
+        print(f"[rejudge] task filter -> {sorted(scope)}", file=sys.stderr)
 
     # task_type -> list of query_score_0_10
     by_task: dict[str, list[float]] = defaultdict(list)
     per_task_seen: dict[str, int] = defaultdict(int)
     n_total = n_scored = n_skip = 0
 
+    # Phase 1 (sequential): collect work items, pre-building ground truth.
+    # GT building reads backend JSON, so keep it off the worker threads (the
+    # parallel section then only does the judge LLM call + scoring).
+    work: list[tuple] = []  # (uid, tt, qid, resp, gt)
     for uid in users:
         rfile = Path(args.results_dir) / uid / "results.csv"
         tfile = Path(args.backend_dir) / uid / "test.json"
@@ -104,7 +117,6 @@ def main() -> int:
                 saved[row["query_id"]] = row["agent_response"]
         instances = json.load(open(tfile))
         bq = BackendQuery(args.backend_dir)
-
         for inst in instances:
             tt = inst.get("task_type")
             if tt not in scope:
@@ -117,23 +129,49 @@ def main() -> int:
             if args.limit_per_task and per_task_seen[f"{uid}:{tt}"] >= args.limit_per_task:
                 continue
             per_task_seen[f"{uid}:{tt}"] += 1
-            n_total += 1
             try:
                 gt = _build_gt(bq, uid, inst)
-                out = pr.score(tt, resp, gt, judge_client=judge_client)
-                s = out.get("query_score_0_10")
-                if isinstance(s, (int, float)):
+            except Exception as exc:
+                print(f"[err-gt] {uid} {qid} {tt}: {exc}", file=sys.stderr, flush=True)
+                continue
+            work.append((uid, tt, qid, resp, gt))
+    n_total = len(work)
+    print(f"[rejudge] {n_total} rows to score with {args.workers} workers", file=sys.stderr)
+
+    # Phase 2 (parallel): the judge LLM call dominates wall-time. Fan out over a
+    # thread pool — QueryLLM's internal rate limiter (50/min) still caps the
+    # request rate; threads just hide the per-call latency.
+    import threading
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    lock = threading.Lock()
+
+    def _score_one(item):
+        uid, tt, qid, resp, gt = item
+        try:
+            out = pr.score(tt, resp, gt, judge_client=judge_client)
+            return uid, tt, qid, out, None
+        except Exception as exc:
+            return uid, tt, qid, None, str(exc)
+
+    with ThreadPoolExecutor(max_workers=args.workers) as pool:
+        futs = [pool.submit(_score_one, it) for it in work]
+        for fut in as_completed(futs):
+            uid, tt, qid, out, err = fut.result()
+            if err is not None:
+                print(f"[err] {uid} {qid} {tt}: {err}", file=sys.stderr, flush=True)
+                continue
+            s = out.get("query_score_0_10")
+            if isinstance(s, (int, float)):
+                with lock:
                     by_task[tt].append(float(s))
                     n_scored += 1
-                    prim = out.get("primary_dim")
-                    viol = out.get("hard_rule_violations") or []
-                    print(f"[{n_scored:4d}] u{uid} {tt:38s} score={s:5.2f} "
-                          f"primary={prim}={out.get('primary_dim_score')} "
-                          f"{'VIOL:'+','.join(viol) if viol else ''}",
-                          file=sys.stderr, flush=True)
-            except Exception as exc:
-                print(f"[err] {uid} {qid} {tt}: {exc}", file=sys.stderr, flush=True)
-        print(f"[done] user {uid}: scored so far {n_scored}/{n_total}", file=sys.stderr)
+                    cur = n_scored
+                prim = out.get("primary_dim")
+                viol = out.get("hard_rule_violations") or []
+                print(f"[{cur:4d}/{n_total}] u{uid} {tt:38s} score={s:5.2f} "
+                      f"primary={prim}={out.get('primary_dim_score')} "
+                      f"{'VIOL:'+','.join(viol) if viol else ''}",
+                      file=sys.stderr, flush=True)
 
     # Aggregate
     rows = []

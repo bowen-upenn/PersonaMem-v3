@@ -18,13 +18,15 @@ from collections import defaultdict
 from dotenv import load_dotenv
 
 
-# Import Gemini-related libraries
+# Import Gemini-related libraries (new unified google-genai SDK; the old
+# google-generativeai package is deprecated/EOL).
 try:
-    import google.generativeai as genai
+    from google import genai
+    from google.genai import types as genai_types
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
-    print("Warning: google-generativeai not installed. Gemini models will not be available.")
+    print("Warning: google-genai not installed. Gemini models will not be available. Install with: pip install google-genai")
 
 # Import Claude/Anthropic libraries
 try:
@@ -88,20 +90,17 @@ class QueryLLM:
         # Check if this is a Gemini model
         if re.search(r'gemini', model_name, re.IGNORECASE):
             if not GEMINI_AVAILABLE:
-                raise ValueError("google-generativeai package is not installed. Please install it with: pip install google-generativeai")
-            
+                raise ValueError("google-genai package is not installed. Please install it with: pip install google-genai")
+
             gemini_api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
             if not gemini_api_key:
                 raise ValueError("GOOGLE_API_KEY or GEMINI_API_KEY environment variable not set")
-            
+
             print(f"Using Google Gemini configuration for model: {model_name}")
-            genai.configure(api_key=gemini_api_key)
-            self.client = genai
-            # Add 'models/' prefix if not already present
-            if not model_name.startswith('models/'):
-                self.model = f"models/{model_name}"
-            else:
-                self.model = model_name
+            # New SDK: a Client object replaces module-level configure()/GenerativeModel.
+            self.client = genai.Client(api_key=gemini_api_key)
+            # New SDK takes the bare model id (it normalizes a leading 'models/').
+            self.model = model_name[len('models/'):] if model_name.startswith('models/') else model_name
             self.is_gemini = True
             self.is_claude = False
             return
@@ -218,15 +217,14 @@ class QueryLLM:
 
         Maintains a dict of caches so 32k and 128k contexts can coexist.
         When a new persona is encountered, old caches for that slot are cleaned up.
-        Returns a GenerativeModel from cached content, or None if caching fails.
+        Returns the cached-content NAME (passed to generate_content via
+        GenerateContentConfig.cached_content), or None if caching fails.
         """
-        import datetime as dt
-
         # Reuse existing cache if key matches
         if cache_key in self._gemini_caches:
-            cached_content, cached_model = self._gemini_caches[cache_key]
+            cached_content, cached_name = self._gemini_caches[cache_key]
             if cached_content is not None:
-                return cached_model
+                return cached_name
             return None  # Previously failed for this key
 
         # Evict oldest caches if we hit the max size
@@ -236,22 +234,24 @@ class QueryLLM:
             old_cache, _ = self._gemini_caches.pop(oldest_key)
             if old_cache is not None:
                 try:
-                    old_cache.delete()
+                    self.client.caches.delete(name=old_cache.name)
                 except Exception:
                     pass
 
         try:
-            from google.generativeai import caching
-            cache = caching.CachedContent.create(
+            # New SDK: client.caches.create(...) returns a CachedContent whose
+            # .name is referenced by GenerateContentConfig.cached_content.
+            cache = self.client.caches.create(
                 model=self.model,
-                contents=history_messages,
-                ttl=dt.timedelta(hours=1),
-                display_name=f"persona_{cache_key}"
+                config=genai_types.CreateCachedContentConfig(
+                    contents=history_messages,
+                    ttl="3600s",
+                    display_name=f"persona_{cache_key}",
+                ),
             )
-            model = genai.GenerativeModel.from_cached_content(cache)
-            self._gemini_caches[cache_key] = (cache, model)
+            self._gemini_caches[cache_key] = (cache, cache.name)
             print(f"  Created Gemini cache for {cache_key}")
-            return model
+            return cache.name
         except Exception as e:
             print(f"  Gemini caching failed (falling back to uncached): {e}")
             self._gemini_caches[cache_key] = (None, None)  # Mark as failed
@@ -263,7 +263,7 @@ class QueryLLM:
         for cache_key, (cached_content, _) in self._gemini_caches.items():
             if cached_content is not None:
                 try:
-                    cached_content.delete()
+                    self.client.caches.delete(name=cached_content.name)
                 except Exception:
                     pass
         self._gemini_caches.clear()
@@ -364,16 +364,19 @@ class QueryLLM:
                 if cache_key and len(gemini_messages) > 1:
                     history_prefix = gemini_messages[:-1]
                     final_turn = gemini_messages[-1:]
-                    cached_model = self._get_or_create_gemini_cache(history_prefix, cache_key)
-                    if cached_model is not None:
-                        response = cached_model.generate_content(final_turn)
+                    cached_name = self._get_or_create_gemini_cache(history_prefix, cache_key)
+                    if cached_name is not None:
+                        response = self.client.models.generate_content(
+                            model=self.model, contents=final_turn,
+                            config=genai_types.GenerateContentConfig(cached_content=cached_name),
+                        )
                     else:
                         # Fallback: send all messages without caching
-                        model = self.client.GenerativeModel(self.model)
-                        response = model.generate_content(gemini_messages)
+                        response = self.client.models.generate_content(
+                            model=self.model, contents=gemini_messages)
                 else:
-                    model = self.client.GenerativeModel(self.model)
-                    response = model.generate_content(gemini_messages)
+                    response = self.client.models.generate_content(
+                        model=self.model, contents=gemini_messages)
 
                 content = response.text
             except Exception as e:

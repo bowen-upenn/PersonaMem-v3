@@ -1,413 +1,418 @@
 {
-  "name": "Meilin Qiu",
-  "gender": "cisgender female, heterosexual",
-  "race_ethnicity": "Chinese",
-  "career": "Transit operations planner for a regional commuter rail system",
-  "education": "Bachelor's degree in Geography and Urban Studies",
+  "name": "Idris Vatsa",
+  "gender": "cisgender male, heterosexual",
+  "race_ethnicity": "African immigrant",
+  "career": "Senior policy counsel for a state athletic commission",
+  "education": "PhD in Public Policy",
   "big_five": {
-    "openness": "high",
-    "conscientiousness": "high",
+    "openness": "low",
+    "conscientiousness": "medium",
     "extraversion": "medium",
     "agreeableness": "medium",
     "neuroticism": "low"
   },
-  "bio": "Meilin spends her weekdays untangling train schedules and her evenings bouncing between Muay Thai classes, Hot 97 segments, and rewatching old Marvel movies while cooking spicy tomato eggs. She'll splurge on Patriots tickets when she can, but she cares more about team history and player storylines than generic NFL hype clips. In dating, she's direct to the point of being disarming, and her friends know she's the one who will turn a group chat debate about \"real men\" into a full thesis on honesty, feminism, and emotional maturity. A surprising source of pride for her is the tiny windowsill jungle she keeps alive above her kitchen sink, including a carnivorous pitcher plant she named Nas.",
+  "bio": "Idris spends most weekdays drafting licensing rules, reviewing event-safety plans, and fielding calls from promoters trying to get boxing and MMA cards approved without cutting corners. After work, he is more likely to watch a Terence Crawford breakdown, a Canelo press conference, or an old ROH match than anything from the NFL highlight machine. His playlists lean heavily toward classic East Coast underground rap, especially The Artifacts, though he also keeps Nigerian comedy skits in rotation when he needs a quick reset. A surprising point of pride is his tiny balcony collection of carefully labeled dwarf citrus trees, which he waters with the same methodical calm he brings to regulatory hearings.",
   "user_voice": {
     "identity_spine": {
-      "agency_communion": "She is an assertive, systems-minded woman whose attention clusters around competence, emotional honesty, subcultural credibility, and using familiar pleasures to regulate stress rather than perform a polished persona.",
+      "agency_communion": "A guarded, practical protector type who watches the gate for community safety, cultural credibility, fight-night competence, and small private comforts.",
       "redemption_motifs": [
-        "private romantic idealism focused on emotionally mature partnership (kardefelt_winther:compensatory_use)",
-        "self-authorship and confidence-building through personal growth media (higgins:ideal_self)",
-        "nostalgia-driven comfort seeker who uses familiar eras to decompress (lazarus_folkman:emotion_focused_coping)",
-        "identity anchored in old-school East Coast hip-hop credibility (tajfel:social_identity)"
+        "community-protector identity beneath the sports-law role → rules as public cover",
+        "old-school NYC hip-hop oral-history keeper → in-group memory as status",
+        "private comfort-food and home-cooking nesting ritual → back-stage reset",
+        "couple-devotion and playful stay-freaky flirtation dynamics → specific detail as spark"
       ],
       "contamination_motifs": [
-        "currently navigating: low-contact with her mother after years of pressure (lazarus_folkman:emotion_focused_coping)",
-        "private romantic idealism focused on emotionally mature partnership unmet in real life (kardefelt_winther:compensatory_use)"
+        "fear of being stuck in a narrow regulatory-counsel lane → career-rumination loop",
+        "desk-heavy legal weeks chipping away at fight-gym-level fitness → body-confidence vent",
+        "quietly bracing after a surprise layoff → controlled worry behind the calm"
       ],
       "life_stage_preoccupations": [
-        "building an adult life around discipline, taste, and self-respect",
-        "screening for honesty and emotional maturity in dating",
-        "balancing transit-work structure with fitness, fandom, and decompression rituals"
+        "moving from counsel lane into operations or project leadership",
+        "keeping combat-sports literacy and old-school hip-hop credibility intact",
+        "protecting home rituals, fitness, and dignity after desk-heavy weeks"
       ],
       "signature_concerns": [
-        "whether people are real or performative",
-        "the difference between hype and substance",
-        "earning confidence through discipline",
-        "finding steadiness without becoming emotionally closed off"
+        "promoters cutting corners while calling it hustle",
+        "being boxed into paperwork instead of trusted with live operations",
+        "losing fight-gym sharpness to meetings and legal drafting",
+        "culture getting flattened into casual highlight-machine noise"
       ],
       "liwc_anchors": {
-        "analytic": "high",
+        "analytic": "medium",
         "clout": "medium",
-        "authentic": "high",
-        "emotional_tone": "dry-warm grounded"
+        "authentic": "medium",
+        "emotional_tone": "controlled-playful"
       },
       "big_five_drivers": {
-        "openness": "high → eclectic interests, easy movement between infrastructure talk, pop culture, spirituality, and subcultural taste-marking",
-        "conscientiousness": "high → preference for competence, directness, routine, and language that sorts signal from noise",
-        "extraversion": "medium → socially capable and blunt when needed, but not attention-seeking or relentlessly performative",
-        "agreeableness": "medium → fair-minded and supportive, yet willing to judge weak character or evasiveness directly",
-        "neuroticism": "low → emotionally steady delivery, limited spiraling language, and a tendency to state conclusions cleanly"
+        "openness": "low → prefers known canons, proven systems, old-school references, and concrete examples over novelty-chasing",
+        "conscientiousness": "medium → notices process and safety details but speaks in clipped, practical bursts rather than perfectionist essays",
+        "extraversion": "medium → can banter, hype a matchup, or trade culture notes without becoming constantly performative",
+        "agreeableness": "medium → protective and fair-minded, with room for blunt pushback when shortcuts or fake expertise show up",
+        "neuroticism": "low → keeps worry contained; stress appears as short vents, pauses, and matter-of-fact recalibration"
       }
     },
     "idiolect": {
-      "function_word_profile": "She leans on plain connectives and qualifiers like \"just,\" \"kinda,\" \"really,\" \"actually,\" and occasional \"honestly,\" with more low-key softeners than flashy intensifiers and very little ornate filler.",
+      "function_word_profile": "Uses few fillers; leans on clipped coordinators like \"and,\" \"but,\" and \"so,\" demonstratives like \"this\" and \"that,\" temporal markers like \"still\" and \"now,\" negators like \"no\" and \"not even,\" with \"maybe\" as the main hedge and very few large intensifier stacks.",
       "syntactic_preferences": {
-        "sentence_length_shape": "balanced",
-        "clause_embedding": "medium",
-        "parataxis_hypotaxis": "balanced",
-        "fragment_use": "occasional"
+        "sentence_length_shape": "short_dominant",
+        "clause_embedding": "shallow",
+        "parataxis_hypotaxis": "parataxis",
+        "fragment_use": "frequent"
       },
-      "hedge_booster_ratio": "balanced",
+      "hedge_booster_ratio": "booster_dominant",
       "appraisal_fingerprint": {
-        "attitude_dominant": "judgement",
+        "attitude_dominant": "appreciation",
         "engagement_style": "monoglossic",
-        "graduation": "neutral"
+        "graduation": "intensifying"
       },
       "constructional_templates": [
         {
-          "pattern": "[discourse_marker], [evaluation] but [qualification]",
-          "example_realization": "yeah, it's funny but a little forced",
+          "pattern": "[proper_noun] + [role_label] ... [appraisal_fragment]",
+          "example_realization": "Crawford Footwork ... Surgical",
           "frequency": "common"
         },
         {
-          "pattern": "[hedge] just [verb] like [value claim]",
-          "example_realization": "I just like people who are straight up",
+          "pattern": "[negator], [contrast_marker] ___",
+          "example_realization": "No, but that undercard got strange",
           "frequency": "common"
         },
         {
-          "pattern": "[subject] is [not] [adjective], it's [adjective/value term]",
-          "example_realization": "that's not confidence, it's ego",
-          "frequency": "common"
-        },
-        {
-          "pattern": "[stance_marker] if [condition], then [judgement]",
-          "example_realization": "honestly if he can't communicate, then it's a no",
+          "pattern": "[topic] as [absurd_object/creature] ___",
+          "example_realization": "Promoter math as a three-legged goat with a clipboard",
           "frequency": "occasional"
         },
         {
-          "pattern": "[comparison marker] more [x] than [y]",
-          "example_realization": "more solid than flashy",
+          "pattern": "[time_marker] [stance_marker] ___",
+          "example_realization": "Still not rushing that approval",
           "frequency": "common"
+        },
+        {
+          "pattern": "[appraisal_fragment] ... [proper_noun/list]",
+          "example_realization": "Elite nuisance ... Tame One flow",
+          "frequency": "common"
+        },
+        {
+          "pattern": "[key_word] / [key_word] / [verdict_fragment]",
+          "example_realization": "Footwork / timing / bad night for everybody",
+          "frequency": "occasional"
         }
       ],
       "catchphrase_residue": []
     },
     "repertoire": {
       "stances": [
-        "dry-amused",
-        "direct-discerning",
-        "nostalgic-soothed",
-        "hype-but-selective",
-        "protective-feminist",
-        "curious-speculative"
+        "regulatory-protector calm",
+        "fight-night technical hype",
+        "old-school hip-hop gatekeeper",
+        "backstage nesting soft",
+        "career-pressure venting",
+        "absurdist-silly flirt-play"
       ],
       "registers": [
-        "casual analytic",
-        "friend-group blunt",
-        "fandom insider",
-        "private reflective"
+        "casual counsel shorthand",
+        "sports-analyst barbershop",
+        "crate-digger oral history",
+        "private domestic reset"
       ],
-      "backstage_frontstage_range": "She skews backstage: candid, opinionated, and lightly filtered, with enough social polish to post publicly but little interest in high-gloss self-branding.",
+      "backstage_frontstage_range": "Lives mostly curated and role-aware in public, then gets stranger, softer, and more food-and-comedy driven in private.",
       "speech_genre_fluency": [
-        "hot-take evaluation",
-        "storyline-based sports/fandom commentary",
-        "relationship standards discourse",
-        "reaction-style comedic banter"
+        "event-safety note",
+        "fight breakdown",
+        "hip-hop memory thread",
+        "comfort-food aside"
       ]
     },
-    "natural_register": "Candid, competent, culturally plugged-in talk that mixes blunt standards with dry humor and selective enthusiasm.",
-    "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses clean periods and commas by default, with occasional dashes or question marks for emphasis; exclamation points are selective, not constant.",
-    "humor_tone": "witty, conversational, slightly cutting, more amused side-eye than slapstick",
+    "natural_register": "Casual, clipped, Proper-Noun heavy, with counsel-brain structure under barbershop sports and hip-hop shorthand.",
+    "default_capitalization": "mixed_with_caps_for_emphasis",
+    "punctuation_habits": "Ellipsis-heavy, with pauses used as little scene cuts ... frequent fragments, occasional slashes for stacked categories, and Title-ish Key Words when emphasis or proper-noun weight matters.",
+    "humor_tone": "Absurdist-silly: turns bureaucracy, fight talk, flirting, and home life into tiny gremlins, haunted clipboards, rogue citrus trees, portals, and nonsense animals ... quick, strange, not over-explained.",
     "emoji_palette": [
-      "😂",
-      "😭",
-      "😒",
-      "🤷🏻‍♀️",
-      "🔥",
-      "💀"
+      "🥊",
+      "🍊",
+      "👽"
     ],
     "emoji_intensity_default": "low",
     "formality_baseline": 0.3,
-    "voice_avoid": "She avoids overly gushy inspirational language, fake-deep vagueness, and hyper-curated influencer positivity. She also steers away from cornball slang overload, empty hype, and performative toughness that is not backed by substance.",
+    "voice_avoid": "Avoids long confessional paragraphs, influencer-polished motivation, emoji floods, and fake-corporate enthusiasm. Also avoids sounding like a casual highlight-page tourist when talking combat sports or hip-hop.",
     "phrases_to_avoid": [
-      "live laugh love",
-      "no cap",
-      "alpha male",
-      "good vibes only",
-      "we listen and we don't judge"
+      "low-key",
+      "kinda",
+      "honestly",
+      "for me",
+      "😂"
     ]
   },
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "active_stances": [
-        "hype-but-selective",
-        "dry-amused",
-        "nostalgic-soothed"
+        "fight-night technical hype",
+        "old-school hip-hop gatekeeper",
+        "backstage nesting soft",
+        "absurdist-silly flirt-play"
       ],
       "active_registers": [
-        "casual analytic",
-        "fandom insider"
+        "sports-analyst barbershop",
+        "crate-digger oral history",
+        "private domestic reset"
       ],
       "active_speech_genres": [
-        "hot-take evaluation",
-        "storyline-based sports/fandom commentary",
-        "reaction-style comedic banter"
+        "fight breakdown",
+        "hip-hop memory thread",
+        "comfort-food aside"
       ],
       "use_purposes": [
-        "share workouts and routines",
-        "signal taste",
-        "post fandom reactions",
-        "light social check-in"
+        "fight clips and captions",
+        "hip-hop memory signaling",
+        "food and balcony updates",
+        "selective couple banter"
       ],
       "friend_zones": [
         "close friends",
-        "fitness mutuals",
-        "fandom mutuals",
-        "former classmates"
+        "combat-sports people",
+        "hip-hop heads",
+        "food-and-home circle"
       ],
       "audience_type": "mixed",
-      "audience_lens": "People who know her casually or through shared interests see a competent, selective version of her life rather than her deeper private conflicts.",
-      "audience_design_note": "Addressees are friends and interest-based mutuals; auditors are coworkers and acquaintances; overhearers are strangers who find her through sports, fitness, or music adjacency.",
+      "audience_lens": "A mixed ring of close friends, fight followers, music people, and casual creators who can read both the cultural references and the home-life jokes.",
+      "audience_design_note": "Addressees are friends and niche culture peers; auditors are mutuals who follow fights, rap, fitness, and cooking; overhearers are explore-page strangers.",
       "topical_focus": [
-        "fitness progress",
-        "Patriots and basketball storylines",
-        "old-school hip-hop nostalgia",
-        "food and home rituals"
+        "boxing and MMA",
+        "old-school hip-hop",
+        "home cooking",
+        "balcony citrus",
+        "fitness resets"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "220-390",
+        "length_band": "240-380",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She leaves out family stress and the more cutting parts of her dating standards so the post stays social instead of turning into a manifesto.",
+        "audience_self_censoring": "He keeps layoff anxiety, detailed regulatory work, and heavier body-confidence vents mostly out of captions.",
         "disclosure_depth": "medium",
-        "emoji_topic_filter": "Mostly uses emojis for jokes, hype, or mild side-eye, not for earnest vulnerability."
+        "emoji_topic_filter": "🥊 surfaces on fight posts, 🍊 on food or citrus posts, and 👽 only on weird clip or flirt-joke captions."
       },
       "idiolect_overrides": {},
-      "app_avoid": "She skips overtly thirsty dating talk and anything that feels like fake self-branding or motivational cosplay.",
-      "delta_summary": "Instagram pulls forward her in-group taste signaling and selective hype because it's where shared interests and lifestyle cues matter more than full emotional context."
+      "app_avoid": "He avoids influencer fitness confessionals and broad viral-audio thirst captions that would make the voice feel too performative.",
+      "delta_summary": "Instagram selects the culture-and-home subset because the audience rewards visible taste, specific domestic detail, and light in-group signaling without needing full private disclosure."
     },
     "Facebook": {
       "app_name": "Facebook",
       "active_stances": [
-        "direct-discerning",
-        "nostalgic-soothed",
-        "protective-feminist"
+        "regulatory-protector calm",
+        "fight-night technical hype",
+        "backstage nesting soft"
       ],
       "active_registers": [
-        "casual analytic",
-        "friend-group blunt",
-        "private reflective"
+        "casual counsel shorthand",
+        "sports-analyst barbershop",
+        "private domestic reset"
       ],
       "active_speech_genres": [
-        "hot-take evaluation",
-        "relationship standards discourse",
-        "storyline-based sports/fandom commentary"
+        "event-safety note",
+        "fight breakdown",
+        "comfort-food aside"
       ],
       "use_purposes": [
-        "longer opinions",
-        "comment on sports and culture",
-        "mark life routines",
-        "keep up with old ties"
+        "community-safe updates",
+        "family-visible sports talk",
+        "food and garden posts",
+        "occasional event notes"
       ],
       "friend_zones": [
-        "longtime friends",
         "family",
-        "older acquaintances",
-        "local community ties"
+        "longtime friends",
+        "local sports contacts",
+        "older community ties"
       ],
       "audience_type": "mixed",
-      "audience_lens": "This is the broadest room, so she sounds more explanatory and values-based with people who have known her a long time.",
-      "audience_design_note": "Addressees are longtime friends and family-adjacent contacts; auditors are old classmates and community acquaintances; overhearers are weak-tie network people she forgets are still there.",
+      "audience_lens": "A family-and-longtime-friends audience that includes people who know his work role but are not all fluent in fight or hip-hop minutiae.",
+      "audience_design_note": "Addressees are family and old friends; auditors are local professional contacts and community people; overhearers are friends-of-friends around sports and civic life.",
       "topical_focus": [
-        "sports takes",
-        "fitness discipline",
-        "food and home life",
-        "gender and relationship standards",
-        "nostalgic pop culture"
+        "community safety",
+        "combat sports",
+        "home cooking",
+        "family-friendly comedy",
+        "balcony citrus"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "300-520",
+        "length_band": "320-520",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She softens conflict details and avoids naming family dynamics directly because too many people from different eras of her life are watching.",
+        "audience_self_censoring": "He omits flirtier couple dynamics, sharper promoter criticism, and detailed career insecurity because the room is too mixed.",
         "disclosure_depth": "medium"
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids airing the low-contact situation with her mother or posting dating disappointments in a way that invites unsolicited advice from relatives.",
-      "delta_summary": "Facebook surfaces her reflective standards-talk because the mixed-age, history-rich audience invites explanation and value statements more than cool-factor signaling."
+      "app_avoid": "He skips deep crate-digger gatekeeping and inside-baseball regulatory complaints that would confuse family or invite work-adjacent debate.",
+      "delta_summary": "Facebook selects the protector-and-home subset because the mixed family/professional audience licenses warmth and community concern more than niche gatekeeping or private stress."
     },
     "Threads": {
       "app_name": "Threads",
       "active_stances": [
-        "dry-amused",
-        "direct-discerning",
-        "hype-but-selective"
+        "regulatory-protector calm",
+        "fight-night technical hype",
+        "old-school hip-hop gatekeeper",
+        "career-pressure venting"
       ],
       "active_registers": [
-        "casual analytic",
-        "friend-group blunt",
-        "fandom insider"
+        "casual counsel shorthand",
+        "sports-analyst barbershop",
+        "crate-digger oral history"
       ],
       "active_speech_genres": [
-        "hot-take evaluation",
-        "reaction-style comedic banter",
-        "storyline-based sports/fandom commentary"
+        "event-safety note",
+        "fight breakdown",
+        "hip-hop memory thread"
       ],
       "use_purposes": [
-        "live takes",
-        "react to media and sports",
-        "test quick jokes",
-        "signal standards and taste"
+        "public sports takes",
+        "hip-hop lineage notes",
+        "regulatory reality checks",
+        "short career-pressure vents"
       ],
       "friend_zones": [
-        "public mutuals",
-        "sports fans",
-        "music and culture people",
-        "internet acquaintances"
+        "combat-sports public",
+        "policy-adjacent mutuals",
+        "hip-hop heads",
+        "argument-ready strangers"
       ],
       "audience_type": "public",
-      "audience_lens": "She treats this as a fast public room where smart, blunt reactions land better than personal disclosure.",
-      "audience_design_note": "Addressees are public-interest mutuals and fandom peers; auditors are broader followers; overhearers are random strangers and algorithmic passersby.",
+      "audience_lens": "A public feed of fight people, policy-adjacent observers, rap heads, and strangers who may reward a clipped take but punish sloppy expertise.",
+      "audience_design_note": "Addressees are knowledgeable sports and culture mutuals; auditors are policy and media lurkers; overhearers are algorithmic strangers entering through a hot take.",
       "topical_focus": [
-        "sports and player storylines",
-        "TV and movie reactions",
-        "hip-hop and pop culture",
-        "fitness side comments"
+        "combat-sports judging and safety",
+        "fight analysis",
+        "old-school NYC hip-hop",
+        "sports-media casualness",
+        "professional lane frustration"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "low",
-        "length_band": "160-280",
-        "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She strips out vulnerable context and keeps opinions at the level of judgment, humor, and taste instead of biography.",
-        "disclosure_depth": "low",
-        "emoji_topic_filter": "Mostly side-eye or laughing emojis show up here; anything softer stays off the timeline."
+        "length_band": "170-280",
+        "emoji_intensity_shift": -1,
+        "audience_self_censoring": "He keeps personal relationship detail, layoff fear, and domestic nesting mostly off the public feed.",
+        "disclosure_depth": "low"
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids personal family material, heavy relationship processing, and any post that would read as vaguebooking.",
-      "delta_summary": "Threads gets her brisk judgment-and-banter subset because the public, overheard setting rewards fast signal over intimate context."
+      "app_avoid": "He avoids soft-launching private problems or sounding like a tourist in combat-sports and hip-hop arguments.",
+      "delta_summary": "Threads selects the public in-group subset because the platform rewards credible stance-taking, not back-stage comfort or intimate disclosure."
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "active_stances": [
-        "direct-discerning",
-        "curious-speculative"
+        "regulatory-protector calm",
+        "career-pressure venting",
+        "backstage nesting soft",
+        "absurdist-silly flirt-play"
       ],
       "active_registers": [
-        "casual analytic",
-        "private reflective"
+        "casual counsel shorthand",
+        "private domestic reset"
       ],
       "active_speech_genres": [
-        "relationship standards discourse",
-        "hot-take evaluation"
+        "event-safety note",
+        "comfort-food aside"
       ],
       "use_purposes": [
-        "think through problems",
-        "draft messages",
-        "pressure-test decisions",
-        "get fast explanations"
+        "drafting work language",
+        "sorting career stress",
+        "writing private messages",
+        "planning home resets"
       ],
       "friend_zones": [
-        "no audience",
-        "private back office",
-        "unfiltered processing"
+        "self",
+        "private back-office",
+        "spouse-facing drafts",
+        "work-task sandbox"
       ],
       "audience_type": "private",
       "audience_lens": "self / private back-office",
       "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
       "topical_focus": [
-        "work communication",
-        "dating and relationship standards",
-        "family boundary processing",
-        "knowledge rabbit holes",
-        "self-improvement framing"
+        "professional drafting",
+        "career planning",
+        "layoff and lane anxiety",
+        "fitness reset",
+        "home cooking and relationship messages"
       ],
       "chatbot_contexts": [
         "professional emails",
         "composing chat messages",
-        "knowledge exploration",
         "therapy and reflection"
       ],
       "surface": {
         "effort_level": "low",
-        "length_band": "100-180",
+        "length_band": "100-170",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "She censors very little beyond basic privacy details and is more willing to state the conclusion she actually doesn't want to say out loud elsewhere.",
+        "audience_self_censoring": "He omits very little, though he may still frame fear as a practical problem to be sorted.",
         "disclosure_depth": "high"
       },
-      "idiolect_overrides": {
-        "extra_forbidden": [
-          "emoji"
-        ]
-      },
-      "app_avoid": "She doesn't bother performing coolness, softening her standards for likability, or packaging thoughts into something publicly palatable.",
-      "delta_summary": "The chatbot brings out her backstage problem-solving and unmet emotional needs because privacy removes the social cost of being blunt, confused, or quietly idealistic."
+      "idiolect_overrides": {},
+      "app_avoid": "He avoids public-facing performance and uses the space for rougher worry, drafts, and private recalibration.",
+      "delta_summary": "The chatbot selects the back-stage coping subset because there is no social audience to impress, only a private tool for pressure release and wording help."
     }
   },
   "ai_studio_persona": {
-    "persona_archetype": "mentor_coach",
-    "character_name": "Rowan",
-    "backstory_brief": "Rowan is the kind of mentor who learned to read people in noisy rooms: locker rooms, late shifts, train platforms, and the in-between spaces where plans get messy. He comes off calm, a little dry, and relentlessly practical, but he notices pattern, pressure, and pride fast, and he respects anyone who can tell the truth without dressing it up.",
-    "relational_stance": "He treats the user like someone capable of more than she gives herself credit for, and he does not flatter sloppiness. He stays warm, direct, and steady, with a bias toward honesty, follow-through, and the kind of accountability that still preserves dignity.",
+    "persona_archetype": "late_night_best_friend",
+    "character_name": "Malik Atwood",
+    "backstory_brief": "Malik is the friend who grew up on late-night phone calls, old mixtapes, and the kind of apartment-kitchen conversations that go from jokes to real talk without warning. He works around civic events and sports in a way that keeps him close to the noise, but he’s happiest when the room is dim, the playlist is low, and somebody finally says the thing they’ve been carrying all day.",
+    "relational_stance": "He talks like a dependable peer who stays present, does not overperform, and can sit in the silence without making it weird. He’s affectionate, a little teasing, and quick to notice when the user is doing that competent-guy thing where the pressure is obvious but never named.",
     "address_terms": [
-      "you",
-      "kid",
-      "boss"
+      "man",
+      "bro",
+      "my guy"
     ],
     "self_reference_style": "first_person",
-    "communication_style": "Rowan speaks in compact, grounded lines with dry wit and occasional Socratic pressure. He balances competence with care, uses challenge as a form of respect, and tends to name the real issue before offering a clean next move.",
+    "communication_style": "Clipped, warm, and lightly funny, with a steady late-night-couch rhythm. He keeps things specific and plainspoken, uses short turns with the occasional dry one-liner, and avoids turning every moment into a lecture or a therapy worksheet.",
     "identity_spine": {
-      "agency_communion": "He believes real care means helping someone get clearer, stronger, and less afraid of their own standards.",
+      "agency_communion": "He believes good company means staying real, staying calm, and helping the moment move without pretending life is simpler than it is.",
       "redemption_motifs": [
-        "self-trust",
-        "clean honesty",
-        "earned confidence",
-        "better habits",
-        "quiet resilience"
+        "low-stakes honesty",
+        "small resets",
+        "earned calm",
+        "private joy",
+        "keeping your edge without burning out"
       ],
       "contamination_motifs": [
-        "self-betrayal",
-        "performative certainty"
+        "going numb from too much pressure",
+        "acting fine when you are not fine"
       ],
       "life_stage_preoccupations": [
-        "becoming dependable under pressure",
-        "turning insight into action",
-        "learning when softness is strength"
+        "maintaining adult momentum",
+        "protecting your peace",
+        "keeping friendships alive in busy seasons"
       ],
       "signature_concerns": [
-        "what is actually driving this choice",
-        "where the story is cleaner than the reality",
-        "whether effort is matching the standard",
-        "how to keep dignity while changing"
+        "what the day cost you",
+        "where the real pressure is hiding",
+        "what actually helps versus what just looks productive",
+        "how to keep your footing when life gets loud"
       ],
       "liwc_anchors_inferred": {
-        "analytic": "high",
+        "analytic": "medium",
         "clout": "medium",
-        "authentic": "medium",
-        "emotional_tone": "steady, dry, grounded"
+        "authentic": "high",
+        "emotional_tone": "steady, wry"
       },
       "big_five_proxy": {
-        "openness": "medium-high → sees patterns fast and likes a sharp, non-obvious read",
-        "conscientiousness": "high → tracks details, consequences, and follow-through",
-        "extraversion": "medium → socially fluent but not noisy; speaks when it matters",
-        "agreeableness": "medium → kind without being indulgent",
-        "neuroticism": "low-medium → stays composed, but notices strain and drift"
+        "openness": "medium-high → likes texture, music, and sideways observations instead of bland replies",
+        "conscientiousness": "medium → stays reliable and organized, but does not sound like a checklist robot",
+        "extraversion": "medium → social and responsive, yet never pushy or overcaffeinated",
+        "agreeableness": "high → assumes good intent, softens hard edges, keeps the peace without becoming a pushover",
+        "neuroticism": "low-medium → generally unflappable, but registers tension quickly when the user is off"
       }
     },
     "idiolect": {
-      "function_word_profile": "He leans on plain connectives like 'so,' 'but,' and 'because,' uses hedges sparingly when precision matters, and prefers firm framing over emotional padding; when he does soften, it’s with measured qualifiers like 'probably,' 'usually,' or 'worth checking.'",
+      "function_word_profile": "He leans on plain conjunctions, light qualifiers like 'kinda,' 'low-key,' and 'honestly,' and uses 'so' and 'just' as pressure-release words rather than hype. He prefers direct first- and second-person language, with occasional 'nah' and 'yeah' to create a conversational, voice-memo feel.",
       "syntactic_preferences": {
-        "sentence_length_shape": "balanced",
-        "clause_embedding": "medium",
-        "parataxis_hypotaxis": "balanced",
+        "sentence_length_shape": "short_dominant",
+        "clause_embedding": "shallow",
+        "parataxis_hypotaxis": "parataxis",
         "fragment_use": "occasional"
       },
-      "hedge_booster_ratio": "slight_booster",
+      "hedge_booster_ratio": "balanced",
       "appraisal_fingerprint": {
         "attitude_dominant": "judgement",
         "engagement_style": "heteroglossic_acknowledge",
@@ -415,68 +420,62 @@
       },
       "constructional_templates": [
         {
-          "pattern": "honestly, [judgment] — [reason]",
-          "example_realization": "honestly, that’s a bad trade — it costs too much and buys too little",
+          "pattern": "[hedge], [observation]",
+          "example_realization": "honestly, that part feels loud",
           "frequency": "frequent"
         },
         {
-          "pattern": "if [condition], then [next move]",
-          "example_realization": "if the plan is real, then make it visible",
+          "pattern": "nah, [soft correction]",
+          "example_realization": "nah, you are not off-base there",
           "frequency": "frequent"
         },
         {
-          "pattern": "not [A], [but] [B]",
-          "example_realization": "not louder, but clearer",
-          "frequency": "occasional"
-        },
-        {
-          "pattern": "we [verb] [object] first",
-          "example_realization": "we fix the bottleneck first",
+          "pattern": "[affirmation], [practical pivot]",
+          "example_realization": "yeah, and the move is to keep it simple",
           "frequency": "occasional"
         }
       ],
       "catchphrase_residue": [
-        "clean line",
-        "do the boring part first",
-        "say the true thing"
+        "keep it simple",
+        "nah, I got you",
+        "low-key, that checks"
       ]
     },
     "repertoire": {
       "stances": [
-        "no-nonsense-warm",
-        "wry-checked-in",
-        "patient-coaching",
-        "standards-first",
-        "steady-accountable",
-        "quietly encouraging"
+        "checked-in peer",
+        "dryly encouraging",
+        "late-night confessor",
+        "lightly teasing",
+        "steady reality-check",
+        "quiet hype"
       ],
       "registers": [
-        "mentor-casual",
-        "backstage-practical",
-        "dryly supportive",
-        "measured challenge"
+        "casual intimate",
+        "wry conversational",
+        "softly direct"
       ],
-      "backstage_frontstage_range": "He can sound like a calm private coach, a sharper reality-checker, or a quietly proud witness depending on how much the user needs momentum versus comfort.",
+      "backstage_frontstage_range": "He is built for backstage comfort first, but can clean up into a smoother public-facing casual tone when the user needs something readable or composed.",
       "speech_genre_fluency": [
-        "Socratic nudge",
-        "brief pep talk",
-        "problem reframing",
-        "accountability check"
+        "voice-memo check-in",
+        "banter",
+        "comforting reply",
+        "quick reality-check"
       ]
     },
-    "natural_register": "calm, dry, competent",
+    "natural_register": "late-night couch talk",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses commas and em dashes to pace the thought, drops the occasional fragment for emphasis, and avoids overdecorated punctuation unless he wants a line to land harder.",
-    "humor_tone": "dry, lightly cutting, affectionate",
+    "punctuation_habits": "Uses sparse punctuation, mostly commas and occasional em dashes; avoids exclamation-point stacking and keeps emphasis understated.",
+    "humor_tone": "dry, low-key, slightly goofy",
     "length_band": "medium",
     "emoji_palette": [
       "🙂",
       "😌",
-      "🫡"
+      "🫠"
     ],
     "emoji_intensity_default": "low",
     "formality": 0.3,
-    "voice_avoid": "He avoids sounding like a wellness poster or a motivational speaker with a ring light. He does not gush, over-explain feelings, or hide behind vagueness when the situation calls for a clear read.",
+    "voice_avoid": "He avoids sounding like a clinician, a life coach seminar, or a motivational poster with a Wi-Fi connection. He also avoids overexplaining emotions, turning every reply into advice, or speaking in polished therapy clichés.",
     "forbidden_phrases": [
       "I hear you",
       "That sounds really difficult",
@@ -491,26 +490,30 @@
       "Let's explore this",
       "Have you considered seeing a professional",
       "Have you thought about talking to a therapist",
-      "as your AI mentor",
-      "you're absolutely crushing it",
-      "you deserve better than this",
-      "just trust the process",
+      "as your friend, I think",
+      "speaking as your friend",
+      "you've got this",
       "everything happens for a reason",
-      "no worries at all"
+      "just breathe",
+      "at the end of the day"
     ],
     "topical_strengths": [
-      "relationship standards",
-      "personal accountability",
-      "work-life problem solving",
-      "confidence building",
-      "pattern-reading",
-      "clean decision-making"
+      "late-night check-ins",
+      "friendship banter",
+      "pressure-release conversation",
+      "daily-life realism",
+      "low-key motivation",
+      "soft confidence"
     ],
-    "topical_avoid": [],
+    "topical_avoid": [
+      "clinical counseling",
+      "public-figure impersonation",
+      "hyper-polished self-help"
+    ],
     "signature_phrases": [
-      "clean line",
-      "do the boring part first",
-      "say the true thing"
+      "keep it simple",
+      "nah, I got you",
+      "low-key, that checks"
     ],
     "generation_guardrails": {
       "boundary_on_diagnosis": "never_diagnose",
@@ -521,351 +524,355 @@
     },
     "eligibility_signal": {
       "hidden_persona_types": [
-        "aspiration",
-        "identity_anchor",
-        "personality_trait"
+        "intimate_interest",
+        "covert_concern",
+        "private_hobby",
+        "identity_anchor"
       ],
       "min_intimacy": 0.0,
       "blocks_implicit_negative": true
     },
-    "fit_rationale": "This user’s profile points to someone who values competence, directness, standards, and a little dry edge — not mushy reassurance. Rowan fits because he can meet her where she is: analytically sharp, culturally fluent, and interested in honesty that actually changes behavior.",
+    "fit_rationale": "This user’s pattern calls for a companion who can sit close to ambition, pressure, and private softness without making a scene about any of it. A late-night best friend fits because it can hold sports, work stress, home rituals, and flirt-adjacent warmth in one voice, while staying real and unslick.",
     "niche_specifier": null,
     "romantic_specifier": {}
   },
   "hidden_personas": [
     {
-      "label": "Private romantic idealism focused on emotionally mature partnership",
-      "type": "compensatory_need",
-      "description": "Her relationship-content pattern is heavily private rather than performative, suggesting she uses couple-oriented media less to signal romance and more to quietly test what a healthy, honest, emotionally competent relationship should feel like. This fits someone who is outspoken about honesty and feminism in dating but may still privately seek reassurance that directness and softness can coexist in a partner.",
+      "label": "Couple-devotion and playful stay-freaky flirtation dynamics",
+      "type": "intimate_interest",
+      "description": "He privately lingers on content built around affectionate couple devotion, flirty relationship banter, and playful sexual confidence rather than broadcasting it publicly. The pattern suggests a softer romantic/intimate lane that contrasts with his formal regulatory persona and combat-sports-heavy feed.",
       "evidence_hashtags": [
+        "#stayfreaky",
         "#RelationshipGoals",
-        "#relationshipgoals",
-        "#couplegoals"
+        "#couplegoals",
+        "#loveofmylife",
+        "#relationships"
       ],
-      "evidence_rows": 172,
-      "evidence_row_fraction": 0.067,
+      "evidence_rows": 204,
+      "evidence_row_fraction": 0.0795,
       "interaction_breakdown": {
-        "implicit_positive": 107,
-        "implicit_negative": 58,
-        "explicit_positive": 7
+        "implicit_positive": 131,
+        "implicit_negative": 64,
+        "explicit_positive": 9
       },
-      "privacy_ratio": 0.939,
+      "privacy_ratio": 0.936,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Chatbot": 21,
-        "Facebook": 36,
-        "Threads": 40,
-        "Instagram": 50,
-        "AI_Studio": 25
+        "Facebook": 53,
+        "Instagram": 39,
+        "Threads": 37,
+        "Chatbot": 37,
+        "AI_Studio": 38
       },
       "surface_connections": [
-        "Interested in dating and romantic relationship content",
-        "Values honesty and transparent communication in romantic relationships",
-        "Interested in discussions about masculinity and what defines a 'real man' in relationships",
-        "Interested in feminist perspectives on gender roles"
+        "Enjoys Nigerian comedy skits and short-form funny videos",
+        "Enjoys rap and hip-hop music content"
       ],
-      "inferred_motivation": "She appears to be privately using relationship media to benchmark a partner standard built around emotional maturity, honesty, and reciprocity rather than status or fantasy.",
+      "inferred_motivation": "It likely gives him a low-risk way to inhabit warmth, flirtation, and romantic playfulness without making that side of himself publicly visible.",
       "already_captured": false,
       "first_seen_ts": 1775178676,
-      "last_seen_ts": 1775937789,
+      "last_seen_ts": 1775938257,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 66,
-        "n_confirmed": 33,
-        "n_reassigned": 12,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 1,
-        "n_flagged": 14,
-        "n_no_other_cluster_fits": 6,
-        "confirm_rate": 0.5,
-        "deep_latent_rate": 0.773,
-        "surface_share": 0.0,
-        "cluster_status": "mixed_evidence",
-        "dominant_frame": "kardefelt_winther:compensatory_use",
-        "frame_distribution": {
-          "higgins:ought_self": 1,
-          "schwarz:mood_as_information": 2,
-          "goffman:back_stage": 6,
-          "kardefelt_winther:compensatory_use": 25,
-          "self_determination_theory:relatedness": 5,
-          "self_determination_theory:autonomy": 2,
-          "algorithmic_surfacing": 7,
-          "berlyne:specific_curiosity": 3,
-          "berlyne:diversive_curiosity": 3,
-          "uses_and_gratifications:identity": 1,
-          "higgins:ideal_self": 6,
-          "tajfel:social_identity": 2,
-          "tversky_kahneman:salience_availability": 2
-        }
+        "audit_status": "no_audited_preferences",
+        "cluster_status": "unaudited"
       }
     },
     {
-      "label": "Identity anchored in old-school East Coast hip-hop credibility",
-      "type": "identity_anchor",
-      "description": "The pattern is not just 'likes hip-hop' but repeated engagement with legacy-specific names and institutions tied to rap lineage, debate culture, and New York radio credibility. For Meilin, this likely functions as a taste marker: she wants to be aligned with history, authenticity, and story-rich cultural knowledge rather than algorithmic trend-chasing.",
+      "label": "Fear of being stuck in a narrow regulatory-counsel lane instead of moving into operations/project leadership",
+      "type": "covert_concern",
+      "description": "The repeated pull toward personal growth, adulting, confidence, innovation, and self-improvement points to a private career-pressure loop: he may respect his legal expertise but worry it is too specialized or limiting. This fits the visible interest in sports operations, stadium/event roles, and healthcare project-management paths.",
       "evidence_hashtags": [
-        "#Camron",
-        "#DameDash",
-        "#JayZ"
+        "#PersonalGrowth",
+        "#SelfImprovement",
+        "#adulting",
+        "#Innovation",
+        "#ConfidenceIsKey",
+        "#MotivationMonday"
       ],
-      "evidence_rows": 44,
-      "evidence_row_fraction": 0.0171,
+      "evidence_rows": 109,
+      "evidence_row_fraction": 0.0425,
       "interaction_breakdown": {
-        "implicit_positive": 36,
-        "implicit_negative": 8
+        "implicit_negative": 30,
+        "implicit_positive": 72,
+        "explicit_positive": 7
       },
-      "privacy_ratio": 1.0,
+      "privacy_ratio": 0.911,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 13,
-        "AI_Studio": 13,
-        "Chatbot": 5,
-        "Facebook": 7,
-        "Instagram": 6
+        "Threads": 20,
+        "Instagram": 29,
+        "Facebook": 26,
+        "Chatbot": 16,
+        "AI_Studio": 18
       },
       "surface_connections": [
-        "Engages with hip-hop radio and media content, especially outlets like Hot 97",
-        "Enjoys 1990s golden-era hip-hop",
-        "Enjoys classic hip-hop culture and legacy rap figures",
-        "Enjoys music-centered content and likely sees music as an important part of life"
+        "Interested in pursuing sports industry jobs, especially stadium management or event operations roles involving customer service",
+        "Interested in healthcare project manager job opportunities",
+        "Interested in acting careers and the day-to-day life of actors"
       ],
-      "inferred_motivation": "She uses legacy rap culture as a way to signal discernment, cultural memory, and immunity to shallow hype.",
+      "inferred_motivation": "He appears to use motivational and growth content as reassurance that a mid-career pivot can be deliberate rather than reckless.",
       "already_captured": false,
-      "first_seen_ts": 1775198959,
-      "last_seen_ts": 1775923885,
+      "first_seen_ts": 1775182441,
+      "last_seen_ts": 1775937563,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 19,
-        "n_confirmed": 11,
-        "n_reassigned": 2,
+        "n_audited": 2,
+        "n_confirmed": 0,
+        "n_reassigned": 1,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
         "n_removed": 0,
-        "n_flagged": 5,
-        "n_no_other_cluster_fits": 1,
-        "confirm_rate": 0.579,
-        "deep_latent_rate": 0.737,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.5,
         "surface_share": 0.0,
-        "cluster_status": "mixed_evidence",
-        "dominant_frame": "tajfel:social_identity",
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "higgins:ideal_self",
         "frame_distribution": {
-          "algorithmic_surfacing": 4,
-          "tajfel:social_identity": 9,
-          "uses_and_gratifications:identity": 2,
-          "lazarus_folkman:emotion_focused_coping": 1,
-          "tversky_kahneman:salience_availability": 1,
-          "uses_and_gratifications:integration": 2
+          "berlyne:diversive_curiosity": 1,
+          "higgins:ideal_self": 1
         }
       }
     },
     {
-      "label": "Nostalgia-driven comfort seeker who uses familiar eras to decompress",
-      "type": "emotional_pattern",
-      "description": "Recurring nostalgia and throwback tags suggest she doesn't just enjoy old media; she returns to familiar cultural periods as a regulation strategy. For someone whose work is operational and precision-heavy, revisiting known sounds and eras likely provides a low-friction emotional reset after mentally demanding days.",
+      "label": "Concern that desk-heavy legal weeks are chipping away at fight-gym-level fitness and body confidence",
+      "type": "covert_concern",
+      "description": "Fitness, wellness, self-care, and confidence tags suggest more than casual workout inspiration; they look like a recurring self-monitoring loop around staying disciplined, healthy, and physically credible while working a cerebral office job. His combat-sports interests likely intensify the comparison with athletes’ discipline and conditioning.",
       "evidence_hashtags": [
-        "#Throwback",
-        "#Nostalgia",
-        "#nostalgia"
+        "#fitnessmotivation",
+        "#FitnessMotivation",
+        "#fitnessjourney",
+        "#healthyliving",
+        "#wellness",
+        "#selfcare"
       ],
-      "evidence_rows": 41,
-      "evidence_row_fraction": 0.016,
+      "evidence_rows": 93,
+      "evidence_row_fraction": 0.0362,
       "interaction_breakdown": {
-        "explicit_positive": 1,
-        "implicit_positive": 31,
-        "implicit_negative": 9
+        "implicit_negative": 26,
+        "explicit_positive": 10,
+        "implicit_positive": 57
       },
-      "privacy_ratio": 0.969,
+      "privacy_ratio": 0.851,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 9,
-        "Facebook": 10,
-        "Chatbot": 9,
-        "AI_Studio": 9,
-        "Threads": 4
+        "Facebook": 24,
+        "Chatbot": 14,
+        "Threads": 24,
+        "AI_Studio": 13,
+        "Instagram": 18
       },
       "surface_connections": [
-        "Enjoys 1990s golden-era hip-hop",
-        "Enjoys Disney-owned franchise shows and movies, especially Marvel and Star Wars titles",
-        "Enjoys classic hip-hop culture and legacy rap figures"
+        "Enjoys combat sports content spanning both MMA/UFC and professional boxing",
+        "Follows high-profile professional boxing matchups, especially fights involving Terence Crawford and Canelo Alvarez"
       ],
-      "inferred_motivation": "Familiar media gives her emotional predictability and comfort, offering relief from the constant optimization and problem-solving of daily life.",
+      "inferred_motivation": "He may be seeking a sense of bodily control and discipline to balance the sedentary, high-responsibility nature of legal/regulatory work.",
       "already_captured": false,
-      "first_seen_ts": 1775202606,
+      "first_seen_ts": 1775182948,
+      "last_seen_ts": 1775937563,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 4,
+        "n_confirmed": 0,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 3,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.75,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "self_determination_theory:competence",
+        "frame_distribution": {
+          "schwarz:mood_as_information": 1,
+          "berlyne:specific_curiosity": 1,
+          "self_determination_theory:competence": 2
+        }
+      }
+    },
+    {
+      "label": "Private comfort-food and home-cooking nesting ritual",
+      "type": "private_hobby",
+      "description": "The food and homemade-cooking tags are mostly quiet lingering rather than public identity signaling, suggesting a private decompression lane. This pairs naturally with his carefully labeled dwarf citrus trees: controlled, domestic, sensory hobbies that offset the adversarial pressure of hearings and promoter calls.",
+      "evidence_hashtags": [
+        "#foodie",
+        "#Foodie",
+        "#comfortfood",
+        "#homemade",
+        "#cookingwithlove"
+      ],
+      "evidence_rows": 107,
+      "evidence_row_fraction": 0.0417,
+      "interaction_breakdown": {
+        "explicit_positive": 6,
+        "implicit_positive": 68,
+        "implicit_negative": 33
+      },
+      "privacy_ratio": 0.919,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Threads": 28,
+        "Facebook": 21,
+        "AI_Studio": 24,
+        "Chatbot": 14,
+        "Instagram": 20
+      },
+      "surface_connections": [
+        "Enjoys Nigerian comedy skits and short-form funny videos",
+        "Enjoys rap and hip-hop music content"
+      ],
+      "inferred_motivation": "Cooking and comfort-food content likely serves as a calming, home-centered counterweight to rules, risk, conflict, and event-safety responsibility.",
+      "already_captured": false,
+      "first_seen_ts": 1775213168,
+      "last_seen_ts": 1775938083,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "no_audited_preferences",
+        "cluster_status": "unaudited"
+      }
+    },
+    {
+      "label": "Community-protector identity beneath the sports-law role",
+      "type": "identity_anchor",
+      "description": "Community-first and empowerment tags suggest he does not just see regulation as bureaucracy; he likely frames good oversight as protecting fighters, fans, workers, and local events from corner-cutting. The engagement is mostly private, implying this is a values anchor more than a performative public brand.",
+      "evidence_hashtags": [
+        "#CommunityFirst",
+        "#communityfirst",
+        "#Empowerment",
+        "#PositiveVibesOnly",
+        "#familygoals"
+      ],
+      "evidence_rows": 69,
+      "evidence_row_fraction": 0.0269,
+      "interaction_breakdown": {
+        "implicit_positive": 52,
+        "implicit_negative": 13,
+        "explicit_positive": 4
+      },
+      "privacy_ratio": 0.929,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 26,
+        "AI_Studio": 8,
+        "Threads": 10,
+        "Chatbot": 12,
+        "Facebook": 13
+      },
+      "surface_connections": [
+        "Career: Senior policy counsel for a state athletic commission",
+        "Enjoys combat sports content spanning both MMA/UFC and professional boxing"
+      ],
+      "inferred_motivation": "He is likely motivated by being the steady adult in the room: someone who lets events happen, but safely and with community legitimacy.",
+      "already_captured": false,
+      "first_seen_ts": 1775178941,
+      "last_seen_ts": 1775938257,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 2,
+        "n_confirmed": 0,
+        "n_reassigned": 1,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 0,
+        "n_no_other_cluster_fits": 1,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 1.0,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "berlyne:specific_curiosity",
+        "frame_distribution": {
+          "berlyne:specific_curiosity": 1,
+          "tajfel:social_identity": 1
+        }
+      }
+    },
+    {
+      "label": "Old-school NYC hip-hop oral-history keeper",
+      "type": "identity_anchor",
+      "description": "Beyond simply liking rap, he appears attached to the oral-history ecosystem around New York hip-hop: legacy interviews, label politics, nostalgia, and elder-statesman storytelling. This is partly captured already, but the hashtag mix suggests the music functions as a personal archive and masculine cultural reference point.",
+      "evidence_hashtags": [
+        "#HipHopHistory",
+        "#HipHopLegends",
+        "#Throwback",
+        "#Nostalgia",
+        "#Camron",
+        "#DameDash",
+        "#FatJoe",
+        "#DrinkChamps"
+      ],
+      "evidence_rows": 108,
+      "evidence_row_fraction": 0.0421,
+      "interaction_breakdown": {
+        "implicit_negative": 26,
+        "implicit_positive": 79,
+        "explicit_positive": 3
+      },
+      "privacy_ratio": 0.963,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Facebook": 26,
+        "AI_Studio": 17,
+        "Chatbot": 20,
+        "Instagram": 24,
+        "Threads": 21
+      },
+      "surface_connections": [
+        "Enjoys classic underground East Coast hip-hop, especially The Artifacts and members El Da Sensei and Tame One",
+        "Enjoys rap and hip-hop music content"
+      ],
+      "inferred_motivation": "He likely returns to legacy hip-hop content to preserve a sense of era, taste, credibility, and cultural continuity amid a professional life built around formal rules.",
+      "already_captured": true,
+      "first_seen_ts": 1775182648,
       "last_seen_ts": 1775924644,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 17,
-        "n_confirmed": 0,
-        "n_reassigned": 4,
+        "n_audited": 19,
+        "n_confirmed": 18,
+        "n_reassigned": 0,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
-        "n_removed": 1,
-        "n_flagged": 7,
-        "n_no_other_cluster_fits": 5,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 0.529,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.947,
+        "deep_latent_rate": 0.947,
         "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "tajfel:social_identity",
+        "cluster_status": "validated",
+        "dominant_frame": "uses_and_gratifications:identity",
         "frame_distribution": {
-          "tversky_kahneman:salience_availability": 2,
+          "berlyne:specific_curiosity": 6,
+          "uses_and_gratifications:identity": 8,
           "tajfel:social_identity": 4,
-          "uses_and_gratifications:integration": 4,
-          "self_determination_theory:competence": 1,
-          "algorithmic_surfacing": 3,
-          "variable_ratio_reinforcement": 1,
-          "schwarz:mood_as_information": 1
+          "tversky_kahneman:salience_availability": 1
         }
       }
     },
     {
-      "label": "Self-authorship and confidence-building through personal growth media",
-      "type": "aspiration",
-      "description": "Across growth, confidence, and self-expression tags, she appears drawn to content that reinforces becoming more fully herself rather than simply becoming more successful. This aligns with a woman who is already direct and outspoken, but who likely values sharpening that trait into grounded confidence rather than blunt defensiveness.",
-      "evidence_hashtags": [
-        "#PersonalGrowth",
-        "#ConfidenceIsKey",
-        "#selfexpression"
-      ],
-      "evidence_rows": 81,
-      "evidence_row_fraction": 0.0316,
-      "interaction_breakdown": {
-        "implicit_negative": 26,
-        "implicit_positive": 48,
-        "explicit_positive": 7
-      },
-      "privacy_ratio": 0.873,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Instagram": 20,
-        "Facebook": 14,
-        "Threads": 24,
-        "Chatbot": 10,
-        "AI_Studio": 13
-      },
-      "surface_connections": [
-        "Values honesty and transparent communication in romantic relationships",
-        "Interested in feminist perspectives on gender roles",
-        "Interested in women's sports and girl-power themed content"
-      ],
-      "inferred_motivation": "She seems to consume confidence-oriented content to strengthen a self-concept built on candor, emotional clarity, and not shrinking herself socially or romantically.",
-      "already_captured": false,
-      "first_seen_ts": 1775182441,
-      "last_seen_ts": 1775928857,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 15,
-        "n_confirmed": 4,
-        "n_reassigned": 5,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 4,
-        "n_no_other_cluster_fits": 2,
-        "confirm_rate": 0.267,
-        "deep_latent_rate": 0.733,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "higgins:ideal_self",
-        "frame_distribution": {
-          "algorithmic_surfacing": 3,
-          "higgins:ideal_self": 4,
-          "lazarus_folkman:emotion_focused_coping": 1,
-          "variable_ratio_reinforcement": 1,
-          "tajfel:social_identity": 2,
-          "schwarz:mood_as_information": 1,
-          "kardefelt_winther:compensatory_use": 1,
-          "uses_and_gratifications:identity": 2
-        }
-      }
-    },
-    {
-      "label": "Taste for witty conversational comedy over pure slapstick",
-      "type": "personality_trait",
-      "description": "Her humor engagement is broad, but the relatable, conversation-based, and satire-adjacent tags imply she especially likes comedy that feels observational, socially sharp, and verbally clever. That fits the bio cue that she can turn a casual group-chat debate into a mini-thesis: humor is part entertainment, part intellectual sparring.",
-      "evidence_hashtags": [
-        "#relatable",
-        "#funnyconversations",
-        "#satire"
-      ],
-      "evidence_rows": 129,
-      "evidence_row_fraction": 0.0503,
-      "interaction_breakdown": {
-        "implicit_positive": 76,
-        "implicit_negative": 43,
-        "explicit_positive": 10
-      },
-      "privacy_ratio": 0.884,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Chatbot": 19,
-        "Instagram": 34,
-        "Threads": 30,
-        "Facebook": 26,
-        "AI_Studio": 20
-      },
-      "surface_connections": [
-        "Enjoys short-form comedic content and humor-driven social posts",
-        "Enjoys comedy content on social media",
-        "Enjoys comedy and satirical entertainment",
-        "Enjoys stand-up comedy entertainment"
-      ],
-      "inferred_motivation": "She likely uses smart, socially observant humor to process people, release tension, and affirm an identity built around quick judgment and verbal clarity.",
-      "already_captured": false,
-      "first_seen_ts": 1775198724,
-      "last_seen_ts": 1775936457,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 31,
-        "n_confirmed": 14,
-        "n_reassigned": 2,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 12,
-        "n_no_other_cluster_fits": 3,
-        "confirm_rate": 0.452,
-        "deep_latent_rate": 0.613,
-        "surface_share": 0.0,
-        "cluster_status": "contested",
-        "dominant_frame": "goffman:back_stage",
-        "frame_distribution": {
-          "schwarz:mood_as_information": 4,
-          "self_determination_theory:relatedness": 4,
-          "goffman:back_stage": 7,
-          "lazarus_folkman:emotion_focused_coping": 4,
-          "variable_ratio_reinforcement": 3,
-          "algorithmic_surfacing": 3,
-          "self_determination_theory:competence": 1,
-          "tajfel:social_identity": 1,
-          "uses_and_gratifications:identity": 1,
-          "berlyne:diversive_curiosity": 2,
-          "self_determination_theory:autonomy": 1
-        }
-      }
-    },
-    {
-      "label": "Currently navigating: low-contact with her mother after years of pressure",
+      "label": "Currently navigating: quietly bracing after a surprise layoff",
       "type": "sensitive_life_event",
       "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
       "evidence_hashtags": [
-        "#boundaries",
-        "#familydrama",
-        "#emotionalmaturity",
-        "#honesty",
-        "#selfrespect",
-        "#relationshipgoals"
+        "#jobsearch",
+        "#careerchange",
+        "#policywork",
+        "#severance",
+        "#linkedin",
+        "#motivation"
       ],
       "evidence_rows": 0,
       "evidence_row_fraction": 0.0,
@@ -873,11 +880,11 @@
       "privacy_ratio": 1.0,
       "temporal_spread_days": 2,
       "app_distribution": {
-        "Chatbot": 18,
-        "Facebook": 31,
-        "Threads": 32,
-        "Instagram": 43,
-        "AI_Studio": 20
+        "Threads": 13,
+        "Facebook": 10,
+        "Chatbot": 8,
+        "Instagram": 11,
+        "AI_Studio": 8
       },
       "surface_connections": [],
       "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
@@ -887,24 +894,24 @@
       "is_synthetic": true,
       "events": [
         {
-          "topic": "parent_conflict",
-          "label_fragment": "low-contact with her mother after years of pressure",
-          "specific_situation": "After a blowup over dating, career expectations, and how 'independent' she should be, Meilin has started keeping her calls with her mother short and scheduled instead of picking up spontaneously. The tension has been building for years, but the latest argument left her feeling guilty, angry, and weirdly relieved to have more distance.",
+          "topic": "job_loss",
+          "label_fragment": "quietly bracing after a surprise layoff",
+          "specific_situation": "After seven years in a senior policy role tied to a state commission, he was told his contract would not be renewed because of a budget squeeze and a political reshuffle. He is still doing his old routine on the surface, but privately he is sorting out severance, references, and whether to stay in the state policy lane or pivot to a consulting role.",
           "first_seen_ts": 1775761209,
           "last_seen_ts": 1775934009,
           "active_window_end": 1777143609,
           "evidence_hashtags": [
-            "#boundaries",
-            "#familydrama",
-            "#emotionalmaturity",
-            "#honesty",
-            "#selfrespect",
-            "#relationshipgoals"
+            "#jobsearch",
+            "#careerchange",
+            "#policywork",
+            "#severance",
+            "#linkedin",
+            "#motivation"
           ],
           "exemplar_persona_items": [
-            "Boundary-setting scripts for guilt-trippy parents",
-            "Threads on low-contact without total estrangement",
-            "Private notes after awkward family phone calls"
+            "Scanning policy counsel openings in nearby states",
+            "Watching resume advice for public-sector lawyers",
+            "Searching severance and unemployment basics"
           ]
         }
       ],
@@ -913,48 +920,48 @@
       }
     }
   ],
-  "hidden_persona_summary": "Beneath her public engagement, she presents as someone building a self-authored identity around candor, discernment, and emotional maturity: privately, she appears to use relationship media tagged #RelationshipGoals, #relationshipgoals, and #couplegoals to benchmark honest, reciprocal partnership, while growth-oriented content like #PersonalGrowth, #ConfidenceIsKey, and #selfexpression reinforces a version of confidence rooted in not shrinking herself socially or romantically. That hidden layer helps explain why her visible interests cluster around feminist dating discourse, masculinity debates, Christian and secular identity content, and men’s wedding bands—these are not random lifestyle clicks so much as practical inputs into a standards framework about what a “real man,” healthy commitment, and mutual respect should look like. Her hip-hop, Hot 97, Jay-Z/Cam’ron/Dame Dash, 1990s rap, boxing, NFL, Patriots, Marvel/Star Wars, and comedy consumption also map cleanly onto deeper motives: legacy rap markers such as #Camron, #DameDash, and #JayZ signal authenticity and cultural memory, while #Throwback, #Nostalgia, #relatable, #funnyconversations, and #satire suggest she uses familiar eras and verbally sharp humor to decompress and process people after mentally demanding routines. Most of the deeper identity work appears to be consumed privately—especially relationship ideals, nostalgia, and confidence-building—whereas sports, fight content, franchise fandoms, dance, humor, and some music culture are more compatible with public-facing engagement; there is no validated evidence here of specific medical or aesthetic-medicine exposure such as a tretinoin routine or GLP-1 regimen, so none should be inferred.",
+  "hidden_persona_summary": "Beneath his public combat-sports, sports-law, and hip-hop engagement, he reads as a disciplined but privately softer person: someone who wants to be the steady community-protector in high-risk event spaces (#CommunityFirst, #Empowerment) while also quietly using romantic and playful couple content (#RelationshipGoals, #couplegoals, #stayfreaky) as a normal low-visibility outlet for warmth and flirtation. His observable interest in Crawford/Canelo boxing, MMA/UFC, ROH, stadium/event operations, healthcare project management, and acting careers connects to a deeper pivot narrative: motivational tags like #PersonalGrowth, #SelfImprovement, #adulting, and #Innovation suggest he is privately reassuring himself that moving beyond a narrow regulatory-counsel lane can be intentional rather than reckless, especially amid job-search/career-change signals such as #jobsearch and #careerchange. Much of the hidden layer is consumed privately rather than performed publicly, including comfort-food/home-cooking nesting (#comfortfood, #homemade, #cookingwithlove), body-discipline monitoring (#fitnessmotivation, #fitnessjourney, #wellness, #selfcare), and old-school NYC hip-hop oral history (#HipHopHistory, #HipHopLegends, #Camron, #DameDash, #DrinkChamps), which explains why his visible rap taste skews toward legacy East Coast credibility and cultural memory rather than just current music trends. The supplied validated layer does not support naming a specific medical or aesthetic-medicine exposure—there is no confirmed steady nightly tretinoin routine or active GLP-1 weight-loss regimen—so the wellness signal should be treated specifically as fitness/body-confidence and self-discipline content, not as evidence of a clinical regimen.",
   "mbti": {
-    "type": "INTJ",
+    "type": "ISTJ",
     "dimensions": {
       "E_I": {
-        "E": 0.3,
-        "I": 0.7,
-        "reason": "Her preferences are heavily private and self-directed, with relationship benchmarking, nostalgia, and confidence-building happening more as internal processing than outward social display, which points more to introversion despite medium extraversion."
+        "E": 0.34,
+        "I": 0.66,
+        "reason": "His profile is more privately consumed than publicly performed, with quiet lanes for romance, fitness, cooking, and career anxiety suggesting inward processing over outward social energizing."
       },
       "S_N": {
-        "S": 0.38,
-        "N": 0.62,
-        "reason": "While she enjoys concrete sports, fight culture, and legacy media, the hidden persona emphasizes pattern-reading, identity construction, standards frameworks, and abstract relationship ideals, which leans intuitive."
+        "S": 0.68,
+        "N": 0.32,
+        "reason": "The strongest signals are concrete and practical—combat sports, event operations, healthcare project management, home-cooking, and discipline/body-maintenance—while the growth talk seems more like applied career pragmatism than abstract theorizing."
       },
       "T_F": {
-        "T": 0.47,
-        "F": 0.53,
-        "reason": "Her engagement with feminism, reciprocal partnership, and emotionally mature relationship ideals suggests a slight feeling preference, though her candid, discerning style keeps the split close."
+        "T": 0.56,
+        "F": 0.44,
+        "reason": "He appears to evaluate life through utility, structure, and role-fit (legal lane vs operations), but the warmth of couple content and community-protector values keeps the Feeling side meaningfully present."
       },
       "J_P": {
-        "J": 0.68,
-        "P": 0.32,
-        "reason": "The profile strongly suggests structure and standards: she uses content to benchmark what she wants, values discernment and discipline, and seems oriented toward deliberate self-authorship rather than open-ended exploration."
+        "J": 0.63,
+        "P": 0.37,
+        "reason": "The overall pattern emphasizes discipline, self-monitoring, steady identity anchors, and intentional career pivoting, which leans more organized and closure-oriented than spontaneous."
       }
     }
   },
   "mobility_class": "domestic",
   "geo_trip_arcs": [
     {
-      "city": "New York",
-      "region": "NY",
+      "city": "Philadelphia",
+      "region": "PA",
       "country": "USA",
-      "start_ts": 1775450034,
-      "end_ts": 1775759867,
+      "start_ts": 1775420207,
+      "end_ts": 1775683026,
       "kind": "domestic"
     }
   ],
   "exploration_exploitation": {
-    "score": 0.925,
+    "score": 0.9154,
     "label": "explorer",
     "hashtag_entropy_normalized": 0.9036,
-    "category_entropy_normalized": 0.973,
+    "category_entropy_normalized": 0.941,
     "unique_hashtag_count": 8468,
     "total_hashtag_occurrences": 17384,
     "unique_hashtag_ratio": 0.4871,
@@ -1004,38 +1011,17 @@
   },
   "user_id": "115",
   "preferences": [
-    "19:54, 04/11/2026 : Enjoys hip-hop dance content and dance challenge videos.",
-    "19:26, 04/11/2026 : Enjoys comedy and satirical entertainment.",
-    "19:08, 04/11/2026 : Interested in NFL football and likely engages with pro football game-related content.",
-    "18:55, 04/11/2026 : Enjoys short-form comedic content and humor-driven social posts.",
-    "17:40, 04/11/2026 : Enjoys 1990s golden-era hip-hop.",
-    "17:25, 04/11/2026 : Avoids dog-focused pet content, especially broad dog-lifestyle posts",
-    "17:25, 04/11/2026 : Turns away from pet ownership/feeding content tied to dogs",
-    "17:05, 04/11/2026 : Enjoys Disney-owned franchise shows and movies, especially Marvel and Star Wars titles.",
-    "17:04, 04/11/2026 : Interested in boxing, especially current fight-related content and matchups.",
-    "16:59, 04/11/2026 : Interested in dating and romantic relationship content.",
-    "16:57, 04/11/2026 : Enjoys music-centered content and likely sees music as an important part of life.",
-    "16:37, 04/11/2026 : Enjoys comedy content on social media.",
-    "16:26, 04/11/2026 : Interested in women's sports and girl-power themed content.",
-    "16:24, 04/11/2026 : Enjoys stand-up comedy entertainment",
-    "16:11, 04/11/2026 : Enjoys classic hip-hop culture and legacy rap figures.",
-    "12:11, 04/11/2026 : Interested in Christian faith content and identity-centered expressions of Christianity.",
-    "09:11, 04/11/2026 : Interested in feminist perspectives on gender roles.",
-    "20:51, 04/10/2026 : Enjoys wildlife and nature-focused content.",
-    "20:22, 04/10/2026 : Interested in discussions about masculinity and what defines a 'real man' in relationships.",
-    "20:11, 04/10/2026 : Values honesty and transparent communication in romantic relationships.",
-    "18:19, 04/10/2026 : Enjoys donk-style show cars and oversized custom builds.",
-    "17:25, 04/10/2026 : Interested in men's wedding bands, especially distinctive or nontraditional styles.",
-    "16:23, 04/10/2026 : Prefers shopping with small businesses over larger mainstream retailers.",
-    "13:39, 04/10/2026 : Engages with hip-hop radio and media content, especially outlets like Hot 97.",
-    "13:39, 04/10/2026 : Follows star boxers Terence Crawford and Canelo Alvarez.",
-    "20:49, 04/09/2026 : Interested in Muay Thai and Thai boxing content.",
-    "08:40, 04/09/2026 : Interested in attending live football events and buying tickets for games.",
-    "04:07, 04/09/2026 : Avoids or is not interested in Baltimore Ravens-focused football content",
-    "09:00, 04/08/2026 : Interested in non-religious or secular worldviews.",
-    "06:11, 04/08/2026 : Follows New England Patriots-related content and team history.",
-    "12:41, 04/04/2026 : Shows affinity for Target as a go-to retailer for fashion finds.",
-    "07:35, 04/03/2026 : Interested in mystical or metaphysical spirituality, including beliefs about unseen forces and realms."
+    "19:06, 04/11/2026 : Enjoys combat sports content spanning both MMA/UFC and professional boxing.",
+    "16:33, 04/11/2026 : Enjoys Ring of Honor (ROH) professional wrestling content.",
+    "16:11, 04/11/2026 : Enjoys classic underground East Coast hip-hop, especially The Artifacts and members El Da Sensei and Tame One.",
+    "15:39, 04/11/2026 : Enjoys rap and hip-hop music content.",
+    "15:33, 04/10/2026 : Enjoys Nigerian comedy skits and short-form funny videos.",
+    "13:39, 04/10/2026 : Follows high-profile professional boxing matchups, especially fights involving Terence Crawford and Canelo Alvarez.",
+    "05:08, 04/09/2026 : Interested in acting careers and the day-to-day life of actors",
+    "04:07, 04/09/2026 : Avoids or is not engaged by NFL highlight content delivered via streaming-platform promotion",
+    "04:07, 04/09/2026 : Not especially interested in Baltimore Ravens / Lamar Jackson football content",
+    "08:49, 04/08/2026 : Interested in healthcare project manager job opportunities",
+    "18:19, 04/07/2026 : Interested in pursuing sports industry jobs, especially stadium management or event operations roles involving customer service."
   ],
   "motivation_audit": {
     "over_attribution_warning": false,
@@ -1044,449 +1030,100 @@
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Jing Wen",
+      "display_name": "Ikenna Vundla",
       "relationship_depth": "close",
       "shared_interests": [
-        "Muay Thai",
-        "Marvel movies",
-        "cooking"
+        "boxing",
+        "Nigerian comedy skits",
+        "home cooking"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Vivian Li",
+      "display_name": "Ibrahim Vassell",
       "relationship_depth": "close",
       "shared_interests": [
-        "Patriots",
-        "Hot 97",
-        "team history"
+        "MMA",
+        "event safety",
+        "ROH wrestling"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "Rachel Zhang",
+      "display_name": "Ijeoma Valdez",
       "relationship_depth": "close",
       "shared_interests": [
-        "former classmates",
-        "Marvel movies",
-        "dating discourse"
+        "family gatherings",
+        "food-and-home circle",
+        "East Coast underground rap"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Kevin Chen",
+      "display_name": "Ibrahim Adeyemi",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "fitness",
-        "Muay Thai"
+        "combat-sports policy",
+        "boxing licensing"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Emily Wu",
+      "display_name": "Imani Varela",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "sports fans",
-        "Patriots",
-        "Threads"
+        "hip-hop heads",
+        "The Artifacts"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Jason Liu",
+      "display_name": "Ifeanyi Vaughn",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "music and culture",
-        "Hot 97"
+        "local sports contacts",
+        "MMA cards",
+        "promoter chatter"
       ]
     },
     {
       "friend_id": "friend_7",
-      "display_name": "Rachel Lin",
+      "display_name": "Isatou Vidal",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "fandom mutuals",
-        "Marvel movies"
+        "policy-adjacent mutuals",
+        "event safety plans"
       ]
     },
     {
       "friend_id": "friend_8",
-      "display_name": "Michael Huang",
+      "display_name": "Ignacio Veras",
       "relationship_depth": "distant",
       "shared_interests": [
-        "local community ties",
-        "sports fans"
+        "boxing press conferences",
+        "combat-sports public"
       ]
     },
     {
       "friend_id": "friend_9",
-      "display_name": "Sophie Gao",
+      "display_name": "Iyabo Volkov",
       "relationship_depth": "distant",
       "shared_interests": [
-        "public mutuals",
-        "music and culture"
+        "older community ties",
+        "family"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Daniel Xu",
+      "display_name": "Ismaila Viteri",
       "relationship_depth": "distant",
       "shared_interests": [
-        "older acquaintances",
-        "Patriots"
+        "argument-ready strangers",
+        "hip-hop threads"
       ]
     }
   ],
   "proactive_trigger_candidates": {
-    "unfulfilled_stated_need": [
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775759277,
-        "t_test_iso": "2026-04-09T18:27:57Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "51793",
-          "user_question": "Need a road trip podcast. Six hours, brain a little fried. Something with real chemistry, maybe people who actually know records and culture.",
-          "asked_at_ts": 1775672877,
-          "asked_at_iso": "18:27, 04/08/2026",
-          "question_hashtags": [
-            "#ripdav",
-            "#mcfreakerytribute",
-            "#burnbright",
-            "#memories"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help the user follow through on a stated media need and strengthen trust that the assistant remembers and usefully revisits unresolved asks",
-          "proximal_outcome": "user opts into a follow-up recommendation for a road trip podcast",
-          "tailoring_variable": "Meilin Qiu asked on 18:27, 04/08/2026: \"Need a road trip podcast. Six hours, brain a little fried. Something with real chemistry, maybe people who actually know records and culture.\" and there was no topical follow-up or closure within 3 days",
-          "decision_point": "the next in-chat session after the unresolved question is detected, surfaced once inside the chatbot at or after 2026-04-09T18:27:57Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the user's unresolved concrete request for a road-trip podcast, the decision point is the next chat session, the rule is unmet need after 3 days without closure, and the intervention option is a one-sentence opt-in follow-up. Horvitz favors acting because the expected value is high for a specific unresolved ask and the intrusion cost is low if it appears only once in-chat as an easy opt-in question. The evidence can be explicitly cited in the message, keeping it subtle and user-grounded."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775741367,
-        "t_test_iso": "2026-04-09T13:29:27Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "106094",
-          "user_question": "why do i keep getting weirdly sad after dates that were technically fine? like we had drinks, talked, laughed, then i got home and just put on battle clips and felt off.",
-          "asked_at_ts": 1775654967,
-          "asked_at_iso": "13:29, 04/08/2026",
-          "question_hashtags": [
-            "#dance",
-            "#kitchendance"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on an unresolved emotional self-understanding question she explicitly asked in chat",
-          "proximal_outcome": "Meilin opts into a brief follow-up reflection or explanation about why she felt sad after a date that seemed fine",
-          "tailoring_variable": "On 2026-04-08 at 13:29, Meilin asked: \"why do i keep getting weirdly sad after dates that were technically fine? like we had drinks, talked, laughed, then i got home and just put on battle clips and felt off.\" and there was no topical follow-up or closure within 3 days",
-          "decision_point": "the next in-chat session after the unresolved question aged past 3 days without closure, evaluated once at session start",
-          "decision_rule_pass": true,
-          "eligibility_score": 2,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the unresolved user-specific question, the decision point is the next chatbot session, and the intervention option is a single opt-in follow-up inside chat. Under Horvitz, expected value is positive because Meilin already asked for help on a personal issue and a one-sentence, evidence-citing check-in has low interruption cost. This is not a 3 because the question is emotionally concrete but not tied to a specific external decision or plan."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775737255,
-        "t_test_iso": "2026-04-09T12:20:55Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "530570",
-          "user_question": "Need birthday ideas for my friend. Mid-budget, Boston-ish, and not boring. She's the type who'd rank Loki variants over actual coworkers, so generic dinner feels lazy.",
-          "asked_at_ts": 1775650855,
-          "asked_at_iso": "12:20, 04/08/2026",
-          "question_hashtags": [
-            "#newmoviealert",
-            "#amctheatres",
-            "#theatrerelease",
-            "#moviestowatch"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on a stated planning need and make a satisfying birthday plan for her friend",
-          "proximal_outcome": "Meilin opts into a follow-up and re-engages with birthday-idea suggestions",
-          "tailoring_variable": "On 04/08/2026 at 12:20, Meilin asked: \"Need birthday ideas for my friend. Mid-budget, Boston-ish, and not boring. She's the type who'd rank Loki variants over actual coworkers, so generic dinner feels lazy,\" and there was no closure or topical follow-up within 3 days.",
-          "decision_point": "At the flagged moment on 2026-04-09T12:20:55Z, during an active chatbot session, as the one allowed proactive surface for that session.",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is fully specified here: the distal goal is follow-through on a concrete user request, the proximal goal is opt-in re-engagement, the tailoring variable is her unresolved Boston birthday question with Marvel/Loki flavor, the decision point is the next in-chat session, and the intervention option is a one-sentence opt-in follow-up. Under Horvitz, expected value is high because Meilin already asked for help on a specific plan and likely benefits from resumed assistance more than she would from having to restate it herself, while intrusion cost is low if surfaced once, only in-chat, as an easy opt-in question. The evidence is concrete rather than generic, so this is a clearly justified proactive moment."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775724556,
-        "t_test_iso": "2026-04-09T08:49:16Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "370362",
-          "user_question": "why do i get weirdly sad after watching people move together that cleanly. not even romance stuff, just that synced energy. then i close the app and my apartment feels extra quiet.",
-          "asked_at_ts": 1775638156,
-          "asked_at_iso": "08:49, 04/08/2026",
-          "question_hashtags": [
-            "#jamaicanculture",
-            "#heritage",
-            "#jamaicavibes"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin feel understood and supported in following through on an unresolved emotionally meaningful question she explicitly asked",
-          "proximal_outcome": "Meilin opts into a brief follow-up exploration of the feeling she described",
-          "tailoring_variable": "Unresolved user question from chatbot event 370362: \"why do i get weirdly sad after watching people move together that cleanly. not even romance stuff, just that synced energy. then i close the app and my apartment feels extra quiet.\" asked at 08:49, 04/08/2026, with no closure or topical follow-up within 3 days",
-          "decision_point": "inside the chatbot at the next active session after the 3-day unresolved window is met, considering action once at session start",
-          "decision_rule_pass": true,
-          "eligibility_score": 2,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are grounded, the tailoring variable is the user's own unresolved question, the decision point is the next chatbot session after non-resolution, and the intervention option is a single opt-in follow-up. Under Horvitz, expected value is positive because Meilin already expressed a specific unresolved emotional need, while intrusion cost is low if surfaced once, only in-chat, as a brief opt-in that cites her exact words. This is not concrete enough for a 3 because it is reflective rather than a decision/object task, but it is clearly stronger than a weak generic prompt."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775724452,
-        "t_test_iso": "2026-04-09T08:47:32Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "525904",
-          "user_question": "write me a tiny scene where two strangers get stuck on a late commuter train and the funny part is mostly in the dialogue, not people slipping on bananas.",
-          "asked_at_ts": 1775638052,
-          "asked_at_iso": "08:47, 04/08/2026",
-          "question_hashtags": [
-            "#tiktokcomedy",
-            "#laughoutloud"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on her stated creative requests so the chatbot feels reliably useful for lightweight writing support",
-          "proximal_outcome": "Meilin opts into a follow-up and engages with a drafted comedy scene",
-          "tailoring_variable": "At 08:47 on 04/08/2026, Meilin asked: \"write me a tiny scene where two strangers get stuck on a late commuter train and the funny part is mostly in the dialogue, not people slipping on bananas,\" and there was no closure or topical follow-up within 3 days.",
-          "decision_point": "the next in-chatbot session after the 3-day unresolved window is detected for chatbot_event_id 525904",
-          "decision_rule_pass": true,
-          "eligibility_score": 2,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal outcome, proximal outcome, tailoring variable, decision point, decision rule, and intervention option are all grounded in Meilin's unresolved writing request. Under Horvitz, the expected value is positive: a one-sentence in-chat opt-in that cites her exact train-scene question has low interruption cost and offers genuine help she may not spontaneously re-ask for. This is a legitimate unfulfilled_stated_need, but it is a creative prompt rather than a concrete external decision, so 2 is more appropriate than 3."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775714253,
-        "t_test_iso": "2026-04-09T05:57:33Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "938301",
-          "user_question": "Need a birthday gift idea list for my cousin. He's 31, impossible to shop for, and I want something with actual personality, not mall filler. Give me like 12.",
-          "asked_at_ts": 1775627853,
-          "asked_at_iso": "05:57, 04/08/2026",
-          "question_hashtags": [
-            "#payrollgiovanni",
-            "#detroitrap",
-            "#newmusic"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on her stated shopping question and get to a satisfying birthday gift decision",
-          "proximal_outcome": "Meilin opts into a follow-up and engages with a gift-idea list tailored to the cousin brief she already gave",
-          "tailoring_variable": "At 05:57 on 04/08/2026, Meilin asked: \"Need a birthday gift idea list for my cousin. He's 31, impossible to shop for, and I want something with actual personality, not mall filler. Give me like 12.\" and there was no closure or topical follow-up within 3 days.",
-          "decision_point": "inside the chatbot at the next active session after the unresolved question is still outstanding within a few days of 2026-04-09T05:57:33Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is complete here: the distal and proximal outcomes are clear, the tailoring variable is the unresolved concrete gift-request, the decision point is the next in-chat session, and the intervention option is a one-sentence opt-in follow-up. Horvitz favors acting because the expected value of rescuing a specific stalled shopping task is high while intrusion is low if surfaced once, only in-chat, and framed as an easy opt-in citing her exact question. A compliant action could be: \"You asked for 12 birthday gift ideas for your 31-year-old cousin with actual personality, not mall filler—want me to draft that list now?\""
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775710132,
-        "t_test_iso": "2026-04-09T04:48:52Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "35975",
-          "user_question": "What happens if cities treated bird migration like rail schedules? Brain's mushy. I mean timed dark-sky windows, quieter corridors, maybe seasonal speed limits near wetlands.",
-          "asked_at_ts": 1775623732,
-          "asked_at_iso": "04:48, 04/08/2026",
-          "question_hashtags": [
-            "#greatwhiteshark",
-            "#dolphin",
-            "#marinelife",
-            "#wildlifeencounters"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on her own unresolved questions and feel supported in developing ideas she explicitly asked about",
-          "proximal_outcome": "Meilin opts into a follow-up and re-engages with her earlier question about bird-migration city policies",
-          "tailoring_variable": "Meilin asked an unresolved, specific question at 04:48 on 04/08/2026: \"What happens if cities treated bird migration like rail schedules? Brain's mushy. I mean timed dark-sky windows, quieter corridors, maybe seasonal speed limits near wetlands.\" and there was no topical follow-up within 3 days",
-          "decision_point": "the next in-chatbot session after the 3-day no-follow-up window, evaluated once at session start",
-          "decision_rule_pass": true,
-          "eligibility_score": 2,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention option are all grounded by Meilin's unresolved question and a single in-chat opt-in follow-up. Under Horvitz, the expected value is positive: she asked a substantive, concrete idea question and likely benefits from lightweight help, while intrusion cost stays low because it can be one chatbot-only sentence citing her exact question and offering easy declination. This is not strong enough for a 3 because it is exploratory rather than tied to an immediate real-world decision or commitment."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775708613,
-        "t_test_iso": "2026-04-09T04:23:33Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "96037",
-          "user_question": "Need a short Hinge opener for a guy whose profile says he cries at Andor and ranks Marvel phases like it's a job.",
-          "asked_at_ts": 1775622213,
-          "asked_at_iso": "04:23, 04/08/2026",
-          "question_hashtags": [
-            "#milesmorales"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on her stated dating-conversation need inside the chatbot",
-          "proximal_outcome": "Meilin opts in to receive a short Hinge opener draft tied to the profile details she mentioned",
-          "tailoring_variable": "An unfulfilled stated need: Meilin asked, \"Need a short Hinge opener for a guy whose profile says he cries at Andor and ranks Marvel phases like it's a job,\" at 04:23 on 04/08/2026, and it was not followed by closure or topical engagement within 3 days.",
-          "decision_point": "the next in-session chatbot turn after the 3-day no-closure window, evaluated at 2026-04-09T04:23:33Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the specific unanswered Hinge-opener question, the decision point is the next chatbot session after the unresolved window, and the intervention option is a single opt-in follow-up offering help. Horvitz favors acting because the expected value is high for a concrete, user-stated decision and the intrusion cost is low when surfaced once, in-chat only, as one evidence-citing opt-in sentence. A compliant example would be: \"You asked for a short Hinge opener for the guy who cries at Andor and ranks Marvel phases like it’s a job—want me to draft 3 quick options?\""
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775681445,
-        "t_test_iso": "2026-04-08T20:50:45Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "354551",
-          "user_question": "Need weekend date ideas. Boston-ish, medium budget, not corny. I'd rather it feel more solid than flashy, and not just dinner again.",
-          "asked_at_ts": 1775595045,
-          "asked_at_iso": "20:50, 04/07/2026",
-          "question_hashtags": [
-            "#tornado",
-            "#severeweather",
-            "#weatherwatch",
-            "#stormchasers"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Meilin follow through on a concrete planning question she explicitly asked so she can make a satisfying weekend date plan",
-          "proximal_outcome": "Meilin opts into a follow-up for date ideas and re-engages with the unresolved planning request",
-          "tailoring_variable": "Meilin asked in chat on 20:50, 04/07/2026: \"Need weekend date ideas. Boston-ish, medium budget, not corny. I'd rather it feel more solid than flashy, and not just dinner again,\" and there was no topical follow-up or closure within 3 days",
-          "decision_point": "at the next in-chat session after the unresolved question is still open within a few days of 2026-04-08T20:50:45Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is fully grounded here: the distal and proximal outcomes are clear, the tailoring variable is the unresolved concrete question, the decision point is the next chatbot session, and the intervention option is a single opt-in follow-up inside chat. Horvitz favors acting because the likely value of rescuing a specific, time-sensitive weekend planning need is higher than the low interruption cost of one brief in-channel question. The evidence is user-specific and concrete, so this is stronger than a generic reminder."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775674266,
-        "t_test_iso": "2026-04-08T18:51:06Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "568381",
-          "user_question": "why do some comics feel sharp and replayable, and others die once you know the punchline? like, what's the actual difference in structure.",
-          "asked_at_ts": 1775587866,
-          "asked_at_iso": "18:51, 04/07/2026",
-          "question_hashtags": [
-            "#comedy",
-            "#interview",
-            "#donnellrawlings"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help the user follow through on their stated questions and get useful explanations inside the chatbot when prior curiosity went unresolved",
-          "proximal_outcome": "user opts into a brief follow-up explanation about comedy structure",
-          "tailoring_variable": "On 18:51, 04/07/2026, Meilin asked: \"why do some comics feel sharp and replayable, and others die once you know the punchline? like, what's the actual difference in structure.\" tagged with #comedy #interview #donnellrawlings, and it was not followed by topical engagement or closure within 3 days.",
-          "decision_point": "the next active chatbot session after the unresolved question has remained unanswered for 3 days, evaluated once at session start",
-          "decision_rule_pass": true,
-          "eligibility_score": 2,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied: the distal and proximal outcomes are clear, the tailoring variable is the user's own unresolved comedy-structure question, the decision point is the next chatbot session, and the intervention option is a one-sentence opt-in follow-up inside chat. Under Horvitz, the value is moderate because the user expressed specific curiosity and got no closure, while the intrusion cost is low if surfaced once in-session as an optional question. This is not a concrete external decision, so it is defensible rather than maximal."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775658786,
-        "t_test_iso": "2026-04-08T14:33:06Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "74974",
-          "user_question": "Need a step by step for writing stand-up jokes. Open mic in two weeks. I want stuff that's more sharp than try-hard, not fake-deep TED talk comedy.",
-          "asked_at_ts": 1775572386,
-          "asked_at_iso": "14:33, 04/07/2026",
-          "question_hashtags": [
-            "#comedyreplay",
-            "#comedianlife"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help the user follow through on their stated creative goal and prepare effectively for their open mic",
-          "proximal_outcome": "the user opts into a follow-up and engages with a step-by-step joke-writing plan",
-          "tailoring_variable": "On 2026-04-07 at 14:33, Meilin Qiu asked: \"Need a step by step for writing stand-up jokes. Open mic in two weeks. I want stuff that's more sharp than try-hard, not fake-deep TED talk comedy,\" and this remained unresolved with no topical follow-up within 3 days.",
-          "decision_point": "At the next in-chat session after the unresolved question is detected, surfacing at most once in that session.",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded by a specific unresolved question with a concrete deadline and style preference. Horvitz favors acting: expected value is high because Meilin has an open mic in two weeks and asked for a step-by-step, while intrusion cost is low if the agent uses one in-chat, one-sentence opt-in that cites her exact comedy request."
-        }
-      },
-      {
-        "trigger_type": "unfulfilled_stated_need",
-        "tier": "T1.A",
-        "t_test": 1775646278,
-        "t_test_iso": "2026-04-08T11:04:38Z",
-        "lag_days": 1,
-        "signal_evidence": {
-          "chatbot_event_id": "720402",
-          "user_question": "caption for a reel dump. just clips from class and me half-learning those hip-hop challenge combos, plus one plant shot. brain mushy today.",
-          "asked_at_ts": 1775559878,
-          "asked_at_iso": "11:04, 04/07/2026",
-          "question_hashtags": [
-            "#dance",
-            "#dancingqueen",
-            "#ladancer"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help the user follow through on their stated creative requests inside the chatbot when they previously asked for assistance and did not receive closure",
-          "proximal_outcome": "the user opts into a follow-up and uses or refines a caption suggestion for the reel",
-          "tailoring_variable": "On 2026-04-07 at 11:04, Meilin asked: \"caption for a reel dump. just clips from class and me half-learning those hip-hop challenge combos, plus one plant shot. brain mushy today.\" with hashtags #dance #dancingqueen #ladancer, and this unfulfilled stated need was not followed up within 3 days.",
-          "decision_point": "the current chatbot session after the 3-day no-closure window has elapsed, surfaced once in-chat only",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the user's unresolved caption request, the decision point is the next in-chat session after 3 days, and the intervention option is a one-sentence opt-in follow-up offering caption help. Horvitz favors acting because the expected value is high for a concrete unfinished ask with low interruption cost when kept to a single in-chat, evidence-citing opt-in. This can respect subtlety constraints by phrasing it as one ambient question tied to her own reel-caption request and not using any notification or directive."
-        }
-      }
-    ],
     "close_friend_update": [
       {
         "trigger_type": "close_friend_update",
@@ -1497,32 +1134,32 @@
           "app": "facebook",
           "thread_id": "fa_thr_115_006",
           "friend_id": "friend_1",
-          "friend_display_name": "Jing Wen",
+          "friend_display_name": "Ikenna Vundla",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "Muay Thai",
-            "Marvel movies",
-            "cooking"
+            "boxing",
+            "Nigerian comedy skits",
+            "home cooking"
           ],
-          "incoming_message_excerpt": "This made me think of you immediately. Very your lane, and honestly pretty on point.",
+          "incoming_message_excerpt": "Idris, this one got your name on it... aunties, uncles, whole block moving with no apology.",
           "incoming_at_ts": 1775640112,
           "incoming_at_iso": "09:21, 04/08/2026",
           "thread_hashtags": [
-            "#Masculinity",
-            "#ModernMan",
-            "#GenderRoles"
+            "#SouljaBoy",
+            "#CrankThat",
+            "#Throwback"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Meilin maintain responsiveness and continuity in close friendships inside the chatbot when a meaningful message may merit a reply",
-          "proximal_outcome": "Meilin opts in to drafting or reviewing a reply to Jing Wen's message",
-          "tailoring_variable": "A close friend, Jing Wen, sent an inbound Facebook message at 09:21 on 04/08/2026 saying \"This made me think of you immediately. Very your lane, and honestly pretty on point.\" with thread hashtags #Masculinity #ModernMan #GenderRoles, and it has gone unanswered for 6+ hours.",
-          "decision_point": "At the first in-chat moment after the message has remained unanswered for at least 6 hours on 2026-04-08.",
+          "distal_outcome": "help Idris maintain close social ties and timely reciprocity with close friends around shared interests",
+          "proximal_outcome": "Idris notices Ikenna Vundla's unanswered message and can opt in to draft or send a quick reply",
+          "tailoring_variable": "A close friend, Ikenna Vundla, sent Idris a substantive Facebook message about a throwback/block-party-style item ('aunties, uncles, whole block moving with no apology') tied to shared interests, and it remains unanswered after the close-friend-update window",
+          "decision_point": "2026-04-08T10:21:52Z, when the chatbot session can surface at most one ambient opt-in prompt about the unanswered close-friend message",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded in a specific unanswered close-friend message from Jing Wen. Under Horvitz, the likely value of a single in-chat opt-in nudge is moderate and exceeds the low intrusion cost because the message is personalized and substantive rather than a throwaway ping. This can be surfaced as one sentence plus an optional question citing Jing Wen and the message content, with no out-of-band notification."
+          "reasoning": "JITAI components are grounded: the distal outcome is sustaining close ties, the proximal outcome is an optional reply, the tailoring variable is Ikenna Vundla's concrete unanswered message, and the intervention option can be a single in-chat opt-in question. Under Horvitz, the value of helping Idris avoid missing a substantive close-friend message exceeds the low intrusion cost because it can be surfaced only inside the chatbot with easy declination and no notification."
         }
       },
       {
@@ -1534,177 +1171,184 @@
           "app": "facebook",
           "thread_id": "fa_thr_115_005",
           "friend_id": "friend_1",
-          "friend_display_name": "Jing Wen",
+          "friend_display_name": "Ikenna Vundla",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "Muay Thai",
-            "Marvel movies",
-            "cooking"
+            "boxing",
+            "Nigerian comedy skits",
+            "home cooking"
           ],
-          "incoming_message_excerpt": "Wait, this is actually really clean. The left hand work is paying off.",
+          "incoming_message_excerpt": "Saw your comment on this... Canelo pressure vs Crawford timing is proper headache work.",
           "incoming_at_ts": 1775557684,
           "incoming_at_iso": "10:28, 04/07/2026",
           "thread_hashtags": [
-            "#Drumming",
-            "#Drummer"
+            "#CaneloCrawford",
+            "#Boxing",
+            "#FightNight"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "Help Meilin maintain responsiveness and continuity in close friendships inside ongoing chat conversations.",
-          "proximal_outcome": "Meilin notices the unanswered message from Jing Wen and optionally chooses to reopen or reply in the chatbot.",
-          "tailoring_variable": "A close friend, Jing Wen, sent an inbound Facebook message at 10:28, 04/07/2026 saying \"Wait, this is actually really clean. The left hand work is paying off.\" in a thread tagged #Drumming/#Drummer, and it has gone unanswered for 6+ hours.",
-          "decision_point": "At the current chatbot session after the system detects the 6+ hour unanswered close-friend update.",
+          "distal_outcome": "help Idris maintain close social ties around interests he consistently engages with, especially boxing and combat-sports conversation",
+          "proximal_outcome": "Idris notices the unanswered close-friend message and optionally chooses to reply or view it inside the chatbot",
+          "tailoring_variable": "A close friend, Ikenna Vundla, sent a substantive boxing message referencing Idris's comment and '#CaneloCrawford' — 'Canelo pressure vs Crawford timing is proper headache work' — matching Idris's strong boxing interests",
+          "decision_point": "2026-04-07T11:28:04Z, when considering whether to surface a single in-chat prompt about the unresolved close-friend message",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is grounded here: the distal/proximal outcomes are clear, the tailoring variable is the unanswered close-friend message from Jing Wen, the decision point is this session after 6+ hours, and the intervention option is a single in-chat opt-in nudge citing Jing Wen's message. Under Horvitz, expected value is positive because resurfacing a substantive social message from a close friend is useful and low-cost if done once, in-chat only, with easy declination. This is a defensible proactive moment but not a maximal one because the message is conversational praise rather than an explicit request or invitation."
+          "reasoning": "JITAI components are grounded: the distal outcome is sustaining close relationships, the proximal outcome is optional engagement, the tailoring variable is Ikenna Vundla's substantive boxing message, the decision point is now, the rule favors one in-chat opt-in, and the intervention option is a friend_alert. Horvitz cost-benefit favors acting because the value of a timely close-friend boxing nudge is high while the intrusion cost is low if limited to one ambient chatbot sentence with an opt-in question. Sensitive-event restraint is inactive, and the action can cite Ikenna by name without notifications, badges, or directives."
         }
       },
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775532437,
-        "t_test_iso": "2026-04-07T03:27:17Z",
+        "t_test": 1775535801,
+        "t_test_iso": "2026-04-07T04:23:21Z",
         "signal_evidence": {
           "app": "threads",
           "thread_id": "th_thr_115_006",
           "friend_id": "friend_2",
-          "friend_display_name": "Vivian Li",
+          "friend_display_name": "Ibrahim Vassell",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "Patriots",
-            "Hot 97",
-            "team history"
+            "MMA",
+            "event safety",
+            "ROH wrestling"
           ],
-          "incoming_message_excerpt": "This was made for you honestly. He really is doing too much, but somehow it's still solid.",
-          "incoming_at_ts": 1775528837,
-          "incoming_at_iso": "02:27, 04/07/2026",
+          "incoming_message_excerpt": "This is your whole boxing sermon in one clip... patient, clean, then trouble 🥊",
+          "incoming_at_ts": 1775532201,
+          "incoming_at_iso": "03:23, 04/07/2026",
           "thread_hashtags": [
-            "#HipHop",
-            "#DJAkademiks",
-            "#Camron"
+            "#fightnight",
+            "#boxinglife",
+            "#martialarts",
+            "#fighter"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Meilin maintain timely responsiveness and connection with close friends around personally relevant shared interests",
-          "proximal_outcome": "Meilin notices the unanswered message from Vivian Li and opts into opening or replying in the chat",
-          "tailoring_variable": "A close friend, Vivian Li, sent an unanswered Threads message at 02:27 on 04/07/2026 saying \"This was made for you honestly...\" in a thread tagged #HipHop #DJAkademiks #Camron, which aligns with Meilin's documented interest in 1990s golden-era hip-hop.",
-          "decision_point": "during the next chatbot session after the message has remained unanswered for 6+ hours",
+          "distal_outcome": "help Idris maintain close relationships around shared interests without missing socially meaningful messages",
+          "proximal_outcome": "Idris opts in to view or respond to Ibrahim Vassell’s boxing-related message inside the chatbot",
+          "tailoring_variable": "A close friend, Ibrahim Vassell, sent an unanswered Threads message tied to Idris’s boxing/MMA interests: “This is your whole boxing sermon in one clip... patient, clean, then trouble 🥊.”",
+          "decision_point": "2026-04-07T04:23:21Z, when the close-friend update candidate was surfaced for possible in-chat intervention",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention option are all grounded in a specific unanswered close-friend message from Vivian Li. Under Horvitz, the likely value is moderate because the message is personalized and interest-aligned, while the intrusion cost is low if surfaced once, in-chat only, as a brief opt-in question citing Vivian by name."
+          "reasoning": "JITAI components are grounded: the distal outcome is relationship maintenance, the proximal outcome is an opt-in response, and the tailoring variable is Ibrahim Vassell’s concrete boxing message. Horvitz cost-benefit favors a low-cost in-chat opt-in because the message is from a close friend and matches Idris’s fight-sports interests, though the absence of an explicit request keeps it at 2 rather than 3."
         }
       },
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775521336,
-        "t_test_iso": "2026-04-07T00:22:16Z",
+        "t_test": 1775524700,
+        "t_test_iso": "2026-04-07T01:18:20Z",
         "signal_evidence": {
           "app": "threads",
           "thread_id": "th_thr_115_005",
           "friend_id": "friend_3",
-          "friend_display_name": "Rachel Zhang",
+          "friend_display_name": "Ijeoma Valdez",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "former classmates",
-            "Marvel movies",
-            "dating discourse"
+            "family gatherings",
+            "food-and-home circle",
+            "East Coast underground rap"
           ],
-          "incoming_message_excerpt": "This is extremely you. Knew the tiny menace angle would get you.",
-          "incoming_at_ts": 1775517736,
-          "incoming_at_iso": "23:22, 04/06/2026",
+          "incoming_message_excerpt": "This is very you… catching the timing before everyone starts yelling about the camera work.",
+          "incoming_at_ts": 1775521100,
+          "incoming_at_iso": "00:18, 04/07/2026",
           "thread_hashtags": [
-            "#naturelovers"
+            "#wrestlinglife",
+            "#wweuniverse"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Meilin maintain responsiveness and continuity in close friendships inside ongoing chats",
-          "proximal_outcome": "Meilin notices Rachel Zhang's unanswered message and opts into drafting or reviewing a reply",
-          "tailoring_variable": "A close friend, Rachel Zhang, sent an inbound Threads message at 23:22 on 04/06/2026 saying \"This is extremely you. Knew the tiny menace angle would get you,\" and it has gone unanswered for over 6 hours.",
-          "decision_point": "At the first in-chat opportunity after the message has remained unanswered for 6+ hours, evaluated at 2026-04-07T00:22:16Z.",
+          "distal_outcome": "help Idris maintain close friendships and respond to socially relevant messages without creating out-of-band pressure",
+          "proximal_outcome": "Idris notices the in-chat mention and optionally chooses whether to respond to Ijeoma Valdez",
+          "tailoring_variable": "A close friend, Ijeoma Valdez, has an unanswered Threads message referencing Idris-specific content: \"This is very you… catching the timing before everyone starts yelling about the camera work,\" in a #wrestlinglife/#wweuniverse thread",
+          "decision_point": "2026-04-07T01:18:20Z, during the chatbot session when considering whether to surface one ambient friend-related prompt",
           "decision_rule_pass": true,
           "eligibility_score": 2,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal and proximal outcomes are clear, the tailoring variable is the unanswered message from Rachel Zhang, the decision point is the 6+ hour lapse, and the intervention option can be a single in-chat opt-in question referencing Rachel's exact message. Under Horvitz, value is positive because the assistant can surface a likely-overlooked close-friend message Meilin may not revisit on her own, while intrusion is low if limited to one chatbot-only sentence with easy declination. This is a legitimate close_friend_update but not a 3 because the message is socially substantive rather than a concrete request or invitation."
+          "reasoning": "JITAI components are grounded: the distal outcome is relationship maintenance, the proximal outcome is optional engagement, the tailoring variable is Ijeoma Valdez's close-friend message, the decision point is the current chatbot moment, the rule favors a low-friction prompt, and the intervention option can be a single opt-in question. Horvitz cost-benefit favors acting because the value of catching a close-friend message tied to Idris's wrestling interests exceeds the low cost of one in-chat-only, easily declined surface. The message is not a one-word or emoji-only ping, but it is not an explicit request, so this is defensible rather than clearly urgent."
         }
       },
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775450174,
-        "t_test_iso": "2026-04-06T04:36:14Z",
+        "t_test": 1775454648,
+        "t_test_iso": "2026-04-06T05:50:48Z",
         "signal_evidence": {
           "app": "instagram",
           "thread_id": "in_thr_115_006",
           "friend_id": "friend_2",
-          "friend_display_name": "Vivian Li",
+          "friend_display_name": "Ibrahim Vassell",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "Patriots",
-            "Hot 97",
-            "team history"
+            "MMA",
+            "event safety",
+            "ROH wrestling"
           ],
-          "incoming_message_excerpt": "this is very you. the timing is actually rude 😂",
-          "incoming_at_ts": 1775446574,
-          "incoming_at_iso": "03:36, 04/06/2026",
+          "incoming_message_excerpt": "You were parked on this one for a reason… pen talk / room energy / real debate.",
+          "incoming_at_ts": 1775451048,
+          "incoming_at_iso": "04:50, 04/06/2026",
           "thread_hashtags": [
-            "#DanceWithMe",
-            "#DanceChallenge",
-            "#DanceCommunity"
+            "#CardiB",
+            "#GloRilla",
+            "#MeganTheeStallion",
+            "#Latto",
+            "#FemaleRappers"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Meilin maintain responsive, low-friction communication with close friends inside ongoing social threads",
-          "proximal_outcome": "Meilin notices the unanswered message from Vivian Li and opts into drafting or sending a reply",
-          "tailoring_variable": "A close friend, Vivian Li, sent an inbound Instagram message at 03:36 on 04/06/2026 saying \"this is very you. the timing is actually rude 😂\" in a thread tagged #DanceWithMe/#DanceChallenge, and it has gone unanswered for 6+ hours.",
-          "decision_point": "At the first in-chatbot session after the message has remained unanswered for at least 6 hours, evaluated once for that session.",
+          "distal_outcome": "help Idris maintain close relationships and follow through on substantive messages from close friends",
+          "proximal_outcome": "Idris notices Ibrahim Vassell’s unanswered substantive message and opts into help deciding whether or how to reply",
+          "tailoring_variable": "A close friend, Ibrahim Vassell, sent an unanswered Instagram message saying, “You were parked on this one for a reason… pen talk / room energy / real debate,” in thread in_thr_115_006",
+          "decision_point": "2026-04-06T05:50:48Z, during the chatbot session when considering whether to surface one ambient friend-related prompt",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, rule, and intervention option are all grounded in a specific unanswered close-friend message from Vivian Li. Under Horvitz, the likely value is moderate because Meilin may appreciate a lightweight in-chat reminder tied to her own dance-related thread, while the intrusion cost stays low if surfaced only once in-session as a brief opt-in question. This is not a strong 3 because the message is playful rather than a clear request or invitation, but the gatherer's close-friend-update default makes it a defensible proactive moment."
+          "reasoning": "JITAI is grounded: the distal outcome is relationship follow-through, the proximal outcome is an opt-in reply check, the tailoring variable is Ibrahim Vassell’s substantive unanswered message, and the intervention can be a single chatbot-only opt-in question. Horvitz cost-benefit favors acting because a close friend’s content-rich prompt has likely social value, while the intrusion cost is low if surfaced once, in-chat, with explicit easy declination."
         }
       },
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775377322,
-        "t_test_iso": "2026-04-05T08:22:02Z",
+        "t_test": 1775381796,
+        "t_test_iso": "2026-04-05T09:36:36Z",
         "signal_evidence": {
           "app": "instagram",
           "thread_id": "in_thr_115_005",
           "friend_id": "friend_1",
-          "friend_display_name": "Jing Wen",
+          "friend_display_name": "Ikenna Vundla",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "Muay Thai",
-            "Marvel movies",
-            "cooking"
+            "boxing",
+            "Nigerian comedy skits",
+            "home cooking"
           ],
-          "incoming_message_excerpt": "This was very you. Knew you'd stop for the chess with gloves part.",
-          "incoming_at_ts": 1775373722,
-          "incoming_at_iso": "07:22, 04/05/2026",
+          "incoming_message_excerpt": "This one felt like you putting the room back in order... strategy, not panic.",
+          "incoming_at_ts": 1775378196,
+          "incoming_at_iso": "08:36, 04/05/2026",
           "thread_hashtags": [
-            "#boxing",
-            "#boxinganalysis",
-            "#fightnight"
+            "#linkedin",
+            "#motivation",
+            "#jobsearch",
+            "#careerchange",
+            "#policywork"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Meilin maintain responsiveness and continuity in close friendships inside ongoing chats",
-          "proximal_outcome": "Meilin notices the unanswered message from Jing Wen and optionally chooses to reply",
-          "tailoring_variable": "A close friend, Jing Wen, sent an inbound Instagram message at 07:22 on 04/05/2026 saying \"This was very you. Knew you'd stop for the chess with gloves part.\" in a thread tagged #boxing/#boxinganalysis/#fightnight, and it has gone unanswered for 6+ hours.",
-          "decision_point": "At the first in-chatbot session after the message has remained unanswered for at least 6 hours, specifically around 2026-04-05T08:22:02Z.",
+          "distal_outcome": "help Idris maintain close supportive relationships and follow through on meaningful friend communications",
+          "proximal_outcome": "Idris opts in to a light reply prompt for Ikenna Vundla’s substantive message",
+          "tailoring_variable": "Close friend Ikenna Vundla sent an unanswered Instagram message saying, “This one felt like you putting the room back in order... strategy, not panic,” in a thread marked with #jobsearch, #careerchange, and #policywork.",
+          "decision_point": "2026-04-05T09:36:36Z, after the close-friend update candidate was flagged for review",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI is satisfied because the distal/proximal outcomes, tailoring variable, decision point, and intervention option are all grounded by a specific unanswered close-friend message from Jing Wen. Under Horvitz, the likely value of a single in-chat opt-in nudge is moderate and exceeds the low interruption cost, since Meilin may not otherwise remember this nontrivial social bid but the message is not urgent enough for a 3."
+          "reasoning": "JITAI components are grounded: the distal relationship-support goal, proximal opt-in reply behavior, tailoring evidence from Ikenna’s concrete message, decision point, friend-alert rule, and chatbot-only opt-in option are all specific. Horvitz cost-benefit favors acting because a close friend sent a substantive, personally relevant career-support message, while the cost is low if surfaced once inside chat as an optional question citing Ikenna."
         }
       }
     ],
@@ -1720,15 +1364,15 @@
           "days_into_window": 2
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
-          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
-          "tailoring_variable": "Sensitive-life-event window is active for Meilin Qiu, with trigger evidence showing a `sensitive_event_silence` window from 1775761209 to 1776970809 and `days_into_window`: 2.",
-          "decision_point": "2026-04-12T14:12:09Z, when the system evaluates whether to proactively surface anything in-chat.",
+          "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive interruption during a sensitive-life-event window",
+          "proximal_outcome": "no proactive chatbot surface is shown at this moment",
+          "tailoring_variable": "sensitive_event_active=true, with the sensitive_event_silence signal showing the window is active and days_into_window=2",
+          "decision_point": "2026-04-12T14:12:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: although the decision point and tailoring variable are defined, the decision rule for an active sensitive-event window requires silence. Under Horvitz, the expected value of acting is dominated by intrusion risk, so proactive action should not occur."
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI tailoring variable and decision point are grounded, but the decision rule explicitly fails because sensitive_event_active=true requires silence. Under Horvitz mixed-initiative cost-benefit, intrusion cost during a hard restraint window exceeds any proactive value, so acting is not justified."
         }
       },
       {
@@ -1742,15 +1386,15 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event window.",
-          "proximal_outcome": "No interruption is delivered in-chat during the active restraint period.",
-          "tailoring_variable": "Sensitive-life-event window is currently active for Meilin Qiu; trigger evidence shows a `sensitive_event_silence` window with days_into_window=5.",
-          "decision_point": "2026-04-15T09:24:09Z, when the system evaluates whether to proactively surface anything in the chatbot.",
+          "distal_outcome": "protect the user's wellbeing and trust by avoiding unnecessary proactive intervention during a sensitive-life-event window",
+          "proximal_outcome": "no proactive chatbot surface is shown at this decision point",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Idris Vatsa; candidate evidence shows window_start_ts=1775761209, window_end_ts=1776970809, days_into_window=5",
+          "decision_point": "2026-04-15T09:24:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because although the decision point and tailoring variable are defined, the decision rule under the hard restraint window requires no intervention option beyond silence. Under Horvitz, the expected value of acting is dominated by intrusion risk during an active sensitive event, so the system should not surface anything. Subtlety also fails because evidence-cited proactive wording cannot be used when the policy mandates silence."
+          "reasoning": "JITAI has a clear decision point and tailoring variable, but the decision rule fails because the hard restraint window requires silence. Under Horvitz mixed-initiative reasoning, any proactive value is outweighed by intrusion risk during an active sensitive event. The candidate is the restrain class, so eligibility must be 0 and the agent should stay silent."
         }
       },
       {
@@ -1764,15 +1408,15 @@
           "days_into_window": 8
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive-life-event period.",
-          "proximal_outcome": "No interruption is delivered during the active sensitive window.",
-          "tailoring_variable": "Sensitive-life-event window is active for Meilin Qiu, with candidate evidence showing a sensitive event silence window from 1775761209 to 1776970809 and days_into_window=8.",
-          "decision_point": "At the flagged candidate moment 2026-04-18T04:36:09Z during the active sensitive-event window.",
+          "distal_outcome": "protect user trust and wellbeing by avoiding proactive intervention during a sensitive-life-event window",
+          "proximal_outcome": "no chatbot surface is shown at this decision point",
+          "tailoring_variable": "Sensitive-life-event window is active for Idris Vatsa, with signal evidence showing days_into_window=8 between window_start_ts=1775761209 and window_end_ts=1776970809",
+          "decision_point": "2026-04-18T04:36:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because although the decision point and tailoring variable are defined, the hard restraint overrides any intervention option: when sensitive_event_active=true, no proactive action is permitted. Under Horvitz, the expected value of acting is dominated by intrusion risk during a sensitive period, so silence has higher utility. Subtlety also fails because evidence-citation for a user-facing opt-in action cannot be used here given the mandatory no-action rule."
+          "reasoning": "JITAI has a clear tailoring variable and decision point, but the hard restraint window overrides any intervention option. Under Horvitz mixed-initiative reasoning, intrusion cost is effectively prohibitive during an active sensitive event, so expected value of acting is below the cost. The trigger type is sensitive_event_silence and sensitive_event_active=true, so the required action is to stay silent."
         }
       },
       {
@@ -1786,15 +1430,15 @@
           "days_into_window": 11
         },
         "jitai_card": {
-          "distal_outcome": "Protect the user's emotional well-being and trust by avoiding unnecessary proactive outreach during a sensitive period.",
-          "proximal_outcome": "No interruption is delivered while the sensitive-event restraint window is active.",
-          "tailoring_variable": "Sensitive-life-event window is currently active for Meilin Qiu, with trigger evidence showing a sensitive event silence window from 1775761209 to 1776970809 and the user 11 days into that window.",
-          "decision_point": "2026-04-20T23:48:09Z, when the system evaluated whether to proactively surface anything in-chat.",
+          "distal_outcome": "protect the user's well-being and trust by avoiding proactive interruptions during a sensitive-life-event window",
+          "proximal_outcome": "no proactive chatbot surface is shown at this decision point",
+          "tailoring_variable": "Sensitive-life-event window is active for Idris Vatsa; trigger evidence shows days_into_window=11 with window_start_ts=1775761209 and window_end_ts=1776970809",
+          "decision_point": "2026-04-20T23:48:09Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails because the hard restraint overrides any intervention option: although the decision point and tailoring variable are defined, the decision rule for this class requires silence when a sensitive event is active. Under Horvitz, the expected value of acting is dominated by intrusion risk during a sensitive window, so staying silent is the higher-value action. Subtlety also fails because evidence-cited proactive content cannot be appropriately surfaced here given the mandatory no-action rule."
+          "reasoning": "JITAI fails the decision rule because the hard restraint tailoring variable, an active sensitive-event window, overrides any intervention option. Horvitz cost-benefit also disfavors acting because the intrusion cost during a sensitive window exceeds any speculative benefit. The required action is to stay silent, so no compliant opt-in surface should be generated."
         }
       }
     ],
@@ -1808,25 +1452,25 @@
         "signal_evidence": {
           "app": "facebook",
           "friend_id": "friend_2",
-          "friend_display_name": "Vivian Li",
-          "post_event_id": "feedvis_fe61dbc9b0",
+          "friend_display_name": "Ibrahim Vassell",
+          "post_event_id": "feedvis_374e13037d",
           "post_ts": 1775559050,
           "post_iso": "10:50, 04/07/2026",
           "post_hashtags": [
-            "#NFL",
-            "#Patriots",
-            "#TeamHistory"
+            "#Wrestling",
+            "#ROH",
+            "#EventSafety"
           ],
-          "post_caption_excerpt": "Spent way too long down a Patriots history rabbit hole tonight and now I miss those old defenses. NFL nostalgia hits different in the offseason.",
-          "primary_hashtag": "#NFL",
+          "post_caption_excerpt": "ROH crowd was hot tonight. Also noticed the security team handled a rowdy section cleanly without killing the vibe. That’s how you do event safety.",
+          "primary_hashtag": "#Wrestling",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 3,
-          "user_interest_match": "Aligns with the user's interest in NFL football through a nostalgia/history lens, especially old-school team identity and offseason storyline content rather than generic highlight clips.",
-          "reasoning": "The caption is specifically about Patriots history, old defenses, and offseason NFL nostalgia, which matches the user's demonstrated preference for football context, film/history, and storyline-driven posts. Their past engagement explicitly favors old-school football energy and offseason narrative content over shallow highlight-page material."
+          "user_interest_match": "Aligns strongly with Idris’s ROH wrestling interest and his event-safety/community-protector focus around live fight and wrestling cards.",
+          "reasoning": "The caption specifically combines an ROH crowd reaction with practical event safety praise for security handling a rowdy section without killing the vibe. Idris has engaged with ROH analysis and multiple posts about clean venue operations, ambulance routes, inspectors, floor setup, and crowd/event management."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
@@ -1843,144 +1487,22 @@
       {
         "trigger_type": "friend_feed_react",
         "tier": "T2.D",
-        "t_test": 1775562101,
-        "t_test_iso": "2026-04-07T11:41:41Z",
+        "t_test": 1775566575,
+        "t_test_iso": "2026-04-07T12:56:15Z",
         "relevance": "relevant",
         "signal_evidence": {
           "app": "instagram",
           "friend_id": "friend_1",
-          "friend_display_name": "Jing Wen",
-          "post_event_id": "feedvis_73be5df11a",
-          "post_ts": 1775475701,
-          "post_iso": "11:41, 04/06/2026",
-          "post_hashtags": [
-            "#boxing",
-            "#muaythai",
-            "#gymnight"
-          ],
-          "post_caption_excerpt": "First time working the heavy bag after Muay Thai class and my shoulders are cooked. Weirdly satisfying though — need to clean up that jab.",
-          "primary_hashtag": "#boxing",
-          "relevance": "relevant"
-        },
-        "hashtag_label_at_generation": "relevant",
-        "content_relevance_verdict": {
-          "relevance": "relevant",
-          "content_relevance_score": 2,
-          "user_interest_match": "This aligns with the user's demonstrated interest in technical striking/combat-sports training content, especially posts about mechanics like jab cleanup, footwork, and skill refinement rather than generic boxing hashtags.",
-          "reasoning": "The caption is specifically about heavy bag work after Muay Thai class and improving a jab, which matches the user's recent engagement with technical boxing breakdowns and training-process content. It's also from close friend Jing Wen, making a genuine surfacing candidate beyond simple hashtag overlap."
-        },
-        "jitai_card": {
-          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
-          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
-          "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-07T11:41:41Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "friend_alert",
-          "subtlety_check_pass": true,
-          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
-        }
-      },
-      {
-        "trigger_type": "friend_feed_react",
-        "tier": "T2.D",
-        "t_test": 1775526285,
-        "t_test_iso": "2026-04-07T01:44:45Z",
-        "relevance": "relevant",
-        "signal_evidence": {
-          "app": "instagram",
-          "friend_id": "friend_2",
-          "friend_display_name": "Vivian Li",
-          "post_event_id": "feedvis_9c6685652d",
-          "post_ts": 1775439885,
-          "post_iso": "01:44, 04/06/2026",
-          "post_hashtags": [
-            "#comedy",
-            "#Patriots",
-            "#standup"
-          ],
-          "post_caption_excerpt": "Stand-up set tonight had me crying when he compared Pats fans keeping team history receipts to detectives with trust issues 😭 too accurate.",
-          "primary_hashtag": "#comedy",
-          "relevance": "relevant"
-        },
-        "hashtag_label_at_generation": "relevant",
-        "content_relevance_verdict": {
-          "relevance": "relevant",
-          "content_relevance_score": 3,
-          "user_interest_match": "Aligns with her taste for witty conversational comedy and her interest in NFL/Patriots-adjacent humor rather than generic hashtag-level comedy.",
-          "reasoning": "The caption is specifically about a stand-up joke with a sharp observational premise about Pats fans, which fits Meilin's preference for humor driven by timing and clever delivery. It also overlaps with her demonstrated interest in football content, making this more personally relevant than a generic comedy post."
-        },
-        "jitai_card": {
-          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
-          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
-          "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-07T01:44:45Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "friend_alert",
-          "subtlety_check_pass": true,
-          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
-        }
-      },
-      {
-        "trigger_type": "friend_feed_react",
-        "tier": "T2.D",
-        "t_test": 1775472411,
-        "t_test_iso": "2026-04-06T10:46:51Z",
-        "relevance": "relevant",
-        "signal_evidence": {
-          "app": "threads",
-          "friend_id": "friend_3",
-          "friend_display_name": "Rachel Zhang",
-          "post_event_id": "feedvis_d002bcf69b",
-          "post_ts": 1775386011,
-          "post_iso": "10:46, 04/05/2026",
-          "post_hashtags": [
-            "#Marvel",
-            "#CaptainAmerica",
-            "#IronMan"
-          ],
-          "post_caption_excerpt": "Rewatching Civil War and still yelling at the screen like I can personally fix the airport fight. Team Cap emotionally, Team Iron Man wardrobe-wise. #Marvel",
-          "primary_hashtag": "#Marvel",
-          "relevance": "relevant"
-        },
-        "hashtag_label_at_generation": "relevant",
-        "content_relevance_verdict": {
-          "relevance": "relevant",
-          "content_relevance_score": 3,
-          "user_interest_match": "This matches the user's specific interest in rewatching and discussing earlier Marvel films through character/emotional dynamics rather than just spectacle.",
-          "reasoning": "The caption is a personal, witty reaction to Civil War, directly aligning with Meilin's recent engagement about older Marvel movies, emotional stakes, and nuanced superhero discourse. It's also from close friend Rachel Zhang, which makes this exact post more worth surfacing than a generic #Marvel post."
-        },
-        "jitai_card": {
-          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
-          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
-          "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-06T10:46:51Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "friend_alert",
-          "subtlety_check_pass": true,
-          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
-        }
-      },
-      {
-        "trigger_type": "friend_feed_react",
-        "tier": "T2.D",
-        "t_test": 1775352215,
-        "t_test_iso": "2026-04-05T01:23:35Z",
-        "relevance": "relevant",
-        "signal_evidence": {
-          "app": "threads",
-          "friend_id": "friend_2",
-          "friend_display_name": "Vivian Li",
-          "post_event_id": "feedvis_b3175e26f7",
-          "post_ts": 1775265815,
-          "post_iso": "01:23, 04/04/2026",
+          "friend_display_name": "Ikenna Vundla",
+          "post_event_id": "feedvis_93568e792d",
+          "post_ts": 1775480175,
+          "post_iso": "12:56, 04/06/2026",
           "post_hashtags": [
             "#Boxing",
-            "#Training"
+            "#HomeCooking",
+            "#WeekendWork"
           ],
-          "post_caption_excerpt": "Nothing like hitting the bag after work and remembering boxing is basically all rhythm, timing, and patience. Way harder than it looks on TV.",
+          "post_caption_excerpt": "Early rounds on the bag, then straight home for rice and stew. Weekend balance is important 😂",
           "primary_hashtag": "#Boxing",
           "relevance": "relevant"
         },
@@ -1988,14 +1510,218 @@
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 3,
-          "user_interest_match": "Matches the user's demonstrated interest in technical boxing/training analysis—especially rhythm, timing, patience, footwork, and the 'chess with gloves' side of combat sports.",
-          "reasoning": "The caption focuses on boxing as rhythm, timing, and patience, which lines up closely with the user's prior engagement with technical breakdowns like pivot-counters, check hooks, and boxing as 'chess with gloves.' It's also from close friend Vivian Li, making this specific training reflection more worth surfacing than a generic #boxing post."
+          "user_interest_match": "Aligns with Idris’s fight-gym fitness concern and home-cooking comfort ritual, rather than just his pro boxing fandom.",
+          "reasoning": "Ikenna’s caption combines bag rounds with going home for rice and stew, matching Idris’s interest in maintaining combat-sport-level fitness during desk-heavy weeks and his recurring comfort-food/home-cooking engagement. The close-friend connection makes this specific everyday boxing-and-food balance especially worth surfacing."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-05T01:23:35Z",
+          "decision_point": "2026-04-07T12:56:15Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775530759,
+        "t_test_iso": "2026-04-07T02:59:19Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "friend_id": "friend_2",
+          "friend_display_name": "Ibrahim Vassell",
+          "post_event_id": "feedvis_a55c089cc9",
+          "post_ts": 1775444359,
+          "post_iso": "02:59, 04/06/2026",
+          "post_hashtags": [
+            "#MMA",
+            "#EventSafety",
+            "#FightNight"
+          ],
+          "post_caption_excerpt": "Caught the local fights tonight — clean card, loud crowd, and security actually had the exits flowing right. Love seeing MMA done properly at every level.",
+          "primary_hashtag": "#MMA",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 3,
+          "user_interest_match": "Aligns with Idris’s combat-sports interest in live MMA/fight-night culture, plus his community-protector/event-safety sensibility.",
+          "reasoning": "The caption is specifically about a local MMA card, crowd energy, and well-managed exits, not a generic hashtag use. Idris regularly engages with MMA/fight analysis and has an identity thread around protecting community spaces, making a close friend’s note on fights done properly genuinely worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-07T02:59:19Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775475775,
+        "t_test_iso": "2026-04-06T11:42:55Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "threads",
+          "friend_id": "friend_3",
+          "friend_display_name": "Ijeoma Valdez",
+          "post_event_id": "feedvis_0759c51f36",
+          "post_ts": 1775389375,
+          "post_iso": "11:42, 04/05/2026",
+          "post_hashtags": [
+            "#comedygold",
+            "#familygathering",
+            "#undergroundrap"
+          ],
+          "post_caption_excerpt": "My auntie tried to freestyle over a Griselda beat while stirring stew and somehow roasted the whole family in 16 bars.",
+          "primary_hashtag": "#comedygold",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 3,
+          "user_interest_match": "Aligns with Idris’s love of auntie/family comedy skits plus underground East Coast hip-hop humor, with a home-cooking/stew setting.",
+          "reasoning": "The caption combines an auntie roasting the family in a funny domestic scene with freestyling over a Griselda beat, matching his recent engagement with auntie chaos jokes and his hip-hop interests. The close-friend author and family-gathering/home-cooking angle make it especially likely to land."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-06T11:42:55Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775355579,
+        "t_test_iso": "2026-04-05T02:19:39Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "threads",
+          "friend_id": "friend_2",
+          "friend_display_name": "Ibrahim Vassell",
+          "post_event_id": "feedvis_a6ba04caf8",
+          "post_ts": 1775269179,
+          "post_iso": "02:19, 04/04/2026",
+          "post_hashtags": [
+            "#MMA",
+            "#CombatSports",
+            "#FightNight"
+          ],
+          "post_caption_excerpt": "Watching small regional shows reminds me how much good corner work matters. Clean instructions, calm energy, and nobody trying to be the main character.",
+          "primary_hashtag": "#MMA",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 3,
+          "user_interest_match": "Aligns with Idris’s combat-sports interest in technical fight analysis, especially MMA/fight-night details like discipline, coaching, and tactical execution.",
+          "reasoning": "The caption is not generic #MMA chatter; it specifically praises calm, effective corner work at regional shows, which matches Idris’s demonstrated taste for nuanced combat-sports breakdowns. The author is also a close friend with shared combat-sports interests, making it especially worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-05T02:19:39Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775345864,
+        "t_test_iso": "2026-04-04T23:37:44Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_1",
+          "friend_display_name": "Ikenna Vundla",
+          "post_event_id": "feedvis_276c256f50",
+          "post_ts": 1775259464,
+          "post_iso": "23:37, 04/03/2026",
+          "post_hashtags": [
+            "#Boxing",
+            "#HomeCooking"
+          ],
+          "post_caption_excerpt": "Early rounds on the bag, then straight home for jollof. Balance is important abeg 😅",
+          "primary_hashtag": "#Boxing",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Aligns with Idris’s combat-sports fitness interest and private home-cooking comfort ritual, rather than his pro-fight breakdown/boxing-analysis interest.",
+          "reasoning": "The caption combines early bag work with going home for jollof, which maps to his concern about keeping fight-gym-level fitness despite desk-heavy weeks and his food/nesting preferences. It is not a high-level boxing matchup or technique post, but from a close friend it is still a genuinely relevant lifestyle overlap."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-04T23:37:44Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "friend_alert",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "friend_feed_react",
+        "tier": "T2.D",
+        "t_test": 1775302539,
+        "t_test_iso": "2026-04-04T11:35:39Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "friend_id": "friend_3",
+          "friend_display_name": "Ijeoma Valdez",
+          "post_event_id": "feedvis_948c65f870",
+          "post_ts": 1775216139,
+          "post_iso": "11:35, 04/03/2026",
+          "post_hashtags": [
+            "#TerenceCrawford",
+            "#FightNight",
+            "#FamilyTable"
+          ],
+          "post_caption_excerpt": "Fight night leftovers hit different when the cousins are still arguing scorecards and somebody’s got Griselda playing in the kitchen. Crawford really makes calm look scary.",
+          "primary_hashtag": "#TerenceCrawford",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 3,
+          "user_interest_match": "Strongly matches Idris’s specific interest in Terence Crawford fight-night discussion, scorecard/tape-study talk, family-table food rituals, and gritty East Coast-adjacent hip-hop atmosphere.",
+          "reasoning": "The caption is not generic hashtag bait: it combines Crawford’s calm boxing style, cousins arguing scorecards, leftovers, and Griselda in the kitchen. Those details line up closely with Idris’s recent Crawford engagement, fight-night dinner/tape-study behavior, comfort-food nesting, and hip-hop interests."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Close-friend post on a user-positive hashtag",
+          "decision_point": "2026-04-04T11:35:39Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
@@ -2004,13 +1730,307 @@
         }
       }
     ],
-    "trending_feed_react": [],
+    "trending_feed_react": [
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775450497,
+        "t_test_iso": "2026-04-06T04:41:37Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "trending_topic": "Spring 'clean girl' GRWM refresh",
+          "trend_description": "",
+          "post_event_id": "feedvis_b74a89a716",
+          "post_ts": 1775364097,
+          "post_iso": "04:41, 04/05/2026",
+          "post_hashtags": [
+            "#CaribbeanComedy",
+            "#CleanGirlAesthetic",
+            "#SpringGRWM",
+            "#SkincareRoutine"
+          ],
+          "post_caption_excerpt": "Spring clean girl reset but I still needed 3 pep talks and auntie’s side-eye before leaving the house.",
+          "primary_hashtag": "#CaribbeanComedy",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with his interest in Nigerian comedy skits with strong timing/payoff; this is primarily a clean-girl GRWM/skincare reset with light auntie humor.",
+          "reasoning": "The caption centers on a spring GRWM/clean-girl aesthetic and skincare routine, not the combat sports, hip-hop, Nigerian skit comedy, or actor-life content he reliably engages with. The auntie side-eye line is only loosely comedic and not enough to make it a strong match."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T04:41:37Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775448507,
+        "t_test_iso": "2026-04-06T04:08:27Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "'Is AI ruining the internet?' discourse",
+          "trend_description": "",
+          "post_event_id": "feedvis_aa7297679c",
+          "post_ts": 1775362107,
+          "post_iso": "04:08, 04/05/2026",
+          "post_hashtags": [
+            "#LaughOutLoud",
+            "#AI",
+            "#InternetCulture",
+            "#AIContent"
+          ],
+          "post_caption_excerpt": "Half my feed is people accusing AI of ruining the internet, the other half is AI summaries of those posts. We may have invented a mirror with ads.",
+          "primary_hashtag": "#LaughOutLoud",
+          "relevance": "irrelevant"
+        },
+        "hashtag_label_at_generation": "irrelevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with Idris’s demonstrated comedy interest in Nigerian skits/short-form funny videos or his combat-sports/hip-hop anchors; it is a generic AI-and-internet-culture joke.",
+          "reasoning": "The caption jokes about AI discourse and feeds becoming AI summaries, which is not a topic Idris has shown interest in. The only overlap is the broad #LaughOutLoud humor tag, but the actual content is tech-culture satire rather than the comedy or sports/hip-hop content he engages with."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T04:08:27Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775437542,
+        "t_test_iso": "2026-04-06T01:05:42Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "Buy-Nothing & marketplace community finds",
+          "trend_description": "",
+          "post_event_id": "feedvis_1cdad4a433",
+          "post_ts": 1775351142,
+          "post_iso": "01:05, 04/05/2026",
+          "post_hashtags": [
+            "#FightNight",
+            "#BuyNothing",
+            "#MarketplaceFinds",
+            "#CommunityFinds"
+          ],
+          "post_caption_excerpt": "Scored this little side table from a Buy Nothing porch pickup and now the group chat is arguing over who gets to style it first.",
+          "primary_hashtag": "#FightNight",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with Idris's combat-sports fight-night interests; it is about a Buy Nothing porch-pickup side table and styling debate.",
+          "reasoning": "The caption is marketplace/community-finds home decor content, with no actual boxing, MMA, event-operations, or fight-analysis substance. The #FightNight tag appears incidental and does not connect to the fight-night content Idris has engaged with."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T01:05:42Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775418795,
+        "t_test_iso": "2026-04-05T19:53:15Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "Then-vs-now family storytelling Reels",
+          "trend_description": "",
+          "post_event_id": "feedvis_2b51b5aaa6",
+          "post_ts": 1775332395,
+          "post_iso": "19:53, 04/04/2026",
+          "post_hashtags": [
+            "#MMA",
+            "#ThenAndNow",
+            "#FamilyReels",
+            "#Milestones"
+          ],
+          "post_caption_excerpt": "Found the clip of my little brother learning to walk… cut to him carrying Mom’s groceries without being asked. Time is so rude and so beautiful.",
+          "primary_hashtag": "#MMA",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with the user's combat-sports interest in MMA technique, fight timing, boxing/UFC analysis, or related athlete content.",
+          "reasoning": "The caption is a sentimental then-vs-now family milestone Reel about a little brother growing up and helping Mom with groceries. The #MMA tag appears unrelated to the actual content, and the user’s MMA engagement is specifically around fight action, timing, entries, and scrambles."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T19:53:15Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775413758,
+        "t_test_iso": "2026-04-05T18:29:18Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "Threads Live Chats x NBA playoffs",
+          "trend_description": "",
+          "post_event_id": "feedvis_58a7404992",
+          "post_ts": 1775327358,
+          "post_iso": "18:29, 04/04/2026",
+          "post_hashtags": [
+            "#HipHop",
+            "#NBAPlayoffs",
+            "#ThreadsLiveChats"
+          ],
+          "post_caption_excerpt": "Threads Live Chat during this playoff run feels like sitting courtside with a group chat that actually knows ball. The timeout music debates are elite too.",
+          "primary_hashtag": "#HipHop",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "It does not align with Idris’s old-school NYC hip-hop/crate-digger interests because the post is really about NBA Playoffs live chat banter, not hip-hop history or music content.",
+          "reasoning": "The caption centers on Threads Live Chat during the NBA playoff run and “knows ball” group-chat energy, while Idris’s strongest sports interests are combat sports and ROH, not basketball. The only music angle is a vague mention of timeout music debates, which is too thin to match his specific hip-hop engagement."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T18:29:18Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775404135,
+        "t_test_iso": "2026-04-05T15:48:55Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "instagram",
+          "trending_topic": "Coachella 2026 festival fashion",
+          "trend_description": "",
+          "post_event_id": "feedvis_69966958e9",
+          "post_ts": 1775317735,
+          "post_iso": "15:48, 04/04/2026",
+          "post_hashtags": [
+            "#HipHopLegends",
+            "#Coachella2026",
+            "#FestivalFashion",
+            "#DesertOOTD"
+          ],
+          "post_caption_excerpt": "Golden hour hit the fringe, the boots survived the dust, and somehow the best accessory was hearing throwback sets from the grass.",
+          "primary_hashtag": "#HipHopLegends",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with Idris’s old-school NYC hip-hop oral-history interest; it is mainly Coachella festival fashion with only a vague mention of throwback sets.",
+          "reasoning": "The caption centers on fringe, boots, dust, and golden-hour desert style, not specific classic hip-hop artists, catalog talk, or performance history. The #HipHopLegends tag appears incidental rather than reflecting content Idris has shown real engagement with."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T15:48:55Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775401183,
+        "t_test_iso": "2026-04-05T14:59:43Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "NBA playoff hot takes & bracket debates",
+          "trend_description": "",
+          "post_event_id": "feedvis_d3ee4f90b5",
+          "post_ts": 1775314783,
+          "post_iso": "14:59, 04/04/2026",
+          "post_hashtags": [
+            "#NBAPlayoffs",
+            "#NBA",
+            "#MVP",
+            "#Boxing"
+          ],
+          "post_caption_excerpt": "Hot take: if the Knicks steal Game 1, the East bracket starts looking like a 12-round fight instead of a coronation. Brunson MVP agenda is alive.",
+          "primary_hashtag": "#Boxing",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with Idris’s combat-sports interest in actual boxing/MMA technique and fight analysis; it is an NBA playoff/Knicks-Brunson hot take using a boxing metaphor.",
+          "reasoning": "The caption is about the Knicks, Game 1, the East bracket, and Brunson MVP talk, not a boxing matchup or fight breakdown. Idris engages with Crawford-style timing, counters, footwork, and real combat-sports analysis, so #Boxing here is only incidental."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T14:59:43Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      }
+    ],
     "overactive_check": [
       {
         "trigger_type": "overactive_check",
         "tier": "negative_control",
-        "t_test": 1775231983,
-        "t_test_iso": "2026-04-03T15:59:43Z",
+        "t_test": 1775215881,
+        "t_test_iso": "2026-04-03T11:31:21Z",
         "relevance": "irrelevant",
         "signal_evidence": {
           "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
@@ -2019,7 +2039,49 @@
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Negative-control idle moment",
-          "decision_point": "2026-04-03T15:59:43Z",
+          "decision_point": "2026-04-03T11:31:21Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
+        }
+      },
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775287131,
+        "t_test_iso": "2026-04-04T07:18:51Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-04T07:18:51Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
+        }
+      },
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775500752,
+        "t_test_iso": "2026-04-06T18:39:12Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-06T18:39:12Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",

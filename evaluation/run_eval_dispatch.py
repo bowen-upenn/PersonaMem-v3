@@ -72,7 +72,7 @@ def dispatch_single(task_type: str, inst: dict, ctx: DispatchContext) -> dict | 
     task_type = normalize_task_type(task_type)
 
     if task_type in ("chatbot_personalized_response", "over_personalization_chatbot_text",
-                       "over_personalization_sensitive_event"):
+                       "over_personalization_sensitive_event", "over_personalization_sycophancy"):
         # Phase I.3: distractor-reject converted from a 4-way ranking task to
         # an open-ended chatbot text task — same runner as the other chatbot
         # arms, judged by personalization_leak_rate against the irrelevant

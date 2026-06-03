@@ -2,20 +2,20 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775181300,
-      "formatted_timestamp": "05:15, 04/03/2026",
+      "ts": 1775183400,
+      "formatted_timestamp": "07:30, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Pre-dawn plant shift: filtration checks",
-        "start_ts": 1775181300,
-        "end_ts": 1775188500,
+        "title": "Early banquet prep shift",
+        "start_ts": 1775183400,
+        "end_ts": 1775201400,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Denver",
+          "region": "CO",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 39.7392,
+          "lon": -104.9903,
           "precision": "city"
         },
         "type": "work",
@@ -26,49 +26,47 @@
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775202300,
-      "formatted_timestamp": "11:05, 04/03/2026",
+      "ts": 1775205000,
+      "formatted_timestamp": "13:30, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "Lunch break: self-improvement podcast catch-up",
-        "start_ts": 1775202300,
-        "end_ts": 1775204100,
+        "title": "Pediatrician office visit",
+        "start_ts": 1775205000,
+        "end_ts": 1775208600,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Denver",
+          "region": "CO",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 39.7392,
+          "lon": -104.9903,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [
-          "Interested in personal development and self-improvement content."
-        ],
-        "is_preference_driven": true,
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775212800,
-      "formatted_timestamp": "14:00, 04/03/2026",
+      "ts": 1775260800,
+      "formatted_timestamp": "05:20, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "PTO request: early train to Pittsburgh",
-        "start_ts": 1775212800,
-        "end_ts": 1775220000,
+        "title": "Coffee run and grocery stop",
+        "start_ts": 1775260800,
+        "end_ts": 1775264400,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Denver",
+          "region": "CO",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 39.7392,
+          "lon": -104.9903,
           "precision": "city"
         },
-        "type": "travel",
+        "type": "personal",
         "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
@@ -76,90 +74,92 @@
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775213400,
-      "formatted_timestamp": "14:10, 04/03/2026",
+      "ts": 1775275200,
+      "formatted_timestamp": "09:20, 04/02/2026",
       "action": "updated",
       "entry_id": "cal_003",
       "diff": {
         "end_ts": {
-          "from": 1775220000,
-          "to": 1775218200
+          "from": 1775264400,
+          "to": 1775266200
         },
         "notes": {
           "from": "",
-          "to": "Pack charger and work boots before leaving."
+          "to": "add oat milk and diapers"
         }
       }
     },
     {
       "mod_id": "mod_005",
-      "ts": 1775218800,
-      "formatted_timestamp": "15:40, 04/03/2026",
+      "ts": 1775331600,
+      "formatted_timestamp": "01:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Hotel check-in and unpack",
-        "start_ts": 1775218800,
-        "end_ts": 1775222400,
+        "title": "Carson Wentz thread check and Nuggets highlights",
+        "start_ts": 1775331600,
+        "end_ts": 1775335200,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Denver",
+          "region": "CO",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 39.7392,
+          "lon": -104.9903,
           "precision": "city"
         },
         "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
+        "linked_preferences": [
+          "NFL fandom",
+          "Denver Nuggets"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
       }
     },
     {
       "mod_id": "mod_006",
-      "ts": 1775236800,
-      "formatted_timestamp": "20:40, 04/03/2026",
+      "ts": 1775368800,
+      "formatted_timestamp": "11:20, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_005",
-        "title": "Dinner with plant supervisor and Ana",
-        "start_ts": 1775236800,
-        "end_ts": 1775244000,
+        "title": "Team huddle with Marco",
+        "start_ts": 1775368800,
+        "end_ts": 1775372400,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Denver",
+          "region": "CO",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 39.7392,
+          "lon": -104.9903,
           "precision": "city"
         },
-        "type": "social",
+        "type": "work",
         "linked_preferences": [],
         "is_preference_driven": false,
-        "relation_to_social": "related",
+        "relation_to_social": "unrelated",
         "attendees": [
           "self",
-          "Ana",
-          "Miguel"
+          "Marco"
         ]
       }
     },
     {
       "mod_id": "mod_007",
-      "ts": 1775260800,
-      "formatted_timestamp": "03:20, 04/04/2026",
+      "ts": 1775374136,
+      "formatted_timestamp": "12:48, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_006",
-        "title": "Return train to Philadelphia",
-        "start_ts": 1775260800,
-        "end_ts": 1775273400,
+        "title": "Depart Denver for Chicago",
+        "start_ts": 1775374136,
+        "end_ts": 1775384936,
         "location": {
-          "city": "Pittsburgh",
-          "region": "PA",
+          "city": "Chicago",
+          "region": "IL",
           "country": "USA",
-          "lat": 40.4406,
-          "lon": -79.9959,
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "travel",
@@ -170,502 +170,137 @@
     },
     {
       "mod_id": "mod_008",
-      "ts": 1775281800,
-      "formatted_timestamp": "09:30, 04/04/2026",
+      "ts": 1775388600,
+      "formatted_timestamp": "16:50, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_007",
-        "title": "Family breakfast and weekend planning",
-        "start_ts": 1775281800,
-        "end_ts": 1775287200,
+        "title": "Hotel check-in and conference registration",
+        "start_ts": 1775388600,
+        "end_ts": 1775392200,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Chicago",
+          "region": "IL",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "personal",
-        "linked_preferences": [
-          "Likely a parent or primary caregiver who relates to everyday parenting challenges."
-        ],
-        "is_preference_driven": true,
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_009",
-      "ts": 1775311200,
-      "formatted_timestamp": "17:40, 04/04/2026",
+      "ts": 1775415600,
+      "formatted_timestamp": "00:20, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_008",
-        "title": "NBA 2K session after dinner",
-        "start_ts": 1775311200,
-        "end_ts": 1775318400,
+        "title": "Phone call with sister about baby routine",
+        "start_ts": 1775415600,
+        "end_ts": 1775417400,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Chicago",
+          "region": "IL",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "Interested in basketball video games, especially NBA 2K."
+          "early parenthood"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_010",
-      "ts": 1775346000,
-      "formatted_timestamp": "03:20, 04/05/2026",
+      "ts": 1775463000,
+      "formatted_timestamp": "13:30, 04/04/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_009",
-        "title": "Car inspection appointment",
-        "start_ts": 1775346000,
-        "end_ts": 1775351400,
+        "title": "Expo floor break and drinkware booth walk",
+        "start_ts": 1775463000,
+        "end_ts": 1775468400,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Chicago",
+          "region": "IL",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 41.8781,
+          "lon": -87.6298,
           "precision": "city"
         },
         "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
+        "linked_preferences": [
+          "collectibles and drinkware drops"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_011",
-      "ts": 1775366400,
-      "formatted_timestamp": "09:00, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_010",
-        "title": "Movie night prep: Marvel rewatch snacks",
-        "start_ts": 1775366400,
-        "end_ts": 1775373600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
+      "ts": 1775502600,
+      "formatted_timestamp": "00:30, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_007",
+      "diff": {
+        "end_ts": {
+          "from": 1775392200,
+          "to": 1775394000
         },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys Iron Man and the Marvel Cinematic Universe."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "notes": {
+          "from": "",
+          "to": "late check-in after delay"
+        }
       }
     },
     {
       "mod_id": "mod_012",
-      "ts": 1775377200,
-      "formatted_timestamp": "12:00, 04/05/2026",
-      "action": "updated",
-      "entry_id": "cal_010",
-      "diff": {
-        "end_ts": {
-          "from": 1775373600,
-          "to": 1775375400
+      "ts": 1775509200,
+      "formatted_timestamp": "02:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Hotel breakfast planning notes",
+        "start_ts": 1775509200,
+        "end_ts": 1775511000,
+        "location": {
+          "city": "Chicago",
+          "region": "IL",
+          "country": "USA",
+          "lat": 41.8781,
+          "lon": -87.6298,
+          "precision": "city"
         },
-        "notes": {
-          "from": "",
-          "to": "Pick up extra popcorn and the good soda."
-        }
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_013",
-      "ts": 1775386800,
-      "formatted_timestamp": "14:40, 04/05/2026",
+      "ts": 1775514760,
+      "formatted_timestamp": "03:52, 04/05/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_011",
-        "title": "Hot dog cook-off recipe test: kimchi chili-cheese dog",
-        "start_ts": 1775386800,
-        "end_ts": 1775397600,
+        "title": "Return to Denver",
+        "start_ts": 1775514760,
+        "end_ts": 1775525560,
         "location": {
-          "city": "Philadelphia",
-          "region": "PA",
+          "city": "Denver",
+          "region": "CO",
           "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys healthy eating.",
-          "Interested in food experiments and hot dog cook-offs."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_014",
-      "ts": 1775415600,
-      "formatted_timestamp": "22:40, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_012",
-        "title": "Piano lesson video practice",
-        "start_ts": 1775415600,
-        "end_ts": 1775421000,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Interested in personal development and self-improvement content."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_015",
-      "ts": 1775446800,
-      "formatted_timestamp": "07:20, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_013",
-        "title": "Sunday sketching session",
-        "start_ts": 1775446800,
-        "end_ts": 1775457600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Interested in creating or closely following hyperrealistic portrait drawing."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_016",
-      "ts": 1775462400,
-      "formatted_timestamp": "11:40, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_014",
-        "title": "Grocery run and meal prep",
-        "start_ts": 1775462400,
-        "end_ts": 1775469600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys healthy eating."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_017",
-      "ts": 1775485200,
-      "formatted_timestamp": "18:00, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_015",
-        "title": "Family movie night: suspense thriller",
-        "start_ts": 1775485200,
-        "end_ts": 1775499600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "Enjoys thriller and suspense films."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_018",
-      "ts": 1775521200,
-      "formatted_timestamp": "04:00, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_016",
-        "title": "Water plant maintenance shutdown review",
-        "start_ts": 1775521200,
-        "end_ts": 1775532000,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_019",
-      "ts": 1775535600,
-      "formatted_timestamp": "08:00, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_017",
-        "title": "Gym class: light cardio and stretch",
-        "start_ts": 1775535600,
-        "end_ts": 1775541000,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "Interested in light fitness and wellness wins."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_020",
-      "ts": 1775563200,
-      "formatted_timestamp": "15:40, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_018",
-        "title": "Phone call with cousin about Penn State and the Nuggets",
-        "start_ts": 1775563200,
-        "end_ts": 1775566800,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "Follows Penn State college football."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related",
-        "attendees": [
-          "self",
-          "Darren"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_021",
-      "ts": 1775599200,
-      "formatted_timestamp": "01:40, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "Dentist cleaning",
-        "start_ts": 1775599200,
-        "end_ts": 1775604600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_022",
-      "ts": 1775630400,
-      "formatted_timestamp": "10:20, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_020",
-        "title": "Short shift handoff and safety notes",
-        "start_ts": 1775630400,
-        "end_ts": 1775637600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_023",
-      "ts": 1775649000,
-      "formatted_timestamp": "15:30, 04/08/2026",
-      "action": "updated",
-      "entry_id": "cal_020",
-      "diff": {
-        "end_ts": {
-          "from": 1775637600,
-          "to": 1775641200
-        },
-        "notes": {
-          "from": "",
-          "to": "Need to stay for chlorine alarm walk-through."
-        }
-      }
-    },
-    {
-      "mod_id": "mod_024",
-      "ts": 1775691600,
-      "formatted_timestamp": "03:20, 04/09/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_021",
-        "title": "Community preparedness meeting",
-        "start_ts": 1775691600,
-        "end_ts": 1775698800,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "Values healthy, respectful romantic partnerships."
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "related",
-        "attendees": [
-          "self",
-          "Ana"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_025",
-      "ts": 1775720400,
-      "formatted_timestamp": "11:20, 04/09/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_022",
-        "title": "Evening walk and dog clip scrolling break",
-        "start_ts": 1775720400,
-        "end_ts": 1775725000,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "Enjoys humorous dog content on social media.",
-          "Enjoys dog-focused social media content."
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_026",
-      "ts": 1775785200,
-      "formatted_timestamp": "05:20, 04/10/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_023",
-        "title": "Parent-teacher conference",
-        "start_ts": 1775785200,
-        "end_ts": 1775790600,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "Likely a parent or primary caregiver who relates to everyday parenting challenges."
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "related",
-        "attendees": [
-          "self",
-          "Ms. Rivera"
-        ]
-      }
-    },
-    {
-      "mod_id": "mod_027",
-      "ts": 1775833200,
-      "formatted_timestamp": "18:40, 04/10/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_024",
-        "title": "Pittsburgh trip hold: cancelable hotel backup",
-        "start_ts": 1775833200,
-        "end_ts": 1775840400,
-        "location": {
-          "city": "Philadelphia",
-          "region": "PA",
-          "country": "USA",
-          "lat": 39.9526,
-          "lon": -75.1652,
+          "lat": 39.7392,
+          "lon": -104.9903,
           "precision": "city"
         },
         "type": "travel",
@@ -675,12 +310,333 @@
       }
     },
     {
-      "mod_id": "mod_028",
-      "ts": 1775929800,
-      "formatted_timestamp": "21:10, 04/11/2026",
+      "mod_id": "mod_014",
+      "ts": 1775566800,
+      "formatted_timestamp": "18:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "Laundry, bottles, and apartment reset",
+        "start_ts": 1775566800,
+        "end_ts": 1775572200,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "DIY apartment wins"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775633400,
+      "formatted_timestamp": "12:50, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_013",
+        "title": "Dentist cleaning",
+        "start_ts": 1775633400,
+        "end_ts": 1775637000,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775671200,
+      "formatted_timestamp": "23:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Quick piano practice",
+        "start_ts": 1775671200,
+        "end_ts": 1775673000,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "piano"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775723400,
+      "formatted_timestamp": "13:50, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_015",
+        "title": "Work shift coverage swap",
+        "start_ts": 1775723400,
+        "end_ts": 1775727000,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_018",
+      "ts": 1775759400,
+      "formatted_timestamp": "23:50, 04/07/2026",
+      "action": "updated",
+      "entry_id": "cal_015",
+      "diff": {
+        "start_ts": {
+          "from": 1775723400,
+          "to": 1775721600
+        },
+        "notes": {
+          "from": "",
+          "to": "start 30 minutes earlier"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775791800,
+      "formatted_timestamp": "08:50, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Parent safety tips review",
+        "start_ts": 1775791800,
+        "end_ts": 1775795400,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "baby safety and parent hacks"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775821200,
+      "formatted_timestamp": "17:00, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Grocery pickup and bottle restock",
+        "start_ts": 1775821200,
+        "end_ts": 1775824800,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775867400,
+      "formatted_timestamp": "05:50, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Watch Nuggets replay",
+        "start_ts": 1775867400,
+        "end_ts": 1775871000,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Denver Nuggets"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775878200,
+      "formatted_timestamp": "08:50, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_019",
+        "title": "Family dinner RSVP",
+        "start_ts": 1775878200,
+        "end_ts": 1775883600,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_023",
+      "ts": 1775910000,
+      "formatted_timestamp": "17:40, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_020",
+        "title": "One-on-one with hotel supervisor",
+        "start_ts": 1775910000,
+        "end_ts": 1775913600,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated",
+        "attendees": [
+          "self",
+          "Elena"
+        ]
+      }
+    },
+    {
+      "mod_id": "mod_024",
+      "ts": 1775928000,
+      "formatted_timestamp": "22:40, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_021",
+        "title": "Alien: Earth trailer discussion",
+        "start_ts": 1775928000,
+        "end_ts": 1775931600,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Alien: Earth"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_025",
+      "ts": 1775937600,
+      "formatted_timestamp": "01:20, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_022",
+        "title": "Car service oil change",
+        "start_ts": 1775937600,
+        "end_ts": 1775941200,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_026",
+      "ts": 1775943000,
+      "formatted_timestamp": "02:50, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_023",
+        "title": "Baby sleep routine block",
+        "start_ts": 1775943000,
+        "end_ts": 1775946600,
+        "location": {
+          "city": "Denver",
+          "region": "CO",
+          "country": "USA",
+          "lat": 39.7392,
+          "lon": -104.9903,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "baby safety and sleep routines"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_027",
+      "ts": 1775946000,
+      "formatted_timestamp": "03:40, 04/10/2026",
       "action": "removed",
-      "entry_id": "cal_024",
-      "removal_reason": "canceled: travel plans shifted after the work schedule changed."
+      "entry_id": "cal_023",
+      "removal_reason": "canceled: baby fell asleep early"
     }
   ]
 }

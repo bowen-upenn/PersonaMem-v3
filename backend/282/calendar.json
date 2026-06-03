@@ -2,27 +2,27 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775187600,
-      "formatted_timestamp": "08:20, 03/31/2026",
+      "ts": 1775190000,
+      "formatted_timestamp": "09:00, 03/31/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Runway inspection and morning ops checklist",
-        "start_ts": 1775187600,
-        "end_ts": 1775191200,
+        "title": "Morning prayer and lease inbox triage",
+        "start_ts": 1775190000,
+        "end_ts": 1775193600,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
         "type": "work",
         "linked_preferences": [
-          "aviation"
+          "Christian devotional content centered on Jesus, prayer, and Bible verses"
         ],
-        "is_preference_driven": true,
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
@@ -33,47 +33,52 @@
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "Pavement issue walk-through with maintenance",
+        "title": "Apartment walkthrough with owner and photo notes",
         "start_ts": 1775195400,
-        "end_ts": 1775199000,
+        "end_ts": 1775202600,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
         "type": "work",
+        "attendees": [
+          "self",
+          "Marcus"
+        ],
         "linked_preferences": [
-          "aviation",
-          "construction machinery"
+          "budget-friendly apartment renovations",
+          "DIY interior decor projects using textured finishes, staining techniques, and roller-coat applications"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775206800,
-      "formatted_timestamp": "13:40, 03/31/2026",
+      "ts": 1775284800,
+      "formatted_timestamp": "12:00, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "Lunch break and quick stop for truck parts",
-        "start_ts": 1775206800,
-        "end_ts": 1775210400,
+        "title": "Lunch and quotes call for car insurance comparison",
+        "start_ts": 1775284800,
+        "end_ts": 1775288400,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "pickup trucks"
+          "comparing car insurance quotes and discounts to save money",
+          "Porsche 911 GT3 and GT3 high-performance sports cars"
         ],
         "is_preference_driven": true,
         "relation_to_social": "unrelated"
@@ -81,25 +86,25 @@
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775289600,
-      "formatted_timestamp": "12:00, 04/01/2026",
+      "ts": 1775292300,
+      "formatted_timestamp": "14:05, 04/01/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Toddler pediatric checkup",
-        "start_ts": 1775289600,
-        "end_ts": 1775293200,
+        "title": "Gym class: treadmill intervals and core work",
+        "start_ts": 1775292300,
+        "end_ts": 1775297700,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
         "type": "health",
         "linked_preferences": [
-          "parenting"
+          "high-protein eating to support fitness and weight-loss goals"
         ],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
@@ -107,23 +112,23 @@
     },
     {
       "mod_id": "mod_005",
-      "ts": 1775307600,
-      "formatted_timestamp": "17:00, 04/01/2026",
+      "ts": 1775378400,
+      "formatted_timestamp": "12:00, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_005",
-        "title": "Travel to Austin for overnight visit",
-        "start_ts": 1775307600,
-        "end_ts": 1775311200,
+        "title": "Haircut and quick errand run",
+        "start_ts": 1775378400,
+        "end_ts": 1775383800,
         "location": {
-          "city": "Austin",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 30.2672,
-          "lon": -97.7431,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
-        "type": "travel",
+        "type": "personal",
         "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
@@ -131,68 +136,171 @@
     },
     {
       "mod_id": "mod_006",
-      "ts": 1775313000,
-      "formatted_timestamp": "18:30, 04/01/2026",
+      "ts": 1775385600,
+      "formatted_timestamp": "14:00, 04/02/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_006",
-        "title": "Dinner with Ana",
-        "start_ts": 1775313000,
-        "end_ts": 1775318400,
+        "title": "Tenant renewal questions with Dana",
+        "start_ts": 1775385600,
+        "end_ts": 1775389200,
         "location": {
-          "city": "Austin",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 30.2672,
-          "lon": -97.7431,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
-        "type": "social",
-        "linked_preferences": [
-          "romantic relationships",
-          "family activities"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "related",
+        "type": "work",
         "attendees": [
           "self",
-          "Ana"
-        ]
+          "Dana"
+        ],
+        "linked_preferences": [
+          "leasing-week stories"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_007",
-      "ts": 1775318400,
-      "formatted_timestamp": "20:00, 04/01/2026",
-      "action": "updated",
-      "entry_id": "cal_006",
-      "diff": {
-        "end_ts": {
-          "from": 1775318400,
-          "to": 1775320200
+      "ts": 1775462400,
+      "formatted_timestamp": "10:40, 04/03/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Texans clip review and note dump",
+        "start_ts": 1775462400,
+        "end_ts": 1775466000,
+        "location": {
+          "city": "Houston",
+          "region": "TX",
+          "country": "USA",
+          "lat": 29.7604,
+          "lon": -95.3698,
+          "precision": "city"
         },
-        "notes": {
-          "from": "",
-          "to": "Ana wants to grab dessert after."
-        }
+        "type": "personal",
+        "linked_preferences": [
+          "NFL content involving the Tampa Bay Buccaneers and Houston Texans"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_008",
-      "ts": 1775376000,
-      "formatted_timestamp": "12:00, 04/02/2026",
+      "ts": 1775547000,
+      "formatted_timestamp": "09:30, 04/04/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_007",
-        "title": "Flight home to San Antonio",
-        "start_ts": 1775376000,
-        "end_ts": 1775383200,
+        "entry_id": "cal_008",
+        "title": "Refurbished motorcycle listing meetup",
+        "start_ts": 1775547000,
+        "end_ts": 1775552400,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "refurbished motorcycles"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775553600,
+      "formatted_timestamp": "11:20, 04/04/2026",
+      "action": "updated",
+      "entry_id": "cal_008",
+      "diff": {
+        "end_ts": {
+          "from": 1775552400,
+          "to": 1775554200
+        },
+        "notes": {
+          "from": "",
+          "to": "Seller running late; extend by 30 minutes."
+        }
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775635200,
+      "formatted_timestamp": "11:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Family lunch after service",
+        "start_ts": 1775635200,
+        "end_ts": 1775644200,
+        "location": {
+          "city": "Houston",
+          "region": "TX",
+          "country": "USA",
+          "lat": 29.7604,
+          "lon": -95.3698,
+          "precision": "city"
+        },
+        "type": "social",
+        "linked_preferences": [
+          "faith encouragement"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775719800,
+      "formatted_timestamp": "10:50, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Bible verse copy time and quiet reset",
+        "start_ts": 1775719800,
+        "end_ts": 1775723400,
+        "location": {
+          "city": "Houston",
+          "region": "TX",
+          "country": "USA",
+          "lat": 29.7604,
+          "lon": -95.3698,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "Christian devotional content centered on Jesus, prayer, and Bible verses"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775806200,
+      "formatted_timestamp": "10:10, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Houston to Atlanta flight",
+        "start_ts": 1775806200,
+        "end_ts": 1775818200,
+        "location": {
+          "city": "Atlanta",
+          "region": "GA",
+          "country": "USA",
+          "lat": 33.749,
+          "lon": -84.388,
           "precision": "city"
         },
         "type": "travel",
@@ -202,224 +310,124 @@
       }
     },
     {
-      "mod_id": "mod_009",
-      "ts": 1775390400,
-      "formatted_timestamp": "16:00, 04/02/2026",
+      "mod_id": "mod_013",
+      "ts": 1775818800,
+      "formatted_timestamp": "13:40, 04/07/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_008",
-        "title": "Airport ops call and storm preparedness review",
-        "start_ts": 1775390400,
-        "end_ts": 1775395800,
+        "entry_id": "cal_012",
+        "title": "Atlanta site visit and renovation photo walk",
+        "start_ts": 1775818800,
+        "end_ts": 1775829600,
         "location": {
-          "city": "San Antonio",
-          "region": "TX",
+          "city": "Atlanta",
+          "region": "GA",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 33.749,
+          "lon": -84.388,
           "precision": "city"
         },
         "type": "work",
         "linked_preferences": [
-          "aviation"
+          "budget-friendly apartment renovations",
+          "DIY interior decor projects using textured finishes, staining techniques, and roller-coat applications"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_010",
-      "ts": 1775462400,
-      "formatted_timestamp": "12:00, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_009",
-        "title": "Lunch and devotional break",
-        "start_ts": 1775462400,
-        "end_ts": 1775465100,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "christian music"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_011",
-      "ts": 1775487600,
-      "formatted_timestamp": "19:00, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_010",
-        "title": "Gym class: mobility and core",
-        "start_ts": 1775487600,
-        "end_ts": 1775491200,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "wellness"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_012",
-      "ts": 1775552400,
-      "formatted_timestamp": "08:00, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_011",
-        "title": "Bass fishing at the lake",
-        "start_ts": 1775552400,
-        "end_ts": 1775566800,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "bass fishing"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_013",
-      "ts": 1775560500,
-      "formatted_timestamp": "10:15, 04/04/2026",
-      "action": "updated",
-      "entry_id": "cal_011",
-      "diff": {
-        "end_ts": {
-          "from": 1775566800,
-          "to": 1775565000
-        },
-        "notes": {
-          "from": "",
-          "to": "Packed up early because the wind picked up."
-        }
+        "relation_to_social": "adjacent"
       }
     },
     {
       "mod_id": "mod_014",
-      "ts": 1775631600,
-      "formatted_timestamp": "06:20, 04/05/2026",
+      "ts": 1775824200,
+      "formatted_timestamp": "15:10, 04/07/2026",
+      "action": "updated",
+      "entry_id": "cal_012",
+      "diff": {
+        "end_ts": {
+          "from": 1775829600,
+          "to": 1775831400
+        },
+        "notes": {
+          "from": "",
+          "to": "Owner wants extra time for cabinet finish samples."
+        }
+      }
+    },
+    {
+      "mod_id": "mod_015",
+      "ts": 1775897100,
+      "formatted_timestamp": "11:45, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_012",
-        "title": "Sunday service and coffee hour",
-        "start_ts": 1775631600,
-        "end_ts": 1775637600,
+        "entry_id": "cal_013",
+        "title": "Morning jog and protein breakfast",
+        "start_ts": 1775897100,
+        "end_ts": 1775902500,
         "location": {
-          "city": "San Antonio",
-          "region": "TX",
+          "city": "Atlanta",
+          "region": "GA",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 33.749,
+          "lon": -84.388,
           "precision": "city"
         },
-        "type": "personal",
+        "type": "health",
         "linked_preferences": [
-          "christian music"
+          "high-protein eating to support fitness and weight-loss goals"
         ],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_015",
-      "ts": 1775649600,
-      "formatted_timestamp": "11:20, 04/05/2026",
+      "mod_id": "mod_016",
+      "ts": 1775905200,
+      "formatted_timestamp": "14:00, 04/08/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_013",
-        "title": "Family cookout and yard time",
-        "start_ts": 1775649600,
-        "end_ts": 1775660400,
+        "entry_id": "cal_014",
+        "title": "Coffee catch-up with Tasha",
+        "start_ts": 1775905200,
+        "end_ts": 1775909700,
         "location": {
-          "city": "San Antonio",
-          "region": "TX",
+          "city": "Atlanta",
+          "region": "GA",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 33.749,
+          "lon": -84.388,
           "precision": "city"
         },
         "type": "social",
+        "attendees": [
+          "self",
+          "Tasha"
+        ],
         "linked_preferences": [
-          "family activities"
+          "faith-friendly encouragement"
         ],
         "is_preference_driven": false,
         "relation_to_social": "related"
       }
     },
     {
-      "mod_id": "mod_016",
-      "ts": 1775714400,
-      "formatted_timestamp": "05:20, 04/06/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_014",
-        "title": "Truck oil change and tire rotation",
-        "start_ts": 1775714400,
-        "end_ts": 1775721600,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "pickup trucks",
-          "rural lifestyle"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
       "mod_id": "mod_017",
-      "ts": 1775739600,
-      "formatted_timestamp": "12:20, 04/06/2026",
+      "ts": 1775913000,
+      "formatted_timestamp": "16:10, 04/08/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_015",
-        "title": "One-on-one check-in with supervisor",
-        "start_ts": 1775739600,
-        "end_ts": 1775743200,
+        "title": "Return flight to Houston",
+        "start_ts": 1775913000,
+        "end_ts": 1775925000,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
-        "type": "work",
+        "type": "travel",
         "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
@@ -427,259 +435,63 @@
     },
     {
       "mod_id": "mod_018",
-      "ts": 1775811600,
-      "formatted_timestamp": "08:20, 04/07/2026",
+      "ts": 1775931600,
+      "formatted_timestamp": "21:20, 04/08/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_016",
-        "title": "Hand-cut bird decoy sanding session",
-        "start_ts": 1775811600,
-        "end_ts": 1775818800,
+        "title": "Pack work bag and clean out car",
+        "start_ts": 1775931600,
+        "end_ts": 1775937000,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "duck hunting"
+          "budget reality checks"
         ],
-        "is_preference_driven": true,
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_019",
-      "ts": 1775829600,
-      "formatted_timestamp": "13:20, 04/07/2026",
+      "ts": 1775940600,
+      "formatted_timestamp": "23:50, 04/08/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_017",
-        "title": "Dentist appointment",
-        "start_ts": 1775829600,
-        "end_ts": 1775833200,
+        "title": "Cancel tomorrow's gym class",
+        "start_ts": 1775944800,
+        "end_ts": 1775948400,
         "location": {
-          "city": "San Antonio",
+          "city": "Houston",
           "region": "TX",
           "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
+          "lat": 29.7604,
+          "lon": -95.3698,
           "precision": "city"
         },
         "type": "health",
-        "linked_preferences": [],
+        "linked_preferences": [
+          "high-protein eating to support fitness and weight-loss goals"
+        ],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_020",
-      "ts": 1775894400,
-      "formatted_timestamp": "06:40, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_018",
-        "title": "Early airport perimeter and lighting check",
-        "start_ts": 1775894400,
-        "end_ts": 1775899800,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "aviation"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_021",
-      "ts": 1775908800,
-      "formatted_timestamp": "10:40, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_019",
-        "title": "Lunch and phone comparison rabbit hole",
-        "start_ts": 1775908800,
-        "end_ts": 1775912400,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_022",
-      "ts": 1775923200,
-      "formatted_timestamp": "14:40, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_020",
-        "title": "Little League practice with toddler and partner",
-        "start_ts": 1775923200,
-        "end_ts": 1775930400,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "social",
-        "linked_preferences": [
-          "family activities",
-          "parenting"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_023",
-      "ts": 1775937600,
-      "formatted_timestamp": "18:40, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_021",
-        "title": "Pickup dinner for the family",
-        "start_ts": 1775937600,
-        "end_ts": 1775941200,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "family activities"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_024",
-      "ts": 1775944800,
-      "formatted_timestamp": "20:40, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_022",
-        "title": "Evening flight sim and music",
-        "start_ts": 1775944800,
-        "end_ts": 1775951400,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "aviation",
-          "music"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_027",
-      "ts": 1775946000,
-      "formatted_timestamp": "21:00, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_024",
-        "title": "Prepare decoy trade package",
-        "start_ts": 1775946000,
-        "end_ts": 1775947800,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "duck hunting",
-          "rural lifestyle"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_rep_028",
-      "ts": 1775946442,
-      "formatted_timestamp": "22:27, 04/11/2026",
-      "action": "removed",
-      "entry_id": "cal_020",
-      "removal_reason": "Rescheduled at last minute"
-    },
-    {
-      "mod_id": "mod_028",
-      "ts": 1775947920,
-      "formatted_timestamp": "21:32, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_025",
-        "title": "Set out clothes and charger for early shift",
-        "start_ts": 1775947920,
-        "end_ts": 1775949120,
-        "location": {
-          "city": "San Antonio",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.4241,
-          "lon": -98.4936,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_025",
       "ts": 1775949000,
-      "formatted_timestamp": "21:50, 04/08/2026",
-      "action": "updated",
-      "entry_id": "cal_022",
-      "diff": {
-        "end_ts": {
-          "from": 1775951400,
-          "to": 1775953200
-        },
-        "notes": {
-          "from": "",
-          "to": "Stayed up to finish the approach briefing."
-        }
-      }
+      "formatted_timestamp": "00:30, 04/09/2026",
+      "action": "removed",
+      "entry_id": "cal_017",
+      "removal_reason": "canceled: work runover and I'm too tired to make class."
     }
   ]
 }
