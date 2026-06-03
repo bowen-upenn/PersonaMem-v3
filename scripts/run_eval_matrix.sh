@@ -29,7 +29,8 @@ CLAUDE_MODEL="opus"             # alias -> latest opus (opus-4.8)
 JUDGE_MODEL="gpt-5.5"
 GPT_WORKERS=8
 AGENT_WORKERS=1
-JOBS=1
+JOBS=1            # cross-persona concurrency for the gpt modes (mem0 only)
+AGENT_JOBS=1     # cross-persona concurrency for the opus agent modes
 LIMIT=""
 RESUME="--resume"
 
@@ -43,6 +44,7 @@ while [ $# -gt 0 ]; do
     --gpt-workers)   GPT_WORKERS="$2"; shift 2;;
     --agent-workers) AGENT_WORKERS="$2"; shift 2;;
     --jobs)          JOBS="$2"; shift 2;;
+    --agent-jobs)    AGENT_JOBS="$2"; shift 2;;
     --no-resume)     RESUME=""; shift 1;;
     *) echo "unknown arg: $1" >&2; exit 2;;
   esac
@@ -83,8 +85,19 @@ run_one() {
 
 for mode in $MODES; do
   if is_agent_mode "$mode"; then
-    # Agent modes: strictly one (mode,persona) at a time.
-    for uid in $PERSONAS; do run_one "$mode" "$uid"; done
+    # Agent modes: $AGENT_JOBS personas concurrent. Each persona has its OWN
+    # time-masked snapshot + write-overlay + run_dir + claude (opus) process, so
+    # cross-persona parallelism is race-free. agent_workers stays intra-persona
+    # (mcp_agent writes accumulate per persona). Concurrency is bounded by what
+    # the Claude subscription tolerates.
+    echo "[matrix] $mode: $AGENT_JOBS persona(s) concurrent x $AGENT_WORKERS worker(s)"
+    running=0
+    for uid in $PERSONAS; do
+      run_one "$mode" "$uid" &
+      running=$((running+1))
+      if [ "$running" -ge "$AGENT_JOBS" ]; then wait -n 2>/dev/null || wait; running=$((running-1)); fi
+    done
+    wait
   else
     # GPT modes. mem0 is intra-persona SERIAL (workers=1, unpicklable qdrant
     # store), so parallelize it across personas with $JOBS (each persona has its
