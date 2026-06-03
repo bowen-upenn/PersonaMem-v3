@@ -215,6 +215,7 @@ Twelve dimensions, each a callable; results aggregated per query. Self-skips whe
 | `privacy_leak` | No surface mention of privacy-flagged hidden personas | tasks anchored on hidden personas |
 | `tool_call_validity` | Agentic + E3/E6 tool-call payloads dry-run successfully via MCP at `t_test` | `TOOL_CALL_VALIDITY_TASKS` set |
 | `frame_consistency` | User-voiced response carries the dominant motivational frame | `FRAME_CONSISTENCY_TASKS` set |
+| `holistic_test_quality` (catch-all) | Asks the LLM, given the FULL eval-facing instance for this query (`user_query` + `example_response` + `inferior_response` + `groundtruth_preference` + rubric — i.e. everything `persona.html` shows MINUS the actual model response), whether it is a genuinely good test example *for its `task_type`* (query makes sense; gold correctly answers/handles it; inferior is a credible-but-worse foil that commits the labeled flaw; GT/rubric anchors a fair grade). Drops/flags the row if not. This is the holistic safety net behind the per-dimension checks above — it catches composite failures (on-topic forbidden pref + no-op foil + query-irrelevant gold) that each single-axis check passes. | all |
 
 This audit is invoked as the post-write step from `prepare_eval_data.py`.
 
