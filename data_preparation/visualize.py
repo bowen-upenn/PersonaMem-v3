@@ -264,6 +264,19 @@ def _scrub_internal_ids(text):
     return re.sub(r"\s{2,}", " ", t).strip()
 
 
+def _scrub_inferior_response(inf):
+    """Scrub internal IDs / frame tags from an inferior_response (dict-with-text
+    OR string). The foil text is user-facing + graded, so it must be scrubbed
+    just like example_response / groundtruth_preference."""
+    if isinstance(inf, dict):
+        if isinstance(inf.get("text"), str):
+            return {**inf, "text": _scrub_internal_ids(inf["text"])}
+        return inf
+    if isinstance(inf, str):
+        return _scrub_internal_ids(inf)
+    return inf
+
+
 def _split_polarity(s: str) -> tuple[str, str]:
     """Strip a leading `(+)` or `(-)` polarity marker from a rubric string.
 
@@ -3638,7 +3651,8 @@ def dump_test_samples_json(
             "tool_call": s.get("tool_call"),  # workstream H, agentic only
             # Phase 4: paired foil + self-check signal lifted to top-level
             # for downstream tooling (instance_full also keeps the originals).
-            "inferior_response": s.get("inferior_response") or inst.get("inferior_response"),
+            "inferior_response": _scrub_inferior_response(
+                s.get("inferior_response") or inst.get("inferior_response")),
             "example_response_self_check": (
                 s.get("example_response_self_check")
                 or inst.get("example_response_self_check")
