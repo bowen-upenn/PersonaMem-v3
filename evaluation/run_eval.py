@@ -664,13 +664,17 @@ def main() -> int:
         from evaluation.memory_builder import (
             build_checkpoints, default_memory_config, load_existing_checkpoints,
         )
-        builder_client = llm_client
-        if args.memory_builder_model and args.memory_builder_model != args.model:
-            from query_llm import QueryLLM
-            builder_client = QueryLLM(
-                {"models": {"llm_model": args.memory_builder_model}},
-                rate_limit_per_min=args.rate_limit,
-            )
+        # Independent builder client: the memory-build API calls must be SEPARATE
+        # from the per-query answer calls — its OWN QueryLLM instance (+ own
+        # rate-limit semaphore + usage accounting), never the shared answer
+        # `llm_client`. The build is a distinct phase; isolating its client keeps
+        # build vs answer traffic from contending or being conflated.
+        from query_llm import QueryLLM
+        _builder_model = args.memory_builder_model or args.model
+        builder_client = QueryLLM(
+            {"models": {"llm_model": _builder_model}},
+            rate_limit_per_min=args.rate_limit,
+        )
         mem_cfg = default_memory_config()
         mem_cfg.update({
             "token_cap": args.memory_token_cap,

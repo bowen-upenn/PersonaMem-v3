@@ -108,7 +108,15 @@ for mode in $MODES; do
     # own store dir — no conflict). The long-context / text-memory modes already
     # parallelize intra-persona via $GPT_WORKERS, so run their personas one at a
     # time — otherwise $JOBS×$GPT_WORKERS would blow past the Azure rate limit.
-    if [ "$mode" = "mem0" ]; then mode_jobs="$JOBS"; else mode_jobs=1; fi
+    # mem0 AND llm_memory both have a SERIAL per-persona memory BUILD phase (the
+    # bottleneck), so parallelize them across personas with $JOBS (each persona =
+    # own process + own independent builder client). Keep $GPT_WORKERS low for
+    # these (jobs x workers = concurrency) so the answer phase stays within the
+    # rate limit. llm_longctx (no build) keeps jobs=1 x high workers.
+    case "$mode" in
+      mem0|llm_memory) mode_jobs="$JOBS";;
+      *)               mode_jobs=1;;
+    esac
     echo "[matrix] $mode: $mode_jobs persona(s) concurrent x $GPT_WORKERS worker(s)"
     running=0
     for uid in $PERSONAS; do
