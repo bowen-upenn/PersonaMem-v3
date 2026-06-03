@@ -2745,6 +2745,12 @@ def _pick_flaw_evidence(flaw_kind: str, inst: dict, persona_ctx: dict,
         if task_id == "daily_personalized_briefing":
             return None
         recent_negs = persona_ctx.get("recent_negatives") or []
+        # When the narrow recent window holds no negatives, BROADEN to the user's
+        # all-time explicit_negative history (any day < t_test) so the foil still
+        # injects a REAL disliked topic instead of no-op'ing — esp.
+        # agentic_trending_alert. (daily_personalized_briefing already returned.)
+        if not recent_negs:
+            recent_negs = persona_ctx.get("all_negatives") or []
         if not recent_negs:
             return None
         evidence = rng.choice(recent_negs)
@@ -3601,6 +3607,7 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
     cat_recent_ts: dict[str, int] = {}
     pref_recent_ts: dict[str, int] = {}
     recent_negs: list[dict] = []
+    all_negs: list[dict] = []   # ALL explicit_negative (ts < t_test), any day
     # app_personas — capitalized keys in profile.json: Instagram/Facebook/Threads/Chatbot.
     # Normalize to lowercase keys to match inst["target_app"].
     # user_voice — shared across all apps; needed by the voice-evidence smoke
@@ -3634,22 +3641,25 @@ def _build_persona_ctx(bq, user_id: str, t_test: int) -> dict:
                     cat_counts[cat] += 1
                     if ts > cat_recent_ts.get(cat, 0):
                         cat_recent_ts[cat] = ts
-            if (e.get("source_interaction_type") or "") == "explicit_negative" \
-               and (t_test - 2 * DAY) <= ts < t_test:
+            if (e.get("source_interaction_type") or "") == "explicit_negative" and ts < t_test:
                 content = e.get("content") or {}
-                recent_negs.append({
+                neg_row = {
                     "ts": ts,
                     "app": app,
                     "source_object_id": e.get("source_object_id", ""),
                     "hashtags": e.get("source_hashtags") or [],
                     "persona_item": (content.get("caption") or content.get("title") or "")[:100],
-                })
+                }
+                all_negs.append(neg_row)
+                if (t_test - 2 * DAY) <= ts:
+                    recent_negs.append(neg_row)
     return {
         "top_prefs": pref_counts.most_common(8),
         "top_categories": cat_counts.most_common(6),
         "cat_recent_ts": cat_recent_ts,
         "pref_recent_ts": pref_recent_ts,
         "recent_negatives": recent_negs,
+        "all_negatives": all_negs,
         "app_personas": app_personas,
         "user_voice": user_voice,
     }

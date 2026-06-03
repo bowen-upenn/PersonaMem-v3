@@ -2604,7 +2604,9 @@ def build_c1c_same_preference_clusters(
 # metric-artifact remediation pass for the same reason as c1c: tail size
 # grows from 2 → 4 so the diversification metric can actually fail.
 _C1D_QUERIES_PER_CLUSTER = 6
-_C1D_N_ALLOWED_REPETITIONS = 2
+# At most TWICE: head zone = first n_allowed+1 = 2 responses may reuse the
+# target pref; diversification is required from response #3 onward.
+_C1D_N_ALLOWED_REPETITIONS = 1
 # 3h → 12h (2026-05-28), same reasoning as _C1C_WINDOW_SECONDS — the
 # diversification test now spans a fuller day instead of compressing
 # into one short stretch.
