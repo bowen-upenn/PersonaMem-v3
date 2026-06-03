@@ -682,12 +682,28 @@ def main() -> int:
             "builder_temperature": args.memory_builder_temperature,
             "builder_model": args.memory_builder_model or args.model,
         })
-        boundaries = sorted({int(r["ts"]) for r in rows})
+        # Build the memory at DAY boundaries (one consolidation per calendar day
+        # of the user's activity), NOT at every query T_test. Per-T_test building
+        # was ~1 gpt-5.5 call per boundary (~90/persona) and gpt-5.5's reasoning
+        # endpoint caps build throughput at ~2.7 calls/min regardless of
+        # concurrency → ~11h. Day boundaries (~8-10/persona) cut that ~10x. The
+        # ledger's nearest-prior lookup maps each query to the memory consolidated
+        # through the previous day (queries see same-day-earlier events only after
+        # the next daily consolidation — accepted staleness, daily cadence).
+        from evaluation.memory_builder import build_global_stream as _bgs
+        _DAY = 86400
+        _query_ts = [int(r["ts"]) for r in rows]
+        _t_hi = max(_query_ts)
+        _ev = _bgs(bq, args.user_id, _t_hi + 1)
+        _ev_ts = [int(e.get("t") or 0) for e in _ev if e.get("t")]
+        _lo = min(_ev_ts) if _ev_ts else min(_query_ts)
+        # midnight (UTC) of the first activity day .. the day AFTER the last query
+        boundaries = list(range((_lo // _DAY) * _DAY, ((_t_hi // _DAY) + 2) * _DAY, _DAY))
         existing = load_existing_checkpoints(run_dir, args.user_id, args.mode) if args.resume else None
         _usage_before = (builder_client.get_usage_totals()
                          if hasattr(builder_client, "get_usage_totals") else None)
         print(f"[run_eval] {args.mode} mode: building memory ledger over {len(boundaries)} "
-              f"T_test boundaries (builder={mem_cfg['builder_model']}, "
+              f"DAY boundaries (builder={mem_cfg['builder_model']}, "
               f"cap={mem_cfg['token_cap']}, chunk_k={mem_cfg['chunk_k']})...", flush=True)
         ledger = build_checkpoints(
             bq, args.user_id, boundaries, builder_client, mem_cfg,
