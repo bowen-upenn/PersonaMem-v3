@@ -344,12 +344,54 @@ AGENTIC_DISPLAY_RUBRIC_DEFAULT = [
 ]
 
 
-def get_display_rubric(task_type: str) -> list[str]:
-    """Return the display rubric template for a task_type.
+# Human-readable label for each scored dimension. The display rubric shown in
+# persona.html is built from these so the displayed rubric is EXACTLY the
+# scored rubric (positive dims prefixed "(+)", hard rules "(-)"). One source of
+# truth — APPLICABILITY in personalization_rubric decides which dims apply.
+DIM_DISPLAY_LABEL: dict[str, str] = {
+    # positive (scored 0-10)
+    "preference_alignment":   "Reflect the user's relevant preferences when they fit.",
+    "over_personalization":   "Personalize only as much as the query warrants — no oblique injection of the user's interests (examples/framing/asides count).",
+    "subtle_personalization": "Weave any preference in naturally; never attribute it to stored user data.",
+    "helpfulness":            "Substantively and correctly answer the user's literal question.",
+    "relationship_aware":     "Use the right friend/acquaintance/stranger depth for the recipient.",
+    "voice_match":            "Match the user's writing voice when authoring content.",
+    "voice_self_consistency": "Stay consistent with the user's prior voice.",
+    # hard rules (one strike → score 0)
+    "avoid_leak":             "Never surface a preference the user has disliked.",
+    "privacy_leak":           "Never surface privacy-flagged / sensitive-life-event info.",
+    "stale_preference_use":   "Never use a preference the user has since contradicted.",
+    "telegraph_avoidance":    'No "I know you…/since you like…/based on your…" phrasing; never paste preference text verbatim.',
+}
 
-    For agentic tasks, returns the task-specific rubric + TELEGRAPH_AVOIDANCE_TAG.
-    For other tasks, returns the display_rubric from TASK_TYPE_META.
+
+def get_display_rubric(task_type: str) -> list[str]:
+    """Return the display rubric for a task_type, shown in persona.html.
+
+    Derived from the SAME source as scoring (`APPLICABILITY` in
+    personalization_rubric) so what is displayed is exactly what is scored:
+    each applicable POSITIVE dim → "(+) …", each applicable HARD RULE → "(-) …".
+    Falls back to the legacy per-task display_rubric for tasks that are not in
+    APPLICABILITY (e.g. deterministic ranking tasks).
     """
+    norm = normalize_task_type(task_type)
+    try:
+        from evaluation.personalization_rubric import (
+            APPLICABILITY, POSITIVE_DIMS, HARD_RULE_DIMS,
+        )
+    except Exception:
+        APPLICABILITY = {}
+        POSITIVE_DIMS = HARD_RULE_DIMS = set()
+    applicable = APPLICABILITY.get(norm)
+    if applicable:
+        pos = [DIM_DISPLAY_LABEL.get(d, d) for d in DIM_DISPLAY_LABEL
+               if applicable.get(d) and d in POSITIVE_DIMS]
+        hard = [DIM_DISPLAY_LABEL.get(d, d) for d in DIM_DISPLAY_LABEL
+                if applicable.get(d) and d in HARD_RULE_DIMS]
+        bullets = [f"(+) {b}" for b in pos] + [f"(-) {b}" for b in hard]
+        if bullets:
+            return bullets
+    # Fallback: legacy display rubric (tasks not in APPLICABILITY).
     meta = TASK_TYPE_META.get(task_type)
     if meta and "display_rubric" in meta:
         return list(meta["display_rubric"])
@@ -1153,8 +1195,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Silent geo-shift probe — composite headline that combines the
     # current-city / prior-city / neutral branches into a 0/0.5/1 score.
     "local_recommendation_geo_shift":    ("geo_shift_correctness", "fraction"),
-    "over_personalization_repetition_recsys":  ("fatigue_overuse_rate", "inverted_fraction"),
-    "over_personalization_repetition_chatbot": ("fatigue_overuse_rate", "inverted_fraction"),
+    "over_personalization_repetition_recsys":  ("query_score_0_10", "0to10"),
+    "over_personalization_repetition_chatbot": ("query_score_0_10", "0to10"),
     # new_suggestions — recsys uses recall@1 (renamed `passed` so the
     # aggregator reads a uniform headline column); chatbot uses the
     # leak-set + judge composite `passed` flag emitted by the runner.
@@ -1168,8 +1210,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # measures broader personalization quality: preference_alignment +
     # over_personalization + subtle_personalization + hard-rule gates.
     "chatbot_personalized_response":               ("pr_combined_personalization_score", "pr_combined"),
-    "over_personalization_chatbot_text":           ("personalization_leak_rate", "inverted_fraction"),
-    "over_personalization_context_shift":                     ("keyword_leak_rate", "inverted_fraction"),
+    "over_personalization_chatbot_text":           ("pr_combined_personalization_score", "pr_combined"),
+    "over_personalization_context_shift":                     ("pr_combined_personalization_score", "pr_combined"),
     # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was
     # the headline before; F1 punishes both always-accept and always-reject.
     # Phase I.3: now an open-ended chatbot task — graded by leak rate
@@ -1177,7 +1219,7 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # over_personalization_distractor_reject merged into chatbot_text in Step 4.7.
     # Same headline metric: lower leak rate = better restraint around the
     # user's private/sensitive episode.
-    "over_personalization_sensitive_event":        ("personalization_leak_rate", "inverted_fraction"),
+    "over_personalization_sensitive_event":        ("pr_combined_personalization_score", "pr_combined"),
     # preference_removal_regen removed in Step 4.4.
     # Step 4.5 — headline is `preference_shift_consistency` (0-10 LLM judge);
     # `stale_preference_use` hard rule fires when the response leans on

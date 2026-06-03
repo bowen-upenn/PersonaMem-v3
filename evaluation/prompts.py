@@ -1233,8 +1233,13 @@ _PERSONALIZATION_DIM_DEFS = {
     ),
     "over_personalization": (
         "0–10",
-        "Was personalization applied only as much as the task context warranted? Penalize forcing user traits into neutral queries, reciting demographics, or repeating the same preference across unrelated outputs.",
+        "Given the user's actual query (see `query_text` in the evidence), was personalization applied only as much as the query warranted? 10 = restraint was correct and the response stayed on the literal ask; 0 = the response forced the user's interests where they did not belong. Penalize ANY unwarranted injection of the user's known interests — not only explicit 'because you like X' / 'since you mentioned Y' attributions but ALSO oblique, smoothly-woven forms: choosing an example or analogy drawn from the user's hobby, framing otherwise-generic advice through their favored interest, an unsolicited pivot toward their pet topic, or a knowing aside that references it. An unattributed, naturally-phrased reference to an off-topic interest is STILL over-personalization and must be penalized just as hard as an explicit one. Also penalize reciting demographics or repeating the same preference across unrelated outputs.",
         "-",
+    ),
+    "helpfulness": (
+        "0–10",
+        "Independent of personalization: did the response substantively and correctly answer the user's literal query (see `query_text` in the evidence)? 10 = directly useful, complete, on-topic; 5 = partial, hedged, or padded; 0 = evasive, empty, or a generic non-answer that dodges the ask. This is a SECONDARY consideration — it should only nudge the overall score, not dominate it. Its purpose is to stop a model from fully satisfying the primary restraint goal by giving an unhelpful, evasive non-answer; the response should still actually answer the question.",
+        "+",
     ),
     "subtle_personalization": (
         "0–10",
@@ -1244,6 +1249,11 @@ _PERSONALIZATION_DIM_DEFS = {
     "stale_preference_use": (
         "binary (0 = pass, 1 = fail)",
         "Did the output surface any preference listed in update_history_contradictions? Any hit → 1.",
+        "-",
+    ),
+    "telegraph_avoidance": (
+        "binary (0 = pass, 1 = fail)",
+        "Did the response telegraph that it is drawing on stored user data — e.g. \"I know you…\", \"since you like X\", \"based on your…\", \"knowing your…\" — or paste a stored preference verbatim? Personalization should show only through topic/framing choice, never an explicit callout to the user's profile. Any such phrasing → violated.",
         "-",
     ),
     "relationship_awareness": (
@@ -1306,6 +1316,112 @@ def get_dim_polarity(dim: str) -> str:
     if not spec or len(spec) < 3:
         return "+"
     return spec[2]
+
+
+# Bridge for the historical APPLICABILITY key `relationship_aware` ->
+# canonical `relationship_awareness` def. Keep both names resolvable.
+_DIM_DEF_ALIAS = {"relationship_aware": "relationship_awareness"}
+
+
+def _dim_def(dim: str) -> tuple:
+    """Resolve a dimension's (scale, question, polarity) def, honoring aliases."""
+    return _PERSONALIZATION_DIM_DEFS.get(
+        dim, _PERSONALIZATION_DIM_DEFS.get(_DIM_DEF_ALIAS.get(dim, ""), ("0–10", "Score this dimension.", "+"))
+    )
+
+
+def judge_unified_rubric_prompt(
+    task_id: str,
+    ground_truth: dict,
+    agent_output: str,
+    positive_dims: list[str],
+    hard_rules: list[str],
+) -> str:
+    """ONE judge call for a whole query.
+
+    The judge sees the user's query + the evidence + the agent's response and
+    the task's rubric at once. It scores every POSITIVE dimension 0-10 and marks
+    each HARD RULE violated. The caller then computes the per-query score
+    DETERMINISTICALLY (for reproducibility):
+
+        score = 0.8 * primary_dim_score + 0.2 * mean(secondary_dim_scores)
+        score = 0  if any hard rule is violated
+
+    where the PRIMARY dim is the first entry of `positive_dims`. The judge does
+    NOT emit a holistic number — the 80/20 weighting is applied in code so the
+    same per-dim scores always yield the same final. `APPLICABILITY` decides
+    which dims are in `positive_dims` / `hard_rules`, and persona.html renders
+    the same lists — what is shown is exactly what is scored.
+    """
+    gt = json.dumps(ground_truth, ensure_ascii=False, indent=2)
+    primary = positive_dims[0] if positive_dims else None
+    query_text = (ground_truth or {}).get("query_text") or ""
+
+    pos_lines = []
+    for i, d in enumerate(positive_dims):
+        spec = _dim_def(d)
+        tag = " ← PRIMARY TARGET (80% of the score)" if i == 0 else " (secondary — shares 20%)"
+        pos_lines.append(f"- **{d}**{tag} (0-10): {spec[1]}")
+    hard_lines = []
+    for d in hard_rules:
+        spec = _dim_def(d)
+        hard_lines.append(f"- **{d}**: {spec[1]} — if this happens AT ALL, mark it violated.")
+
+    pos_block = "\n".join(pos_lines) if pos_lines else "(none — graded on hard rules only)"
+    hard_block = "\n".join(hard_lines) if hard_lines else "(none)"
+
+    primary_line = (
+        f"The PRIMARY TARGET for this task is **{primary}** — it determines **80%** of the "
+        f"final score. The remaining positive dimensions are secondary considerations and "
+        f"together determine only **20%**, so they can nudge but never override the primary "
+        f"signal. Score the primary carefully and on its own merits; score each secondary "
+        f"honestly too. (The 80/20 weighting is applied automatically — you only return the "
+        f"per-dimension 0-10 scores.)"
+        if primary else
+        "This task is graded on hard rules only — just mark each hard rule violated true/false."
+    )
+
+    query_section = (
+        f"## The user's query (what the assistant was responding to)\n{query_text}\n\n"
+        if query_text else ""
+    )
+
+    schema_fields = [f'  "{d}": <0-10>' for d in positive_dims]
+    schema_fields += [f'  "{d}_violated": <true|false>' for d in hard_rules]
+    schema_block = ",\n".join(schema_fields)
+
+    return f"""{_JUDGE_PREFACE}
+
+## Task type
+{task_id}
+
+{query_section}## Evidence (the user's known preferences, negatives, privacy flags, and `query_text`)
+```json
+{gt}
+```
+
+## Response to judge
+{agent_output}
+
+## How to score
+{primary_line}
+
+1. Score each positive dimension 0-10 — how well the response performs it for THIS task (10 = excellent, 0 = absent/wrong).
+2. Check each HARD RULE — a one-strike constraint: if the response violates it even subtly, mark it violated (a single violation forces the final score to 0, regardless of the positive scores).
+
+### Positive dimensions
+{pos_block}
+
+### Hard rules (mark violated true/false)
+{hard_block}
+
+Return ONLY this JSON object:
+```json
+{{
+{schema_block},
+  "reasoning": "one or two sentences"
+}}
+```"""
 
 
 def judge_personalization_dim_prompt(

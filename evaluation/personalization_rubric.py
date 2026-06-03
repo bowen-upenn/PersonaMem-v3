@@ -51,8 +51,14 @@ DAY_SECONDS = 24 * 60 * 60
 
 APPLICABILITY: dict[str, dict[str, bool]] = {
     # Chatbot response (was: chatbot_response_proactive / _control)
-    "chatbot_personalized_response": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": True, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "chatbot_personalized_response": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    # Restraint task: PRIMARY positive = over_personalization (did the model
+    # stay appropriately un-personalized?). helpfulness is a SECONDARY considerata
+    # (did it still answer?) — it nudges but never displaces the primary, so it
+    # can't inflate restraint. subtle_personalization stays OFF (rewarding a
+    # subtly-woven pref would credit the very leak we penalize). The sharpened
+    # over_personalization dim catches oblique injection.
+    "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     # Restraint family — repetition fatigue tested in two surface modes
     # (recsys-loop vs varied chatbot questions on same pref).
     "over_personalization_repetition_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
@@ -63,9 +69,12 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
     # — the gold IS a fresh topic, so preference_alignment is off.
     "new_suggestions_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     "new_suggestions_chatbot": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_context_shift": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_distractor_reject": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_sensitive_event": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    # Restraint family: single focused positive = over_personalization (don't
+    # apply the user's prefs in the shifted context — this already subsumes the
+    # third-party / wrong-recipient cases). relationship_aware trimmed for focus.
+    "over_personalization_context_shift": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_distractor_reject": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    "over_personalization_sensitive_event": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
     # preference_removal_regen removed in Step 4.4.
     # Agentic family (was: t6..t19)
     "agentic_community_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
@@ -104,8 +113,30 @@ PENALTY_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use",
 # Backward compat alias — old code that references HARD_RULE_DIMS still works.
 HARD_RULE_DIMS = PENALTY_DIMS
 JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_personalization",
+                  "helpfulness",
                   "relationship_aware", "voice_match", "voice_self_consistency",
                   "telegraph_avoidance"}
+
+# --- Unified scoring roles (single source of truth) ------------------------
+# Every judged task draws its applicable dims from APPLICABILITY. Each dim has
+# exactly one role: POSITIVE dims are judged 0-10; HARD_RULE dims are one-strike
+# constraints (any violation zeroes the score). The persona.html display rubric
+# is rendered from these same two lists, so what is shown is exactly what is
+# scored.
+#
+# The per-query headline is the judge's holistic `overall_score`, DOMINATED by
+# the PRIMARY positive (the first applicable positive dim). Other positives are
+# secondary considerations that only nudge the score — they are NOT equal-weight
+# averaged. Because of that, `helpfulness` is safe as a general secondary
+# considerata: it can't inflate restraint scores the way an equal-weight mean
+# would (it never displaces the primary target, and its per-dim score is
+# auxiliary/analysis-only). helpfulness is never a PRIMARY — it is only ever
+# listed after the task's main positive.
+POSITIVE_DIMS = {"preference_alignment", "over_personalization", "subtle_personalization",
+                 "helpfulness", "relationship_aware", "voice_match", "voice_self_consistency"}
+# HARD_RULE_DIMS is PENALTY_DIMS: avoid_leak, privacy_leak, stale_preference_use,
+# telegraph_avoidance.
+HARD_RULE_DIMS = PENALTY_DIMS
 
 
 # --- Source A: persona ground truth ----------------------------------------
@@ -146,6 +177,10 @@ def build_source_a(
                 seen.add(key)
 
     return {
+        # The literal query is part of the ground truth so judge dims that
+        # must reason about query-appropriateness (over_personalization,
+        # helpfulness) can see what was actually asked.
+        "query_text": query_text,
         "user_top_preferences": _rank_relevant(flat_prefs, query_text, query_hashtags or [], k=8),
         "user_negatives_nearby": same_day["avoid"],
         "privacy_flagged_prefs": privacy_flagged,
@@ -459,82 +494,6 @@ _DIM_ALIAS = {
 }
 
 
-def combine_dim_scores_with_polarity(out: dict, applicable: dict) -> None:
-    """Aggregate per-dim scores into a polarity-aware combined score.
-
-    Mutates `out` in place to add three keys:
-      - `positive_score`: sum of `out[f"{dim}_score"]` over each applicable
-        `+` dim that has a numeric score (0-10 each).
-      - `negative_penalty`: sum over each applicable `-` dim of either
-        `hard_fail * PENALTY_PER_HARD_FAIL` (binary dims) or
-        `(10 - dim_score) / 10 * PENALTY_PER_SOFT_NEG` (gap-from-ideal for
-        soft 0-10 negative dims).
-      - `combined_personalization_score`: clamp(positive_score - negative_penalty, 0, max_possible).
-
-    Polarity comes from `evaluation.prompts._PERSONALIZATION_DIM_DEFS` via
-    `prompts.get_dim_polarity`. Unknown dims default to `+`.
-
-    Caller note: when `judge_client=None`, no `+` dim ever has a score, so
-    `combined_personalization_score` reflects only hard-fail penalties
-    (clamped at 0). Document this in the run report.
-    """
-    from evaluation import prompts as _prompts_mod
-
-    def _polarity(dim: str) -> str:
-        # Try canonical name; fall back through alias bridge.
-        pol = _prompts_mod.get_dim_polarity(dim)
-        if pol == "+" and dim in _DIM_ALIAS:
-            # Default-fallback in get_dim_polarity returns "+" for unknown
-            # dims. Re-check with the canonical name from the alias map so
-            # `relationship_aware` correctly resolves to `+`.
-            pol = _prompts_mod.get_dim_polarity(_DIM_ALIAS[dim])
-        return pol
-
-    pos_dims_applicable: list[str] = []
-    neg_dims_applicable: list[str] = []
-    for dim, is_on in (applicable or {}).items():
-        if not is_on:
-            continue
-        if _polarity(dim) == "+":
-            pos_dims_applicable.append(dim)
-        else:
-            neg_dims_applicable.append(dim)
-
-    # Positive contribution: judge-dim scores on the 0-10 scale.
-    positive_score = 0.0
-    n_positive_scored = 0
-    for dim in pos_dims_applicable:
-        v = out.get(f"{dim}_score")
-        if isinstance(v, (int, float)):
-            positive_score += float(v)
-            n_positive_scored += 1
-
-    # Negative penalty: all dims now use gap-from-ideal on their 0-10 score.
-    # Penalty dims (formerly hard-rule) contribute via their _score key;
-    # if only a hard_fail flag is present (no _score), fall back to the
-    # binary PENALTY_PER_HARD_FAIL constant.
-    negative_penalty = 0.0
-    for dim in neg_dims_applicable:
-        v = out.get(f"{dim}_score")
-        if isinstance(v, (int, float)):
-            gap = max(0.0, 10.0 - float(v)) / 10.0
-            weight = PENALTY_PER_HARD_FAIL if dim in PENALTY_DIMS else PENALTY_PER_SOFT_NEG
-            negative_penalty += gap * weight
-        elif dim in PENALTY_DIMS:
-            # Fallback: only a hard_fail flag exists (no 0-10 score).
-            hf = out.get(f"{dim}_hard_fail")
-            if isinstance(hf, (int, float)) and hf:
-                negative_penalty += PENALTY_PER_HARD_FAIL
-
-    max_possible = 10.0 * len(pos_dims_applicable)
-    combined = max(0.0, min(max_possible, positive_score - negative_penalty))
-
-    out["positive_score"] = positive_score
-    out["negative_penalty"] = negative_penalty
-    out["combined_personalization_score"] = combined
-    out["combined_max_possible"] = max_possible
-
-
 def score(
     task_id: str,
     agent_output: str,
@@ -543,102 +502,122 @@ def score(
     judge_client=None,
     threshold: float = 0.5,
 ) -> dict:
-    """Score an agent output on the applicable personalization dimensions.
+    """Score one agent output with a SINGLE unified judge call.
 
-    Hard dims run always (cheap, no LLM). Judge dims run only when
-    `judge_client` is provided.
+    The judge sees the user's query + ground truth + the response + the task's
+    full rubric at once. It scores every applicable POSITIVE dimension 0-10 (by
+    how well the response performs) and flags every applicable HARD RULE.
 
-    Returns a flat dict of dimension_name → score (and hard_fail flags).
+    The per-query score (`query_score_0_10`) = mean(positive dim scores),
+    zeroed if ANY hard rule is violated. Each dimension's sub-score / violation
+    flag is kept in the returned dict for diagnostics.
+
+    `telegraph_avoidance` is also checked deterministically (cheap regex) and
+    OR'd with the judge's verdict. Source-B behavioral hit/miss is appended as a
+    diagnostic only — it is NOT part of the 0-10 (that stays purely judge-based).
     """
-    # Phase 0: support v1 task names that may flow in from older queries.csv
-    # files via runner. Normalize to the v2 name before APPLICABILITY lookup.
     from evaluation.task_registry import normalize_task_type
     task_id = normalize_task_type(task_id)
     applicable = APPLICABILITY.get(task_id, {})
     out: dict = {"task_id": task_id, "applicable_dims": [k for k, v in applicable.items() if v]}
 
-    # Hard-rule dims — now LLM-judged when judge_client available,
-    # falls back to similarity-based metrics otherwise.
-    from evaluation import llm_metrics
-    _judge_fn = (judge_client.query_llm
-                 if judge_client and hasattr(judge_client, "query_llm")
-                 else None)
+    pos_dims = [d for d in applicable if applicable[d] and d in POSITIVE_DIMS]
+    hard_dims = [d for d in applicable if applicable[d] and d in HARD_RULE_DIMS]
+    out["positive_dims"] = pos_dims
+    out["hard_rule_dims"] = hard_dims
 
-    if applicable.get("avoid_leak"):
-        r = llm_metrics.personalization_leak_check(
-            _judge_fn, agent_output,
-            ground_truth.get("user_negatives_nearby") or [],
-            context="avoid_leak: user has disliked these topics",
-        )
-        avoid_leak_score = float(r.get("restraint_score", 10.0 if r["leak_rate"] == 0 else 0.0))
-        out["avoid_leak_score"] = avoid_leak_score
-        out["avoid_leak_rate"] = r["leak_rate"]
-        out["avoid_leak_hard_fail"] = 1 if avoid_leak_score <= 2 else 0
-    if applicable.get("privacy_leak"):
-        r = llm_metrics.privacy_leak_check(
-            _judge_fn, agent_output,
-            ground_truth.get("privacy_flagged_prefs") or [],
-        )
-        privacy_leak_score = float(r.get("restraint_score", 10.0 if r["leak_rate"] == 0 else 0.0))
-        out["privacy_leak_score"] = privacy_leak_score
-        out["privacy_leak_rate"] = r["leak_rate"]
-        out["privacy_leak_hard_fail"] = 1 if privacy_leak_score <= 2 else 0
-    if applicable.get("stale_preference_use"):
-        r = llm_metrics.personalization_leak_check(
-            _judge_fn, agent_output,
-            ground_truth.get("update_history_contradictions") or [],
-            context="stale_preference_use: user has contradicted these old preferences",
-        )
-        stale_score = float(r.get("restraint_score", 10.0 if r["leak_rate"] == 0 else 0.0))
-        out["stale_preference_use_score"] = stale_score
-        out["stale_preference_use_rate"] = r["leak_rate"]
-        out["stale_preference_use_hard_fail"] = 1 if stale_score <= 2 else 0
-    if applicable.get("telegraph_avoidance"):
-        # Deterministic — runs the regex + verbatim-pref-insertion check
-        # in `evaluation.llm_postprocess._validate_no_creepy_phrasing`.
-        # No LLM needed; output 0-10 score: 10 if no telegraph phrase, 0 if detected.
+    # Deterministic telegraph check (cheap; OR'd with the judge verdict below).
+    telegraph_det_violation = False
+    if "telegraph_avoidance" in hard_dims:
         from evaluation.judges import judge_telegraph_avoidance as _jta
         held_out = (ground_truth.get("held_out_preference")
                     or ground_truth.get("groundtruth_preference")
                     or ground_truth.get("target_pref"))
         ja = _jta(agent_output, held_out)
-        # Convert the old [0, 1] scale to 0-10: 1.0 -> 10, 0.0 -> 0
-        telegraph_score_010 = float(ja["telegraph_avoidance"]) * 10.0
-        out["telegraph_avoidance_score"] = telegraph_score_010
-        out["telegraph_avoidance_hard_fail"] = 1 if telegraph_score_010 <= 2 else 0
+        out["telegraph_avoidance_score"] = float(ja["telegraph_avoidance"]) * 10.0
+        telegraph_det_violation = float(ja["telegraph_avoidance"]) < 1.0
         if ja.get("telegraph_reason"):
             out["telegraph_avoidance_reason"] = ja["telegraph_reason"]
 
-    # Judge dims — skip if no judge available.
-    if judge_client:
-        for dim in (
-            "preference_alignment", "over_personalization", "subtle_personalization",
-            "relationship_aware", "voice_match", "voice_self_consistency",
-        ):
-            if not applicable.get(dim):
-                continue
-            prompt = prompts_mod.judge_personalization_dim_prompt(dim, ground_truth, agent_output, task_id)
-            try:
-                resp = judge_client(prompt) if callable(judge_client) else judge_client.query_llm(prompt)
-                parsed = extract_json_from_response(resp) or {}
-                score_val = parsed.get("score")
-                if isinstance(score_val, (int, float)):
-                    out[f"{dim}_score"] = float(score_val)
-                    # Derive hard_fail for backward compat if this is a penalty dim
-                    if dim in PENALTY_DIMS:
-                        out[f"{dim}_hard_fail"] = 1 if float(score_val) <= 2 else 0
-                # voice_match returns 3 sub-scores plus the mean — surface
-                # them all for diagnostic visibility (helps diagnose whether
-                # a low score is identity / idiolect / audience).
-                if dim == "voice_match":
-                    for sub in ("identity_coherence", "idiolect_fidelity", "audience_appropriateness"):
-                        sub_val = parsed.get(sub)
-                        if isinstance(sub_val, (int, float)):
-                            out[f"voice_match_{sub}"] = float(sub_val)
-            except Exception as exc:
-                out[f"{dim}_judge_error"] = str(exc)
+    violated: list[str] = []
+    pos_scores: list[float] = []
 
-    # Source B — behavioral hit/miss for applicable tasks.
+    if judge_client is not None and (pos_dims or hard_dims):
+        _judge_fn = (judge_client.query_llm
+                     if hasattr(judge_client, "query_llm") else judge_client)
+        prompt = prompts_mod.judge_unified_rubric_prompt(
+            task_id, ground_truth, agent_output, pos_dims, hard_dims,
+        )
+        parsed: dict = {}
+        try:
+            raw = _judge_fn(prompt)
+            parsed = extract_json_from_response(raw) or {}
+        except Exception as exc:
+            out["judge_error"] = str(exc)
+        if not isinstance(parsed, dict):
+            parsed = {}
+
+        # Positive dims — the judge's per-dim 0-10 scores. These feed the
+        # deterministic 80/20 aggregation below (primary 80%, secondaries 20%).
+        for d in pos_dims:
+            v = parsed.get(d)
+            if isinstance(v, dict):  # voice_match may return sub-scores + score
+                for sub in ("identity_coherence", "idiolect_fidelity", "audience_appropriateness"):
+                    if isinstance(v.get(sub), (int, float)):
+                        out[f"{d}_{sub}"] = float(v[sub])
+                v = v.get("score")
+            if isinstance(v, (int, float)):
+                s = max(0.0, min(10.0, float(v)))
+                out[f"{d}_score"] = s
+                pos_scores.append(s)
+
+        # Hard rules — judge verdict OR (for telegraph) the deterministic check.
+        for d in hard_dims:
+            jv = bool(parsed.get(f"{d}_violated"))
+            if d == "telegraph_avoidance":
+                jv = jv or telegraph_det_violation
+            out[f"{d}_violated"] = 1 if jv else 0
+            out[f"{d}_hard_fail"] = 1 if jv else 0  # backward-compat key
+            if jv:
+                violated.append(d)
+        out["judge_reasoning"] = parsed.get("reasoning", "")
+    else:
+        # No judge available — only the deterministic telegraph hard rule can
+        # fire; positive dims cannot be scored without the judge.
+        if telegraph_det_violation:
+            out["telegraph_avoidance_violated"] = 1
+            out["telegraph_avoidance_hard_fail"] = 1
+            violated.append("telegraph_avoidance")
+
+    # Deterministic 80/20 aggregation (reproducible: same per-dim scores → same
+    # final). PRIMARY = first applicable positive dim → 80%; the secondaries
+    # share 20% (their mean). If the primary score is missing, fall back to the
+    # mean of whatever positive scores exist.
+    out["positive_dim_mean"] = round(sum(pos_scores) / len(pos_scores), 2) if pos_scores else 0.0
+    out["hard_rule_violations"] = violated
+    primary_dim = pos_dims[0] if pos_dims else None
+    primary_score = out.get(f"{primary_dim}_score") if primary_dim else None
+    secondary_scores = [out[f"{d}_score"] for d in pos_dims[1:]
+                        if isinstance(out.get(f"{d}_score"), (int, float))]
+    if isinstance(primary_score, (int, float)):
+        if secondary_scores:
+            final = 0.8 * float(primary_score) + 0.2 * (sum(secondary_scores) / len(secondary_scores))
+        else:
+            final = float(primary_score)
+    else:
+        final = out["positive_dim_mean"]  # primary missing → graceful fallback
+    out["primary_dim"] = primary_dim
+    out["primary_dim_score"] = primary_score
+    # THE single per-query score, fixed 0-10: 80% primary + 20% mean(secondary),
+    # zeroed on any hard-rule violation.
+    out["query_score_0_10"] = 0.0 if violated else round(float(final), 2)
+    # Backward-compat aliases so the existing headline map
+    # (`pr_combined_personalization_score` / `pr_combined_max_possible`) and
+    # aggregate_eval keep working — they now carry the unified 0-10 score.
+    out["combined_personalization_score"] = out["query_score_0_10"]
+    out["combined_max_possible"] = 10.0
+
+    # Source B — behavioral hit/miss (diagnostic only; not part of the 0-10).
     if task_id in SOURCE_B_APPLICABLE and source_b:
         bh = metrics_mod.behavioral_hit_miss(
             agent_output,
@@ -650,13 +629,5 @@ def score(
         out["behavioral_miss_rate"]  = bh["miss_rate"]
         out["behavioral_false_hit_rate"] = bh["false_hit_rate"]
 
-    # Compose a summary "personalization_pass" flag: no hard-rule fails.
-    hard_fails = [k for k in out if k.endswith("_hard_fail") and out[k]]
-    out["personalization_hard_fail_count"] = len(hard_fails)
-
-    # Polarity-aware aggregation: emit positive_score / negative_penalty /
-    # combined_personalization_score. Pre-existing per-dim keys are kept
-    # untouched for backward compatibility.
-    combine_dim_scores_with_polarity(out, applicable)
-
+    out["personalization_hard_fail_count"] = len(violated)
     return out

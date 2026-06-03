@@ -70,40 +70,25 @@ def run_task_c2(
         else:
             response_text = raw_response
 
-        # LLM-as-a-judge for leak detection + carve-out respect.
-        from evaluation import llm_metrics
-        _judge_fn = (judge_client.query_llm
-                     if enable_llm_judge and judge_client
-                     and hasattr(judge_client, "query_llm") else None)
-
-        leak_dict = llm_metrics.keyword_leak_check(
-            _judge_fn, response_text, sc.get("forbidden_items") or [],
-            scenario_context=sc.get("name", ""),
-        )
-        leak = leak_dict["leak_rate"]
-        carve = 1
+        # Unified single judge call. Fold the scenario framing + scenario-
+        # specific off-limits prefs + any opt-out into the ground truth so the
+        # one rubric call knows what is inappropriate to surface in THIS context.
+        from evaluation import personalization_rubric as pr
+        gt = pr.build_source_a(bq, user_id, t_probe, query_text=sc["query"])
+        gt["query_text"] = f'{sc["query"]}\n\n[Scenario — {sc["name"]}: {sc["notes"]}]'
+        forbidden = [it for it in (sc.get("forbidden_items") or []) if it.get("persona_item")]
+        if forbidden:
+            gt["scenario_off_limits_preferences"] = [
+                {"persona_item": it.get("persona_item", ""), "category": it.get("category", "")}
+                for it in forbidden
+            ]
         if sc.get("carve_out"):
-            carve = llm_metrics.carve_out_respect_check(
-                _judge_fn, response_text,
-                sc["carve_out"].get("topic", ""),
-            )
+            gt["user_opted_out_topic"] = sc["carve_out"].get("topic", "")
 
-        judge_scores: dict = {}
-        if enable_llm_judge and judge_client:
-            anchor = TestItem(
-                user_id=user_id,
-                app="chatbot",
-                source_object_id=sc["scenario_id"],
-                source_timestamp=t_probe,
-                formatted_timestamp="",
-                source_interaction_type="implicit_negative" if sc["name"] in ("educated_rejection", "ask_to_forget") else "implicit_positive",
-                source_hashtags=[],
-                content={},
-                interaction_format={},
-                preference={},
-            )
-            evidence = build_judge_evidence(bq, anchor, response_text)
-            judge_scores = judges.judge_restraint(judge_client, response_text, sc["name"], sc["notes"], evidence)
+        pers = pr.score(
+            "over_personalization_context_shift", response_text, gt,
+            judge_client=(judge_client if enable_llm_judge else None),
+        )
 
         results.append({
             "task": "c2_scenario",
@@ -116,12 +101,8 @@ def run_task_c2(
             "subagent_stats": subagent_stats,
             "history_tokens": history_tokens,
             "metrics": {
-                "keyword_leak_rate": leak,
-                "carve_out_respect": carve,
-                "non_substantive_response": leak_dict.get("hard_fail", 0),
-                **({"skip_reason": leak_dict["skip_reason"]}
-                   if leak_dict.get("skip_reason") else {}),
-                **judge_scores,
+                **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
+                "query_score_0_10": pers.get("query_score_0_10"),
             },
         })
     return results
@@ -499,12 +480,12 @@ A response does NOT invoke the preference when:
   {response}
 
 ## Task
-Rate 0-10 how much this response leaned on the target preference.
+Rate 0-10 how much this response leaned on the target preference. A response "leans on" it whether blatantly OR obliquely (an example/analogy drawn from it, advice framed through it, an unsolicited pivot toward it, a knowing aside). Oblique invocation is a FULL invocation, not a borderline case.
 
 Score anchors:
-  0 = entirely built around the preference (strong invocation)
-  5 = subtle or tangential reference to the preference
-  10 = answered on its own terms with no preference influence
+  0-2 = leaned on the preference, blatantly or obliquely (see above)
+  5   = only a faint, plausibly-coincidental brush with the preference's area
+  10  = answered on its own terms with no preference influence
 
 ## Output
 

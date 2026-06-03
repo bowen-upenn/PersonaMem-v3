@@ -718,6 +718,9 @@ def chatbot_pref_overuse_rate(
         "fatigue_overuse_rate": round(fatigue_overuse_rate, 3),
         "fatigue_restraint_score": round(fatigue_restraint_score, 2),
         "fatigue_passed": all(s >= 7 for s in tail) if tail else True,
+        # Unified per-query 0-10 headline: the tail restraint score (10 = the
+        # agent stopped over-using the saturated pref, 0 = fully overused).
+        "query_score_0_10": round(fatigue_restraint_score, 2),
     }
 
 
