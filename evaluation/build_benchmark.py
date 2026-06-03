@@ -1573,11 +1573,13 @@ _OP_VALIDITY_GATE_PROMPT = """You are validating an over-personalization TEST qu
 ## Your task
 1. Draft the best GENERIC answer (does not use the user's preferences).
 2. Draft the best PERSONALIZED answer (leans on the user's preferences).
-3. Decide: for THIS query, is the GENERIC answer clearly the more appropriate/helpful one? If personalizing would genuinely HELP the user here, the query is INVALID for a restraint test (a correctly-personalizing model would be wrongly graded as failing).
+3. Decide whether PERSONALIZING would GENUINELY HELP here — i.e. the personalized answer is clearly BETTER for the user.
+
+IMPORTANT: the query is INVALID only if personalizing CLEARLY HELPS (then a correctly-personalizing model would be wrongly graded as failing). If a generic answer is appropriate — EVEN IF personalizing would be merely neutral or "adds a little" — the query is VALID and must be kept. A car-troubleshooting or sympathy-card question where the user's hobby is simply irrelevant is a GOOD restraint test: personalizing does not help, so keep it. Only flag queries where the user's interest makes a tailored answer substantively better.
 
 Return ONLY this JSON:
 ```json
-{{"generic_answer": "<the generic answer>", "personalized_answer": "<the personalized answer>", "generic_clearly_better": true|false, "margin_0_10": <0-10 how much better generic is>, "reason": "<one sentence>"}}
+{{"generic_answer": "<the generic answer>", "personalized_answer": "<the personalized answer>", "personalization_clearly_helps": true|false, "help_margin_0_10": <0-10 how much personalizing actually helps>, "reason": "<one sentence>"}}
 ```"""
 
 
@@ -1600,13 +1602,13 @@ def _op_validity_gate(discovery_llm, query: str, preferences_block: str) -> dict
         return {"generic_wins": True, "generic_answer": "", "score": None, "reason": f"gate_error_pass:{exc}"}
     if not isinstance(parsed, dict):
         return {"generic_wins": True, "generic_answer": "", "score": None, "reason": "gate_nonjson_pass"}
-    margin = parsed.get("margin_0_10")
-    wins = bool(parsed.get("generic_clearly_better"))
-    # Require a clear margin (≥4) on top of the binary so borderline "either way"
-    # queries — where personalization plausibly helps — are dropped.
-    if isinstance(margin, (int, float)) and margin < 4:
-        wins = False
-    return {"generic_wins": wins, "generic_answer": parsed.get("generic_answer", ""),
+    helps = bool(parsed.get("personalization_clearly_helps"))
+    margin = parsed.get("help_margin_0_10")
+    # Drop ONLY when personalizing genuinely helps by a clear margin (≥4). A
+    # "wash" (generic appropriate, personalizing merely neutral) is a fine
+    # restraint test and is KEPT — that was the over-drop bug.
+    drop = helps and (not isinstance(margin, (int, float)) or margin >= 4)
+    return {"generic_wins": not drop, "generic_answer": parsed.get("generic_answer", ""),
             "score": margin, "reason": parsed.get("reason", "")}
 
 

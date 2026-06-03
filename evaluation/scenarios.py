@@ -312,7 +312,11 @@ def build_all_scenarios(
     seed: int = 0,
     discovery_llm=None,
 ) -> list[dict]:
-    rng = random.Random(seed)
+    # Seed per-user so the fixed-query scenarios (out_of_domain /
+    # socially_inappropriate / ask_to_forget) draw DIFFERENT queries per persona.
+    # Previously `random.Random(seed)` used the same global seed for everyone, so
+    # all 20 users got the identical out_of_domain query.
+    rng = random.Random(f"{seed}:{user_id}")
     out: list[dict] = []
 
     # Phase A — legacy fixed-query scenarios that don't suffer from the

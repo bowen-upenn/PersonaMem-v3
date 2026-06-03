@@ -242,16 +242,26 @@ def _truncate(s, n=120):
 # Raw internal handles must never reach user-facing GT text: thread IDs
 # (`in_thr_229_006`, `fa_thr_…`) and bare `(source_object_id=…)` remnants.
 _INTERNAL_ID_RE = re.compile(
-    r"\s*\(?\s*source_object_id\s*=\s*[^)\s]*\)?|\b[a-z]{2}_thr_[A-Za-z0-9_]+\b",
+    r"\s*\(?\s*source_object_id\s*=\s*[^)\s]*\)?"
+    r"|\bthread\s+[a-z]{2}_thr_[A-Za-z0-9_]+\b"   # "in thread in_thr_1_007"
+    r"|\b[a-z]{2}_thr_[A-Za-z0-9_]+\b",
+    re.I,
+)
+# Academic coping/identity-frame tags (e.g. `lazarus_folkman:emotion_focused_coping`)
+# and their rendered "Motivational frame: …" wrapper must never reach user-facing text.
+_FRAME_TAG_RE = re.compile(
+    r"[*\-\s]*\**\s*Motivational frame\**\s*:?\s*`?[A-Za-z_]+:[A-Za-z_]+`?[^\n]*"
+    r"|`?\b(?:lazarus_folkman|goffman|tajfel|leary|baumeister|deci_ryan|higgins|festinger)[:_][a-z_]+`?",
     re.I,
 )
 
 
 def _scrub_internal_ids(text):
-    """Strip raw thread/object IDs from user-facing GT text (no-op on non-str)."""
+    """Strip raw thread/object IDs + academic frame tags from user-facing text."""
     if not isinstance(text, str) or not text:
         return text
-    return re.sub(r"\s{2,}", " ", _INTERNAL_ID_RE.sub("", text)).strip()
+    t = _FRAME_TAG_RE.sub("", _INTERNAL_ID_RE.sub("", text))
+    return re.sub(r"\s{2,}", " ", t).strip()
 
 
 def _split_polarity(s: str) -> tuple[str, str]:
@@ -3496,8 +3506,10 @@ def dump_test_samples_json(
             # block (held-out persona_item only) is kept in
             # `groundtruth_preference_obj` for tooling that needs the raw
             # held-out signal alongside the rendered text.
-            "example_response": s.get("example_response", ""),
-            "groundtruth_preference": s.get("groundtruth_preference", ""),
+            # Scrub raw internal IDs / academic frame tags from the user-facing
+            # gold BEFORE it ships in test.json (the eval reads these directly).
+            "example_response": _scrub_internal_ids(s.get("example_response", "")),
+            "groundtruth_preference": _scrub_internal_ids(s.get("groundtruth_preference", "")),
             "groundtruth_preference_obj": held,
             "reference_example": ref_ex,
             "distractor_preferences": _normalize_distractors(s),
