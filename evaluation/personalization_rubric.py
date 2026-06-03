@@ -108,14 +108,17 @@ SOURCE_B_APPLICABLE = {
     "agentic_proactive_daily_catchup", "agentic_trending_alert",
 }
 
-PENALTY_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use",
-                "telegraph_avoidance"}
-# Backward compat alias — old code that references HARD_RULE_DIMS still works.
-HARD_RULE_DIMS = PENALTY_DIMS
+# Hard negatives — surfacing one of these zeroes the score (one-strike). These
+# are genuine "must never surface" violations. telegraph_avoidance is NOT here:
+# it's a phrasing/style issue (a judge-scored secondary positive), not a hard
+# negative — a minor "since you like X" should cost a little, not zero an
+# otherwise-good response, and the deterministic regex false-positived on
+# legitimate authoring ("compose a post about a topic the user engages with").
+HARD_RULE_DIMS = {"avoid_leak", "privacy_leak", "stale_preference_use"}
+PENALTY_DIMS = HARD_RULE_DIMS  # backward-compat alias
 JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_personalization",
-                  "helpfulness",
-                  "relationship_aware", "voice_match", "voice_self_consistency",
-                  "telegraph_avoidance"}
+                  "helpfulness", "telegraph_avoidance",
+                  "relationship_aware", "voice_match", "voice_self_consistency"}
 
 # --- Unified scoring roles (single source of truth) ------------------------
 # Every judged task draws its applicable dims from APPLICABILITY. Each dim has
@@ -133,10 +136,8 @@ JUDGE_DIMS     = {"preference_alignment", "over_personalization", "subtle_person
 # auxiliary/analysis-only). helpfulness is never a PRIMARY — it is only ever
 # listed after the task's main positive.
 POSITIVE_DIMS = {"preference_alignment", "over_personalization", "subtle_personalization",
-                 "helpfulness", "relationship_aware", "voice_match", "voice_self_consistency"}
-# HARD_RULE_DIMS is PENALTY_DIMS: avoid_leak, privacy_leak, stale_preference_use,
-# telegraph_avoidance.
-HARD_RULE_DIMS = PENALTY_DIMS
+                 "helpfulness", "telegraph_avoidance",
+                 "relationship_aware", "voice_match", "voice_self_consistency"}
 
 
 # --- Source A: persona ground truth ----------------------------------------
@@ -526,19 +527,8 @@ def score(
     out["positive_dims"] = pos_dims
     out["hard_rule_dims"] = hard_dims
 
-    # Deterministic telegraph check (cheap; OR'd with the judge verdict below).
-    telegraph_det_violation = False
-    if "telegraph_avoidance" in hard_dims:
-        from evaluation.judges import judge_telegraph_avoidance as _jta
-        held_out = (ground_truth.get("held_out_preference")
-                    or ground_truth.get("groundtruth_preference")
-                    or ground_truth.get("target_pref"))
-        ja = _jta(agent_output, held_out)
-        out["telegraph_avoidance_score"] = float(ja["telegraph_avoidance"]) * 10.0
-        telegraph_det_violation = float(ja["telegraph_avoidance"]) < 1.0
-        if ja.get("telegraph_reason"):
-            out["telegraph_avoidance_reason"] = ja["telegraph_reason"]
-
+    # telegraph_avoidance is now a judge-scored secondary positive (in pos_dims),
+    # not a hard rule — handled by the normal positive-dim loop below.
     violated: list[str] = []
     pos_scores: list[float] = []
 
@@ -571,23 +561,17 @@ def score(
                 out[f"{d}_score"] = s
                 pos_scores.append(s)
 
-        # Hard rules — judge verdict OR (for telegraph) the deterministic check.
+        # Hard rules — one-strike: any judge-flagged violation zeroes the score.
         for d in hard_dims:
             jv = bool(parsed.get(f"{d}_violated"))
-            if d == "telegraph_avoidance":
-                jv = jv or telegraph_det_violation
             out[f"{d}_violated"] = 1 if jv else 0
             out[f"{d}_hard_fail"] = 1 if jv else 0  # backward-compat key
             if jv:
                 violated.append(d)
         out["judge_reasoning"] = parsed.get("reasoning", "")
     else:
-        # No judge available — only the deterministic telegraph hard rule can
-        # fire; positive dims cannot be scored without the judge.
-        if telegraph_det_violation:
-            out["telegraph_avoidance_violated"] = 1
-            out["telegraph_avoidance_hard_fail"] = 1
-            violated.append("telegraph_avoidance")
+        # No judge available — positive dims (and hard rules) can't be scored.
+        pass
 
     # Deterministic 80/20 aggregation (reproducible: same per-dim scores → same
     # final). PRIMARY = first applicable positive dim → 80%; the secondaries

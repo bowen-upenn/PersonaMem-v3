@@ -1252,9 +1252,9 @@ _PERSONALIZATION_DIM_DEFS = {
         "-",
     ),
     "telegraph_avoidance": (
-        "binary (0 = pass, 1 = fail)",
-        "Did the response telegraph that it is drawing on stored user data — e.g. \"I know you…\", \"since you like X\", \"based on your…\", \"knowing your…\" — or paste a stored preference verbatim? Personalization should show only through topic/framing choice, never an explicit callout to the user's profile. Any such phrasing → violated.",
-        "-",
+        "0–10",
+        "Did the response AVOID telegraphing that it is drawing on stored user data? 10 = personalization shows only through topic/framing choice, no explicit callout; score lower as the response uses meta-callouts like \"I know you…\", \"since you like X\", \"based on your…\", \"knowing your…\", or pastes a stored preference verbatim. IMPORTANT: legitimately writing ABOUT a topic the user engages with (e.g. authoring a post in their voice on their hobby) is NOT telegraphing — only an explicit callout to the user's profile/history counts.",
+        "+",
     ),
     "relationship_awareness": (
         "0–10",
