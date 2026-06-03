@@ -31,6 +31,7 @@ GPT_WORKERS=8
 AGENT_WORKERS=1
 JOBS=1            # cross-persona concurrency for the gpt modes (mem0 only)
 AGENT_JOBS=1     # cross-persona concurrency for the opus agent modes
+RATE_LIMIT=""    # per-client concurrency semaphore (run_eval --rate_limit); blank=default 50
 LIMIT=""
 RESUME="--resume"
 
@@ -45,6 +46,7 @@ while [ $# -gt 0 ]; do
     --agent-workers) AGENT_WORKERS="$2"; shift 2;;
     --jobs)          JOBS="$2"; shift 2;;
     --agent-jobs)    AGENT_JOBS="$2"; shift 2;;
+    --rate-limit)    RATE_LIMIT="$2"; shift 2;;
     --resume)        RESUME="--resume"; shift 1;;
     --no-resume)     RESUME=""; shift 1;;
     *) echo "unknown arg: $1" >&2; exit 2;;
@@ -71,6 +73,7 @@ run_one() {
               --memory_token_cap 2048)
   [ -n "$RESUME" ] && args+=($RESUME)
   [ -n "$LIMIT" ]  && args+=($LIMIT)
+  [ -n "$RATE_LIMIT" ] && args+=(--rate_limit "$RATE_LIMIT")
   if is_agent_mode "$mode"; then
     args+=(--claude_model "$CLAUDE_MODEL" --workers "$AGENT_WORKERS")
   else
