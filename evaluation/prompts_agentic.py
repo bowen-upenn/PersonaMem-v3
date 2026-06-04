@@ -346,6 +346,10 @@ def t11_vague_refind(topic: str, history_block: str | None = None,
                      text_only: bool = False) -> str:
     if ground_truth_block:
         directive = _grounded_directive(allow_extra_tools=allow_extra_tools)
+    elif text_only:
+        directive = ("Search the user history shown below to locate the post the user "
+                     "is describing. Identify it precisely — app + title/caption/creator/"
+                     "hashtags — so they can recognize it. Do NOT just restate the topic.")
     else:
         directive = ("To find the post, call `mcp__instagram__search`, `mcp__facebook__search`, "
                      "`mcp__threads__search`, and `mcp__chatbot__search_history` with the topic as "

@@ -285,16 +285,35 @@ def _verify_auto_reply(inst: dict, response: str, writes: list) -> dict:
 
 
 def _verify_vague_refind(inst: dict, response: str, writes: list) -> dict:
-    """Agent must surface something matching the topic (token overlap with topic)."""
+    """Agent must IDENTIFY a real matching post, not just restate the topic word.
+    Pass requires referencing a gold post's oid, or >=2 of its title/caption
+    content tokens (beyond the topic itself)."""
     topic = inst.get("topic") or ""
     text = response or ""
+    low = text.lower()
     rep_tokens = _tokens(text)
     topic_tokens = _tokens(topic)
-    if not topic_tokens:
-        return _mk(1, 0, [("vacuous_topic", "pass")])  # nothing to verify
-    if topic_tokens & rep_tokens or topic.lower() in text.lower():
-        return _mk(1, 0, [("response_mentions_topic", "pass")])
-    return _mk(0, 1, [("response_mentions_topic", "fail")])
+    gold = inst.get("gold_matches") or []
+
+    if not gold:
+        # Legacy instances (pre-gold) — fall back to the old topic-mention check.
+        if not topic_tokens:
+            return _mk(1, 0, [("vacuous_topic", "pass")])
+        ok = bool(topic_tokens & rep_tokens) or topic.lower() in low
+        return _mk(1 if ok else 0, 0 if ok else 1,
+                   [("response_mentions_topic", "pass" if ok else "fail")])
+
+    # With gold: require identification of a SPECIFIC matching post.
+    for g in gold:
+        oid = str(g.get("oid") or "")
+        if oid and oid in text:
+            return _mk(1, 0, [("identifies_gold_post(oid)", "pass")])
+        for field in ("title", "caption"):
+            content_overlap = (_tokens(g.get(field) or "") & rep_tokens) - topic_tokens
+            if len(content_overlap) >= 2:
+                return _mk(1, 0, [(f"identifies_gold_post({field})", "pass")])
+    return _mk(0, 1, [("identifies_gold_post",
+                       "fail (restated topic but did not identify a specific post)")])
 
 
 def _verify_composed_post(inst: dict, response: str, writes: list) -> dict:

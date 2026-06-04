@@ -421,6 +421,17 @@ def compute_geo_shift_metrics(
     - `geo_neutral_response`: neither named — partial pass.
     - `geo_shift_correctness ∈ {0.0, 0.5, 1.0}` — composite headline.
     """
+    if not metrics.is_substantive_response(response_text or ""):
+        # An empty / refusal response names no city only because it said nothing —
+        # it must NOT earn the 0.5 "geo-neutral" partial pass (silence-win). Gate
+        # to 0 and flag so the aggregator's substantive gate also fires.
+        return {
+            "current_city_grounded": 0,
+            "stale_geo_anchor": 0,
+            "geo_neutral_response": 0,
+            "geo_shift_correctness": 0.0,
+            "non_substantive_response": True,
+        }
     grounded = _any_match(response_text, current_city, current_region)
     stale = _word_boundary_match(response_text, prior_city)
     neutral = (not grounded) and (not stale)

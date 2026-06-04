@@ -386,7 +386,7 @@ python scripts/prepare_eval_data.py --user_id 115
 #    each row to its task-specific runner. --workers controls parallelism.
 python -m evaluation.run_eval --user_id 115 --mode agent_tools \
     --run_dir benchmark/115/runs/$(date +%s) \
-    --claude_model sonnet --judge_model gpt-5-chat --workers 16
+    --claude_model sonnet --judge_model gpt-5.5 --workers 16
 # `--mode` ∈ {mcp_agent, agent_tools, llm_longctx, llm_memory, mem0}; see "Modes" below.
 # `--workers 16` parallelizes non-agentic rows; agentic writes stay sequential.
 # `--workers 1` disables parallelism (original sequential behavior).
@@ -399,7 +399,7 @@ python scripts/aggregate_eval.py
 for uid in 105 115 229 282 760; do
     python -m evaluation.run_eval --user_id $uid --mode agent_tools \
         --run_dir benchmark/$uid/runs/$(date +%s) \
-        --claude_model sonnet --judge_model gpt-5-chat --workers 16 &
+        --claude_model sonnet --judge_model gpt-5.5 --workers 16 &
 done
 wait
 python scripts/aggregate_eval.py
@@ -624,7 +624,27 @@ Shared properties (held constant for a fair A/B):
 - `mem0` is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable), so it parallelizes *across personas* with `--jobs` (each persona has its own store dir → no conflict). Use `--jobs 4` to cut its wall-time ~4× without the `$JOBS × $GPT_WORKERS` blow-up the long-context modes would suffer.
 - Agent modes (`agent_tools` / `mcp_agent`) always run one `(mode,persona)` at a time (Claude subscription + write-overlay safety).
 
-If you see Azure `429` / rate-limit errors in `results/_logs/*.stderr`, lower `--jobs` (mem0) or `--gpt-workers`, or raise `--rate_limit` only if your Azure quota allows; then re-run (–`-resume` skips finished rows).
+If you see Azure `429` / rate-limit errors in `results/_logs/*.stderr`, the QueryLLM client now backs off and retries them automatically (see below); for rows that still fail, re-run with `--retry_failed` (plain `--resume` *skips* failed rows because they are already present in `results.csv`). Lower `--jobs` (mem0) or `--gpt-workers` if 429s persist.
+
+### Failure handling — every row completes, retry once, then discard
+
+A row must either complete (`status == "ok"`) or be discarded — a row that errored out must **never** be scored as `accuracy = 0`, because that conflates an infrastructure failure (e.g. a `429` rate-limit on long-context's token-heavy prompts) with a genuinely bad answer and silently deflates that mode's headline. The policy is **complete → retry once → discard**:
+
+1. **Transient errors auto-retry inside the client.** Azure/OpenAI calls back off and retry on `429` / rate-limit (honoring the server's `retry-after`) via `query_llm._openai_create_with_retry`, matching the Gemini path. Most 429s never surface as a failed row.
+2. **Retry the failures (`--retry_failed`).** A row left at `status != "ok"` (a 429 that survived backoff, a worker timeout, a transient error) is re-run: `run_eval.py --retry_failed` drops the non-ok rows from `results.csv`, then resumes so only those `query_id`s re-execute. Rerun the same `(mode, persona)` command with the flag added.
+3. **Discard on the second failure (`--prune_invalid`).** After the retry, any row *still* `status != "ok"` is unfixable (an Azure content-filter `400`, a genuinely broken task) and is removed from `results.csv` by `--prune_invalid`, so the aggregate is computed over completed rows only.
+
+```bash
+# Complete a run that hit transient errors: retry the failed rows, discard
+# anything that fails a second time, then re-aggregate.
+python -m evaluation.run_eval --user_id 115 --mode llm_longctx --model gpt-5.5 \
+    --run_dir results/llm_longctx/115 --judge_model gpt-5.5 \
+    --workers 8 --retry_failed --prune_invalid
+# scripts/retry_failed.sh does this sweep over every gpt-5.5 persona × mode,
+# then re-aggregates results/.
+```
+
+`--workers` defaults to **8** (12 over-saturated Azure gpt-5.5 and tripped 429s). Note: `scripts/aggregate_eval.py` scores `status ∈ {error, failed_writes, failed_quality, no_result}` rows as `0`, so always finish a run with `--retry_failed --prune_invalid` before reading the headline.
 
 ### How the `agent_tools` sandbox works
 
@@ -725,23 +745,25 @@ The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `l
 | `--run_dir` | _(required)_ | Output directory for `results.csv` + `summary.json` + `writes.jsonl` |
 | `--backend_dir` | `backend` | Path to backend root |
 | `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0` |
-| `--model` | `$EVAL_MODEL` or `gpt-5-chat` | Baseline model for `llm_longctx` / `llm_memory` / `mem0` modes (maps to Azure gpt-5.5) |
+| `--model` | `$EVAL_MODEL` or `gpt-5.5` | Baseline model for `llm_longctx` / `llm_memory` / `mem0` modes (maps to Azure gpt-5.5) |
 | `--memory_token_cap` | `2048` | Max tokens of memory injected per query (`llm_memory`/`mem0` modes) |
 | `--memory_chunk_k` | `40` | Max events per memory-build LLM call (`llm_memory`/`mem0` modes) |
 | `--memory_builder_model` | `=--model` | Model that builds the memory (`llm_memory`/`mem0` modes) |
 | `--memory_builder_temperature` | `0.0` | Temperature for memory-build calls (`llm_memory` mode) |
 | `--claude_model` | `$EVAL_CLAUDE_MODEL` or `sonnet` | Claude Code subagent model (`haiku`/`sonnet`/`opus`) |
 | `--judge_model` | `$EVAL_JUDGE_MODEL` or `claude-opus` | LLM judge model |
-| `--workers` | `4` | Parallel worker count for non-agentic rows. Agentic writes always sequential. `--workers 1` = original sequential behavior. Max safe: 16 (32 risks Azure rate limits). |
+| `--workers` | `8` | Parallel worker count for non-agentic rows (12 over-saturated Azure gpt-5.5 → 429s). Agentic writes always sequential. `--workers 1` = original sequential behavior. |
 | `--enable_llm_judge` | **on** | Run the LLM judge for pr_* dimensions. `--no-enable_llm_judge` to disable. |
 | `--limit` | _none_ | Cap total query rows (for quick smoke tests) |
 | `--rate_limit` | `50` | LLM rate limit per minute (split across workers: each gets `rate_limit // workers`) |
 | `--context_budget` | _none_ | Token budget for long-context modes |
-| `--resume` | off | Skip queries already in `{run_dir}/results.csv` |
+| `--resume` | off | Skip queries already in `{run_dir}/results.csv` (skips *all* present rows, including failed ones — use `--retry_failed` to re-run failures) |
+| `--retry_failed` | off | Drop non-ok rows (`error` / `failed_*` / `no_result`) from `results.csv`, then resume so only those failed/missing `query_id`s re-run (implies `--resume`). Completes a run that hit transient `429`s. |
+| `--prune_invalid` | off | After the run, remove any row still not `status=="ok"` so the aggregate has only completed rows (the "discard on 2nd failure" step). |
 | `--dry_run` | off | Build prompts without LLM calls (forces sequential, useful for debugging) |
 
 **Model env vars** — two are honored across the eval + build pipeline:
-- `$EVAL_MODEL` (large, default `gpt-5-chat`) — flagship / judge / heavy-discovery calls.
+- `$EVAL_MODEL` (large, default `gpt-5.5`) — flagship / judge / heavy-discovery calls.
 - `$EVAL_MINI_MODEL` (mini, default `gpt-5.4-mini`) — mini-tier discovery + audit calls (E6 paired warn/foil discovery, new_suggestions flavor-A gold proposal, per-query audit). Same knob used everywhere a mini call is made.
 
 Benchmark-building is its own CLI:

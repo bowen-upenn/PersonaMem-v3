@@ -253,7 +253,7 @@ def main():
     parser.add_argument("--task", default="all", help=f"Task or alias ({', '.join(TASK_ALIASES)})")
     parser.add_argument("--limit", type=int, default=None, help="Cap per-task item count (for quick runs)")
     parser.add_argument("--enable_llm_judge", action="store_true", help="Enable LLM-as-judge optional layer")
-    parser.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"), help="Baseline (llm_longctx) model — QueryLLM backend (Azure/OpenAI/Claude/Gemini)")
+    parser.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5.5"), help="Baseline (llm_longctx) model — QueryLLM backend (Azure/OpenAI/Claude/Gemini)")
     parser.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"), help="Claude Code subagent model for agent_tools (haiku, sonnet, opus)")
     parser.add_argument("--judge_model", default=os.getenv("EVAL_JUDGE_MODEL", "gpt-5.5"), help="Judge model (QueryLLM)")
     parser.add_argument("--context_budget", type=int, default=None, help="Token budget for long-context modes")
@@ -291,7 +291,7 @@ def main():
         elif boundaries and args.mode == "mem0":
             from evaluation.mem0_backend import Mem0Backend
             t_max = max(boundaries) + 1
-            llm_dep = None if args.model in (None, "gpt-5-chat") else args.model
+            llm_dep = None if args.model in (None, "gpt-5.5") else args.model
             m0 = Mem0Backend(args.user_id, args.output_dir or f"benchmark/{args.user_id}/runs",
                              llm_deployment=llm_dep)
             bstats = m0.build(bq, t_max, {"builder_model": args.model})

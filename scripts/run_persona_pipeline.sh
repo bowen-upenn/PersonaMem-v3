@@ -19,7 +19,7 @@
 #
 # --- OpenAI API (set OPENAI_API_KEY in .env, leave Azure vars unset) --------
 #
-#   # Uses gpt-5-chat by default; override with --model
+#   # Uses gpt-5.5 by default; override with --model
 #   bash scripts/run_persona_pipeline.sh data/test_interactions.csv --model gpt-4o
 #
 # ============================================================================

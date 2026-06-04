@@ -8,7 +8,7 @@ so we can see the actual rejection reasons.
 No backend writes — pure read + log.
 
 Usage:
-    python scripts/debug_unfulfilled_judge.py --user_id 115 [--model gpt-5-chat]
+    python scripts/debug_unfulfilled_judge.py --user_id 115 [--model gpt-5.5]
 """
 
 from __future__ import annotations
@@ -32,7 +32,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--user_id", required=True)
     ap.add_argument("--backend_dir", default="backend")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--rate_limit", type=int, default=30)
     args = ap.parse_args()
 

@@ -29,7 +29,7 @@ def main():
     parser.add_argument("--user_id", default=None, help="Process only this user_id (default: all users)")
     parser.add_argument("--max_workers", type=int, default=1, help="Max parallel user workers (default: 1 — process users sequentially)")
     parser.add_argument("--parallel", type=int, default=50, help="Parallel LLM API calls per user (default: 50)")
-    parser.add_argument("--model", default="gpt-5-chat", help="Flagship LLM model name (default: gpt-5-chat, uses AZURE_OPENAI_DEPLOYMENT_NAME from .env)")
+    parser.add_argument("--model", default="gpt-5.5", help="Flagship LLM model name (default: gpt-5.5, uses AZURE_OPENAI_DEPLOYMENT_NAME from .env)")
     parser.add_argument("--mini_model", default="gpt-5.4-mini",
                         help="Mini-tier LLM model for mechanical steps — 7a intimate detection, 10 app routing, 12 interaction formats, 13b synthetic content, 14 stereotype marks. "
                              "Only honored on OpenAI-direct / Claude / Gemini backends; Azure with a forced AZURE_OPENAI_DEPLOYMENT_NAME needs a separate deployment to benefit.")

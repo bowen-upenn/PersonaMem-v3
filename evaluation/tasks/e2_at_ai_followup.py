@@ -224,13 +224,29 @@ def build_e2_at_ai_followup(
             t_test = t_ai + lag_seconds
             rng = _random.Random(f"{rng_seed}:e2:{directive_oid}:{lag_label}")
 
-            tgt = list(target_pool)
-            cvs = list(carveout_pool)
-            fls = list(filler_pool)
+            # Candidates must be content the agent has NOT already seen at
+            # directive time — source each lag's pool from the FORWARD window
+            # (t_test, t_test + lookahead]. This (a) excludes pre-directive
+            # events (which can't test whether the agent REMEMBERED the directive)
+            # and (b) gives each lag a distinct window instead of every lag
+            # sharing one timeline-wide pool. Previously `_E2_LOOKAHEAD_HOURS` was
+            # defined but never applied — the headline confounded recall with
+            # raw recency and let pre-directive events be the ranking target.
+            _win_hi = t_test + _E2_LOOKAHEAD_HOURS * 3600
+
+            def _in_window(pool):
+                return [(a, e) for (a, e) in pool
+                        if t_test < int(e.get("source_timestamp") or 0) <= _win_hi]
+
+            tgt = _in_window(target_pool)
+            cvs = _in_window(carveout_pool)
+            fls = _in_window(filler_pool)
             rng.shuffle(tgt)
             rng.shuffle(cvs)
             rng.shuffle(fls)
 
+            if not tgt:
+                continue  # no directive-matching content in this lag's window
             target_pick = tgt[0]
             n_cv = min(n_carveouts_target, len(cvs))
             cv_pick = cvs[:n_cv]

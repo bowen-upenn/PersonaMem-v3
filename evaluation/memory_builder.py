@@ -69,9 +69,13 @@ def default_memory_config() -> dict:
     """Default knobs for the memory builder. Mirrors the run_eval CLI flags."""
     return {
         "token_cap": 2048,
+        # chunk_k / chunk_gap are LEGACY (no longer consulted by build_checkpoints,
+        # which now folds one update_step per DAY boundary). Kept for back-compat
+        # with any caller that still reads them.
         "chunk_k": 40,
-        "chunk_gap": 900,          # seconds; >15-min gap ends a chunk (if big enough)
-        "chunk_tok_budget": 4000,
+        "chunk_gap": 900,          # seconds (legacy; unused by the per-day build)
+        "chunk_tok_budget": 16000, # mid-day flush is now a context-overflow SAFETY
+                                    # split ONLY (a normal day is well under this).
         "builder_temperature": 0.0,
         "builder_model": None,     # metadata only; the passed llm_client owns the model
     }
@@ -320,6 +324,11 @@ def build_checkpoints(
     boundaries = sorted({int(t) for t in t_tests})
     if not boundaries:
         return ledger
+    # Resume / --retry_failed fast-path: if every day-boundary checkpoint was
+    # already loaded from disk, the ledger is complete — skip the whole walk
+    # (and ALL its update_step LLM calls) instead of redundantly rebuilding it.
+    if existing and all(b in ledger.checkpoints for b in boundaries):
+        return ledger
     rows = build_global_stream(bq, user_id, boundaries[-1])
     ledger.build_stats["n_events"] = len(rows)
 
@@ -357,7 +366,14 @@ def build_checkpoints(
             _snapshot(boundaries[bi])
             bi += 1
         buffer.append(row)
-        if _should_close_chunk(buffer, cfg, model):
+        # ONE build per DAY: a day's events fold into the running memory at the
+        # NEXT day boundary (the _flush in the while-loop above) — input =
+        # prev-day memory + this day's events → this day's memory. Mid-day we
+        # flush ONLY as a context-overflow safety valve, NEVER on event-count or
+        # 15-min session gaps. The old _should_close_chunk (chunk_k=40 / gap=900)
+        # split each active day into 3-5 chunks → ~95 update_step calls/user
+        # instead of the intended ~1/day (~30/user).
+        if count_tokens(_render_chunk(buffer), model) >= cfg.get("chunk_tok_budget", 16000):
             _flush()
     # Drain remaining buffer + snapshot any boundaries after the last event.
     _flush()

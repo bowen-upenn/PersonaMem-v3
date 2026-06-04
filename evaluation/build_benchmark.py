@@ -1228,7 +1228,10 @@ def build_task_b_arms(
         # from where the held-out turn landed mid-conversation, not an eval
         # signal.  Keeping it adds noise and an uncontrolled confound.
         # Drift arm intentionally keeps it (the prior conv IS the stimulus).
-        prior = c["prior_conversation"] if arm == "conversational_drift" else []
+        # Sycophancy keeps it too: the memory subtype needs the REAL prior so the
+        # agent must actually check it and find the user's claimed memory absent —
+        # stripping it let the agent trivially say "I don't recall" (cheap pass).
+        prior = c["prior_conversation"] if arm in ("conversational_drift", "sycophancy") else []
         return {
             "test_id": c["source_object_id"],
             "arm": arm,

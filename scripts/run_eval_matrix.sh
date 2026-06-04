@@ -8,7 +8,7 @@
 #
 # Usage:
 #   scripts/run_eval_matrix.sh [--personas "1 2 3"] [--modes "llm_longctx mem0"] \
-#       [--limit N] [--gpt-model gpt-5-chat] [--claude-model opus] \
+#       [--limit N] [--gpt-model gpt-5.5] [--claude-model opus] \
 #       [--gpt-workers 8] [--agent-workers 1] [--jobs 1] [--no-resume]
 #
 # --limit N         cap rows per (mode,persona) — use for the smoke test.
@@ -24,7 +24,7 @@ cd "$(dirname "$0")/.."
 
 PERSONAS="1 2 3 5 6 8 9 10 13 14 26 105 115 209 229 282 461 655 760 835"
 MODES="llm_longctx llm_memory mem0 agent_tools mcp_agent"
-GPT_MODEL="gpt-5-chat"          # QueryLLM maps this to AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5.5
+GPT_MODEL="gpt-5.5"          # QueryLLM maps this to AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5.5
 CLAUDE_MODEL="opus"             # alias -> latest opus (opus-4.8)
 JUDGE_MODEL="gpt-5.5"
 GPT_WORKERS=8

@@ -252,7 +252,7 @@ def main():
     ap.add_argument("--user_ids", required=True, help="comma-separated uids to re-roll")
     ap.add_argument("--keep_uids", default="", help="comma-separated uids whose names seed the blocklist")
     ap.add_argument("--backend_dir", default="backend")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--mini_model", default="gpt-5.4-mini")
     ap.add_argument("--rate_limit", type=int, default=50)
     ap.add_argument("--verbose", action="store_true")

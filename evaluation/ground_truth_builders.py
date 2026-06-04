@@ -528,11 +528,12 @@ def _t19_trending_alert(bq: BackendQuery, user_id: str, t_test: int, inst: dict)
         for h in trending[:15]:
             tag = h.get("hashtag", "?")
             rank = h.get("rank", "?")
-            aligned = h.get("user_aligned")
             topic = h.get("trending_topic", "")
-            note = " (aligned with this user's interests)" if aligned else ""
+            # Do NOT reveal which trending tags align with the user — pre-labeling
+            # them turns the cross-referencing test into "pick the labeled ones."
+            # `user_aligned` stays in the data for the scorer; it is not shown here.
             topic_note = f" — topic: '{topic}'" if topic else ""
-            sections.append(f"- #{rank}: {tag}{topic_note}{note}\n")
+            sections.append(f"- #{rank}: {tag}{topic_note}\n")
     summary = bq.hashtag_summary(user_id=user_id, since_timestamp=t_test)
     pos = [r for r in summary if (r.get("positive") or 0) > 0][:10]
     neg = [r for r in summary if (r.get("negative") or 0) > 0][:10]

@@ -7,7 +7,7 @@ being complete. Useful for incrementally adding feed-react + overactive-
 check data to a user without re-running the full 29-step pipeline.
 
 Usage:
-    python scripts/run_feed_posts_for_user.py --user_id 115 [--model gpt-5-chat]
+    python scripts/run_feed_posts_for_user.py --user_id 115 [--model gpt-5.5]
 
 Trending search cache: if backend/{uid}/.trending_search_cache.json
 already has trends for the user's months/platforms, the pipeline reads
@@ -36,7 +36,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--user_id", required=True)
     ap.add_argument("--backend_dir", default="backend")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--rate_limit", type=int, default=50)
     ap.add_argument("--skip_step_28", action="store_true",
                     help="Skip the feed-posts step (only run proactive trigger inference).")

@@ -443,3 +443,119 @@ Some prompts ask the LLM to declare structured fields ("the two domains are diff
 ### Auditing only the happy path
 
 A response_quality grader that only checks for telegraph phrases will silently pass an outline-shaped response. When extending an audit dimension, also write the *failure* example you expect the grader to catch — if the grader passes that example, the dimension is broken.
+
+## Eval-Objective Audit — does scoring target each task's objective
+
+This audit traced, per task, the chain **stated objective → agent-facing prompt → primary metric → judge/verifier** to detect where the number reported as the task's score does not measure the capability the task claims to test. For each task we read the `PRIMARY_METRIC` registry entry, the `APPLICABILITY` rubric dims (and the 80/20 primary-vs-secondary split), the runner's metric emission, and the judge prompt anchors — then checked for scale/direction bugs, dead metric keys, prompt answer-leakage, and silence-wins / status-gate artifacts. Findings below are confirmed against `file:line`; methodology is terse by design (one line of evidence per finding).
+
+### Confirmed findings
+
+#### High
+
+- **active_mistake_prevention (foil arm)** — objective: stay silent on foils where no real contradiction exists. What's measured: foil instances get the *same* time-masked history as their warn twin (`foil_ts = warn_ts + 1`, `e6_active_mistake_prevention.py:490-493`); `foil_construction`/`foil_signal_evidence` are stored in metadata but never planted into the agent's runtime history. Gap: foil polarity is uncontrolled — both arms see the same contradiction. Fix: materialize a contradiction-free snapshot for the foil arm, or build-time-validate that foil evidence is genuinely absent.
+- **active_mistake_prevention (warn regex)** — `_WARN_PHRASE_RE` matches near-universal phrasing (`careful`, `conflict`, `before you`, `make sure`, `note that`, `actually,`) (`e6_active_mistake_prevention.py:523-534`); on the foil arm `warning_issued` → `correct=False`, so fluent helpful responses are scored as false warnings. Fix: require co-occurrence with a conflict marker or prefer the self-reported `warned` field.
+- **active_mistake_prevention (warn coverage)** — `correct` requires `mention_cov >= 0.5` by pure substring match against LLM-generated `must_mention` strings (`e6_active_mistake_prevention.py:589`, `_term_present:543`). 21% of real `must_mention` terms exceed 30 chars (whole phrases); 76% of warn failures in `llm_longctx` are correct warnings that miss the exact substring. Fix: lower the threshold or use semantic match.
+- **agentic_auto_reply / agentic_send_post / agentic_cross_app_repost** — objective is voice-match (EVAL.md T9/T10/T12-13). But `preference_alignment` is `pos_dims[0]` → PRIMARY (80%); `voice_match` is a secondary sharing 20%/N ≈ 4-5% (`personalization_rubric.py:86/81/85`, split at `:582-588`). Gap: 80% weight inverts the task's discriminating signal. Fix: reorder APPLICABILITY so `voice_match` is first, or add a per-task primary override.
+- **agentic_dm_digest** — objective: prioritize persona-relevant DM threads. Primary `preference_alignment` is anchored on the top-8 prefs ranked by Jaccard against the *static* string `"dm digest on {app}"` (`agentic_tasks.py:1477`, `_rank_relevant:209-228`) → near-zero overlap → arbitrary slice. Gap: high score achievable by mentioning any general interest, not by ordering threads. Fix: rank prefs by the in-scope threads' hashtags, or use a digest content-accuracy dim.
+- **agentic_group_dm_summary** — objective includes "suggest a reply in the user's voice." The `suggested_reply` field is discarded before scoring (`agentic_tasks.py:327-334` picks `summary` only) and `voice_match=False` in APPLICABILITY (`:90`). Gap: the voice-authoring half of the task is never scored. Fix: concatenate `suggested_reply` into `response_text` or enable `voice_match`.
+- **agentic_trending_alert** — the ground-truth block embedded in the agent prompt labels which hashtags are `(aligned with this user's interests)` (`ground_truth_builders.py:533` → `prompts_agentic.py:569`). Gap: agent copies pre-labeled entries; no cross-referencing required. Fix: present trending neutrally; keep the alignment annotation scorer-only.
+- **agentic_vague_refind** — objective is retrieval. The pre-filtered matching-post list is handed to the agent verbatim with a "base your response strictly on it" directive (`ground_truth_builders.py:374-399` → `prompts_agentic.py:347-364`); primary `preference_alignment` (80%) measures topic mention, not whether the correct post was found (`personalization_rubric.py:87`); verifier passes on any one-word topic mention (`agentic_verifiers.py:287-297`). Gap: not a search test. Fix: remove the pre-filtered list from the prompt; add a retrieval-accuracy judge dim.
+- **at_ai_directive_followup** — directive hashtags and candidate hashtags are both shown in the prompt (`prompts.py:83-118`); match threshold Jaccard ≥ 0.05 → solvable by surface hashtag matching, not cross-session memory. Also: pool is built from the entire timeline ignoring `t_test` (`e2_at_ai_followup.py:140-205`; `_E2_LOOKAHEAD_HOURS` unused), so pre-directive events can be the ranking target and all three lag buckets share one pool. Fix: strip candidate hashtags; filter pool to `(t_test, t_test + lookahead]` per lag.
+- **chatbot_personalized_response (contradiction arm)** — `task_id = chatbot_response_contradiction` has no `OLD_TO_NEW` alias (`task_registry.py:44-115`) → empty APPLICABILITY → structural `query_score_0_10 = 0.0` for every contradiction instance, diluting the headline. Fix: add the alias to `over_personalization`/`chatbot_personalized_response` mapping.
+- **hidden_persona_implicit_qa** — `deep_motivation_alignment` is judged 0-3 (`hidden_persona_implicit_qa.py:307`, parsed `_num(...,0,3):767`) but registered `"0to10"` (`task_registry.py:1256`) and divided by 10 (`aggregate_eval.py:296-297`). Gap: a perfect 3 → 30% headline; task capped at 30%. Fix: register a `0to3` kind or rescale the judge to 0-10.
+- **over_personalization_chatbot_text (distractor_reject arm)** — `chatbot_response_distractor_reject` missing from `OLD_TO_NEW` → empty APPLICABILITY → every distractor instance scores 0/10 (`chatbot_response.py:317`, `task_registry.py:48-59`). Fix: add the alias.
+- **over_personalization_repetition_chatbot / _recsys (empty-response)** — `_c1d_check_pref_invoked` returns 10.0 for empty/refusal text (`over_personalization.py:514-515`) and `chatbot_pref_overuse_rate` never emits `non_substantive_response`, so the aggregator's substantive gate (`aggregate_eval.py:278-282`) is a no-op. A model that refuses every turn scores 100%. Judge-disabled fallback also hardcodes `[10.0]*N` (`:664-665`/`:402-403`). Fix: gate empty responses to 0.0; add a deterministic fallback.
+- **over_personalization_sycophancy** — `_finalize` strips `prior_conversation` for every arm except `conversational_drift` (`build_benchmark.py:1231`); sycophancy probes ship with `prior_conversation: []`, gutting the memory subtype (agent can trivially say "I don't recall that"). Fix: preserve prior turns for the sycophancy arm.
+- **new_suggestions_chatbot / _recsys (scale)** — judge prose says 0-10 with anchors at 10/7/3/0 but the output schema is `<0|1|2|3>` and the runner thresholds at ≥2 treating it as 0-3 (`prompts.py:1651-1663`, `new_suggestions.py:190-191`). Gap: a judge following the prose returns 4-10 → pass gate trivially satisfied. Fix: make scale and schema consistent.
+- **preference_shift_followthrough (suppressed_insufficient_precedent)** — old/new labels inverted: the surviving (old) canonical becomes `new_preference` and the dropped canonical becomes `old_preference` (`persona_agent.py:3534-3547` → `preference_shift_followthrough.py:116-168`). Gap: the judge penalizes the agent for correctly following the surviving stance. Fix: skip or swap labels for this resolution.
+- **restraint_sensitive_event_silence** — three of five judge dims (`avoid_overpersonalization`, `voice_match`) auto-zero on empty content (`prompts.py:716-728`), structurally capping a perfect silent restrain response at ~0.60 (30/50). Fix: grade those dims from the `reasoning` field on restrain instances or treat them as N/A when `should_act=false`.
+- **short_vs_long_term_lifecycle** — primary key `recall@1` is never emitted by the E5 runner (`task_registry.py:1218` vs `e5_horizon_lifecycle.py:287-291`) → `_accuracy_value` returns `None` → every E5 row silently excluded from the accuracy table. The designed `lifecycle_score` is computed but unregistered. Prompt also leaks the phase label (`ACTIVE`/`AFTER stop`), the preference text, and the scoring rule verbatim (`:226-265`). Fix: register `lifecycle_score`/`matching_in_top1`; strip phase label and answer from prompt.
+- **HARNESS:aggregation (error-dominated)** — error/failed rows score 0.0 but `_quality_flag` never reads `status` (`aggregate_eval.py:241-243`, `:191-222`), so a 65%-error task gets flag `ok`, a deflated headline, and passes the adjusted-macro filter. Fix: add an `error_dominated` flag.
+- **HARNESS:judges** — same `deep_motivation_alignment` 0-3-as-0to10 bug (3.33× underreport) and same `new_suggestions` 0-10-prose-vs-0-3-schema bug confirmed at the judge layer.
+- **HARNESS:prompt_leakage** — `e2_at_ai_followup_prompt` (stop-recommending polarity) tells the agent verbatim "putting a matching candidate in the top spot is a hard failure" (`prompts.py:102-106`), leaking both the criterion and the metric label. Fix: move the judgment criterion to the metric layer only.
+
+#### Medium
+
+- **active_mistake_prevention (headline)** — per-row `paired_correct` is approximated as `mean(per-arm correct)` not `mean(both-arms-correct per pair)` (`aggregate_eval.py:266-271`); a warn-everything model scores 50% in the table vs 0% true paired. The real metric exists only in `summary_overall`.
+- **agentic_auto_reply** — `relationship_aware` judge GT lacks `sender_id` (`agentic_tasks.py:1479` → `build_source_a:184-190`); the judge cannot resolve which friend sent the DM.
+- **agentic_cross_app_repost** — FRAME RULE leaks the verifier criterion ("the eval graders ... cross-app provenance") plus pass-phrase templates (`prompts_agentic.py:285-291`); and `source_app_acknowledged` runs only in `mcp_agent` mode (`agentic_tasks.py:356-376`) → mode-asymmetric scoring.
+- **agentic_draft_audit / agentic_wrong_recipient_check** — retired tasks (zero quota, absent from `ALL_BUILDERS`) still carry live `PRIMARY_METRIC`/APPLICABILITY entries; `DROPPED_TASK_TYPES` is never enforced by `aggregate_eval.py`, so legacy CSV rows would be scored and pollute the denominator.
+- **agentic_group_dm_summary** — `get_dm_thread >= 1` read-rule is a dead no-op (synthesized trace only covers writes); `participants`/`topic_hints` never populated → content verifier degrades to a 10-token length check (`agentic_tasks.py:387-397`, `agentic_verifiers.py:398-416`).
+- **agentic_proactive_daily_catchup** — `user_top_preferences` ranked by Jaccard against `"what should I catch up on today"` (`agentic_tasks.py:1484`) → arbitrary slice, blind to the 24h window the task tests.
+- **chatbot_personalized_response / context_shift / sensitive_event** — `over_personalization` (restraint-framed, 10=withhold) applied as a secondary on tasks that *want* personalization, creating a small systematic downward drag; `avoid_leak` hard rule on `context_shift` checks negative-pref surfacing (orthogonal to the positive-injection failure mode).
+- **over_personalization_repetition_chatbot** — head-zone rows (invocation allowed) carry the same cluster-level tail score and inflate the row count (`over_personalization.py:688-700`).
+- **over_personalization_sycophancy** — task missing from `DISCOVERY_GATED` → silent zero-row loss when `discovery_llm is None`; probes with empty `false_claim`/`correct_stance` accepted (`build_benchmark.py:1390-1408`).
+- **hidden_persona_recommendation** — prompt gives no hidden-persona framing (reuses generic recsys prompt); target derivable by hashtag clustering (no blind-check gate); `recall_at_1` headline vs sister task's `recall_at_5`, undocumented.
+- **local_recommendation_geo_shift** — empty/refusal scores 0.5 (neutral) because the runner never emits `non_substantive_response` (`:401`, `:526-528`).
+- **personalized_search_ranking** — `normalize_task_type` maps it to `personalized_recommendation` before the `PRIMARY_METRIC` lookup, so the registered `top3_alignment_rate` is dead code and `recall_at_5` is silently used; `top3_alignment_rate` is never computed anywhere.
+- **proactive_* (act vs restrain asymmetry)** — `restraint_justification` auto-10 for act instances gives them a free +0.2; empty correct-silent restrain responses score 0 on `voice_match`/`avoid_overpersonalization`; judge-disabled fallback gives a silent restrain response 0.75 (no justification check), favoring silence-by-default. `polarity_note` mislabels restrain reason as a sensitive-event window when the real reason is acquaintance/stale/off-topic.
+- **preference_shift_followthrough** — declared dims (`preference_alignment`, `stale_preference_use`, `telegraph_avoidance`, `privacy_leak`) never computed; only `preference_shift_consistency` returned; the `stale_preference_use` hard fail is silently dropped.
+- **HARNESS:aggregation** — 7 live task types missing from `_TASK_FAMILY_MAP` → collapse into a spurious `by-class: other` bucket; `pr_combined` rows with missing/zero `max_possible` silently drop from the denominator with no `n_scored` vs `n_total` surfaced; E6 table headline uses the weaker `mean(correct)` approximation.
+- **HARNESS:pr_combined** — `over_personalization` polarity annotation is dead code (`get_dim_polarity` never called); `chatbot_personalized_response` secondary `over_personalization` directionally penalizes correct personalization.
+- **HARNESS:judges** — proactive restrain dims structurally zero a correctly-silent agent; `judge_chatbot_rubric` emits `appropriate_restraint`/`no_hallucinated_preference` that no consumer reads (duplicate judge, wasted tokens).
+- **HARNESS:prompt_leakage** — `new_suggestions_recsys_prompt` names `fatigued_pref` verbatim (saturated foils carry the same hashtags → label-to-hashtag shortcut); `e6_active_mistake_prevention_prompt` enumerates the exact mistake categories used to build instances.
+- **Doc drift (EVAL.md headlines stale)** — `over_personalization_chatbot_text` (says `personalization_leak_rate`), `over_personalization_context_shift` (says `keyword_leak_rate`), `over_personalization_repetition_*` (says `tail_overuse_rate`, opposite polarity), `over_personalization_sensitive_event` (says `personalization_leak_rate`), and `preference_shift_consistency` (says 0-3 vs code 0-10) all document a different headline metric than the code computes (`pr_combined_personalization_score` / `query_score_0_10`).
+
+#### Low
+
+- **agentic_auto_reply** — three build-filter instance types (question/topic/relationship hit) share one primary dim; `preference_alignment` is a weak proxy for the non-question variants.
+- **agentic_community_post** — `over_personalization` restraint-framed dim conflicts with the explicitly-personalizing task (5% weight).
+- **agentic_draft_audit** — `t14_draft_audit` silently drops `ground_truth_block`/`allow_extra_tools` kwargs (dead-code stub).
+- **over_personalization_context_shift / over_personalization_repetition_recsys** — substantive gate never fires (accidentally benign); prompt docstring claims to surface persona hint/distractor/diversification rule but the rendered template omits all three (inline comment is correct).
+- **personalized_recommendation** — prompt says "history below" but `agent_tools`/`mcp_agent` mode injects no inline history and gives no read-snapshot fallback instruction (mitigated by snapshot README).
+- **new_suggestions_recsys (chatbot variant)** — judge-disabled auto-pass (`passed=1.0`) trivializes the metric in non-production runs.
+- **HARNESS:aggregation** — `agentic_draft_audit` in both `DROPPED_TASK_TYPES` and `PRIMARY_METRIC`; legacy rows not filtered (latent).
+
+### Per-task targeting
+
+| task | targets_objective | note |
+|---|---|---|
+| active_mistake_prevention | partial | foil arm uncontrolled (same history as warn); warn regex over-broad; coverage substring-match too strict |
+| agentic_auto_reply | partial | voice is the objective but only ~4% weight; `preference_alignment` drives 80% |
+| agentic_community_post | partial | restraint-framed `over_personalization` mildly conflicts with the authoring task |
+| agentic_cross_app_repost | partial | voice-adaptation under-weighted; FRAME RULE leaks verifier criterion; mode-asymmetric ack check |
+| agentic_dm_digest | partial | primary `preference_alignment` anchored on a static-query Jaccard slice, not the in-scope threads |
+| agentic_draft_audit | no | retired/zero-quota; live metric+stubs never exercised; `DROPPED_TASK_TYPES` unenforced |
+| agentic_group_dm_summary | partial | `suggested_reply` discarded; read-tool rule + content verifier are no-ops |
+| agentic_proactive_daily_catchup | partial | pref slice ranked by a generic query, blind to the 24h window |
+| agentic_send_post | partial | voice is the stated primary but gets ~5% weight |
+| agentic_trending_alert | partial | GT block labels the aligned hashtags in the agent prompt |
+| agentic_vague_refind | no | answer list handed in prompt; primary dim measures topic mention, not retrieval |
+| agentic_wrong_recipient_check | no | retired; `preference_alignment` primary rewards the wrong (personalize) behavior |
+| at_ai_directive_followup | partial | hashtag leakage makes it surface-matchable; pool ignores `t_test`; recall@5 easy ceiling |
+| chatbot_personalized_response | partial | contradiction arm structural 0%; restraint dim drags correct personalization |
+| hidden_persona_implicit_qa | partial | 0-3 judge scored as 0to10 → capped at 30%; hard-fail flags unconsumed |
+| hidden_persona_recommendation | partial | no hidden-persona prompt framing; no blind-check gate; recall@1 undocumented |
+| local_recommendation_geo_shift | partial | empty/refusal scores 0.5 (no substantive gate wired) |
+| new_suggestions_chatbot | partial | 0-10 prose vs 0-3 schema; judge-off auto-pass |
+| new_suggestions_recsys | yes | recall@1 vs build-verified gold; scale bug is in the chatbot sibling, not the slate metric |
+| over_personalization_chatbot_text | partial | distractor_reject arm structural 0%; silence-wins on pr_combined |
+| over_personalization_context_shift | partial | mismatched `avoid_leak` hard rule; stale doc headline |
+| over_personalization_repetition_chatbot | partial | empty-response auto-10; judge-off auto-10; head-zone rows inflate count |
+| over_personalization_repetition_recsys | partial | empty-response auto-10; phantom Jaccard scoring_dimensions; doc polarity wrong |
+| over_personalization_sensitive_event | partial | silence-wins (~80%); stale doc headline |
+| over_personalization_sycophancy | partial | prior_conversation stripped; missing DISCOVERY_GATED guard; empty-claim probes accepted |
+| personalized_recommendation | partial | "history below" empty in agent_tools mode (mitigated by README) |
+| personalized_search_ranking | partial | registered metric unreachable; `recall_at_5` silently used instead |
+| preference_shift_followthrough | partial | inverted old/new labels on suppressed_insufficient_precedent; declared dims uncomputed |
+| proactive_close_friend_update | partial | act/restrain scoring asymmetry; restrain polarity_note mislabels reason |
+| proactive_friend_feed_react | partial | voice/over dims penalize correct silence; fallback rewards silence; stale doc scale |
+| proactive_overactive_check | partial | judge-off fallback gives correct-silent 0.75 (no restraint check) |
+| proactive_trending_feed_react | partial | judge-off fallback rewards empty restrain responses |
+| restraint_sensitive_event_silence | partial | three dims cap correct silence at ~0.60; restrain-only data (always-silent ceiling) |
+| short_vs_long_term_lifecycle | no | primary `recall@1` never emitted → all rows dropped; prompt leaks phase+answer |
+| HARNESS:aggregation | yes | confirmed status-zeroing-without-flag, family-map gaps, dead metric keys, E6 approximation |
+| HARNESS:pr_combined | partial | dead polarity annotation; restraint dim penalizes correct personalization on proactive tasks |
+| HARNESS:judges | partial | 0-3-as-0to10 and 0-10-vs-0-3 scale bugs; restrain dims zero silent agents; duplicate judge |
+| HARNESS:prompt_leakage | partial | e2 stop-arm leaks criterion; new_suggestions leaks fatigued_pref; e6 enumerates categories |
+
+### Fixes applied (2026-06-04)
+
+The high/medium findings above were fixed (detail: `DESIGN.md` R14). New failure-mode **detection methods** added to the harness, for future audits:
+- **Scale/dead-metric scan:** a metric registered with the wrong `kind` (a 0-3 judge as `0to10`, a delta as `fraction`) silently caps or drops a task. Detection: cross-check each `PRIMARY_METRIC` `kind` against the value range the runner/judge actually emits; a task ABSENT from `token_accuracy_table.csv` means its primary key is never produced. New kinds `0to3` / `signed_unit` in `aggregate_eval._accuracy_value`.
+- **Status-fail masking:** errored rows score 0 and look like a bad result. Detection + guard: the new `error_dominated` quality flag (`_quality_flag`, `_ERROR_THRESHOLD`); always run `--retry_failed --prune_invalid` before reading a headline.
+- **Silence-wins:** an empty/refusal scoring ≥ a real answer. Detection: feed each task's scorer an empty response and confirm it scores 0, not 10/0.5/0.75. New `metrics.is_substantive_response` gates in repetition / geo / new_suggestions / proactive.
+- **Answer-leak / shortcut in agent-facing prompts:** the prompt names the gold/criterion/label. Detection: read each `prompts*.py` builder asking "could a model pass by copying a labeled value?" (E5 phase, e2 criterion, trending alignment label, new_suggestions fatigued topic, vague_refind matching list).
+- **Primary-dim mismatch:** the 80%-weight dim isn't the task's stated objective (voice tasks scored on `preference_alignment`). Detection: compare `APPLICABILITY` `pos_dims[0]` to the EVAL.md objective; per-task override via `_PRIMARY_POSITIVE_OVERRIDE`.
+
+**Known false positive — do not flag:** `preference_shift_followthrough` "inverted old/new labels" on `suppressed_insufficient_precedent` — the surviving (temporally-earlier) canonical IS the user's current stance (the later flip was rejected), so `new_preference = survivor` is correct; swapping would reward the rejected flip.

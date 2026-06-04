@@ -97,7 +97,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("user_id", help="User id (subfolder in backend/)")
     ap.add_argument("--backend_dir", default="backend")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--top_n", type=int, default=20)
     args = ap.parse_args()
 

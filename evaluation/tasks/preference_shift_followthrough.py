@@ -504,57 +504,81 @@ def run_preference_shift_followthrough(
 ) -> list[dict]:
     """Run preference_shift_followthrough instances.
 
-    Non-stub chatbot instances dispatch to chatbot_response.run_task_b.
-    Stub instances return a placeholder result.
+    Both flavors (chatbot + recsys) present the discovery-generated
+    `user_query` to the agent at `t_test` (time-masked history) and judge
+    whether the response follows the user's CURRENT stance vs the outdated
+    one — headline metric `preference_shift_consistency` (0-10 LLM judge).
+
+    The instance is self-contained (its own `t_test` / `user_query` /
+    `example_response` / `inferior_response` / `groundtruth_preference`), so it
+    runs through the shared chatbot-answer path directly instead of being
+    re-shaped into a Task-B instance (which expected `source_timestamp` /
+    `test_id` and raised KeyError on these rows). The recsys flavor is scored
+    identically — the shift-consistency question is flavor-independent.
     """
+    from evaluation import prompts, judges
+    from evaluation.inference_utils import dispatch_agent_run as _dispatch_agent
+
     if limit is not None:
         instances = instances[:limit]
     results: list[dict] = []
     for inst in instances:
+        base = {
+            "task": "preference_shift_followthrough",
+            "user_id": user_id,
+            "instance_id": inst.get("instance_id", ""),
+            "flavor": inst.get("flavor", ""),
+            "mode": mode,
+        }
         if inst.get("_scaffolding_stub"):
-            results.append({
-                "task": "preference_shift_followthrough",
-                "user_id": user_id,
-                "instance_id": inst.get("instance_id", ""),
-                "flavor": inst.get("flavor", ""),
-                "mode": mode,
-                "metrics": {},
-                "status": "scaffolding_stub",
-            })
+            results.append({**base, "metrics": {}, "status": "scaffolding_stub"})
             continue
 
-        if inst.get("flavor") == "chatbot":
-            try:
-                from evaluation.tasks.chatbot_response import run_task_b
-                task_b_results = run_task_b(
-                    [inst], user_id, bq, llm_client, judge_client,
-                    mode, snapshot_cache,
-                    model_name=model_name,
-                    claude_model=claude_model,
-                    context_budget=context_budget,
-                    enable_llm_judge=enable_llm_judge,
-                    dry_run=dry_run,
-                    limit=1,
-                )
-                results.extend(task_b_results)
-            except Exception as exc:
-                results.append({
-                    "task": "preference_shift_followthrough",
-                    "user_id": user_id,
-                    "instance_id": inst.get("instance_id", ""),
-                    "flavor": "chatbot",
-                    "mode": mode,
-                    "metrics": {},
-                    "status": f"runner_error: {type(exc).__name__}: {exc}",
-                })
+        user_query = (inst.get("user_query") or "").strip()
+        if not user_query:
+            results.append({**base, "metrics": {}, "status": "skipped_no_query"})
+            continue
+
+        t_test = inst["t_test"]
+        history_block = None
+        if mode in ("llm_longctx", "llm_memory", "mem0"):
+            history_block, _stats = snapshot_cache.get_or_build(
+                bq, user_id, t_test, model_name, context_budget)
+
+        prompt = prompts.chatbot_response_prompt(user_query, [], history_block)
+
+        if dry_run:
+            results.append({**base, "agent_response": None,
+                            "metrics": None, "status": "ok"})
+            continue
+
+        raw_response, tool_call_count, subagent_stats = _dispatch_agent(
+            mode, prompt, bq=bq, user_id=user_id, t=t_test,
+            claude_model=claude_model, llm_client=llm_client,
+        )
+        parsed = extract_json_from_response(raw_response)
+        if isinstance(parsed, dict) and parsed.get("response"):
+            response_text = parsed["response"]
         else:
-            results.append({
-                "task": "preference_shift_followthrough",
-                "user_id": user_id,
-                "instance_id": inst.get("instance_id", ""),
-                "flavor": inst.get("flavor", "recsys"),
-                "mode": mode,
-                "metrics": {},
-                "status": "recsys_not_implemented",
-            })
+            response_text = raw_response
+
+        metrics: dict = {}
+        if enable_llm_judge and judge_client is not None:
+            metrics = judges.judge_preference_shift(
+                judge_client,
+                response_text,
+                inst.get("groundtruth_preference") or {},
+                user_query,
+                example_response=inst.get("example_response", ""),
+                inferior_response=inst.get("inferior_response", ""),
+            )
+
+        results.append({
+            **base,
+            "agent_response": response_text,
+            "tool_calls": tool_call_count,
+            "subagent_stats": subagent_stats,
+            "metrics": metrics,
+            "status": "ok",
+        })
     return results

@@ -66,7 +66,7 @@ def main():
         default="data/gistbench_sample_10users.csv",
         help="Source CSV for hashtag extraction (defaults to gistbench sample)",
     )
-    ap.add_argument("--model", default="gpt-5-chat",
+    ap.add_argument("--model", default="gpt-5.5",
                     help="Flagship model (used as fallback)")
     ap.add_argument("--mini_model", default="gpt-5.4-mini",
                     help="Mini-tier model (Step 11C uses mini-tier)")

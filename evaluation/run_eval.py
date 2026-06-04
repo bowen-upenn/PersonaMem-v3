@@ -111,7 +111,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--mode",
                    choices=("llm_longctx", "llm_memory", "mem0", "mcp_agent", "agent_tools"),
                    default="llm_longctx")
-    p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5-chat"),
+    p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5.5"),
                    help="Baseline LLM model for llm_longctx / llm_memory / mem0 modes")
     p.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"),
                    help="Claude Code subagent model (haiku/sonnet/opus)")
@@ -137,9 +137,18 @@ def _parse_args() -> argparse.Namespace:
                    help="Cap total query rows (for quick smoke tests)")
     p.add_argument("--resume", action="store_true",
                    help="Skip queries already present in {run_dir}/results.csv")
+    p.add_argument("--retry_failed", action="store_true",
+                   help="Drop non-ok rows (error / failed_* / no_result) from "
+                        "results.csv first, then re-run ONLY those failed/missing "
+                        "query_ids (implies --resume). Use to complete a run that "
+                        "hit transient API errors like 429 rate limits.")
+    p.add_argument("--prune_invalid", action="store_true",
+                   help="After the run, remove any rows still not status=='ok' "
+                        "from results.csv so the aggregate contains only valid rows.")
     p.add_argument("--dry_run", action="store_true")
-    p.add_argument("--workers", type=int, default=4,
-                   help="Parallel worker count for non-agentic rows. "
+    p.add_argument("--workers", type=int, default=8,
+                   help="Parallel worker count for non-agentic rows (default 8; "
+                        "12 was too aggressive for Azure gpt-5.5 and tripped 429s). "
                         "Agentic rows (T6-T19) always run sequentially in a "
                         "dedicated worker because they share writes.jsonl. "
                         "--workers 1 disables parallelism (original behavior).")
@@ -236,6 +245,32 @@ def _already_done(results_csv: Path) -> set[str]:
             if qid:
                 out.add(qid)
     return out
+
+
+def _rewrite_keep_ok(results_csv: Path) -> tuple[int, int]:
+    """Rewrite results.csv keeping ONLY status=='ok' rows; drop everything else
+    (error / failed_writes / failed_quality / no_result). Returns (kept, dropped).
+
+    Used by --retry_failed (pre-run: removing failed rows makes their query_ids
+    re-run under resume) and by --prune_invalid (post-run: drop anything that
+    still failed so the aggregate contains only valid rows). Writes via a temp
+    file + atomic replace so a crash can't truncate results.csv mid-write."""
+    if not results_csv.exists():
+        return (0, 0)
+    with results_csv.open("r", encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    keep = [r for r in rows if (r.get("status") or "") == "ok"]
+    dropped = len(rows) - len(keep)
+    if dropped == 0:
+        return (len(keep), 0)
+    tmp = results_csv.with_suffix(".csv.tmp")
+    with tmp.open("w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=RESULTS_COLUMNS, extrasaction="ignore")
+        w.writeheader()
+        for r in keep:
+            w.writerow(r)
+    tmp.replace(results_csv)
+    return (len(keep), dropped)
 
 
 def _open_results_writer(results_csv: Path, resume: bool):
@@ -606,6 +641,14 @@ def main() -> int:
     run_dir.mkdir(parents=True, exist_ok=True)
     results_csv = run_dir / "results.csv"
 
+    # --retry_failed: strip non-ok rows so their query_ids are no longer "done",
+    # then resume — only the failed/missing rows re-run (now under 429 backoff).
+    if args.retry_failed and results_csv.exists():
+        kept, dropped = _rewrite_keep_ok(results_csv)
+        print(f"[run_eval] retry_failed: removed {dropped} non-ok rows "
+              f"(kept {kept} ok) — re-running the failed/missing query_ids.")
+        args.resume = True
+
     # Persistent overlay for this persona-run — MCP writes from all queries
     # accumulate here so later queries see earlier writes via OverlayView.
     overlay_path = run_dir / "writes.jsonl"
@@ -638,7 +681,7 @@ def main() -> int:
         from evaluation.mem0_backend import Mem0Backend
         boundaries = sorted({int(r["ts"]) for r in rows})
         t_max = (boundaries[-1] + 1) if boundaries else 0
-        llm_dep = None if args.model in (None, "gpt-5-chat") else args.model
+        llm_dep = None if args.model in (None, "gpt-5.5") else args.model
         print(f"[run_eval] mem0 mode: building real-mem0 store up to T={t_max} "
               f"(LLM={llm_dep or 'AZURE_OPENAI_DEPLOYMENT_NAME'}, "
               f"embed=text-embedding-3-large, cap={args.memory_token_cap})...", flush=True)
@@ -949,6 +992,16 @@ def main() -> int:
         if bar is not None:
             bar.close()
         out_file.close()
+
+    # --prune_invalid: drop any rows that still failed after retries so the
+    # aggregate (and per-persona summary below) reflect only completed rows.
+    if args.prune_invalid:
+        kept, dropped = _rewrite_keep_ok(results_csv)
+        if dropped:
+            print(f"[run_eval] prune_invalid: removed {dropped} still-invalid "
+                  f"rows (kept {kept}).")
+        written_results = [r for r in written_results
+                           if (r.get("status") or "") == "ok"]
 
     # Per-persona summary + per-persona totals across all tasks.
     summary = _summarize_by_task(written_results)

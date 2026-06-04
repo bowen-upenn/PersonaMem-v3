@@ -168,7 +168,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("user_id", help="User id (subfolder under --backend_dir)")
     ap.add_argument("--backend_dir", default="backend")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--rate_limit", type=int, default=50)
     ap.add_argument("--parallel", type=int, default=20,
                     help="Parallel LLM calls for chatbot regen (default 20)")

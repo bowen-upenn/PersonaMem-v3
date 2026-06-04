@@ -100,9 +100,8 @@ def e2_at_ai_followup_prompt(
             f"(topic signal: {hashtag_str})."
         )
         ranking_rule = (
-            "Rank candidates by how well they AVOID the topic signal above. "
-            "Top-ranked candidates must NOT match the directive's hashtag space — "
-            "putting a matching candidate in the top spot is a hard failure."
+            "The user asked to stop seeing this kind of content. Rank candidates "
+            "so the ones least related to what they're tired of come first."
         )
 
     user_msg_block = (
@@ -1513,11 +1512,14 @@ def _new_suggestions_trigger_framing(
 ) -> str:
     """Shared framing block for both surfaces. Branches on trigger_kind."""
     if trigger_kind == "post_fatigue":
+        # Do NOT name the fatigued topic — that let the agent avoid-by-hashtag
+        # (the saturated foils carry its tags) without doing the real work. The
+        # agent must INFER which topic the user is tired of from recent history.
         return (
-            f"The user has been hit with REPEATED personalization on the topic "
-            f"{fatigued_pref!r} in the past few hours. They are saturated. "
-            f"They have NOT made an explicit request — read the recent history "
-            f"and infer the fatigue. Pivot to something genuinely new for this user."
+            "The user has been hit with REPEATED personalization on ONE topic in "
+            "the past few hours and is now saturated on it. They have NOT made an "
+            "explicit request — read the recent history, infer WHICH topic they "
+            "are tired of, and pivot to something genuinely new for this user."
         )
     if trigger_kind == "chatbot_ask":
         return (
@@ -1648,12 +1650,12 @@ def judge_new_suggestions_chatbot_prompt(
 {agent_response}
 
 ## Scoring
-Score on a 0-10 scale how well the agent's recommendation aligns with the
+Score on a 0-3 scale how well the agent's recommendation aligns with the
 SPIRIT of the gold (not necessarily the exact same topic — different
 plausible new directions for this user are fine):
-  10 = obviously a fresh, persona-grounded pivot the user would love
-  7 = plausible new direction, somewhat aligned with hidden interests
-  3 = generic / barely persona-aware
+  3 = obviously a fresh, persona-grounded pivot the user would love
+  2 = plausible new direction, somewhat aligned with hidden interests
+  1 = generic / barely persona-aware
   0 = recycled, off-target, or violates a hard rule
 
 ## Output

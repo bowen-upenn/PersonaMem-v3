@@ -57,6 +57,17 @@ OLD_TO_NEW: dict[str, str] = {
     "chatbot_response_adversarial":         "over_personalization_chatbot_text",
     "chatbot_response_stale":               "over_personalization_chatbot_text",
     "chatbot_response_conversational_drift": "over_personalization_chatbot_text",
+    # distractor_reject is a restraint arm (grouped with control/adversarial/
+    # stale at run_task_b:178). Without this alias its emitted task_id
+    # `chatbot_response_distractor_reject` had no APPLICABILITY entry →
+    # empty-dim structural 0/10 on every instance.
+    "chatbot_response_distractor_reject":   "over_personalization_chatbot_text",
+    # contradiction is a surface-preferences arm (grouped with proactive at
+    # run_task_b:207) — reward using the CURRENT pref; chatbot_personalized_
+    # response's APPLICABILITY carries the stale_preference_use hard rule that
+    # penalizes use of the contradicted stance. Without this alias every
+    # contradiction instance scored a structural 0, diluting the headline.
+    "chatbot_response_contradiction":       "chatbot_personalized_response",
     # Sensitive-event arm of run_task_b is graded under its own task_type so
     # the rubric APPLICABILITY entry / aggregator headline are isolated from
     # the generic chatbot restraint metric.
@@ -1215,7 +1226,12 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # the user's recent_pref_summary. Was previously `recall@1` against an
     # absent ground-truth (no scorer existed; metric was never populated).
     "personalized_search_ranking":       ("top3_alignment_rate", "fraction"),
-    "short_vs_long_term_lifecycle":      ("recall@1", "fraction"),
+    # The E5 runner emits `lifecycle_score` (pre.match_rate_at_3 −
+    # post.match_rate_at_3) on its paired rows — NOT `recall@1` (which no E5
+    # code path ever produces). Registering recall@1 made `_accuracy_value`
+    # return None for every E5 row, silently dropping the whole task from the
+    # accuracy table. `signed_unit` maps the [-1,1] delta to [0,100].
+    "short_vs_long_term_lifecycle":      ("lifecycle_score", "signed_unit"),
     # Silent geo-shift probe — composite headline that combines the
     # current-city / prior-city / neutral branches into a 0/0.5/1 score.
     "local_recommendation_geo_shift":    ("geo_shift_correctness", "fraction"),
@@ -1251,9 +1267,11 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # Step 4.5 — headline is `preference_shift_consistency` (0-10 LLM judge);
     # `stale_preference_use` hard rule fires when the response leans on
     # `groundtruth_preference.old_preference.text`.
-    "preference_shift_followthrough":              ("preference_shift_consistency", "fraction"),
-    # Step 4.6 — headline is `deep_motivation_alignment` (0-10 LLM judge).
-    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "0to10"),
+    "preference_shift_followthrough":              ("preference_shift_consistency", "0to10"),
+    # Step 4.6 — headline is `deep_motivation_alignment` (0-3 LLM judge rubric;
+    # see hidden_persona_implicit_qa.py:305-311). MUST be 0to3, not 0to10, or a
+    # perfect 3 reads as 30%.
+    "hidden_persona_implicit_qa":                  ("deep_motivation_alignment", "0to3"),
     "hidden_persona_recommendation":              ("recall_at_1", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no

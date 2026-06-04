@@ -18,7 +18,7 @@ privacy_leak hard rules). The contrast isolates the effect of P-freshness.
 
 Usage:
     python scripts/smoke_anchor_op.py --users 105,115,229 \
-        --model gpt-5-chat --judge_model gpt-5.5 --pick_model gpt-5.4-mini \
+        --model gpt-5.5 --judge_model gpt-5.5 --pick_model gpt-5.4-mini \
         --limit_per_user 6 --workers 6 --out /tmp/eval_regen/anchor_ab.json
 """
 from __future__ import annotations

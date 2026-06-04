@@ -139,6 +139,18 @@ POSITIVE_DIMS = {"preference_alignment", "over_personalization", "subtle_persona
                  "helpfulness", "telegraph_avoidance",
                  "relationship_aware", "voice_match", "voice_self_consistency"}
 
+# Per-task PRIMARY positive override. By default the primary (80%-weight) dim is
+# pos_dims[0] = the first applicable positive in APPLICABILITY order. For voice-
+# authoring tasks the STATED objective is voice-match (EVAL.md T9/T10/T12-13),
+# but `preference_alignment` is listed first and took 80% while voice_match got
+# ~4-5% — inverting the discriminating signal. These overrides make voice_match
+# the primary so the headline measures what the task actually tests.
+_PRIMARY_POSITIVE_OVERRIDE: dict[str, str] = {
+    "agentic_auto_reply":       "voice_match",
+    "agentic_send_post":        "voice_match",
+    "agentic_cross_app_repost": "voice_match",
+}
+
 
 # --- Source A: persona ground truth ----------------------------------------
 
@@ -580,9 +592,13 @@ def score(
     out["positive_dim_mean"] = round(sum(pos_scores) / len(pos_scores), 2) if pos_scores else 0.0
     out["hard_rule_violations"] = violated
     primary_dim = pos_dims[0] if pos_dims else None
+    _override = _PRIMARY_POSITIVE_OVERRIDE.get(task_id)
+    if _override is not None and _override in pos_dims:
+        primary_dim = _override
     primary_score = out.get(f"{primary_dim}_score") if primary_dim else None
-    secondary_scores = [out[f"{d}_score"] for d in pos_dims[1:]
-                        if isinstance(out.get(f"{d}_score"), (int, float))]
+    secondary_scores = [out[f"{d}_score"] for d in pos_dims
+                        if d != primary_dim
+                        and isinstance(out.get(f"{d}_score"), (int, float))]
     if isinstance(primary_score, (int, float)):
         if secondary_scores:
             final = 0.8 * float(primary_score) + 0.2 * (sum(secondary_scores) / len(secondary_scores))

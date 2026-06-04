@@ -128,7 +128,7 @@ class QueryLLM:
         # Check for Azure OpenAI configuration first
         azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         azure_key = os.getenv("AZURE_OPENAI_KEY")
-        if self.args['models']['llm_model'] == 'gpt-5-chat':
+        if self.args['models']['llm_model'] == 'gpt-5.5':
             azure_deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
         else:
             azure_deployment = self.args['models']['llm_model']
@@ -298,6 +298,62 @@ class QueryLLM:
             return []
 
 
+    def _gemini_generate_with_retry(self, *, contents, config=None, max_retries=7):
+        """Gemini generate_content with backoff on 429 / RESOURCE_EXHAUSTED.
+
+        Gemini's rate limits are token-per-minute heavy and bursty (distinct from
+        Azure's). Under concurrency we hit transient 429s; rather than failing the
+        row, honor the server's "retry in Ns" hint (or exponential backoff) and
+        retry. Non-rate-limit errors re-raise immediately."""
+        import time as _t, re as _re
+        for attempt in range(max_retries):
+            try:
+                kw = {"model": self.model, "contents": contents}
+                if config is not None:
+                    kw["config"] = config
+                return self.client.models.generate_content(**kw)
+            except Exception as e:
+                msg = str(e)
+                is_rl = ("429" in msg or "RESOURCE_EXHAUSTED" in msg
+                         or "exhausted" in msg.lower() or "rate limit" in msg.lower())
+                if not is_rl or attempt == max_retries - 1:
+                    raise
+                m = _re.search(r"retry in ([\d.]+)s", msg)
+                delay = float(m.group(1)) if m else min(2 ** attempt * 2, 45)
+                _t.sleep(delay + attempt * 0.75)
+
+    def _openai_create_with_retry(self, openai_kwargs, max_retries=8):
+        """OpenAI/Azure chat.completions.create with backoff on 429 / rate-limit,
+        plus a one-shot fallback for deployments that reject a non-default
+        temperature (e.g. gpt-5.5).
+
+        Long-context prompts are token-heavy and burst past Azure's per-minute
+        token budget, so under concurrency we hit transient 429s. Previously the
+        call had no retry (only Gemini did), so the row failed with status=error
+        and the aggregator scored it 0 — silently deflating the long-context
+        headline. Honor the server's retry hint (or exponential backoff) and
+        retry; non-rate-limit errors re-raise immediately."""
+        import time as _t, re as _re
+        for attempt in range(max_retries):
+            try:
+                return self.client.chat.completions.create(**openai_kwargs)
+            except Exception as e:
+                msg = str(e)
+                low = msg.lower()
+                # Deployment rejects a non-default temperature → drop it and retry
+                # once (does not consume a backoff sleep).
+                if "temperature" in low and "temperature" in openai_kwargs:
+                    openai_kwargs.pop("temperature", None)
+                    continue
+                is_rl = ("429" in msg or "too many requests" in low
+                         or "rate limit" in low or "rate_limit" in low)
+                if not is_rl or attempt == max_retries - 1:
+                    raise
+                m = (_re.search(r"retry[- ]after[\"': ]+([\d.]+)", low)
+                     or _re.search(r"retry in ([\d.]+)s", low))
+                delay = float(m.group(1)) if m else min(2 ** attempt * 2, 60)
+                _t.sleep(delay + attempt * 0.75)
+
     # @timeout_decorator.timeout(60, timeout_exception=TimeoutError)  # Set timeout to 60 seconds
     def query_llm(self, prompt, use_history=False, image=None, image_path=None, verbose=False, thread_id=None, temperature=None):
         # print(f"Querying LLM with prompt: {prompt}\n\n")
@@ -366,19 +422,32 @@ class QueryLLM:
                     final_turn = gemini_messages[-1:]
                     cached_name = self._get_or_create_gemini_cache(history_prefix, cache_key)
                     if cached_name is not None:
-                        response = self.client.models.generate_content(
-                            model=self.model, contents=final_turn,
-                            config=genai_types.GenerateContentConfig(cached_content=cached_name),
-                        )
+                        response = self._gemini_generate_with_retry(
+                            contents=final_turn,
+                            config=genai_types.GenerateContentConfig(cached_content=cached_name))
                     else:
-                        # Fallback: send all messages without caching
-                        response = self.client.models.generate_content(
-                            model=self.model, contents=gemini_messages)
+                        response = self._gemini_generate_with_retry(contents=gemini_messages)
                 else:
-                    response = self.client.models.generate_content(
-                        model=self.model, contents=gemini_messages)
+                    response = self._gemini_generate_with_retry(contents=gemini_messages)
 
                 content = response.text
+                # Gemini implicit context caching is automatic for large prompts
+                # (no setup needed). Log the cache hit + accumulate usage, mirroring
+                # the OpenAI/Azure path, so caching is visible during the eval.
+                try:
+                    um = getattr(response, "usage_metadata", None)
+                    if um is not None:
+                        ptok = getattr(um, "prompt_token_count", 0) or 0
+                        cached = getattr(um, "cached_content_token_count", 0) or 0
+                        if cached:
+                            print(f"  Gemini cache hit: cached={cached}, total_prompt={ptok}")
+                        self._record_usage(
+                            input_tokens=ptok,
+                            output_tokens=getattr(um, "candidates_token_count", 0) or 0,
+                            cached_input_tokens=cached,
+                        )
+                except Exception:
+                    pass
             except Exception as e:
                 print(utils.Colors.WARNING + f'Error getting Gemini response: {e}' + utils.Colors.ENDC)
                 content = None
@@ -501,22 +570,12 @@ class QueryLLM:
             }
             if temperature is not None:
                 _openai_kwargs["temperature"] = temperature
-            try:
-                response = self.client.chat.completions.create(**_openai_kwargs)
-            except Exception as _temp_exc:
-                # Some newer deployments (e.g. gpt-5.5) reject any non-default
-                # temperature: "Unsupported value: 'temperature' does not
-                # support 0.0 ... Only the default (1) value is supported."
-                # Deterministic callers pass temperature=0.0; without this guard
-                # the ENTIRE call 400s and the caller silently loses its result
-                # (this silently zeroed Step 29 proactive triggers + any other
-                # temperature=0 flagship call). Retry once without temperature.
-                _m = str(_temp_exc).lower()
-                if "temperature" in _m and "temperature" in _openai_kwargs:
-                    _openai_kwargs.pop("temperature", None)
-                    response = self.client.chat.completions.create(**_openai_kwargs)
-                else:
-                    raise
+            # 429/rate-limit backoff + temperature-unsupported fallback are both
+            # handled inside the helper (newer deployments like gpt-5.5 reject a
+            # non-default temperature; deterministic callers pass 0.0). Without
+            # this the call would 429 or 400 and the caller silently lost its
+            # result — scored 0 by the aggregator.
+            response = self._openai_create_with_retry(_openai_kwargs)
 
             # Extract content
             try:

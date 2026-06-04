@@ -8,7 +8,7 @@ are preserved.
 
 CLI:
     python -m data_preparation.extension_b --user_id 115 [--backend_dir backend]
-       [--model gpt-5-chat] [--rng_seed 0] [--dry_run]
+       [--model gpt-5.5] [--rng_seed 0] [--dry_run]
 """
 
 from __future__ import annotations
@@ -147,7 +147,7 @@ def main():
     parser = argparse.ArgumentParser(description="Run Pipeline Extension B post-processing.")
     parser.add_argument("--user_id", required=True)
     parser.add_argument("--backend_dir", default="backend")
-    parser.add_argument("--model", default=os.getenv("EXT_B_MODEL", "gpt-5-chat"))
+    parser.add_argument("--model", default=os.getenv("EXT_B_MODEL", "gpt-5.5"))
     parser.add_argument("--rate_limit", type=int, default=30)
     parser.add_argument("--rng_seed", type=int, default=0)
     parser.add_argument("--dry_run", action="store_true", help="Don't call LLM, don't write files")

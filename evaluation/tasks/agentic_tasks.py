@@ -1149,20 +1149,37 @@ def build_t10_auto_reply(bq: BackendQuery, user_id: str, t_anchor: int) -> list[
 
 
 def build_t11_vague_refind(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
-    """Pick top 6 topics the user has historical engagement with."""
+    """Pick top 6 topics the user has historical engagement with, and store the
+    GOLD matching posts so the verifier can require the agent to IDENTIFY a real
+    post (app + title/caption/creator), not just restate the topic word. The
+    matching-post list is NOT shown to the agent — it must search to find it."""
     counts: dict[str, int] = {}
     for app in APPS:
         for e in bq.get_events(user_id=user_id, app=app, since_timestamp=t_anchor):
             for h in e.get("source_hashtags", []):
                 counts[h] = counts.get(h, 0) + 1
     top_topics = [h for h, _ in sorted(counts.items(), key=lambda kv: kv[1], reverse=True)[:6]]
-    return [
-        {"instance_id": f"t11_{i}", "task_id": "agentic_vague_refind", "entry_point": "chatbot_routed",
-         "topic": topic.lstrip("#"), "t_test": t_anchor,
-         "tool_call_rules": ["count('instagram_create_post') == 0", "count('facebook_create_post') == 0",
-                             "count('threads_create_post') == 0"]}
-        for i, topic in enumerate(top_topics)
-    ]
+    out: list[dict] = []
+    for i, topic in enumerate(top_topics):
+        tag = topic.lstrip("#")
+        gold_matches: list[dict] = []
+        for app in APPS:
+            for e in bq.get_events(user_id=user_id, app=app, since_timestamp=t_anchor, hashtag=tag):
+                c = e.get("content") or {}
+                gold_matches.append({
+                    "app": app,
+                    "oid": e.get("source_object_id"),
+                    "title": (c.get("title") or "")[:120],
+                    "caption": (c.get("caption") or c.get("overall_description") or "")[:200],
+                })
+        out.append({
+            "instance_id": f"t11_{i}", "task_id": "agentic_vague_refind", "entry_point": "chatbot_routed",
+            "topic": tag, "t_test": t_anchor,
+            "gold_matches": gold_matches[:10],
+            "tool_call_rules": ["count('instagram_create_post') == 0", "count('facebook_create_post') == 0",
+                                "count('threads_create_post') == 0"],
+        })
+    return out
 
 
 def build_t12_agent_composed_post(bq: BackendQuery, user_id: str, t_anchor: int) -> list[dict]:
@@ -1432,6 +1449,11 @@ def _run_generic(task_id: str, instances, user_id, bq, llm_client, judge_client,
         # write tasks ask for the actual content as JSON instead of telling
         # the model to call non-existent MCP tools.
         gt_block = ground_truth_builders.build_for_task(task_id, bq, user_id, t, inst)
+        if task_id == "agentic_vague_refind":
+            # SEARCH task — do NOT hand the agent the pre-filtered matching posts;
+            # it must locate the post itself (history in text modes / MCP search in
+            # agent modes). The gold is checked at scoring via inst["gold_matches"].
+            gt_block = None
         history_block = None
         if mode in ("llm_longctx", "llm_memory", "mem0"):
             history_block, _ = snapshot_cache.get_or_build(bq, user_id, t, model_name, context_budget)

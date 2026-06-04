@@ -14,7 +14,7 @@ Azure throttling at any concurrency.
 
 Usage:
     python scripts/run_feed_backfill_batch.py --user_ids 1 2 105 ... \
-        --workers 5 --rate_limit 12 --model gpt-5-chat
+        --workers 5 --rate_limit 12 --model gpt-5.5
 """
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--user_ids", nargs="+", required=True)
     ap.add_argument("--backend_dir", default="backend")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--rate_limit", type=int, default=12,
                     help="Per-worker QueryLLM rate limit (workers*rate_limit "
                          "is the aggregate ceiling).")

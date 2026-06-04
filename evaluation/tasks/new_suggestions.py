@@ -190,9 +190,15 @@ def compute_new_suggestions_chatbot_metrics(
             # alignment_score in [0,3] → passed iff ≥ 2.
             out["passed"] = 1.0 if (score is not None and score >= 2.0) else 0.0
     else:
-        # No judge — leak-set check alone determines pass; default 1.0
-        # since we already know there's no hard fail.
-        out["passed"] = 1.0
+        # No judge — the deterministic leak-set hard-fail check already ran; a
+        # substantive, non-leaking response passes, but an empty/refusal must NOT
+        # auto-pass (silence-win).
+        from evaluation import metrics as _metrics_mod
+        if _metrics_mod.is_substantive_response(raw_response or ""):
+            out["passed"] = 1.0
+        else:
+            out["passed"] = 0.0
+            out["non_substantive_response"] = True
     return out
 
 

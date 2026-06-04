@@ -400,7 +400,12 @@ def run_task_c1c(
                 pref_invoked = list(pool.map(_check_invoked,
                     zip(target_responses, target_query_texts)))
         else:
-            pref_invoked = [10.0] * len(target_responses)
+            # Judge-disabled deterministic fallback: still gate empty/refusal to
+            # 0 (was a flat [10.0]*N auto-pass — a silence-win where refusing
+            # every turn scored 100%). Substantive turns get the benefit of the
+            # doubt (10) since we can't judge invocation without the LLM.
+            pref_invoked = [10.0 if metrics.is_substantive_response(r) else 0.0
+                            for r in target_responses]
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
@@ -511,8 +516,10 @@ def _c1d_check_pref_invoked(
     """
     if not callable(judge_query_fn):
         return 10.0
-    if not (response_text or "").strip():
-        return 10.0
+    if not metrics.is_substantive_response(response_text or ""):
+        # Empty / refusal is NOT restraint — a model that declines every repeated
+        # query must not score a perfect 10 (silence-win). Gate it to 0.
+        return 0.0
     prompt = _C1D_PREF_INVOCATION_JUDGE_PROMPT.format(
         target_pref=target_pref[:200],
         primary_category=primary_category or "(none)",
@@ -662,7 +669,12 @@ def run_task_c1d(
             with ThreadPoolExecutor(max_workers=len(target_responses)) as pool:
                 pref_invoked = list(pool.map(_check_invoked, target_responses))
         else:
-            pref_invoked = [10.0] * len(target_responses)
+            # Judge-disabled deterministic fallback: still gate empty/refusal to
+            # 0 (was a flat [10.0]*N auto-pass — a silence-win where refusing
+            # every turn scored 100%). Substantive turns get the benefit of the
+            # doubt (10) since we can't judge invocation without the LLM.
+            pref_invoked = [10.0 if metrics.is_substantive_response(r) else 0.0
+                            for r in target_responses]
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,

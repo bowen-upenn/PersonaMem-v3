@@ -684,12 +684,18 @@ def run_proactive_task(
         # If no judge ran, derive a fallback composite from hard metrics so
         # `proactive_action_score` is always populated.
         if "proactive_action_score" not in judge_scores or judge_scores.get("proactive_action_score") is None:
-            # Fallback: 0.5 weight on decision_correct + 0.25 on length + 0.25 on evidence cited.
-            fallback_score = (
-                0.5 * decision_correct
-                + 0.25 * length_ok
-                + 0.25 * evidence_cited
-            )
+            if expected_behavior == "restrain":
+                # Don't hand silence a free 0.25 "length_ok" credit (an empty
+                # response is trivially short) — a correct restrain must show SOME
+                # justification (evidence/reasoning) to beat silence-by-default.
+                fallback_score = 0.6 * decision_correct + 0.4 * evidence_cited
+            else:
+                # Act: 0.5 decision + 0.25 length + 0.25 evidence cited.
+                fallback_score = (
+                    0.5 * decision_correct
+                    + 0.25 * length_ok
+                    + 0.25 * evidence_cited
+                )
             judge_scores = {**judge_scores, "proactive_action_score": fallback_score}
 
         # Penalise verbose bodies regardless of score source (judge or fallback).

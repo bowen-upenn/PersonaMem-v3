@@ -221,13 +221,6 @@ def build_e5_horizon_lifecycle(
 
 def e5_prompt(instance: dict, history_block: str | None) -> str:
     phase = instance.get("phase", "pre")
-    day_info = (
-        "It is currently the ACTIVE phase of a short-term intent."
-        if phase == "pre" else
-        "It is currently AFTER the intent's expected stop moment. "
-        "If the user's context (location, calendar, engagement) suggests the "
-        "intent has ended, DO NOT keep pushing matching content."
-    )
     history = f"\n## User history (time-masked)\n{history_block}\n" if history_block else ""
     candidates = instance.get("candidates") or []
     cand_lines = "\n".join(
@@ -241,28 +234,30 @@ def e5_prompt(instance: dict, history_block: str | None) -> str:
         {k: v for k, v in (e or {}).items() if k in ("title", "start_ts", "type", "location")}
         for e in cal[:10]
     ], ensure_ascii=False)
-    return f"""# Task: rank candidates given a short-term intent
+    # The prompt deliberately does NOT name the short-term preference, its stop
+    # condition, the lifecycle "phase" (ACTIVE/AFTER), or the scoring rule —
+    # leaking any of those collapsed this into instruction-following. The agent
+    # must INFER from history + current context whether a past interest is live.
+    return f"""# Task: rank candidates for what to surface right now
 
-The user had a SHORT-TERM preference: "{instance.get('persona_item', '')}"
-- Stop type: {instance.get('stop_condition_type')}
-- Stop description: {instance.get('stop_condition_description', '')}
-- Expected stop timestamp: {instance.get('expected_stop_ts')}
-
-{day_info}
+You are choosing what to put in this user's feed. Some interests in a user's
+history are time-bound (a trip, an event, a one-off project) and stop being
+relevant once that moment passes; others are durable. Use the user's history
+and present context to judge which still matter RIGHT NOW.
 
 ## User context at current moment
 - City: {geo.get('city_at_t_test', '(unknown)')}
-- Same-as-intent-city: {geo.get('same_as_intent_city', False)}
+- In a city matching a past interest: {geo.get('same_as_intent_city', False)}
 - Upcoming/recent calendar snapshot: {cal_json}
 {history}
 ## Candidates (order is random)
 {cand_lines}
 
 ## Your job
-Rank the candidates from most to least worth surfacing for this user RIGHT NOW.
-In the ACTIVE phase, matching the short-term intent is good. In the EXPIRED
-phase, continuing to rank matching candidates highly is an over-personalization
-failure.
+Rank the candidates from most to least worth surfacing for this user RIGHT NOW,
+based on their history and present context (location, calendar, recency of
+engagement) — weighing, for each relevant interest, whether it still appears
+active or has likely passed.
 
 ## Output
 Respond with ONE fenced ```json block:

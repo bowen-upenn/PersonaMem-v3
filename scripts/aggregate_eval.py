@@ -152,6 +152,15 @@ _SILENCE_PASS_THRESHOLD = 0.50
 # is then mostly measuring the hard-rule trigger, not personalization.
 _HARD_FAIL_THRESHOLD = 0.30
 
+# A task is flagged `error_dominated` when more than this fraction of rows
+# failed to run (status ∈ error/failed_*/no_result). Those rows score 0.0, so a
+# task that mostly hit API errors (e.g. a 429 storm) shows a deflated headline
+# that looks like a real (bad) result. Without this flag a 65%-errored task read
+# as `ok`. Always retry+prune (run_eval --retry_failed --prune_invalid) before
+# trusting a headline; this flag catches what slips through.
+_ERROR_THRESHOLD = 0.20
+_FAIL_STATUS = {"error", "failed_writes", "failed_quality", "no_result"}
+
 # Task → benchmark family for the by-class breakout.
 _TASK_FAMILY_MAP = {
     # Ranking
@@ -189,12 +198,19 @@ _TASK_FAMILY_MAP = {
 
 
 def _quality_flag(task_type: str, task_rows: list[dict], n: int) -> str:
-    """Classify a task as ok | insufficient_n | silence_dominated |
-    hard_fail_dominated. Multiple conditions can apply; we report the
-    most severe (insufficient_n trumps silence trumps hard_fail).
+    """Classify a task as ok | insufficient_n | error_dominated |
+    silence_dominated | hard_fail_dominated. Multiple conditions can apply; we
+    report the most severe (insufficient_n trumps error trumps silence trumps
+    hard_fail).
     """
     if n < _MIN_N_HEADLINE:
         return "insufficient_n"
+    # Error-dominated: rows that never produced a result (status fail) are scored
+    # 0 and otherwise invisible — flag the task so a run-failure headline is not
+    # mistaken for a real (bad) score.
+    n_error = sum(1 for r in task_rows if (r.get("status") or "") in _FAIL_STATUS)
+    if n_error / max(1, n) > _ERROR_THRESHOLD:
+        return "error_dominated"
     n_silent = 0
     n_hard_fail = 0
     n_with_metrics = 0
@@ -295,6 +311,15 @@ def _accuracy_value(task_type: str, metrics: dict, status: str, e6_paired: dict 
         return 100.0 * float(v) / float(mx)
     if kind == "0to10":
         return 100.0 * float(v) / 10.0
+    if kind == "0to3":
+        # 4-point judge rubrics (0/1/2/3). Without this, a 0-3 metric registered
+        # as 0to10 hard-caps the task headline at 30% (a perfect 3 → 30%).
+        return 100.0 * float(v) / 3.0
+    if kind == "signed_unit":
+        # metric in [-1, 1] (e.g. E5 lifecycle_score = pre_match − post_match):
+        # +1 = correctly ranks the pref active before its stop + drops it after;
+        # 0 = neutral (no decay); -1 = backwards. Map to [0, 100] with 0 → 50.
+        return 50.0 * (1.0 + max(-1.0, min(1.0, float(v))))
     return 100.0 * float(v)
 
 

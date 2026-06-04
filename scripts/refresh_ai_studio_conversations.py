@@ -120,7 +120,7 @@ def main():
     ap.add_argument("--input_csv",
                     default="data/gistbench_sample_10users.csv",
                     help="Source CSV for interaction reconstruction")
-    ap.add_argument("--model", default="gpt-5-chat")
+    ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--mini_model", default="gpt-5.4-mini")
     ap.add_argument("--rate_limit", type=int, default=50)
     ap.add_argument("--parallel", type=int, default=8,
