@@ -145,12 +145,19 @@ class QueryLLM:
                 azure_endpoint=azure_endpoint,
                 api_key=azure_key,
                 api_version=azure_api_version,
+                # Hard per-request timeout so a STALLED reasoning call (server
+                # streams 0 bytes) fails in 3 min instead of hanging on the SDK's
+                # ~10-min default. max_retries=0: retries are owned by
+                # _openai_create_with_retry (429 + timeout + connection).
+                timeout=180.0,
+                max_retries=0,
             )
             self.model = azure_deployment
         else:
             try:
                 print("Using OpenAI configuration")
-                self.client = OpenAI(api_key=os.getenv("OPENAI_KEY"))
+                self.client = OpenAI(api_key=os.getenv("OPENAI_KEY"),
+                                     timeout=180.0, max_retries=0)
                 self.model = self.args['models']['llm_model']
             except Exception as e:
                 raise ValueError(
@@ -322,7 +329,7 @@ class QueryLLM:
                 delay = float(m.group(1)) if m else min(2 ** attempt * 2, 45)
                 _t.sleep(delay + attempt * 0.75)
 
-    def _openai_create_with_retry(self, openai_kwargs, max_retries=8):
+    def _openai_create_with_retry(self, openai_kwargs, max_retries=8, max_timeout_retries=1):
         """OpenAI/Azure chat.completions.create with backoff on 429 / rate-limit,
         plus a one-shot fallback for deployments that reject a non-default
         temperature (e.g. gpt-5.5).
@@ -334,6 +341,7 @@ class QueryLLM:
         headline. Honor the server's retry hint (or exponential backoff) and
         retry; non-rate-limit errors re-raise immediately."""
         import time as _t, re as _re
+        timeout_retries = 0
         for attempt in range(max_retries):
             try:
                 return self.client.chat.completions.create(**openai_kwargs)
@@ -347,6 +355,20 @@ class QueryLLM:
                     continue
                 is_rl = ("429" in msg or "too many requests" in low
                          or "rate limit" in low or "rate_limit" in low)
+                etype = type(e).__name__
+                is_transient = ("timeout" in low or "timed out" in low
+                                or "connection" in low
+                                or etype in ("APITimeoutError", "APIConnectionError"))
+                if is_transient and not is_rl:
+                    # The 180s client timeout fired (stalled / dropped request).
+                    # Re-issue on a fresh connection ONCE; if it stalls again, give
+                    # up and raise so the caller DROPS this query rather than the
+                    # whole build/eval hanging on one wedged call.
+                    timeout_retries += 1
+                    if timeout_retries > max_timeout_retries:
+                        raise
+                    _t.sleep(2.0)
+                    continue
                 if not is_rl or attempt == max_retries - 1:
                     raise
                 m = (_re.search(r"retry[- ]after[\"': ]+([\d.]+)", low)
