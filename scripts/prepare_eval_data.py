@@ -378,7 +378,10 @@ def _verify_personalization_routing(
     user_id: str,
     *,
     verbose: bool = True,
-    max_workers: int = 16,
+    # Sequential within a persona: parallelism is at the PERSONA level
+    # (--parallel) so we never burst N×16 concurrent calls at the deployment
+    # (which triggered server-side reasoning stalls). 1 = one call at a time.
+    max_workers: int = 1,
 ) -> None:
     """Filter chatbot personalization buckets in-place.
 

@@ -329,6 +329,42 @@ class QueryLLM:
                 delay = float(m.group(1)) if m else min(2 ** attempt * 2, 45)
                 _t.sleep(delay + attempt * 0.75)
 
+    def _create_with_deadline(self, openai_kwargs, deadline_s=200.0):
+        """Wall-clock HARD deadline around chat.completions.create.
+
+        The httpx read-timeout (180s) does not reliably fire when the Azure
+        gpt-5.5 deployment holds a connection open while a reasoning generation
+        is stuck server-side (0 bytes, no error). Run the call in a worker thread
+        and enforce a hard wall-clock cap; on deadline, abandon the (leaked)
+        thread — we can't kill a blocked C-level socket read — and raise so the
+        caller's retry/drop logic fires instead of the whole build/eval hanging.
+
+        Uses a DAEMON thread (not ThreadPoolExecutor) so a wedged call does NOT
+        block process exit — the leaked thread is abandoned and dies with the
+        process."""
+        import threading as _th, queue as _q
+        out = _q.Queue(maxsize=1)
+
+        def _run():
+            try:
+                out.put(("ok", self.client.chat.completions.create(**openai_kwargs)))
+            except BaseException as exc:  # propagate any error to the caller
+                try:
+                    out.put(("err", exc))
+                except Exception:
+                    pass
+
+        _th.Thread(target=_run, daemon=True).start()
+        try:
+            kind, val = out.get(timeout=deadline_s)
+        except _q.Empty:
+            raise TimeoutError(
+                f"request timeout: hard {deadline_s:.0f}s deadline exceeded "
+                f"(server stalled, 0 bytes)")
+        if kind == "err":
+            raise val
+        return val
+
     def _openai_create_with_retry(self, openai_kwargs, max_retries=8, max_timeout_retries=1):
         """OpenAI/Azure chat.completions.create with backoff on 429 / rate-limit,
         plus a one-shot fallback for deployments that reject a non-default
@@ -344,7 +380,7 @@ class QueryLLM:
         timeout_retries = 0
         for attempt in range(max_retries):
             try:
-                return self.client.chat.completions.create(**openai_kwargs)
+                return self._create_with_deadline(openai_kwargs, deadline_s=200.0)
             except Exception as e:
                 msg = str(e)
                 low = msg.lower()
@@ -357,8 +393,10 @@ class QueryLLM:
                          or "rate limit" in low or "rate_limit" in low)
                 etype = type(e).__name__
                 is_transient = ("timeout" in low or "timed out" in low
-                                or "connection" in low
-                                or etype in ("APITimeoutError", "APIConnectionError"))
+                                or "connection" in low or "stalled" in low
+                                or "deadline" in low
+                                or etype in ("APITimeoutError", "APIConnectionError",
+                                             "TimeoutError"))
                 if is_transient and not is_rl:
                     # The 180s client timeout fired (stalled / dropped request).
                     # Re-issue on a fresh connection ONCE; if it stalls again, give

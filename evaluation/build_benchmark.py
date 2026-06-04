@@ -1022,7 +1022,10 @@ def build_task_b_arms(
         def _score_one(c: dict) -> tuple[dict, dict]:
             return c, _blind_check(c["user_query"], blind_check_llm)
 
-        with ThreadPoolExecutor(max_workers=16) as pool:
+        # Sequential within a persona — concurrency is at the PERSONA level
+        # (--parallel), not the query level, to avoid bursting many concurrent
+        # reasoning calls at the deployment (which stalled server-side).
+        with ThreadPoolExecutor(max_workers=1) as pool:
             futures = [pool.submit(_score_one, c) for c in candidates]
             for fut in as_completed(futures):
                 c, bc = fut.result()
