@@ -608,7 +608,14 @@ def prepare_one(
             postprocess_benchmark(
                 bm, bq, user_id,
                 self_check_llm=postprocess_llm if enable_self_check else None,
-                inferior_llm=postprocess_llm if enable_inferior else None,
+                # inferior_response is a FOIL (the deliberately-wrong answer) — it
+                # doesn't need the flagship. Generate it on the mini model
+                # (gpt-5.4-mini, the blind-check client): ~5-10x faster per call
+                # and, crucially, it doesn't hit the flagship reasoning endpoint
+                # that stalls server-side. Falls back to the flagship if no mini
+                # client was built. The example_response + self_check stay on the
+                # flagship (postprocess_llm).
+                inferior_llm=(blind_check_llm or postprocess_llm) if enable_inferior else None,
                 verbose=verbose,
             )
         except Exception as exc:
