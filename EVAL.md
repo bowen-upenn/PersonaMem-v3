@@ -603,17 +603,45 @@ Running all five answers: (a) does structured MCP access beat raw filesystem sea
 
 ### How the `llm_memory` / `mem0` memory baselines work
 
-Both follow the `llm_longctx` style (single `QueryLLM` answer call, context injected into the prompt) but, instead of dumping raw events, inject a **bounded ≤2048-token memory** built from the cross-app history. They are two *different kinds* of memory — a hand-written text profile and a real vector-memory product — not two variants of one algorithm. **Fairness invariant: the memory-build prompts are deliberately GENERAL and are NOT engineered around the benchmark's graded dimensions** (no dislikes / restraint / "stop recommending" / over-personalization special-casing, no app-name enumeration) — special-casing those would teach the baselines to the test.
+Both follow the `llm_longctx` style (single `QueryLLM` answer call, context injected into the prompt) but, instead of dumping raw events, inject a **bounded ≤4096-token memory** built from the cross-app history. They are two *different kinds* of memory — a hand-written text profile and a real vector-memory product — not two variants of one algorithm. **Fairness invariant: the memory-build prompts are deliberately GENERAL and are NOT engineered around the benchmark's graded dimensions** (no dislikes / restraint / "stop recommending" / over-personalization special-casing, no app-name enumeration) — special-casing those would teach the baselines to the test.
 
-- **`llm_memory` — persona/preference-centered text memory (no vectors).** A memory agent reads the history in chronological chunks and maintains ONE plain-text profile under four headers (`Who they are` / `Interests & preferences` / `People & places` / `Currently active`) using explicit **ADD / EDIT / REMOVE / MERGE** actions, capturing both explicit signals AND implicit preferences/patterns (grounded, not fabricated). Built once in the parent, snapshotting at each `T_test` boundary (persisted to `{run_dir}/memory_states/{uid}_llm_memory_T{t}.json` for `--resume`); eviction under the 2048-token cap is salience-based and **content-neutral** (no pinning). `evaluation/memory_builder.py` + `llm_memory_update_prompt` in `evaluation/prompts.py`.
+- **`llm_memory` — persona/preference-centered text memory (no vectors).** A memory agent reads the history in chronological chunks and maintains ONE plain-text profile under four headers (`Who they are` / `Interests & preferences` / `People & places` / `Currently active`) using explicit **ADD / EDIT / REMOVE / MERGE** actions, capturing both explicit signals AND implicit preferences/patterns (grounded, not fabricated). Built once in the parent, snapshotting at each `T_test` boundary (persisted to `{run_dir}/memory_states/{uid}_llm_memory_T{t}.json` for `--resume`); eviction under the 4096-token cap is salience-based and **content-neutral** (no pinning). `evaluation/memory_builder.py` + `llm_memory_update_prompt` in `evaluation/prompts.py`.
 - **`mem0` — real `mem0ai` 2.0.4, fully on Azure.** We do NOT reimplement mem0 — `evaluation/mem0_backend.py` wraps the real library: Azure gpt-5.5 LLM (fact extraction + its own ADD/UPDATE/DELETE/NOOP), Azure `text-embedding-3-large` (3072-d) embedder, local on-disk qdrant per user. The store is built once over all events `< max(T_test)`; each query does **per-query top-k semantic search**. gpt-5.5 is registered as a reasoning model so mem0 sends only `model`+`messages` (the deployment rejects `temperature`/`max_tokens`). Runs **in-process** (`--workers` forced to 1) since the qdrant store is unpicklable.
 
 Shared properties (held constant for a fair A/B):
 
 - **Firewall preserved.** `llm_memory` snapshots reflect only events with `source_timestamp < T_test` (clean prefix cut, same mask as `llm_longctx`). For `mem0`, every event is added with `metadata={"ts": event_ts}` (reconciled to the latest contributing event after each add), and retrieval filters `ts < T_test` — verified that the filter is honored and no future-informed fact leaks. `profile.json` is never read; both consume the same `_compact_event` view as the baseline.
 - **Calendar parity.** The folded calendar state at `T_test` is appended to both memory contexts at answer time (it is live structured state, not "activity to distill"), matching `llm_longctx` and the agent modes.
-- **Token-matched.** Both cap the injected memory at `--memory_token_cap` (2048) so the comparison isolates memory *content*, not budget.
-- **Knobs:** `--memory_token_cap` (2048), `--memory_chunk_k` (40), `--memory_builder_model` (=`--model`), `--memory_builder_temperature` (0.0, `llm_memory` only). mem0 env: `AZURE_OPENAI_DEPLOYMENT_NAME` (gpt-5.5), `AZURE_OPENAI_DEPLOYMENT_NAME_EMBED`/`_EMBEDDING` (text-embedding-3-large).
+- **Token-matched.** Both cap the injected memory at `--memory_token_cap` (4096) so the comparison isolates memory *content*, not budget.
+- **Knobs:** `--memory_token_cap` (4096, single source of truth = `DEFAULT_MEMORY_TOKEN_CAP` in `evaluation/prompts.py`; the build-prompt rail text interpolates it so the LLM-instructed budget can never drift from the enforced cap), `--memory_chunk_k` (40), `--memory_builder_model` (=`--model`), `--memory_builder_temperature` (0.0, `llm_memory` only). mem0 env: `AZURE_OPENAI_DEPLOYMENT_NAME` (gpt-5.5), `AZURE_OPENAI_DEPLOYMENT_NAME_EMBED`/`_EMBEDDING` (text-embedding-3-large).
+
+### Building the `llm_memory` ledger (and the decoupled fast path)
+
+The `llm_memory` ledger is built **once per persona, then reused**. `build_checkpoints` (`evaluation/memory_builder.py`) folds the cross-app history **one `update_step` per DAY boundary** — each call is a whole-document rewrite of the running memory (prev memory + that day's events → new memory), enforced to `--memory_token_cap` by `consolidate_evict`. A persona with an N-day history is therefore **N sequential LLM calls** (each day depends on the prior day — the build is inherently serial *within* a persona). Each `T_test` checkpoint is persisted to `{run_dir}/memory_states/{uid}_llm_memory_T{t}.json`.
+
+**Two ways the build runs:**
+
+1. **Coupled (default).** A plain `run_eval.py --mode llm_memory` run builds the ledger first, then answers the benchmark against it in the same process. Simple, but the build phase is throttled by whatever cross-persona concurrency you sized for the *answer* phase (e.g. `--gpt-workers 8`, a few personas at a time).
+
+2. **Decoupled `--build_only` (fast).** The build phase is **rate-light** — only one in-flight call per persona (serial) — so it barely touches the answer rate budget. Building all personas at once therefore saturates the rate cap and finishes far faster. `run_eval.py --build_only` builds + persists the ledger and exits *before* answering; a later `--resume` run reloads the cached checkpoints (`load_existing_checkpoints`) and only answers (the build is then instant).
+
+```bash
+# Phase 1 — build ALL personas' ledgers in parallel (rate-light → run them all at once).
+for uid in $PERSONAS; do
+  python -u evaluation/run_eval.py --user_id "$uid" --backend_dir backend \
+    --run_dir results/llm_memory/$uid --mode llm_memory --model gpt-5.5 \
+    --memory_token_cap 4096 --build_only &
+done; wait
+# Phase 2 — answer against the cached ledgers (rate-heavy → cap cross-persona concurrency).
+#   --resume reloads memory_states/ (build is instant) and only runs the answer calls.
+for uid in $PERSONAS; do
+  python -u evaluation/run_eval.py --user_id "$uid" --backend_dir backend \
+    --run_dir results/llm_memory/$uid --mode llm_memory --model gpt-5.5 \
+    --judge_model gpt-5.5 --workers 8 --memory_token_cap 4096 --resume
+done
+```
+
+This cut a 20-persona @4096 build from ~50 min (throttled at the answer-sized concurrency, where only ~3 build calls were ever in flight) to **~10 min** (built all-personas-in-parallel, which saturates the ~50 calls/min rate cap — the build is rate-bound, not concurrency-bound, once you stop under-subscribing the cap). **Caveat:** the ledger is cached, so it is NOT rebuilt on `--resume`. Changing the cap or builder model requires a fresh build — delete `{run_dir}/memory_states/` (and `results.csv` if you also want fresh answers) or `--build_only` into a fresh `--run_dir`. A known shutdown wedge (the process can hang on a pooled Azure socket *after* writing its last artifact) means a robust launcher should detect completion (the `--build_only: ledger built` line, or `summary.json` for an answer run) and kill the process rather than relying on a clean exit. `mem0` has no decoupled build — its qdrant store is rebuilt fresh (`fresh=True`) each run.
 
 ### Running the full 5-config matrix
 
@@ -746,7 +774,7 @@ The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `l
 | `--backend_dir` | `backend` | Path to backend root |
 | `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0` |
 | `--model` | `$EVAL_MODEL` or `gpt-5.5` | Baseline model for `llm_longctx` / `llm_memory` / `mem0` modes (maps to Azure gpt-5.5) |
-| `--memory_token_cap` | `2048` | Max tokens of memory injected per query (`llm_memory`/`mem0` modes) |
+| `--memory_token_cap` | `4096` | Max tokens of memory injected per query (`llm_memory`/`mem0` modes). Single source of truth: `DEFAULT_MEMORY_TOKEN_CAP` in `evaluation/prompts.py`. |
 | `--memory_chunk_k` | `40` | Max events per memory-build LLM call (`llm_memory`/`mem0` modes) |
 | `--memory_builder_model` | `=--model` | Model that builds the memory (`llm_memory`/`mem0` modes) |
 | `--memory_builder_temperature` | `0.0` | Temperature for memory-build calls (`llm_memory` mode) |
@@ -761,6 +789,7 @@ The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `l
 | `--retry_failed` | off | Drop non-ok rows (`error` / `failed_*` / `no_result`) from `results.csv`, then resume so only those failed/missing `query_id`s re-run (implies `--resume`). Completes a run that hit transient `429`s. |
 | `--prune_invalid` | off | After the run, remove any row still not `status=="ok"` so the aggregate has only completed rows (the "discard on 2nd failure" step). |
 | `--dry_run` | off | Build prompts without LLM calls (forces sequential, useful for debugging) |
+| `--build_only` | off | `llm_memory`/`mem0`: build + persist the memory ledger to `{run_dir}/memory_states/`, then exit before answering. Run all personas with this in parallel (builds are rate-light), then `--resume` to answer against the cached ledgers. See "Building the `llm_memory` ledger". |
 
 **Model env vars** — two are honored across the eval + build pipeline:
 - `$EVAL_MODEL` (large, default `gpt-5.5`) — flagship / judge / heavy-discovery calls.
