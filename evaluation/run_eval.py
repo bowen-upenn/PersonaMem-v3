@@ -147,6 +147,12 @@ def _parse_args() -> argparse.Namespace:
                    help="After the run, remove any rows still not status=='ok' "
                         "from results.csv so the aggregate contains only valid rows.")
     p.add_argument("--dry_run", action="store_true")
+    p.add_argument("--build_only", action="store_true",
+                   help="Memory modes: build + persist the ledger to "
+                        "{run_dir}/memory_states/, then exit before answering. "
+                        "Lets the build run at high cross-persona concurrency "
+                        "(decoupled from the rate-heavy answer phase); a later "
+                        "--resume run reuses the cached ledger and only answers.")
     p.add_argument("--workers", type=int, default=8,
                    help="Parallel worker count for non-agentic rows (default 8; "
                         "12 was too aggressive for Azure gpt-5.5 and tripped 429s). "
@@ -775,6 +781,17 @@ def main() -> int:
               f"{memory_build_stats['memory_build_calls']} build calls, "
               f"{memory_build_stats['memory_build_input_tokens']:,}+"
               f"{memory_build_stats['memory_build_output_tokens']:,} build tokens", flush=True)
+
+    if args.build_only:
+        # Decoupled build phase: the ledger is now persisted under
+        # {run_dir}/memory_states/ (build_checkpoints dumped it). Exit before
+        # answering so the build can run at high cross-persona concurrency
+        # (builds barely touch the answer rate budget); a later --resume run
+        # reloads these checkpoints via load_existing_checkpoints and only
+        # answers. No-op for modes without a persisted ledger (llm_longctx).
+        print(f"[run_eval] --build_only: ledger built for user {args.user_id}; "
+              f"skipping answer phase.", flush=True)
+        return 0
 
     ctx = DispatchContext(
         user_id=args.user_id,
