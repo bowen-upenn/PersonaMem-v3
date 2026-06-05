@@ -88,7 +88,9 @@ def _e6_paired_f1(rows: list[dict]) -> dict[str, float]:
       - Paired-correct: both polarities correct on the same pair.
       - Warn-recall: warn-polarity accuracy.
       - Foil-precision: foil-polarity accuracy (true-silent rate).
-      - Macro-F1: harmonic mean of the two.
+      - Paired-F1: harmonic mean of the two (the active_mistake_prevention
+        headline; a plain accuracy isn't well-defined for the paired warn/foil
+        task). Named `paired_f1` — distinct from the removed macro-accuracy.
     """
     e6 = [r for r in rows if r.get("task_type") == "active_mistake_prevention"]
     if not e6:
@@ -123,13 +125,13 @@ def _e6_paired_f1(rows: list[dict]) -> dict[str, float]:
     warn_rate = _mean(warn_correct)
     foil_rate = _mean(foil_correct)
     denom = (warn_rate + foil_rate)
-    macro_f1 = (2 * warn_rate * foil_rate / denom) if denom > 0 else 0.0
+    paired_f1 = (2 * warn_rate * foil_rate / denom) if denom > 0 else 0.0
     return {
         "n_pairs": len(pairs),
         "warn_recall": round(warn_rate, 4),
         "foil_precision": round(foil_rate, 4),
         "paired_correct": round(_mean(paired_correct), 4),
-        "macro_f1": round(macro_f1, 4),
+        "paired_f1": round(paired_f1, 4),
     }
 
 
@@ -282,7 +284,7 @@ def _accuracy_value(task_type: str, metrics: dict, status: str, e6_paired: dict 
     if kind == "paired_correct":
         # For active_mistake_prevention rows we need the pair-level result;
         # the per-row metric "correct" is itself binary, so we approximate
-        # as 100 * mean(correct). Pair-level macro-F1 is in summary_overall.
+        # as 100 * mean(correct). Pair-level paired-F1 is in summary_overall.
         v = metrics.get("correct")
         return 100.0 * float(v) if v is not None else None
 
@@ -405,63 +407,27 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
     }
     table.append(all_row)
 
-    # ALL row (macro, task-weighted): each task_type contributes one data
-    # point in [0,1], averaged across task_types. This is the historical
-    # headline number (kept for back-compat with the eval report).
-    per_task_accs = [
-        r["accuracy_pct"] for r in table
-        if r["task_type"] not in ("ALL (micro, row-weighted)",)
-        and isinstance(r.get("accuracy_pct"), (int, float))
-    ]
-    macro_row = {
-        "task_type": "ALL (macro, task-weighted)",
-        "n": len(per_task_accs),
-        "accuracy_pct": round(sum(per_task_accs) / len(per_task_accs), 2) if per_task_accs else "",
-        "quality_flag": "",
-        "task_family": "",
-        "mean_input_tokens": "",
-        "mean_output_tokens": "",
-        "mean_cost_usd": "",
-        "mean_duration_ms": "",
-    }
-    table.append(macro_row)
-
-    # ALL row (ADJUSTED, macro): only tasks flagged `ok` contribute.
-    # This is the metric-artifact-aware headline. Headlines should
-    # report both this AND the raw macro so the reader can see how much
-    # of the score is artifact.
-    ok_accs = [
-        r["accuracy_pct"] for r in table
-        if r.get("quality_flag") == "ok"
-        and isinstance(r.get("accuracy_pct"), (int, float))
-    ]
-    adjusted_row = {
-        "task_type": "ALL (macro, adjusted: artifact-flagged tasks excluded)",
-        "n": len(ok_accs),
-        "accuracy_pct": round(sum(ok_accs) / len(ok_accs), 2) if ok_accs else "",
-        "quality_flag": "",
-        "task_family": "",
-        "mean_input_tokens": "",
-        "mean_output_tokens": "",
-        "mean_cost_usd": "",
-        "mean_duration_ms": "",
-    }
-    table.append(adjusted_row)
-
-    # BY-CLASS macro means: one row per task_family. Lets the reader
-    # see whether agentic vs ranking vs restraint dominate the headline.
-    family_accs: dict[str, list[float]] = defaultdict(list)
+    # Per-family by-class roll-ups — MICRO (row-weighted), consistent with the
+    # micro headline (NOT task-averaged). The macro task-weighted + adjusted-macro
+    # ALL rows were removed: micro (the ALL row above) is the sole headline.
+    fam_correct: dict[str, float] = defaultdict(float)
+    fam_rows: dict[str, int] = defaultdict(int)
     for r in table:
+        if str(r["task_type"]).startswith("ALL"):
+            continue
         fam = r.get("task_family")
         acc = r.get("accuracy_pct")
-        if fam and fam != "" and isinstance(acc, (int, float)):
-            family_accs[fam].append(acc)
-    for fam in sorted(family_accs):
-        accs_in_fam = family_accs[fam]
+        n = r.get("n")
+        if fam and isinstance(acc, (int, float)) and isinstance(n, int) and n > 0:
+            fam_correct[fam] += acc * n
+            fam_rows[fam] += n
+    for fam in sorted(fam_rows):
+        if not fam_rows[fam]:
+            continue
         table.append({
             "task_type": f"  by-class: {fam}",
-            "n": len(accs_in_fam),
-            "accuracy_pct": round(sum(accs_in_fam) / len(accs_in_fam), 2),
+            "n": fam_rows[fam],
+            "accuracy_pct": round(fam_correct[fam] / fam_rows[fam], 2),
             "quality_flag": "",
             "task_family": fam,
             "mean_input_tokens": "",
@@ -574,17 +540,14 @@ def aggregate_run_set(all_rows: list[dict], per_persona: dict[str, list[dict]],
             print(f"[aggregate] e6 paired: n={e6['n_pairs']}  "
                   f"warn_recall={e6['warn_recall']:.3f}  "
                   f"foil_precision={e6['foil_precision']:.3f}  "
-                  f"macro_f1={e6['macro_f1']:.3f}")
+                  f"paired_f1={e6['paired_f1']:.3f}")
 
     # Phase C: token-vs-accuracy table — single artifact for the eval report.
     table = _build_token_accuracy_table(all_rows, overall["e6_paired"])
     # Lift the headline numbers into summary_overall.json so other tools can
     # read them without parsing the printed table.
     for r in table:
-        if r["task_type"] == "ALL (macro, task-weighted)":
-            overall["accuracy_pct_macro"] = r["accuracy_pct"]
-            overall["n_task_types"] = r["n"]
-        elif r["task_type"] == "ALL (micro, row-weighted)":
+        if r["task_type"] == "ALL (micro, row-weighted)":
             overall["accuracy_pct_micro"] = r["accuracy_pct"]
     (out_dir / "summary_overall.json").write_text(
         json.dumps(overall, indent=2, ensure_ascii=False), encoding="utf-8",
@@ -636,21 +599,19 @@ def main() -> int:
                 "mode": mode,
                 "n_personas": overall["n_personas"],
                 "n_queries": overall["n_queries"],
-                "accuracy_pct_macro": overall.get("accuracy_pct_macro"),
                 "accuracy_pct_micro": overall.get("accuracy_pct_micro"),
-                "e6_macro_f1": round(e6["macro_f1"], 4) if e6 else "",
+                "e6_paired_f1": round(e6["paired_f1"], 4) if e6 else "",
             })
             print(f"[aggregate] mode={mode:12s}  personas={overall['n_personas']:2d}  "
                   f"queries={overall['n_queries']:4d}  "
-                  f"acc_macro={overall.get('accuracy_pct_macro','?')}  "
                   f"acc_micro={overall.get('accuracy_pct_micro','?')}  "
-                  f"e6_f1={comparison[-1]['e6_macro_f1']}")
+                  f"e6_paired_f1={comparison[-1]['e6_paired_f1']}")
         if not comparison:
             print("[aggregate] no mode produced results", file=sys.stderr)
             return 2
         comp_path = agg_root / "comparison.csv"
-        cols = ["mode", "n_personas", "n_queries", "accuracy_pct_macro",
-                "accuracy_pct_micro", "e6_macro_f1"]
+        cols = ["mode", "n_personas", "n_queries",
+                "accuracy_pct_micro", "e6_paired_f1"]
         with comp_path.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=cols)
             writer.writeheader()
