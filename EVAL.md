@@ -643,6 +643,37 @@ done
 
 This cut a 20-persona @4096 build from ~50 min (throttled at the answer-sized concurrency, where only ~3 build calls were ever in flight) to **~10 min** (built all-personas-in-parallel, which saturates the ~50 calls/min rate cap — the build is rate-bound, not concurrency-bound, once you stop under-subscribing the cap). **Caveat:** the ledger is cached, so it is NOT rebuilt on `--resume`. Changing the cap or builder model requires a fresh build — delete `{run_dir}/memory_states/` (and `results.csv` if you also want fresh answers) or `--build_only` into a fresh `--run_dir`. A known shutdown wedge (the process can hang on a pooled Azure socket *after* writing its last artifact) means a robust launcher should detect completion (the `--build_only: ledger built` line, or `summary.json` for an answer run) and kill the process rather than relying on a clean exit. `mem0` has no decoupled build — its qdrant store is rebuilt fresh (`fresh=True`) each run.
 
+### Reference results: accuracy vs token cost (gpt-5.5)
+
+Snapshot from a single 20-persona run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`.
+
+**Accuracy (micro %) + context size:**
+
+| | longctx | mem@2048 | mem@4096 |
+|---|--:|--:|--:|
+| ALL (micro) | **63.5** | 60.4 | **58.6** |
+| input tokens / query | **426.7k** | 4.0k | 5.0k |
+| ranking | 57.1 | 53.4 | 52.9 |
+| chatbot | 59.9 | 55.9 | 59.5 |
+| agentic | 69.0 | 69.0 | 61.7 |
+| over_personalization | 84.2 | 81.8 | 80.3 |
+| proactive | 30.7 | 25.0 | 25.2 |
+| other | 67.8 | 50.8 | 65.3 |
+
+Full long-context beats the compressed ledger by ~5 micro points; doubling the cap (2048→4096) is roughly a wash on accuracy (the gains in earlier reports were really the `preference_shift_followthrough` crash-fix + `proactive_overactive_check` supply-fix, not the cap).
+
+**Token cost — the memory baseline's whole point.** `llm_memory` answers each query against a bounded ledger instead of the full history, and pays a small one-time build that updates the memory once per active day:
+
+| cost component | longctx | mem@4096 |
+|---|--:|--:|
+| answer **input tokens / query** | ~427k | ~5.0k |
+| answer output tokens / query | ~250 | ~250 |
+| **memory update / day** (one `update_step`) | — | **~16.6k** (12.9k in + 3.7k out) |
+| one-time build / persona (~14 active-day updates) | — | ~236k (183k in + 53k out) |
+| **end-to-end input / persona** (build + ~129 queries) | **~55M** | **~0.9M** |
+
+So `llm_memory` is **~85× cheaper per query** and **~60× cheaper end-to-end** than `llm_longctx`, for a ~5-point accuracy cost. The per-day update tokens grow with ledger size — each `update_step` rewrites the whole ≤4096-token memory plus that day's events — which is why @4096 costs ~1k more input/query and a larger build than @2048. The biggest long-context blow-ups are the multi-turn `over_personalization_repetition_*` tasks (3.7–4.3M input tokens/query), which the ledger compresses to 28–44k. Per-task token columns live in `results/aggregate/{mode}/token_accuracy_table.csv` (`mean_input_tokens` / `mean_output_tokens` / `mean_cost_usd` / `mean_duration_ms`).
+
 ### Running the full 5-config matrix
 
 `scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; agent modes use Claude Code opus (4.8). gpt-5.5 is the judge for all. `--resume` is on by default, so a stopped run picks up where it left off (per-`query_id`).
