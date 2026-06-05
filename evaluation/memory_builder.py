@@ -39,7 +39,7 @@ from dataclasses import dataclass, field
 
 from evaluation.backend_query import APPS, BackendQuery
 from evaluation.inference_utils import _compact_event, count_tokens
-from evaluation.prompts import llm_memory_update_prompt
+from evaluation.prompts import llm_memory_update_prompt, DEFAULT_MEMORY_TOKEN_CAP
 
 # ONE persona/preference-centered, human-readable text memory (no vectors). The
 # real `mem0ai` library is the OTHER memory baseline and lives in
@@ -68,7 +68,7 @@ EMPTY_MEMORY = """# USER MEMORY (last activity seen: none yet)
 def default_memory_config() -> dict:
     """Default knobs for the memory builder. Mirrors the run_eval CLI flags."""
     return {
-        "token_cap": 2048,
+        "token_cap": DEFAULT_MEMORY_TOKEN_CAP,
         # chunk_k / chunk_gap are LEGACY (no longer consulted by build_checkpoints,
         # which now folds one update_step per DAY boundary). Kept for back-compat
         # with any caller that still reads them.
@@ -197,7 +197,7 @@ def update_step(
     *,
     algo: str = "llm_memory",
     temperature: float = 0.0,
-    token_cap: int = 2048,
+    token_cap: int = DEFAULT_MEMORY_TOKEN_CAP,
     model: str | None = None,
 ) -> tuple[str, str, int, int]:
     """Run ONE memory build LLM call over `chunk` using the persona/preference
@@ -207,7 +207,8 @@ def update_step(
     rewrites the whole doc; we then enforce the token cap with text-only
     consolidation as a safety net. `algo` is retained only as a state-file label.
     """
-    prompt = llm_memory_update_prompt(memory, summary, _render_chunk(chunk))
+    prompt = llm_memory_update_prompt(memory, summary, _render_chunk(chunk),
+                                      token_cap=token_cap)
     resp = llm_client.query_llm(prompt, temperature=temperature) or ""
     new_m, new_s = _parse_memory_summary(resp, memory, summary)
     new_m = consolidate_evict(new_m, token_cap, model=model)

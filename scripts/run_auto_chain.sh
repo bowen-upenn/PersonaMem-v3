@@ -22,7 +22,7 @@ run_pass () {
     mkdir -p "$root/$mode/$uid"
     ( python -u evaluation/run_eval.py --user_id "$uid" --backend_dir backend \
         --run_dir "$root/$mode/$uid" --mode "$mode" --model "$model" \
-        --judge_model "$JUDGE" --workers "$WORKERS" --memory_token_cap 2048 \
+        --judge_model "$JUDGE" --workers "$WORKERS" --memory_token_cap 4096 \
         > "$root/_logs/$mode.$uid.stdout" 2> "$root/_logs/$mode.$uid.stderr" ) &
     running=$((running+1))
     if [ "$running" -ge "$conc" ]; then wait -n; running=$((running-1)); fi

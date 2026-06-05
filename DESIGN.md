@@ -984,6 +984,8 @@ Plus 7 **subtlety constraints** that gate every candidate (see EVAL.md Task F): 
 
 Each candidate carries `trigger_type`, `tier`, `t_test`, `t_test_iso`, `signal_evidence` (the raw user-cited evidence — chatbot question text, friend DM excerpt, sensitive-window metadata) and the `jitai_card` from Stage 2. The eval harness reads this catalog directly via `evaluation.tasks.proactive_actions.build_*` builders.
 
+**Negative-control idle moments (`overactive_check`)** are a pass-through type (no LLM): `_gather_idle_moments` stratifies the user's engagement timeline into 8 buckets and picks up to **6** moments where NO other trigger fires within ±3h and the user is outside any sensitive window (the over-proactivity calibration test — the agent must stay silent). Within each stratum it tries every timestamp (shuffled) rather than a single one-shot pick, and picked moments are kept ≥3h apart. (Earlier the one-shot-per-stratum logic plus a cap of 3 — below the (4,6) quota — starved the task to ~5/20 users; audit 2026-06-05.)
+
 **Reproducibility** — Step 28 should be run with `temperature=0` and ideally with a deterministic cache keyed by `(user_id, candidate_signature)` so re-builds don't re-pay the LLM cost. Phase 1 uses naive per-call invocation; aggressive caching is a Phase 2 follow-up.
 
 ---

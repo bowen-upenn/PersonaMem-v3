@@ -10947,7 +10947,7 @@ class PersonaAgent:
         existing_candidates: dict[str, list[dict]],
         sensitive_periods: list[tuple[int, int]],
     ) -> list[dict]:
-        """Negative-control candidates: pick 2-3 timestamps where NO other
+        """Negative-control candidates: pick up to 6 timestamps where NO other
         task type's candidate fires within ±3h and the user is not in a
         sensitive window. Each picked moment becomes one overactive_check
         instance with `expected_behavior=restrain`.
@@ -10990,6 +10990,21 @@ class PersonaAgent:
         lo, hi = activity_ts[0], activity_ts[-1]
         n_strata = 8
         stratum_size = max((hi - lo) // n_strata, 1)
+        # Match the overactive_check quota max (4, 6). The previous cap of 3 sat
+        # BELOW the min-4 quota, so even an ideal yield came up short
+        # (audit 2026-06-05: task starved to ~5/20 users, n=6 total).
+        MAX_PICKS = 6
+
+        def _valid(t: int, chosen: list[int]) -> bool:
+            # Far enough (±3h) from every OTHER trigger AND from moments already
+            # picked here (so the negative controls don't cluster), and outside
+            # any sensitive-event window.
+            if any(abs(t - f) < 3 * 3600 for f in forbidden):
+                return False
+            if any(abs(t - p) < 3 * 3600 for p in chosen):
+                return False
+            return not self._is_in_sensitive_window(t, sensitive_periods)
+
         picks: list[int] = []
         for i in range(n_strata):
             stratum_lo = lo + i * stratum_size
@@ -10997,15 +11012,17 @@ class PersonaAgent:
             in_stratum = [t for t in activity_ts if stratum_lo <= t < stratum_hi]
             if not in_stratum:
                 continue
-            cand = rng.choice(in_stratum)
-            # Reject if too close to any forbidden t_test (±3h — see docstring).
-            if any(abs(cand - f) < 3 * 3600 for f in forbidden):
-                continue
-            # Reject if inside any sensitive window.
-            if self._is_in_sensitive_window(cand, sensitive_periods):
+            # Try EVERY timestamp in the stratum (shuffled), not a single one-shot
+            # pick — a stratum with any valid idle moment now always yields one,
+            # instead of being wasted when the lone random pick happened to land
+            # near a forbidden trigger (the old one-shot logic was the main
+            # under-supply cause, audit 2026-06-05).
+            rng.shuffle(in_stratum)
+            cand = next((t for t in in_stratum if _valid(t, picks)), None)
+            if cand is None:
                 continue
             picks.append(cand)
-            if len(picks) >= 3:
+            if len(picks) >= MAX_PICKS:
                 break
 
         out: list[dict] = []
@@ -11018,7 +11035,7 @@ class PersonaAgent:
                 "relevance": "irrelevant",   # negative control: AI should stay quiet
                 "signal_evidence": {
                     "note": ("Idle moment — no other proactive candidate "
-                             "fires within ±12h; not in a sensitive-event "
+                             "fires within ±3h; not in a sensitive-event "
                              "window. Used as a negative control to test "
                              "whether the AI stays silent when nothing is "
                              "worth surfacing."),

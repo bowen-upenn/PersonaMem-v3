@@ -1805,6 +1805,12 @@ Respond with ONE fenced JSON block:
 # `\n## ` headers, so QueryLLM's prefix-cache split (first `\n##`) caches all of
 # it and re-sends only the volatile memory/summary/chunk trailer each call.
 
+# Single source of truth for the build-time memory-ledger budget (tokens).
+# run_eval's CLI default, the builder config, and the rail text below all derive
+# from this so the LLM-instructed budget can never drift from the enforced cap.
+# Lives in prompts.py (a leaf module) to avoid a memory_builder<->prompts cycle.
+DEFAULT_MEMORY_TOKEN_CAP = 4096
+
 _MEMORY_SECTIONS_NOTE = (
     "Organize the memory under these four sections, always keeping all four "
     "headers verbatim: 'Who they are' (identity, life context, traits, and how "
@@ -1817,10 +1823,11 @@ _MEMORY_SECTIONS_NOTE = (
     "persona/preference profile, NOT a chronological log of events."
 )
 
-_MEMORY_RAILS = """Constraints (output/format rules):
+def _memory_rails(cap: int = DEFAULT_MEMORY_TOKEN_CAP) -> str:
+    return f"""Constraints (output/format rules):
   - GROUND EVERY LINE in activity you have actually observed. Do not invent demographics, profile details, or stereotypes, and do not guess beyond what the behavior supports.
   - GENERALIZE AND CONSOLIDATE: distill recurring evidence into durable, generalized knowledge about the user; merge related or duplicate notes; let one-off incidental noise fade.
-  - STAY BOUNDED: keep the whole memory within a hard budget of 2048 tokens. When over budget, combine same-topic lines and drop the least useful detail.
+  - STAY BOUNDED: keep the whole memory within a hard budget of {cap} tokens. When over budget, combine same-topic lines and drop the least useful detail.
   - Output the FULL memory each call (whole-document rewrite, not a diff)."""
 
 _MEMORY_OUTPUT = """Output EXACTLY this, nothing else:
@@ -1846,11 +1853,15 @@ def _memory_trailer(memory_doc: str, rolling_summary: str, chunk_text: str) -> s
 Apply the method to the new activity above and emit the full updated <memory> and <summary>."""
 
 
-def llm_memory_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str) -> str:
+def llm_memory_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str,
+                             *, token_cap: int = DEFAULT_MEMORY_TOKEN_CAP) -> str:
     """Persona/preference-centered, human-readable text memory (no vectors).
     Distills a chronological activity stream into durable knowledge about the
     user, maintained each chunk with explicit ADD / EDIT / REMOVE / MERGE
-    actions. Deliberately general — not tuned to any evaluation dimension."""
+    actions. Deliberately general — not tuned to any evaluation dimension.
+
+    `token_cap` is interpolated into the rail text so the LLM-instructed budget
+    always matches the enforced consolidate_evict cap."""
     return f"""You maintain a compact, human-readable MEMORY of ONE user, built by reading their activity in chronological chunks. The memory is a plain-text persona/preference profile a person could read — NOT a log of events, NOT a database, and it uses no embeddings. The raw activity is a stream of timestamped engagements; distill it into durable, generalized knowledge about the user rather than retaining the events themselves.
 
 Maintain the profile each chunk with four explicit actions:
@@ -1863,7 +1874,7 @@ Capture both what the user signals outright AND the preferences, traits, and pat
 
 {_MEMORY_SECTIONS_NOTE}
 
-{_MEMORY_RAILS}
+{_memory_rails(token_cap)}
 
 {_MEMORY_OUTPUT}
 {_memory_trailer(memory_doc, rolling_summary, chunk_text)}"""

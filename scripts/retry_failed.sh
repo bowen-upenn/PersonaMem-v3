@@ -34,7 +34,7 @@ run_mode () {
     echo "[retry $(ts)] queue $mode/$uid"
     ( python -u evaluation/run_eval.py --user_id "$uid" --backend_dir backend \
         --run_dir "$ROOT/$mode/$uid" --mode "$mode" --model "$MODEL" \
-        --judge_model "$JUDGE" --workers "$WORKERS" --memory_token_cap 2048 \
+        --judge_model "$JUDGE" --workers "$WORKERS" --memory_token_cap 4096 \
         --retry_failed --prune_invalid \
         > "$ROOT/_logs/$mode.$uid.retry.stdout" 2> "$ROOT/_logs/$mode.$uid.retry.stderr" ) &
     running=$((running+1))

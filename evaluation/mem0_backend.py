@@ -39,6 +39,7 @@ from pathlib import Path
 from evaluation.backend_query import BackendQuery
 from evaluation.inference_utils import count_tokens
 from evaluation.memory_builder import (
+    DEFAULT_MEMORY_TOKEN_CAP,
     _render_event_line,
     _should_close_chunk,
     build_global_stream,
@@ -145,7 +146,7 @@ class Mem0Backend:
     earlier moment via the `ts < T_test` filter (firewall-safe)."""
 
     def __init__(self, user_id: str, store_dir, *, llm_deployment: str | None = None,
-                 token_cap: int = 2048, fresh: bool = True):
+                 token_cap: int = DEFAULT_MEMORY_TOKEN_CAP, fresh: bool = True):
         _register_gpt55_as_reasoning()
         from mem0 import Memory  # imported lazily so non-mem0 modes don't need it
 

@@ -46,6 +46,7 @@ from evaluation.backend_query import BackendQuery
 from evaluation.inference_utils import SnapshotCache
 from evaluation.run_eval_dispatch import DispatchContext, dispatch_single
 from evaluation.task_registry import QUERIES_CSV_VERSION
+from evaluation.prompts import DEFAULT_MEMORY_TOKEN_CAP
 
 try:
     from tqdm import tqdm
@@ -125,7 +126,7 @@ def _parse_args() -> argparse.Namespace:
                    help="Run the LLM judge for pr_* dimensions (default: on). --no-enable_llm_judge to disable.")
     p.add_argument("--context_budget", type=int, default=None)
     # --- memory mode knobs (only used when --mode memory) ---
-    p.add_argument("--memory_token_cap", type=int, default=2048,
+    p.add_argument("--memory_token_cap", type=int, default=DEFAULT_MEMORY_TOKEN_CAP,
                    help="Max tokens for the consolidated memory injected per query (com/mem0 modes)")
     p.add_argument("--memory_chunk_k", type=int, default=40,
                    help="Max events per memory-build LLM call (com/mem0 modes)")

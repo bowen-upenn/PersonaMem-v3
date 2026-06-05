@@ -35,7 +35,7 @@ run_gpt_mode(){   # $1=mode  $2=conc
     mkdir -p "results/$mode/$uid"
     ( python -u evaluation/run_eval.py --user_id "$uid" --backend_dir backend \
         --run_dir "results/$mode/$uid" --mode "$mode" --model "$GPT" --judge_model "$JUDGE" \
-        --workers "$WORKERS" --memory_token_cap 2048 --prune_invalid \
+        --workers "$WORKERS" --memory_token_cap 4096 --prune_invalid \
         > "results/_logs/$mode.$uid.stdout" 2> "results/_logs/$mode.$uid.stderr" ) &
     running=$((running+1)); if [ "$running" -ge "$conc" ]; then wait -n; running=$((running-1)); fi
   done; wait; echo "[matrix $(ts)] DONE $mode"
@@ -47,7 +47,7 @@ run_mem0(){
     mkdir -p "results/mem0/$uid"
     ( python -u evaluation/run_eval.py --user_id "$uid" --backend_dir backend \
         --run_dir "results/mem0/$uid" --mode mem0 --model "$GPT" --judge_model "$JUDGE" \
-        --memory_token_cap 2048 --prune_invalid \
+        --memory_token_cap 4096 --prune_invalid \
         > "results/_logs/mem0.$uid.stdout" 2> "results/_logs/mem0.$uid.stderr" ) &
     running=$((running+1)); if [ "$running" -ge "$JOBS_MEM0" ]; then wait -n; running=$((running-1)); fi
   done; wait; echo "[matrix $(ts)] DONE mem0"

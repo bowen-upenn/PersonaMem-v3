@@ -70,7 +70,7 @@ run_one() {
   # pass --no-enable_llm_judge to disable. Do NOT pass a hyphenated variant.
   local args=(--user_id "$uid" --backend_dir backend --run_dir "$rundir"
               --mode "$mode" --judge_model "$JUDGE_MODEL"
-              --memory_token_cap 2048)
+              --memory_token_cap 4096)
   [ -n "$RESUME" ] && args+=($RESUME)
   [ -n "$LIMIT" ]  && args+=($LIMIT)
   [ -n "$RATE_LIMIT" ] && args+=(--rate_limit "$RATE_LIMIT")

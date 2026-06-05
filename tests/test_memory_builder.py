@@ -228,7 +228,13 @@ def test_prompt_is_neutral_and_text_only():
     for action in ("add", "edit", "remove", "merge"):
         assert action in p, f"prompt missing maintenance action {action!r}"
     assert "infer" in p and "pattern" in p, "prompt must capture inferred-from-pattern preferences"
-    assert "2048" in p, "prompt should state the 2048-token budget"
+    # the prompt must state the enforced budget, derived from the single source of
+    # truth (never a hardcoded literal that can drift from the real cap).
+    cap = default_memory_config()["token_cap"]
+    assert str(cap) in p, f"prompt should state the {cap}-token budget"
+    # and the cap must be interpolated from the passed token_cap, not baked in
+    p7 = llm_memory_update_prompt("MEM", "SUM", "EVENTS", token_cap=7777).lower()
+    assert "7777" in p7, "prompt must interpolate the passed token_cap"
     # NOT tuned to the benchmark's graded probes (would teach to the test)
     for probe in ("stop recommending", "stop personalizing", "do not personalize",
                   "over-personaliz", "over personaliz", "restraint"):
