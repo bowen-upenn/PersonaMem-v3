@@ -26,13 +26,17 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-# Headless `claude -p` doesn't expose Glob/Grep as standalone tools — those only
-# exist in interactive sessions. Filesystem navigation in headless mode is
-# ordinarily done via Bash (find/ls/grep), but Bash opens a trivial sandbox
-# escape (`cat /etc/passwd`). Solution: restrict to Read only, and put a README
-# in the snapshot directory that enumerates every file the agent would want.
-DEFAULT_ALLOWED_TOOLS = ("Read",)
-DEFAULT_DENY_TOOLS = ("Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit")
+# Agentic-search tools for filesystem (agent_tools) mode. claude -p DOES expose
+# Grep/Glob/Bash in headless mode (verified 2026-06-06) — so the agent SEARCHES the
+# snapshot for the relevant slices instead of reading whole ~40KB files. Reading
+# everything made opus burn turns + reasoning (18k output) and hit the turn cap →
+# EMPTY answers (2178/2580). Read/Grep/Glob are path-scoped to the snapshot (below);
+# Bash can't be path-scoped, so cwd=snapshot + the profile deny patterns + the
+# time-masked snapshot are the firewall. (A determined Bash call could still reach
+# absolute paths outside the snapshot, e.g. the real profile.json — residual risk
+# accepted by the eval owner in exchange for real agentic search.)
+DEFAULT_ALLOWED_TOOLS = ("Read", "Grep", "Glob", "Bash")
+DEFAULT_DENY_TOOLS = ("Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit")
 # Defense-in-depth (Phase G): even if a future change accidentally writes
 # profile.json or persona.html into the snapshot, these path patterns block
 # Read/Glob/Grep from opening them. Belt + suspenders on top of materialize_snapshot
@@ -59,7 +63,7 @@ _ACCESS_MCP = """\
 You are an assistant acting on behalf of this user. You have access to MCP tools that let you read the user's cross-app history (`mcp__instagram__get_feed`, `mcp__facebook__get_feed`, `mcp__threads__get_feed`, `mcp__chatbot__get_history`, `*_list_dms`, `*_search`) and — when the task calls for it — write on their behalf (`mcp__<app>__create_post`, `mcp__<app>__send_dm`, `mcp__<app>__react`, `mcp__<app>__comment`).
 """
 _ACCESS_FS = """\
-You are an assistant acting on behalf of this user. Their time-masked cross-app history is in FILES in your current working directory, and you have the `Read` tool. Agentically search that history before you answer: first `Read` `README.md` (it lists and describes every file available to you), then `Read` the relevant files — the per-app event timelines (`instagram.json`, `facebook.json`, `threads.json`, `chatbot.json`, `ai_studio.json`) and `calendar.json` — to ground your response in what this user has actually done. Do not answer from generic priors; search the files first.
+You are an assistant acting on behalf of this user. Their time-masked cross-app history is in JSON FILES in your current working directory, and you have agentic-search tools: `Grep`, `Glob`, `Read`, and `Bash`. The files are large — do NOT read them in full. Instead SEARCH them: first `Read` `README.md` (it lists every file), then use `Grep`/`Bash` (e.g. grep a hashtag, topic, friend name, or app across the `*.json` files) plus targeted `Read`s of just the relevant slices to gather the evidence you need. Ground your answer in what this user has actually done — search, don't guess from generic priors — then give your final answer concisely.
 """
 # Shared over-personalization rail (appended after the access framing). The
 # benchmark's central question is whether the agent personalizes appropriately
@@ -137,7 +141,13 @@ def run_subagent(
     # absolute path. Without `--setting-sources ""` the subprocess inherits
     # permissive project / user / local settings from the caller's Claude
     # Code session, which silently overrides these allow patterns.
-    fs_allowed_patterns = [f"{tool}(/{snapshot_abs}/**)" for tool in allowed_tools]
+    # Read/Grep/Glob take file/path args → path-scope them to the snapshot.
+    # Bash takes a command (not a path) → can't be path-scoped; allow it bare
+    # (cwd=snapshot keeps relative ops in-bounds; see firewall note above).
+    fs_allowed_patterns = [
+        (tool if tool == "Bash" else f"{tool}(/{snapshot_abs}/**)")
+        for tool in allowed_tools
+    ]
     # MCP patterns (e.g., "mcp__instagram__*") are added directly — no path
     # scoping needed because the MCP server enforces its own scope.
     mcp_patterns = list(mcp_tool_patterns or [])
@@ -152,6 +162,10 @@ def run_subagent(
         "--permission-mode", "dontAsk",
         "--no-session-persistence",
         "--disable-slash-commands",
+        # Headroom so a search-heavy run still reaches its final answer instead of
+        # being cut off at the CLI's low default (the prior empty-answer cause when
+        # the agent read all 6 files); the agentic-search prompt keeps it well under.
+        "--max-turns", "40",
         "--add-dir", snapshot_abs,
     ]
     if allowed_patterns:
