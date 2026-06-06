@@ -29,7 +29,13 @@ CLAUDE_MODEL="opus"             # alias -> latest opus (opus-4.8)
 JUDGE_MODEL="gpt-5.5"
 GPT_WORKERS=8
 AGENT_WORKERS=1
-JOBS=1            # cross-persona concurrency for the gpt modes (mem0 only)
+JOBS=1            # cross-persona concurrency for llm_memory (workers=8 intra-persona)
+MEM0_JOBS=20     # cross-persona concurrency for mem0 — DEFAULT: all 20 personas at once.
+                 # mem0 is workers=1 (serial per persona) AND rate-light (~1 in-flight
+                 # call/persona, ~36% of the Azure cap at 6-way), so run them all in
+                 # parallel; backoff absorbs any overflow. REQUIRES per-persona
+                 # MEM0_DIR isolation (run_one) — else personas collide on the global
+                 # ~/.mem0/migrations_qdrant lock (portalocker.AlreadyLocked).
 AGENT_JOBS=1     # cross-persona concurrency for the opus agent modes
 RATE_LIMIT=""    # per-client concurrency semaphore (run_eval --rate_limit); blank=default 50
 LIMIT=""
@@ -45,6 +51,7 @@ while [ $# -gt 0 ]; do
     --gpt-workers)   GPT_WORKERS="$2"; shift 2;;
     --agent-workers) AGENT_WORKERS="$2"; shift 2;;
     --jobs)          JOBS="$2"; shift 2;;
+    --mem0-jobs)     MEM0_JOBS="$2"; shift 2;;
     --agent-jobs)    AGENT_JOBS="$2"; shift 2;;
     --rate-limit)    RATE_LIMIT="$2"; shift 2;;
     --resume)        RESUME="--resume"; shift 1;;
@@ -80,6 +87,11 @@ run_one() {
     args+=(--model "$GPT_MODEL" --workers "$GPT_WORKERS")
   fi
   echo "[matrix] START $mode/$uid -> $rundir  (log: $out)"
+  # mem0 keeps a GLOBAL store at $HOME/.mem0 (migrations_qdrant) that portalocker-locks;
+  # concurrent personas collide (AlreadyLocked). Isolate MEM0_DIR per persona so
+  # MEM0_JOBS>1 is safe. (run_one runs in a backgrounded subshell, so this export is
+  # per-persona.) Does NOT touch HOME (that breaks the Python env).
+  if [ "$mode" = "mem0" ]; then export MEM0_DIR="$rundir/.mem0dir"; mkdir -p "$MEM0_DIR"; else unset MEM0_DIR; fi
   if python -m evaluation.run_eval "${args[@]}" >"$out" 2>"$err"; then
     echo "[matrix] DONE  $mode/$uid"
   else
@@ -114,8 +126,9 @@ for mode in $MODES; do
     # these (jobs x workers = concurrency) so the answer phase stays within the
     # rate limit. llm_longctx (no build) keeps jobs=1 x high workers.
     case "$mode" in
-      mem0|llm_memory) mode_jobs="$JOBS";;
-      *)               mode_jobs=1;;
+      mem0)       mode_jobs="$MEM0_JOBS";;   # workers=1 + rate-light → parallelize hard
+      llm_memory) mode_jobs="$JOBS";;        # workers=8 intra-persona → keep jobs low
+      *)          mode_jobs=1;;
     esac
     echo "[matrix] $mode: $mode_jobs persona(s) concurrent x $GPT_WORKERS worker(s)"
     running=0
