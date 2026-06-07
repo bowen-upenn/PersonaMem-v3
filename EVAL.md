@@ -630,6 +630,18 @@ Net effect on the 10-persona long-context set: ~92% of input tokens become cache
 
 **Cost impact (gemini-3.5-flash, 10 personas, ~1,250 long-context queries):** standard $765 → +batch $382 → +cache $137 → **+cache+batch $103** (7.4× cheaper). Best-case caching assumes per-persona ascending-`T_test` dispatch so each query is a prefix-extension; realized savings depend on implicit-cache hit rate. NOTE: `query_many`/batch is implemented in `QueryLLM` but the `run_eval` per-row loop still calls `query_llm` synchronously — wiring the loop to collect-then-batch is the remaining step before batch savings are realized end-to-end.
 
+### Judge policy: ON by default + judge-replay
+
+**The LLM judge (gpt-5.5 by default) is ON for every scored run** — `--enable_llm_judge` is the default in `run_eval.py` and in `scripts/run_gemini35_eval.sh`. Many task primaries (the `pr_*` personalization rubric, chatbot/restraint/proactive rubrics, repetition `query_score_0_10`) are judge-produced, so a judge-off run leaves those tasks unscored (0 / absent) and is **not comparable** to a judge-on run. Only run judge-off for a quick generation/cost check, never for a result you intend to compare.
+
+**Judge-replay (`--replay_from <prior_run_dir>`)** retro-scores a judge-off run **without re-generating**: `dispatch_agent_run` returns the saved `agent_response` from `{replay_from}/{user_id}/results.csv` instead of calling the model (`_replay_active`), and only scoring + the judge run. Forces `--workers 1` (the per-row replay response is staged on the shared client). Use it to add gpt-5.5 judge scores to a model's saved outputs at judge cost only — no model regeneration:
+```
+python -m evaluation.run_eval --user_id 1 --mode llm_longctx --model gemini-3.5-flash \
+    --judge_model gpt-5.5 --enable_llm_judge \
+    --replay_from results/llm_longctx_gemini3.5flash --run_dir results/llm_longctx_gemini3.5flash_judged
+```
+Errored/empty saved rows replay as `""` (scored non-substantive → 0); response-feedback clusters (`over_personalization_repetition_*`) don't replay cleanly (one saved response can't reconstruct the N-turn cluster) and stay unscored.
+
 ### How the `llm_memory` / `mem0` memory baselines work
 
 Both follow the `llm_longctx` style (single `QueryLLM` answer call, context injected into the prompt) but, instead of dumping raw events, inject a **bounded ≤4096-token memory** built from the cross-app history. They are two *different kinds* of memory — a hand-written text profile and a real vector-memory product — not two variants of one algorithm. **Fairness invariant: the memory-build prompts are deliberately GENERAL and are NOT engineered around the benchmark's graded dimensions** (no dislikes / restraint / "stop recommending" / over-personalization special-casing, no app-name enumeration) — special-casing those would teach the baselines to the test.

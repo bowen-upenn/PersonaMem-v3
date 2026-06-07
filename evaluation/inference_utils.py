@@ -841,6 +841,21 @@ def dispatch_agent_run(
     # facts for mem0), so dispatch is identical.
     if mode not in ("llm_longctx", "llm_memory", "mem0"):
         return "", 0, {"error": f"dispatch_agent_run: unhandled mode {mode!r}"}
+    # Replay-judge: when the client has a staged saved response (run_eval
+    # --replay_from), skip the model call entirely and score that response.
+    # This adds judge metrics to a prior judge-off run WITHOUT re-generating —
+    # the (gpt-5.5) judge still runs downstream in the task scorer. Any missing
+    # response replays as "" (scored non-substantive → 0); the model is never
+    # called while replay is active.
+    if getattr(llm_client, "_replay_active", False):
+        replay = getattr(llm_client, "_replay_next", None) or ""
+        return replay, 0, {
+            "input_tokens": count_tokens(prompt),
+            "output_tokens": count_tokens(replay),
+            "cache_read_tokens": 0,
+            "cost_usd": 0.0,
+            "replayed": True,
+        }
     if llm_client is None:
         return "", 0, {"error": f"{mode} mode requires a QueryLLM client but none was passed"}
     # Default cache layout for all long-context eval: hoist the time-masked

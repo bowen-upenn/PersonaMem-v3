@@ -19,7 +19,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 MODE="${MODE:-llm_longctx}"
 MODEL="${MODEL:-gemini-3.5-flash}"
 CONCURRENCY="${CONCURRENCY:-5}"
-JUDGE_FLAG="${JUDGE_FLAG:---no-enable_llm_judge}"   # default: no judge (model-gen-cost focus)
+JUDGE_FLAG="${JUDGE_FLAG:---enable_llm_judge}"      # default: JUDGE ON (gpt-5.5 judge). Scored runs are the norm.
 PERSONAS="${PERSONAS:-1 2 3 5 6 8 9 10 13 14}"
 # OUT_ROOT overridable (e.g. results/llm_longctx_gpt5.5 for the gpt-5.5 reeval).
 OUT_ROOT="${OUT_ROOT:-results/${MODE}_gemini3.5flash}"
@@ -43,7 +43,9 @@ run_one() {
   EVAL_GEMINI_BATCH=0 EVAL_CHRONO_HISTORY=1 \
   python -m evaluation.run_eval \
     --user_id "$uid" --mode "$MODE" --model "$MODEL" \
-    --workers 1 $JUDGE_FLAG --resume \
+    --judge_model "${JUDGE_MODEL:-gpt-5.5}" \
+    --workers 1 $JUDGE_FLAG --resume ${RETRY_FLAG:-} \
+    ${REPLAY_FROM:+--replay_from "$REPLAY_FROM"} \
     --run_dir "$rd" > "$LOG_DIR/${MODE}_${uid}.log" 2>&1
   echo "[done] uid=$uid mode=$MODE exit=$?"
 }

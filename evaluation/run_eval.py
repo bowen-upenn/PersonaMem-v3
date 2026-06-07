@@ -146,6 +146,13 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--prune_invalid", action="store_true",
                    help="After the run, remove any rows still not status=='ok' "
                         "from results.csv so the aggregate contains only valid rows.")
+    p.add_argument("--replay_from", default=None,
+                   help="Judge-replay: instead of calling the model, reuse the "
+                        "saved agent_response from {replay_from}/{user_id}/results.csv "
+                        "and only (re)run scoring + the LLM judge. Use to add judge "
+                        "metrics to a prior judge-off run with NO re-generation. "
+                        "Forces --workers 1. Pair with --enable_llm_judge (default) "
+                        "and --judge_model gpt-5.5.")
     p.add_argument("--dry_run", action="store_true")
     p.add_argument("--build_only", action="store_true",
                    help="Memory modes: build + persist the ledger to "
@@ -629,6 +636,12 @@ def main() -> int:
               f"{args.workers} -> 1", flush=True)
         args.workers = 1
 
+    # Judge-replay: per-row saved response is staged on the shared llm_client,
+    # which is only race-free in-process — force single worker.
+    if args.replay_from and args.workers != 1:
+        print(f"[run_eval] replay_from set; overriding --workers {args.workers} -> 1", flush=True)
+        args.workers = 1
+
     # Source of truth: backend/{uid}/test.json (a list of test-instance
     # dicts written by scripts/prepare_eval_data.py). Legacy
     # benchmark/{uid}/queries.csv path still loads if present, but the
@@ -673,6 +686,28 @@ def main() -> int:
     bq = BackendQuery(args.backend_dir)
     llm_client, judge_client = _build_llm_clients(args)
     snapshot_cache = SnapshotCache(mode=args.mode)
+
+    # Judge-replay: load {query_id: saved agent_response} from a prior run's
+    # results.csv. dispatch_agent_run returns these instead of calling the model
+    # (see _replay_active), so only scoring + the judge run. The model client is
+    # still built (judge uses judge_client); flag it so the gen step replays.
+    replay_map: dict | None = None
+    if args.replay_from:
+        import csv as _csv
+        _csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+        src = Path(args.replay_from) / args.user_id / "results.csv"
+        if not src.exists():
+            print(f"[run_eval] --replay_from: {src} missing", file=sys.stderr)
+            return 2
+        replay_map = {}
+        with src.open() as fh:
+            for r in _csv.DictReader(fh):
+                replay_map[r["query_id"]] = r.get("agent_response") or ""
+        if llm_client is not None:
+            llm_client._replay_active = True
+        print(f"[run_eval] replay_from={src}: staged {len(replay_map)} saved responses "
+              f"(model gen DISABLED; judge={'on' if args.enable_llm_judge else 'off'} "
+              f"model={args.judge_model})", flush=True)
 
     # com / mem0 modes: build the per-user memory ledger ONCE here (in the
     # parent) with the faithful algorithm (args.mode), snapshotting consolidated
@@ -886,6 +921,10 @@ def main() -> int:
         # threaded in-process, so this shared slot is race-free for that mode).
         if ctx.snapshot_cache is not None:
             ctx.snapshot_cache._pending_query = inst.get("user_query")
+        # Judge-replay: stage this row's saved response so dispatch_agent_run
+        # returns it instead of calling the model (race-free at --workers 1).
+        if replay_map is not None and ctx.llm_client is not None:
+            ctx.llm_client._replay_next = replay_map.get(qid, "")
         t0 = time.time()
         try:
             result = dispatch_single(row["task_type"], inst, ctx)
