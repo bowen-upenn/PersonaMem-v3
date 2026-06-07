@@ -712,6 +712,8 @@ Each test moment, the harness **materializes a filesystem snapshot** from the ba
 2. Write a `README.md` inside the snapshot that enumerates the files (the subagent has Read only, no Glob/Grep).
 3. Spawn `claude -p <prompt>` with `cwd = snapshot_dir`, `--setting-sources ""` (blocks inheritance from parent Claude Code session's permissive config), `--allowedTools "Read(/<abs>/**)"` (path-scoped permission), `--disallowedTools Bash,Edit,Write,WebFetch,WebSearch,Task,NotebookEdit`, and `--permission-mode dontAsk`.
 
+**Per-query cost guardrails** (`claude_subagent.py`, tunable via env): `--max-turns` defaults to **15** (`EVAL_AGENT_MAX_TURNS`) and `--max-budget-usd` to **0.30** (`EVAL_AGENT_MAX_BUDGET_USD`). These bound the agentic-loop spiral — at the old `--max-turns 40` with no budget cap, search runs reached ~970k cache-read tokens / ~9 min in the tail. The `_ACCESS_FS` system framing also explicitly instructs the agent to **never read/dump whole `*.json` files** (no `Read` of a full file, no `cat`) and to grep for line ranges + targeted `Read offset/limit` instead, since cache-read tokens (re-read every turn) are ~97% of the per-query token cost.
+
 Three layers of sandbox, all required — any one alone is bypassable:
 - **`cwd`** scopes relative reads to the snapshot.
 - **Path-scoped `Read(//abs/**)`** blocks absolute-path reads outside the snapshot.
