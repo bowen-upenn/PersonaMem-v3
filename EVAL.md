@@ -865,9 +865,9 @@ In `agent_tools` mode, each query spawns a Claude Code subagent that autonomousl
 | `output_tokens` | All agent output across ALL turns — reasoning + Read tool calls + final answer |
 | `cost_usd` | Per-row USD cost from the Claude Code SDK |
 
-Total prompt = `input_tokens + cache_read_tokens`. `cache_hit_rate = cache_read / total_prompt`. An agent that reads all 5 app JSONs uses ~90K input tokens; one that reads 1 file uses ~5K. The agent's search strategy is part of the cost — an efficient agent reads fewer files.
+Total prompt = `input_tokens + cache_read_tokens`. `cache_hit_rate = cache_read / total_prompt`. With prompt caching, the snapshot + Claude Code system prompt are served from cache, so **`cache_read_tokens` dominates (~97% of per-query token volume; measured median ~87K, tail ~970K)** while fresh `input_tokens` stays tiny (often <1K). Every agentic turn re-reads the whole accumulated context from cache, so cost scales with **turns × context size** — an agent that reads narrow slices over few turns is far cheaper than one that reads whole files over many turns.
 
-The `input/output` ratio is a proxy for search efficiency: higher = more searching relative to answering. Typical range: 20:1 (light tasks) to 45:1 (heavy personalization tasks).
+**Per-query cost caps (standing defaults).** Each subagent runs with `--max-turns 15` and `--max-budget-usd 0.30` (override via `EVAL_AGENT_MAX_TURNS` / `EVAL_AGENT_MAX_BUDGET_USD`), plus a system prompt that forbids reading whole `*.json` files (grep for line ranges + targeted `Read offset/limit` instead). Measured impact vs the old uncapped setting (`--max-turns 40`, no budget) on `agent_tools_sonnet`: **per-query cost ≈ −57%, wall-clock ≈ −33%**, empty-answer rate did **not** rise (4.0% → 2.8%), and matched-by-task accuracy stayed roughly flat (no task regressed beyond small-sample noise). The long agentic tail was mostly wasted re-reading, not productive search.
 ```
 
 ## Per-query quality audit (`scripts/audit_benchmark_queries.py`)
@@ -942,7 +942,7 @@ Each query is adjacent to a DIFFERENT user preference (round-robin assignment). 
 
 ### Token-cost interpretation
 
-For `agent_tools` mode, the agent autonomously decides which files to Read. The token counts reflect the full agentic loop — an agent that reads every file uses ~90K input tokens while one that reads efficiently uses ~5K. The `input/output` ratio measures search efficiency (higher = more searching). Typical range: 20:1 (light tasks) to 45:1 (heavy personalization).
+For `agent_tools` mode, the agent autonomously decides which files to Read. The token counts reflect the full agentic loop, dominated by `cache_read_tokens` (context re-read every turn). Per-query cost is bounded by the standing caps `--max-turns 15` + `--max-budget-usd 0.30` and the "never read whole files" system prompt (see Token accounting above for the measured ~−57% cost / −33% time impact).
 
 ### Proactive task polarity
 
