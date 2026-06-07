@@ -490,7 +490,8 @@ All tasks share a single time-gated view: for each test moment `T_test`, events 
 ### Task A — Cross-app slate ranking (Instagram, Facebook, Threads)
 - **Input**: for each social-app test preference, build a K=16 slate = `1× held-out positive + 3× hard-negative (events the user passed over with adjacent-Jaccard hashtags) + 3× irrelevant (from over_personalization_irrelevant) + 3× past-positive + 3× future-positive + 3× plausible-random`. Topped up with `filler_lowsim` past/future positives if any tier is short. Shuffled; agent sees only the slate, no labels. Hard-negatives replace the v2 known-disliked tier — they look like the held-out on the surface, so the agent can no longer win top-1 by surface keyword match.
 - **Agent output**: permutation of indices (most → least likely positive engagement).
-- **Hard metrics**: Recall@{1,3,5}, NDCG@K, MRR, Hit@K, intra-list diversity, rate of negatives / irrelevants landing in top-1 / top-3.
+- **HEADLINE metric — `tier_concordance` (R14, Proposal A):** the slate has three relevance tiers — `gold (held-out) > fillers (neutral) > hard-negatives (the user actively skipped)`. Score = fraction of the **cross-tier constrained pairs** ranked correctly: `gold > each filler` (f pairs) + `gold > each hard-neg` (h pairs) + `each filler > each hard-neg` (f·h pairs), over `f + h + f·h`. It is **1.0 iff the gold is #1 AND every hard-negative is ranked below every filler**, smoothly `[0,1]` otherwise, and `0.0` at the fully-inverted order; unranked items are treated as tied at the bottom (so an empty/partial ranking loses those pairs). This replaces `recall@5` as `PRIMARY_METRIC`, because recall@5 gave full credit for "gold in top-5 of 16" while letting the *skipped* hard-negatives float — `tier_concordance` requires the model to *both* surface the gold *and* bury the rejected lookalikes below the neutral fillers. Computed in `evaluation/tasks/personalized_recommendation.py::_tier_concordance`.
+- **Diagnostic metrics**: Recall@{1,3,5}, NDCG@K, MRR, Hit@K, `hard_neg_violation_rate` (fraction of hard-negs ranked above the lowest filler), intra-list diversity.
 - **Judge (opt-in)**: when held-out positive is not top-1, scores whether the agent's top-1 pick is itself preference-aligned (0–3).
 
 ### Task B — Chatbot personalized response (generative only)
@@ -613,6 +614,21 @@ The agent decides **on its own** whether to initiate contact at a moment the use
 | `mem0` | Same as `llm_memory`, but memory is the **real `mem0ai` library** (Azure) | Per-query **top-k semantic retrieval** over a `mem0ai` store (Azure gpt-5.5 fact extraction + `text-embedding-3-large` + local qdrant), time-masked, rendered ≤2048 tokens (+ folded calendar) | Whether a real vector-memory product matches raw long-context / a hand-written text memory |
 
 Running all five answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history? (c) does a compact self-built memory (human-readable text vs. real `mem0ai` vector retrieval) match raw long-context at a fraction of the per-query tokens?
+
+### Cache-optimal prompt layout (default for all long-context eval)
+
+The time-masked history (~400K tokens/query) is the only thing worth caching, but provider implicit caching is **prefix-based** — it reuses only the longest leading run of bytes shared with a recent request. Two defaults make the history a stable, reusable prefix:
+
+- **History-first hoist.** `inference_utils._hoist_history_prefix` (called in `dispatch_agent_run` for `llm_longctx` / `llm_memory` / `mem0`) moves the history block to the very FRONT of every prompt, ahead of all per-query variable content (task framing, prior turns, the user query). Builders mark the block with sentinels (`_wrap_history_block`); the hoist relocates it and strips the sentinels. Same `(user, T_test)` → byte-identical leading prefix across every task.
+- **Chronological serialization.** `serialize_history_for_context` renders ONE global timeline (oldest first, each line app-tagged) instead of per-app sections, so `history(T₂)` is a true **prefix-extension** of `history(T₁)` for `T₁ < T₂` (events only append at the tail; the small folded-calendar block trails). Measured: a later cut shares ~99.6% of an earlier cut's tokens. Set `EVAL_CHRONO_HISTORY=0` for the legacy per-app layout (A/B).
+
+Net effect on the 10-persona long-context set: ~92% of input tokens become cache-eligible re-reads. Smoke test: `tests/test_cache_layout.py` (asserts tokens/$ saved, no API).
+
+### Gemini batch mode (default for Gemini baselines)
+
+`QueryLLM.query_many(prompts)` routes Gemini through the **Batch API** (`query_llm_batch`: one inlined `batches.create` job, polled to completion, responses remapped to input order via `metadata.idx`) for a flat **50% discount** on non-cached tokens. ON by default for Gemini (`use_batch`); `EVAL_GEMINI_BATCH=0` forces per-row synchronous calls; non-Gemini backends fall back to sequential `query_llm`. Discounts do **not** multiply — a cache hit bills at the cache rate with no further batch discount; batch's 50% applies only to the remaining non-cached tokens. Rates + the discount math live in `evaluation/cost_model.py`; smoke test: `tests/test_batch_mode.py` (mock savings asserts + opt-in `PM3_BATCH_LIVE=1` real submission).
+
+**Cost impact (gemini-3.5-flash, 10 personas, ~1,250 long-context queries):** standard $765 → +batch $382 → +cache $137 → **+cache+batch $103** (7.4× cheaper). Best-case caching assumes per-persona ascending-`T_test` dispatch so each query is a prefix-extension; realized savings depend on implicit-cache hit rate. NOTE: `query_many`/batch is implemented in `QueryLLM` but the `run_eval` per-row loop still calls `query_llm` synchronously — wiring the loop to collect-then-batch is the remaining step before batch savings are realized end-to-end.
 
 ### How the `llm_memory` / `mem0` memory baselines work
 

@@ -64,6 +64,14 @@ class QueryLLM:
         load_dotenv(override=True)
         self._setup_client()
 
+        # Batch mode (Gemini only). The Gemini Batch API runs many prompts as
+        # one async job for a flat 50% discount on all (non-cached) tokens. The
+        # eval is fully offline, so batch is the right default for Gemini
+        # baselines. ON by default; set EVAL_GEMINI_BATCH=0 to force per-row
+        # synchronous calls (e.g. for interactive debugging). No effect on
+        # OpenAI/Azure/Claude backends — query_many falls back to sequential.
+        self.use_batch = bool(getattr(self, "is_gemini", False)) and os.getenv("EVAL_GEMINI_BATCH", "1") != "0"
+
     def _record_usage(
         self,
         input_tokens: int = 0,
@@ -275,6 +283,116 @@ class QueryLLM:
                     pass
         self._gemini_caches.clear()
         print("Cleaned up all Gemini cached content")
+
+
+    # --- Gemini Batch API ---------------------------------------------------
+
+    _BATCH_TERMINAL_OK = ("JOB_STATE_SUCCEEDED", "JOB_STATE_PARTIALLY_SUCCEEDED")
+    _BATCH_TERMINAL_BAD = ("JOB_STATE_FAILED", "JOB_STATE_CANCELLED", "JOB_STATE_EXPIRED")
+
+    @staticmethod
+    def _job_state(job) -> str:
+        st = getattr(job, "state", None)
+        return getattr(st, "name", None) or str(st)
+
+    def query_llm_batch(self, prompts, temperature=None, poll_interval=15, max_wait=86400):
+        """Submit `prompts` (list of strings) as ONE Gemini batch job and return
+        the responses as a list aligned 1:1 with the input order.
+
+        Each element is the response text, or None if that request errored.
+        Gemini batch billing = 50% of standard rates on non-cached tokens;
+        context-cache hits inside a batch still bill at the (cheaper) cache
+        rate. Gemini only — callers use `query_many` which routes here.
+        """
+        if not self.is_gemini:
+            raise ValueError("query_llm_batch is Gemini-only; use query_many for routing")
+        if not prompts:
+            return []
+
+        cfg = None
+        if temperature is not None:
+            cfg = genai_types.GenerateContentConfig(temperature=temperature)
+        src = [
+            genai_types.InlinedRequest(
+                contents=p,
+                config=cfg,
+                metadata={"idx": str(i)},
+            )
+            for i, p in enumerate(prompts)
+        ]
+
+        job = self.client.batches.create(model=self.model, src=src)
+        name = job.name
+        print(f"  Gemini batch submitted: {name} ({len(prompts)} requests)")
+
+        waited = 0
+        state = self._job_state(job)
+        while state not in self._BATCH_TERMINAL_OK and state not in self._BATCH_TERMINAL_BAD:
+            if waited >= max_wait:
+                raise TimeoutError(f"Gemini batch {name} not done after {max_wait}s (state={state})")
+            time.sleep(poll_interval)
+            waited += poll_interval
+            job = self.client.batches.get(name=name)
+            state = self._job_state(job)
+
+        if state in self._BATCH_TERMINAL_BAD:
+            raise RuntimeError(f"Gemini batch {name} ended in {state}: {getattr(job,'error',None)}")
+
+        # Map inlined responses back to input order. Prefer the request's
+        # metadata idx (robust to any reordering); fall back to positional.
+        out: list = [None] * len(prompts)
+        dest = getattr(job, "dest", None)
+        responses = getattr(dest, "inlined_responses", None) or []
+        for pos, ir in enumerate(responses):
+            idx = pos
+            md = getattr(ir, "metadata", None) or {}
+            if "idx" in md:
+                try:
+                    idx = int(md["idx"])
+                except (TypeError, ValueError):
+                    idx = pos
+            if idx < 0 or idx >= len(prompts):
+                idx = pos
+            resp = getattr(ir, "response", None)
+            if resp is None:
+                continue
+            try:
+                out[idx] = resp.text
+            except Exception:
+                out[idx] = None
+            # Accumulate usage so the run-total report stays honest under batch.
+            try:
+                um = getattr(resp, "usage_metadata", None)
+                if um is not None:
+                    self._record_usage(
+                        input_tokens=getattr(um, "prompt_token_count", 0) or 0,
+                        output_tokens=getattr(um, "candidates_token_count", 0) or 0,
+                        cached_input_tokens=getattr(um, "cached_content_token_count", 0) or 0,
+                    )
+            except Exception:
+                pass
+        return out
+
+    def query_many(self, prompts, temperature=None, allow_batch=True):
+        """Answer a list of prompts. Routes Gemini to the Batch API when
+        `use_batch` is set (default for Gemini) AND `allow_batch` is True; every
+        other backend (and Gemini with EVAL_GEMINI_BATCH=0) falls back to
+        sequential query_llm. Returns a list aligned 1:1 with `prompts`.
+
+        `allow_batch=False` is the escape hatch for tasks with an intra-cluster
+        RESPONSE-FEEDBACK dependency (e.g. over_personalization repetition,
+        where query k+1's prompt embeds the agent's answer to query k). Those
+        prompts are not all known upfront, so batching is invalid — callers pass
+        allow_batch=evaluation.inference_utils.is_batchable_task(task_type).
+        """
+        if not prompts:
+            return []
+        if allow_batch and self.use_batch and self.is_gemini and len(prompts) > 1:
+            try:
+                return self.query_llm_batch(prompts, temperature=temperature)
+            except Exception as e:
+                print(utils.Colors.WARNING + f"Batch failed ({e}); falling back to sequential" + utils.Colors.ENDC)
+        return [self.query_llm(p, temperature=temperature) for p in prompts]
 
 
     def search_images(self, pref: str):

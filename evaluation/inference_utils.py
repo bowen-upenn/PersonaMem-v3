@@ -16,6 +16,71 @@ from typing import Iterable
 from evaluation.backend_query import APPS, BackendQuery, materialize_snapshot
 
 
+# --- Prompt-cache layout (Gemini implicit caching) -------------------------
+# The big time-masked history block is the only thing worth caching (~400K
+# tokens/query). Provider implicit caching is PREFIX-based: it only reuses the
+# longest leading run of bytes shared with a recent request. Historically the
+# history was interpolated into the MIDDLE of each task prompt (after the task's
+# own variable content — prior turns, candidate slates, the user query), so the
+# cacheable block never sat in the prefix and was re-billed in full every call.
+#
+# Fix: the history serializer wraps its output in these sentinels; the dispatch
+# layer (`_hoist_history_prefix`) extracts that block and moves it to the very
+# FRONT of the prompt — before any per-query variable content — for the
+# single-call LLM modes (llm_longctx / llm_memory / mem0). The user query now
+# trails the prompt. Same (user, T_test) → identical leading bytes across every
+# task; ascending T_test → a true prefix-extension (see EVAL_CHRONO_HISTORY).
+# Sentinels use control chars so they can never collide with real content.
+HIST_SENTINEL_START = "\x01<<PM3_HIST>>\x01"
+HIST_SENTINEL_END = "\x01<</PM3_HIST>>\x01"
+
+import re as _re
+
+# Optional markdown header line immediately preceding the start sentinel (the
+# builder's own "## ... history ..." heading) is swallowed so it doesn't orphan
+# in the body after the block is hoisted out.
+_HIST_BLOCK_RE = _re.compile(
+    r"(?:\n#{1,6}[^\n]*\n)?" + _re.escape(HIST_SENTINEL_START) + r"(.*?)" + _re.escape(HIST_SENTINEL_END),
+    _re.DOTALL,
+)
+
+
+def _wrap_history_block(text: str) -> str:
+    """Mark a rendered history/memory block as the hoist-able cache prefix."""
+    if not text:
+        return text
+    return f"{HIST_SENTINEL_START}{text}{HIST_SENTINEL_END}"
+
+
+def _hoist_history_prefix(prompt: str) -> str:
+    """Move the sentinel-wrapped history block to the front of `prompt`.
+
+    Returns the prompt with the (deduped) history block leading and all
+    per-query variable content trailing — the layout provider implicit caching
+    needs. Idempotent and safe when no sentinel is present (sentinels are always
+    stripped so they never reach the model). Only the FIRST block is hoisted;
+    any stray sentinels elsewhere are stripped.
+    """
+    if HIST_SENTINEL_START not in prompt:
+        return prompt
+    m = _HIST_BLOCK_RE.search(prompt)
+    if not m:
+        # Sentinels present but malformed — strip them, leave content in place.
+        return prompt.replace(HIST_SENTINEL_START, "").replace(HIST_SENTINEL_END, "")
+    content = m.group(1)
+    body = (prompt[: m.start()] + prompt[m.end():])
+    # Strip any leftover sentinels from the body (defensive; normally none).
+    body = body.replace(HIST_SENTINEL_START, "").replace(HIST_SENTINEL_END, "")
+    front = (
+        "You are given the user's time-masked cross-app history FIRST; your "
+        "task and the current query follow it.\n\n"
+        "## Cross-app user history (time-masked)\n"
+        f"{content}\n\n"
+        "----\n"
+    )
+    return front + body.lstrip("\n")
+
+
 # --- Data classes ----------------------------------------------------------
 
 @dataclass
@@ -579,38 +644,79 @@ def serialize_history_for_context(
     # must be inferred from the event timeline alone — no demographic / app
     # personas / hidden-persona scaffolding that would shortcut the test.
 
-    for app in APPS:
-        events = bq.get_events(user_id=user_id, app=app, since_timestamp=since_timestamp)
-        compacts = [_compact_event(e) for e in events]
-        body = "\n".join(json.dumps(c, ensure_ascii=False) for c in compacts)
-        app_tokens = count_tokens(body, model)
+    # Default layout for all long-context eval: a single CHRONOLOGICAL timeline
+    # (oldest first), each line tagged with its app. Per-app grouping made
+    # history(T2) NOT a prefix of history(T1) — growth in an earlier app block
+    # shifts every later block, so prefix-caching could never reuse across
+    # ascending T_test. A global timeline appends only at the tail, so a later
+    # cut is a true prefix-extension of an earlier one. Annotations that embed
+    # running counts/totals are omitted here for the same reason (they'd shift
+    # with T). Set EVAL_CHRONO_HISTORY=0 to fall back to the legacy per-app
+    # layout for A/B comparison.
+    chrono = os.environ.get("EVAL_CHRONO_HISTORY", "1") != "0"
 
-        if budget_tokens is not None and running_tokens + app_tokens > budget_tokens:
-            # Reservoir-sample: keep a stratified subset that fits.
-            remaining = max(0, budget_tokens - running_tokens - 256)
-            if remaining > 0 and compacts:
-                keep: list[dict] = []
-                step = max(1, len(compacts) // max(1, remaining // max(1, app_tokens // max(1, len(compacts)))))
-                for i in range(0, len(compacts), step):
-                    keep.append(compacts[i])
-                body = "\n".join(json.dumps(c, ensure_ascii=False) for c in keep)
-                app_tokens = count_tokens(body, model)
-            else:
-                body = ""
-                app_tokens = 0
+    if chrono:
+        timeline: list[tuple] = []
+        for app in APPS:
+            events = bq.get_events(user_id=user_id, app=app, since_timestamp=since_timestamp)
+            app_lines = [json.dumps({"app": app, **_compact_event(e)}, ensure_ascii=False) for e in events]
+            per_app_stats[app] = {"events": len(events), "tokens": count_tokens("\n".join(app_lines), model)}
+            for e, line in zip(events, app_lines):
+                timeline.append((e.get("source_timestamp") or 0, app, line))
+        # Stable sort by (timestamp, app) — deterministic across calls so the
+        # shared prefix is byte-identical for the same user across T_test cuts.
+        timeline.sort(key=lambda x: (x[0], x[1]))
+        lines = [t[2] for t in timeline]
+        body = "\n".join(lines)
+        body_tokens = count_tokens(body, model)
+        if budget_tokens is not None and body_tokens > budget_tokens and lines:
+            # Global strided reservoir sample preserving chronological order.
+            per_line = max(1, body_tokens // len(lines))
+            keep_count = max(1, (budget_tokens - 256) // per_line)
+            step = max(1, len(lines) // keep_count)
+            lines = lines[::step]
+            body = "\n".join(lines)
+            body_tokens = count_tokens(body, model)
             truncated = True
-
-        header = f"\n# App: {app} — {len(compacts)} events, ~{app_tokens} tokens (running total before: {running_tokens})\n"
-        sections.append(header)
+        sections.append("# Cross-app engagement timeline (oldest first; one event per line)\n")
         if body:
             sections.append(body)
-        running_tokens += app_tokens
-        sections.append(f"\n[After {app}: running total {running_tokens}]\n")
-        per_app_stats[app] = {"events": len(compacts), "tokens": app_tokens}
+        running_tokens = body_tokens
+    else:
+        for app in APPS:
+            events = bq.get_events(user_id=user_id, app=app, since_timestamp=since_timestamp)
+            compacts = [_compact_event(e) for e in events]
+            body = "\n".join(json.dumps(c, ensure_ascii=False) for c in compacts)
+            app_tokens = count_tokens(body, model)
+
+            if budget_tokens is not None and running_tokens + app_tokens > budget_tokens:
+                # Reservoir-sample: keep a stratified subset that fits.
+                remaining = max(0, budget_tokens - running_tokens - 256)
+                if remaining > 0 and compacts:
+                    keep: list[dict] = []
+                    step = max(1, len(compacts) // max(1, remaining // max(1, app_tokens // max(1, len(compacts)))))
+                    for i in range(0, len(compacts), step):
+                        keep.append(compacts[i])
+                    body = "\n".join(json.dumps(c, ensure_ascii=False) for c in keep)
+                    app_tokens = count_tokens(body, model)
+                else:
+                    body = ""
+                    app_tokens = 0
+                truncated = True
+
+            header = f"\n# App: {app} — {len(compacts)} events, ~{app_tokens} tokens (running total before: {running_tokens})\n"
+            sections.append(header)
+            if body:
+                sections.append(body)
+            running_tokens += app_tokens
+            sections.append(f"\n[After {app}: running total {running_tokens}]\n")
+            per_app_stats[app] = {"events": len(compacts), "tokens": app_tokens}
 
     # Calendar (R5 modification stream) — folded to the time-masked state at
     # `since_timestamp`. Not an APPS event list, so included separately so
     # llm_longctx / memory see the user's schedule like the agent modes do.
+    # Placed AFTER the timeline so the (stable) event prefix stays cacheable;
+    # only this small trailing block varies with T.
     cal_body = _render_calendar_block(bq, user_id, since_timestamp)
     if cal_body:
         cal_tokens = count_tokens(cal_body, model)
@@ -625,8 +731,37 @@ def serialize_history_for_context(
         "per_app": per_app_stats,
         "budget_tokens": budget_tokens,
         "truncated": truncated,
+        "chrono": chrono,
     }
-    return text, stats
+    # Mark as the hoist-able cache prefix; the dispatch layer moves it to the
+    # FRONT of every single-call LLM-mode prompt (see _hoist_history_prefix).
+    return _wrap_history_block(text), stats
+
+
+# --- Batch eligibility -----------------------------------------------------
+
+# Tasks with an intra-cluster RESPONSE-FEEDBACK dependency: query k+1's prompt
+# embeds the agent's OWN answer to query k (over_personalization repetition
+# accumulates `prior_responses`; see over_personalization.py). The later prompts
+# are not known until the earlier responses come back, so the cluster CANNOT be
+# submitted as one batch — it must run sequentially. Every other task builds its
+# prompts independently (prior_conversation comes from frozen instance data, not
+# from generated responses) and is batch-safe. Keep this list tight: only add a
+# task here if a later query's PROMPT depends on an earlier query's RESPONSE.
+BATCH_UNSAFE_TASKS = frozenset({
+    "over_personalization_repetition_recsys",
+    "over_personalization_repetition_chatbot",
+})
+
+
+def is_batchable_task(task_type: str | None) -> bool:
+    """True if a task's queries are mutually independent (safe to batch).
+
+    False for response-feedback clusters, which must run sequentially so each
+    prompt can include the agent's prior answers. Callers pass the result as
+    `query_many(..., allow_batch=is_batchable_task(task_type))`.
+    """
+    return task_type not in BATCH_UNSAFE_TASKS
 
 
 # --- Mode dispatch helper (shared across task drivers) ---------------------
@@ -708,6 +843,12 @@ def dispatch_agent_run(
         return "", 0, {"error": f"dispatch_agent_run: unhandled mode {mode!r}"}
     if llm_client is None:
         return "", 0, {"error": f"{mode} mode requires a QueryLLM client but none was passed"}
+    # Default cache layout for all long-context eval: hoist the time-masked
+    # history block to the FRONT (stable prefix) so the per-query variable
+    # content — task framing + user query — trails it. Provider implicit
+    # caching reuses the leading history across same-user queries instead of
+    # re-billing it every call. Strips sentinels even when nothing is hoisted.
+    prompt = _hoist_history_prefix(prompt)
     response = llm_client.query_llm(prompt) or ""
     # Phase B: count tokens locally so the per-task metrics_json gets
     # input/output token counts even in llm_longctx mode (Claude Code modes
@@ -784,6 +925,10 @@ class SnapshotCache:
         else:
             prior = [b for b in cps if b <= t]
             mem = cps[max(prior)] if prior else EMPTY_MEMORY
+        # NOT sentinel-wrapped: the memory block is ~1.5K tokens, so hoisting it
+        # to the front for cache reuse saves ~$1 across a full run — not worth
+        # perturbing the memory baselines. Only the big llm_longctx history
+        # (serialize_history_for_context) is wrapped + hoisted.
         return mem, {
             "total_tokens": count_tokens(mem),
             "memory_mode": True,
