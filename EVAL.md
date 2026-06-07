@@ -253,6 +253,19 @@ them up.
   (n-weighted across rows — every query counts equally) as the **sole**
   headline. Macro (task-weighted) was removed. Per-family **by-class**
   roll-ups are also row-weighted (micro).
+- **Comparisons ignore empty-response rows.** The single-config headline counts
+  an empty / non-substantive response as **0** (a non-answer is a failure for
+  absolute scoring — see `_accuracy_value`'s substantive-engagement gate). But
+  when comparing *configurations* — before vs after a setting change (e.g. the
+  per-task turn/budget caps) or across modes — aggregate accuracy on the
+  **non-empty subset only**, and report `kept` vs `dropped` per cohort so the
+  exclusion is auditable. Empty rows are cap/timeout artifacts, not
+  answer-quality signal: a setting that shifts the empty rate would otherwise
+  masquerade as an accuracy change. (Measured on `agent_tools_sonnet`, the
+  40→15-turn / flat-$0.30 change pushed the empty rate 4.0%→7.0%, concentrated
+  in the heavy multi-turn tasks; on the **non-empty** subset, matched-by-task
+  accuracy held/rose 50.4%→55.6% micro while per-query cost and wall-clock both
+  dropped ~20%.)
 - **`chatbot_personalized_response` bucket purity** —
   `build_task_b_arms` walks every chatbot event but only events whose
   `source_object_id` is in `test_index` (the R8 selector's per-app top-N)
