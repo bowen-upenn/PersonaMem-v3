@@ -47,14 +47,42 @@ DEFAULT_DENY_PATTERNS = (
     "Grep(**/profile.json)", "Grep(**/persona.html)",
 )
 
-# Per-query guardrails (tunable via env — no code edit needed to retune).
-#   max-turns: 40 let search runs spiral (measured p90 ~242k cache-read, tail
-#     ~970k tokens / 9 min). 15 bounds the tail while leaving headroom for a
-#     legit README + a few greps + targeted Reads.
-#   max-budget: a hard dollar ceiling per query so a single runaway agent can't
-#     blow the budget (CLI honors it only with `-p`, which we always use).
+# Per-query budget = TWO complementary per-task caps:
+#   * max-turns — bounds the agentic loop (40 let search runs spiral to ~970k
+#     cache-read / 9 min). Model-agnostic.
+#   * max-budget-usd — hard dollar ceiling, MODEL-AWARE: scaled by the model's
+#     price so the same TOKEN allowance holds across models (sonnet 4.6 $3/$15 =
+#     1.0x baseline; opus 4.8 $5/$25 = 5/3x). The CLI exposes no token-budget flag,
+#     so the dollar cap (×price factor) is how we hold tokens constant.
+# Heavy tasks (multi-turn / multi-invocation) get DOUBLE both — at the base budget
+# they were cut off mid-answer -> empty rows. The 6 below are user-flagged.
+HEAVY_TASKS = (
+    "over_personalization_repetition_recsys",
+    "over_personalization_repetition_chatbot",
+    "active_mistake_prevention",
+    "agentic_auto_reply",
+    "agentic_vague_refind",
+    "personalized_recommendation",
+)
 DEFAULT_MAX_TURNS = int(os.getenv("EVAL_AGENT_MAX_TURNS", "15"))
-DEFAULT_MAX_BUDGET_USD = float(os.getenv("EVAL_AGENT_MAX_BUDGET_USD", "0.30"))
+HEAVY_MAX_TURNS = int(os.getenv("EVAL_AGENT_HEAVY_TURNS", "30"))
+TURNS_BY_TASK = {t: HEAVY_MAX_TURNS for t in HEAVY_TASKS}
+
+# Dollar budgets are the SONNET baseline; _price_factor() scales to the run model.
+DEFAULT_BUDGET_USD = float(os.getenv("EVAL_AGENT_MAX_BUDGET_USD", "0.30"))
+HEAVY_BUDGET_USD = float(os.getenv("EVAL_AGENT_HEAVY_BUDGET_USD", "0.60"))
+BUDGET_USD_BY_TASK = {t: HEAVY_BUDGET_USD for t in HEAVY_TASKS}
+# Price relative to sonnet 4.6: opus 4.8 = 5/3, haiku 4.5 = 1/3 (uniform across
+# input/output/cache, so the ratio is exact regardless of token mix).
+MODEL_PRICE_FACTOR = {"opus": 5.0 / 3.0, "sonnet": 1.0, "haiku": 1.0 / 3.0}
+
+
+def _price_factor(model: str) -> float:
+    m = (model or "").lower()
+    for key, factor in MODEL_PRICE_FACTOR.items():
+        if key in m:
+            return factor
+    return 1.0
 
 
 # Universal over-personalization system framing — prepended to EVERY agent
@@ -126,7 +154,8 @@ def run_subagent(
     model: str = "sonnet",
     allowed_tools: tuple[str, ...] = DEFAULT_ALLOWED_TOOLS,
     timeout_seconds: int = 300,
-    max_budget_usd: float | None = DEFAULT_MAX_BUDGET_USD,
+    max_budget_usd: float | None = None,
+    task_type: str | None = None,
     extra_env: dict | None = None,
     mcp_config_path: Path | None = None,
     mcp_tool_patterns: tuple[str, ...] | None = None,
@@ -169,6 +198,13 @@ def run_subagent(
     mcp_patterns = list(mcp_tool_patterns or [])
     allowed_patterns = fs_allowed_patterns + mcp_patterns
 
+    # Per-task caps: turns (loop bound) + model-scaled dollar budget. The 6 heavy
+    # tasks get the doubled values; explicit args override the computed defaults.
+    max_turns = TURNS_BY_TASK.get(task_type, DEFAULT_MAX_TURNS)
+    if max_budget_usd is None:
+        max_budget_usd = round(
+            BUDGET_USD_BY_TASK.get(task_type, DEFAULT_BUDGET_USD) * _price_factor(model), 4)
+
     cmd = [
         claude_bin,
         "-p", final_prompt,
@@ -178,10 +214,10 @@ def run_subagent(
         "--permission-mode", "dontAsk",
         "--no-session-persistence",
         "--disable-slash-commands",
-        # Bounded turn budget: enough for README + a few greps + targeted Reads,
-        # but low enough to cap the spiral tail (40 let runs hit ~970k cache-read
-        # / 9 min). The "don't read whole files" prompt keeps real runs well under.
-        "--max-turns", str(DEFAULT_MAX_TURNS),
+        # Per-task turn budget (15 default, 30 for heavy multi-turn tasks). Bounds
+        # the spiral tail (40 let runs hit ~970k cache-read / 9 min); the "don't
+        # read whole files" prompt keeps normal runs well under.
+        "--max-turns", str(max_turns),
         "--add-dir", snapshot_abs,
     ]
     if allowed_patterns:

@@ -312,7 +312,7 @@ def _dispatch_and_score(
     raw, turns, stats = dispatch_agent_run(
         mode=mode, prompt=prompt,
         bq=bq, user_id=user_id, t=t,
-        claude_model=claude_model, llm_client=llm_client,
+        claude_model=claude_model, llm_client=llm_client, task_type=task_id,
     )
     parsed = extract_json_from_response(raw)
     # `final_answer` is the llm_longctx (text-only) JSON key — checked first

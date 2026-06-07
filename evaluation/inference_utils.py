@@ -642,6 +642,7 @@ def dispatch_agent_run(
     llm_client,
     run_dir: Path | None = None,
     enabled_mcp_apps: tuple[str, ...] = ("instagram", "facebook", "threads", "chatbot"),
+    task_type: str | None = None,
 ) -> tuple[str, int, dict]:
     """Single point of truth for how each inference mode gets an agent response.
 
@@ -662,7 +663,7 @@ def dispatch_agent_run(
         # Same value used by mcp_agent mode.
         sub = run_subagent(
             prompt=prompt, snapshot_dir=snap, model=claude_model,
-            timeout_seconds=600,
+            timeout_seconds=600, task_type=task_type,
         )
         return sub.text, sub.turns, _pack_stats(sub, include_denials=True)
 
@@ -691,7 +692,7 @@ def dispatch_agent_run(
             allowed_tools=(),  # no filesystem tools in MCP mode
             mcp_config_path=cfg_path,
             mcp_tool_patterns=tuple(mcp_patterns),
-            timeout_seconds=600,
+            timeout_seconds=600, task_type=task_type,
         )
         # Return the overlay path in stats so the grader can read writes.jsonl.
         stats = _pack_stats(sub, include_denials=True)

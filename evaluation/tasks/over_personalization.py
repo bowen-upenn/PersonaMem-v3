@@ -360,6 +360,7 @@ def run_task_c1c(
             raw, turns, stats = _dispatch_agent(
                 mode, prompt, bq=bq, user_id=user_id, t=ts,
                 claude_model=claude_model, llm_client=llm_client,
+                task_type="over_personalization_repetition_recsys",
             )
             parsed = extract_json_from_response(raw) or {}
             if not isinstance(parsed, dict):
@@ -636,6 +637,7 @@ def run_task_c1d(
             raw, turns, stats = _dispatch_agent(
                 mode, prompt, bq=bq, user_id=user_id, t=ts,
                 claude_model=claude_model, llm_client=llm_client,
+                task_type="over_personalization_repetition_chatbot",
             )
             parsed = extract_json_from_response(raw)
             if isinstance(parsed, dict):
