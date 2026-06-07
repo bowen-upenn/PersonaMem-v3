@@ -829,6 +829,19 @@ def main() -> int:
     pending = [r for r in rows if r["query_id"] not in done]
     parallel_rows = [r for r in pending if not _is_sequential(r["task_type"], args.mode)]
     sequential_rows = [r for r in pending if _is_sequential(r["task_type"], args.mode)]
+    # Cache locality for the single-call LLM modes: dispatch in ascending-T_test
+    # order so each request's hoisted+chronological history is a PREFIX-EXTENSION
+    # of the previous one — provider implicit caching then reuses the shared
+    # leading history instead of re-billing it. Only meaningful when run
+    # sequentially in one process (--workers 1) so requests hit the server-side
+    # cache of the immediately-prior request. No effect on scoring (keyed by
+    # query_id). Other modes keep their original order.
+    if args.mode in ("llm_longctx", "llm_memory", "mem0"):
+        parallel_rows.sort(key=lambda r: int(r.get("ts") or 0))
+        if args.workers != 1:
+            print(f"[run_eval] NOTE: mode={args.mode} caches best at --workers 1 "
+                  f"(ascending-T, one process); got --workers {args.workers} — "
+                  f"cache hit-rate will be lower.", flush=True)
     print(f"[run_eval] partition: parallel={len(parallel_rows)} "
           f"sequential={len(sequential_rows)} workers={args.workers}")
 
@@ -1055,6 +1068,40 @@ def main() -> int:
             + memory_build_stats.get("memory_build_output_tokens", 0)
         )
 
+    # Real provider-billed cost from the answer client's accumulated usage
+    # (input/output/CACHED tokens as the API reported them). The per-row
+    # metrics_json counts tokens locally and can't see cache hits, so this is
+    # the honest cost number under the implicit-cache layout. Only populated
+    # when the answer client ran IN-PROCESS (--workers 1) — with a ProcessPool
+    # the parent client's counters stay empty (workers hold their own).
+    api_cost = None
+    try:
+        if llm_client is not None and hasattr(llm_client, "get_usage_totals"):
+            u = llm_client.get_usage_totals()
+            if u.get("calls"):
+                from evaluation.cost_model import RATES, gemini_cost
+                in_tok = int(u.get("input_tokens", 0))
+                out_tok = int(u.get("output_tokens", 0))
+                cached = int(u.get("cached_input_tokens", 0))
+                api_cost = {
+                    "api_calls": int(u.get("calls", 0)),
+                    "api_input_tokens": in_tok,
+                    "api_output_tokens": out_tok,
+                    "api_cached_input_tokens": cached,
+                    "api_cache_hit_rate": round(cached / in_tok, 4) if in_tok else 0.0,
+                }
+                if args.model in RATES and "in_hi" not in RATES[args.model]:
+                    # Gemini's prompt_token_count (recorded as input_tokens) is the
+                    # TOTAL prompt incl. cached; cached_content_token_count is the
+                    # cached subset. gemini_cost splits uncached = input - cached
+                    # and bills cached at the cache rate.
+                    api_cost["api_cost_usd"] = round(
+                        gemini_cost(args.model, in_tok, out_tok,
+                                    cached_input_tokens=cached, batch=False), 4)
+                persona_totals.update(api_cost)
+    except Exception as e:  # cost reporting must never break the run
+        print(f"[run_eval] WARN: API cost report failed: {type(e).__name__}: {e}", file=sys.stderr)
+
     (run_dir / "summary.json").write_text(
         json.dumps(
             {
@@ -1084,6 +1131,13 @@ def main() -> int:
           f"non_substantive={persona_totals['non_substantive_responses']}/"
           f"{len(written_results)}, "
           f"errored={persona_totals['errored_rows']}/{len(written_results)}")
+    if api_cost is not None:
+        print(f"[run_eval] API-billed: calls={api_cost['api_calls']}, "
+              f"input={api_cost['api_input_tokens']:,} "
+              f"(cached {api_cost['api_cached_input_tokens']:,} = "
+              f"{api_cost['api_cache_hit_rate']*100:.1f}%), "
+              f"output={api_cost['api_output_tokens']:,}, "
+              f"cost=${api_cost.get('api_cost_usd', float('nan')):.2f}")
     return 0
 
 
