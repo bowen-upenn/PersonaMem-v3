@@ -19,9 +19,10 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 MODE="${MODE:-llm_longctx}"
 MODEL="${MODEL:-gemini-3.5-flash}"
 CONCURRENCY="${CONCURRENCY:-5}"
-JUDGE_FLAG="${JUDGE_FLAG:---no-enable_llm_judge}"   # default: no judge (gemini-cost focus)
+JUDGE_FLAG="${JUDGE_FLAG:---no-enable_llm_judge}"   # default: no judge (model-gen-cost focus)
 PERSONAS="${PERSONAS:-1 2 3 5 6 8 9 10 13 14}"
-OUT_ROOT="results/${MODE}_gemini3.5flash"
+# OUT_ROOT overridable (e.g. results/llm_longctx_gpt5.5 for the gpt-5.5 reeval).
+OUT_ROOT="${OUT_ROOT:-results/${MODE}_gemini3.5flash}"
 LOG_DIR="/tmp/eval_gemini"
 mkdir -p "$LOG_DIR"
 
