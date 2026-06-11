@@ -108,7 +108,8 @@ the MCP tool. The grader checks the overlay (writes.jsonl) for the call.
 """
 
 
-def _response_final_answer(content_fields: str, intended_tool: str | None = None) -> str:
+def _response_final_answer(content_fields: str, intended_tool: str | None = None,
+                           has_read_tools: bool = False) -> str:
     """Output contract for write tasks in `text_only` (llm_longctx) mode.
 
     No MCP tools are available; the model is asked for the actual content
@@ -123,10 +124,20 @@ def _response_final_answer(content_fields: str, intended_tool: str | None = None
     cross-mode comparison; not enforced).
     """
     intended_line = (f',\n "tool_intended": "{intended_tool}"' if intended_tool else "")
-    return f"""## Output (final-answer-only mode — no tools available)
-Do NOT attempt to call any tools — none are available in this mode. The
-harness will grade your final answer text directly. Emit the actual content
-the user would publish/send, as a single fenced ```json``` block:
+    if has_read_tools:
+        # agent_tools: has Read/Grep to research the snapshot but NO write/publish
+        # tool — emit the content as the final answer (the harness grades the text).
+        header = "## Output (no write tool — emit the content as your final answer)"
+        lead = ("You have no tool to publish/send, so the harness grades your final "
+                "answer text directly. Research the user's history with your search "
+                "tools first, then emit the actual content the user would publish/send")
+    else:
+        header = "## Output (final-answer-only mode — no tools available)"
+        lead = ("Do NOT attempt to call any tools — none are available in this mode. "
+                "The harness will grade your final answer text directly. Emit the "
+                "actual content the user would publish/send")
+    return f"""{header}
+{lead}, as a single fenced ```json``` block:
 ```json
 {{{content_fields},
  "reasoning": "<=2 sentences on the choices you made"{intended_line}}}
@@ -143,24 +154,31 @@ def _no_tools_note() -> str:
 
 
 def _action_or_final(target_app: str, write_tool: str, text_only: bool,
-                      content_fields: str) -> str:
+                      content_fields: str, allow_extra_tools: bool = False) -> str:
     """Pick the output contract for a write task based on mode.
 
-    text_only=True (llm_longctx): the model emits the actual content as JSON;
-    no tool is available. text_only=False (mcp_agent): the model is told to
-    call the MCP tool to actually perform the action.
+    Publish via the MCP write tool ONLY when the mode actually has MCP write
+    tools — i.e. mcp_agent (allow_extra_tools=True). EVERY other mode emits the
+    content as its final answer (the harness grades the text): llm_longctx/
+    memory/mem0 (no tools, inline context) AND agent_tools (Read/Grep search
+    tools but NO write tool). agent_tools is flagged has_read_tools so its
+    contract says "research with your tools, then emit the content" rather than
+    "no tools available". (Audit 2026-06-06: agent_tools was wrongly told to
+    publish via MCP → 62% of compose rows ended as "publish FAILED" meta-text.)
     """
-    if text_only:
-        return _response_final_answer(content_fields,
-                                       intended_tool=f"mcp__{target_app}__{write_tool}")
-    return _response_action(target_app, write_tool)
+    if allow_extra_tools:
+        return _response_action(target_app, write_tool)
+    return _response_final_answer(content_fields,
+                                   intended_tool=f"mcp__{target_app}__{write_tool}",
+                                   has_read_tools=not text_only)
 
 
 def _publish_directive(target_app: str, write_tool: str, text_only: bool,
-                        what: str) -> str:
+                        what: str, allow_extra_tools: bool = False) -> str:
     """The 'Then publish / send via mcp__...' line in write-task bodies.
-    Suppressed in text_only mode (no tool to publish through)."""
-    if text_only:
+    Shown ONLY for mcp_agent (allow_extra_tools); suppressed for the text modes
+    AND agent_tools (which has no write tool)."""
+    if not allow_extra_tools:
         return ""
     fq = f"mcp__{target_app}__{write_tool}"
     return f"\nThen publish {what} by calling `{fq}`.\n"
@@ -276,7 +294,7 @@ def t9_cross_app_repost(source_post: dict, target_app: str, history_block: str |
         voice_directive = (f"Match the user's {target_app} voice (call `mcp__{target_app}__get_feed` "
                            f"first to see how they typically write on {target_app} — voice, length, "
                            f"hashtag style).")
-    publish = _publish_directive(target_app, "create_post", text_only,
+    publish = _publish_directive(target_app, "create_post", text_only, allow_extra_tools=allow_extra_tools,
                                   what="the adapted post")
     content_fields = ('"final_answer": "<the adapted caption text in the user’s voice>",'
                       ' "hashtags": ["#..."]')
@@ -305,7 +323,7 @@ Adapt it for {target_app} while preserving the core point. {voice_directive}{src
 
 {COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}
-{_action_or_final(target_app, "create_post", text_only, content_fields)}"""
+{_action_or_final(target_app, "create_post", text_only, content_fields, allow_extra_tools=allow_extra_tools)}"""
 
 
 def t10_auto_reply(inbound_message: str, sender_id: str, history_block: str | None = None,
@@ -320,7 +338,7 @@ def t10_auto_reply(inbound_message: str, sender_id: str, history_block: str | No
                           f"sender, first call `mcp__{target_app}__get_dm_thread` (with the relevant "
                           f"thread_id) to see the conversation history, and `mcp__{target_app}__get_feed` "
                           f"to see the user's general writing style on {target_app}.")
-    send = _publish_directive(target_app, "send_dm", text_only,
+    send = _publish_directive(target_app, "send_dm", text_only, allow_extra_tools=allow_extra_tools,
                                what=f"the reply to {sender_id}")
     content_fields = (f'"final_answer": "<the reply text the user would send, in their voice>",'
                       f' "recipient_id": "{sender_id}"')
@@ -337,7 +355,7 @@ Inbound message from {sender_id}:
 {_ground_truth_block(ground_truth_block)}
 {read_directive}
 {send}{_history_block(history_block)}
-{_action_or_final(target_app, "send_dm", text_only, content_fields)}"""
+{_action_or_final(target_app, "send_dm", text_only, content_fields, allow_extra_tools=allow_extra_tools)}"""
 
 
 def t11_vague_refind(topic: str, history_block: str | None = None,
@@ -378,7 +396,7 @@ def t12_agent_composed_post(app: str, update: str, history_block: str | None = N
         voice_directive = (f"To match the user's voice on {app} (length, tone, hashtag habits), first "
                            f"call `mcp__{app}__get_feed` to see their past self-authored posts on this "
                            f"platform.")
-    publish = _publish_directive(app, "create_post", text_only,
+    publish = _publish_directive(app, "create_post", text_only, allow_extra_tools=allow_extra_tools,
                                   what="the rewritten post (caption + hashtags from the user's typical pool)")
     content_fields = ('"final_answer": "<the rewritten caption in the user’s voice>",'
                       ' "hashtags": ["#..."]')
@@ -392,7 +410,7 @@ The user has asked you to publish the following update on {app} on their behalf:
 
 {COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}
-{_action_or_final(app, "create_post", text_only, content_fields)}"""
+{_action_or_final(app, "create_post", text_only, content_fields, allow_extra_tools=allow_extra_tools)}"""
 
 
 def t13_send_post(target_app: str, context: str, history_block: str | None = None,
@@ -421,7 +439,7 @@ that platform. {voice_directive}
 
 {COMPOSE_LENGTH_AND_VOICE_RULE}
 {publish}{_history_block(history_block)}
-{_action_or_final(target_app, "create_post", text_only, content_fields)}"""
+{_action_or_final(target_app, "create_post", text_only, content_fields, allow_extra_tools=allow_extra_tools)}"""
 
 
 def t14_draft_audit(draft: str, target_app: str, history_block: str | None = None) -> str:
