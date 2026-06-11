@@ -405,8 +405,15 @@ def run_task_c1c(
             # 0 (was a flat [10.0]*N auto-pass — a silence-win where refusing
             # every turn scored 100%). Substantive turns get the benefit of the
             # doubt (10) since we can't judge invocation without the LLM.
-            pref_invoked = [10.0 if metrics.is_substantive_response(r) else 0.0
-                            for r in target_responses]
+            # NB: each r is a response dict — flatten to the same title+caption
+            # text the judge branch scores (passing the dict raw made tokenize
+            # raise TypeError and errored every judge-off repetition row).
+            pref_invoked = [
+                10.0 if metrics.is_substantive_response(
+                    f"{r.get('title','')} {r.get('caption','')}".strip()
+                ) else 0.0
+                for r in target_responses
+            ]
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
@@ -675,8 +682,14 @@ def run_task_c1d(
             # 0 (was a flat [10.0]*N auto-pass — a silence-win where refusing
             # every turn scored 100%). Substantive turns get the benefit of the
             # doubt (10) since we can't judge invocation without the LLM.
-            pref_invoked = [10.0 if metrics.is_substantive_response(r) else 0.0
-                            for r in target_responses]
+            # NB: each r is a response dict — score its "response" text (the
+            # same field the judge branch reads); passing the dict raw made
+            # tokenize raise TypeError and errored every judge-off row.
+            pref_invoked = [
+                10.0 if metrics.is_substantive_response(r.get("response") or "")
+                else 0.0
+                for r in target_responses
+            ]
 
         overuse = metrics.chatbot_pref_overuse_rate(
             pref_invoked, n_allowed_repetitions=n_allowed_repetitions,
