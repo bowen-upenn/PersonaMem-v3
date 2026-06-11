@@ -265,7 +265,10 @@ them up.
   40→15-turn / flat-$0.30 change pushed the empty rate 4.0%→7.0%, concentrated
   in the heavy multi-turn tasks; on the **non-empty** subset, matched-by-task
   accuracy held/rose 50.4%→55.6% micro while per-query cost and wall-clock both
-  dropped ~20%.)
+  dropped ~20%.) Cross-**model** comparisons have one further requirement: a
+  **shared judge** — compare only the `*_judged` gpt-5.5 judge-replay re-scores,
+  never native self-judged runs, since self-judging differs across models (raw
+  gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
 - **`chatbot_personalized_response` bucket purity** —
   `build_task_b_arms` walks every chatbot event but only events whose
   `source_object_id` is in `test_index` (the R8 selector's per-app top-N)
@@ -591,15 +594,23 @@ The agent decides **on its own** whether to initiate contact at a moment the use
 
 **Build pipeline (Step 28 in `data_preparation/persona_agent.py`)** — runs after Extension B so trending + friends are populated. Stage 1 deterministically gathers candidate moments; Stage 2 calls `infer_proactive_trigger_prompt` (LLM judge) per candidate, producing a **JITAI card** (`distal_outcome`, `proximal_outcome`, `tailoring_variable`, `decision_rule_pass`, `eligibility_score 0-3`, `subtlety_check_pass`, `recommended_action_class`). Output saved to `profile.json.proactive_trigger_candidates`. Skipped gracefully when no LLM client is configured.
 
-**Evaluation metric** — `proactive_action_score ∈ [0,1]` (composite, weighted). As of yuan-merge (`98a33c1`) the rubric tags are aligned with the universal personalization dimensions used by chatbot Q&A, over-personalization, and agentic tasks — same dimensions regardless of `expected_behavior`. Polarity is carried by the hidden `expected_behavior` field in the judge prompt, not by the tags:
-- `trigger_detection_correctness` (0-3, proactive-specific): act vs restrain decision matches `expected_behavior`.
-- `preference_alignment` (0-3, universal): surfaced content reflects the user's relevant positive preferences.
-- `avoid_overpersonalization` (0-3, universal): appropriate amount of personalization for this proactive context.
-- `voice_match` (0-3, universal): tone-matched to the user's `user_voice`.
-- `negative_leakage` (binary hard rule, universal): no same-day user-negative surfaced.
-- `stale_preference_use` (binary hard rule, universal): no preferences the user has since contradicted.
+**Evaluation metric** — `proactive_action_score = 0.7·decision_score + 0.3·justification_score ∈ [0,1]`, combined in code (`judges.judge_proactive_action`), with a decision/justification split:
+- `decision_score` (0.0|1.0, **deterministic, computed in code**): the agent's own `should_act` (lenient `_bool` coercion) vs `expected_behavior` — never trusted to the judge; emitted on every path, including judge-call failure.
+- `justification_score ∈ [0,1]`:
+  - correct RESTRAIN → `restraint_justification/10` **alone** — the act-shaped dims (preference_alignment / avoid_overpersonalization / voice_match) have nothing to grade on silence and are deliberately excluded (a4f7023 semantics).
+  - otherwise (acted, or wrong arm) → `(justification_quality + preference_alignment + avoid_overpersonalization + voice_match + restraint_justification)/50`.
 
-**Hard metrics** also reported (no LLM needed): `decision_correct`, `content_word_count`, `content_length_ok`, `evidence_cited`. The runner falls back to a hard-metric composite (0.5·decision + 0.25·length + 0.25·evidence) when the judge is disabled.
+A correct decision with weak justification still scores ≥ 0.7; the gates below are the only exemptions. Judge rubric dims (polarity carried by the hidden `expected_behavior` field in the judge prompt, not by the tags):
+- `trigger_detection_correctness` (0|10, proactive-specific, DECISION-only): act vs restrain decision matches `expected_behavior` (kept as a diagnostic; the headline uses the deterministic `decision_score`).
+- `justification_quality` (0-10, proactive-specific, RATIONALE-only): quality of the stated rationale / trigger-evidence citation, scored independently of decision correctness. Judge-replay back-compat: absent in pre-split stored judge JSON → falls back to the (then-fused) `trigger_detection_correctness`.
+- `preference_alignment` (0-10, universal): surfaced content reflects the user's relevant positive preferences.
+- `avoid_overpersonalization` (0-10, universal): appropriate amount of personalization for this proactive context.
+- `voice_match` (0-10, universal): tone-matched to the user's `user_voice`.
+- `restraint_justification` (0-10, restraint-only): did the agent explain why staying silent is right? `restraint_justification == 0` on a restrain instance zeros the score (silence-by-default floor).
+- `negative_leakage` (binary hard rule, universal): no same-day user-negative surfaced. Violation zeros the score.
+- `stale_preference_use` (binary hard rule, universal): no preferences the user has since contradicted. Violation zeros the score.
+
+**Hard metrics** also reported (no LLM needed): `decision_correct`, `decision_score`, `content_word_count`, `content_length_ok`, `evidence_cited`. When the judge is disabled (or fails), the runner falls back to a hard-metric composite mirroring the same split — act: `0.7·decision + 0.15·length_ok + 0.15·evidence_cited`; restrain: `0.7·decision + 0.3·evidence_cited` (no length term — an empty response trivially passes the length check, so silence gets no free credit). The >30-word verbosity penalty shrinks only the portion of the score above the `0.7·decision` floor.
 
 **Critical: identical prompt phrasing** for proactive vs restraint instances. The agent must decide on its own; the polarity flip lives only in the judge prompt (`evaluation/prompts.py:judge_proactive_action_prompt`) via the hidden `expected_behavior` field.
 
@@ -686,7 +697,7 @@ This cut a 20-persona @4096 build from ~50 min (throttled at the answer-sized co
 
 ### Reference results: accuracy vs token cost (gpt-5.5)
 
-Snapshot from a single 20-persona run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`.
+Snapshot from a single 20-persona run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`. Cross-**model** accuracy (e.g. gemini-3.5-flash vs gpt-5.5) is only comparable under a shared judge — use the `*_judged` gpt-5.5 judge-replay re-scores — since native self-judging differs (raw gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
 
 **Accuracy (micro %) + context size:**
 
@@ -714,6 +725,43 @@ Full long-context beats the compressed ledger by ~5 micro points; doubling the c
 | **end-to-end input / persona** (build + ~129 queries) | **~55M** | **~0.9M** |
 
 So `llm_memory` is **~85× cheaper per query** and **~60× cheaper end-to-end** than `llm_longctx`, for a ~5-point accuracy cost. The per-day update tokens grow with ledger size — each `update_step` rewrites the whole ≤4096-token memory plus that day's events — which is why @4096 costs ~1k more input/query and a larger build than @2048. The biggest long-context blow-ups are the multi-turn `over_personalization_repetition_*` tasks (3.7–4.3M input tokens/query), which the ledger compresses to 28–44k. Per-task token columns live in `results/aggregate/{mode}/token_accuracy_table.csv` (`mean_input_tokens` / `mean_output_tokens` / `mean_cost_usd` / `mean_duration_ms`).
+
+### Model finding: Gemini-3.5-Flash privacy-leak rate
+
+From the shared-judge (`*_judged` gpt-5.5) re-scores: on `over_personalization_sensitive_event`,
+gemini-3.5-flash trips the `privacy_leak` hard-fail on **21.5%** of rows vs gpt-5.5's
+**11.8%** — ~1.8×. Denominators: Gemini's 21.5% pools its two judged configs (40/186 = 6/93
+memory + 34/93 longctx); gpt-5.5's 11.8% is the single `llm_longctx_gpt5.5_judged` config
+(11/93). gpt-5.5's other (self-judged) configs run 11.4–14.6% on the same metric (`llm_memory`
+21/185, `mem0` 27/185), so the gap is robust to config choice. 90% of Gemini's privacy-leak
+hard-fails pair with LOW `over_personalization` judge scores (judge consensus, not a detector
+artifact), and spot-reads confirm genuine subtle leaks — e.g. "herbal tea" surfacing a wellness
+preference during a rumination query, or a "clinic trip" surfacing medical context in a stress
+query. On the non-sensitive `chatbot_personalized_response` task Gemini is NOT worse on the
+`pr_personalization_hard_fail` rate (25.5% pooled vs 29.4%) — though on that task's
+`privacy_leak` hard-fail axis it is slightly worse (23.5% vs 19.6%) — so this is not a generic
+restraint gap: it is a real model-specific weakness on privacy-flagged contexts, kept as
+benchmark signal (no task change).
+
+### Caveat: long-context overflow on repetition tasks
+
+`over_personalization_repetition_chatbot` / `over_personalization_repetition_recsys` average ~2M
+input tokens per query in `llm_longctx` mode (the multi-turn cluster re-injects the full history
+every turn; up to 3.7–4.3M on the gpt-5.5 20-persona run above). In the 10-persona shared-judge
+(`*_judged`) comparison configs these rows came back as empty answers scoring 0. The 20-persona
+`llm_longctx_gpt5.5` run is NOT all-empty: 50/100 repetition rows (personas 26–835) returned
+non-empty answers (mean ~1,151 output tokens, per-row judge scores 3.3–10; published accuracy
+43.91/37.06), while the other 50 (personas 1–14) are `status=error` from a harness TypeError at
+`evaluation/metrics.py:64` (`tokenize` received a dict — a separate fix is landing for it). On
+the identical tasks `llm_memory` (gpt-5.5) scores 81.16/75.11 and `mem0_gpt5.5` 73.18/63.16 —
+but `llm_memory_gemini3.5flash(_judged)` scores 0.0 on both with the same TypeError/empty
+signature at only 36–44K input tokens, which CANNOT be overflow. So treat the dead longctx
+cells as **structurally invalid** rather than 0-accuracy model signal — context overflow is
+supported for gemini longctx (~486K+ prompts) and gpt-5.5 personas 1–14 (~1.8M+), while the
+gemini-memory failures share only the metrics.py:64 crash. Mitigation: `run_eval.py` now defaults
+`--context_budget` to `DEFAULT_LONGCTX_CONTEXT_BUDGET = 700_000` tokens in `llm_longctx` mode
+when the flag is unset (see `evaluation/run_eval.py`); pass `--context_budget` explicitly to
+override.
 
 ### Running the full 5-config matrix
 
@@ -955,7 +1003,7 @@ per-dim pass-rate table. Cost ≈ 5 mini-tier calls per applicable query ×
 | `over_personalization_chatbot_text` | `personalization_leak_rate` (inverted) | Fraction of user preferences that DON'T leak into off-topic responses | Higher = better restraint |
 | `over_personalization_context_shift` | `keyword_leak_rate` (inverted) | Same as above for scenario-specific restraint | Higher = better |
 | `over_personalization_repetition_*` | `tail_overuse_rate` (inverted) | Fraction of tail responses that still invoked the target preference (LLM-judged per response) | Lower = better (0 = perfect diversification) |
-| `proactive_*` + `restraint_*` | `proactive_action_score` | Composite of trigger_detection + preference_alignment + avoid_overpersonalization + voice_match + **restraint_justification** (5 dims / 15 max) | 0.6+ solid, 0.75+ strong |
+| `proactive_*` + `restraint_*` | `proactive_action_score` | 0.7·decision_score (deterministic act/restrain correctness) + 0.3·justification_score (correct restrain: restraint_justification/10 alone; else 5 judge dims incl. **justification_quality** / 50) | 0.6+ solid, 0.75+ strong |
 | `agentic_*` (T6-T19) | `pr_combined_personalization_score / max` | Same as chatbot — personalization quality, NOT tool-call pass rate | Higher = better |
 | `hidden_persona_implicit_qa` | `deep_motivation_alignment` (0-3 judge) | Did the agent serve the hidden persona WITHOUT naming it? | Higher = better |
 | `active_mistake_prevention` | `correct` (warn + foil) | Paired warn-recall + foil-precision; foil requires substantive response (empty = fail) | Higher = better |
