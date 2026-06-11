@@ -163,6 +163,77 @@ _HARD_FAIL_THRESHOLD = 0.30
 _ERROR_THRESHOLD = 0.20
 _FAIL_STATUS = {"error", "failed_writes", "failed_quality", "no_result"}
 
+# ---------------------------------------------------------------------------
+# Judge vs objective task split (for the judge-only micro headline)
+# ---------------------------------------------------------------------------
+# Criterion: HEADLINE-METRIC judge-sensitivity. A task type belongs in
+# JUDGE_TASK_TYPES iff its PRIMARY_METRIC value (evaluation/task_registry.py
+# PRIMARY_METRIC — the single metric `_accuracy_value` reads for the headline)
+# would change if the judge model changed: 0-10 / 0-3 judge rubric scores,
+# judge-derived pass flags, and the pr_combined rubric (per-dim scores graded
+# by the LLM judge in evaluation/personalization_rubric.py). It belongs in
+# OBJECTIVE_TASK_TYPES iff the headline is computed deterministically from the
+# response (set-intersection recall@k, ranking concordance, regex matching,
+# paired warn/foil rule checks) — diagnostic judge columns the task may ALSO
+# emit are irrelevant; only the headline counts.
+#
+# Corrections from the 2026-06 adversarial review (previously misclassified):
+#   - at_ai_directive_followup: headline recall@5 is a deterministic set
+#     intersection (e2_at_ai_followup.py compute_e2_metrics) → OBJECTIVE.
+#   - local_recommendation_geo_shift: geo_shift_correctness is deterministic
+#     word-boundary regex city matching (local_recommendation_geo_shift.py
+#     compute_geo_shift_metrics) → OBJECTIVE.
+#   - over_personalization_repetition_{chatbot,recsys}: query_score_0_10 is
+#     the mean of per-response 0-10 restraint scores graded by the mini-tier
+#     LLM judge (_c1d_check_pref_invoked, over_personalization.py) → JUDGE.
+#
+# `accuracy_pct_micro_judge` is the row-weighted micro over judge tasks only,
+# so judge-model swaps / judge-rubric changes can be compared without the
+# objective tasks diluting the delta. A task type in NEITHER set still counts
+# toward the overall micro but is excluded from the judge micro, and triggers
+# a printed warning so new tasks get classified deliberately.
+JUDGE_TASK_TYPES = frozenset({
+    # pr_combined_personalization_score: 0-10 rubric whose per-dim scores come
+    # from the LLM judge (personalization_rubric.py).
+    "agentic_auto_reply",
+    "agentic_community_post",
+    "agentic_cross_app_repost",
+    "agentic_dm_digest",
+    "agentic_draft_audit",            # pr_combined (judge rubric); dropped from TASK_TYPE_META but historical rows still parse
+    "agentic_group_dm_summary",
+    "agentic_proactive_daily_catchup",
+    "agentic_send_post",
+    "agentic_trending_alert",
+    "agentic_vague_refind",
+    "agentic_wrong_recipient_check",  # pr_combined (judge rubric, personalization_rubric.py)
+    "chatbot_personalized_response",  # pr_combined (judge rubric)
+    "hidden_persona_implicit_qa",     # deep_motivation_alignment: 0-3 LLM-judge rubric (hidden_persona_implicit_qa.py)
+    "new_suggestions_chatbot",        # passed: judge alignment_score >= 2 composite (new_suggestions.py _score_chatbot_response)
+    "over_personalization_chatbot_text",       # pr_combined (judge rubric)
+    "over_personalization_context_shift",      # pr_combined (judge rubric)
+    "over_personalization_repetition_chatbot", # query_score_0_10: mean of judge-graded restraint scores (_c1d_check_pref_invoked)
+    "over_personalization_repetition_recsys",  # query_score_0_10: same judge as the chatbot variant
+    "over_personalization_sensitive_event",    # pr_combined (judge rubric)
+    "over_personalization_sycophancy",         # sycophancy_resistance_0_10: LLM-judge score (judges.py judge_sycophancy)
+    "preference_shift_followthrough",          # preference_shift_consistency: 0-10 LLM judge
+    # proactive_action_score: 0.7*deterministic decision + 0.3*judge justification dims (judges.py judge_proactive_action) — judge-sensitive via the 0.3 term.
+    "proactive_close_friend_update",
+    "proactive_friend_feed_react",
+    "proactive_overactive_check",
+    "proactive_trending_feed_react",
+    "restraint_sensitive_event_silence",
+})
+OBJECTIVE_TASK_TYPES = frozenset({
+    "active_mistake_prevention",       # paired warn/foil `correct`: regex warn-detect + coverage fraction (e6_active_mistake_prevention.py)
+    "at_ai_directive_followup",        # recall@5: deterministic set intersection (e2_at_ai_followup.py compute_e2_metrics)
+    "hidden_persona_recommendation",   # recall_at_1: deterministic slate ranking
+    "local_recommendation_geo_shift",  # geo_shift_correctness: deterministic regex city matching (compute_geo_shift_metrics)
+    "new_suggestions_recsys",          # passed: recall@1 against gold idx (new_suggestions.py _recall_at_k)
+    "personalized_recommendation",     # tier_concordance: deterministic 3-tier pair concordance
+    "personalized_search_ranking",     # legacy alias → personalized_recommendation via normalize_task_type; same deterministic headline
+    "short_vs_long_term_lifecycle",    # lifecycle_score: pre−post match_rate_at_3, deterministic set intersection (e5_horizon_lifecycle.py)
+})
+
 # Task → benchmark family for the by-class breakout.
 _TASK_FAMILY_MAP = {
     # Ranking
@@ -341,6 +412,16 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
     sum_cost = 0.0
     sum_dur = 0.0
     sum_n_tok = 0
+    # Judge-only accumulators (mirror the overall ones, restricted to
+    # JUDGE_TASK_TYPES) for the ALL-JUDGE micro row.
+    j_weighted_sum_acc = 0.0
+    j_weighted_n_acc = 0
+    j_sum_in_tok = 0.0
+    j_sum_out_tok = 0.0
+    j_sum_cost = 0.0
+    j_sum_dur = 0.0
+    j_sum_n_tok = 0
+    j_all_n = 0
     for task, task_rows in sorted(by_task.items()):
         accs: list[float] = []
         in_toks: list[float] = []
@@ -391,6 +472,24 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
             sum_cost += sum(costs)
             sum_n_tok += len(in_toks)
         sum_dur += sum(durs)
+        # Judge-only micro: only JUDGE_TASK_TYPES rows contribute. Unknown
+        # task types (in neither set) still count toward the overall micro
+        # above, but are excluded here — warn so they get classified.
+        if task in JUDGE_TASK_TYPES:
+            j_all_n += n
+            if accs:
+                j_weighted_sum_acc += acc_mean * len(accs)
+                j_weighted_n_acc += len(accs)
+            if in_toks:
+                j_sum_in_tok += sum(in_toks)
+                j_sum_out_tok += sum(out_toks)
+                j_sum_cost += sum(costs)
+                j_sum_n_tok += len(in_toks)
+            j_sum_dur += sum(durs)
+        elif task not in OBJECTIVE_TASK_TYPES:
+            print(f"[aggregate] WARNING: unknown task type {task!r} — counted in "
+                  f"overall micro but NOT in judge micro; add it to "
+                  f"JUDGE_TASK_TYPES or OBJECTIVE_TASK_TYPES in scripts/aggregate_eval.py.")
 
     # ALL row (n-weighted, micro): every row contributes 1/N
     all_n = sum(r["n"] for r in table)
@@ -406,6 +505,21 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
         "mean_duration_ms": round(sum_dur / max(1, all_n), 1),
     }
     table.append(all_row)
+
+    # ALL-JUDGE row (n-weighted micro over the judge-sensitive-headline tasks
+    # only) — same column semantics as the ALL row, restricted to JUDGE_TASK_TYPES.
+    judge_row = {
+        "task_type": "ALL-JUDGE (micro, judge tasks only)",
+        "n": j_all_n,
+        "accuracy_pct": round(j_weighted_sum_acc / j_weighted_n_acc, 2) if j_weighted_n_acc else "",
+        "quality_flag": "",
+        "task_family": "",
+        "mean_input_tokens": round(j_sum_in_tok / j_sum_n_tok, 1) if j_sum_n_tok else 0,
+        "mean_output_tokens": round(j_sum_out_tok / j_sum_n_tok, 1) if j_sum_n_tok else 0,
+        "mean_cost_usd": round(j_sum_cost / j_sum_n_tok, 4) if j_sum_n_tok else 0,
+        "mean_duration_ms": round(j_sum_dur / max(1, j_all_n), 1),
+    }
+    table.append(judge_row)
 
     # Per-family by-class roll-ups — MICRO (row-weighted), consistent with the
     # micro headline (NOT task-averaged). The macro task-weighted + adjusted-macro
@@ -549,6 +663,8 @@ def aggregate_run_set(all_rows: list[dict], per_persona: dict[str, list[dict]],
     for r in table:
         if r["task_type"] == "ALL (micro, row-weighted)":
             overall["accuracy_pct_micro"] = r["accuracy_pct"]
+        elif r["task_type"] == "ALL-JUDGE (micro, judge tasks only)":
+            overall["accuracy_pct_micro_judge"] = r["accuracy_pct"]
     (out_dir / "summary_overall.json").write_text(
         json.dumps(overall, indent=2, ensure_ascii=False), encoding="utf-8",
     )
@@ -600,18 +716,20 @@ def main() -> int:
                 "n_personas": overall["n_personas"],
                 "n_queries": overall["n_queries"],
                 "accuracy_pct_micro": overall.get("accuracy_pct_micro"),
+                "accuracy_pct_micro_judge": overall.get("accuracy_pct_micro_judge"),
                 "e6_paired_f1": round(e6["paired_f1"], 4) if e6 else "",
             })
             print(f"[aggregate] mode={mode:12s}  personas={overall['n_personas']:2d}  "
                   f"queries={overall['n_queries']:4d}  "
                   f"acc_micro={overall.get('accuracy_pct_micro','?')}  "
+                  f"acc_micro_judge={overall.get('accuracy_pct_micro_judge','?')}  "
                   f"e6_paired_f1={comparison[-1]['e6_paired_f1']}")
         if not comparison:
             print("[aggregate] no mode produced results", file=sys.stderr)
             return 2
         comp_path = agg_root / "comparison.csv"
         cols = ["mode", "n_personas", "n_queries",
-                "accuracy_pct_micro", "e6_paired_f1"]
+                "accuracy_pct_micro", "accuracy_pct_micro_judge", "e6_paired_f1"]
         with comp_path.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=cols)
             writer.writeheader()
