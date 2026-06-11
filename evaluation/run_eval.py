@@ -1074,7 +1074,16 @@ def main() -> int:
                            if (r.get("status") or "") == "ok"]
 
     # Per-persona summary + per-persona totals across all tasks.
-    summary = _summarize_by_task(written_results)
+    # On --resume, `written_results` only holds rows answered THIS pass —
+    # summarizing it alone clobbers summary.json with a partial (or all-zero,
+    # for a no-op resume) view. Re-read the full results.csv so summary.json
+    # always reflects every completed row of the run.
+    if args.resume and results_csv.exists():
+        with results_csv.open("r", encoding="utf-8") as f:
+            summary_rows = list(csv.DictReader(f))
+    else:
+        summary_rows = written_results
+    summary = _summarize_by_task(summary_rows)
     persona_totals = {
         "input_tokens": 0.0,
         "output_tokens": 0.0,
@@ -1148,7 +1157,7 @@ def main() -> int:
                 "mode": args.mode,
                 "model": args.model,
                 "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
-                "n_queries_run": len(written_results),
+                "n_queries_run": len(summary_rows),
                 "persona_totals": persona_totals,
                 "by_task": summary,
             },
