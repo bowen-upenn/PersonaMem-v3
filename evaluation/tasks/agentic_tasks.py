@@ -350,12 +350,18 @@ def _dispatch_and_score(
         judge_client=(judge_client if enable_llm_judge else None),
     )
 
-    # llm_longctx is graded final-answer-only: rubric on response_text, no
-    # tool-call rules, no overlay readout, no output_quality verifier (those
-    # all assume an MCP overlay that doesn't exist in this mode). Returning
-    # early keeps the cross-mode comparison honest — see DESIGN.md.
+    # Final-answer-only modes are graded on response_text only: rubric on the
+    # answer, no tool-call rules, no overlay readout, no output_quality verifier
+    # (those all assume an MCP overlay that exists ONLY in mcp_agent). This covers
+    # the text baselines AND agent_tools — agent_tools has filesystem search tools
+    # but NO MCP write tools / overlay, so its write tasks emit the content as
+    # final_answer (see prompts_agentic._action_or_final) and must be graded as
+    # text, identically to llm_longctx. Without agent_tools here it fell through to
+    # the mcp_agent path and was scored against an empty writes.jsonl overlay →
+    # invalid compose-task scores (audit 2026-06-06). Keeps the cross-mode
+    # comparison honest — see DESIGN.md.
     from evaluation.inference_utils import merge_token_metrics
-    if mode in ("llm_longctx", "llm_memory", "mem0"):
+    if mode in ("llm_longctx", "llm_memory", "mem0", "agent_tools"):
         metrics = {
             **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
             "mode_grading": "final_answer_only",

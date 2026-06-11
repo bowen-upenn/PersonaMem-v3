@@ -63,6 +63,12 @@ HEAVY_TASKS = (
     "agentic_auto_reply",
     "agentic_vague_refind",
     "personalized_recommendation",
+    # Compose tasks: agentic SEARCH (grep the user's posts for voice/topic) THEN
+    # compose in their voice THEN emit final_answer JSON — at the DEFAULT 15-turn
+    # budget the compose phase got cut off → empty final_answer (audit 2026-06-06).
+    "agentic_send_post",
+    "agentic_cross_app_repost",
+    "agentic_community_post",
 )
 DEFAULT_MAX_TURNS = int(os.getenv("EVAL_AGENT_MAX_TURNS", "15"))
 HEAVY_MAX_TURNS = int(os.getenv("EVAL_AGENT_HEAVY_TURNS", "30"))

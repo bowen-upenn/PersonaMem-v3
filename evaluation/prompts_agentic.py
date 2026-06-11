@@ -368,10 +368,17 @@ def t11_vague_refind(topic: str, history_block: str | None = None,
         directive = ("Search the user history shown below to locate the post the user "
                      "is describing. Identify it precisely — app + title/caption/creator/"
                      "hashtags — so they can recognize it. Do NOT just restate the topic.")
-    else:
+    elif allow_extra_tools:
         directive = ("To find the post, call `mcp__instagram__search`, `mcp__facebook__search`, "
                      "`mcp__threads__search`, and `mcp__chatbot__search_history` with the topic as "
                      "the query. Pick the one most likely to be what the user remembers.")
+    else:
+        # agent_tools: search the snapshot FILES (no MCP search tool).
+        directive = ("To find the post, SEARCH the user's history files in your working "
+                     "directory — `Grep` (or `bash grep`) the `*.json` files for the topic/"
+                     "keywords/creator the user mentions, then `Read` the matching events. "
+                     "Identify it precisely — app + title/caption/creator/hashtags — so they "
+                     "can recognize it. Do NOT just restate the topic.")
     no_tools = f"\n{_no_tools_note()}\n" if text_only else ""
     return f"""# Task T11: Vague refind
 
