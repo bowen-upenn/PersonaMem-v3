@@ -80,6 +80,18 @@ RESULTS_COLUMNS: list[str] = [
 _AGENT_RESPONSE_TRUNCATE_BYTES = 4096
 
 
+# Default --context_budget for llm_longctx when none is given. Data-driven
+# from results/llm_longctx_gpt5.5 + results/llm_longctx_gemini3.5flash_judged:
+# rows with non-empty answers top out at 660,915 input tokens (574,305 for
+# gemini), while the over_personalization_repetition_* rows that came back
+# EMPTY (output_tokens=0, status ok → scored 0) start at 1,283,374 (gpt-5.5)
+# / 1,538,676 (gemini). 700,000 is the first round number above every
+# observed success, so currently-working tasks are untouched while the 2M+
+# repetition prompts get truncated by serialize_history_for_context instead
+# of silently overflowing the model.
+DEFAULT_LONGCTX_CONTEXT_BUDGET = 700_000
+
+
 def _truncate_agent_response(resp) -> str:
     """Coerce runner-emitted `agent_response` (str | dict | None) to a
     truncated UTF-8 string suitable for the CSV column."""
@@ -641,6 +653,13 @@ def main() -> int:
     if args.replay_from and args.workers != 1:
         print(f"[run_eval] replay_from set; overriding --workers {args.workers} -> 1", flush=True)
         args.workers = 1
+
+    # llm_longctx with no budget let 2M-token repetition prompts overflow into
+    # silent empty answers (output_tokens=0, status ok) — default the budget.
+    if args.mode == "llm_longctx" and args.context_budget is None:
+        args.context_budget = DEFAULT_LONGCTX_CONTEXT_BUDGET
+        print(f"[run_eval] llm_longctx: defaulting --context_budget to "
+              f"{DEFAULT_LONGCTX_CONTEXT_BUDGET}", flush=True)
 
     # Source of truth: backend/{uid}/test.json (a list of test-instance
     # dicts written by scripts/prepare_eval_data.py). Legacy
