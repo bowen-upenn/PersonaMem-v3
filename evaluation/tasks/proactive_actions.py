@@ -655,12 +655,15 @@ def run_proactive_task(
             parsed = {"should_act": False, "content": raw_response, "reasoning": "(failed_to_parse)"}
 
         # Hard metrics — deterministic checks, no LLM needed.
-        agent_should_act = bool(parsed.get("should_act", False))
+        # NOTE: judges._bool, NOT naive bool() — bool("false") is True, so a
+        # string-valued should_act would flip the decision metric.
+        agent_should_act = bool(judges._bool(parsed.get("should_act", False)))
         # Decision-level correctness: does should_act match expected_behavior?
         decision_correct = (
             (expected_behavior == "act" and agent_should_act)
             or (expected_behavior == "restrain" and not agent_should_act)
         )
+        decision_score = 1.0 if decision_correct else 0.0
         # Length compliance: content ≤ 30 words.
         content_text = parsed.get("content") or ""
         word_count = len(content_text.split()) if isinstance(content_text, str) else 0
@@ -669,6 +672,9 @@ def run_proactive_task(
 
         hard_metrics = {
             "decision_correct": int(decision_correct),
+            # Deterministic — also emitted by judge_proactive_action on every
+            # path (including judge failure); values are identical.
+            "decision_score": decision_score,
             "content_word_count": word_count,
             "content_length_ok": int(length_ok),
             "evidence_cited": int(evidence_cited),
@@ -682,25 +688,34 @@ def run_proactive_task(
             )
 
         # If no judge ran, derive a fallback composite from hard metrics so
-        # `proactive_action_score` is always populated.
+        # `proactive_action_score` is always populated. Mirrors the judge's
+        # 0.7*decision + 0.3*justification split with hard-metric proxies
+        # for the justification term.
         if "proactive_action_score" not in judge_scores or judge_scores.get("proactive_action_score") is None:
             if expected_behavior == "restrain":
-                # Don't hand silence a free 0.25 "length_ok" credit (an empty
-                # response is trivially short) — a correct restrain must show SOME
-                # justification (evidence/reasoning) to beat silence-by-default.
-                fallback_score = 0.6 * decision_correct + 0.4 * evidence_cited
+                # Don't hand silence a free "length_ok" credit (an empty
+                # response is trivially short) — a correct restrain must show
+                # SOME justification (evidence/reasoning) to beat
+                # silence-by-default.
+                fallback_score = 0.7 * decision_score + 0.3 * evidence_cited
             else:
-                # Act: 0.5 decision + 0.25 length + 0.25 evidence cited.
+                # Act: 0.7 decision + 0.15 length + 0.15 evidence cited.
                 fallback_score = (
-                    0.5 * decision_correct
-                    + 0.25 * length_ok
-                    + 0.25 * evidence_cited
+                    0.7 * decision_score
+                    + 0.15 * length_ok
+                    + 0.15 * evidence_cited
                 )
             judge_scores = {**judge_scores, "proactive_action_score": fallback_score}
 
-        # Penalise verbose bodies regardless of score source (judge or fallback).
-        if "proactive_action_score" in judge_scores and not length_ok:
-            judge_scores["proactive_action_score"] = judge_scores["proactive_action_score"] * 0.7
+        # Penalise verbose bodies regardless of score source (judge or
+        # fallback) — but only on the portion ABOVE the 0.7*decision floor,
+        # so a correct decision is never dragged below 0.7 by verbosity
+        # (the hard-rule gates remain the only way below the floor).
+        _pas = judge_scores.get("proactive_action_score")
+        if _pas is not None and not length_ok:
+            _floor = 0.7 * decision_score
+            if _pas > _floor:
+                judge_scores["proactive_action_score"] = _floor + (_pas - _floor) * 0.7
 
         from evaluation.inference_utils import merge_token_metrics
         result_metrics = {**hard_metrics, **judge_scores}

@@ -13,6 +13,27 @@ from data_preparation.utils import extract_json_from_response
 from evaluation import prompts
 
 
+def _clamp(v, lo, hi):
+    try:
+        return max(lo, min(hi, float(v)))
+    except (TypeError, ValueError):
+        return None
+
+
+def _bool(v):
+    """Lenient bool coercion for judge/agent JSON fields. Maps the strings
+    "false"/"no"/"0" to False — naive ``bool()`` would map ANY non-empty
+    string (including "false") to True. Returns None for unrecognized types
+    so callers can distinguish "absent/unparseable" from a real False."""
+    if isinstance(v, bool):
+        return v
+    if isinstance(v, (int, float)):
+        return bool(v)
+    if isinstance(v, str):
+        return v.strip().lower() in ("true", "yes", "1", "y")
+    return None
+
+
 def judge_telegraph_avoidance(
     response: str,
     held_out_pref: dict | str | None = None,
@@ -261,57 +282,70 @@ def judge_proactive_action(
     expected_behavior: str,
     jitai_card: dict | None = None,
 ) -> dict:
-    """Score a proactive-action response against an aligned rubric: the
-    universal personalization dimensions plus one proactive-specific
-    dimension. Polarity-aware:
+    """Score a proactive-action response with a decision/justification split.
+    Polarity-aware:
       - expected_behavior=='act'      → reward acting with grounded action
       - expected_behavior=='restrain' → reward staying silent
 
-    Rubric (1 proactive-specific + 3 universal LLM dims + 2 universal
-    hard-rules):
-      - trigger_detection_correctness (0-10, proactive-specific)
-      - preference_alignment (0-10, universal)
-      - avoid_overpersonalization (0-10, universal)
-      - voice_match (0-10, universal)
-      - negative_leakage (bool hard-rule, universal): True ⇒ score = 0.0
-      - stale_preference_use (bool hard-rule, universal): True ⇒ score = 0.0
+    Headline: ``proactive_action_score = 0.7*decision_score +
+    0.3*justification_score`` ∈ [0, 1].
 
-    Composite proactive_action_score ∈ [0, 1] is the sum of the five LLM
-    dims divided by 50, gated to 0 on any hard-rule violation.
+      - decision_score (0.0|1.0): DETERMINISTIC, computed in code from the
+        agent's own ``should_act`` vs ``expected_behavior`` — never trusted
+        to the judge. Emitted on every path, including judge failure.
+      - justification_score ∈ [0, 1]:
+          * correct RESTRAIN → restraint_justification/10 ALONE. The
+            act-shaped dims (preference_alignment / avoid_overpersonalization
+            / voice_match) have nothing to grade on silence and are
+            deliberately excluded (a4f7023 restrain semantics).
+          * otherwise (acted, or wrong-restrain arm) → (justification_quality
+            + preference_alignment + avoid_overpersonalization + voice_match
+            + restraint_justification) / 50.
+
+    Judge dims (LLM): trigger_detection_correctness (0|10, decision-only,
+    kept for back-compat/diagnostics), justification_quality (0-10,
+    rationale-only), preference_alignment / avoid_overpersonalization /
+    voice_match / restraint_justification (0-10), plus 2 hard-rules:
+      - negative_leakage (bool): True ⇒ score = 0.0
+      - stale_preference_use (bool): True ⇒ score = 0.0
+    Restraint-silence floor: on restrain, restraint_justification == 0 ⇒
+    score = 0.0 (bare silence is indistinguishable from always-silent).
+    These gates are the only exemptions to the 0.7*decision floor.
     """
+    # Deterministic decision score — computed in code from the agent's own
+    # should_act vs expected_behavior. Uses the lenient _bool coercion
+    # (naive bool() maps the string "false" to True); None (absent /
+    # unparseable) coerces to "did not act", matching the historical
+    # `not _bool(...)` restrain predicate.
+    agent_should_act = bool(_bool(response_obj.get("should_act", False)))
+    decision_score = 1.0 if (
+        (expected_behavior == "act" and agent_should_act)
+        or (expected_behavior == "restrain" and not agent_should_act)
+    ) else 0.0
+
     prompt = prompts.judge_proactive_action_prompt(
         response_obj, trigger_evidence, expected_behavior, jitai_card or {},
     )
     try:
         resp = judge_client.query_llm(prompt)
     except Exception as exc:
+        # decision_score is deterministic and computable without the judge —
+        # emit it even on judge failure so the runner fallback can reuse it.
         return {
             "trigger_detection_correctness": None,
+            "justification_quality": None,
             "preference_alignment": None,
             "avoid_overpersonalization": None,
             "voice_match": None,
             "restraint_justification": None,
             "negative_leakage": None,
             "stale_preference_use": None,
+            "decision_score": decision_score,
+            "justification_score": None,
             "proactive_action_score": None,
             "judge_reasoning": f"judge_call_failed: {exc}",
         }
     parsed = extract_json_from_response(resp) or {}
-
-    def _clamp(v, lo, hi):
-        try:
-            return max(lo, min(hi, float(v)))
-        except (TypeError, ValueError):
-            return None
-
-    def _bool(v):
-        if isinstance(v, bool):
-            return v
-        if isinstance(v, (int, float)):
-            return bool(v)
-        if isinstance(v, str):
-            return v.strip().lower() in ("true", "yes", "1", "y")
-        return None
 
     trig  = _clamp(parsed.get("trigger_detection_correctness"), 0, 10)
     pref  = _clamp(parsed.get("preference_alignment"), 0, 10)
@@ -322,32 +356,46 @@ def judge_proactive_action(
     # LLM to emit 10 by default; we still parse to keep the rubric
     # symmetric across both arms.
     just  = _clamp(parsed.get("restraint_justification"), 0, 10)
+    # justification_quality: NEW rationale-only dim (0-10) — grades
+    # rationale / trigger-citation quality regardless of the decision.
+    jq    = _clamp(parsed.get("justification_quality"), 0, 10)
+    if jq is None:
+        # Back-compat for judge-replay of stored judge JSON predating the
+        # decision/justification split: reuse the (then-fused) trigger dim.
+        jq = trig
     neg_leak = _bool(parsed.get("negative_leakage"))
     stale    = _bool(parsed.get("stale_preference_use"))
 
-    agent_restrained = (expected_behavior == "restrain"
-                        and not _bool(response_obj.get("should_act", False)))
+    agent_restrained = (expected_behavior == "restrain" and not agent_should_act)
     if agent_restrained:
         # Correct restrain: there is no surfaced action, so the act-shaped dims
         # (preference_alignment / avoid_overpersonalization / voice_match) have
         # nothing to grade and were dragging a justified silence down (capping it
-        # ~0.6). The score IS how well-justified the restraint is — "silent
-        # because wise" vs "silent by default". Leakage is still caught by the
-        # negative_leakage / stale hard-rules, and just==0 is floored to 0 below,
-        # so this does NOT reward bare silence (just=3 → 0.30).
+        # ~0.6). The justification score IS how well-justified the restraint is —
+        # "silent because wise" vs "silent by default". Leakage is still caught
+        # by the negative_leakage / stale hard-rules, and just==0 is floored to
+        # 0 below, so this does NOT reward bare silence.
         components = [(just, 10.0)]
     else:
-        components = [(trig, 10.0), (pref, 10.0), (over, 10.0), (voice, 10.0), (just, 10.0)]
+        components = [(jq, 10.0), (pref, 10.0), (over, 10.0), (voice, 10.0), (just, 10.0)]
     if any(c is None for c, _ in components):
-        score = None
+        justification_score = None
     else:
         num = sum(c for c, _ in components)  # type: ignore[misc]
         denom = sum(m for _, m in components)
-        score = num / denom if denom > 0 else None
+        justification_score = num / denom if denom > 0 else None
 
-    # Hard-rule gating: any violation zeros the entire score.
-    # Aligned with how the other personalization tasks (chatbot Q&A,
-    # over-personalization, agentic) treat these same dimensions.
+    # Headline: correct decision alone is worth 0.7; justification quality
+    # modulates only the remaining 0.3 (a correct decision with weak
+    # justification still scores >= 0.7 unless a gate below fires).
+    if justification_score is None:
+        score = None  # runner derives its hard-metric fallback composite
+    else:
+        score = 0.7 * decision_score + 0.3 * justification_score
+
+    # Hard-rule gating: any violation zeros the entire score (including
+    # the 0.7 decision floor). Aligned with how the other personalization
+    # tasks (chatbot Q&A, over-personalization, agentic) treat these dims.
     if (neg_leak is True) or (stale is True):
         score = 0.0
     # Silence-by-default floor: on restraint instances, an empty
@@ -360,12 +408,15 @@ def judge_proactive_action(
 
     return {
         "trigger_detection_correctness": trig,
+        "justification_quality": jq,
         "preference_alignment": pref,
         "avoid_overpersonalization": over,
         "voice_match": voice,
         "restraint_justification": just,
         "negative_leakage": neg_leak,
         "stale_preference_use": stale,
+        "decision_score": decision_score,
+        "justification_score": justification_score,
         "proactive_action_score": score,
         "judge_reasoning": parsed.get("reasoning") or "",
     }

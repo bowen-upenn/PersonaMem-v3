@@ -934,7 +934,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "scoring_dimensions": [
-            "trigger_detection_correctness", "content_length_ok",
+            "trigger_detection_correctness", "justification_quality",
+            "content_length_ok",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
             "negative_leakage", "stale_preference_use", "telegraph_avoidance",
             "restraint_justification",
@@ -953,7 +954,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "scoring_dimensions": [
-            "trigger_detection_correctness", "content_length_ok",
+            "trigger_detection_correctness", "justification_quality",
+            "content_length_ok",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
             "negative_leakage", "stale_preference_use", "telegraph_avoidance",
             "restraint_justification",
@@ -975,7 +977,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "scoring_dimensions": [
-            "trigger_detection_correctness", "content_length_ok",
+            "trigger_detection_correctness", "justification_quality",
+            "content_length_ok",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
             "negative_leakage", "stale_preference_use", "telegraph_avoidance",
             "restraint_justification",
@@ -994,7 +997,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "scoring_dimensions": [
-            "trigger_detection_correctness", "content_length_ok",
+            "trigger_detection_correctness", "justification_quality",
+            "content_length_ok",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
             "negative_leakage", "stale_preference_use", "telegraph_avoidance",
             "restraint_justification",
@@ -1013,7 +1017,8 @@ TASK_TYPE_META: dict[str, dict] = {
         "state_write_policy": "read_only",
         "expected_response_kind": "text_with_tool_calls",
         "scoring_dimensions": [
-            "trigger_detection_correctness", "content_length_ok",
+            "trigger_detection_correctness", "justification_quality",
+            "content_length_ok",
             "preference_alignment", "avoid_overpersonalization", "voice_match",
             "negative_leakage", "stale_preference_use", "telegraph_avoidance",
             "restraint_justification",
@@ -1299,7 +1304,8 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "agentic_proactive_daily_catchup":   ("pr_combined_personalization_score", "pr_combined"),
     "agentic_trending_alert":            ("pr_combined_personalization_score", "pr_combined"),
     # Proactive Actions (Phase 1): composite proactive_action_score in [0,1]
-    # produced by judge_proactive_action averaged across the 5 rubric dims.
+    # produced by judge_proactive_action: 0.7*decision_score (deterministic
+    # act/hold correctness) + 0.3*justification_score (judge rubric dims).
     "proactive_close_friend_update":     ("proactive_action_score", "fraction"),
     "restraint_sensitive_event_silence": ("proactive_action_score", "fraction"),
     # Phase 2 proactive — same composite as Phase 1.

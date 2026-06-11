@@ -691,18 +691,32 @@ expected_behavior = `{expected_behavior}`
 
 This rubric uses the universal personalization dimensions used by every
 other personalization task in the benchmark (chatbot Q&A, over-personalization,
-agentic) plus one proactive-specific dimension at the top. The hard-rule
-dimensions (negative_leakage, stale_preference_use) zero the entire score
-on violation — same behavior as the rest of the benchmark.
+agentic) plus two proactive-specific dimensions at the top — one for the
+DECISION alone and one for the RATIONALE alone; never fuse them. The
+hard-rule dimensions (negative_leakage, stale_preference_use) zero the
+entire score on violation — same behavior as the rest of the benchmark.
 
 For each, reason briefly then score:
 
-- **trigger_detection_correctness (0-10, proactive-specific)**: did the
-  agent correctly decide to act vs stay silent given the polarity?
-  - 10 = perfect alignment with expected_behavior
-  - 7 = correct decision but reasoning weak
-  - 3 = mixed signals (acted but hedged heavily, or stayed silent without clear reason)
+- **trigger_detection_correctness (0 | 10, proactive-specific, DECISION-only)**:
+  did the agent make the correct act-vs-stay-silent DECISION given the
+  polarity? Score ONLY the decision itself — ignore how well (or whether)
+  the agent explained it; rationale quality belongs in
+  `justification_quality` below.
+  - 10 = decision matches expected_behavior
   - 0 = wrong decision (acted when restrain expected, or vice versa)
+
+- **justification_quality (0-10, proactive-specific, RATIONALE-only)**: how
+  good is the agent's stated rationale for its decision — does it cite the
+  specific trigger evidence (the concrete moment / event / signal it
+  observed) rather than generic boilerplate? Score this INDEPENDENTLY of
+  whether the decision was correct: a wrong decision can still carry a
+  coherent, evidence-cited rationale, and a correct decision can ship with
+  no rationale at all.
+  - 10 = rationale names the specific trigger evidence and connects it to the decision
+  - 7 = on-target rationale but generic (no specific evidence cited)
+  - 3 = vague, hedged, or boilerplate rationale
+  - 0 = no rationale at all
 
 - **preference_alignment (0-10, universal)**: if the agent acted, does the
   surfaced content match what this user actually prefers / cares about
@@ -752,7 +766,8 @@ For each, reason briefly then score:
 Respond with ONLY this JSON, no prose outside:
 ```json
 {{
-  "trigger_detection_correctness": <0-10>,
+  "trigger_detection_correctness": <0 | 10>,
+  "justification_quality": <0-10>,
   "preference_alignment": <0-10>,
   "avoid_overpersonalization": <0-10>,
   "voice_match": <0-10>,
