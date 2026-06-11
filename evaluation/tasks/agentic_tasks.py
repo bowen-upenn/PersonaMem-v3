@@ -1288,39 +1288,77 @@ def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) ->
     non-trivial: the thread either references a topic in the user's
     persona OR contains an open question / decision signal. Pure
     logistics threads ("what time again?") get the same summary
-    regardless of memory and pollute the benchmark."""
+    regardless of memory and pollute the benchmark.
+
+    Supply relaxation (2026-06): the shipped benchmark artifact (test.json
+    built from an older backend snapshot) had 13/20 users with zero
+    instances against a min=5 floor; the current backend supplies more
+    group threads unpatched, but coverage still varies by persona.
+    Tiered fallback: group threads stay the first preference, but when
+    fewer than 2 group-thread candidates survive the filters, long
+    1-on-1 exchanges (>= FALLBACK_MIN_MSGS messages) become eligible —
+    a multi-message DM exchange is still meaningfully summarizable.
+    Fallback instances carry ``group_dm_fallback: True`` so audits can
+    distinguish them from true group threads."""
     idx = _build_persona_topic_index(bq, user_id, t_anchor)
-    out = []
     DECISION_SIGNALS = ("?", "decide", "decision", "settle", "vote",
-                         "thoughts", "should we", "what about", "let me know")
+                         "thoughts", "should we", "what about", "let me know",
+                         # Group-coordination phrases (supply relaxation).
+                         # NB: "votes?"-style entries are redundant — "?" and
+                         # "vote" above already match as substrings.
+                         "who's in", "let's lock", "final call")
+    # Short coordination tokens need word-boundary matching — a plain
+    # substring check would false-positive on "soccer" ("cc"), etc.
+    TOKEN_SIGNALS_RE = re.compile(r"\b(?:cc|fyi)\b")
+    FALLBACK_MIN_MSGS = 6
+
+    def _make_instance(app: str, tid: str, has_persona: bool,
+                       has_decision: bool, fallback: bool) -> dict:
+        inst = {
+            "instance_id": f"t16_{app}_{tid}", "task_id": "agentic_group_dm_summary",
+            "entry_point": "chatbot_routed",
+            "target_app": app, "thread_id": tid, "t_test": t_anchor,
+            "tool_call_rules": [f"count('{app}_send_dm') == 0",  # don't send without approval
+                                f"count('{app}_get_dm_thread') >= 1"],
+            "persona_relevance": {
+                "topic_match": has_persona,
+                "has_decision_signal": has_decision,
+            },
+        }
+        if fallback:
+            inst["group_dm_fallback"] = True
+        return inst
+
+    out: list[dict] = []
+    fallback_pool: list[dict] = []
     for app in SOCIAL_APPS:
-        page = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=20)
+        page = bq.list_dm_threads(user_id=user_id, app=app, since_timestamp=t_anchor, limit=60)
         for t in page.get("results", []):
-            if not t.get("is_group"):
-                continue
+            is_group = bool(t.get("is_group"))
             tid = t["thread_id"]
             thread_full = bq.get_dm_thread(user_id=user_id, app=app, thread_id=tid, since_timestamp=t_anchor, limit=20) or {}
             msgs = thread_full.get("results") or thread_full.get("messages") or []
             if not msgs:
                 continue
+            if not is_group and len(msgs) < FALLBACK_MIN_MSGS:
+                continue
             joined = " ".join((m.get("text") or "") for m in msgs).lower()
             # Persona check: hashtag overlap from the carried forward
             # (via thread_full) OR keyword hit in the joined message text.
             has_persona = _text_touches_persona(thread_full, idx) or _text_touches_persona(joined, idx)
-            has_decision = any(sig in joined for sig in DECISION_SIGNALS)
+            has_decision = (any(sig in joined for sig in DECISION_SIGNALS)
+                            or bool(TOKEN_SIGNALS_RE.search(joined)))
             if not (has_persona or has_decision):
                 continue
-            out.append({
-                "instance_id": f"t16_{app}_{tid}", "task_id": "agentic_group_dm_summary",
-                "entry_point": "chatbot_routed",
-                "target_app": app, "thread_id": tid, "t_test": t_anchor,
-                "tool_call_rules": [f"count('{app}_send_dm') == 0",  # don't send without approval
-                                    f"count('{app}_get_dm_thread') >= 1"],
-                "persona_relevance": {
-                    "topic_match": has_persona,
-                    "has_decision_signal": has_decision,
-                },
-            })
+            if is_group:
+                out.append(_make_instance(app, tid, has_persona, has_decision, fallback=False))
+            else:
+                fallback_pool.append(_make_instance(app, tid, has_persona, has_decision, fallback=True))
+    # Tier 2: only when group threads alone can't supply >= 2 candidates,
+    # top up from long 1-on-1 exchanges (downstream apply_caps trims to
+    # the task's max).
+    if len(out) < 2 and fallback_pool:
+        out.extend(fallback_pool)
     return out
 
 
