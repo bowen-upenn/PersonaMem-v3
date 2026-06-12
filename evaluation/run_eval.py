@@ -743,13 +743,26 @@ def main() -> int:
         boundaries = sorted({int(r["ts"]) for r in rows})
         t_max = (boundaries[-1] + 1) if boundaries else 0
         llm_dep = None if args.model in (None, "gpt-5.5") else args.model
-        print(f"[run_eval] mem0 mode: building real-mem0 store up to T={t_max} "
-              f"(LLM={llm_dep or 'AZURE_OPENAI_DEPLOYMENT_NAME'}, "
-              f"embed=text-embedding-3-large, cap={args.memory_token_cap})...", flush=True)
-        m0 = Mem0Backend(args.user_id, run_dir, llm_deployment=llm_dep,
-                         token_cap=args.memory_token_cap)
-        bstats = m0.build(bq, t_max, {"builder_model": args.model,
-                                      "chunk_k": args.memory_chunk_k})
+        # Judge-replay reuses the existing on-disk store: generation is
+        # disabled, so rebuilding (rm -rf + full re-ingest via Azure LLM +
+        # embeddings) would be pure waste — retrieval only needs the vectors
+        # already there from the original run.
+        reuse_store = bool(args.replay_from) and (run_dir / "mem0_store").exists()
+        if reuse_store:
+            print(f"[run_eval] mem0 mode: REUSING existing store at "
+                  f"{run_dir / 'mem0_store'} (replay; no rebuild)", flush=True)
+            m0 = Mem0Backend(args.user_id, run_dir, llm_deployment=llm_dep,
+                             token_cap=args.memory_token_cap, fresh=False)
+            bstats = {"n_events": 0, "n_chunks": 0, "n_memories": 0,
+                      "reused_store": True}
+        else:
+            print(f"[run_eval] mem0 mode: building real-mem0 store up to T={t_max} "
+                  f"(LLM={llm_dep or 'AZURE_OPENAI_DEPLOYMENT_NAME'}, "
+                  f"embed=text-embedding-3-large, cap={args.memory_token_cap})...", flush=True)
+            m0 = Mem0Backend(args.user_id, run_dir, llm_deployment=llm_dep,
+                             token_cap=args.memory_token_cap)
+            bstats = m0.build(bq, t_max, {"builder_model": args.model,
+                                          "chunk_k": args.memory_chunk_k})
         snapshot_cache.attach_mem0_backend(m0)
         memory_build_stats = {
             # The real mem0ai library makes its own Azure calls (not via QueryLLM),
