@@ -313,9 +313,10 @@ Produce a triple for the fact domain below:
 
 ## Fact target
 
-  key:           {domain_key}
-  fact:          {fact}
-  scenario seed: {scenario_idea}
+  key:              {domain_key}
+  fact:             {fact}
+  scenario seed:    {scenario_idea}
+  deliverable shape (use unless it truly doesn't fit): {deliverable_hint}
 
 ## Style anchors (register/length reference ONLY — invent a DIFFERENT scenario)
 
@@ -326,7 +327,7 @@ Produce a triple for the fact domain below:
   top interests: {top_interests}
   recent activity flavor: {activity_flavor}
   home city: {home_city}
-  real moments from their history (anchor the scenario to one when natural — P2):
+  real moment(s) assigned to THIS scenario (anchor to one when natural — P2; other probes for this user are anchored to DIFFERENT moments, so do not drift to topics outside these):
 {real_anchors}
 
 ## Hard constraints
@@ -369,19 +370,34 @@ STYLE_EXAMPLES = (
 )
 
 
+# Deliverable-shape rotation — one hint per instance so a user's probe set
+# spans formats instead of converging on one (structural diversity, like
+# the per-instance anchor dealing below).
+_DELIVERABLE_HINTS = (
+    "a short message or note to another person",
+    "a form field value plus a one-line accompanying note",
+    "a marketplace / listing blurb",
+    "a quick reply to a text someone sent the user",
+    "a short bio or profile line",
+    "an order / booking / reservation note",
+)
+
+
 def _format_discovery_prompt(candidate: dict, persona_ctx: dict,
-                             real_anchors: list[str]) -> str:
+                             anchor_slice: list[str],
+                             deliverable_hint: str = "") -> str:
     return DISCOVERY_PROMPT.format(
         q_min=_USER_QUERY_MIN_WORDS,
         q_max=_USER_QUERY_MAX_WORDS,
         domain_key=candidate["key"],
         fact=candidate["fact"],
         scenario_idea=candidate.get("scenario_idea") or "(none — invent one from the user texture / real moments)",
+        deliverable_hint=deliverable_hint or "(your choice)",
         style_examples="\n".join(f"  - {s}" for s in STYLE_EXAMPLES),
         top_interests=persona_ctx.get("top_interests") or "(unknown)",
         activity_flavor=persona_ctx.get("activity_flavor") or "(unknown)",
         home_city=persona_ctx.get("home_city") or "(unknown)",
-        real_anchors="\n".join(f"    - {a}" for a in real_anchors) or "    (none)",
+        real_anchors="\n".join(f"    - {a}" for a in anchor_slice) or "    (none — use an everyday context)",
     )
 
 
@@ -657,11 +673,37 @@ def _t_test_anchors(bq: BackendQuery, backend_dir: Path, user_id: str, n: int,
     return anchors
 
 
+def _dedupe_anchors(moments: list[str], rng: random.Random, k: int) -> list[str]:
+    """Pick up to k TOPICALLY-DISTINCT moments: a candidate is skipped when
+    its content tokens overlap >50% with an already-kept anchor. Without
+    this, a dominant life moment (e.g. one trip that generated many events)
+    floods the anchor list and every scenario converges on it."""
+    rng.shuffle(moments)
+    kept: list[str] = []
+    kept_tokens: list[set[str]] = []
+    for mo in moments:
+        toks = {t for t in _tokenize_simple(mo) if len(t) > 3}
+        if not toks:
+            continue
+        if any(len(toks & kt) / max(1, len(toks | kt)) > 0.5 for kt in kept_tokens):
+            continue
+        kept.append(mo)
+        kept_tokens.append(toks)
+        if len(kept) >= k:
+            break
+    return kept
+
+
+def _tokenize_simple(text: str) -> list[str]:
+    return [w.lower() for w in _WORD_RE.findall(text or "")]
+
+
 def _real_anchors(backend_dir: Path, user_id: str, cutoff_ts: int,
-                  rng: random.Random, k: int = 8) -> list[str]:
-    """Sample short real moments (event titles/captions, calendar entries)
-    from BEFORE `cutoff_ts` so discovery can anchor scenarios in things the
-    user actually did — all strictly visible at every instance's t_test."""
+                  rng: random.Random, k: int = 12) -> list[str]:
+    """Sample short TOPICALLY-DISTINCT real moments (event titles/captions,
+    calendar entries) from BEFORE `cutoff_ts` so discovery can anchor
+    scenarios in things the user actually did — all strictly visible at
+    every instance's t_test."""
     moments: list[str] = []
     user_dir = backend_dir / user_id
     for app in _CORPUS_APPS:
@@ -697,9 +739,7 @@ def _real_anchors(backend_dir: Path, user_id: str, cutoff_ts: int,
                     moments.append(f"calendar: {title[:90]}")
         except (json.JSONDecodeError, OSError):
             pass
-    if len(moments) <= k:
-        return moments
-    return rng.sample(moments, k)
+    return _dedupe_anchors(moments, rng, k)
 
 
 def build_personal_qa_hallucination(
@@ -781,10 +821,19 @@ def build_personal_qa_hallucination(
         turn += 1
 
     out: list[dict] = []
+    n_picked = max(1, len(picked))
     for i, cand in enumerate(picked):
         key = cand["key"]
         checked_terms = cand["checked_terms"]
-        base_prompt = _format_discovery_prompt(cand, persona_ctx, real_anchors)
+        # Structural diversity: deal each instance its OWN anchor slice
+        # (disjoint when supply allows) + a rotated deliverable shape, so
+        # the per-instance calls can't all converge on the user's single
+        # most salient life moment.
+        anchor_slice = real_anchors[i::n_picked][:2] if real_anchors else []
+        deliverable_hint = _DELIVERABLE_HINTS[i % len(_DELIVERABLE_HINTS)]
+        base_prompt = _format_discovery_prompt(
+            cand, persona_ctx, anchor_slice, deliverable_hint,
+        )
         parsed: dict | None = None
         why = ""
         raw = discovery_llm.query_llm(base_prompt)
