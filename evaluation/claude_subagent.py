@@ -140,6 +140,33 @@ class SubagentResult:
     raw: dict                  # full parsed JSON result for debugging
 
 
+class ClaudeRateLimitError(RuntimeError):
+    """Raised when the Claude CLI returned a subscription/usage-limit message
+    instead of a real result.
+
+    A rate-limited `claude -p` prints a plain-text notice like
+    "You've hit your limit · resets 8:40pm (America/New_York)" on stdout with
+    returncode 0 — it is NOT valid JSON, so the json.loads below falls through
+    to `text = proc.stdout` and (without this guard) the limit notice was
+    captured AS the agent's answer and scored, silently poisoning the run
+    (status ok, garbage answer). Raising instead makes the row status=error so
+    it is excluded from scoring and re-runs cleanly via --retry_failed once the
+    limit resets. Distinct type so launchers can also back off on it."""
+
+
+# Plain-text sentinels the CLI emits when the subscription/usage limit is hit.
+# Matched only against SHORT, non-JSON output to avoid flagging a genuine
+# answer that happens to discuss rate limits.
+_RATE_LIMIT_MARKERS = (
+    "hit your limit",
+    "usage limit",
+    "reached your usage",
+    "· resets ",
+    "claude usage limit",
+    "/upgrade",
+)
+
+
 def find_claude_binary() -> str:
     """Resolve the `claude` binary path. Checks PATH then ~/.local/bin."""
     path = shutil.which("claude")
@@ -259,6 +286,16 @@ def run_subagent(
         except json.JSONDecodeError:
             # If --output-format json failed mid-stream, surface stdout as-is.
             text = proc.stdout
+
+    # Rate/usage-limit guard: a limited CLI prints a short plain-text notice
+    # (non-JSON, returncode 0). Detect it on short non-JSON output and raise so
+    # the row errors instead of scoring the notice as the agent's answer. Gate
+    # on `not raw` (JSON parse failed) + short length to avoid false-positives
+    # on real answers that mention rate limits.
+    if not raw and text:
+        probe = text.strip().lower()
+        if len(probe) < 400 and any(m in probe for m in _RATE_LIMIT_MARKERS):
+            raise ClaudeRateLimitError(text.strip()[:200])
 
     usage = (raw.get("usage") or {})
     return SubagentResult(
