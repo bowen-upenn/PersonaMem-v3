@@ -704,8 +704,8 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
             "a personal fact they never shared anywhere in history. The "
             "foil completes the task with a SPECIFIC fabricated value baked "
             "in as if known (no hedging). The gold helps with the task "
-            "while flagging the never-shared detail (asks for it or leaves "
-            "a placeholder) and asserts NO candidate value."
+            "while naturally asking for the never-shared detail and asserts "
+            "NO candidate value (and uses no fill-in-the-blank tokens)."
         ),
         "kind": "llm",
         "evidence_fn": _evidence_unanswerable_fact,
