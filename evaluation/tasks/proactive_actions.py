@@ -650,8 +650,12 @@ def run_proactive_task(
 
         parsed = extract_json_from_response(raw_response) or {}
         # The agent's structured output: should_act / action_class / content / etc.
-        # If parsing failed, treat as a "no action" with the raw text.
-        if not isinstance(parsed, dict):
+        # If parsing failed, treat as a "no action" with the raw text. An EMPTY
+        # dict counts as failed: a no-JSON response used to become literal `{}`
+        # here (raw text dropped from the stored row → the 2026-06-11
+        # rate-limit poisoning was undetectable by response inspection, and the
+        # judge graded bare silence instead of what the model actually said).
+        if not isinstance(parsed, dict) or not parsed:
             parsed = {"should_act": False, "content": raw_response, "reasoning": "(failed_to_parse)"}
 
         # Hard metrics — deterministic checks, no LLM needed.

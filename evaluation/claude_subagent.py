@@ -154,6 +154,22 @@ class ClaudeRateLimitError(RuntimeError):
     limit resets. Distinct type so launchers can also back off on it."""
 
 
+class ClaudeZeroWorkError(ClaudeRateLimitError):
+    """Raised when the CLI returned a well-formed JSON result whose token
+    usage is ALL-ZERO — i.e. no model call ever happened (rate-limited CLI
+    emitting the limit notice as `result`, broken auth, or similar).
+
+    Observed 2026-06-11: the subscription limit tripped mid-run BEFORE the
+    text-marker guard existed, and `claude -p` returned the ~18-token
+    "You've hit your limit · resets …" notice as valid result JSON with
+    usage all-zero. 254 proactive/repetition rows scored that notice as a
+    real answer (status ok) — invisible afterwards because the proactive
+    runner stores the PARSED response (`{}`), not the raw text. Usage is a
+    marker-independent invariant: any real run reads ≥1 input token, so
+    all-zero usage is never a legitimate answer. Subclasses
+    ClaudeRateLimitError so launcher backoff treats both alike."""
+
+
 # Plain-text sentinels the CLI emits when the subscription/usage limit is hit.
 # Matched only against SHORT, non-JSON output to avoid flagging a genuine
 # answer that happens to discuss rate limits.
@@ -299,6 +315,20 @@ def run_subagent(
             raise ClaudeRateLimitError(text.strip()[:200])
 
     usage = (raw.get("usage") or {})
+
+    # Zero-work guard: a parsed-JSON result whose usage is all-zero means the
+    # CLI never made a model call — there is nothing legitimate to score.
+    # (Only checked on the valid-JSON path: `raw` is empty when stdout wasn't
+    # JSON, and that path is already covered by the marker guard above.)
+    if raw and not raw.get("is_error") and proc.returncode == 0:
+        total_usage = sum(usage.get(k) or 0 for k in (
+            "input_tokens", "output_tokens",
+            "cache_read_input_tokens", "cache_creation_input_tokens"))
+        if total_usage == 0:
+            raise ClaudeZeroWorkError(
+                f"subagent result carries zero token usage — no model call "
+                f"happened (result head: {text.strip()[:120]!r})")
+
     return SubagentResult(
         text=text,
         turns=raw.get("num_turns") or 0,
