@@ -287,12 +287,13 @@ def run_subagent(
             # If --output-format json failed mid-stream, surface stdout as-is.
             text = proc.stdout
 
-    # Rate/usage-limit guard: a limited CLI prints a short plain-text notice
-    # (non-JSON, returncode 0). Detect it on short non-JSON output and raise so
-    # the row errors instead of scoring the notice as the agent's answer. Gate
-    # on `not raw` (JSON parse failed) + short length to avoid false-positives
-    # on real answers that mention rate limits.
-    if not raw and text:
+    # Rate/usage-limit guard: a limited CLI emits a short limit notice either
+    # as bare plain text (non-JSON path) OR as the `result` field of otherwise
+    # valid JSON ("You've hit your limit · resets 1:40am" — observed poisoning
+    # personas 13/14 after the first, non-JSON-only version of this guard).
+    # Check the final text on BOTH paths; the short-length gate avoids
+    # false-positives on real answers that merely mention rate limits.
+    if text:
         probe = text.strip().lower()
         if len(probe) < 400 and any(m in probe for m in _RATE_LIMIT_MARKERS):
             raise ClaudeRateLimitError(text.strip()[:200])
