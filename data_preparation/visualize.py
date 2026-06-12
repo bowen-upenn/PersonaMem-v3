@@ -2829,6 +2829,38 @@ def _gt_hidden_persona_implicit_qa(inst: dict) -> dict:
     }
 
 
+def _gt_personal_qa_hallucination(inst: dict) -> dict:
+    """personal_qa_hallucination — abstention / hallucination probe.
+
+    The user asks for a personal fact verified ABSENT from the visible
+    history; the gold abstains honestly, the foil asserts a fabricated
+    value. Flatten the dict groundtruth_preference to a readable string
+    so JS doesn't render it as [object Object].
+    """
+    gt = inst.get("groundtruth_preference") or {}
+    if not isinstance(gt, dict):
+        gt = {}
+    lines: list[str] = []
+    domain = (gt.get("fact_domain") or "").strip()
+    fact = (gt.get("fact_description") or "").strip()
+    if fact:
+        prefix = f"Unanswerable personal fact ({domain})" if domain else "Unanswerable personal fact"
+        lines.append(f"{prefix}: {fact}")
+    why = (gt.get("why_unanswerable") or "").strip()
+    if why:
+        lines.append(f"Why unanswerable: {_truncate(why, 260)}")
+    fab = (gt.get("fabricated_value") or "").strip()
+    if fab:
+        lines.append(f"Fabrication bait (asserted by the Inferior): {fab}")
+    lines.append("Expected: say the info hasn't been shared; assert no candidate value.")
+    return {
+        "example_response": inst.get("example_response", "") or "",
+        "inferior_response": inst.get("inferior_response", "") or "",
+        "groundtruth_preference": "\n".join(lines),
+        "rubric_tags": _registry_display_rubric("personal_qa_hallucination"),
+    }
+
+
 def _gt_preference_shift_followthrough(inst: dict) -> dict:
     """preference_shift_followthrough — flatten the dict groundtruth_preference
     to a readable string so JS doesn't render it as [object Object]."""
@@ -2921,6 +2953,7 @@ def _gt_hidden_persona_recommendation(inst: dict) -> dict:
 TEST_GT_EXTRACTORS = {
     "slate_ranking":                       _gt_personalized_recommendation,  # v1 alias for personalized_recommendation
     "hidden_persona_implicit_qa":          _gt_hidden_persona_implicit_qa,
+    "personal_qa_hallucination":           _gt_personal_qa_hallucination,
     "chatbot_personalized_response":   _gt_chatbot_proactive,
     "chatbot_response_proactive":          _gt_chatbot_proactive,           # v1 alias
     "over_personalization_chatbot_text":   _gt_chatbot_restraint,
@@ -3173,6 +3206,7 @@ def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
 TEST_QUERY_EXTRACTORS = {
     "slate_ranking":                       _q_personalized_recommendation,  # v1 alias for personalized_recommendation
     "hidden_persona_implicit_qa":          _q_chatbot,
+    "personal_qa_hallucination":           _q_chatbot,
     "chatbot_personalized_response":   _q_chatbot,
     "chatbot_response_proactive":          _q_chatbot,
     "over_personalization_chatbot_text":   _q_chatbot,
@@ -3385,6 +3419,7 @@ def _load_test_samples(
                 "hidden_persona_implicit_qa",
                 "preference_shift_followthrough",
                 "hidden_persona_recommendation",
+                "personal_qa_hallucination",
             }
             if task_type in _RENDER_FROM_EXTRACTOR:
                 groundtruth_preference = gt.get("groundtruth_preference", "") or groundtruth_preference

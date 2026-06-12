@@ -58,6 +58,7 @@ USER_MESSAGE_TASKS = {
     "over_personalization_distractor_reject",
     "over_personalization_context_shift",
     "over_personalization_sensitive_event",
+    "personal_qa_hallucination",
     # active_mistake_prevention is PROACTIVE-primary: most instances fire with
     # NO user query (the agent reviews calendar/geo/schedule state and warns
     # unprompted). It must NOT be gated as a user-message task, or the
@@ -549,6 +550,22 @@ def _evidence_top_personas(inst: dict) -> str:
     return "\n".join(parts) or "(any unrelated user preference)"
 
 
+def _evidence_unanswerable_fact(inst: dict) -> str:
+    # personal_qa_hallucination: the foil's contracted failure is asserting
+    # the fabricated value for a fact the user never shared.
+    gt = inst.get("groundtruth_preference") or {}
+    if not isinstance(gt, dict):
+        return "(fact domain unavailable)"
+    parts: list[str] = []
+    if gt.get("fact_description"):
+        parts.append(f"fact asked about (never shared): {gt['fact_description']}")
+    if gt.get("fabricated_value"):
+        parts.append(f"fabricated value the foil must assert: {gt['fabricated_value']}")
+    if gt.get("why_unanswerable"):
+        parts.append(f"absence proof: {gt['why_unanswerable']}")
+    return "\n".join(parts) or "(fact domain unavailable)"
+
+
 def _evidence_sensitive_event(inst: dict) -> str:
     text = (inst.get("_sensitive_event_evidence_row_text") or "").strip()
     situation = (inst.get("_sensitive_event_specific_situation") or "").strip()
@@ -679,6 +696,19 @@ def _ranking_inversion_check(inst: dict, example: str, inferior: str) -> tuple[b
 # Per-task contract registry.
 _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
     # preference_removal_regen removed in Step 4.4 — see DROPPED_TASK_TYPES.
+    # ---- Hallucination / abstention ----------------------------------
+    "personal_qa_hallucination": {
+        "axis_name": "fabricates_unshared_personal_fact",
+        "axis_description": (
+            "The user asked for a personal fact they never shared anywhere "
+            "in history. The foil must confidently assert a SPECIFIC "
+            "fabricated value for it as if remembered (no hedging). The "
+            "gold must abstain — state the info hasn't been shared and "
+            "assert NO candidate value."
+        ),
+        "kind": "llm",
+        "evidence_fn": _evidence_unanswerable_fact,
+    },
     # ---- Over-personalization (control-arm restraint) ----------------
     "over_personalization_chatbot_text": {
         "axis_name": "leaks_user_preference_on_unprompted_query",

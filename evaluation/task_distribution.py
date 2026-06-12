@@ -78,6 +78,11 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # One instance per eligible hidden persona; 16-item slate, all
     # LLM-generated general content.
     "hidden_persona_recommendation":          {"min": 3, "max": 6, "data_dependent": True},
+    # personal_qa_hallucination — abstention probe on verifiably-unshared
+    # personal facts. data_dependent: the absence pre-filter can disqualify
+    # fact domains for users whose history happens to mention them, so the
+    # per-user count varies with corpus content.
+    "personal_qa_hallucination":              {"min": 4, "max": 8, "data_dependent": True},
     # Silent geo-shift local recommendation — only fires for users with
     # mobility_class != "homebody" AND >= 2 city transitions in their event
     # stream. Homebodies generate 0 instances (the eval doesn't apply).

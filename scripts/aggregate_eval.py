@@ -208,6 +208,7 @@ JUDGE_TASK_TYPES = frozenset({
     "agentic_wrong_recipient_check",  # pr_combined (judge rubric, personalization_rubric.py)
     "chatbot_personalized_response",  # pr_combined (judge rubric)
     "hidden_persona_implicit_qa",     # deep_motivation_alignment: 0-3 LLM-judge rubric (hidden_persona_implicit_qa.py)
+    "personal_qa_hallucination",      # abstention_quality_0_10: 0-10 LLM-judge rubric (personal_qa_hallucination.py)
     "new_suggestions_chatbot",        # passed: judge alignment_score >= 2 composite (new_suggestions.py _score_chatbot_response)
     "over_personalization_chatbot_text",       # pr_combined (judge rubric)
     "over_personalization_context_shift",      # pr_combined (judge rubric)
@@ -244,6 +245,7 @@ _TASK_FAMILY_MAP = {
     # Generative chatbot
     "chatbot_personalized_response": "chatbot",
     "hidden_persona_implicit_qa": "chatbot",
+    "personal_qa_hallucination": "chatbot",
     "hidden_persona_recommendation": "ranking",
     # Over-personalization (restraint)
     "over_personalization_chatbot_text": "over_personalization",

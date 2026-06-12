@@ -4699,6 +4699,23 @@ def build_benchmark(
         hidden_persona_rec_instances = []
         print(f"[build_benchmark] WARN: hidden_persona_recommendation builder failed: {exc}")
 
+    # personal_qa_hallucination — abstention / hallucination probe. The user
+    # asks for a personal fact verified ABSENT from the full visible history
+    # (deterministic term scan + query-level re-scan); discovery LLM writes
+    # the query + honest-abstention gold + fabrication foil. Emits nothing
+    # when discovery_llm is unavailable.
+    try:
+        from evaluation.tasks.personal_qa_hallucination import (
+            build_personal_qa_hallucination,
+        )
+        personal_qa_hallucination_instances = build_personal_qa_hallucination(
+            bq, user_id, t_probe, discovery_llm=discovery_llm, rng_seed=rng_seed,
+            backend_dir=backend_dir,
+        )
+    except Exception as exc:
+        personal_qa_hallucination_instances = []
+        print(f"[build_benchmark] WARN: personal_qa_hallucination builder failed: {exc}")
+
     # Agentic tasks T6-T19.
     # - E: builders that fix t_test=t_probe get their instances scattered
     #   across the observation window.
@@ -4950,6 +4967,7 @@ def build_benchmark(
         "preference_shift_followthrough":         preference_shift_instances,
         "hidden_persona_implicit_qa":             hidden_persona_implicit_instances,
         "hidden_persona_recommendation":          hidden_persona_rec_instances,
+        "personal_qa_hallucination":              personal_qa_hallucination_instances,
         "at_ai_directive_followup":               e2_instances,
         # daily_personalized_briefing removed in Step 4.3 (e3_instances empty).
         # workstream D: e4 builder now emits the personalized_recommendation
@@ -4992,6 +5010,7 @@ def build_benchmark(
         "hidden_persona_implicit_qa",
         "preference_shift_followthrough",
         "over_personalization_sensitive_event",
+        "personal_qa_hallucination",
     )
     _zeroed = [t for t in DISCOVERY_GATED
                if _counts.get(t, 0) == 0
