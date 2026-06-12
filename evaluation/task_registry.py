@@ -1150,6 +1150,98 @@ def get_expected_behavior(task_type: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Capability axis — does the task primarily test EXPLICIT RETRIEVAL or
+# IMPLICIT INFERENCE over the time-masked history?
+#
+#   explicit_retrieval — the ground truth is anchored to specific artifacts
+#       literally present in history (a typed @ai directive, a particular
+#       post / DM thread, a recorded stance); success = locate them and use
+#       them faithfully.
+#   implicit_inference — the ground truth is a latent construct never
+#       literally stated (induced taste, a hidden persona, the current city,
+#       a saturation/fatigue state, an unprompted act-vs-restrain policy
+#       call); success = derive it by reasoning over behavioral patterns.
+#   mixed — both channels contribute materially, or instances split between
+#       them (noted per entry).
+#
+# Assignment follows each task's *discriminating contract* — the failure its
+# foil / headline metric is built to catch (see DESIGN.md flaw-kind table:
+# factual_error foils ⇒ retrieval fidelity; voice_mismatch foils ⇒ style
+# induction; disliked_recent foils ⇒ taste filtering) — NOT its surface or
+# trigger. E.g. new_suggestions' `chatbot_ask` trigger is an explicit user
+# ask, but the gold requires hidden-persona reasoning (the blind-check +
+# persona-grounded answerability dual gate proves it is not derivable from
+# the query text alone), so the task is implicit_inference.
+#
+# Consumed by scripts/aggregate_eval.py for the by-axis micro roll-up in
+# token_accuracy_table.csv.
+# ---------------------------------------------------------------------------
+
+CAPABILITY_AXES = ("explicit_retrieval", "implicit_inference", "mixed")
+
+CAPABILITY_AXIS_BY_TASK: dict[str, str] = {
+    # -- explicit_retrieval: find + faithfully use stated artifacts ---------
+    "at_ai_directive_followup":         "explicit_retrieval",  # honor the user's literal @ai directive at 24h/72h/7d lag
+    "agentic_vague_refind":             "explicit_retrieval",  # locate ONE specific past post (factual_error foil)
+    "agentic_dm_digest":                "explicit_retrieval",  # faithful paraphrase of actual DM threads (factual_error foil)
+    "agentic_group_dm_summary":         "explicit_retrieval",  # faithful per-participant thread summary (factual_error foil)
+
+    # -- implicit_inference: derive a latent construct from patterns --------
+    "hidden_persona_implicit_qa":       "implicit_inference",  # serve a never-stated hidden persona without naming it
+    "hidden_persona_recommendation":    "implicit_inference",  # rank by hidden-persona resonance (gold is subtle by design)
+    "new_suggestions_recsys":           "implicit_inference",  # pivot anchored on hidden personas (needed-persona dual gate)
+    "new_suggestions_chatbot":          "implicit_inference",  # same gate; trigger may be explicit, the GOLD is not
+    "personalized_recommendation":      "implicit_inference",  # rank by taste induced from engagement; no user query at all
+    "short_vs_long_term_lifecycle":     "implicit_inference",  # infer a short-term intent has expired (nothing states it)
+    "local_recommendation_geo_shift":   "implicit_inference",  # infer the current city — the query never names it
+    "over_personalization_chatbot_text":       "implicit_inference",  # judge that THIS query doesn't warrant personalization
+    "over_personalization_sensitive_event":    "implicit_inference",  # episode signal is planted implicit engagement; restraint is a judgment
+    "over_personalization_repetition_recsys":  "implicit_inference",  # infer saturation from own prior responses
+    "over_personalization_repetition_chatbot": "implicit_inference",  # same
+    "active_mistake_prevention":        "implicit_inference",  # cross-signal contradiction discovery (calendar × geo × engagement)
+    "proactive_close_friend_update":    "implicit_inference",  # unprompted act-vs-restrain policy call
+    "restraint_sensitive_event_silence": "implicit_inference",  # unprompted restraint inside a sensitive window
+    "proactive_friend_feed_react":      "implicit_inference",  # act iff the friend's post matches induced taste
+    "proactive_trending_feed_react":    "implicit_inference",  # same, for trending content
+    "proactive_overactive_check":       "implicit_inference",  # negative control: infer there is no trigger
+    "agentic_community_post":           "implicit_inference",  # voice induction — style is never stated (voice_mismatch foil)
+    "agentic_send_post":                "implicit_inference",  # voice induction; content is handed to the agent
+    "agentic_cross_app_repost":         "implicit_inference",  # style adaptation dominates; source post is identified for it
+    "agentic_auto_reply":               "implicit_inference",  # voice + relationship-depth register (voice_mismatch foil)
+    "agentic_trending_alert":           "implicit_inference",  # map given trends onto induced taste/dislikes (disliked_recent foil)
+
+    # -- mixed: both channels material, or instances split ------------------
+    "chatbot_personalized_response":    "mixed",  # held-out pref is evidenced by the user's own explicit content; weaving it into THIS query is relevance inference
+    "preference_shift_followthrough":   "mixed",  # stance-shift flavor = retrieve the LATER explicit stance (knowledge-update); expiry flavor = infer the intent ended
+    "over_personalization_sycophancy":  "mixed",  # memory subtype = verify a fabricated claim against recorded history; fact/value subtypes = honesty judgment
+    "over_personalization_context_shift": "mixed",  # ask-to-forget carve-out = honor an explicit directive; sympathy-card/tax scenarios = social-context judgment
+    "agentic_proactive_daily_catchup":  "mixed",  # retrieve actual recent cross-app activity, filter by induced taste (disliked_recent foil)
+    "agentic_wrong_recipient_check":    "mixed",  # explicit friend-graph lookup + ambiguity-caution judgment (task retired; tag kept for historical rows)
+
+    # Dropped task types (DROPPED_TASK_TYPES) — tagged only so historical
+    # results.csv rows don't aggregate as axis="unknown".
+    "daily_personalized_briefing":      "mixed",
+    "preference_removal_regen":         "explicit_retrieval",
+    "agentic_draft_audit":              "mixed",
+}
+
+# Static-data completeness guard: every registered task type must carry an
+# axis, and every axis value must be canonical. Fires at import time only
+# when this file is edited inconsistently — never on live data.
+_AXIS_UNTAGGED = set(TASK_TYPE_META) - set(CAPABILITY_AXIS_BY_TASK)
+assert not _AXIS_UNTAGGED, (
+    f"task types missing a CAPABILITY_AXIS_BY_TASK entry: {sorted(_AXIS_UNTAGGED)}"
+)
+assert set(CAPABILITY_AXIS_BY_TASK.values()) <= set(CAPABILITY_AXES)
+
+
+def get_capability_axis(task_type: str) -> str:
+    """explicit_retrieval / implicit_inference / mixed for a task_type
+    (legacy names normalized first); 'unknown' for unregistered types."""
+    return CAPABILITY_AXIS_BY_TASK.get(normalize_task_type(task_type), "unknown")
+
+
+# ---------------------------------------------------------------------------
 # Fixed [system prompt] text per task_type for instances with no real user
 # message. When `prepare_eval_data._project_row` finds `query_text` empty
 # (no `query` / `user_query` / `user_message` on the instance), it falls

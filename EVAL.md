@@ -944,7 +944,7 @@ Results land under `benchmark/{user_id}/runs/{timestamp}/`:
 Cross-persona aggregation (`python scripts/aggregate_eval.py`):
 
 - `eval_aggregate/summary_by_task.csv` — per-task mean with `quality_flag` (`ok` / `insufficient_n` / `silence_dominated` / `hard_fail_dominated`) + `task_family`.
-- `eval_aggregate/token_accuracy_table.csv` — headline accuracy + token cost per task + the `ALL (micro, row-weighted)` roll-up row + per-family by-class breakouts (ranking, chatbot, agentic, proactive, over_personalization), all row-weighted (micro). Macro/adjusted-macro roll-ups removed.
+- `eval_aggregate/token_accuracy_table.csv` — headline accuracy + token cost per task + the `ALL (micro, row-weighted)` roll-up row + per-family by-class breakouts (ranking, chatbot, agentic, proactive, over_personalization) + per-capability-axis breakouts (`explicit_retrieval` / `mixed` / `implicit_inference` — see "Capability axis" under Interpreting metrics), all row-weighted (micro). Macro/adjusted-macro roll-ups removed.
 - `eval_aggregate/summary_overall.json` — grand totals + E6 `paired_f1` + `accuracy_pct_micro`.
 
 ### Token accounting
@@ -1007,6 +1007,22 @@ per-dim pass-rate table. Cost ≈ 5 mini-tier calls per applicable query ×
 | `agentic_*` (T6-T19) | `pr_combined_personalization_score / max` | Same as chatbot — personalization quality, NOT tool-call pass rate | Higher = better |
 | `hidden_persona_implicit_qa` | `deep_motivation_alignment` (0-3 judge) | Did the agent serve the hidden persona WITHOUT naming it? | Higher = better |
 | `active_mistake_prevention` | `correct` (warn + foil) | Paired warn-recall + foil-precision; foil requires substantive response (empty = fail) | Higher = better |
+
+### Capability axis: explicit retrieval vs implicit inference
+
+Every task type carries a `capability_axis` tag — `evaluation/task_registry.py::CAPABILITY_AXIS_BY_TASK` (+ `get_capability_axis`, which normalizes legacy names; completeness against `TASK_TYPE_META` is enforced by an import-time assert). It answers: does the task test **finding stated artifacts** in the time-masked history, or **deriving constructs that are never literally stated**?
+
+| Axis | Meaning | Tasks |
+|---|---|---|
+| `explicit_retrieval` | GT is anchored to artifacts literally present in history (a typed `@ai` directive, a specific post / DM thread); success = locate + use them faithfully | `at_ai_directive_followup`, `agentic_vague_refind`, `agentic_dm_digest`, `agentic_group_dm_summary` |
+| `implicit_inference` | GT is a latent construct never literally stated — induced taste, a hidden persona, the current city, a saturation/fatigue state, an unprompted act-vs-restrain policy call | `hidden_persona_implicit_qa`, `hidden_persona_recommendation`, `new_suggestions_*`, `personalized_recommendation`, `short_vs_long_term_lifecycle`, `local_recommendation_geo_shift`, `over_personalization_{chatbot_text, sensitive_event, repetition_*}`, `active_mistake_prevention`, all `proactive_*` + `restraint_*`, voice-authoring agentic tasks (`community_post`, `send_post`, `cross_app_repost`, `auto_reply`), `agentic_trending_alert` |
+| `mixed` | Both channels contribute materially, or instances split between them | `chatbot_personalized_response`, `preference_shift_followthrough` (stance-shift flavor = knowledge-update retrieval; expiry flavor = inference), `over_personalization_sycophancy` (memory subtype = verify vs recorded history), `over_personalization_context_shift` (ask-to-forget carve-out = explicit directive), `agentic_proactive_daily_catchup`, `agentic_wrong_recipient_check` |
+
+Assignment follows each task's **discriminating contract** — the failure its foil / headline metric is built to catch (factual_error foils ⇒ retrieval fidelity; voice_mismatch foils ⇒ style induction; disliked_recent foils ⇒ taste filtering; see DESIGN.md's flaw-kind table) — NOT its surface or trigger. E.g. `new_suggestions`' `chatbot_ask` trigger is an explicit user ask, but the gold requires hidden-persona reasoning (the blind-check + persona-grounded answerability dual gate proves the answer is not derivable from the query text alone), so the task is `implicit_inference`.
+
+**Reporting**: `token_accuracy_table.csv` carries a per-task `capability_axis` column plus three `  by-axis:` micro (row-weighted) roll-up rows; the same three numbers are lifted into `summary_overall.json.accuracy_pct_by_capability_axis`. Works retroactively on any saved `results.csv` (the tag is a static task property).
+
+**Caveat**: the benchmark is inference-heavy *by design* (~80% of instances on a typical persona land in `implicit_inference`) — it is a personalization benchmark, not a memory-QA benchmark, so the taxonomy is by personalization surface and the capability axis is a cross-cutting projection. The `explicit_retrieval` slice is small-n (≈20 rows/3 personas) and dominated by the known-hard `at_ai_directive_followup`; read per-task rows before drawing axis-level conclusions.
 
 ### Metric artifact safeguards
 

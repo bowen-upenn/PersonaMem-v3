@@ -400,6 +400,8 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
     """Group rows by task_type; produce one row of accuracy + token means.
     Append a final ALL row with n-weighted accuracy + token means.
     """
+    from evaluation.task_registry import get_capability_axis
+
     by_task: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
         by_task[r.get("task_type", "")].append(r)
@@ -457,6 +459,7 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
             "accuracy_pct": round(acc_mean, 2) if acc_mean is not None else "",
             "quality_flag": flag,
             "task_family": _TASK_FAMILY_MAP.get(task, "other"),
+            "capability_axis": get_capability_axis(task),
             "mean_input_tokens": round(_mean(in_toks), 1) if in_toks else 0,
             "mean_output_tokens": round(_mean(out_toks), 1) if out_toks else 0,
             "mean_cost_usd": round(_mean(costs), 4) if costs else 0,
@@ -544,6 +547,38 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
             "accuracy_pct": round(fam_correct[fam] / fam_rows[fam], 2),
             "quality_flag": "",
             "task_family": fam,
+            "mean_input_tokens": "",
+            "mean_output_tokens": "",
+            "mean_cost_usd": "",
+            "mean_duration_ms": "",
+        })
+
+    # Capability-axis roll-ups — MICRO (row-weighted), same math as by-class.
+    # explicit_retrieval = GT anchored to artifacts literally in history;
+    # implicit_inference = GT is a latent construct derived from behavioral
+    # patterns; mixed = both channels material. Source of truth:
+    # evaluation/task_registry.py::CAPABILITY_AXIS_BY_TASK.
+    ax_correct: dict[str, float] = defaultdict(float)
+    ax_rows: dict[str, int] = defaultdict(int)
+    for r in table:
+        if str(r["task_type"]).startswith(("ALL", "  by-")):
+            continue
+        ax = r.get("capability_axis")
+        acc = r.get("accuracy_pct")
+        n = r.get("n")
+        if ax and isinstance(acc, (int, float)) and isinstance(n, int) and n > 0:
+            ax_correct[ax] += acc * n
+            ax_rows[ax] += n
+    for ax in ("explicit_retrieval", "mixed", "implicit_inference", "unknown"):
+        if not ax_rows.get(ax):
+            continue
+        table.append({
+            "task_type": f"  by-axis: {ax}",
+            "n": ax_rows[ax],
+            "accuracy_pct": round(ax_correct[ax] / ax_rows[ax], 2),
+            "quality_flag": "",
+            "task_family": "",
+            "capability_axis": ax,
             "mean_input_tokens": "",
             "mean_output_tokens": "",
             "mean_cost_usd": "",
@@ -665,11 +700,19 @@ def aggregate_run_set(all_rows: list[dict], per_persona: dict[str, list[dict]],
             overall["accuracy_pct_micro"] = r["accuracy_pct"]
         elif r["task_type"] == "ALL-JUDGE (micro, judge tasks only)":
             overall["accuracy_pct_micro_judge"] = r["accuracy_pct"]
+        elif str(r["task_type"]).startswith("  by-axis: "):
+            # explicit_retrieval / mixed / implicit_inference micro split —
+            # answers "do we distinguish explicit retrieval from implicit
+            # reasoning?" without parsing the printed table.
+            overall.setdefault("accuracy_pct_by_capability_axis", {})[
+                str(r["task_type"]).removeprefix("  by-axis: ")
+            ] = r["accuracy_pct"]
     (out_dir / "summary_overall.json").write_text(
         json.dumps(overall, indent=2, ensure_ascii=False), encoding="utf-8",
     )
     table_path = out_dir / "token_accuracy_table.csv"
     cols = ["task_type", "n", "accuracy_pct", "quality_flag", "task_family",
+            "capability_axis",
             "mean_input_tokens", "mean_output_tokens", "mean_cost_usd", "mean_duration_ms"]
     with table_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=cols)
