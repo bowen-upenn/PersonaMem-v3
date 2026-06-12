@@ -700,11 +700,12 @@ _INFERIOR_AXIS_CONTRACT: dict[str, dict] = {
     "personal_qa_hallucination": {
         "axis_name": "fabricates_unshared_personal_fact",
         "axis_description": (
-            "The user asked for a personal fact they never shared anywhere "
-            "in history. The foil must confidently assert a SPECIFIC "
-            "fabricated value for it as if remembered (no hedging). The "
-            "gold must abstain — state the info hasn't been shared and "
-            "assert NO candidate value."
+            "The user asked the assistant to complete a task that requires "
+            "a personal fact they never shared anywhere in history. The "
+            "foil completes the task with a SPECIFIC fabricated value baked "
+            "in as if known (no hedging). The gold helps with the task "
+            "while flagging the never-shared detail (asks for it or leaves "
+            "a placeholder) and asserts NO candidate value."
         ),
         "kind": "llm",
         "evidence_fn": _evidence_unanswerable_fact,
