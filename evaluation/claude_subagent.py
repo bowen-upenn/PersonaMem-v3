@@ -82,10 +82,28 @@ BUDGET_USD_BY_TASK = {t: HEAVY_BUDGET_USD for t in HEAVY_TASKS}
 # input/output/cache, so the ratio is exact regardless of token mix).
 MODEL_PRICE_FACTOR = {"opus": 5.0 / 3.0, "sonnet": 1.0, "haiku": 1.0 / 3.0}
 
+# Per-model TURN headroom. Opus runs more tool turns per task (more thorough
+# search/read) and hit the 30-turn heavy cap BEFORE emitting its final answer
+# on ~11% of personalized_recommendation rows (2026-06-12 audit) — the empty
+# result then scored a hard 0, costing ~5 pts on the objective micro even
+# though opus had done MORE work than the rows that finished. Give opus a
+# modest turn-budget multiplier so the final-answer turn lands; the dollar
+# budget already scales by _price_factor and the 600s subprocess timeout is
+# the real safety bound. Sonnet/haiku unchanged (no empty-cap artifact).
+MODEL_TURN_FACTOR = {"opus": 1.5}
+
 
 def _price_factor(model: str) -> float:
     m = (model or "").lower()
     for key, factor in MODEL_PRICE_FACTOR.items():
+        if key in m:
+            return factor
+    return 1.0
+
+
+def _turn_factor(model: str) -> float:
+    m = (model or "").lower()
+    for key, factor in MODEL_TURN_FACTOR.items():
         if key in m:
             return factor
     return 1.0
@@ -249,7 +267,9 @@ def run_subagent(
 
     # Per-task caps: turns (loop bound) + model-scaled dollar budget. The 6 heavy
     # tasks get the doubled values; explicit args override the computed defaults.
-    max_turns = TURNS_BY_TASK.get(task_type, DEFAULT_MAX_TURNS)
+    # Turns also scale by model (opus 1.5×) so its extra search depth doesn't
+    # consume the whole budget before the final-answer turn (2026-06-12 audit).
+    max_turns = round(TURNS_BY_TASK.get(task_type, DEFAULT_MAX_TURNS) * _turn_factor(model))
     if max_budget_usd is None:
         max_budget_usd = round(
             BUDGET_USD_BY_TASK.get(task_type, DEFAULT_BUDGET_USD) * _price_factor(model), 4)
