@@ -148,6 +148,12 @@ def _parse_args() -> argparse.Namespace:
                    help="Temperature for memory-build calls (com/mem0 modes; default 0.0 for determinism)")
     p.add_argument("--limit", type=int, default=None,
                    help="Cap total query rows (for quick smoke tests)")
+    p.add_argument("--task", default=None,
+                   help="Comma-separated task_type filter (legacy names "
+                        "normalized). Only matching rows run — combine with "
+                        "--resume to surgically fill a newly-added task type "
+                        "into an existing run_dir without touching anything "
+                        "else (e.g. --task personal_qa_hallucination).")
     p.add_argument("--resume", action="store_true",
                    help="Skip queries already present in {run_dir}/results.csv")
     p.add_argument("--retry_failed", action="store_true",
@@ -694,6 +700,12 @@ def main() -> int:
     overlay_path.touch(exist_ok=True)
 
     rows = _load_queries(queries_path)
+    if args.task:
+        from evaluation.task_registry import normalize_task_type as _norm
+        wanted = {_norm(t.strip()) for t in args.task.split(",") if t.strip()}
+        pre = len(rows)
+        rows = [r for r in rows if _norm(r.get("task_type", "")) in wanted]
+        print(f"[run_eval] --task filter {sorted(wanted)}: {pre} -> {len(rows)} rows")
     if args.limit:
         rows = rows[: args.limit]
 
