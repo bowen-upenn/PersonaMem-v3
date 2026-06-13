@@ -52,9 +52,18 @@ def _pick_runs(mode: str) -> list[Path]:
 
 
 def _load_rows(results_csv: Path) -> list[dict]:
+    # Single ingestion chokepoint: rows whose (normalized) task_type is in
+    # task_registry.DROPPED_TASK_TYPES are filtered out HERE so every
+    # downstream consumer — token table, by_task, by_persona, overall micro,
+    # by-axis/by-class, the cross-mode comparison, E6 pairing — uniformly
+    # excludes retired tasks. Historical CSV rows still parse; they just no
+    # longer count toward any reported number.
+    from evaluation.task_registry import DROPPED_TASK_TYPES, normalize_task_type
     rows: list[dict] = []
     with results_csv.open("r", encoding="utf-8") as f:
         for r in csv.DictReader(f):
+            if normalize_task_type(r.get("task_type", "")) in DROPPED_TASK_TYPES:
+                continue
             mj = r.get("metrics_json") or ""
             try:
                 metrics = json.loads(mj) if mj else {}

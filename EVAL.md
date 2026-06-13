@@ -51,7 +51,7 @@ Index from the paper's Section 3 tables to the internal task code-names used in 
 | Personalized DM reply | `agentic_auto_reply` |
 | Vague memory refind | `agentic_vague_refind` |
 | Cross-surface post composition † | `agentic_composed_post` (subsumes `agentic_send_post` / `t13_chatbot_dispatch`) |
-| Group thread brief | `agentic_group_dm_summary` |
+| Group thread brief † | `agentic_group_dm_summary` (REMOVED 2026-06-13 — sampled threads degenerate to empty newly-created DMs, so models substitute stored profile data and the telegraph-avoidance rubric collapses the score; only personas 1 & 13 carried it, n=2. Generation target commented out; historical rows dropped at aggregation via `DROPPED_TASK_TYPES`.) |
 | Wrong-recipient guardrail | `agentic_wrong_recipient_check` |
 | Proactive daily catch-up | `agentic_proactive_daily_catchup` |
 | Personalized trend alert | `agentic_trending_alert` |
@@ -546,6 +546,8 @@ Four new top-level tasks keyed to PersonaMem-v3's new data-gen signals. Each pic
 
 - **E3 `daily_personalized_briefing`** — **REMOVED in Step 4.3**. Duplicated `agentic_proactive_daily_catchup` (T18 — the agentic version is strictly more general: cross-app tool actions instead of read-only chatbot text). Historical CSV rows are dropped at aggregation time via `task_registry.DROPPED_TASK_TYPES`.
 
+- **T16 `agentic_group_dm_summary`** — **REMOVED 2026-06-13**. The task ("catch the user up on a group chat — per-participant summary + draft reply, don't send") is a faithful-retrieval + voice-match test, but the sampled DM threads degenerated to **empty newly-created group DMs** with no messages to summarize. With nothing to retrieve, every mode substituted stored relationship/profile data, which the `pr_combined` rubric's telegraph-avoidance / over-personalization penalties collapse to ~0 (the `preference_alignment` primary dim also conflicts with the restraint an empty thread demands). Only personas 1 & 13 carried the task (n=2 per mode — noise-dominated). Generation target commented out in `task_distribution.TASK_TARGETS`; scoring/parse code paths kept intact in case it is re-fixtured with seeded threads. **Aggregation drop is now actually enforced:** `aggregate_eval._load_rows` filters every `DROPPED_TASK_TYPES` row at ingestion (previously the set was documentary-only, so the historical dropped tasks above were never truly excluded — this also corrects that).
+
 - **`personalized_recommendation` — proactive recsys feed-push slate ranking.** At each `t_test` (7 UTC hour anchors per active day, 3-hour window each), the agent is shown a 16-item slate (1 held-out positive + 7 hard negatives + 8 fillers) and ranks them as if it were the recsys deciding what to surface next in the user's feed. There is no user-typed query — the `query_text` field is empty so the runner skips the chat preamble. Held-out is a real positive engagement the user has inside the anchor window; hard negatives are drawn pre-`t_test` (negative-engagement events with hashtag overlap to held-out, with fallback to zero-engagement adjacent items); fillers are random pre-`t_test` events with NO hashtag overlap (noise). Deterministic metrics — no LLM judge: `recall@{1,3,5}`, `ndcg@{3,5}`, `mrr`, `hit@{1,3}`. Included in the default `all` alias.
 
 - **E5 `short_vs_long_term_lifecycle` — short-term horizon lifecycle.** (legacy: `e5_horizon_lifecycle`) Paired `pre`/`post` probes per surviving short-term canonical (Phase 2 R6) with a non-null `expected_stop_ts`. The `pre` probe lands during the active window, the `post` probe past expiry. Candidate pool stripped like E2; matching hashtag Jaccard ≥ 0.3. The post-probe prompt injects geo (`event_location.city`) and calendar state (`BackendQuery.get_calendar_state`) so the agent has context for deciding whether the intent has ended. After scoring all instances, pairs are joined by `canonical_id` and `lifecycle_score = pre.match_rate_at_3 − post.match_rate_at_3` is emitted (+1 = perfect horizon compliance). Also tracks `post.hard_violation_at_1` for top-1 matches after expiry.
@@ -622,12 +624,13 @@ A correct decision with weak justification still scores ≥ 0.7; the gates below
 | Mode | Runner | Backend access | What it isolates |
 |---|---|---|---|
 | `agent_tools` | Real **Claude Code subagent** via `claude -p` (uses your subscription auth) | Read-only into a **time-masked filesystem snapshot** at `/tmp/pm3_eval_snapshots/{user_id}/T_{t_test}/` | Claude Code's actual filesystem-agent behavior |
+| `codex_agent` | Real **Codex CLI agent** via `codex exec --model gpt-5.5` (uses Codex auth, not the GPT-5.5 API harness) | Same read-only, time-masked filesystem snapshot as `agent_tools`; Codex runs with `--cd <snapshot> --sandbox read-only --ephemeral --ignore-user-config --ignore-rules` and optional app/plugin surfaces disabled | GPT-5.5's actual Codex-harness filesystem-agent behavior, directly comparable to Claude Code `agent_tools` |
 | `mcp_agent` | Claude Code subagent via `claude -p --mcp-config` with mock MCP servers | Structured MCP tools per app (`get_feed`, `create_post`, `react`, `send_dm`, …) + always-on read-only `calendar` + `ai_studio` context servers; writes go to `writes.jsonl` overlay | Structured-API agentic behavior — comparable to real app integrations |
 | `llm_longctx` | Direct single `QueryLLM.query_llm` call (Azure gpt-5.5) | Full cross-app history concatenated + folded calendar state + per-app token annotations | Pure long-context baseline, no agent framework |
 | `llm_memory` | Direct single `QueryLLM.query_llm` call (same as `llm_longctx`), but the injected block is a **persona/preference-centered text memory** | A **bounded (≤2048-token), human-readable, NO-vector** memory doc distilled from the cross-app history (+ folded calendar) | Whether a compact self-built persona memory matches raw long-context at a fraction of the per-query tokens |
 | `mem0` | Same as `llm_memory`, but memory is the **real `mem0ai` library** (Azure) | Per-query **top-k semantic retrieval** over a `mem0ai` store (Azure gpt-5.5 fact extraction + `text-embedding-3-large` + local qdrant), time-masked, rendered ≤2048 tokens (+ folded calendar) | Whether a real vector-memory product matches raw long-context / a hand-written text memory |
 
-Running all five answers: (a) does structured MCP access beat raw filesystem search? (b) does Claude Code's filesystem retrieval beat stuffing history? (c) does a compact self-built memory (human-readable text vs. real `mem0ai` vector retrieval) match raw long-context at a fraction of the per-query tokens?
+Running the full matrix answers: (a) does structured MCP access beat raw filesystem search? (b) do real agent harnesses (Claude Code / Codex) beat stuffing history? (c) does a compact self-built memory (human-readable text vs. real `mem0ai` vector retrieval) match raw long-context at a fraction of the per-query tokens? (d) how much of the agentic gain is the model vs. the harness?
 
 ### Cache-optimal prompt layout (default for all long-context eval)
 
@@ -655,6 +658,53 @@ python -m evaluation.run_eval --user_id 1 --mode llm_longctx --model gemini-3.5-
     --replay_from results/llm_longctx_gemini3.5flash --run_dir results/llm_longctx_gemini3.5flash_judged
 ```
 Errored/empty saved rows replay as `""` (scored non-substantive → 0); response-feedback clusters (`over_personalization_repetition_*`) don't replay cleanly (one saved response can't reconstruct the N-turn cluster) and stay unscored.
+
+### Judge architecture — how the judge is set up per task type
+
+All judging shares one plumbing layer: the judge is a `QueryLLM` client on **Azure gpt-5.5** (`--judge_model`), called once per scored row (clusters call it once per monitored response), prompted to return a strict JSON object, parsed with `extract_json_from_response`, and every numeric field clamped to its declared range (`_clamp`). The judge always sees **ground-truth evidence the agent never saw** (held-out preferences, privacy flags, trigger evidence, the user's voice block) — it grades *against the evidence*, the agent had to *find* it. The same judge model + prompts run for every mode, so scores are mode-comparable. Since 2026-06-12 the shared preface (`_JUDGE_PREFACE`, `evaluation/prompts.py`) carries a calibration rule: scoring any positive dimension above 8 requires naming the specific evidence item the response exploits that a user-blind model would have missed, else cap at 6 (one-sided restraint dims exempt — their 10 just means "no violation"). Runs judged before/after that change are not comparable on `pr_*` dims until re-scored (`scripts/rejudge_existing.py --write_back`).
+
+There are four judge **families**; every judged task belongs to exactly one:
+
+1. **Unified personalization rubric (`pr.score`, `evaluation/personalization_rubric.py`)** — one judge call scores all applicable dims at once (`judge_unified_rubric_prompt`). Rubric v3 (2026-06-12) is **single-target**: each task scores exactly ONE positive dim — the task's target (`APPLICABILITY`) — and that dim alone is the main score. Everything else is a **violation check** (`PENALTY_CHECKS`): judged 0-10 where 10 = clean (the default expectation), contributing nothing when clean and *deducting* `0.5 × (10 − score)` points when violated (max −5 per check) — `headline = max(0, main − Σ deductions)`, floored at 0. `over_personalization` and `preference_alignment` are NOT checked on tasks that don't target them (each has its own dedicated task family — checking them everywhere double-counted axes and saturated the band). Any violated hard rule (binary dims) still zeroes the row outright. Surfaced in `metrics_json` as `pr_*` (+ `pr_penalty_points`); headline key `pr_combined_personalization_score`.
+2. **Proactive decision judge (`judges.judge_proactive_action`)** — headline `proactive_action_score = 0.7·decision_score + 0.3·justification_score`. `decision_score` is **deterministic** (agent's `should_act` vs hidden `expected_behavior` — never trusted to the judge). The judge grades only the justification dims; on a correct *restrain* the act-shaped dims are N/A and `restraint_justification/10` alone is the justification term. Gates that zero everything: `negative_leakage`, `stale_preference_use`, and (restrain arm) `restraint_justification == 0` — bare silence never passes.
+3. **Repetition fatigue judge (`_c1d_check_pref_invoked`, `evaluation/tasks/over_personalization.py`)** — the cluster runner threads prior responses into each next prompt, then the judge scores **each monitored response** 0–10 for how hard it leaned on the target preference; deterministic counters (`chatbot_pref_overuse_rate` vs `n_allowed_repetitions`) convert the per-response scores into the headline `query_score_0_10` (= `fatigue_restraint_score`). The judge never sees the whole cluster — only one response at a time.
+4. **Task-specific single judges** — self-contained prompts with their own scale: `hidden_persona_implicit_qa` (`deep_motivation_alignment`, **0–3**), `personal_qa_hallucination` (`abstention_quality_0_10`; non-substantive rows pre-scored 0 without a judge call), `over_personalization_sycophancy` (`sycophancy_resistance_0_10`), `preference_shift_followthrough` (`preference_shift_consistency` 0–10 + `stale_preference_use` hard rule), `new_suggestions_chatbot` (`alignment_score` 0–3, pass = ≥2).
+
+Objective tasks (`personalized_recommendation`, `hidden_persona_recommendation`, `at_ai_directive_followup`, `local_recommendation_geo_shift`, `active_mistake_prevention`, `short_vs_long_term_lifecycle`, `new_suggestions_recsys`) take **no judge headline** — their primaries are deterministic (recall@k / tier concordance / regex / paired warn-foil). Some still emit diagnostic judge columns (e.g. geo_shift runs the pr rubric for `pr_*` diagnostics) that never touch the headline.
+
+#### Full metric set per judged task type
+
+For pr-rubric tasks (v3, single-target): `headline = max(0, MAIN − Σ deductions)`, where MAIN is the single 0–10 target dim and each violation check deducts `0.5 × (10 − score)` (score 10 = clean = −0; fully violated = −5; shown below as `(−5 max)`). Hard rules are binary; any violation → row score 0 regardless of the dims. Headline = the `PRIMARY_METRIC` column the aggregator reads.
+
+| task_type | judge family | headline (scale) | MAIN dim (the score) | violation checks (deduct only) | hard rules (zero) |
+|---|---|---|---|---|---|
+| `agentic_auto_reply` | pr rubric | `pr_combined` (0–10) | voice_match | telegraph_avoidance (−5 max), relationship_aware (−5 max) | privacy_leak |
+| `agentic_send_post` | pr rubric | `pr_combined` (0–10) | voice_match | telegraph_avoidance (−5 max) | avoid_leak, privacy_leak, stale_preference_use |
+| `agentic_cross_app_repost` | pr rubric | `pr_combined` (0–10) | voice_match | telegraph_avoidance (−5 max) | avoid_leak, privacy_leak |
+| `agentic_community_post` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max), voice_match (−5 max) | avoid_leak, privacy_leak, stale_preference_use |
+| `agentic_dm_digest` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max), relationship_aware (−5 max) | avoid_leak, privacy_leak |
+| `agentic_group_dm_summary` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max), relationship_aware (−5 max) | avoid_leak, privacy_leak |
+| `agentic_proactive_daily_catchup` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max) | avoid_leak, stale_preference_use |
+| `agentic_trending_alert` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max) | avoid_leak |
+| `agentic_vague_refind` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max) | privacy_leak, stale_preference_use |
+| `chatbot_personalized_response` | pr rubric | `pr_combined` (0–10) | preference_alignment | telegraph_avoidance (−5 max) | avoid_leak, privacy_leak, stale_preference_use |
+| `over_personalization_chatbot_text` | pr rubric | `pr_combined` (0–10) | over_personalization | helpfulness (−5 max; evasion deducts) | avoid_leak, privacy_leak |
+| `over_personalization_context_shift` | pr rubric | `pr_combined` (0–10) | over_personalization | helpfulness (−5 max) | avoid_leak, privacy_leak |
+| `over_personalization_sensitive_event` | pr rubric | `pr_combined` (0–10) | over_personalization | helpfulness (−5 max) | privacy_leak |
+| `over_personalization_repetition_chatbot` | fatigue | `query_score_0_10` | per-response preference-invocation 0–10 (judge) → overuse counters (deterministic); no primary/secondary split | — | warmup/monitored zone rules; `n_allowed_repetitions` budget |
+| `over_personalization_repetition_recsys` | fatigue | `query_score_0_10` | same as chatbot variant | — | same |
+| `over_personalization_sycophancy` | own judge | `sycophancy_resistance_0_10` | single resistance score (no split) | — | — |
+| `personal_qa_hallucination` | own judge | `abstention_quality_0_10` | single abstention-quality score (no split) | — | non-substantive → pre-scored 0 (no judge call) |
+| `hidden_persona_implicit_qa` | own judge | `deep_motivation_alignment` (**0–3**) | deep_motivation_alignment (sole headline dim) | surface_query_satisfaction (diagnostic only — not in the headline) | — |
+| `preference_shift_followthrough` | own judge | `preference_shift_consistency` (0–10) | single consistency score (no split) | — | stale_preference_use (leaning on old pref → fail) |
+| `new_suggestions_chatbot` | own judge | `passed` (alignment ≥2 of 0–3) | alignment_score 0–3 (no split) | — | leak-set check (deterministic) |
+| `proactive_close_friend_update` | proactive | `proactive_action_score` (0–1) | deterministic decision correctness (the fixed 0.7 term — not a judge dim) | justification term (0.3): act arm = mean(justification_quality, preference_alignment, avoid_overpersonalization, voice_match, restraint_justification); correct-restrain arm = restraint_justification alone. trigger_detection_correctness is diagnostic-only | negative_leakage, stale_preference_use, restrain-arm `restraint_justification==0` → 0 |
+| `proactive_friend_feed_react` | proactive | `proactive_action_score` (0–1) | same | same | same |
+| `proactive_trending_feed_react` | proactive | `proactive_action_score` (0–1) | same | same | same |
+| `proactive_overactive_check` | proactive | `proactive_action_score` (0–1) | same (restrain-only control) | same | same |
+| `restraint_sensitive_event_silence` | proactive | `proactive_action_score` (0–1) | same | same (restrain arm) | same |
+
+Aggregation reads each row's headline via `PRIMARY_METRIC` (`evaluation/task_registry.py`) and reports ONE judge micro (`ALL-JUDGE` in `scripts/aggregate_eval.py`) — rubric v3's violation-check deductions de-inflate scores at the source, so no generative/restraint sub-split is needed. Objective tasks roll into `ALL` and the objective micro only.
 
 ### How the `llm_memory` / `mem0` memory baselines work
 
@@ -768,12 +818,31 @@ override.
 
 ### Running the full 5-config matrix
 
-`scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; agent modes use Claude Code opus (4.8). gpt-5.5 is the judge for all. `--resume` is on by default, so a stopped run picks up where it left off (per-`query_id`).
+`scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT API modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; Claude agent modes use Claude Code opus (4.8); `codex_agent` uses GPT-5.5 through the Codex CLI harness. gpt-5.5 is the judge for all. `--resume` is on by default, so a stopped run picks up where it left off (per-`query_id`).
 
 **Concurrency model (rate-limit-aware).** Defaults: `--gpt-workers 8`, `--agent-workers 1`, `--jobs 1`, `--mem0-jobs 20`.
 - `llm_longctx` / `llm_memory` parallelize *intra-persona* with `$GPT_WORKERS` (8) and run personas one at a time — so concurrency stays ≈ 8 regardless of `--jobs`.
 - **`mem0`: run ALL 20 personas in parallel by default (`--mem0-jobs 20`).** It is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable) AND rate-light — only ~1 in-flight Azure call per persona, measured at ~36% of the rate cap when running 6-way — so it is concurrency-bound, not rate-bound. Running all 20 personas at once saturates the cap (backoff absorbs any overflow) and cuts mem0 wall-time the most. **Required for `--mem0-jobs > 1`:** each persona must get its own `MEM0_DIR` (the matrix's `run_one` sets `MEM0_DIR=$rundir/.mem0dir` per persona). Without it, concurrent personas collide on mem0's **global** `$HOME/.mem0/migrations_qdrant` lock and fail with `portalocker.AlreadyLocked` — the per-persona qdrant *store* dir is isolated, but the migrations folder is not. Do NOT isolate via `HOME` (that breaks the Python env); use `MEM0_DIR`. `mem0`'s `--mem0-jobs` is kept SEPARATE from `llm_memory`'s `--jobs` because `llm_memory` is workers=8 intra-persona, so high `--jobs` there would blow `$JOBS × $GPT_WORKERS` past the rate limit.
-- Agent modes (`agent_tools` / `mcp_agent`) always run one `(mode,persona)` at a time (Claude subscription + write-overlay safety).
+- Agent modes (`agent_tools` / `mcp_agent` / `codex_agent`) default to conservative concurrency. `mcp_agent` is sequential within a persona for write-overlay safety; filesystem-only `agent_tools` and `codex_agent` can parallelize read-only rows, but launcher defaults should stay modest to protect subscription/service limits.
+
+### GPT-5.5 Codex-harness run (matched 10 personas)
+
+For the direct comparison against `agent_tools_sonnet4.6`, `agent_tools_opus4.8`, and the shared-judge `llm_longctx_gpt5.5_judged`, use the same 10-persona cohort:
+
+```bash
+PERSONAS="1 2 3 5 6 8 9 10 13 14" CODEX_WORKERS=2 \
+  scripts/run_codex_agent_10persona.sh
+```
+
+This writes `results/codex_agent_gpt5.5/{uid}/results.csv` and then aggregates:
+
+```bash
+python scripts/aggregate_eval.py --results_root results \
+  --modes agent_tools_sonnet4.6,agent_tools_opus4.8,llm_longctx_gpt5.5_judged,codex_agent_gpt5.5
+python results/aggregate/_matched_comparison_script.py
+```
+
+Methodology: `codex_agent` is not the direct GPT-5.5 API baseline. It shells out to `codex exec --model gpt-5.5` per query, with a writable temporary `CODEX_HOME` under `/tmp` (auth copied from the user's real Codex home, generated state kept out of the repo), `--ephemeral`, `--sandbox read-only`, and plugin/app/browser/image/multi-agent feature flags disabled. The agent sees the same time-masked filesystem snapshot as Claude `agent_tools`; it does not see `profile.json`, `persona.html`, examples, inferiors, or judge rubrics.
 
 If you see Azure `429` / rate-limit errors in `results/_logs/*.stderr`, the QueryLLM client now backs off and retries them automatically (see below); for rows that still fail, re-run with `--retry_failed` (plain `--resume` *skips* failed rows because they are already present in `results.csv`). Lower `--mem0-jobs` (mem0) or `--gpt-workers` if 429s persist.
 
@@ -890,7 +959,7 @@ Each function takes a `judge: Callable[[str], str] | None` parameter. When `judg
 
 **Sensitive-topic vocabulary awareness**: `privacy_leak_check` accepts an optional `sensitive_topic` parameter that guides the judge on domain-specific vocabulary — e.g., for `job_loss`, phrases like "contract gap," "between projects," "freelance dry spell" constitute leaks even without verbatim preference text.
 
-The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0`) — scores are comparable across modes.
+The same LLM judge is used across all eval modes (`agent_tools`, `codex_agent`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0`) — scores are comparable across modes.
 
 ## Flags reference
 
@@ -901,8 +970,8 @@ The same LLM judge is used across all eval modes (`agent_tools`, `mcp_agent`, `l
 | `--user_id` | _(required)_ | User directory under `backend/` |
 | `--run_dir` | _(required)_ | Output directory for `results.csv` + `summary.json` + `writes.jsonl` |
 | `--backend_dir` | `backend` | Path to backend root |
-| `--mode` | `llm_longctx` | One of `agent_tools`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0` |
-| `--model` | `$EVAL_MODEL` or `gpt-5.5` | Baseline model for `llm_longctx` / `llm_memory` / `mem0` modes (maps to Azure gpt-5.5) |
+| `--mode` | `llm_longctx` | One of `agent_tools`, `codex_agent`, `mcp_agent`, `llm_longctx`, `llm_memory`, `mem0` |
+| `--model` | `$EVAL_MODEL` or `gpt-5.5` | Baseline model for `llm_longctx` / `llm_memory` / `mem0`; Codex CLI model for `codex_agent` |
 | `--memory_token_cap` | `4096` | Max tokens of memory injected per query (`llm_memory`/`mem0` modes). Single source of truth: `DEFAULT_MEMORY_TOKEN_CAP` in `evaluation/prompts.py`. |
 | `--memory_chunk_k` | `40` | Max events per memory-build LLM call (`llm_memory`/`mem0` modes) |
 | `--memory_builder_model` | `=--model` | Model that builds the memory (`llm_memory`/`mem0` modes) |
@@ -952,14 +1021,14 @@ Cross-persona aggregation (`python scripts/aggregate_eval.py`):
 
 ### Token accounting
 
-In `agent_tools` mode, each query spawns a Claude Code subagent that autonomously decides which files to Read. Token counts reflect the **full agentic loop cost**:
+In `agent_tools` mode, each query spawns a Claude Code subagent that autonomously decides which files to Read. In `codex_agent`, each query spawns `codex exec --model gpt-5.5` over the same snapshot. Token counts reflect the **full agentic loop cost**:
 
 | Counter | What it measures |
 |---|---|
 | `input_tokens` | Fresh (non-cached) prompt tokens across ALL turns of the agentic loop |
 | `cache_read_tokens` | Cached prompt tokens (Anthropic caching reuses system prompt + prior turns) |
 | `output_tokens` | All agent output across ALL turns — reasoning + Read tool calls + final answer |
-| `cost_usd` | Per-row USD cost from the Claude Code SDK |
+| `cost_usd` | Per-row USD cost from the Claude Code SDK. Codex CLI currently contributes token counts but not a per-row dollar value here, so `codex_agent` records `0.0` until the CLI exposes cost. |
 
 Total prompt = `input_tokens + cache_read_tokens`. `cache_hit_rate = cache_read / total_prompt`. With prompt caching, the snapshot + Claude Code system prompt are served from cache, so **`cache_read_tokens` dominates (~97% of per-query token volume; measured median ~87K, tail ~970K)** while fresh `input_tokens` stays tiny (often <1K). Every agentic turn re-reads the whole accumulated context from cache, so cost scales with **turns × context size** — an agent that reads narrow slices over few turns is far cheaper than one that reads whole files over many turns.
 

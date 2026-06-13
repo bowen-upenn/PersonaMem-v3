@@ -142,6 +142,14 @@ DROPPED_TASK_TYPES: set[str] = {
     # data-gen pipeline no longer emits. c4_button_regen still resolves
     # via OLD_TO_NEW so historical strings parse before the drop.
     "preference_removal_regen",
+    # Removed 2026-06-13 — sampled threads degenerate to empty newly-created
+    # group DMs (nothing to summarize), so models substitute stored profile
+    # data and the telegraph-avoidance rubric collapses the score to ~0; the
+    # task only landed on personas 1 & 13 (n=2, noise-dominated), and its
+    # preference_alignment primary dim conflicts with the restraint an empty
+    # thread demands. Generation target commented out in task_distribution;
+    # scoring/parse code paths kept so historical rows still resolve.
+    "agentic_group_dm_summary",
 }
 
 
@@ -1442,5 +1450,10 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "proactive_trending_feed_react":     ("proactive_action_score", "fraction"),
     "proactive_overactive_check":        ("proactive_action_score", "fraction"),
     # Personalized recommendation — recall@5 is the standard recsys headline.
-    "personalized_recommendation":       ("recall_at_5", "fraction"),
+    # Proposal A (R14): 3-tier (gold > fillers > hard-negatives) pair concordance.
+    # 1.0 iff gold is #1 AND every hard-neg is ranked below every filler; smooth
+    # [0,1] otherwise. Replaces recall@5 (which ignored that hard-negs — items the
+    # user actively skipped — should rank BELOW neutral fillers). recall@5 kept as
+    # a diagnostic column.
+    "personalized_recommendation":       ("tier_concordance", "fraction"),
 }

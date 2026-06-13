@@ -113,7 +113,14 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "agentic_auto_reply":                     {"min": 5,  "max": 5},
     "agentic_vague_refind":                   {"min": 5,  "max": 5},
     # agentic_draft_audit removed — workstream F.
-    "agentic_group_dm_summary":               {"min": 5,  "max": 8, "data_dependent": True},
+    # agentic_group_dm_summary removed — sampled threads degenerate to empty
+    # newly-created DMs (nothing to summarize), so models substitute stored
+    # profile data and the telegraph-avoidance rubric collapses the score to
+    # ~0; only personas 1 & 13 carried the task (n=2, noise-dominated). The
+    # rubric's preference_alignment primary dim also conflicts with the
+    # restraint an empty thread demands. Kept code paths intact (parse/score)
+    # in case it is re-fixtured; commenting out the target stops emission.
+    # See task_registry.DROPPED_TASK_TYPES.
     # agentic_wrong_recipient_check removed — task retired (kept code paths
     # intact for now in case it needs to be re-enabled; zero quota stops
     # emission).
