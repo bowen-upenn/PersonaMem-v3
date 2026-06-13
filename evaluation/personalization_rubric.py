@@ -123,8 +123,15 @@ PENALTY_CHECKS: dict[str, dict[str, float]] = {
     "agentic_community_post":          {"telegraph_avoidance": 5.0, "voice_match": 5.0},
     "agentic_dm_digest":               {"telegraph_avoidance": 5.0, "relationship_aware": 5.0},
     "agentic_group_dm_summary":        {"telegraph_avoidance": 5.0, "relationship_aware": 5.0},
-    "agentic_proactive_daily_catchup": {"telegraph_avoidance": 5.0},
-    "agentic_trending_alert":          {"telegraph_avoidance": 5.0},
+    # NO telegraph penalty on trending_alert / daily_catchup: their output
+    # SCHEMA mandates a justification field (`why_user_cares` / `why_now`), so
+    # "you engaged with X in the last 24h" is the REQUIRED format, not a
+    # telegraph violation. The penalty was firing on the task's own contract
+    # (mean −4.4 of −5 on 100% of rows), flooring a real ~4/10 main score to 0
+    # (2026-06-12 audit). These tasks are pure surface-the-right-content: main
+    # dim (preference_alignment) + hard rules (no surfacing disliked/stale).
+    "agentic_proactive_daily_catchup": {},
+    "agentic_trending_alert":          {},
     "agentic_vague_refind":            {"telegraph_avoidance": 5.0},
     "agentic_wrong_recipient_check":   {"relationship_aware": 5.0},
     "local_recommendation_geo_shift":  {"telegraph_avoidance": 5.0},
