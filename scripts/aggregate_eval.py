@@ -224,29 +224,11 @@ JUDGE_TASK_TYPES = frozenset({
     "proactive_trending_feed_react",
     "restraint_sensitive_event_silence",
 })
-# Restraint-axis subset of JUDGE_TASK_TYPES: one-sided "avoid the failure
-# mode" probes where a competent generic response CORRECTLY earns ~10 (the
-# tested failure — volunteering private/stale/over-repeated info, asserting a
-# fabricated fact, caving to a false claim — is rare for well-behaved models).
-# Their medians run 9.8-9.9 with 51-69% of rows ≥9.5 (2026-06-12 leniency
-# audit), so folding them into one judge micro inflates it by ~9 pts and reads
-# as generative quality when it is actually absence-of-violation. The headline
-# therefore splits: ALL-JUDGE-RESTRAINT (these tasks) vs ALL-JUDGE-GENERATIVE
-# (everything else judge-typed: compose / chat / proactive-decision quality).
-# ALL-JUDGE (the union) is kept for back-compat with older comparisons.
-# NOTE: proactive_* / restraint_sensitive_event_silence stay GENERATIVE — their
-# headline is 0.7*decision correctness on a balanced act/restrain split, which
-# discriminates (observed 21-89), unlike the one-sided probes here.
-JUDGE_RESTRAINT_TASK_TYPES = frozenset({
-    "over_personalization_chatbot_text",
-    "over_personalization_context_shift",
-    "over_personalization_sensitive_event",
-    "over_personalization_repetition_chatbot",
-    "over_personalization_repetition_recsys",
-    "over_personalization_sycophancy",
-    "personal_qa_hallucination",
-})
-
+# NOTE (rubric history): a GENERATIVE/RESTRAINT judge-micro split existed
+# briefly (2026-06-12) to counter restraint-probe inflation of the blended
+# judge micro. Superseded the same day by rubric v3 (single-target main dims +
+# violation-check deductions in evaluation/personalization_rubric.py), which
+# de-inflates the scores at the SOURCE — the headline is one judge micro again.
 OBJECTIVE_TASK_TYPES = frozenset({
     "active_mistake_prevention",       # paired warn/foil `correct`: regex warn-detect + coverage fraction (e6_active_mistake_prevention.py)
     "at_ai_directive_followup",        # recall@5: deterministic set intersection (e2_at_ai_followup.py compute_e2_metrics)
@@ -449,10 +431,6 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
     j_sum_dur = 0.0
     j_sum_n_tok = 0
     j_all_n = 0
-    # Restraint/generative sub-split of the judge micro (accuracy only — token
-    # columns stay on the union ALL-JUDGE row).
-    jr_sum_acc = jr_n_acc = jr_all_n = 0.0
-    jg_sum_acc = jg_n_acc = jg_all_n = 0.0
     for task, task_rows in sorted(by_task.items()):
         accs: list[float] = []
         in_toks: list[float] = []
@@ -512,16 +490,6 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
             if accs:
                 j_weighted_sum_acc += acc_mean * len(accs)
                 j_weighted_n_acc += len(accs)
-            if task in JUDGE_RESTRAINT_TASK_TYPES:
-                jr_all_n += n
-                if accs:
-                    jr_sum_acc += acc_mean * len(accs)
-                    jr_n_acc += len(accs)
-            else:
-                jg_all_n += n
-                if accs:
-                    jg_sum_acc += acc_mean * len(accs)
-                    jg_n_acc += len(accs)
             if in_toks:
                 j_sum_in_tok += sum(in_toks)
                 j_sum_out_tok += sum(out_toks)
@@ -562,29 +530,6 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
         "mean_duration_ms": round(j_sum_dur / max(1, j_all_n), 1),
     }
     table.append(judge_row)
-
-    # Restraint/generative judge split — the union micro above is inflated by
-    # the one-sided restraint probes (median 9.8-9.9; see
-    # JUDGE_RESTRAINT_TASK_TYPES). GENERATIVE is the honest "produces good
-    # personalized output" headline; RESTRAINT is the "avoids violations"
-    # headline (read it as a compliance rate, not a quality score).
-    for label, s_acc, n_acc, s_n in (
-        ("ALL-JUDGE-GENERATIVE (micro, judge minus restraint probes)",
-         jg_sum_acc, jg_n_acc, jg_all_n),
-        ("ALL-JUDGE-RESTRAINT (micro, one-sided restraint probes)",
-         jr_sum_acc, jr_n_acc, jr_all_n),
-    ):
-        table.append({
-            "task_type": label,
-            "n": int(s_n),
-            "accuracy_pct": round(s_acc / n_acc, 2) if n_acc else "",
-            "quality_flag": "",
-            "task_family": "",
-            "mean_input_tokens": 0,
-            "mean_output_tokens": 0,
-            "mean_cost_usd": 0,
-            "mean_duration_ms": 0,
-        })
 
     # Per-family by-class roll-ups — MICRO (row-weighted), consistent with the
     # micro headline (NOT task-averaged). The macro task-weighted + adjusted-macro
@@ -762,10 +707,6 @@ def aggregate_run_set(all_rows: list[dict], per_persona: dict[str, list[dict]],
             overall["accuracy_pct_micro"] = r["accuracy_pct"]
         elif r["task_type"] == "ALL-JUDGE (micro, judge tasks only)":
             overall["accuracy_pct_micro_judge"] = r["accuracy_pct"]
-        elif str(r["task_type"]).startswith("ALL-JUDGE-GENERATIVE"):
-            overall["accuracy_pct_micro_judge_generative"] = r["accuracy_pct"]
-        elif str(r["task_type"]).startswith("ALL-JUDGE-RESTRAINT"):
-            overall["accuracy_pct_micro_judge_restraint"] = r["accuracy_pct"]
         elif str(r["task_type"]).startswith("  by-axis: "):
             # explicit_retrieval / mixed / implicit_inference micro split —
             # answers "do we distinguish explicit retrieval from implicit
@@ -826,15 +767,12 @@ def main() -> int:
                 "n_queries": overall["n_queries"],
                 "accuracy_pct_micro": overall.get("accuracy_pct_micro"),
                 "accuracy_pct_micro_judge": overall.get("accuracy_pct_micro_judge"),
-                "accuracy_pct_micro_judge_generative": overall.get("accuracy_pct_micro_judge_generative"),
-                "accuracy_pct_micro_judge_restraint": overall.get("accuracy_pct_micro_judge_restraint"),
                 "e6_paired_f1": round(e6["paired_f1"], 4) if e6 else "",
             })
             print(f"[aggregate] mode={mode:12s}  personas={overall['n_personas']:2d}  "
                   f"queries={overall['n_queries']:4d}  "
                   f"acc_micro={overall.get('accuracy_pct_micro','?')}  "
-                  f"acc_judge_gen={overall.get('accuracy_pct_micro_judge_generative','?')}  "
-                  f"acc_judge_restraint={overall.get('accuracy_pct_micro_judge_restraint','?')}  "
+                  f"acc_micro_judge={overall.get('accuracy_pct_micro_judge','?')}  "
                   f"e6_paired_f1={comparison[-1]['e6_paired_f1']}")
         if not comparison:
             print("[aggregate] no mode produced results", file=sys.stderr)

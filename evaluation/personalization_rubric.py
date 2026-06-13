@@ -111,25 +111,29 @@ APPLICABILITY: dict[str, dict[str, bool]] = {
 # tasks), off-voice drift (community_post — content task where voice is a
 # constraint, not the target), and evasion (restraint tasks — a non-answer
 # must not win on restraint alone).
+#
+# Deduction per check = 0.5 × (10 − judge_score), i.e. weight 5.0 in the
+# weight×(10−s)/10 formula: clean (10) = −0; s=8 → −1; s=5 → −2.5; fully
+# violated (0) → −5. Final score floors at 0.
 PENALTY_CHECKS: dict[str, dict[str, float]] = {
-    "chatbot_personalized_response":   {"telegraph_avoidance": 2.0},
-    "agentic_send_post":               {"telegraph_avoidance": 2.0},
-    "agentic_cross_app_repost":        {"telegraph_avoidance": 2.0},
-    "agentic_auto_reply":              {"telegraph_avoidance": 2.0, "relationship_aware": 2.0},
-    "agentic_community_post":          {"telegraph_avoidance": 2.0, "voice_match": 2.0},
-    "agentic_dm_digest":               {"telegraph_avoidance": 2.0, "relationship_aware": 2.0},
-    "agentic_group_dm_summary":        {"telegraph_avoidance": 2.0, "relationship_aware": 2.0},
-    "agentic_proactive_daily_catchup": {"telegraph_avoidance": 2.0},
-    "agentic_trending_alert":          {"telegraph_avoidance": 2.0},
-    "agentic_vague_refind":            {"telegraph_avoidance": 2.0},
-    "agentic_wrong_recipient_check":   {"relationship_aware": 2.0},
-    "local_recommendation_geo_shift":  {"telegraph_avoidance": 2.0},
+    "chatbot_personalized_response":   {"telegraph_avoidance": 5.0},
+    "agentic_send_post":               {"telegraph_avoidance": 5.0},
+    "agentic_cross_app_repost":        {"telegraph_avoidance": 5.0},
+    "agentic_auto_reply":              {"telegraph_avoidance": 5.0, "relationship_aware": 5.0},
+    "agentic_community_post":          {"telegraph_avoidance": 5.0, "voice_match": 5.0},
+    "agentic_dm_digest":               {"telegraph_avoidance": 5.0, "relationship_aware": 5.0},
+    "agentic_group_dm_summary":        {"telegraph_avoidance": 5.0, "relationship_aware": 5.0},
+    "agentic_proactive_daily_catchup": {"telegraph_avoidance": 5.0},
+    "agentic_trending_alert":          {"telegraph_avoidance": 5.0},
+    "agentic_vague_refind":            {"telegraph_avoidance": 5.0},
+    "agentic_wrong_recipient_check":   {"relationship_aware": 5.0},
+    "local_recommendation_geo_shift":  {"telegraph_avoidance": 5.0},
     # Restraint family: helpfulness as a check — an evasive non-answer
     # deducts; a normal answer is "clean" and deducts nothing.
-    "over_personalization_chatbot_text":      {"helpfulness": 2.0},
-    "over_personalization_context_shift":     {"helpfulness": 2.0},
-    "over_personalization_distractor_reject": {"helpfulness": 2.0},
-    "over_personalization_sensitive_event":   {"helpfulness": 2.0},
+    "over_personalization_chatbot_text":      {"helpfulness": 5.0},
+    "over_personalization_context_shift":     {"helpfulness": 5.0},
+    "over_personalization_distractor_reject": {"helpfulness": 5.0},
+    "over_personalization_sensitive_event":   {"helpfulness": 5.0},
 }
 
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
