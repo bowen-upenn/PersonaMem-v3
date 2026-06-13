@@ -49,55 +49,87 @@ DAY_SECONDS = 24 * 60 * 60
 # --- Which dimensions apply to which tasks --------------------------------
 # True = applied (graded); False = omitted. From plan Extension C applicability grid.
 
+# SINGLE-TARGET dim sets (2026-06-12 rubric v3). Each task scores exactly ONE
+# positive dim — the task's target; the MAIN score IS that dim. Everything
+# that used to be a scored secondary is now either a PENALTY CHECK (below —
+# default 0 deduction, subtracts on violation) or gone: over_personalization
+# and preference_alignment are NOT checked on tasks that don't target them —
+# each has its own dedicated task family (the over_personalization_* probes /
+# the alignment-primary tasks), so sprinkling them everywhere double-counted
+# axes and handed saturated free points (the old 8-9 band compression).
+# Hard rules (leaks / stale prefs) still zero the row on every task.
+# Keys omitted = dim not judged (smaller judge prompt, less halo).
 APPLICABILITY: dict[str, dict[str, bool]] = {
-    # Chatbot response (was: chatbot_response_proactive / _control)
-    "chatbot_personalized_response": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": True, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # Restraint task: PRIMARY positive = over_personalization (did the model
-    # stay appropriately un-personalized?). helpfulness is a SECONDARY considerata
-    # (did it still answer?) — it nudges but never displaces the primary, so it
-    # can't inflate restraint. subtle_personalization stays OFF (rewarding a
-    # subtly-woven pref would credit the very leak we penalize). The sharpened
-    # over_personalization dim catches oblique injection.
-    "over_personalization_chatbot_text": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # Restraint family — repetition fatigue tested in two surface modes
-    # (recsys-loop vs varied chatbot questions on same pref).
-    "over_personalization_repetition_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_repetition_chatbot": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # new_suggestions — explorative recommendation. Agent must avoid
-    # over-personalization (no recycling fatigued topics) AND avoid
-    # the M1 telegraph phrasings. No fixed preference to align against
-    # — the gold IS a fresh topic, so preference_alignment is off.
-    "new_suggestions_recsys":  {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "new_suggestions_chatbot": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # Restraint family: single focused positive = over_personalization (don't
-    # apply the user's prefs in the shifted context — this already subsumes the
-    # third-party / wrong-recipient cases). relationship_aware trimmed for focus.
-    "over_personalization_context_shift": {"preference_alignment": False, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_distractor_reject": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "over_personalization_sensitive_event": {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "helpfulness": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # preference_removal_regen removed in Step 4.4.
-    # Agentic family (was: t6..t19)
-    "agentic_community_post":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
-    "agentic_send_post":               {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
-    # agentic_moment_recommendation merged into personalized_recommendation
-    # (slate-based ranking, deterministic recall@k / ndcg@k / mrr metrics).
-    "agentic_dm_digest":                 {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
-    "agentic_cross_app_repost":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
-    "agentic_auto_reply":                {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": True, "voice_self_consistency": True, "telegraph_avoidance": True},
-    "agentic_vague_refind":              {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # agentic_composed_post merged into agentic_send_post.
-    "agentic_draft_audit":               {"preference_alignment": False, "avoid_leak": False, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "agentic_group_dm_summary":          {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
-    "agentic_wrong_recipient_check":     {"preference_alignment": True, "avoid_leak": False, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": True, "voice_match": False, "telegraph_avoidance": True},
-    "agentic_proactive_daily_catchup":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    "agentic_trending_alert":            {"preference_alignment": True, "avoid_leak": True, "privacy_leak": False, "over_personalization": True, "subtle_personalization": False, "stale_preference_use": False, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
-    # Silent geo-shift local recommendation. The agent is supposed to
-    # personalize MORE (use the latest geo signal + the user's persona
-    # profile), so preference_alignment is the headline judge dimension.
-    # Hard rules still apply (no surfacing of negative prefs / privacy
-    # flags / contradicted prefs). voice_match is off — the agent is
-    # answering as the assistant, not authoring in the user's voice.
-    "local_recommendation_geo_shift":    {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "over_personalization": False, "subtle_personalization": False, "stale_preference_use": True, "relationship_aware": False, "voice_match": False, "telegraph_avoidance": True},
+    # Target: personalize the answer to THIS user.
+    "chatbot_personalized_response": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "stale_preference_use": True},
+    # Restraint family — target: appropriate NON-personalization. helpfulness
+    # moved to a penalty check (evasion deducts; silence can't win).
+    "over_personalization_chatbot_text":    {"over_personalization": True, "avoid_leak": True, "privacy_leak": True},
+    "over_personalization_context_shift":   {"over_personalization": True, "avoid_leak": True, "privacy_leak": True},
+    "over_personalization_distractor_reject": {"over_personalization": True, "privacy_leak": True},
+    "over_personalization_sensitive_event": {"over_personalization": True, "privacy_leak": True},
+    # Repetition fatigue + new_suggestions: headline comes from their own
+    # scorers (fatigue counters / alignment_score); the single dim here only
+    # feeds diagnostics.
+    "over_personalization_repetition_recsys":  {"over_personalization": True},
+    "over_personalization_repetition_chatbot": {"over_personalization": True},
+    "new_suggestions_recsys":  {"over_personalization": True},
+    "new_suggestions_chatbot": {"over_personalization": True},
+    # Voice-authoring trio — target: write in the user's VOICE. (relationship
+    # depth on auto_reply is a penalty check, not a positive.)
+    "agentic_send_post":        {"voice_match": True, "avoid_leak": True, "privacy_leak": True, "stale_preference_use": True},
+    "agentic_cross_app_repost": {"voice_match": True, "avoid_leak": True, "privacy_leak": True},
+    "agentic_auto_reply":       {"voice_match": True, "privacy_leak": True},
+    # Content-selection tasks — target: surface what THIS user cares about.
+    "agentic_community_post":   {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "stale_preference_use": True},
+    "agentic_dm_digest":        {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True},
+    "agentic_group_dm_summary": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True},
+    "agentic_vague_refind":            {"preference_alignment": True, "privacy_leak": True, "stale_preference_use": True},
+    "agentic_proactive_daily_catchup": {"preference_alignment": True, "avoid_leak": True, "stale_preference_use": True},
+    "agentic_trending_alert":          {"preference_alignment": True, "avoid_leak": True},
+    # Retired tasks (historical rows still parse).
+    "agentic_draft_audit":           {"over_personalization": True, "privacy_leak": True, "stale_preference_use": True},
+    "agentic_wrong_recipient_check": {"preference_alignment": True, "privacy_leak": True},
+    # Geo-shift: objective headline; this pr set is diagnostic-only.
+    "local_recommendation_geo_shift": {"preference_alignment": True, "avoid_leak": True, "privacy_leak": True, "stale_preference_use": True},
+}
+
+# PENALTY CHECKS (rubric v3) — the third dim role. A penalty dim contributes
+# NOTHING by default and can only SUBTRACT: deduction = weight × (10 − s)/10,
+# where s is the judge's 0-10 score on the dim (10 = clean, the default
+# expectation; the dims keep their existing avoidance-framed definitions so
+# stored per-dim scores recompute cleanly). final = max(0, main − Σ deductions).
+# This is where the old everywhere-secondaries went: instead of saturated 0-10
+# positives handing out free points (a clean response just avoids the
+# deduction — it doesn't earn anything), violations now bite the main score.
+# Hard rules remain one-strike zeros on top. Restraint-family tasks carry no
+# penalties — the guarded axis IS their primary.
+# NO over_personalization / preference_alignment checks here — each has its
+# own dedicated task family; checking them everywhere double-counted the axis.
+# What remains as checks: telegraphing stored data (a phrasing violation any
+# personalization task can commit), wrong relationship depth (recipient
+# tasks), off-voice drift (community_post — content task where voice is a
+# constraint, not the target), and evasion (restraint tasks — a non-answer
+# must not win on restraint alone).
+PENALTY_CHECKS: dict[str, dict[str, float]] = {
+    "chatbot_personalized_response":   {"telegraph_avoidance": 2.0},
+    "agentic_send_post":               {"telegraph_avoidance": 2.0},
+    "agentic_cross_app_repost":        {"telegraph_avoidance": 2.0},
+    "agentic_auto_reply":              {"telegraph_avoidance": 2.0, "relationship_aware": 2.0},
+    "agentic_community_post":          {"telegraph_avoidance": 2.0, "voice_match": 2.0},
+    "agentic_dm_digest":               {"telegraph_avoidance": 2.0, "relationship_aware": 2.0},
+    "agentic_group_dm_summary":        {"telegraph_avoidance": 2.0, "relationship_aware": 2.0},
+    "agentic_proactive_daily_catchup": {"telegraph_avoidance": 2.0},
+    "agentic_trending_alert":          {"telegraph_avoidance": 2.0},
+    "agentic_vague_refind":            {"telegraph_avoidance": 2.0},
+    "agentic_wrong_recipient_check":   {"relationship_aware": 2.0},
+    "local_recommendation_geo_shift":  {"telegraph_avoidance": 2.0},
+    # Restraint family: helpfulness as a check — an evasive non-answer
+    # deducts; a normal answer is "clean" and deducts nothing.
+    "over_personalization_chatbot_text":      {"helpfulness": 2.0},
+    "over_personalization_context_shift":     {"helpfulness": 2.0},
+    "over_personalization_distractor_reject": {"helpfulness": 2.0},
+    "over_personalization_sensitive_event":   {"helpfulness": 2.0},
 }
 
 # Tasks where Source B (post-T_test behavioral ground truth) is applicable.
@@ -536,19 +568,22 @@ def score(
 
     pos_dims = [d for d in applicable if applicable[d] and d in POSITIVE_DIMS]
     hard_dims = [d for d in applicable if applicable[d] and d in HARD_RULE_DIMS]
+    pen_dims = PENALTY_CHECKS.get(task_id, {})
     out["positive_dims"] = pos_dims
     out["hard_rule_dims"] = hard_dims
+    out["penalty_dims"] = list(pen_dims)
 
     # telegraph_avoidance is now a judge-scored secondary positive (in pos_dims),
     # not a hard rule — handled by the normal positive-dim loop below.
     violated: list[str] = []
     pos_scores: list[float] = []
 
-    if judge_client is not None and (pos_dims or hard_dims):
+    if judge_client is not None and (pos_dims or hard_dims or pen_dims):
         _judge_fn = (judge_client.query_llm
                      if hasattr(judge_client, "query_llm") else judge_client)
         prompt = prompts_mod.judge_unified_rubric_prompt(
             task_id, ground_truth, agent_output, pos_dims, hard_dims,
+            penalty_dims=list(pen_dims),
         )
         parsed: dict = {}
         try:
@@ -572,6 +607,16 @@ def score(
                 s = max(0.0, min(10.0, float(v)))
                 out[f"{d}_score"] = s
                 pos_scores.append(s)
+
+        # Penalty checks — 0-10 like positives (10 = clean) but they only ever
+        # DEDUCT: weight × (10 − s)/10 points off the main score below. A
+        # missing score deducts nothing (benefit of the doubt on judge gaps).
+        for d in pen_dims:
+            v = parsed.get(d)
+            if isinstance(v, dict):
+                v = v.get("score")
+            if isinstance(v, (int, float)):
+                out[f"{d}_score"] = max(0.0, min(10.0, float(v)))
 
         # Hard rules — one-strike: any judge-flagged violation zeroes the score.
         for d in hard_dims:
@@ -606,6 +651,15 @@ def score(
             final = float(primary_score)
     else:
         final = out["positive_dim_mean"]  # primary missing → graceful fallback
+    # Penalty checks subtract from the main score (default 0 deduction — a
+    # clean response earns nothing here, a violation costs weight×(10−s)/10).
+    penalty_points = 0.0
+    for d, w in pen_dims.items():
+        s = out.get(f"{d}_score")
+        if isinstance(s, (int, float)):
+            penalty_points += float(w) * (10.0 - float(s)) / 10.0
+    out["penalty_points"] = round(penalty_points, 2)
+    final = max(0.0, float(final) - penalty_points)
     out["primary_dim"] = primary_dim
     out["primary_dim_score"] = primary_score
     # THE single per-query score, fixed 0-10: 80% primary + 20% mean(secondary),

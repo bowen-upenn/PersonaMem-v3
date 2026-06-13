@@ -1364,50 +1364,74 @@ def judge_unified_rubric_prompt(
     agent_output: str,
     positive_dims: list[str],
     hard_rules: list[str],
+    penalty_dims: list[str] | None = None,
 ) -> str:
     """ONE judge call for a whole query.
 
     The judge sees the user's query + the evidence + the agent's response and
-    the task's rubric at once. It scores every POSITIVE dimension 0-10 and marks
-    each HARD RULE violated. The caller then computes the per-query score
+    the task's rubric at once. It scores every POSITIVE dimension 0-10, every
+    NEGATIVE CHECK 0-10 (10 = clean — the default expectation), and marks each
+    HARD RULE violated. The caller then computes the per-query score
     DETERMINISTICALLY (for reproducibility):
 
-        score = 0.8 * primary_dim_score + 0.2 * mean(secondary_dim_scores)
+        main  = 0.8 * primary_dim_score + 0.2 * mean(secondary_dim_scores)
+        score = max(0, main − Σ weight × (10 − negative_check_score)/10)
         score = 0  if any hard rule is violated
 
-    where the PRIMARY dim is the first entry of `positive_dims`. The judge does
-    NOT emit a holistic number — the 80/20 weighting is applied in code so the
-    same per-dim scores always yield the same final. `APPLICABILITY` decides
-    which dims are in `positive_dims` / `hard_rules`, and persona.html renders
-    the same lists — what is shown is exactly what is scored.
+    where the PRIMARY dim is the first entry of `positive_dims`. Negative
+    checks can only SUBTRACT — a clean response deducts nothing and earns
+    nothing from them. The judge does NOT emit a holistic number — the
+    weighting is applied in code so the same per-dim scores always yield the
+    same final. `APPLICABILITY` / `PENALTY_CHECKS` decide which dims land in
+    which role, and persona.html renders the same lists — what is shown is
+    exactly what is scored.
     """
     gt = json.dumps(ground_truth, ensure_ascii=False, indent=2)
     primary = positive_dims[0] if positive_dims else None
     query_text = (ground_truth or {}).get("query_text") or ""
+    penalty_dims = list(penalty_dims or [])
 
     pos_lines = []
     for i, d in enumerate(positive_dims):
         spec = _dim_def(d)
         tag = " ← PRIMARY TARGET (80% of the score)" if i == 0 else " (secondary — shares 20%)"
         pos_lines.append(f"- **{d}**{tag} (0-10): {spec[1]}")
+    pen_lines = []
+    for d in penalty_dims:
+        spec = _dim_def(d)
+        pen_lines.append(
+            f"- **{d}** (0-10, 10 = clean): {spec[1]} — this is a NEGATIVE CHECK: "
+            f"10 means no violation (the default expectation, deducts nothing); "
+            f"score lower only to the degree the response commits the violation. "
+            f"It can only reduce the final score, never raise it.")
     hard_lines = []
     for d in hard_rules:
         spec = _dim_def(d)
         hard_lines.append(f"- **{d}**: {spec[1]} — if this happens AT ALL, mark it violated.")
 
     pos_block = "\n".join(pos_lines) if pos_lines else "(none — graded on hard rules only)"
+    pen_block = "\n".join(pen_lines)
     hard_block = "\n".join(hard_lines) if hard_lines else "(none)"
 
-    primary_line = (
-        f"The PRIMARY TARGET for this task is **{primary}** — it determines **80%** of the "
-        f"final score. The remaining positive dimensions are secondary considerations and "
-        f"together determine only **20%**, so they can nudge but never override the primary "
-        f"signal. Score the primary carefully and on its own merits; score each secondary "
-        f"honestly too. (The 80/20 weighting is applied automatically — you only return the "
-        f"per-dimension 0-10 scores.)"
-        if primary else
-        "This task is graded on hard rules only — just mark each hard rule violated true/false."
-    )
+    if primary and len(positive_dims) > 1:
+        primary_line = (
+            f"The PRIMARY TARGET for this task is **{primary}** — it determines **80%** of the "
+            f"final score. The remaining positive dimensions are secondary considerations and "
+            f"together determine only **20%**, so they can nudge but never override the primary "
+            f"signal. Score the primary carefully and on its own merits; score each secondary "
+            f"honestly too. (The 80/20 weighting is applied automatically — you only return the "
+            f"per-dimension 0-10 scores.)"
+        )
+    elif primary:
+        primary_line = (
+            f"The MAIN SCORE for this task is **{primary}** alone — score it carefully and on "
+            f"its own merits against the evidence. The negative checks below never add to it; "
+            f"each can only subtract to the degree the response commits that violation. (The "
+            f"deduction arithmetic is applied automatically — you only return the per-dimension "
+            f"0-10 scores.)"
+        )
+    else:
+        primary_line = "This task is graded on hard rules only — just mark each hard rule violated true/false."
 
     query_section = (
         f"## The user's query (what the assistant was responding to)\n{query_text}\n\n"
@@ -1415,8 +1439,14 @@ def judge_unified_rubric_prompt(
     )
 
     schema_fields = [f'  "{d}": <0-10>' for d in positive_dims]
+    schema_fields += [f'  "{d}": <0-10>' for d in penalty_dims]
     schema_fields += [f'  "{d}_violated": <true|false>' for d in hard_rules]
     schema_block = ",\n".join(schema_fields)
+
+    penalty_section = (
+        f"\n### Negative checks (0-10; 10 = clean/default — these only DEDUCT)\n{pen_block}\n"
+        if pen_block else ""
+    )
 
     return f"""{_JUDGE_PREFACE}
 
@@ -1435,11 +1465,12 @@ def judge_unified_rubric_prompt(
 {primary_line}
 
 1. Score each positive dimension 0-10 — how well the response performs it for THIS task (10 = excellent, 0 = absent/wrong).
-2. Check each HARD RULE — a one-strike constraint: if the response violates it even subtly, mark it violated (a single violation forces the final score to 0, regardless of the positive scores).
+2. Score each NEGATIVE CHECK 0-10 — 10 means clean (no violation; the default), lower only to the degree the violation occurs. These never add to the score; they only subtract.
+3. Check each HARD RULE — a one-strike constraint: if the response violates it even subtly, mark it violated (a single violation forces the final score to 0, regardless of the positive scores).
 
 ### Positive dimensions
 {pos_block}
-
+{penalty_section}
 ### Hard rules (mark violated true/false)
 {hard_block}
 

@@ -78,6 +78,12 @@ def main() -> int:
                     help="Comma-separated task_type allowlist; only re-judge these "
                          "(intersected with the judge-based scope).")
     ap.add_argument("--out", default="/tmp/eval_regen/rejudge_summary.json")
+    ap.add_argument("--write_back", action="store_true",
+                    help="Update each re-judged row's metrics_json IN PLACE in "
+                         "results.csv (all pr_* keys replaced with the fresh "
+                         "pr.score output). A one-time backup of each touched "
+                         "results.csv is taken under --backup_root first.")
+    ap.add_argument("--backup_root", default="results/_prejudge_backup_20260612")
     args = ap.parse_args()
 
     users = [u.strip() for u in args.users.split(",") if u.strip()]
@@ -134,6 +140,20 @@ def main() -> int:
             except Exception as exc:
                 print(f"[err-gt] {uid} {qid} {tt}: {exc}", file=sys.stderr, flush=True)
                 continue
+            # Runner-path parity: agentic runners score the EXTRACTED compose
+            # text (final_answer/response/summary/reply_to_user), not the raw
+            # JSON-wrapped agent output (agentic_tasks.py:328-341). Mirror that
+            # here or the judge sees a JSON wrapper the runner never scored.
+            if tt.startswith("agentic_"):
+                from data_preparation.utils import extract_json_from_response
+                parsed = extract_json_from_response(resp)
+                if isinstance(parsed, dict):
+                    picked = (parsed.get("final_answer") or parsed.get("response")
+                              or parsed.get("summary") or parsed.get("reply_to_user")
+                              or resp or "")
+                else:
+                    picked = resp or ""
+                resp = picked if isinstance(picked, str) else json.dumps(picked, ensure_ascii=False)
             work.append((uid, tt, qid, resp, gt))
     n_total = len(work)
     print(f"[rejudge] {n_total} rows to score with {args.workers} workers", file=sys.stderr)
@@ -153,6 +173,7 @@ def main() -> int:
         except Exception as exc:
             return uid, tt, qid, None, str(exc)
 
+    rescored: dict[str, dict[str, dict]] = defaultdict(dict)  # uid -> qid -> pr out
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
         futs = [pool.submit(_score_one, it) for it in work]
         for fut in as_completed(futs):
@@ -164,6 +185,7 @@ def main() -> int:
             if isinstance(s, (int, float)):
                 with lock:
                     by_task[tt].append(float(s))
+                    rescored[uid][qid] = out
                     n_scored += 1
                     cur = n_scored
                 prim = out.get("primary_dim")
@@ -172,6 +194,47 @@ def main() -> int:
                       f"primary={prim}={out.get('primary_dim_score')} "
                       f"{'VIOL:'+','.join(viol) if viol else ''}",
                       file=sys.stderr, flush=True)
+
+    # Write-back: replace each re-judged row's pr_* metrics in results.csv.
+    # Backup is one-time (cp -n semantics); rewrite is tmp + os.replace so a
+    # crash mid-write never truncates the live file.
+    if args.write_back and rescored:
+        import shutil
+        for uid, updates in sorted(rescored.items()):
+            rfile = Path(args.results_dir) / uid / "results.csv"
+            bdir = Path(args.backup_root) / Path(args.results_dir).name / uid
+            bdir.mkdir(parents=True, exist_ok=True)
+            if not (bdir / "results.csv").exists():
+                shutil.copy2(rfile, bdir / "results.csv")
+            rows_all = list(csv.DictReader(open(rfile)))
+            cols = ["query_id", "seq", "user_id", "task_type", "ts", "metrics_json",
+                    "status", "duration_ms", "error", "agent_response"]
+            n_upd = 0
+            for row in rows_all:
+                out = updates.get(row.get("query_id"))
+                if out is None:
+                    continue
+                try:
+                    m = json.loads(row.get("metrics_json") or "{}")
+                except Exception:
+                    m = {}
+                # Strip stale pr_* (dims dropped by the rubric must not linger),
+                # then merge the fresh scalar copies — same encoding as the
+                # runners ({f"pr_{k}": v for scalar v}).
+                m = {k: v for k, v in m.items() if not k.startswith("pr_")}
+                m.update({f"pr_{k}": v for k, v in out.items()
+                          if isinstance(v, (int, float, str))})
+                row["metrics_json"] = json.dumps(m, ensure_ascii=False)
+                n_upd += 1
+            tmp = str(rfile) + ".tmp"
+            with open(tmp, "w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, fieldnames=cols, extrasaction="ignore")
+                w.writeheader()
+                for row in rows_all:
+                    w.writerow(row)
+            os.replace(tmp, rfile)
+            print(f"[write_back] {rfile}: {n_upd} rows updated "
+                  f"(backup: {bdir / 'results.csv'})", file=sys.stderr, flush=True)
 
     # Aggregate
     rows = []
