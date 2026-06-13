@@ -1026,7 +1026,22 @@ Assignment follows each task's **discriminating contract** — the failure its f
 
 **Reporting**: `token_accuracy_table.csv` carries a per-task `capability_axis` column plus three `  by-axis:` micro (row-weighted) roll-up rows; the same three numbers are lifted into `summary_overall.json.accuracy_pct_by_capability_axis`. Works retroactively on any saved `results.csv` (the tag is a static task property).
 
-**Caveat**: the benchmark is inference-heavy *by design* (~80% of instances on a typical persona land in `implicit_inference`) — it is a personalization benchmark, not a memory-QA benchmark, so the taxonomy is by personalization surface and the capability axis is a cross-cutting projection. The `explicit_retrieval` slice is small-n (≈20 rows/3 personas) and dominated by the known-hard `at_ai_directive_followup`; read per-task rows before drawing axis-level conclusions.
+**By-axis accuracy per model** (micro %, row-weighted; `scripts/aggregate_eval.py` → `token_accuracy_table.csv` `by-axis:` rows). Per the cross-model rule above, only **shared-judge** configs are comparable — the agent/codex modes self-judge with gpt-5.5, and the long-context / memory baselines must be read from their `*_judged` gpt-5.5 replay re-scores (the raw gemini self-judge scores ~24% overall and emits no usable per-task split, so its native rows are omitted here).
+
+| Config (shared gpt-5.5 judge) | explicit_retrieval | mixed | implicit_inference | ALL (micro) |
+|---|--:|--:|--:|--:|
+| `codex_agent_gpt5.5` | **75.6** | 68.7 | 58.6 | 61.3 |
+| `agent_tools_sonnet4.6` | 62.5 | 53.2 | 53.0 | 54.3 |
+| `agent_tools_opus4.8` | 62.2 | 56.2 | 54.3 | 55.6 |
+| `llm_longctx_gpt5.5_judged` | 55.5 | 58.0 | 56.2 | 56.4 |
+| `llm_longctx_gemini3.5flash_judged` | 49.8 | 49.1 | 53.2 | 52.4 |
+| `llm_memory_gpt5.5` | 35.6 | 60.7 | 50.1 | 50.0 |
+| `llm_memory_gemini3.5flash_judged` | 38.3 | 55.3 | 56.2 | 54.3 |
+| `mem0_gpt5.5` | 42.6 | 57.7 | 49.8 | 50.1 |
+
+Reading: the **agent modes** (filesystem/codex retrieval) lead on `explicit_retrieval` — they can actually go find the stated artifact — and the gap over the inference axes is widest there (codex +17 explicit vs implicit). The **memory baselines** invert: they trail on `explicit_retrieval` because the distilled/vectorized ledger drops the specific stated artifact a retrieval task needs, while doing fine on `mixed`/`implicit` where induced taste survives compression. **This is a snapshot** — it predates the in-flight `personal_qa_hallucination` fill (an `explicit_retrieval` task), so the explicit column for the non-agent configs will shift once those rows land and the aggregator re-runs; regenerate the table from `token_accuracy_table.csv` after any fill.
+
+**Caveat**: the benchmark is inference-heavy *by design* (~80% of instances on a typical persona land in `implicit_inference`) — it is a personalization benchmark, not a memory-QA benchmark, so the taxonomy is by personalization surface and the capability axis is a cross-cutting projection. The `explicit_retrieval` slice is smaller-n and (until the `personal_qa_hallucination` fill completes) dominated by the known-hard `at_ai_directive_followup`; read per-task rows before drawing axis-level conclusions.
 
 ### Metric artifact safeguards
 
