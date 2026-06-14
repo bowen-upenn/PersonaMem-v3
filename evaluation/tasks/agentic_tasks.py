@@ -973,13 +973,22 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
         threads = dms.get("results") or []
         if len(threads) < 3:
             continue
-        n_relevant = sum(
-            1 for t in threads
-            if _text_touches_persona(t, idx)
-        )
-        if n_relevant < 1:
+        if not any(_text_touches_persona(t, idx) for t in threads):
             continue
-        for win_name, _win_start in windows:
+        for win_name, win_start in windows:
+            # Degenerate-fixture guard (AUDIT.md Slice B #13): emit a window
+            # only when its [win_start, t_anchor] slice actually holds DM
+            # content AND ≥1 persona-relevant thread. A thread's `latest_ts`
+            # is its most-recent message before t_anchor, so `latest_ts >=
+            # win_start` ⇔ it has a message inside the window. Without this,
+            # an empty 24h window asks the agent to digest an empty inbox; a
+            # correct "no DMs today" answer then gets graded as a
+            # personalization miss and the judge coin-flips (observed: same
+            # answer scored 9.2 / 4.0 / 2.0 across modes on persona 1).
+            in_window = [t for t in threads if (t.get("latest_ts") or 0) >= win_start]
+            n_relevant = sum(1 for t in in_window if _text_touches_persona(t, idx))
+            if n_relevant < 1:
+                continue
             out.append({
                 "instance_id": f"t8_{app}_{win_name}",
                 "task_id": "agentic_dm_digest",
@@ -991,7 +1000,7 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
                                     f"count('{app}_send_dm') == 0",
                                     f"count('{app}_create_post') == 0"],
                 "persona_relevance": {
-                    "n_threads": len(threads),
+                    "n_threads": len(in_window),
                     "n_persona_relevant_threads": n_relevant,
                 },
             })
