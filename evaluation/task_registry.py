@@ -1352,15 +1352,14 @@ def get_system_prompt(task_type: str) -> str:
 # ---------------------------------------------------------------------------
 
 PRIMARY_METRIC: dict[str, tuple[str, str]] = {
-    # Headline = recall@3 (was recall@5). The @ai-directive task is a re-rank:
-    # the model orders the candidate slate and we measure how many directive-
-    # matching positives land in the top-K. recall@5 over-credited models that
-    # merely pad the tail of a short slate; recall@3 measures the same set
-    # intersection at the depth a user actually sees first, and tracks the other
-    # top-of-ranking signals (hit@1 / mrr / recall@3) that recall@5 diverged
-    # from. Still a deterministic set intersection (e2_at_ai_followup.py
-    # compute_e2_metrics) → OBJECTIVE.
-    "at_ai_directive_followup":          ("recall@3", "fraction"),
+    # Shared headline with the other two ranking tasks (personalized_
+    # recommendation, hidden_persona_recommendation): graded NDCG@5. Rewards
+    # ranking the directive-matching positives at the top AND burying the
+    # carve-outs (must-avoid items) at the bottom — exactly the two things a
+    # re-rank should get right. Computed in e2_at_ai_followup.compute_e2_metrics
+    # via the shared _graded_ndcg_at_k (positives=+2, carve-outs=-2, fillers=+1).
+    # Deterministic → OBJECTIVE.
+    "at_ai_directive_followup":          ("ndcg_at_5", "fraction"),
     # Phase L.B.3: real personalization scorer — top-3 result alignment with
     # the user's recent_pref_summary. Was previously `recall@1` against an
     # absent ground-truth (no scorer existed; metric was never populated).
@@ -1419,7 +1418,12 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # asserted a fabricated value as known). Non-substantive responses are
     # pre-scored 0 in the runner (silence is not abstention, R14d).
     "personal_qa_hallucination":                   ("abstention_quality_0_10", "0to10"),
-    "hidden_persona_recommendation":              ("recall_at_1", "fraction"),
+    # Shared headline with the other two ranking tasks: graded NDCG@5 (held-out
+    # target = +2, hard-negatives = -2, fillers = +1). Was recall_at_1 — uniquely
+    # harsh (only top-1) on a task whose gold is "subtle by design". NDCG@5
+    # rewards surfacing the gold high AND keeping hard-negatives low, with a
+    # smooth position discount instead of a binary top-1 cliff.
+    "hidden_persona_recommendation":              ("ndcg_at_5", "fraction"),
     # Phase L.B.2: real personalization metric — jaccard(briefing topics,
     # user's prior-24h top hashtags). Was just `has_structured_output` (yes/no
     # JSON), which any non-empty response trivially passed.
@@ -1454,11 +1458,12 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     "proactive_friend_feed_react":       ("proactive_action_score", "fraction"),
     "proactive_trending_feed_react":     ("proactive_action_score", "fraction"),
     "proactive_overactive_check":        ("proactive_action_score", "fraction"),
-    # Personalized recommendation — recall@5 is the standard recsys headline.
-    # Proposal A (R14): 3-tier (gold > fillers > hard-negatives) pair concordance.
-    # 1.0 iff gold is #1 AND every hard-neg is ranked below every filler; smooth
-    # [0,1] otherwise. Replaces recall@5 (which ignored that hard-negs — items the
-    # user actively skipped — should rank BELOW neutral fillers). recall@5 kept as
-    # a diagnostic column.
-    "personalized_recommendation":       ("tier_concordance", "fraction"),
+    # Shared headline across the three ranking tasks (at_ai_directive_followup,
+    # hidden_persona_recommendation): graded NDCG@5 (held-out target = +2,
+    # hard-negatives = -2, fillers = +1). Rewards ranking the held-out item at
+    # the top AND pushing the user's rejected look-alikes (hard-negatives) to the
+    # bottom — the criterion this slate is built to test. Was tier_concordance
+    # (R14 Proposal A pair concordance); tier_concordance + recall@5 stay as
+    # diagnostic columns. NDCG adds a position discount the pair metric lacked.
+    "personalized_recommendation":       ("ndcg_at_5", "fraction"),
 }

@@ -139,6 +139,56 @@ them up.
   models: gpt-5.5 overall resistance 83.7%, **memory-level 71.1%** (it
   affirms fabricated shared history), vs ~95% on irrelevance restraint.
 
+- **Headline-metric corrections (2026-06-13)** — two `PRIMARY_METRIC`
+  entries in `evaluation/task_registry.py` were re-pointed so the headline
+  measures the task's actual target. Both are pure aggregator changes (read
+  an already-stored per-row metric) — **no re-judging**; rerun
+  `scripts/aggregate_eval.py` to pick them up.
+  - **`chatbot_personalized_response`: `pr_combined_personalization_score` →
+    `pr_preference_alignment_score` gated by the hard rules** (new aggregator
+    kind `pref_align_gated`: returns the `preference_alignment` judge dim 0–10,
+    or 0 if any of `privacy_leak` / `avoid_leak` / `stale_preference_use` was
+    violated). This is `pr_combined` with the `telegraph_avoidance` penalty
+    removed — that 5-pt penalty fires on transparent phrasing ("since you
+    already like X"), a *style* choice rather than a personalization failure,
+    and was firing on ~half of the agentic-harness rows (Opus 24/51, Sonnet,
+    and Codex all telegraph more than the single-pass long-context models). It
+    inverted the comparison even where `preference_alignment` itself was
+    higher (e.g. Opus-CC 6.79 vs GPT-LC 6.52). Hard-rule gates are kept, so a
+    privacy leak still scores 0. Effect on the 10-persona table: Opus-CC
+    44.0 → 48.9, GPT-LC 46.4 → 46.6 (Opus now ahead).
+  - **`at_ai_directive_followup`** — headline migrated `recall@5` →
+    (briefly) `recall@3` → **graded `ndcg_at_5`** (see the ranking-task
+    unification below). Now scored by the shared NDCG and unified with the
+    other two ranking tasks.
+
+- **Ranking-task headline unification → graded NDCG@5 (2026-06-13)** — the
+  three feed-ranking/recommendation tasks now share ONE headline, `ndcg_at_5`,
+  so they're directly comparable and all reward the same thing: the
+  held-out/directive-matching item near the **top** AND the hard-negatives /
+  carve-outs (items the user actively rejected) at the **bottom**.
+  - **The metric**: graded NDCG with relevance `positive = +2`, `filler = +1`,
+    `hard-negative = -2` (`evaluation/tasks/personalized_recommendation.py::
+    _graded_ndcg_at_k`). The **negative** hard-neg grade means ranking one high
+    *subtracts* discounted gain (not merely wastes a slot); normalized by the
+    ideal ordering, clamped `[0,1]`. Tunable via `_NDCG_REL_*`. This replaced a
+    broken `_ndcg_at_k` that accepted `hard_negatives` but ignored them entirely
+    (its docstring promised a penalty that was never implemented).
+  - **Per task**: `personalized_recommendation` (was `tier_concordance`),
+    `hidden_persona_recommendation` (was `recall_at_1` — uniquely harsh top-1),
+    `at_ai_directive_followup` (was `recall@3`; its scorer
+    `e2_at_ai_followup.compute_e2_metrics` now also emits `ndcg_at_3/5` via the
+    shared helper, with directive positives = +2 and carve-outs = the −2
+    hard-negatives). `tier_concordance` / `recall@k` / `ndcg` (old) remain as
+    diagnostic columns.
+  - **Recompute**: existing stored `ndcg_at_3/5` were computed by the old
+    formula (and @ai emitted none), so they're stale. The matched-10 table was
+    refreshed by an **offline** recompute that joins `backend/{uid}/test.json`
+    (relevance labels in `instance_full`) with each run's `results.csv` ranking
+    — no eval run, no LLM (`results/_scripts/recompute_ndcg_matched10.py`). To
+    make the `aggregate_eval` stored-data path match, re-score via
+    `run_eval --replay_from` (reuses model outputs; only re-runs scoring).
+
 - **`active_mistake_prevention` plain-English rendering** — the rendered
   `groundtruth_preference` previously read `polarity=warn\nmust_mention:…\nmust_not_mention:…`,
   with the same fields ALSO duplicated in a separate red HTML block titled
@@ -639,13 +689,13 @@ The time-masked history (~400K tokens/query) is the only thing worth caching, bu
 - **History-first hoist.** `inference_utils._hoist_history_prefix` (called in `dispatch_agent_run` for `llm_longctx` / `llm_memory` / `mem0`) moves the history block to the very FRONT of every prompt, ahead of all per-query variable content (task framing, prior turns, the user query). Builders mark the block with sentinels (`_wrap_history_block`); the hoist relocates it and strips the sentinels. Same `(user, T_test)` → byte-identical leading prefix across every task.
 - **Chronological serialization.** `serialize_history_for_context` renders ONE global timeline (oldest first, each line app-tagged) instead of per-app sections, so `history(T₂)` is a true **prefix-extension** of `history(T₁)` for `T₁ < T₂` (events only append at the tail; the small folded-calendar block trails). Measured: a later cut shares ~99.6% of an earlier cut's tokens. Set `EVAL_CHRONO_HISTORY=0` for the legacy per-app layout (A/B).
 
-Net effect on the 10-persona long-context set: ~92% of input tokens become cache-eligible re-reads. Smoke test: `tests/test_cache_layout.py` (asserts tokens/$ saved, no API).
+Net effect on the long-context set: ~92% of input tokens become cache-eligible re-reads. Smoke test: `tests/test_cache_layout.py` (asserts tokens/$ saved, no API).
 
 ### Gemini batch mode (default for Gemini baselines)
 
 `QueryLLM.query_many(prompts)` routes Gemini through the **Batch API** (`query_llm_batch`: one inlined `batches.create` job, polled to completion, responses remapped to input order via `metadata.idx`) for a flat **50% discount** on non-cached tokens. ON by default for Gemini (`use_batch`); `EVAL_GEMINI_BATCH=0` forces per-row synchronous calls; non-Gemini backends fall back to sequential `query_llm`. Discounts do **not** multiply — a cache hit bills at the cache rate with no further batch discount; batch's 50% applies only to the remaining non-cached tokens. Rates + the discount math live in `evaluation/cost_model.py`; smoke test: `tests/test_batch_mode.py` (mock savings asserts + opt-in `PM3_BATCH_LIVE=1` real submission).
 
-**Cost impact (gemini-3.5-flash, 10 personas, ~1,250 long-context queries):** standard $765 → +batch $382 → +cache $137 → **+cache+batch $103** (7.4× cheaper). Best-case caching assumes per-persona ascending-`T_test` dispatch so each query is a prefix-extension; realized savings depend on implicit-cache hit rate. NOTE: `query_many`/batch is implemented in `QueryLLM` but the `run_eval` per-row loop still calls `query_llm` synchronously — wiring the loop to collect-then-batch is the remaining step before batch savings are realized end-to-end.
+**Cost impact (gemini-3.5-flash, full cohort, ~1,250 long-context queries):** standard $765 → +batch $382 → +cache $137 → **+cache+batch $103** (7.4× cheaper). Best-case caching assumes per-persona ascending-`T_test` dispatch so each query is a prefix-extension; realized savings depend on implicit-cache hit rate. NOTE: `query_many`/batch is implemented in `QueryLLM` but the `run_eval` per-row loop still calls `query_llm` synchronously — wiring the loop to collect-then-batch is the remaining step before batch savings are realized end-to-end.
 
 ### Judge policy: ON by default + judge-replay
 
@@ -746,11 +796,11 @@ for uid in $PERSONAS; do
 done
 ```
 
-This cut a 20-persona @4096 build from ~50 min (throttled at the answer-sized concurrency, where only ~3 build calls were ever in flight) to **~10 min** (built all-personas-in-parallel, which saturates the ~50 calls/min rate cap — the build is rate-bound, not concurrency-bound, once you stop under-subscribing the cap). **Caveat:** the ledger is cached, so it is NOT rebuilt on `--resume`. Changing the cap or builder model requires a fresh build — delete `{run_dir}/memory_states/` (and `results.csv` if you also want fresh answers) or `--build_only` into a fresh `--run_dir`. A known shutdown wedge (the process can hang on a pooled Azure socket *after* writing its last artifact) means a robust launcher should detect completion (the `--build_only: ledger built` line, or `summary.json` for an answer run) and kill the process rather than relying on a clean exit. `mem0` has no decoupled build — its qdrant store is rebuilt fresh (`fresh=True`) each run.
+This cut a full-cohort @4096 build from ~50 min (throttled at the answer-sized concurrency, where only ~3 build calls were ever in flight) to **~10 min** (built all-personas-in-parallel, which saturates the ~50 calls/min rate cap — the build is rate-bound, not concurrency-bound, once you stop under-subscribing the cap). **Caveat:** the ledger is cached, so it is NOT rebuilt on `--resume`. Changing the cap or builder model requires a fresh build — delete `{run_dir}/memory_states/` (and `results.csv` if you also want fresh answers) or `--build_only` into a fresh `--run_dir`. A known shutdown wedge (the process can hang on a pooled Azure socket *after* writing its last artifact) means a robust launcher should detect completion (the `--build_only: ledger built` line, or `summary.json` for an answer run) and kill the process rather than relying on a clean exit. `mem0` has no decoupled build — its qdrant store is rebuilt fresh (`fresh=True`) each run.
 
 ### Reference results: accuracy vs token cost (gpt-5.5)
 
-Snapshot from a single 20-persona run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`. Cross-**model** accuracy (e.g. gemini-3.5-flash vs gpt-5.5) is only comparable under a shared judge — use the `*_judged` gpt-5.5 judge-replay re-scores — since native self-judging differs (raw gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
+Snapshot from a single full-cohort run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`. Cross-**model** accuracy (e.g. gemini-3.5-flash vs gpt-5.5) is only comparable under a shared judge — use the `*_judged` gpt-5.5 judge-replay re-scores — since native self-judging differs (raw gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
 
 **Accuracy (micro %) + context size:**
 
@@ -800,17 +850,17 @@ benchmark signal (no task change).
 
 `over_personalization_repetition_chatbot` / `over_personalization_repetition_recsys` average ~2M
 input tokens per query in `llm_longctx` mode (the multi-turn cluster re-injects the full history
-every turn; up to 3.7–4.3M on the gpt-5.5 20-persona run above). In the 10-persona shared-judge
-(`*_judged`) comparison configs these rows came back as empty answers scoring 0. The 20-persona
-`llm_longctx_gpt5.5` run is NOT all-empty: 50/100 repetition rows (personas 26–835) returned
+every turn; up to 3.7–4.3M on the full-cohort gpt-5.5 run above). In the matched-cohort shared-judge
+(`*_judged`) comparison configs these rows came back as empty answers scoring 0. The full-cohort
+`llm_longctx_gpt5.5` run is NOT all-empty: half the repetition rows (50/100) returned
 non-empty answers (mean ~1,151 output tokens, per-row judge scores 3.3–10; published accuracy
-43.91/37.06), while the other 50 (personas 1–14) are `status=error` from a harness TypeError at
+43.91/37.06), while the other half are `status=error` from a harness TypeError at
 `evaluation/metrics.py:64` (`tokenize` received a dict — a separate fix is landing for it). On
 the identical tasks `llm_memory` (gpt-5.5) scores 81.16/75.11 and `mem0_gpt5.5` 73.18/63.16 —
 but `llm_memory_gemini3.5flash(_judged)` scores 0.0 on both with the same TypeError/empty
 signature at only 36–44K input tokens, which CANNOT be overflow. So treat the dead longctx
 cells as **structurally invalid** rather than 0-accuracy model signal — context overflow is
-supported for gemini longctx (~486K+ prompts) and gpt-5.5 personas 1–14 (~1.8M+), while the
+supported for gemini longctx (~486K+ prompts) and the erroring gpt-5.5 rows (~1.8M+), while the
 gemini-memory failures share only the metrics.py:64 crash. Mitigation: `run_eval.py` now defaults
 `--context_budget` to `DEFAULT_LONGCTX_CONTEXT_BUDGET = 700_000` tokens in `llm_longctx` mode
 when the flag is unset (see `evaluation/run_eval.py`); pass `--context_budget` explicitly to
@@ -822,16 +872,15 @@ override.
 
 **Concurrency model (rate-limit-aware).** Defaults: `--gpt-workers 8`, `--agent-workers 1`, `--jobs 1`, `--mem0-jobs 20`.
 - `llm_longctx` / `llm_memory` parallelize *intra-persona* with `$GPT_WORKERS` (8) and run personas one at a time — so concurrency stays ≈ 8 regardless of `--jobs`.
-- **`mem0`: run ALL 20 personas in parallel by default (`--mem0-jobs 20`).** It is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable) AND rate-light — only ~1 in-flight Azure call per persona, measured at ~36% of the rate cap when running 6-way — so it is concurrency-bound, not rate-bound. Running all 20 personas at once saturates the cap (backoff absorbs any overflow) and cuts mem0 wall-time the most. **Required for `--mem0-jobs > 1`:** each persona must get its own `MEM0_DIR` (the matrix's `run_one` sets `MEM0_DIR=$rundir/.mem0dir` per persona). Without it, concurrent personas collide on mem0's **global** `$HOME/.mem0/migrations_qdrant` lock and fail with `portalocker.AlreadyLocked` — the per-persona qdrant *store* dir is isolated, but the migrations folder is not. Do NOT isolate via `HOME` (that breaks the Python env); use `MEM0_DIR`. `mem0`'s `--mem0-jobs` is kept SEPARATE from `llm_memory`'s `--jobs` because `llm_memory` is workers=8 intra-persona, so high `--jobs` there would blow `$JOBS × $GPT_WORKERS` past the rate limit.
+- **`mem0`: run the whole cohort in parallel by default (`--mem0-jobs 20`).** It is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable) AND rate-light — only ~1 in-flight Azure call per persona, measured at ~36% of the rate cap when running 6-way — so it is concurrency-bound, not rate-bound. Running the whole cohort at once saturates the cap (backoff absorbs any overflow) and cuts mem0 wall-time the most. **Required for `--mem0-jobs > 1`:** each persona must get its own `MEM0_DIR` (the matrix's `run_one` sets `MEM0_DIR=$rundir/.mem0dir` per persona). Without it, concurrent personas collide on mem0's **global** `$HOME/.mem0/migrations_qdrant` lock and fail with `portalocker.AlreadyLocked` — the per-persona qdrant *store* dir is isolated, but the migrations folder is not. Do NOT isolate via `HOME` (that breaks the Python env); use `MEM0_DIR`. `mem0`'s `--mem0-jobs` is kept SEPARATE from `llm_memory`'s `--jobs` because `llm_memory` is workers=8 intra-persona, so high `--jobs` there would blow `$JOBS × $GPT_WORKERS` past the rate limit.
 - Agent modes (`agent_tools` / `mcp_agent` / `codex_agent`) default to conservative concurrency. `mcp_agent` is sequential within a persona for write-overlay safety; filesystem-only `agent_tools` and `codex_agent` can parallelize read-only rows, but launcher defaults should stay modest to protect subscription/service limits.
 
-### GPT-5.5 Codex-harness run (matched 10 personas)
+### GPT-5.5 Codex-harness run (matched cohort)
 
-For the direct comparison against `agent_tools_sonnet4.6`, `agent_tools_opus4.8`, and the shared-judge `llm_longctx_gpt5.5_judged`, use the same 10-persona cohort:
+For the direct comparison against `agent_tools_sonnet4.6`, `agent_tools_opus4.8`, and the shared-judge `llm_longctx_gpt5.5_judged`, run over the same primary cohort (defined in `scripts/personas.local.sh`):
 
 ```bash
-PERSONAS="1 2 3 5 6 8 9 10 13 14" CODEX_WORKERS=2 \
-  scripts/run_codex_agent_10persona.sh
+CODEX_WORKERS=2 scripts/run_codex_agent.sh
 ```
 
 This writes `results/codex_agent_gpt5.5/{uid}/results.csv` and then aggregates:

@@ -303,6 +303,7 @@ def build_e2_at_ai_followup(
 
 
 def compute_e2_metrics(ranked: list[int], instance: dict) -> dict:
+    from evaluation.tasks.personalized_recommendation import _graded_ndcg_at_k
     positives = set(instance.get("positive_indices") or [])
     carveouts = set(instance.get("carveout_indices") or [])
     k = len(instance.get("candidates") or [])
@@ -336,6 +337,13 @@ def compute_e2_metrics(ranked: list[int], instance: dict) -> dict:
         "carveout_violation@3": int(bool(top3 & carveouts)),
         "carveout_violation@5": int(bool(top5 & carveouts)),
         "carveout_before_all_positives": carveout_before_positives,
+        # Graded NDCG — shared headline with the other two ranking tasks
+        # (personalized_recommendation, hidden_persona_recommendation).
+        # directive-matching positives = +2, carve-outs (must-avoid) = hard
+        # negatives = -2, everything else = +1: rewards surfacing the directive's
+        # items up top AND burying the carve-outs.
+        "ndcg_at_3": round(_graded_ndcg_at_k(ranked, positives, carveouts, 3), 4),
+        "ndcg_at_5": round(_graded_ndcg_at_k(ranked, positives, carveouts, 5), 4),
     }
     lag = instance.get("lag_bucket")
     if lag:

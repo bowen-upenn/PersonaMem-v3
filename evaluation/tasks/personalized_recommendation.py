@@ -363,16 +363,102 @@ def _mrr(ranked: list[int], target: int) -> float:
     return 0.0
 
 
-def _ndcg_at_k(ranked: list[int], target: int, hard_negatives: list[int], k: int) -> float:
-    """Single-target NDCG@K with hard-negatives at relevance 0 (penalty
-    if ranked above the target). Held-out has relevance 1; everything
-    else 0."""
+# NDCG relevance grades. Hard-negatives carry a NEGATIVE relevance so that
+# ranking one high actively *subtracts* from the score (not merely wastes a
+# slot) — we penalize surfacing items the user actively rejected. Tunable: make
+# _NDCG_REL_HARD_NEG more negative to penalize hard-negatives harder.
+_NDCG_REL_TARGET = 2.0
+_NDCG_REL_FILLER = 1.0
+_NDCG_REL_HARD_NEG = -2.0
+
+
+def _graded_ndcg_at_k(ranked: list[int], positives, hard_negs, k: int) -> float:
+    """Graded NDCG@K shared by every ranking task. Relevance grades:
+
+        positive (held-out / directive-matching) = +2
+        neutral filler                            = +1
+        hard-negative (rejected / carve-out)      = -2
+
+    A hard-negative ranked into a top slot contributes NEGATIVE discounted gain,
+    so it actively drags the score down (the more so the higher it sits), on top
+    of pushing positives/fillers lower. The score therefore rewards BOTH
+    "positives near the top" AND "hard-negatives at the bottom" — and punishes
+    the inverse. Standard log2 position discount; normalized by the ideal
+    ordering (positives, then fillers, then hard-negatives) and clamped to [0, 1].
+
+    Generalizes over a SET of positives, so it serves both the recsys slates
+    (one held-out target) and the @ai-directive slate (a set of directive-
+    matching items + carve-outs as the hard-negatives). Tune via _NDCG_REL_*.
+    """
     import math
-    dcg = 0.0
-    for i, r in enumerate(ranked[:k]):
-        if r == target:
-            dcg += 1.0 / math.log2(i + 2)
-    return dcg  # ideal DCG = 1 / log2(2) = 1.0, so NDCG = dcg/1.0 = dcg
+    pos = set(positives or [])
+    hard = set(hard_negs or [])
+
+    def _rel(idx: int) -> float:
+        if idx in pos:
+            return _NDCG_REL_TARGET
+        return _NDCG_REL_HARD_NEG if idx in hard else _NDCG_REL_FILLER
+
+    def _dcg(order: list[int]) -> float:
+        return sum(_rel(idx) / math.log2(i + 2) for i, idx in enumerate(order[:k]))
+
+    idcg = _dcg(sorted(ranked, key=_rel, reverse=True))
+    if idcg <= 0:
+        return 0.0
+    return max(0.0, _dcg(ranked) / idcg)
+
+
+def _ndcg_at_k(ranked: list[int], target: int, hard_negatives: list[int], k: int) -> float:
+    """Single-target wrapper around `_graded_ndcg_at_k` for the recsys slates
+    (one held-out `target` + hard negatives). See it for the grading.
+
+    NOTE: this previously credited only the target's own position and ignored
+    `hard_negatives` entirely; then a no-penalty graded version (hard-neg = 0)
+    only let them waste a slot. The shared helper now actively penalizes them.
+    """
+    return _graded_ndcg_at_k(ranked, {target}, hard_negatives, k)
+
+
+def _tier_concordance(ranked: list[int], target: int, hard_negatives: list[int],
+                      n_candidates: int) -> float | None:
+    """Proposal A — fraction of cross-tier constrained pairs ordered correctly.
+
+    The slate has three relevance tiers, ideal order:
+        gold (held-out)  >  fillers (neutral)  >  hard-negatives (rejected)
+    The constrained pairs the ideal order requires are:
+        gold > each filler        (f pairs)
+        gold > each hard-negative  (h pairs)
+        each filler > each hard-neg (f*h pairs)
+    Within-tier order is unconstrained (ties → not counted). Score is the
+    fraction of those f + h + f*h pairs the model ranked correctly. It is 1.0
+    iff the gold is #1 AND every hard-negative sits below every filler, and 0.0
+    at the fully-inverted order. Items the model didn't rank are treated as tied
+    at the bottom (so an incomplete ranking loses those pairs). Returns None for
+    a degenerate slate with no fillers AND no hard-negatives.
+    """
+    if not isinstance(target, int):
+        return None
+    hard = [i for i in (hard_negatives or [])
+            if isinstance(i, int) and 0 <= i < n_candidates and i != target]
+    hard_set = set(hard)
+    fillers = [i for i in range(n_candidates) if i != target and i not in hard_set]
+    f, h = len(fillers), len(hard)
+    total = f + h + f * h
+    if total == 0:
+        return None
+    bottom = len(ranked)
+    pos = {idx: p for p, idx in enumerate(ranked)}
+    above = lambda x, y: pos.get(x, bottom) < pos.get(y, bottom)  # strict
+
+    correct = 0
+    for x in fillers + hard:          # gold above every filler and hard-neg
+        if above(target, x):
+            correct += 1
+    for fi in fillers:                # every filler above every hard-neg
+        for hn in hard:
+            if above(fi, hn):
+                correct += 1
+    return round(correct / total, 4)
 
 
 def compute_personalized_recommendation_metrics(parsed: dict, instance: dict) -> dict:
@@ -410,6 +496,9 @@ def compute_personalized_recommendation_metrics(parsed: dict, instance: dict) ->
     return {
         "n_ranked": len(ranked),
         "valid": True,
+        # HEADLINE (Proposal A): 3-tier (gold > fillers > hard-negs) pair
+        # concordance. 1.0 iff gold is #1 and all hard-negs are below all fillers.
+        "tier_concordance": _tier_concordance(ranked, target, hard_negs, n_candidates),
         "recall_at_1": _recall_at_k(ranked, target, 1),
         "recall_at_3": _recall_at_k(ranked, target, 3),
         "recall_at_5": _recall_at_k(ranked, target, 5),
@@ -471,7 +560,7 @@ def run_personalized_recommendation(
 
         raw_response, tool_call_count, subagent_stats = dispatch_agent_run(
             mode, prompt, bq=bq, user_id=user_id, t=t,
-            claude_model=claude_model, llm_client=llm_client,
+            claude_model=claude_model, llm_client=llm_client, task_type=_TASK_ID,
         )
         parsed = extract_json_from_response(raw_response) or {}
         m = compute_personalized_recommendation_metrics(parsed, inst)
