@@ -353,15 +353,15 @@ def _dispatch_and_score(
     # Final-answer-only modes are graded on response_text only: rubric on the
     # answer, no tool-call rules, no overlay readout, no output_quality verifier
     # (those all assume an MCP overlay that exists ONLY in mcp_agent). This covers
-    # the text baselines AND agent_tools — agent_tools has filesystem search tools
-    # but NO MCP write tools / overlay, so its write tasks emit the content as
-    # final_answer (see prompts_agentic._action_or_final) and must be graded as
-    # text, identically to llm_longctx. Without agent_tools here it fell through to
-    # the mcp_agent path and was scored against an empty writes.jsonl overlay →
-    # invalid compose-task scores (audit 2026-06-06). Keeps the cross-mode
-    # comparison honest — see DESIGN.md.
+    # the text baselines, agent_tools, and codex_agent -- the filesystem-agent
+    # modes have search/read tools but NO MCP write tools / overlay, so write
+    # tasks emit content as final_answer (see prompts_agentic._action_or_final)
+    # and must be graded as text, identically to llm_longctx. Without this they
+    # fall through to the mcp_agent path and get scored against an empty
+    # writes.jsonl overlay. Keeps the cross-mode comparison honest -- see
+    # DESIGN.md.
     from evaluation.inference_utils import merge_token_metrics
-    if mode in ("llm_longctx", "llm_memory", "mem0", "agent_tools"):
+    if mode in ("llm_longctx", "llm_memory", "mem0", "agent_tools", "codex_agent"):
         metrics = {
             **{f"pr_{k}": v for k, v in pers.items() if isinstance(v, (int, float, str))},
             "mode_grading": "final_answer_only",
@@ -1291,7 +1291,7 @@ def build_t16_group_dm_summary(bq: BackendQuery, user_id: str, t_anchor: int) ->
     regardless of memory and pollute the benchmark.
 
     Supply relaxation (2026-06): the shipped benchmark artifact (test.json
-    built from an older backend snapshot) had 13/20 users with zero
+    built from an older backend snapshot) had most users with zero
     instances against a min=5 floor; the current backend supplies more
     group threads unpatched, but coverage still varies by persona.
     Tiered fallback: group threads stay the first preference, but when
@@ -1562,7 +1562,7 @@ def _prompt_for(task_id: str):
     """
     pa = prompts_agentic
 
-    def t6(inst, h, **kw): return pa.t6_user_tone_post(inst["target_app"], h, **kw)
+    def t6(inst, h, **kw): return pa.t6_user_tone_post(inst["target_app"], h, user_query=inst.get("user_query"), **kw)
     def t_send_post(inst, h, **kw):
         body = inst.get("context") or inst.get("update") or ""
         return pa.t12_agent_composed_post(inst["target_app"], body, h, **kw)
@@ -1592,4 +1592,3 @@ def run_task(task_id: str, instances, **kwargs):
     if prompt_fn is None:
         raise ValueError(f"no prompt for task_id={task_id}")
     return _run_generic(task_id=task_id, instances=instances, prompt_fn=prompt_fn, **kwargs)
-

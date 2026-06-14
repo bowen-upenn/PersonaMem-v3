@@ -206,17 +206,35 @@ COMPOSE_LENGTH_AND_VOICE_RULE = (
 def t6_user_tone_post(app: str, history_block: str | None = None,
                       ground_truth_block: str | None = None,
                       allow_extra_tools: bool = False,
-                      text_only: bool = False) -> str:
+                      text_only: bool = False,
+                      user_query: str | None = None) -> str:
     if ground_truth_block:
         directive = _grounded_directive(allow_extra_tools=allow_extra_tools, app=app)
     else:
         directive = _read_first(app)
     no_tools = f"\n{_no_tools_note()}\n" if text_only else ""
-    return f"""# Task T6: Community digest post
+    # The rubric/ground-truth for this task is anchored to a SPECIFIC topic
+    # (the user's top non-generic interest, e.g. "cats" via build_t6's
+    # user_query). The request below MUST carry that topic, or the agent is
+    # graded against a topic it was never asked to write about — a
+    # prompt↔rubric mismatch that penalizes focused on-voice posts and
+    # rewards kitchen-sink roundups that incidentally name the topic (see
+    # AUDIT.md, "prompt↔rubric topic drift"). Fall back to the open-ended
+    # week-digest framing only when no topic query is supplied.
+    if user_query:
+        ask = (f'The user asked: "{user_query.strip()}"\n\n'
+               f"Draft ONE short post in their voice on {app} that fulfils that "
+               f"request. Ground it in what they've actually engaged with on "
+               f"{app} so it reads like them and reflects what they genuinely "
+               f"care about on this topic.")
+    else:
+        ask = (f"Look at what the user has engaged with on {app} over the past "
+               f"week. Draft ONE short post they could share with their "
+               f"community that summarizes or highlights something meaningful "
+               f"from that pattern.")
+    return f"""# Task T6: Community voice post
 
-Look at what the user has engaged with on {app} over the past week. Draft ONE
-short post they could share with their community that summarizes or highlights
-something meaningful from that pattern.
+{ask}
 {_ground_truth_block(ground_truth_block)}
 {directive}{no_tools}
 
