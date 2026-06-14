@@ -467,14 +467,25 @@ def _build_token_accuracy_table(rows: list[dict], e6_paired: dict | None = None)
             a = _accuracy_value(task, m, status, e6_paired)
             if a is not None:
                 accs.append(a)
+            # Cost columns are PER STANDALONE QUERY, for a fair cross-task /
+            # cross-mode comparison. The repetition tasks (c1c/c1d) bundle
+            # `n_total` sequential sub-calls into ONE row, so their stored
+            # duration / tokens / cost are cluster SUMS (5-6x a single query)
+            # — normalize by n_total so the table reflects one query's cost,
+            # not the whole cluster. Every other task has n_total absent → 1.
+            nsub = m.get("n_total") or 1
             try:
-                in_toks.append(float(m.get("input_tokens") or 0))
-                out_toks.append(float(m.get("output_tokens") or 0))
-                costs.append(float(m.get("cost_usd") or 0))
+                nsub = max(1, int(nsub))
+            except Exception:
+                nsub = 1
+            try:
+                in_toks.append(float(m.get("input_tokens") or 0) / nsub)
+                out_toks.append(float(m.get("output_tokens") or 0) / nsub)
+                costs.append(float(m.get("cost_usd") or 0) / nsub)
             except Exception:
                 pass
             try:
-                durs.append(float(r.get("duration_ms") or 0))
+                durs.append(float(r.get("duration_ms") or 0) / nsub)
             except Exception:
                 pass
         n = len(task_rows)
