@@ -15,7 +15,7 @@ pipeline. Each item's `instance_full` field becomes the runner's `inst`.
 
 CLI:
     python -m evaluation.run_eval --user_id 115 --run_dir runs/<ts>
-        [--mode llm_longctx|mcp_agent|agent_tools]
+        [--mode llm_longctx|mcp_agent|agent_tools|codex_agent]
         [--limit N] [--resume] [--dry_run]
         [--enable_llm_judge]
 """
@@ -122,7 +122,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--run_dir", required=True,
                    help="Output directory for results.csv + writes.jsonl + summary files")
     p.add_argument("--mode",
-                   choices=("llm_longctx", "llm_memory", "mem0", "mcp_agent", "agent_tools"),
+                   choices=("llm_longctx", "llm_memory", "mem0", "mcp_agent", "agent_tools", "codex_agent"),
                    default="llm_longctx")
     p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5.5"),
                    help="Baseline LLM model for llm_longctx / llm_memory / mem0 modes")
@@ -161,6 +161,11 @@ def _parse_args() -> argparse.Namespace:
                         "results.csv first, then re-run ONLY those failed/missing "
                         "query_ids (implies --resume). Use to complete a run that "
                         "hit transient API errors like 429 rate limits.")
+    p.add_argument("--retry_empty", action="store_true",
+                   help="Drop status=='ok' rows whose agent_response is empty "
+                        "before resuming. This is for repairing harness artifacts "
+                        "where a row was scored even though generation produced no "
+                        "captured final answer.")
     p.add_argument("--prune_invalid", action="store_true",
                    help="After the run, remove any rows still not status=='ok' "
                         "from results.csv so the aggregate contains only valid rows.")
@@ -189,7 +194,7 @@ def _parse_args() -> argparse.Namespace:
 
 def _build_llm_clients(args: argparse.Namespace):
     """Mirror the clients set up by run_inference.py._build_llm_clients."""
-    if args.dry_run or args.mode in ("agent_tools", "mcp_agent"):
+    if args.dry_run or args.mode in ("agent_tools", "codex_agent", "mcp_agent"):
         baseline = None
     else:
         from query_llm import QueryLLM
@@ -247,6 +252,14 @@ def _load_queries(queries_path: Path) -> list[dict]:
             if not isinstance(item, dict):
                 continue
             inst_full = item.get("instance_full") or item
+            # test.json promotes `user_query` to the item top level, but the
+            # runner reads inst = instance_full — so topic-anchored prompt
+            # builders (e.g. T6 agentic_community_post) never saw the requested
+            # topic and were graded against one they were never asked for
+            # (AUDIT.md Slice B #14). Re-attach it (copy, don't mutate source).
+            if (isinstance(inst_full, dict) and item.get("user_query")
+                    and "user_query" not in inst_full):
+                inst_full = {**inst_full, "user_query": item["user_query"]}
             rows.append({
                 "query_id": item.get("query_id", f"unknown:{i:04d}"),
                 "seq": str(i),
@@ -279,9 +292,10 @@ def _already_done(results_csv: Path) -> set[str]:
     return out
 
 
-def _rewrite_keep_ok(results_csv: Path) -> tuple[int, int]:
-    """Rewrite results.csv keeping ONLY status=='ok' rows; drop everything else
-    (error / failed_writes / failed_quality / no_result). Returns (kept, dropped).
+def _rewrite_keep_ok(results_csv: Path, *, require_response: bool = False) -> tuple[int, int]:
+    """Rewrite results.csv keeping only valid rows. By default this means
+    status=='ok'. When ``require_response`` is true, status-ok rows with an
+    empty ``agent_response`` are also dropped. Returns (kept, dropped).
 
     Used by --retry_failed (pre-run: removing failed rows makes their query_ids
     re-run under resume) and by --prune_invalid (post-run: drop anything that
@@ -291,7 +305,11 @@ def _rewrite_keep_ok(results_csv: Path) -> tuple[int, int]:
         return (0, 0)
     with results_csv.open("r", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
-    keep = [r for r in rows if (r.get("status") or "") == "ok"]
+    keep = [
+        r for r in rows
+        if (r.get("status") or "") == "ok"
+        and (not require_response or bool((r.get("agent_response") or "").strip()))
+    ]
     dropped = len(rows) - len(keep)
     if dropped == 0:
         return (len(keep), 0)
@@ -327,6 +345,8 @@ def _set_query_env(row: dict, run_dir: Path, user_id: str, backend_dir: str) -> 
     os.environ["PM3_T_TEST"] = str(row["ts"])
     os.environ["PM3_USER_ID"] = user_id
     os.environ["PM3_BACKEND_DIR"] = backend_dir
+    os.environ["PM3_RUN_DIR"] = str(run_dir)
+    os.environ["PM3_QUERY_ID"] = str(row.get("query_id") or "")
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
 
 
@@ -339,10 +359,10 @@ def _is_sequential(task_type: str, mode: str = "") -> bool:
       (b) the eval mode is `mcp_agent` (the only mode where writes
           actually happen).
 
-    In `agent_tools` mode, the agent is read-only (filesystem snapshot,
-    no MCP tools, no overlay). In `llm_longctx` mode, there's no agent
-    framework at all. So in both non-mcp modes, ALL tasks can safely
-    run in parallel — the sequential constraint is unnecessary.
+    In `agent_tools` and `codex_agent` modes, the agent is read-only
+    (filesystem snapshot, no MCP tools, no overlay). In `llm_longctx` mode,
+    there's no agent framework at all. So in all non-mcp modes, ALL tasks can
+    safely run in parallel -- the sequential constraint is unnecessary.
 
     This alone eliminates the sequential bottleneck for agent_tools
     mode: the 26-min agentic queue drops to ~4 min with 16 workers.
@@ -355,7 +375,8 @@ def _is_sequential(task_type: str, mode: str = "") -> bool:
 
 
 def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
-              result: dict | None, duration_ms: int) -> dict:
+              result: dict | None, duration_ms: int,
+              *, require_agent_response: bool = False) -> dict:
     """Build the per-row CSV record from a runner's return value.
 
     Shared between the sequential and parallel-worker code paths so the
@@ -397,13 +418,26 @@ def _pack_rec(qid: str, seq, user_id: str, task_type: str, ts,
     raw_resp = result.get("agent_response")
     if raw_resp is None:
         raw_resp = result.get("agent_response_raw")
+    if raw_resp is None:
+        raw_resp = result.get("response_for_row")
+    if raw_resp is None and isinstance(result.get("responses"), list):
+        raw_resp = result.get("responses")
+    status = result.get("status", "ok")
+    error = result.get("error", "") or ""
+    if (
+        require_agent_response
+        and status == "ok"
+        and not (str(raw_resp or "").strip())
+    ):
+        status = "error"
+        error = "empty agent_response from successful Codex task"
     return {
         "query_id": qid, "seq": seq,
         "user_id": user_id, "task_type": task_type, "ts": ts,
         "metrics_json": json.dumps(metrics_dict, ensure_ascii=False),
-        "status": result.get("status", "ok"),
+        "status": status,
         "duration_ms": duration_ms,
-        "error": result.get("error", "") or "",
+        "error": error,
         "agent_response": _truncate_agent_response(raw_resp),
     }
 
@@ -437,6 +471,8 @@ def _run_one_in_worker(payload: dict) -> dict:
     os.environ["PM3_T_TEST"] = str(row["ts"])
     os.environ["PM3_USER_ID"] = user_id
     os.environ["PM3_BACKEND_DIR"] = payload["backend_dir"]
+    os.environ["PM3_RUN_DIR"] = str(run_dir)
+    os.environ["PM3_QUERY_ID"] = str(row.get("query_id") or "")
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
 
     # Build per-worker LLM clients. Each worker keeps its own QueryLLM
@@ -472,7 +508,7 @@ def _run_one_in_worker(payload: dict) -> dict:
         llm_client=baseline, judge_client=judge,
         mode=payload["mode"], snapshot_cache=worker_cache,
         model_name=payload["model_name"],
-        claude_model=payload["claude_model"],
+        claude_model=payload["agent_cli_model"],
         context_budget=payload["context_budget"],
         enable_llm_judge=payload["enable_llm_judge"],
         dry_run=payload["dry_run"],
@@ -495,8 +531,14 @@ def _run_one_in_worker(payload: dict) -> dict:
     try:
         result = dispatch_single(row["task_type"], inst, ctx)
         return _pack_rec(qid, row["seq"], user_id, row["task_type"],
-                         row["ts"], result, int((time.time() - t0) * 1000))
+                         row["ts"], result, int((time.time() - t0) * 1000),
+                         require_agent_response=(
+                             payload["mode"] == "codex_agent"
+                             and not payload["dry_run"]
+                         ))
     except Exception as e:
+        if payload["mode"] == "codex_agent" and "usage limit" in str(e).lower():
+            raise
         tb = traceback.format_exc()
         last_frame_loc = ""
         for line in reversed(tb.splitlines()):
@@ -536,6 +578,7 @@ def _build_payload(row: dict, args: argparse.Namespace, run_dir: Path,
         "mode": args.mode,
         "model_name": args.model,
         "claude_model": args.claude_model,
+        "agent_cli_model": args.model if args.mode == "codex_agent" else args.claude_model,
         "judge_model_name": args.judge_model,
         "enable_llm_judge": args.enable_llm_judge,
         "context_budget": args.context_budget,
@@ -688,9 +731,13 @@ def main() -> int:
 
     # --retry_failed: strip non-ok rows so their query_ids are no longer "done",
     # then resume — only the failed/missing rows re-run (now under 429 backoff).
-    if args.retry_failed and results_csv.exists():
-        kept, dropped = _rewrite_keep_ok(results_csv)
-        print(f"[run_eval] retry_failed: removed {dropped} non-ok rows "
+    if (args.retry_failed or args.retry_empty) and results_csv.exists():
+        kept, dropped = _rewrite_keep_ok(
+            results_csv,
+            require_response=args.retry_empty,
+        )
+        reason = "non-ok/empty-response" if args.retry_empty else "non-ok"
+        print(f"[run_eval] retry: removed {dropped} {reason} rows "
               f"(kept {kept} ok) — re-running the failed/missing query_ids.")
         args.resume = True
 
@@ -880,7 +927,7 @@ def main() -> int:
         mode=args.mode,
         snapshot_cache=snapshot_cache,
         model_name=args.model,
-        claude_model=args.claude_model,
+        claude_model=args.model if args.mode == "codex_agent" else args.claude_model,
         context_budget=args.context_budget,
         enable_llm_judge=args.enable_llm_judge,
         dry_run=args.dry_run,
@@ -973,8 +1020,14 @@ def main() -> int:
         try:
             result = dispatch_single(row["task_type"], inst, ctx)
             return _pack_rec(qid, row["seq"], args.user_id, row["task_type"],
-                             row["ts"], result, int((time.time() - t0) * 1000))
+                             row["ts"], result, int((time.time() - t0) * 1000),
+                             require_agent_response=(
+                                 args.mode == "codex_agent"
+                                 and not args.dry_run
+                             ))
         except Exception as e:
+            if args.mode == "codex_agent" and "usage limit" in str(e).lower():
+                raise
             tb = traceback.format_exc()
             print(
                 f"[run_eval] ERROR on query_id={qid} task_type={row['task_type']}:\n{tb}",
@@ -1085,6 +1138,8 @@ def main() -> int:
                         try:
                             _emit(fut.result(timeout=5))
                         except Exception as e:
+                            if args.mode == "codex_agent" and "usage limit" in str(e).lower():
+                                raise
                             payload = fut_to_payload[fut]
                             row = payload["row"]
                             _emit({
