@@ -1352,13 +1352,15 @@ def get_system_prompt(task_type: str) -> str:
 # ---------------------------------------------------------------------------
 
 PRIMARY_METRIC: dict[str, tuple[str, str]] = {
-    # Phase L.B.1: blended hit@1 + judge intent-alignment. Falls back to
-    # hit@1 alone when judge is disabled (directive_score key absent).
-    # Was directive_score (hit@1) → 0% on all 12 rows; recall@3 also
-    # 0% (gold never in top-3). recall@5 shows 25% — below random
-    # (42% expected at chance for a 12-item slate) but at least captures
-    # the partial signal. The agent struggles with @ai directive ranking.
-    "at_ai_directive_followup":          ("recall@5", "fraction"),
+    # Headline = recall@3 (was recall@5). The @ai-directive task is a re-rank:
+    # the model orders the candidate slate and we measure how many directive-
+    # matching positives land in the top-K. recall@5 over-credited models that
+    # merely pad the tail of a short slate; recall@3 measures the same set
+    # intersection at the depth a user actually sees first, and tracks the other
+    # top-of-ranking signals (hit@1 / mrr / recall@3) that recall@5 diverged
+    # from. Still a deterministic set intersection (e2_at_ai_followup.py
+    # compute_e2_metrics) → OBJECTIVE.
+    "at_ai_directive_followup":          ("recall@3", "fraction"),
     # Phase L.B.3: real personalization scorer — top-3 result alignment with
     # the user's recent_pref_summary. Was previously `recall@1` against an
     # absent ground-truth (no scorer existed; metric was never populated).
@@ -1379,14 +1381,17 @@ PRIMARY_METRIC: dict[str, tuple[str, str]] = {
     # leak-set + judge composite `passed` flag emitted by the runner.
     "new_suggestions_recsys":                  ("passed", "fraction"),
     "new_suggestions_chatbot":                 ("passed", "fraction"),
-    # Chatbot response — held-out preference alignment for proactive arm,
-    # restraint for control arm. Both metrics actually emitted by chatbot_response.py.
-    # Was held_out_score (cosine similarity against ONE specific held-out
-    # preference → 7.8% because the agent can personalize well on OTHER
-    # preferences and still miss the exact held-out one). pr_combined
-    # measures broader personalization quality: preference_alignment +
-    # over_personalization + subtle_personalization + hard-rule gates.
-    "chatbot_personalized_response":               ("pr_combined_personalization_score", "pr_combined"),
+    # Chatbot response — headline = preference_alignment (the actual target:
+    # how well the answer is personalized to THIS user), gated by the hard
+    # rules (privacy_leak / avoid_leak / stale_preference_use still zero a row).
+    # This is pr_combined WITH the telegraph_avoidance penalty removed: that
+    # 5-pt penalty fires on transparent phrasing ("since you already like X"),
+    # which is a style choice, not a personalization failure — it was docking
+    # ~half of the agentic-harness rows and inverting the comparison even where
+    # preference_alignment itself was higher. The hard-rule gates are kept, so
+    # a privacy leak still scores 0. Still judge-derived (preference_alignment
+    # is an LLM-judge dim) → stays in JUDGE_TASK_TYPES.
+    "chatbot_personalized_response":               ("pr_preference_alignment_score", "pref_align_gated"),
     "over_personalization_chatbot_text":           ("pr_combined_personalization_score", "pr_combined"),
     "over_personalization_context_shift":                     ("pr_combined_personalization_score", "pr_combined"),
     # F1 over (precision, recall) — gameable-by-rejecting-nothing precision was
