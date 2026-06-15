@@ -27,6 +27,19 @@
 - **NEVER `rm` (or otherwise delete/overwrite) log or backup files without explicitly asking the user first and receiving a clear "yes".** List exactly what will be removed (paths + rough sizes) and why it is safe to delete, then wait for approval. This applies even when cleanup is mentioned in the same message as other instructions — ask before deleting.
 - Stale logs are a known audit footgun (e.g. tracebacks in old `*_eval.stderr` files misread as live errors); flag them for cleanup rather than silently leaving or silently removing them.
 
+## Shared Results HTML (single-writer lock)
+- `results/aggregate/html/results_tables.html` is written by MANY scripts (`results/_scripts/render_matched10_final.py`, the NIAH/memory section renderers, ad-hoc `patch_*.py`) and by MULTIPLE concurrent sessions. With no lock, two writers race: the file gets **duplicated** (whole document doubled) or a section renderer carries a **stale copy of another section forward** (this is how the Hidden-persona Accuracy row kept reverting to old values).
+- **Whenever you update `results_tables.html`, acquire the single-writer lock first — only one session/script may edit it at a time.** Hold the lock across the entire read-modify-write, not just the write.
+- Python: `from _htmllock import html_lock` then `with html_lock(): html = open(HTML).read(); ...; open(HTML, "w").write(html)`. The helper is `results/_scripts/_htmllock.py` (flock on `results/aggregate/html/.results_tables.lock`, 180s timeout then raises rather than risk an overwrite). `render_matched10_final.py` and `mark_top2_bolds.py` already use it; any new writer MUST too.
+- Bash one-off edits:
+  ```bash
+  exec 9>results/aggregate/html/.results_tables.lock
+  flock -w 180 9 || { echo "results_tables.html locked by another session"; exit 1; }
+  python3 results/_scripts/<writer>.py        # do the edit
+  flock -u 9
+  ```
+- First three tables (Accuracy / Latency / Total tokens) bold the **top two** cells per row (Accuracy = 2 highest; Latency & tokens = 2 lowest). `mark_top2_bolds.py` re-applies this; keep it top-2, not top-1.
+
 ## Design Document
 - Whenever you make changes to the pipeline design (new features, changed thresholds, altered logic, new steps, etc.), update `DESIGN.md` accordingly. Keep it clean and concise — match the existing style.
 
