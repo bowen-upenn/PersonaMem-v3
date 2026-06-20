@@ -38,6 +38,29 @@ def _jaccard(a: list[str], b: list[str]) -> float:
     return len(sa & sb) / len(sa | sb)
 
 
+# Match a candidate against the canonical's directive hashtags by SHARED-TAG
+# overlap, not raw Jaccard. `directive_hashtags` is the union of every hashtag
+# the short-term canonical ever carried (often 15-20 tags), so a perfectly
+# on-topic 3-4 tag candidate has Jaccard ~0.2 and never clears a 0.3 bar — that
+# union-inflation collapsed every e5 instance to zero. A candidate is "about"
+# the short-term interest if it shares >=2 directive tags, OR if at least half
+# of its own (small) tag set lands in the directive set (containment), which
+# keeps sparse 1-2 tag candidates matchable.
+_E5_MIN_SHARED_TAGS: int = 2
+_E5_CONTAINMENT_FLOOR: float = 0.5
+
+
+def _is_short_term_match(cand_tags: list[str], directive_tags: list[str]) -> bool:
+    ct = {h.lstrip("#").lower() for h in (cand_tags or []) if h}
+    dt = {h.lstrip("#").lower() for h in (directive_tags or []) if h}
+    if not ct or not dt:
+        return False
+    shared = len(ct & dt)
+    if shared >= _E5_MIN_SHARED_TAGS:
+        return True
+    return shared / len(ct) >= _E5_CONTAINMENT_FLOOR
+
+
 def _collect_short_term_canonicals(bq: BackendQuery, user_id: str) -> list[dict]:
     """Harvest one record per short-term canonical with a non-null
     `expected_stop_ts`, merging data across all four apps.
@@ -167,17 +190,46 @@ def build_e5_horizon_lifecycle(
         if len(post_events) < 3:
             post_events = pre_events
 
+        # The on-topic ("interest") candidates are the SAME set for both phases
+        # — they're the short-term interest's own content, drawn from the active
+        # window. The post phase tests whether the model DEMOTES these once the
+        # interest has expired, so it MUST contain them; re-gathering matches
+        # from the post time-window would (correctly) find none, since the user
+        # stopped engaging — which structurally removed the items under test and
+        # zeroed the post phase. Distractors still come from each phase's own
+        # window. We harvest interest events from a wide active-window sweep so
+        # there are enough to seed every phase.
+        interest_events = [
+            e for e in _gather_candidate_events(
+                bq, user_id,
+                window_start=max(0, t_active - 14 * 86400),
+                window_end=t_active + 3 * 86400,
+            )
+            if _is_short_term_match(e.get("source_hashtags") or [], directive_hashtags)
+        ]
+        if len(interest_events) < E5_MIN_MATCHING_CANDIDATES:
+            continue  # genuine sparsity — not enough on-topic content to test
+
         rng = _random.Random(f"{rng_seed}:e5:{rec['persona_item'][:40]}")
 
         def _build_phase(events_list: list[dict], t_test: int, phase: str) -> dict | None:
-            # Sample up to E5_POOL_TARGET candidates
-            sampled = events_list[:]
+            # Distractors = phase-window events that are NOT the interest.
+            other_pool = [
+                e for e in events_list
+                if not _is_short_term_match(e.get("source_hashtags") or [], directive_hashtags)
+            ]
+            interest = list(interest_events)
+            rng.shuffle(interest)
+            rng.shuffle(other_pool)
+            # Seed enough on-topic candidates to clear the floor with headroom,
+            # but leave room for distractors so the ranking isn't trivial.
+            n_match = min(len(interest), max(E5_MIN_MATCHING_CANDIDATES, E5_POOL_TARGET // 2))
+            sampled = interest[:n_match] + other_pool[: E5_POOL_TARGET - n_match]
             rng.shuffle(sampled)
-            sampled = sampled[:E5_POOL_TARGET]
             candidates = [_project_candidate(e) for e in sampled]
             matching_indices = [
                 i for i, e in enumerate(sampled)
-                if _jaccard(e.get("source_hashtags") or [], directive_hashtags) >= 0.3
+                if _is_short_term_match(e.get("source_hashtags") or [], directive_hashtags)
             ]
             if len(matching_indices) < E5_MIN_MATCHING_CANDIDATES:
                 return None

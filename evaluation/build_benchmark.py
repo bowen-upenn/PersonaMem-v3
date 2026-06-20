@@ -4040,15 +4040,20 @@ def build_c1e_new_suggestions(
         if anchor["trigger_kind"] == "at_ai_directive":
             fatigued_tags = list(anchor.get("directive_hashtags") or [])
 
-        # Tag the gold with the hidden persona(s) it's anchored on. If the
-        # gold doesn't overlap ANY hidden persona's evidence_hashtags it
-        # is, by definition, not persona-anchored — drop the candidate.
+        # Tag the gold with the hidden persona(s) it's anchored on.
         gold_anchor_personas = _c1e_anchor_personas_for_gold(
             gold_payload.get("gold_hashtags") or [],
             hidden_personas,
             top_k=2,
         )
-        if hidden_personas and not gold_anchor_personas:
+        # The hidden-persona-anchor requirement only applies to flavor A
+        # (LLM-INVENTED golds, which need grounding so they aren't arbitrary).
+        # Flavor B golds are REAL future engagements — by construction a brand
+        # new topic with zero overlap to prior history — so they can never
+        # overlap an established hidden persona's evidence hashtags, and the
+        # future-truth engagement IS the gold signal. Requiring anchoring on
+        # flavor B dropped 100% of new_suggestions instances. Exempt it.
+        if flavor == "A_llm" and hidden_personas and not gold_anchor_personas:
             n_dropped_no_anchor += 1
             continue
 
