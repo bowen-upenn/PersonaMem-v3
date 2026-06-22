@@ -149,7 +149,17 @@ def compute_new_suggestions_chatbot_metrics(
     proposed = set(_extract_response_hashtags(parsed, raw_response))
     fatigue_overlap = sorted(proposed & fatigued)
     leak_overlap = sorted(proposed & leak)
-    hard_fail = bool(fatigue_overlap or leak_overlap)
+    # The leak_set is the user's ENTIRE recent hashtag vocabulary (often
+    # hundreds–thousands of tags), so failing on ANY single overlap made a
+    # fresh suggestion impossible (a farm-life pivot got killed because
+    # `baseball` happened to be in the user's history). Hard-fail only on the
+    # FATIGUED cluster (the specific saturated topic the user is tired of) or
+    # when the suggestion is DOMINATED by recently-seen tags (a majority of the
+    # proposed tags are leaks → it's a recycle, not a pivot). Incidental
+    # single-tag overlap is left to the judge to weigh.
+    n_prop = max(1, len(proposed))
+    leak_dominant = len(leak_overlap) >= max(2, (n_prop + 1) // 2)
+    hard_fail = bool(fatigue_overlap) or leak_dominant
     out: dict = {
         "valid": bool(parsed.get("recommendation") or raw_response),
         "fatigue_overlap": fatigue_overlap,

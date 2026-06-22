@@ -1687,27 +1687,30 @@ def judge_new_suggestions_chatbot_prompt(
 ## Trigger
 {trigger_kind}
 
-## Hard rules (mark `hard_fail: true` if any apply)
-- The recommendation overlaps a `fatigued_hashtag` → recycling saturated topics.
-- The recommendation overlaps a `leak_set_hashtag` → user already engaged with it ±24h.
+## Hard rule (mark `hard_fail: true` only if this applies)
+- The recommendation is CENTRALLY about a `fatigued_hashtag` topic → it
+  recycles the exact thing the user is saturated on.
 
 ## Gold (a persona-grounded reference for "what good looks like")
 - gold_topic: {gold_topic!r}
 - gold_hashtags: {gold_hashtags}
-- fatigued_hashtags (must NOT appear): {fatigued_hashtags}
-- leak_set_hashtags (must NOT appear): {leak_set_hashtags}
+- fatigued_hashtags (the saturated topic — must NOT be the focus): {fatigued_hashtags}
+- recently_seen_hashtags (context — the user engages broadly; a great pick is a
+  NEW direction, but an incidental single-tag coincidence with this list is FINE
+  and must NOT be penalized): {leak_set_hashtags[:40]}
 
 ## Agent response
 {agent_response}
 
 ## Scoring
-Score on a 0-3 scale how well the agent's recommendation aligns with the
-SPIRIT of the gold (not necessarily the exact same topic — different
-plausible new directions for this user are fine):
+Score on a 0-3 scale how well the agent's recommendation is a fresh,
+persona-grounded pivot for this user. It need NOT match the gold topic exactly —
+any plausible new direction aligned with the user's deeper interests is great:
   3 = obviously a fresh, persona-grounded pivot the user would love
   2 = plausible new direction, somewhat aligned with hidden interests
   1 = generic / barely persona-aware
-  0 = recycled, off-target, or violates a hard rule
+  0 = recycles the fatigued topic, or is plainly something the user is already
+      actively immersed in (not merely an incidental tag overlap)
 
 ## Output
 Respond with ONE fenced ```json block:
