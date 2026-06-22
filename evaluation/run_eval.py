@@ -176,6 +176,13 @@ def _parse_args() -> argparse.Namespace:
                         "metrics to a prior judge-off run with NO re-generation. "
                         "Forces --workers 1. Pair with --enable_llm_judge (default) "
                         "and --judge_model gpt-5.5.")
+    p.add_argument("--reuse_mem0_store", action="store_true",
+                   help="mem0 mode: load the prebuilt {run_dir}/mem0_store instead "
+                        "of rebuilding it (full re-ingest via Azure LLM + embeddings "
+                        "is slow). Unlike --replay_from, generation still runs — use "
+                        "when surgically adding NEW queries to a run whose store was "
+                        "already built over the full event timeline (retrieval is "
+                        "time-masked per T_test, so the existing vectors cover them).")
     p.add_argument("--dry_run", action="store_true")
     p.add_argument("--build_only", action="store_true",
                    help="Memory modes: build + persist the ledger to "
@@ -347,6 +354,7 @@ def _set_query_env(row: dict, run_dir: Path, user_id: str, backend_dir: str) -> 
     os.environ["PM3_BACKEND_DIR"] = backend_dir
     os.environ["PM3_RUN_DIR"] = str(run_dir)
     os.environ["PM3_QUERY_ID"] = str(row.get("query_id") or "")
+    os.environ["PM3_TASK_TYPE"] = str(row.get("task_type") or "")
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
 
 
@@ -473,6 +481,7 @@ def _run_one_in_worker(payload: dict) -> dict:
     os.environ["PM3_BACKEND_DIR"] = payload["backend_dir"]
     os.environ["PM3_RUN_DIR"] = str(run_dir)
     os.environ["PM3_QUERY_ID"] = str(row.get("query_id") or "")
+    os.environ["PM3_TASK_TYPE"] = str(row.get("task_type") or "")
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
 
     # Build per-worker LLM clients. Each worker keeps its own QueryLLM
@@ -749,7 +758,14 @@ def main() -> int:
     rows = _load_queries(queries_path)
     if args.task:
         from evaluation.task_registry import normalize_task_type as _norm
-        wanted = {_norm(t.strip()) for t in args.task.split(",") if t.strip()}
+        from evaluation.run_eval_dispatch import AGENTIC_TASK_IDS as _AGENTIC_TASK_IDS
+        wanted = set()
+        for raw_task in (t.strip() for t in args.task.split(",") if t.strip()):
+            task = _norm(raw_task)
+            if task == "agentic":
+                wanted.update(_AGENTIC_TASK_IDS)
+            else:
+                wanted.add(task)
         pre = len(rows)
         rows = [r for r in rows if _norm(r.get("task_type", "")) in wanted]
         print(f"[run_eval] --task filter {sorted(wanted)}: {pre} -> {len(rows)} rows")
@@ -806,10 +822,10 @@ def main() -> int:
         # disabled, so rebuilding (rm -rf + full re-ingest via Azure LLM +
         # embeddings) would be pure waste — retrieval only needs the vectors
         # already there from the original run.
-        reuse_store = bool(args.replay_from) and (run_dir / "mem0_store").exists()
+        reuse_store = (bool(args.replay_from) or args.reuse_mem0_store) and (run_dir / "mem0_store").exists()
         if reuse_store:
             print(f"[run_eval] mem0 mode: REUSING existing store at "
-                  f"{run_dir / 'mem0_store'} (replay; no rebuild)", flush=True)
+                  f"{run_dir / 'mem0_store'} (no rebuild)", flush=True)
             m0 = Mem0Backend(args.user_id, run_dir, llm_deployment=llm_dep,
                              token_cap=args.memory_token_cap, fresh=False)
             bstats = {"n_events": 0, "n_chunks": 0, "n_memories": 0,
