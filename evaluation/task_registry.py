@@ -150,6 +150,11 @@ DROPPED_TASK_TYPES: set[str] = {
     # thread demands. Generation target commented out in task_distribution;
     # scoring/parse code paths kept so historical rows still resolve.
     "agentic_group_dm_summary",
+    # Retired 2026-06-20 — the new_suggestions recsys (16-item slate) variant
+    # is hard to eval: ranking ONE LLM-invented "fresh" gold above foils is
+    # noisy and the gold isn't a real engagement. new_suggestions is now
+    # chatbot-only. Builder no longer emits recsys; any stray rows are dropped.
+    "new_suggestions_recsys",
 }
 
 

@@ -98,9 +98,10 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     "over_personalization_context_shift":      {"min": 5,  "max": 6},
 
     # New-suggestions (sibling to repetition family but POSITIVE — agent
-    # must propose a fresh topic). Data-dependent: some triggers (esp.
-    # at_ai_directive) are absent for users with no @ai history.
-    "new_suggestions_recsys":                  {"min": 1, "max": 2, "data_dependent": True},
+    # must propose a fresh topic). CHATBOT surface only; the recsys slate
+    # variant was retired (hard to eval) — see DROPPED_TASK_TYPES.
+    # Data-dependent: some triggers (esp. at_ai_directive) are absent for
+    # users with no @ai history.
     "new_suggestions_chatbot":                 {"min": 1, "max": 2, "data_dependent": True},
 
     # Agentic — uniform target across 14 tasks

@@ -3189,11 +3189,17 @@ _C1E_FATIGUE_MIN_ENGAGEMENTS = 5
 _C1E_TARGET_INSTANCES_PER_SURFACE = 2
 _C1E_SLATE_SIZE = 16
 
+# Natural chatbot openers that IMPLY wanting a fresh direction without naming
+# "new"/"different" explicitly — the model has to infer from the user's
+# saturation + history that a pivot is wanted, rather than being handed the
+# instruction. (An over-explicit "recommend something I've never seen" turned
+# the task into instruction-following.)
 _C1E_CHATBOT_QUERY_BANK = (
-    "anything new I'd be into?",
-    "show me something different — bored of the usual",
-    "surprise me with a new topic",
-    "what's outside my bubble that I'd actually like?",
+    "got a free evening coming up — what should I get into?",
+    "kind of in a rut lately, any ideas for me?",
+    "looking for something to do this weekend, thoughts?",
+    "I've been wanting to pick up a new thing — where would you point me?",
+    "feeling a bit restless, what would you suggest I check out?",
 )
 
 _C1E_AT_AI_PRIORITY_ACTIONS = (
@@ -3435,24 +3441,42 @@ def _persona_grounded_answerability_check(
         return True, ""
 
     # surface == "chatbot"
+    #
+    # A fresh-suggestion chatbot ask is OPEN-ENDED — many distinct directions
+    # are equally valid. The old gate asked the oracle to independently RE-DERIVE
+    # the gold and then required a hashtag/semantic match; an independent oracle
+    # almost always picked a *different* (also valid) direction, so the gate
+    # rejected ~100% of golds and the surface never populated. Validate the gold
+    # instead of demanding rederivation: is this a plausible, persona-aligned
+    # direction the user would enjoy AND has not recently engaged with? That is
+    # the only property the gold needs (it is one acceptable answer, not the
+    # answer). The agent is still scored on restraint + persona-alignment at
+    # eval time, so a permissive build gate doesn't weaken the test.
     gold_hashtags = [h.lstrip("#").lower() for h in (instance_payload.get("gold_hashtags") or [])]
     gold_topic = instance_payload.get("gold_topic") or ""
     user_query = instance_payload.get("user_query") or ""
 
     prompt = (
         "You are an oracle persona scientist with access to the FULL user persona. "
-        "Predict what NEW thing this user would want to be shown right now.\n\n"
+        "A chatbot is about to suggest a fresh direction to this user, who has "
+        "just (implicitly) asked for something to get into.\n\n"
         f"Trigger kind: {trigger_kind}\n"
         f"Trigger context: {trigger_blurb}\n"
         f"User-side ask: {user_query!r}\n\n"
         "## Full persona (eval-side only — agent does NOT see this)\n"
         f"```json\n{json.dumps(persona_block, ensure_ascii=False, indent=2)}\n```\n\n"
-        "Propose ONE concrete recommendation (a topic / object / activity) the user "
-        "has NOT engaged with in the last 7 days. Avoid anything they engaged with "
-        "in the last 24 hours. Keep it specific.\n\n"
+        "## Proposed gold suggestion to validate\n"
+        f"topic: {gold_topic!r}\n"
+        f"hashtags: {gold_hashtags}\n\n"
+        "Judge this gold suggestion on TWO things:\n"
+        "  1. plausible_fit: would this user genuinely enjoy this direction, "
+        "given their personas / interests? (it need not be the ONLY good answer)\n"
+        "  2. is_fresh: is it something they have NOT engaged with in the recent "
+        "history shown above (not a recycled saturated topic)?\n\n"
         "Respond with ONE fenced ```json block:\n"
         "```json\n"
-        "{\"hashtags\": [\"<tag>\", ...], \"summary\": \"<one short sentence>\"}\n"
+        "{\"plausible_fit\": true|false, \"is_fresh\": true|false, "
+        "\"reasoning\": \"<=1 sentence\"}\n"
         "```"
     )
     try:
@@ -3460,30 +3484,11 @@ def _persona_grounded_answerability_check(
     except Exception as exc:
         return False, f"llm_call_failed: {exc}"
     parsed = utils.extract_json_from_response(raw) or {}
-    proposed = [str(h).lstrip("#").lower() for h in (parsed.get("hashtags") or []) if isinstance(h, str)]
-    if not proposed and not parsed.get("summary"):
-        return False, "empty_oracle_proposal"
-    sa, sb = set(proposed), set(gold_hashtags)
-    if sa and sb:
-        jacc = len(sa & sb) / max(1, len(sa | sb))
-        if jacc >= 0.4:
-            return True, ""
-    # Fallback: yes/no semantic-overlap mini-judge.
-    judge_prompt = (
-        "Two AI assistants made recommendations to the same user. "
-        f"Are they essentially the same kind of recommendation?\n\n"
-        f"Recommendation A (oracle): hashtags={proposed} summary={parsed.get('summary','')!r}\n"
-        f"Recommendation B (gold): hashtags={gold_hashtags} topic={gold_topic!r}\n\n"
-        "Respond with ONE fenced ```json block: {\"same_kind\": true|false}"
-    )
-    try:
-        raw2 = discovery_llm.query_llm(judge_prompt)
-    except Exception as exc:
-        return False, f"semantic_judge_failed: {exc}"
-    p2 = utils.extract_json_from_response(raw2) or {}
-    if bool(p2.get("same_kind")):
+    if not parsed:
+        return False, "empty_oracle_validation"
+    if bool(parsed.get("plausible_fit")) and bool(parsed.get("is_fresh")):
         return True, ""
-    return False, f"oracle_proposal_diverged_jaccard_low"
+    return False, "gold_not_plausible_or_not_fresh"
 
 
 # --- Trigger-finders for c1e -----------------------------------------------
@@ -3943,12 +3948,14 @@ def build_c1e_new_suggestions(
     rng_seed: int = 0,
     target_per_surface: int = _C1E_TARGET_INSTANCES_PER_SURFACE,
 ) -> dict[str, list[dict]]:
-    """Build new_suggestions instances for both surfaces.
+    """Build new_suggestions instances (CHATBOT surface only).
 
-    Returns ``{"new_suggestions_recsys": [...], "new_suggestions_chatbot": [...]}``.
+    The recsys slate variant was removed (hard to eval). Returns
+    ``{"new_suggestions_recsys": [], "new_suggestions_chatbot": [...]}`` —
+    the recsys key is retained empty so existing callers don't KeyError.
     Each instance carries:
       - trigger_kind  ∈ {"post_fatigue", "chatbot_ask", "at_ai_directive"}
-      - flavor        ∈ {"A_llm", "B_future_truth"}
+      - flavor        = "A_llm" (persona-grounded gold; the only flavor now)
       - t_test, target_pref, leak_set_hashtags
       - For recsys: candidates (16-item slate), gold_idx, foil_breakdown
       - For chatbot: gold_topic, gold_hashtags, gold_caption, user_query
@@ -3971,16 +3978,20 @@ def build_c1e_new_suggestions(
     chatbot_anchors = _c1e_chatbot_ask_anchors(bq, user_id, n_anchors=n_per_trigger + 1, rng=rng)
     at_ai_anchors = _c1e_at_ai_directive_anchors(bq, user_id, n_anchors=n_per_trigger + 1)
 
-    all_anchors = fatigue_anchors + chatbot_anchors + at_ai_anchors
+    # Chatbot-surface ordering: prefer triggers that carry a NATURAL user turn
+    # so the model sees a real "what should I get into?"-style ask, not just an
+    # inferred saturation signal. chatbot_ask (natural query bank) first, then
+    # at_ai (carries the user's directive message), then post_fatigue (implicit;
+    # no explicit user ask) only as fallback to fill the per-user target.
+    all_anchors = chatbot_anchors + at_ai_anchors + fatigue_anchors
 
-    recsys_out: list[dict] = []
     chatbot_out: list[dict] = []
     n_dropped_persona = 0
     n_dropped_leak = 0
     n_dropped_no_anchor = 0
 
     for anchor in all_anchors:
-        if len(recsys_out) >= target_per_surface and len(chatbot_out) >= target_per_surface:
+        if len(chatbot_out) >= target_per_surface:
             break
         t_test = int(anchor["t_test"])
         leak_set = _user_engaged_hashtag_window(
@@ -3993,48 +4004,34 @@ def build_c1e_new_suggestions(
             lookback_days=_C1E_FUTURE_TRUTH_LOOKBACK_DAYS,
         )
 
-        # Flavor selection — try B first (real future engagement); fall
-        # back to A (LLM proposal) when no qualifying future event exists.
-        flavor = "B_future_truth"
-        gold_event = _c1e_pick_flavor_b_event(bq, user_id, t_test)
+        # Flavor selection. new_suggestions is now CHATBOT-ONLY (the recsys
+        # slate variant was removed — hard to eval). A fresh-suggestion chatbot
+        # ask is OPEN-ENDED: many directions are valid, so the gold must be a
+        # persona-GROUNDED direction the eval oracle can independently re-derive
+        # and ratify — NOT one specific held-out future post. Flavor B (a real
+        # future engagement) is an arbitrary specific topic the oracle can't
+        # predict, so it failed the answerability gate ~100% of the time and
+        # the chatbot surface never populated. Force flavor A (LLM-proposed,
+        # persona-anchored gold) for chatbot.
+        flavor = "A_llm"
         gold_payload: dict
-        if gold_event is not None:
-            content = gold_event.get("content") or {}
-            tags = [h.lstrip("#").lower() for h in (gold_event.get("source_hashtags") or [])]
-            if set(tags) & leak_set:
-                # Should be excluded already, but defensive.
-                gold_event = None
-            else:
-                gold_payload = {
-                    "title": content.get("title") or content.get("caption") or "",
-                    "caption": content.get("caption") or "",
-                    "hashtags": tags,
-                    "content_type": gold_event.get("content_type") or content.get("content_type") or "text",
-                    "source_timestamp": int(gold_event.get("source_timestamp") or 0),
-                    "_app": gold_event.get("_app", "synthetic"),
-                    "gold_topic": content.get("title") or content.get("caption") or "",
-                    "gold_hashtags": tags,
-                    "gold_caption": content.get("caption") or "",
-                }
-        if gold_event is None:
-            flavor = "A_llm"
-            llm_gold = _c1e_propose_flavor_a_gold(
-                bq, user_id, t_test, discovery_llm, leak_set, prior_set,
-            )
-            if llm_gold is None:
-                n_dropped_leak += 1
-                continue
-            gold_payload = {
-                "title": llm_gold["gold_topic"],
-                "caption": llm_gold["gold_caption"],
-                "hashtags": llm_gold["gold_hashtags"],
-                "content_type": "text",
-                "source_timestamp": None,
-                "_app": "synthetic",
-                "gold_topic": llm_gold["gold_topic"],
-                "gold_hashtags": llm_gold["gold_hashtags"],
-                "gold_caption": llm_gold["gold_caption"],
-            }
+        llm_gold = _c1e_propose_flavor_a_gold(
+            bq, user_id, t_test, discovery_llm, leak_set, prior_set,
+        )
+        if llm_gold is None:
+            n_dropped_leak += 1
+            continue
+        gold_payload = {
+            "title": llm_gold["gold_topic"],
+            "caption": llm_gold["gold_caption"],
+            "hashtags": llm_gold["gold_hashtags"],
+            "content_type": "text",
+            "source_timestamp": None,
+            "_app": "synthetic",
+            "gold_topic": llm_gold["gold_topic"],
+            "gold_hashtags": llm_gold["gold_hashtags"],
+            "gold_caption": llm_gold["gold_caption"],
+        }
 
         fatigued_tags = anchor.get("fatigued_hashtags") or []
         if anchor["trigger_kind"] == "at_ai_directive":
@@ -4046,62 +4043,16 @@ def build_c1e_new_suggestions(
             hidden_personas,
             top_k=2,
         )
-        # The hidden-persona-anchor requirement only applies to flavor A
-        # (LLM-INVENTED golds, which need grounding so they aren't arbitrary).
-        # Flavor B golds are REAL future engagements — by construction a brand
-        # new topic with zero overlap to prior history — so they can never
-        # overlap an established hidden persona's evidence hashtags, and the
-        # future-truth engagement IS the gold signal. Requiring anchoring on
-        # flavor B dropped 100% of new_suggestions instances. Exempt it.
-        if flavor == "A_llm" and hidden_personas and not gold_anchor_personas:
+        # Every gold is now flavor A (LLM-invented), so it MUST be grounded in
+        # a hidden persona — otherwise the "fresh direction" is arbitrary and
+        # un-ratifiable. Drop golds that don't anchor on any hidden persona.
+        if hidden_personas and not gold_anchor_personas:
             n_dropped_no_anchor += 1
             continue
 
         instance_id_base = f"{user_id}_c1e_{anchor['trigger_kind']}_{t_test}"
 
-        # --- Recsys variant -------------------------------------------------
-        if len(recsys_out) < target_per_surface:
-            slate, gold_idx, _ = _c1e_build_slate(
-                bq, user_id, t_test, gold_payload,
-                fatigued_hashtags=fatigued_tags,
-                hp_hashtag_set=hp_hashtag_set,
-                rng=rng,
-            )
-            verifier_payload = {
-                "trigger_kind": anchor["trigger_kind"],
-                "trigger_blurb": anchor.get("trigger_blurb", ""),
-                "slate": slate,
-                "gold_idx": gold_idx,
-            }
-            ok, reason = _persona_grounded_answerability_check(
-                bq, user_id, t_test, "recsys", verifier_payload, discovery_llm,
-            )
-            if not ok:
-                n_dropped_persona += 1
-            else:
-                recsys_out.append({
-                    "instance_id": f"{instance_id_base}_recsys",
-                    "task_id": "new_suggestions_recsys",
-                    "task_type": "new_suggestions_recsys",
-                    "trigger_kind": anchor["trigger_kind"],
-                    "flavor": flavor,
-                    "t_test": t_test,
-                    "trigger_blurb": anchor.get("trigger_blurb", ""),
-                    "directive_app": anchor.get("directive_app", ""),
-                    "directive_action": anchor.get("directive_action", ""),
-                    "directive_user_message": anchor.get("directive_user_message", ""),
-                    "user_query": anchor.get("user_query", ""),
-                    "fatigued_hashtags": list(fatigued_tags),
-                    "fatigued_pref": anchor.get("fatigued_pref", ""),
-                    "leak_set_hashtags": sorted(leak_set),
-                    "candidates": slate,
-                    "gold_idx": gold_idx,
-                    "gold_topic": gold_payload.get("gold_topic", ""),
-                    "gold_hashtags": list(gold_payload.get("gold_hashtags") or []),
-                    "gold_anchor_personas": gold_anchor_personas,
-                })
-
-        # --- Chatbot variant ------------------------------------------------
+        # --- Chatbot variant (the only surface; recsys slate removed) -------
         if len(chatbot_out) < target_per_surface:
             user_query = anchor.get("user_query") or anchor.get("directive_user_message") or ""
             if not user_query and anchor["trigger_kind"] == "post_fatigue":
@@ -4145,7 +4096,7 @@ def build_c1e_new_suggestions(
               f"persona-unanswerable, {n_dropped_leak} for leak-set / no-gold, "
               f"{n_dropped_no_anchor} for no-hidden-persona-anchor")
     return {
-        "new_suggestions_recsys": recsys_out,
+        "new_suggestions_recsys": [],  # surface removed — kept key for callers
         "new_suggestions_chatbot": chatbot_out,
     }
 

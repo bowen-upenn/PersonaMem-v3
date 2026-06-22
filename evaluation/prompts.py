@@ -186,7 +186,7 @@ def e6_active_mistake_prevention_prompt(
     return f"""# Task: respond to the user; proactively warn only if you detect a real mistake
 
 The user is chatting with an AI assistant. You have access to the user's cross-app
-history (calendar, geo, Instagram, Facebook, Threads, prior chatbot turns) via the
+history (calendar, geo, Instagram, Facebook, Threads, Chatbot, AI Studio) via the
 history block below.
 {history}
 {mode_block}
@@ -217,11 +217,8 @@ def chatbot_response_prompt(
     history = f"\n## Cross-app user history (time-masked)\n{history_block}\n" if history_block else ""
     return f"""# Task: produce a chatbot response
 
-You are a personalized AI assistant for this user. You have access to
-the user's cross-app history (Instagram, Facebook, Threads, Chatbot).
-Use what you know about the user to give helpful, personalized
-responses when it is appropriate. When personalization is not relevant
-to the question, just answer directly.
+You have access to the user's cross-app history (Instagram, Facebook, Threads, Chatbot, AI Studio) and calendar.
+Give personalized responses when appropriate.
 
 {prior}
 {history}
@@ -1161,14 +1158,8 @@ def chatbot_control_prompt(
     history = f"\n## Cross-app user history (time-masked)\n{history_block}\n" if history_block else ""
     return f"""# Task: produce a helpful chatbot response
 
-The user is in a chat with an AI assistant on the Chatbot app. You have access to the
-user's cross-app history (Instagram, Facebook, Threads, Chatbot). Generate the next
-assistant response.
-
-Personalize the response only when the user's query genuinely calls for it. Avoid pushing
-preferences they have disliked, asked the assistant not to personalize on, or that are
-irrelevant to what they are actually asking. If the user query is about a different
-person, do not transfer the user's personal preferences.
+You have access to the user's cross-app history (Instagram, Facebook, Threads, Chatbot, AI Studio) and calendar.
+Give personalized responses when appropriate.
 
 {prior}
 {history}
@@ -1583,9 +1574,9 @@ def _new_suggestions_trigger_framing(
         )
     if trigger_kind == "chatbot_ask":
         return (
-            f"The user just typed in chatbot: {user_query!r}. Take this as an "
-            f"explicit ask for a new direction — recommend something the user "
-            f"has NOT recently engaged with but would actually enjoy."
+            f"The user just typed in chatbot: {user_query!r}. Read what they're "
+            f"really after from their history and current context, and suggest "
+            f"something that fits them well right now."
         )
     if trigger_kind == "at_ai_directive":
         return (
@@ -1915,26 +1906,30 @@ Apply the method to the new activity above and emit the full updated <memory> an
 
 def llm_memory_update_prompt(memory_doc: str, rolling_summary: str, chunk_text: str,
                              *, token_cap: int = DEFAULT_MEMORY_TOKEN_CAP) -> str:
-    """Persona/preference-centered, human-readable text memory (no vectors).
-    Distills a chronological activity stream into durable knowledge about the
-    user, maintained each chunk with explicit ADD / EDIT / REMOVE / MERGE
-    actions. Deliberately general — not tuned to any evaluation dimension.
+    """Persona/preference memory — tell the model to remember the useful user
+    persona and preferences from their cross-app activity, maintained with
+    explicit ADD/EDIT/REMOVE/MERGE actions. Keeps the load-bearing scaffolding
+    (incremental whole-document update, <memory>/<summary> output format, token
+    budget); drops the prescribed sections and the distillation rails."""
+    return f"""You maintain a running MEMORY of ONE user, updated as you read their activity in chronological chunks. Remember the useful parts of the user's persona and preferences from their activities across these apps; maintain the memory with ADD, EDIT, REMOVE, and MERGE actions; and the memory should contain only the resulting persona profile rather than a raw log of activity
 
-    `token_cap` is interpolated into the rail text so the LLM-instructed budget
-    always matches the enforced consolidate_evict cap."""
-    return f"""You maintain a compact, human-readable MEMORY of ONE user, built by reading their activity in chronological chunks. The memory is a plain-text persona/preference profile a person could read — NOT a log of events, NOT a database, and it uses no embeddings. The raw activity is a stream of timestamped engagements; distill it into durable, generalized knowledge about the user rather than retaining the events themselves.
+Keep the whole memory within {token_cap} tokens, and output the FULL updated memory each call (whole-document rewrite, not a diff).
 
-Maintain the profile each chunk with four explicit actions:
-  - ADD    : record a genuinely new durable fact about the user.
-  - EDIT   : revise a fact whose details have changed, or supersede one when newer evidence contradicts it.
-  - REMOVE : drop stale, one-off, or no-longer-relevant entries.
-  - MERGE  : fold related or duplicate entries into one coherent note, reinforcing recurring signals.
+Output EXACTLY this, nothing else:
+<memory>
+...the full updated memory...
+</memory>
+<summary>
+...one short paragraph: who this user is so far + what is currently active...
+</summary>
 
-Capture both what the user signals outright AND the preferences, traits, and patterns you can reasonably infer from their recurring behavior — their interests and preferences (what they lean toward, positively or negatively), how they come across, the people and places that matter to them, and what they are currently working toward — at an appropriate level of generality. Stay grounded in the observed activity: infer from patterns, but do not fabricate. Let incidental noise fade. Always output the full, current profile.
+## Current memory
+{memory_doc}
 
-{_MEMORY_SECTIONS_NOTE}
+## Rolling summary so far
+{rolling_summary or "(none yet)"}
 
-{_memory_rails(token_cap)}
+## New activity (chronological, time-masked)
+{chunk_text}
 
-{_MEMORY_OUTPUT}
-{_memory_trailer(memory_doc, rolling_summary, chunk_text)}"""
+Update the memory with the new activity above and emit the full updated <memory> and <summary>."""
