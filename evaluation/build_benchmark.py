@@ -3186,7 +3186,11 @@ _C1E_FUTURE_TRUTH_LOOKBACK_DAYS = 7
 _C1E_FUTURE_TRUTH_LOOKAHEAD_HOURS = 72
 _C1E_FATIGUE_WINDOW_SECONDS = 3 * 3600
 _C1E_FATIGUE_MIN_ENGAGEMENTS = 5
-_C1E_TARGET_INSTANCES_PER_SURFACE = 2
+# 8 chatbot instances per persona (was 2). With 5 matched personas that yields
+# ~40/config, so the binary `passed` headline averages on a fine grid instead of
+# the coarse 10% steps a n=10 sample forced. The query bank above (12 distinct
+# natural openers) keeps these from repeating the same user turn.
+_C1E_TARGET_INSTANCES_PER_SURFACE = 8
 _C1E_SLATE_SIZE = 16
 
 # Natural chatbot openers that IMPLY wanting a fresh direction without naming
@@ -3200,6 +3204,13 @@ _C1E_CHATBOT_QUERY_BANK = (
     "looking for something to do this weekend, thoughts?",
     "I've been wanting to pick up a new thing — where would you point me?",
     "feeling a bit restless, what would you suggest I check out?",
+    "slow week ahead — what's worth diving into?",
+    "I need something to look forward to, any suggestions?",
+    "been meaning to shake up my routine — what would you recommend?",
+    "got some downtime tonight, point me at something good?",
+    "feeling like trying something a bit outside my usual lane — ideas?",
+    "what's something you think I should give a shot?",
+    "any ideas for how to spend a quiet weekend?",
 )
 
 _C1E_AT_AI_PRIORITY_ACTIONS = (

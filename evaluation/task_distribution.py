@@ -102,7 +102,7 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # variant was retired (hard to eval) — see DROPPED_TASK_TYPES.
     # Data-dependent: some triggers (esp. at_ai_directive) are absent for
     # users with no @ai history.
-    "new_suggestions_chatbot":                 {"min": 1, "max": 2, "data_dependent": True},
+    "new_suggestions_chatbot":                 {"min": 4, "max": 10, "data_dependent": True},
 
     # Agentic — uniform target across 14 tasks
     "agentic_community_post":                {"min": 5,  "max": 5},
