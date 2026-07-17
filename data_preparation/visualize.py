@@ -2523,6 +2523,65 @@ def _gt_proactive_close_friend_update(inst: dict, discovery_llm=None) -> dict:
     ago = _hours_ago_phrase(sig.get("incoming_at_ts"), inst.get("t_test"))
     t_test_iso = inst.get("t_test_iso") or ""
 
+    # RESTRAIN arm (audit 2026-07-16, T2-2): the builder synthesizes restrain
+    # instances (acquaintance sender, or a stale >48h message) with
+    # expected_behavior='restrain', but this extractor used to hardcode the ACT
+    # card — so a restrain instance shipped an "act / surface the thread" gold
+    # and the correct behavior (stay silent) was graded wrong. Branch on the
+    # authoritative expected_behavior and emit a stay-silent gold instead.
+    if (inst.get("expected_behavior") or "").lower() == "restrain":
+        reason = (inst.get("_restrain_reason")
+                  or sig.get("_restrain_reason") or "").lower()
+        depth = (sig.get("friend_relationship_depth") or "").lower()
+        quoted_r = f' ("{excerpt_short}")' if excerpt_short else ""
+        if "stale" in reason:
+            why = (f"the message is {ago} old — too stale to proactively surface "
+                   f"(the close-friend nudge is for RECENT unread threads)")
+        elif "acquaintance" in reason or depth == "acquaintance":
+            why = (f"{name} is an acquaintance, not a close friend — proactive "
+                   f"nudges to pull up a thread are reserved for CLOSE friends")
+        else:
+            why = ("this trigger does not clear the close-friend + recency bar "
+                   "for an unprompted nudge")
+        preamble = (
+            f"At {t_test_iso}, {name} messaged the user on {app} {ago} ago"
+            f"{quoted_r}, and the user hasn't seen it yet — but {why}, so the AI "
+            f"should stay silent rather than surface the thread."
+        )
+        expected_body = (
+            "EXPECTED: stay silent. Agent emits {should_act: false, "
+            "action_class: 'stay_silent'}. This trigger does not clear the "
+            "close-friend + recency bar for an unprompted nudge."
+        )
+        example_text = "Decision: stay silent. Do NOT proactively surface this thread — " + why + "."
+        flaw_kind = "acts_on_low_value_trigger"
+        fallback_inferior = (
+            f'"{name} messaged you {ago} ago — want me to pull up the thread?" '
+            "(Wrong: surfaces a thread that does not meet the close-friend + "
+            "recency bar for a proactive nudge.)"
+        )
+        context = (
+            f"Friend: {name} (depth: {depth or 'unknown'}). App: {app}. "
+            f"Time since message: {ago}. Restrain reason: {reason or depth or 'low_value'}. "
+            f"Expected behavior: restrain (stay silent)."
+        )
+        inferior_text = _llm_generate_proactive_inferior(
+            discovery_llm, example_text, flaw_kind, context,
+        ) or fallback_inferior
+        return {
+            "groundtruth_preference": preamble + "\n\n" + expected_body,
+            "example_response": example_text,
+            "inferior_response": {
+                "text": inferior_text,
+                "flaw_kind": flaw_kind,
+                "flaw_evidence": {
+                    "friend_display_name": name,
+                    "restrain_reason": reason or depth or "low_value",
+                },
+            },
+            "rubric_tags": _registry_display_rubric(inst.get("task_id", "")),
+        }
+
     quoted = f' ("{excerpt_short}")' if excerpt_short else ""
     preamble = (
         f"At {t_test_iso}, the user's close friend {name} messaged them on "

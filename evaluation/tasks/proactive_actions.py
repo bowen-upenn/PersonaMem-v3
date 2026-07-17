@@ -148,6 +148,10 @@ def _candidate_to_instance(
         "trigger_evidence": cand.get("signal_evidence", {}),
         "jitai_card": cand.get("jitai_card", {}),
         "expected_behavior": expected_behavior,
+        # carry the restrain reason (acquaintance_not_close_friend /
+        # stale_message_over_48h) so the GT extractor can word the stay-silent
+        # gold correctly (audit 2026-07-16, T2-2).
+        "_restrain_reason": cand.get("_restrain_reason"),
         "tool_call_rules": [
             "count('instagram_create_post') == 0",
             "count('facebook_create_post') == 0",
