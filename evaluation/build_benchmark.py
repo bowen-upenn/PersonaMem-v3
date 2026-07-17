@@ -5021,6 +5021,9 @@ def build_benchmark(
         "preference_shift_followthrough",
         "over_personalization_sensitive_event",
         "personal_qa_hallucination",
+        # judge-scored, discovery-LLM-generated; was silently shipping 0 rows
+        # (audit 2026-07-16, T2-5) — gate it so a zero build is LOUD.
+        "over_personalization_sycophancy",
     )
     _zeroed = [t for t in DISCOVERY_GATED
                if _counts.get(t, 0) == 0

@@ -438,6 +438,28 @@ def _verify_personalization_routing(
             elif kind == "overpers" and verdict == "HELPS":
                 drop_overpers_idx.add(idx)
 
+    # FLOOR ENFORCEMENT: never let the NEUTRAL drop pull chatbot_personalized_response
+    # below its min target. The builder supplies plenty (~40/persona); historically
+    # this verifier collapsed it to ~5/persona. Keep >= floor by un-dropping the
+    # highest-value NEUTRAL instances (by blind_check_score) until the floor is met.
+    try:
+        from evaluation.task_distribution import TASK_TARGETS as _TT
+        _floor = int((_TT.get("chatbot_personalized_response") or {}).get("min", 0) or 0)
+    except Exception:
+        _floor = 0
+    _n_pro = len(proactive_bucket)
+    _want = min(_floor, _n_pro)
+    _keep = _n_pro - len(drop_proactive_idx)
+    if _keep < _want:
+        _need = _want - _keep
+        _droppable = sorted(drop_proactive_idx,
+                            key=lambda i: -(proactive_bucket[i].get("blind_check_score") or 0))
+        for _i in _droppable[:_need]:
+            drop_proactive_idx.discard(_i)
+        if verbose:
+            print(f"[{user_id}] floor: kept {_want} chatbot_personalized_response "
+                  f"(un-dropped {_need} to meet min={_floor})")
+
     if drop_proactive_idx:
         bm["chatbot_personalized_response"] = [
             inst for i, inst in enumerate(proactive_bucket)
@@ -808,12 +830,29 @@ def prepare_one(
             return bool((inf.get("text") or "").strip())
         return False
 
+    # over_personalization_sycophancy is judge-scored via its _sycophancy_*
+    # fields (false_claim / correct_stance), NOT via an example/inferior pair,
+    # so it legitimately ships with no inferior_response. Without this exemption
+    # the _has_inferior gate dropped EVERY sycophancy row, so the task shipped 0
+    # rows across all personas (audit 2026-07-16, T2-5). It still must carry a
+    # non-empty false-claim + correct-stance for the judge to have an anchor.
+    _NO_INFERIOR_TASKS = {"over_personalization_sycophancy"}
+
+    def _sycophancy_scorable(inst: dict) -> bool:
+        fc = (inst.get("_sycophancy_false_claim") or "").strip()
+        cs = (inst.get("_sycophancy_correct_stance") or "").strip()
+        return bool(fc and cs)
+
     pre_fmt = len(pairs)
     dropped_no_inferior = 0
     dropped_no_query = 0
     kept: list[tuple[str, dict, int]] = []
     for tt, inst, ts in pairs:
-        if not _has_inferior(inst):
+        if tt in _NO_INFERIOR_TASKS:
+            if not _sycophancy_scorable(inst):
+                dropped_no_inferior += 1
+                continue
+        elif not _has_inferior(inst):
             dropped_no_inferior += 1
             continue
         # USER_MSG_TASKS legitimately carry the query under any of
