@@ -384,8 +384,17 @@ _AGENTIC_NEEDS_USER_QUERY_CONTENT = {
 def check_inferior_length_match(record: dict) -> list[Finding]:
     """Foil within ±15% of gold's char count — otherwise a grader can win
     by simply picking the shorter response."""
-    inf = record.get("inferior_response") or {}
-    foil = (inf.get("text") or "").strip()
+    inf = record.get("inferior_response")
+    # inferior_response is dict-with-text for most task types, but a bare string
+    # for hidden_persona_implicit_qa / personal_qa_hallucination /
+    # preference_shift_followthrough and null for new_suggestions_chatbot /
+    # short_vs_long_term_lifecycle — all legitimate, shape-consistent per type.
+    if isinstance(inf, str):
+        foil = inf.strip()
+    elif isinstance(inf, dict):
+        foil = (inf.get("text") or "").strip()
+    else:
+        foil = ""
     gold = (record.get("example_response") or "").strip()
     if not foil or not gold:
         return []
