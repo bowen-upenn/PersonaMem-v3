@@ -2366,6 +2366,25 @@ _C1C_N_ALLOWED_REPETITIONS = 2
 _C1C_MIN_ANCHORS = _C1C_QUERIES_PER_CLUSTER
 
 
+# Negative/avoid preferences are phrased with these leading verbs by the
+# persona pipeline ("Avoids X", "Dislikes X", "Not interested in X", ...). A
+# saturation/repetition task must NEVER build on one — you cannot over-recommend
+# an interest the user avoids, and doing so makes the gold recommend disliked
+# content. Belt-and-suspenders alongside the event-polarity filter, because the
+# same canonical can be (wrongly) attached to a stray positive event too
+# (audit 2026-07-16, T2-3 / T1-7).
+_NEGATIVE_PREF_PREFIXES = (
+    "avoids", "dislikes", "does not engage", "doesn't engage", "doesn't like",
+    "does not like", "not interested in", "no longer interested",
+    "wants to avoid", "steers clear", "actively avoids", "is not interested",
+)
+
+
+def _is_negative_pref(persona_item: str) -> bool:
+    s = (persona_item or "").strip().lower()
+    return any(s.startswith(p) for p in _NEGATIVE_PREF_PREFIXES)
+
+
 def _c1c_pref_signatures(prefs: list[dict]) -> list[dict]:
     """Group a user's preferences into similarity clusters keyed by
     overlapping hashtags. Two preferences belong to the same cluster
@@ -2640,11 +2659,22 @@ def build_c1c_same_preference_clusters(
             ts = int(e.get("source_timestamp") or 0)
             if ts >= t_anchor:
                 continue
+            # Saturation/repetition tasks require a POSITIVE interest the AI can
+            # over-recommend; an avoid/dislike preference cannot be "saturated"
+            # and using it inverts the premise (gold ends up recommending
+            # content the user explicitly dislikes). Skip prefs carried on
+            # negative-polarity events (audit 2026-07-16, T2-3).
+            if e.get("source_interaction_type") in (
+                "explicit_negative", "implicit_negative",
+            ):
+                continue
             for pref in (e.get("preferences") or []):
                 if not isinstance(pref, dict):
                     continue
                 pi = pref.get("persona_item") or ""
                 if not pi or pi in seen_pi:
+                    continue
+                if _is_negative_pref(pi):
                     continue
                 tags = pref.get("source_hashtags") or e.get("source_hashtags") or []
                 if not tags:
@@ -2980,11 +3010,22 @@ def build_c1d_chatbot_diverse_clusters(
             ts = int(e.get("source_timestamp") or 0)
             if ts >= t_anchor:
                 continue
+            # Saturation/repetition tasks require a POSITIVE interest the AI can
+            # over-recommend; an avoid/dislike preference cannot be "saturated"
+            # and using it inverts the premise (gold ends up recommending
+            # content the user explicitly dislikes). Skip prefs carried on
+            # negative-polarity events (audit 2026-07-16, T2-3).
+            if e.get("source_interaction_type") in (
+                "explicit_negative", "implicit_negative",
+            ):
+                continue
             for pref in (e.get("preferences") or []):
                 if not isinstance(pref, dict):
                     continue
                 pi = pref.get("persona_item") or ""
                 if not pi or pi in seen_pi:
+                    continue
+                if _is_negative_pref(pi):
                     continue
                 tags = pref.get("source_hashtags") or e.get("source_hashtags") or []
                 if not tags:
@@ -3538,6 +3579,8 @@ def _c1e_post_fatigue_anchors(
                     continue
                 pi = pref.get("persona_item") or ""
                 if not pi or pi in seen_pi:
+                    continue
+                if _is_negative_pref(pi):
                     continue
                 tags = pref.get("source_hashtags") or e.get("source_hashtags") or []
                 if not tags:
