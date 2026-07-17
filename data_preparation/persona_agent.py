@@ -691,9 +691,17 @@ MIN_PERSONA_INIT_CONFIDENCE = 0.75
 # frequency so a single hallucination can't dominate. Outliers are dropped
 # only when the cohort is large enough (CANONICAL_MODAL_MIN_COHORT) for
 # the modal set to be meaningful — singletons / pairs are kept verbatim.
-CANONICAL_MODAL_TOP_K = 5
-CANONICAL_MODAL_MIN_COHORT = 3
-MIN_CANONICAL_MODAL_OVERLAP = 1
+# Tightened 2026-07-17 (audit T1-7, publishable-grade regen): the loose gate
+# (overlap≥1 over a top-5 modal, cohort≥3) let an outlier atomic survive on a
+# single broad shared tag (e.g. an elephants/#wildlife row fanning into a
+# "cute pets — cats/dogs" canonical), producing topically-mismatched
+# (event, preference) pairs. Now require ≥2 modal-hashtag overlap over a
+# broader top-8 modal (so a genuinely on-topic atomic that carries several
+# matching tags survives, while a single-broad-tag outlier is dropped) and
+# prune pairs too. Validated by the pref_event_mismatch rate on the regen.
+CANONICAL_MODAL_TOP_K = 8
+CANONICAL_MODAL_MIN_COHORT = 2
+MIN_CANONICAL_MODAL_OVERLAP = 2
 
 # High-confidence predicate — used for test-split eligibility and distractor
 # shortlisting. init threshold matches the filter floor so "high-confidence"
@@ -1669,8 +1677,8 @@ ROGERS_CLICHE_BLOCKLIST = [
 
 # ---- AI Studio character SURNAME pool (cohort diversity, fix #4) ----------
 # Left unconstrained, the LLM collapses the AI character's SURNAME onto a tiny
-# default set: "Vale" was 9/20, and after "Vale" was blocked it shifted to
-# "Mercer" 7/20 — a growing blocklist alone just shifts the collapse to the
+# default set: "Vale" recurred in nearly half the cohort, and after "Vale" was blocked it shifted to
+# "Mercer" — a growing blocklist alone just shifts the collapse to the
 # next modal surname. So we DETERMINISTICALLY assign each user a surname drawn
 # from this large, origin-diverse pool by hashing the user_id (via
 # diversity.user_rng, the established SHA-256(user_id) seeding helper). The
@@ -5607,7 +5615,7 @@ class PersonaAgent:
     # Hidden-persona signal → AI Studio archetype(s). Deterministic routing
     # (below) spreads the cohort across the 10-archetype catalog; the LLM left
     # to choose collapsed ~everyone onto mentor_coach / older_sibling
-    # (audit 2026-05-31: only 3 of 10 archetypes used across 20 personas).
+    # (audit 2026-05-31: only 3 of 10 archetypes used across the cohort).
     _AI_STUDIO_TYPE_TO_ARCHETYPE: dict = {
         "parasocial_attachment": ["anime_or_fandom_character"],
         "intimate_interest": ["romantic_partner"],
@@ -10992,7 +11000,7 @@ class PersonaAgent:
         stratum_size = max((hi - lo) // n_strata, 1)
         # Match the overactive_check quota max (4, 6). The previous cap of 3 sat
         # BELOW the min-4 quota, so even an ideal yield came up short
-        # (audit 2026-06-05: task starved to ~5/20 users, n=6 total).
+        # (audit 2026-06-05: task starved to roughly a quarter of users, n=6 total).
         MAX_PICKS = 6
 
         def _valid(t: int, chosen: list[int]) -> bool:
