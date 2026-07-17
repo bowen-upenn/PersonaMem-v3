@@ -196,25 +196,21 @@ def _harvest_shift_candidates(
 def _pick_t_test(t_shift: int, t_now: int, rng: random.Random) -> int:
     """Pick T_test ∈ (T_shift + min_lag, min(T_shift + window, T_now)].
 
-    Audit (2026-05-28) found user 760 had 10 short_term_expiration
-    candidates with `expected_stop_ts` in the future relative to
-    `t_now` — the original strict window returned 0 for every one
-    (lo > hi), zeroing out preference_shift_followthrough for the
-    user. For those candidates we still want a usable test moment:
-    fall back to a point just before the projected expiration so the
-    test reads as "agent is asked while the pref is fading; the
-    inferior preemptively treats it as already gone, the example
-    still leans on it normally." Clamped at `t_now - 1h` so we
-    never project past the latest event the agent can observe.
+    A future-stop candidate (`expected_stop_ts` after `t_now`) CANNOT be tested
+    for expiration follow-through: at every observable moment the preference is
+    still active, yet the GT template labels it "expired — no replacement" and
+    penalizes an on-topic, still-active pref. An audit (2026-05-28) fallback
+    tested such candidates at `t_now - 1h` to salvage coverage for user 760, but
+    that shipped mislabeled "expired-when-active" rows (audit 2026-07-16, T2-4,
+    confirmed personas 2/5/6). Correctness over coverage: skip future stops
+    (return 0 → the caller drops the candidate). A user with only future stops
+    simply gets no preference_shift instances from expirations — a data-dependent
+    coverage gap, not an unfair test.
     """
     lo = t_shift + T_TEST_MIN_LAG_DAYS * DAY_SECONDS
     hi = min(t_shift + T_TEST_WINDOW_DAYS * DAY_SECONDS, t_now)
     if hi > lo:
         return rng.randint(lo, hi)
-    # Fallback: t_shift is in the future relative to t_now (predicted
-    # expiration that hasn't happened yet). Test just before t_now.
-    if t_shift > t_now:
-        return max(t_now - 60 * 60, 1)
     return 0
 
 
