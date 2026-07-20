@@ -1397,8 +1397,14 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
             day_sec = 24 * 3600
             from collections import Counter
             tag_counts: Counter = Counter()
+            disliked_tags: set[str] = set()
             user_top_cats: set[str] = set()
             # Past-24h hashtag frequency across all social apps the user touched.
+            # Count POSITIVE engagements only; a tag the user engaged NEGATIVELY
+            # (explicit/implicit_negative) is disliked, not a valid trending pick
+            # — surfacing it makes the gold violate the row's own "must NOT alert
+            # on these" rubric (audit 2026-07-20, T2-6: #agriculture had 41
+            # negative engagements yet led the gold).
             for app in ("instagram", "facebook", "threads"):
                 events = bq.get_events(
                     user_id=user_id, app=app,
@@ -1408,13 +1414,23 @@ def _task_grounding(inst: dict, task_id: str, bq, user_id: str) -> str:
                     ts = int(e.get("source_timestamp") or 0)
                     if ts < (t_test - day_sec):
                         continue
+                    neg = (e.get("source_interaction_type") or "") in (
+                        "explicit_negative", "implicit_negative")
                     for h in (e.get("source_hashtags") or []):
-                        if h:
-                            tag_counts[h.lstrip("#").lower()] += 1
+                        if not h:
+                            continue
+                        tag = h.lstrip("#").lower()
+                        if neg:
+                            disliked_tags.add(tag)
+                        else:
+                            tag_counts[tag] += 1
                     for pref in (e.get("preferences") or []):
                         cat = (pref.get("category") or "").strip().lower()
                         if cat:
                             user_top_cats.add(cat)
+            # A tag engaged both ways stays disliked (drop it, don't recommend).
+            for t in disliked_tags:
+                tag_counts.pop(t, None)
             if not tag_counts:
                 return ""
             top = tag_counts.most_common(8)
