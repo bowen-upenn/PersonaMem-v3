@@ -353,7 +353,7 @@ Below is a list of persona traits/preferences for a single user. Each entry has 
 ## Your Task — Find cross-persona relationships
 
 1. **Cross-reference personas** against each other.
-   - If two **different** personas are **similar** (reinforce each other — e.g. "Enjoys home cooking" and "Buys fresh produce weekly"), mark them as related with `"type": "similar"`.
+   - Mark `"type": "similar"` ONLY when two persona_items express essentially the SAME preference — the same specific object/activity, just reworded, or one strictly rephrases/subsumes the other so that merging them loses NO information (e.g. "Enjoys home cooking" and "Likes cooking meals at home"). Do NOT mark as similar two DISTINCT preferences that merely share a topic or reinforce a theme: "Enjoys sushi" vs "Enjoys crab dishes" (both seafood, different foods), "Follows the NBA" vs "Follows the NFL" (both sports, different leagues), "Enjoys home cooking" vs "Buys fresh produce weekly" (related habits, different preferences) → these are NOT similar; leave them unrelated. Over-merging distinct siblings collapses them into ONE preference whose text then mislabels every event supporting the others (audit 2026-07-20, T1-7).
    - If two **different** personas **contradict** each other (e.g. "Prefers vegan meals" and "Loves BBQ ribs"), mark them as related with `"type": "contradictory"`.
 
 2. **Do NOT mark a persona as similar to itself.**
@@ -405,7 +405,8 @@ Below is a batch of {len(categories)} SEPARATE topical categories for a single u
 
 For each category:
 1. Cross-reference its personas against each other WITHIN the same category only.
-   - Similar (reinforce each other): `{{"type": "similar"}}`.
+   - **Similar** = the two persona_items express essentially the SAME preference — the same specific object/activity, just reworded, or one strictly rephrases/subsumes the other so that merging them loses NO information. Mark `{{"type": "similar"}}`.
+     Do NOT mark as "similar" two DISTINCT preferences that merely share a topic or category. "Enjoys sushi" and "Enjoys crab dishes" are both seafood but are DIFFERENT foods → NOT similar. "Enjoys skiing" and "Enjoys snowboarding" are both winter sports but DIFFERENT activities → NOT similar. "Follows the NBA" and "Follows the NFL" are both sports fandom but DIFFERENT leagues → NOT similar. Leave distinct siblings unrelated (do not list them). Over-merging siblings collapses them into ONE preference whose text then mislabels every event that supported the others (audit 2026-07-20, T1-7).
    - Contradictory: `{{"type": "contradictory"}}`.
 2. Do NOT mark a persona as similar to itself.
 3. Do NOT cross-link personas across different categories.
