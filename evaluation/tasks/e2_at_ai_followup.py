@@ -75,6 +75,27 @@ def _hashtag_jaccard(a: list[str], b: list[str]) -> float:
     return len(sa & sb) / len(sa | sb)
 
 
+def _soft_tag_match(t1: str, t2: str, min_len: int = 5) -> bool:
+    """Exact match, OR one tag is a substring of the other with the shorter
+    tag >= min_len chars. So '#wildlife' matches '#wildlifephotography' (a real
+    on-directive candidate that exact Jaccard mislabels 'filler'), while short
+    tags like '#cat' do NOT spuriously match '#category' (audit 2026-07-20, T2-7)."""
+    if t1 == t2:
+        return True
+    short, long = (t1, t2) if len(t1) <= len(t2) else (t2, t1)
+    return len(short) >= min_len and short in long
+
+
+def _soft_overlap_frac(ev_set: set, ai_set: set) -> float:
+    """Lexical-variant-tolerant Jaccard: an ev tag overlaps if it soft-matches
+    ANY ai tag; denominator stays the strict union so exact-match semantics are
+    unchanged and the existing _E2_MATCH_THRESHOLD still applies."""
+    if not ev_set or not ai_set:
+        return 0.0
+    matched = sum(1 for e in ev_set if any(_soft_tag_match(e, a) for a in ai_set))
+    return matched / len(ev_set | ai_set)
+
+
 def _strip_candidate(event: dict) -> dict:
     """Project a raw event into a candidate item: NO preferences, NO labels.
 
@@ -185,12 +206,10 @@ def build_e2_at_ai_followup(
             continue
         ev_set = {h.lstrip("#").lower() for h in ev_tags}
         match_pos = bool(pos_ai_hashtags) and (
-            len(ev_set & pos_ai_hashtags) / len(ev_set | pos_ai_hashtags)
-            >= _E2_MATCH_THRESHOLD
+            _soft_overlap_frac(ev_set, pos_ai_hashtags) >= _E2_MATCH_THRESHOLD
         )
         match_neg = bool(neg_ai_hashtags) and (
-            len(ev_set & neg_ai_hashtags) / len(ev_set | neg_ai_hashtags)
-            >= _E2_MATCH_THRESHOLD
+            _soft_overlap_frac(ev_set, neg_ai_hashtags) >= _E2_MATCH_THRESHOLD
         )
         if match_pos and not match_neg:
             target_pool.append((app, ev))
