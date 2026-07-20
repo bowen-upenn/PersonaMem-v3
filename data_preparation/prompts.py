@@ -216,6 +216,7 @@ Use precise, varied values with two decimal places. Each inference must get a di
 3. **Consider diverse dimensions**: Think about interests, values, demographics, lifestyle, profession, cultural background, media consumption habits, purchasing behavior, and social identity.
 4. **Categorize each inference**: Assign a **specific topical category**.{(' REUSE one of these existing categories whenever possible: ' + ', '.join(existing_categories) + '. Only create a new category if none of the existing ones fit. Avoid creating categories that are near-synonyms of existing ones.') if existing_categories else ' Use specific topical categories (e.g., "cooking", "Christian faith", "NFL fandom", "romantic relationships", "fitness", "parenting").'} Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics".
 5. **Tag source hashtags**: For each persona, include ONLY the specific hashtag(s) that directly led to this inference — not the full list.
+6. **Do NOT substitute a sibling/adjacent topic**: every specific noun in the persona item must be directly supported by these hashtags/text. If the content is about *sushi*, write about sushi — never a different seafood like *crab*; if it's *skiing*, never swap in another sport or a place never named. When unsure of the exact object, stay ONE level more general that still fits (e.g. "Asian cuisine") rather than guessing a specific but wrong sibling. This prevents an event being filed under a topically-adjacent-but-wrong preference (audit 2026-07-20, T1-7).
 
 ## Output Format
 
@@ -310,6 +311,7 @@ Use precise two-decimal values. Spread scores across the range — be critical.
 5. Do NOT use generic categories like "interests", "values", "personality", "lifestyle", or "demographics".
 6. Tag `source_hashtags` as ONLY the specific hashtag(s) from THIS row that led to the inference.
 7. Row N's personas must be grounded in row N's text only — do not mix.
+8. **Do NOT substitute a sibling or adjacent topic.** Every specific noun in the `persona_item` must be directly supported by THIS row's hashtags/text. If the row is about *sushi*, write about sushi — never a different seafood like *crab*; if it's about *skiing*, never swap in a different sport or a specific place the row never names. When you are unsure of the exact object, stay ONE level more general that still fits the row (e.g. "Asian cuisine", "outdoor winter sports") rather than guessing a specific but wrong sibling ("crab-focused dishes", "South Dakota travel"). This prevents an event from being filed under a topically-adjacent-but-wrong preference (audit 2026-07-20, T1-7 over-attribution).
 
 ## Output format
 
@@ -1317,8 +1319,8 @@ def generate_voice_core_prompt(
         )
 
     # Pinned per-user style axes — break the cohort voice-collapse the audit
-    # found (😂 in 20/20 palettes, "just/kinda/honestly" idiolect everywhere,
-    # "dry, avoids mean/cruel" humor in 15/20). The axes are assigned
+    # found (😂 in every palette, "just/kinda/honestly" idiolect everywhere,
+    # "dry, avoids mean/cruel" humor in most). The axes are assigned
     # deterministically per user_id upstream; the LLM MUST realize them and is
     # explicitly forbidden from defaulting to the collapsed center.
     axes_block = ""
@@ -1345,9 +1347,9 @@ def generate_voice_core_prompt(
             f"- **Verbosity**: {voice_axes.get('verbosity','')} — shape `syntactic_preferences.sentence_length_shape` + fragment_use to match.\n"
             f"- **Punctuation habit**: {voice_axes.get('punctuation','')} — reflect in `punctuation_habits`.\n\n"
             "**BANNED DEFAULTS (the cohort over-uses these — do NOT fall back to them unless the pinned axes above genuinely call for it):**\n"
-            "- Do NOT put 😂 in `emoji_palette` by reflex (it was in 20/20 personas). Pick emoji that fit THIS user's topics + intensity axis; many users should have none.\n"
+            "- Do NOT put 😂 in `emoji_palette` by reflex (it showed up in nearly every persona). Pick emoji that fit THIS user's topics + intensity axis; many users should have none.\n"
             "- `function_word_profile` must NOT default to the cluster \"just / kinda / honestly / for me / low-key\". Those were in nearly every persona. Choose function-word habits that fit the pinned formality + verbosity (a formal user leans on \"however/regarding/quite\"; a slangy user on different fillers; a terse user on almost none).\n"
-            "- `humor_tone` must NOT be the formula \"dry, observational, affectionate, avoids mean/cruel\" (15/20 personas had it). Use the pinned humor mode.\n"
+            "- `humor_tone` must NOT be the formula \"dry, observational, affectionate, avoids mean/cruel\" (most personas had it). Use the pinned humor mode.\n"
         )
 
     return f"""\
@@ -4309,7 +4311,7 @@ def personalize_ai_studio_persona_prompt(
     # Deterministic per-user SURNAME (fix #4). Picked upstream by hashing the
     # user_id against a large, origin-diverse pool so the cohort spreads across
     # the surname space instead of collapsing onto the next modal favorite
-    # (was "Vale" 9/20, then "Mercer" 7/20). The caller ALSO rewrites the
+    # (was "Vale" in nearly half the cohort, then "Mercer"). The caller ALSO rewrites the
     # surname after generation from the same seed, so this is a strong hint —
     # but make the LLM comply so first+surname read naturally together.
     if forced_surname:
