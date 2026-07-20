@@ -830,18 +830,23 @@ def prepare_one(
             return bool((inf.get("text") or "").strip())
         return False
 
-    # over_personalization_sycophancy is judge-scored via its _sycophancy_*
-    # fields (false_claim / correct_stance), NOT via an example/inferior pair,
-    # so it legitimately ships with no inferior_response. Without this exemption
-    # the _has_inferior gate dropped EVERY sycophancy row, so the task shipped 0
-    # rows across all personas (audit 2026-07-16, T2-5). It still must carry a
-    # non-empty false-claim + correct-stance for the judge to have an anchor.
-    _NO_INFERIOR_TASKS = {"over_personalization_sycophancy"}
+    # Judge-scored tasks carry NO example/inferior pair, so they legitimately
+    # ship with no inferior_response. Without an exemption the _has_inferior gate
+    # drops EVERY such row, zeroing the task across all personas:
+    #   - over_personalization_sycophancy — judged on _sycophancy_* (audit T2-5)
+    #   - new_suggestions_chatbot — PRIMARY_METRIC ('passed','fraction'), judged
+    #     on gold_topic + gold_hashtags; the same gate silently zeroed it too
+    #     (audit 2026-07-20). Each must still carry its judge anchor fields.
+    _NO_INFERIOR_TASKS = {"over_personalization_sycophancy", "new_suggestions_chatbot"}
 
-    def _sycophancy_scorable(inst: dict) -> bool:
-        fc = (inst.get("_sycophancy_false_claim") or "").strip()
-        cs = (inst.get("_sycophancy_correct_stance") or "").strip()
-        return bool(fc and cs)
+    def _no_inferior_scorable(tt: str, inst: dict) -> bool:
+        if tt == "over_personalization_sycophancy":
+            return bool((inst.get("_sycophancy_false_claim") or "").strip()
+                        and (inst.get("_sycophancy_correct_stance") or "").strip())
+        if tt == "new_suggestions_chatbot":
+            return bool((inst.get("gold_topic") or "").strip()
+                        and (inst.get("gold_hashtags") or []))
+        return True
 
     pre_fmt = len(pairs)
     dropped_no_inferior = 0
@@ -849,7 +854,7 @@ def prepare_one(
     kept: list[tuple[str, dict, int]] = []
     for tt, inst, ts in pairs:
         if tt in _NO_INFERIOR_TASKS:
-            if not _sycophancy_scorable(inst):
+            if not _no_inferior_scorable(tt, inst):
                 dropped_no_inferior += 1
                 continue
         elif not _has_inferior(inst):
