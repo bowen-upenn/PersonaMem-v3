@@ -677,7 +677,14 @@ class AnnotatedPersona:
 # Floor on confidence_score_init. Personas below this are dropped after
 # cross-ref regardless of cross-ref score or relationship type. This is
 # the main knob for preference-list size. Tuneable.
-MIN_PERSONA_INIT_CONFIDENCE = 0.75
+# Lowered 0.75→0.70 (2026-07-20): the R17 cross-ref fix stopped merging distinct
+# siblings, which also removed the merge's max-init rescue (a merged rep took the
+# MAX init of its members, lifting low-init siblings over the floor). Un-merged,
+# those siblings — legitimate "direct topic match" prefs the LLM scores 0.60–0.80
+# — dropped, shrinking personas ~34%. 0.70 restores much of the direct-match band while
+# still excluding weak deductions (0.40–0.60). Over-attribution is unaffected
+# (it is fixed at the merge step, independent of this floor).
+MIN_PERSONA_INIT_CONFIDENCE = 0.65
 
 # Canonical-modal hashtag overlap gate — used post-merge in
 # `cross_reference_personas` to drop outlier atomics whose source_hashtags
@@ -2807,14 +2814,75 @@ class PersonaAgent:
                 else:
                     parent[rb] = ra
 
-        # Union similar pairs
+        # --- Evidence-coherence gate on each union (over-merge guard) ---
+        # The union-find is TRANSITIVE: a chain A~B~C drags unrelated A and C
+        # into one cluster even when the "similar" prompt is tight, because a
+        # borderline B bridges them. The over-merged representative then fans
+        # out to topically-unrelated events (e.g. "fan of Power TV" landing on
+        # Matlock / Colbert / Parks-and-Rec engagement rows). We veto any union
+        # whose two canonicals share NO concrete evidence — no overlapping
+        # topical hashtag AND no overlapping topical content token. This is
+        # asymmetrically safe: blocking a genuine "reworded, disjoint-evidence"
+        # merge (rare) only keeps two granular-but-correct canonicals (no
+        # error); blocking a bogus merge prevents an over-attribution.
+        _merge_generic_tags = {
+            "viral", "fyp", "foryou", "foryoupage", "trending", "explore",
+            "explorepage", "reels", "reel", "viralpost", "viralvideo", "trend",
+            "trends", "followme", "follow4follow", "like4like", "likeforlike",
+            "followforfollow", "tiktok", "instagram", "insta", "instagood",
+            "instadaily", "threads", "facebook", "newpost", "dailypost",
+        }
+        _merge_pref_verbs = {
+            "enjoys", "enjoy", "likes", "like", "loves", "love", "fans",
+            "interested", "interest", "follows", "follow", "prefers", "prefer",
+            "keen", "passionate", "identifies", "identify", "watching",
+            "watches", "reading", "listening", "wants", "seeking", "exploring",
+            "engaged", "active", "regular", "avid", "positively", "themed",
+            "content", "themes", "related", "various", "things", "topics",
+        }
+
+        def _canon_tags(name: str) -> set[str]:
+            atoms_ = groups.get(_normalize_persona_text(name), [])
+            tags: set[str] = set()
+            for ap in atoms_:
+                for raw in (ap.source_hashtags or []):
+                    t = (raw or "").lower().lstrip("#").strip()
+                    if t and t not in _merge_generic_tags:
+                        tags.add(t)
+            return tags
+
+        def _canon_content(name: str) -> set[str]:
+            out: set[str] = set()
+            for raw in (name or "").lower().split():
+                tok = "".join(ch for ch in raw if ch.isalpha())
+                if len(tok) >= 4 and tok not in _merge_pref_verbs:
+                    out.add(tok)
+            return out
+
+        def _merge_coheres(a: str, b: str) -> bool:
+            # Shared concrete topical hashtag → coherent merge.
+            if _canon_tags(a) & _canon_tags(b):
+                return True
+            # Shared topical content token, or one text subsumes the other.
+            ca, cb = _canon_content(a), _canon_content(b)
+            if ca & cb:
+                return True
+            if ca and cb and (ca <= cb or cb <= ca):
+                return True
+            return False
+
+        # Union similar pairs (only when evidence coheres)
+        n_union_vetoed = 0
         for c in survivors:
             for rel in c.related_personas:
                 if not isinstance(rel, dict):
                     continue
                 other_name = rel.get("persona_item", "")
                 if rel.get("type") == "similar" and other_name in canonical_by_item:
-                    _union(c.persona_item, other_name)
+                    if _merge_coheres(c.persona_item, other_name):
+                        _union(c.persona_item, other_name)
+                    else:
+                        n_union_vetoed += 1
 
         # Build clusters
         from collections import defaultdict as _ddict_merge
@@ -2862,7 +2930,8 @@ class PersonaAgent:
             n_merged_clusters = sum(1 for members in clusters.values() if len(members) > 1)
             n_merged_items = sum(len(m) for m in clusters.values() if len(m) > 1)
             print(f"{utils.Colors.OKBLUE}[User {self.user_id}] Merged {n_merged_items} preferences into "
-                  f"{n_merged_clusters} clusters → {len(survivors)} unique preferences.{utils.Colors.ENDC}")
+                  f"{n_merged_clusters} clusters → {len(survivors)} unique preferences "
+                  f"(vetoed {n_union_vetoed} incoherent 'similar' unions).{utils.Colors.ENDC}")
 
         # Apply contradictory penalties — softened to 0.5 × other_base so a
         # losing canonical in a contradiction pair isn't zeroed out. The
