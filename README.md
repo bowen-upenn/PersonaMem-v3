@@ -86,3 +86,7 @@ python scripts/aggregate_eval.py --results_root results   # → results/aggregat
 ```
 
 > **Note for agents (Claude Code / Codex):** all commands above are directly runnable from the repo root; evaluation runs make real LLM API calls, so confirm with the user before launching them.
+
+## License
+
+Code is released under the [MIT License](LICENSE). The sample input data and all personas derived from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench) inherit its **CC-BY-NC-4.0** license (attribution, non-commercial).
