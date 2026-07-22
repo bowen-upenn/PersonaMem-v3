@@ -1,5 +1,14 @@
 # PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
+<p align="left">
+  <a href="https://ai.meta.com"><img src="https://img.shields.io/badge/Meta-0467DF?style=for-the-badge&logo=meta&logoColor=white" alt="Meta"></a>
+  <a href="https://www.upenn.edu"><img src="https://img.shields.io/badge/UPenn-011F5B?style=for-the-badge" alt="University of Pennsylvania"></a>
+  <a href="https://www.mit.edu"><img src="https://img.shields.io/badge/MIT-A31F34?style=for-the-badge" alt="MIT"></a>
+  <a href="https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3"><img src="https://img.shields.io/badge/HuggingFace-Dataset-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" alt="Dataset"></a>
+</p>
+
+A collaboration between **Meta**, the **University of Pennsylvania**, and **MIT**.
+
 ![PersonaMem-v3](header.png)
 
 Third release in the PersonaMem series:
