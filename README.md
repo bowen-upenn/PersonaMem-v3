@@ -6,7 +6,7 @@
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
-A collaboration between **Meta**, the **University of Pennsylvania**, and **MIT**.
+A collaboration between **Meta Recommendation Systems**, **University of Pennsylvania**, and **MIT**.
 
 ![PersonaMem-v3](header.png)
 
