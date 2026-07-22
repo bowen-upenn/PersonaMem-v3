@@ -5301,7 +5301,7 @@ class PersonaAgent:
         if not self.user_profile or not self.interactions:
             return
         if not self.llm_client:
-            # Subagent mode handles this inline per skill.md.
+            # Subagent mode handles this inline by the subagent-mode spec.
             return
 
         from collections import Counter
@@ -5429,7 +5429,7 @@ class PersonaAgent:
                 print(f"{utils.Colors.WARNING}[User {self.user_id}] No profile — skipping app persona generation.{utils.Colors.ENDC}")
             return
         if self.llm_client is None:
-            # Subagent mode does this inline per skill.md; persona_agent.py is
+            # Subagent mode does this inline by the subagent-mode spec; persona_agent.py is
             # only used in API mode. Nothing to do here in subagent mode.
             return
 
@@ -5774,7 +5774,7 @@ class PersonaAgent:
 
         client = getattr(self, "llm_client_mini", None) or getattr(self, "llm_client", None)
         if client is None:
-            # Subagent mode handles this inline per skill.md; persona_agent.py
+            # Subagent mode handles this inline by the subagent-mode spec; persona_agent.py
             # is API mode only — nothing to do.
             return
 
@@ -6255,7 +6255,7 @@ class PersonaAgent:
                 cr.assigned_app = random.choice(PLATFORMS)
             return
         if self.llm_client is None:
-            # Subagent mode — skill.md does it inline.
+            # Subagent mode — the subagent-mode spec does it inline.
             return
 
         preferences_for_prompt = [
@@ -10498,7 +10498,7 @@ class PersonaAgent:
         backend/{uid}/{profile.json, {app}.json ×3}.
 
         Skipped gracefully when no LLM client is configured (Claude Code
-        subagent mode handles this inline via skill.md).
+        subagent mode handles this inline via the subagent-mode spec).
         """
         if self.llm_client is None:
             if self.verbose:
@@ -10544,7 +10544,7 @@ class PersonaAgent:
 
         Reads/writes backend/{uid}/{instagram,facebook,threads}.json.
         Skipped gracefully when no LLM client is configured (subagent mode
-        handles this inline via skill.md). Web-search is also required for
+        handles this inline via the subagent-mode spec). Web-search is also required for
         the trending half; without it, only friend posts are generated.
 
         Idempotent: previously-generated feed_visible events are dropped

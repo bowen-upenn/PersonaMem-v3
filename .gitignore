@@ -47,3 +47,7 @@ telegram_master_report.py
 regen_work/
 backups/
 release/
+
+# Agent-workflow docs (kept local, not part of the public release)
+CLAUDE.md
+skill.md

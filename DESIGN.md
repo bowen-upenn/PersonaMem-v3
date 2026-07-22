@@ -2,7 +2,7 @@
 
 *Towards All-Day-Long Omni-Platform Personal Intelligence*
 
-> Design rationale for the PersonaMem-v3 data generation pipeline. For implementation, see `persona_agent.py`, `prompts.py`, and `skill.md`.
+> Design rationale for the PersonaMem-v3 data generation pipeline. For implementation, see `persona_agent.py` and `prompts.py`.
 
 ## Theoretical Foundations
 
