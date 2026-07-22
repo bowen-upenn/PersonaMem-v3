@@ -42,7 +42,9 @@ Multiple personas:
 
 ```bash
 bash scripts/run_persona_batch.sh                         # every user in the input CSV; resumable
-# knobs: INPUT_CSV=... NUM_USERS=25 USERS="17 18 19" CONCURRENCY=3
+NUM_USERS=25 bash scripts/run_persona_batch.sh            # only the first 25 user ids in the CSV
+USERS="17 18 115" bash scripts/run_persona_batch.sh       # explicit persona ids
+# other knobs: INPUT_CSV=path/to/input.csv  CONCURRENCY=3 (personas generated simultaneously)
 python scripts/prepare_eval_data.py --all --parallel 4    # queries for every generated persona
 ```
 
