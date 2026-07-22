@@ -1,13 +1,13 @@
 # PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
-<p align="left">
-  <a href="https://ai.meta.com"><img src="https://img.shields.io/badge/Meta-0467DF?style=for-the-badge&logo=meta&logoColor=white" alt="Meta"></a>
-  <a href="https://www.upenn.edu"><img src="https://img.shields.io/badge/UPenn-011F5B?style=for-the-badge" alt="University of Pennsylvania"></a>
-  <a href="https://www.mit.edu"><img src="https://img.shields.io/badge/MIT-A31F34?style=for-the-badge" alt="MIT"></a>
-  <a href="https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3"><img src="https://img.shields.io/badge/HuggingFace-Dataset-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" alt="Dataset"></a>
-  <!-- TODO: replace with the real arXiv link once the v3 paper is up -->
-  <a href="https://arxiv.org/abs/"><img src="https://img.shields.io/badge/Paper-arXiv-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" alt="Paper (coming soon)"></a>
-</p>
+<!-- TODO: replace the arXiv badge target/ID once the v3 paper is up -->
+[![Paper](https://img.shields.io/badge/arXiv-coming--soon-b31b1b.svg)](https://arxiv.org/abs/)
+[![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v3-ffd21e.svg)](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)
+[![PersonaMem v2](https://img.shields.io/badge/GitHub-PersonaMem--v2-0075b6.svg?logo=github)](https://github.com/bowen-upenn/PersonaMem-v2)
+[![PersonaMem v1](https://img.shields.io/badge/GitHub-PersonaMem--v1-0075b6.svg?logo=github)](https://github.com/bowen-upenn/PersonaMem)
+[![Meta](https://img.shields.io/badge/Meta-AI-0467df.svg?logo=meta&logoColor=white)](https://ai.meta.com)
+[![UPenn](https://img.shields.io/badge/UPenn-011f5b.svg)](https://www.upenn.edu)
+[![MIT](https://img.shields.io/badge/MIT-a31f34.svg)](https://www.mit.edu)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
