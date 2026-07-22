@@ -39,7 +39,7 @@ Source data comes from [facebook/gistbench](https://huggingface.co/datasets/face
 
 ## 1. Build personas, user histories, their queries
 
-One persona, end to end (28-step generation pipeline → `backend/115/` with `profile.json`, five app histories, `calendar.json`, `persona.html`):
+One persona, end to end (full generation pipeline → `backend/115/` with `profile.json`, five app histories, `calendar.json`, `persona.html`):
 
 ```bash
 python scripts/run_persona_pipeline.py --user_id 115 --input_csv data/gistbench_input.csv --verbose
