@@ -211,7 +211,7 @@ Three interaction pillars:
 
 | Tension | Choice |
 |---------|--------|
-| Signal fidelity vs. coverage | Strict filtering (init >= 0.75, 7-day recency gate on corroboration, bottom-20% removal) — choose fidelity |
+| Signal fidelity vs. coverage | Strict filtering (init >= 0.65 survival floor, 7-day recency gate on corroboration, bottom-20% removal) — fidelity is enforced at the *merge* step (R18 evidence-coherence gate) rather than by a high init floor, so coverage can stay high without admitting over-merges |
 | Realism vs. tractability | Approximate with session routing, per-user action distributions, temporal evolution |
 | Fairness vs. accuracy | Diversify demographics beyond census; avoid stereotypical combos — choose fairness |
 
@@ -364,9 +364,9 @@ Seven sub-stages transform raw inferences into the validated preference skeleton
 
 1. **Merge Duplicates:** Normalize (lowercase, whitespace-collapsed) and group by exact string match. No semantic dedup — handled later by LLM relationship discovery.
 
-2. **Init Filter:** Drop canonicals with `max(init) < 0.75` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor.
+2. **Init Filter:** Drop canonicals with `max(init) < 0.65` (`MIN_PERSONA_INIT_CONFIDENCE`). No exploratory retention — strict floor. **NB (R18):** this is the *survival* floor only, and is deliberately distinct from `HIGH_CONFIDENCE_INIT_THRESHOLD` (0.75), which still gates test-split / distractor eligibility via `is_high_confidence`. The two coincided at 0.75 before R18; lowering the survival floor to 0.65 restores history richness **without** loosening eval-critical selection.
 
-3. **Weighted Corroboration (recency-gated):** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.75), +0.5 per implicit row (init >= 0.75). **Only rows whose `source_timestamp` falls within the user's trailing 7-day window (`RECENCY_WINDOW_SECONDS`, anchored on the user's latest interaction) contribute to the score and to the `n_explicit_rows` / `n_implicit_rows` mix.** Older rows still pass the init filter but don't count here — recency is the strictness mechanism, so canonicals supported only by stale evidence fail the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
+3. **Weighted Corroboration (recency-gated):** Per canonical, count distinct source rows: +1.0 per explicit row (init >= 0.65), +0.5 per implicit row (init >= 0.65). **Only rows whose `source_timestamp` falls within the user's trailing 7-day window (`RECENCY_WINDOW_SECONDS`, anchored on the user's latest interaction) contribute to the score and to the `n_explicit_rows` / `n_implicit_rows` mix.** Older rows still pass the init filter but don't count here — recency is the strictness mechanism, so canonicals supported only by stale evidence fail the survival threshold in Step 7. Score is intentionally uncapped — magnitude is meaningful.
 
 4. **LLM Relationship Discovery:** Per-category LLM calls identify `similar` and `contradictory` relationships. LLM does not alter scores. Categories with one canonical are skipped.
 
@@ -1016,9 +1016,9 @@ All noise applied after skeleton establishment. Skeleton (Steps 1-2) is determin
 
 | Constant | Value | Purpose |
 |----------|-------|---------|
-| `MIN_PERSONA_INIT_CONFIDENCE` | 0.75 | Init filter floor for positives |
+| `MIN_PERSONA_INIT_CONFIDENCE` | 0.65 | Init filter floor for positives — **survival** only (R18: lowered from 0.75 once the merge-time evidence-coherence gate made richness safe) |
 | `MIN_NEGATIVE_INIT_CONFIDENCE` | 0.55 | Init filter floor for negatives (aligned with the 0.55-0.75 prompt-scoring band for "direct dislike") |
-| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.75 | Test-split eligibility (positives only) |
+| `HIGH_CONFIDENCE_INIT_THRESHOLD` | 0.75 | Test-split / distractor eligibility (positives only) — **unchanged by R18**; deliberately stricter than the 0.65 survival floor, so richer histories do not loosen eval-critical selection |
 | `XREF_THRESHOLD_EXPLICIT` | 20.0 | Xref bar for explicit-dominated positive canonicals |
 | `XREF_THRESHOLD_IMPLICIT` | 50.0 | Xref bar for implicit-dominated positive canonicals |
 | `XREF_THRESHOLD_NEGATIVE` | 5.0 | Xref bar for negatives (decoupled from positive scale — negatives are structurally rarer) |
