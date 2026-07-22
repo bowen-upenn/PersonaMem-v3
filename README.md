@@ -5,7 +5,11 @@
   <a href="https://www.upenn.edu"><img src="https://img.shields.io/badge/UPenn-011F5B?style=for-the-badge" alt="University of Pennsylvania"></a>
   <a href="https://www.mit.edu"><img src="https://img.shields.io/badge/MIT-A31F34?style=for-the-badge" alt="MIT"></a>
   <a href="https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3"><img src="https://img.shields.io/badge/HuggingFace-Dataset-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" alt="Dataset"></a>
+  <!-- TODO: replace with the real arXiv link once the v3 paper is up -->
+  <a href="https://arxiv.org/abs/"><img src="https://img.shields.io/badge/Paper-arXiv-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" alt="Paper (coming soon)"></a>
 </p>
+
+Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
 A collaboration between **Meta**, the **University of Pennsylvania**, and **MIT**.
 
