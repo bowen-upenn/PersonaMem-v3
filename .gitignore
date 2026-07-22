@@ -19,5 +19,17 @@ backend/
 data/
 *.csv
 
+# Local persona cohort selection (actual user IDs live here, never committed)
+scripts/personas.local.sh
+
+# Eval outputs + operational scratch (logs, per-mode result trees, refill scripts)
+results/
+results_gemini/
+
 # Nested Overleaf paper repo (own remote = git.overleaf.com)
 overleaf/
+
+# Master-node Telegram reporter (canonical copy lives in ~/.claude/, contains bot token)
+telegram_master_report.py
+regen_work/
+backups/

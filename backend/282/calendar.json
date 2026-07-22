@@ -2,429 +2,542 @@
   "modifications": [
     {
       "mod_id": "mod_001",
-      "ts": 1775190000,
-      "formatted_timestamp": "09:00, 03/31/2026",
+      "ts": 1775193600,
+      "formatted_timestamp": "08:00, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_001",
-        "title": "Morning prayer and lease inbox triage",
-        "start_ts": 1775190000,
-        "end_ts": 1775193600,
+        "title": "Flight to Las Vegas for weekend meetings",
+        "start_ts": 1775193600,
+        "end_ts": 1775204400,
         "location": {
-          "city": "Houston",
-          "region": "TX",
+          "city": "Las Vegas",
+          "region": "NV",
           "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
+          "lat": 36.1699,
+          "lon": -115.1398,
           "precision": "city"
         },
-        "type": "work",
-        "linked_preferences": [
-          "Christian devotional content centered on Jesus, prayer, and Bible verses"
-        ],
+        "type": "travel",
+        "linked_preferences": [],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_002",
-      "ts": 1775195400,
-      "formatted_timestamp": "10:30, 03/31/2026",
+      "ts": 1775201400,
+      "formatted_timestamp": "10:10, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_002",
-        "title": "Apartment walkthrough with owner and photo notes",
-        "start_ts": 1775195400,
-        "end_ts": 1775202600,
+        "title": "Check into hotel and quick reset",
+        "start_ts": 1775201400,
+        "end_ts": 1775205000,
         "location": {
-          "city": "Houston",
-          "region": "TX",
+          "city": "Las Vegas",
+          "region": "NV",
           "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
+          "lat": 36.1699,
+          "lon": -115.1398,
           "precision": "city"
         },
-        "type": "work",
-        "attendees": [
-          "self",
-          "Marcus"
-        ],
-        "linked_preferences": [
-          "budget-friendly apartment renovations",
-          "DIY interior decor projects using textured finishes, staining techniques, and roller-coat applications"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
+        "type": "personal",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_003",
-      "ts": 1775284800,
-      "formatted_timestamp": "12:00, 04/01/2026",
+      "ts": 1775217600,
+      "formatted_timestamp": "14:40, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_003",
-        "title": "Lunch and quotes call for car insurance comparison",
-        "start_ts": 1775284800,
-        "end_ts": 1775288400,
+        "title": "Property walk-through: retail vacancy and tenant notes",
+        "start_ts": 1775217600,
+        "end_ts": 1775223000,
         "location": {
-          "city": "Houston",
-          "region": "TX",
+          "city": "Las Vegas",
+          "region": "NV",
           "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
+          "lat": 36.1699,
+          "lon": -115.1398,
           "precision": "city"
         },
-        "type": "personal",
-        "linked_preferences": [
-          "comparing car insurance quotes and discounts to save money",
-          "Porsche 911 GT3 and GT3 high-performance sports cars"
-        ],
-        "is_preference_driven": true,
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_004",
-      "ts": 1775292300,
-      "formatted_timestamp": "14:05, 04/01/2026",
+      "ts": 1775235600,
+      "formatted_timestamp": "19:40, 04/03/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_004",
-        "title": "Gym class: treadmill intervals and core work",
-        "start_ts": 1775292300,
-        "end_ts": 1775297700,
+        "title": "Boxing preview and dinner with Eli",
+        "start_ts": 1775235600,
+        "end_ts": 1775244600,
         "location": {
-          "city": "Houston",
-          "region": "TX",
+          "city": "Las Vegas",
+          "region": "NV",
           "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "high-protein eating to support fitness and weight-loss goals"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_005",
-      "ts": 1775378400,
-      "formatted_timestamp": "12:00, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_005",
-        "title": "Haircut and quick errand run",
-        "start_ts": 1775378400,
-        "end_ts": 1775383800,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_006",
-      "ts": 1775385600,
-      "formatted_timestamp": "14:00, 04/02/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_006",
-        "title": "Tenant renewal questions with Dana",
-        "start_ts": 1775385600,
-        "end_ts": 1775389200,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "work",
-        "attendees": [
-          "self",
-          "Dana"
-        ],
-        "linked_preferences": [
-          "leasing-week stories"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_007",
-      "ts": 1775462400,
-      "formatted_timestamp": "10:40, 04/03/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_007",
-        "title": "Texans clip review and note dump",
-        "start_ts": 1775462400,
-        "end_ts": 1775466000,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "NFL content involving the Tampa Bay Buccaneers and Houston Texans"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_008",
-      "ts": 1775547000,
-      "formatted_timestamp": "09:30, 04/04/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_008",
-        "title": "Refurbished motorcycle listing meetup",
-        "start_ts": 1775547000,
-        "end_ts": 1775552400,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "refurbished motorcycles"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_009",
-      "ts": 1775553600,
-      "formatted_timestamp": "11:20, 04/04/2026",
-      "action": "updated",
-      "entry_id": "cal_008",
-      "diff": {
-        "end_ts": {
-          "from": 1775552400,
-          "to": 1775554200
-        },
-        "notes": {
-          "from": "",
-          "to": "Seller running late; extend by 30 minutes."
-        }
-      }
-    },
-    {
-      "mod_id": "mod_010",
-      "ts": 1775635200,
-      "formatted_timestamp": "11:20, 04/05/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_009",
-        "title": "Family lunch after service",
-        "start_ts": 1775635200,
-        "end_ts": 1775644200,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
+          "lat": 36.1699,
+          "lon": -115.1398,
           "precision": "city"
         },
         "type": "social",
         "linked_preferences": [
-          "faith encouragement"
+          "boxing fandom",
+          "romantic relationships"
         ],
-        "is_preference_driven": false,
-        "relation_to_social": "related"
+        "is_preference_driven": true,
+        "relation_to_social": "related",
+        "attendees": [
+          "self",
+          "Eli"
+        ]
       }
     },
     {
-      "mod_id": "mod_011",
-      "ts": 1775719800,
-      "formatted_timestamp": "10:50, 04/06/2026",
+      "mod_id": "mod_005",
+      "ts": 1775250000,
+      "formatted_timestamp": "23:40, 04/03/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_010",
-        "title": "Bible verse copy time and quiet reset",
-        "start_ts": 1775719800,
-        "end_ts": 1775723400,
+        "entry_id": "cal_005",
+        "title": "Late-night devotional and quiet wind-down",
+        "start_ts": 1775250000,
+        "end_ts": 1775253600,
         "location": {
-          "city": "Houston",
-          "region": "TX",
+          "city": "Las Vegas",
+          "region": "NV",
           "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
+          "lat": 36.1699,
+          "lon": -115.1398,
           "precision": "city"
         },
         "type": "personal",
         "linked_preferences": [
-          "Christian devotional content centered on Jesus, prayer, and Bible verses"
+          "christian devotional practice",
+          "gospel music",
+          "personal development"
         ],
         "is_preference_driven": true,
-        "relation_to_social": "unrelated"
+        "relation_to_social": "adjacent"
       }
     },
     {
-      "mod_id": "mod_012",
-      "ts": 1775806200,
-      "formatted_timestamp": "10:10, 04/07/2026",
+      "mod_id": "mod_006",
+      "ts": 1775334600,
+      "formatted_timestamp": "23:30, 04/04/2026",
       "action": "added",
       "entry": {
-        "entry_id": "cal_011",
-        "title": "Houston to Atlanta flight",
-        "start_ts": 1775806200,
-        "end_ts": 1775818200,
+        "entry_id": "cal_006",
+        "title": "Return flight to Los Angeles",
+        "start_ts": 1775334600,
+        "end_ts": 1775342400,
         "location": {
-          "city": "Atlanta",
-          "region": "GA",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 33.749,
-          "lon": -84.388,
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
         "type": "travel",
         "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_007",
+      "ts": 1775422800,
+      "formatted_timestamp": "00:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_007",
+        "title": "Sleep clinic screening questionnaire",
+        "start_ts": 1775422800,
+        "end_ts": 1775426400,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_008",
+      "ts": 1775440800,
+      "formatted_timestamp": "05:20, 04/05/2026",
+      "action": "updated",
+      "entry_id": "cal_007",
+      "diff": {
+        "end_ts": {
+          "from": 1775426400,
+          "to": 1775428200
+        },
+        "notes": {
+          "from": "",
+          "to": "bring insurance card"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_009",
+      "ts": 1775505600,
+      "formatted_timestamp": "23:20, 04/05/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_008",
+        "title": "Organize leasing folders on kitchen table",
+        "start_ts": 1775505600,
+        "end_ts": 1775512800,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [
+          "home organization attempts"
+        ],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_010",
+      "ts": 1775592000,
+      "formatted_timestamp": "23:20, 04/06/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_009",
+        "title": "Tenant call block and rent roll follow-up",
+        "start_ts": 1775592000,
+        "end_ts": 1775599200,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_011",
+      "ts": 1775671200,
+      "formatted_timestamp": "21:20, 04/07/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_010",
+        "title": "Camaro build videos and parts wishlist",
+        "start_ts": 1775671200,
+        "end_ts": 1775676600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "american muscle cars",
+          "car enthusiast social media"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_012",
+      "ts": 1775743200,
+      "formatted_timestamp": "17:20, 04/08/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_011",
+        "title": "Gym class",
+        "start_ts": 1775743200,
+        "end_ts": 1775748600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "health",
+        "linked_preferences": [
+          "wellness"
+        ],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
       "mod_id": "mod_013",
-      "ts": 1775818800,
-      "formatted_timestamp": "13:40, 04/07/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_012",
-        "title": "Atlanta site visit and renovation photo walk",
-        "start_ts": 1775818800,
-        "end_ts": 1775829600,
-        "location": {
-          "city": "Atlanta",
-          "region": "GA",
-          "country": "USA",
-          "lat": 33.749,
-          "lon": -84.388,
-          "precision": "city"
-        },
-        "type": "work",
-        "linked_preferences": [
-          "budget-friendly apartment renovations",
-          "DIY interior decor projects using textured finishes, staining techniques, and roller-coat applications"
-        ],
-        "is_preference_driven": true,
-        "relation_to_social": "adjacent"
-      }
-    },
-    {
-      "mod_id": "mod_014",
-      "ts": 1775824200,
-      "formatted_timestamp": "15:10, 04/07/2026",
+      "ts": 1775764800,
+      "formatted_timestamp": "23:20, 04/08/2026",
       "action": "updated",
-      "entry_id": "cal_012",
+      "entry_id": "cal_011",
       "diff": {
-        "end_ts": {
-          "from": 1775829600,
-          "to": 1775831400
+        "start_ts": {
+          "from": 1775743200,
+          "to": 1775745000
         },
-        "notes": {
-          "from": "",
-          "to": "Owner wants extra time for cabinet finish samples."
+        "location": {
+          "from": {
+            "city": "Los Angeles",
+            "region": "CA",
+            "country": "USA",
+            "lat": 34.0522,
+            "lon": -118.2437,
+            "precision": "city"
+          },
+          "to": {
+            "city": "Los Angeles",
+            "region": "CA",
+            "country": "USA",
+            "lat": 34.0522,
+            "lon": -118.2437,
+            "precision": "city"
+          }
         }
       }
     },
     {
+      "mod_id": "mod_014",
+      "ts": 1775835600,
+      "formatted_timestamp": "19:00, 04/09/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_012",
+        "title": "One-on-one with Marcus about leasing pipeline",
+        "start_ts": 1775835600,
+        "end_ts": 1775841000,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated",
+        "attendees": [
+          "self",
+          "Marcus"
+        ]
+      }
+    },
+    {
       "mod_id": "mod_015",
-      "ts": 1775897100,
-      "formatted_timestamp": "11:45, 04/08/2026",
+      "ts": 1775865600,
+      "formatted_timestamp": "03:20, 04/10/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_013",
-        "title": "Morning jog and protein breakfast",
-        "start_ts": 1775897100,
-        "end_ts": 1775902500,
+        "title": "Watch party: boxing undercard previews",
+        "start_ts": 1775865600,
+        "end_ts": 1775871000,
         "location": {
-          "city": "Atlanta",
-          "region": "GA",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 33.749,
-          "lon": -84.388,
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
-        "type": "health",
+        "type": "social",
         "linked_preferences": [
-          "high-protein eating to support fitness and weight-loss goals"
+          "boxing fandom"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "related"
+      }
+    },
+    {
+      "mod_id": "mod_016",
+      "ts": 1775878200,
+      "formatted_timestamp": "06:50, 04/10/2026",
+      "action": "removed",
+      "entry_id": "cal_013",
+      "removal_reason": "canceled: his boyfriend had to work late."
+    },
+    {
+      "mod_id": "mod_017",
+      "ts": 1775906400,
+      "formatted_timestamp": "14:40, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_014",
+        "title": "Balcony pond water change and fish label check",
+        "start_ts": 1775906400,
+        "end_ts": 1775911800,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "wildlife conservation"
         ],
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
     },
     {
-      "mod_id": "mod_016",
-      "ts": 1775905200,
-      "formatted_timestamp": "14:00, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_014",
-        "title": "Coffee catch-up with Tasha",
-        "start_ts": 1775905200,
-        "end_ts": 1775909700,
-        "location": {
-          "city": "Atlanta",
-          "region": "GA",
-          "country": "USA",
-          "lat": 33.749,
-          "lon": -84.388,
-          "precision": "city"
-        },
-        "type": "social",
-        "attendees": [
-          "self",
-          "Tasha"
-        ],
-        "linked_preferences": [
-          "faith-friendly encouragement"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "related"
-      }
-    },
-    {
-      "mod_id": "mod_017",
-      "ts": 1775913000,
-      "formatted_timestamp": "16:10, 04/08/2026",
+      "mod_id": "mod_018",
+      "ts": 1775917200,
+      "formatted_timestamp": "17:40, 04/10/2026",
       "action": "added",
       "entry": {
         "entry_id": "cal_015",
-        "title": "Return flight to Houston",
-        "start_ts": 1775913000,
-        "end_ts": 1775925000,
+        "title": "Faith and renewal devotional",
+        "start_ts": 1775917200,
+        "end_ts": 1775920800,
         "location": {
-          "city": "Houston",
-          "region": "TX",
+          "city": "Los Angeles",
+          "region": "CA",
           "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "christian devotional practice",
+          "gospel music",
+          "spiritual growth"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_019",
+      "ts": 1775929800,
+      "formatted_timestamp": "21:10, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_016",
+        "title": "Headlights and body kit clips saved for later",
+        "start_ts": 1775929800,
+        "end_ts": 1775933400,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "personal",
+        "linked_preferences": [
+          "supercar blondie/sbx cars-style social media",
+          "american muscle cars"
+        ],
+        "is_preference_driven": true,
+        "relation_to_social": "adjacent"
+      }
+    },
+    {
+      "mod_id": "mod_020",
+      "ts": 1775937000,
+      "formatted_timestamp": "23:30, 04/10/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_017",
+        "title": "Late office sprint review prep",
+        "start_ts": 1775937000,
+        "end_ts": 1775940600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
+          "precision": "city"
+        },
+        "type": "work",
+        "linked_preferences": [],
+        "is_preference_driven": false,
+        "relation_to_social": "unrelated"
+      }
+    },
+    {
+      "mod_id": "mod_021",
+      "ts": 1775941200,
+      "formatted_timestamp": "00:40, 04/11/2026",
+      "action": "updated",
+      "entry_id": "cal_017",
+      "diff": {
+        "end_ts": {
+          "from": 1775940600,
+          "to": 1775942400
+        },
+        "notes": {
+          "from": "",
+          "to": "add final occupancy numbers"
+        }
+      }
+    },
+    {
+      "mod_id": "mod_rep_023",
+      "ts": 1775946442,
+      "formatted_timestamp": "22:27, 04/11/2026",
+      "action": "removed",
+      "entry_id": "cal_015",
+      "removal_reason": "Rescheduled at last minute"
+    },
+    {
+      "mod_id": "mod_022",
+      "ts": 1775947800,
+      "formatted_timestamp": "02:30, 04/11/2026",
+      "action": "added",
+      "entry": {
+        "entry_id": "cal_018",
+        "title": "Return flight home",
+        "start_ts": 1775947800,
+        "end_ts": 1775955600,
+        "location": {
+          "city": "Los Angeles",
+          "region": "CA",
+          "country": "USA",
+          "lat": 34.0522,
+          "lon": -118.2437,
           "precision": "city"
         },
         "type": "travel",
@@ -432,66 +545,6 @@
         "is_preference_driven": false,
         "relation_to_social": "unrelated"
       }
-    },
-    {
-      "mod_id": "mod_018",
-      "ts": 1775931600,
-      "formatted_timestamp": "21:20, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_016",
-        "title": "Pack work bag and clean out car",
-        "start_ts": 1775931600,
-        "end_ts": 1775937000,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "personal",
-        "linked_preferences": [
-          "budget reality checks"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_019",
-      "ts": 1775940600,
-      "formatted_timestamp": "23:50, 04/08/2026",
-      "action": "added",
-      "entry": {
-        "entry_id": "cal_017",
-        "title": "Cancel tomorrow's gym class",
-        "start_ts": 1775944800,
-        "end_ts": 1775948400,
-        "location": {
-          "city": "Houston",
-          "region": "TX",
-          "country": "USA",
-          "lat": 29.7604,
-          "lon": -95.3698,
-          "precision": "city"
-        },
-        "type": "health",
-        "linked_preferences": [
-          "high-protein eating to support fitness and weight-loss goals"
-        ],
-        "is_preference_driven": false,
-        "relation_to_social": "unrelated"
-      }
-    },
-    {
-      "mod_id": "mod_020",
-      "ts": 1775949000,
-      "formatted_timestamp": "00:30, 04/09/2026",
-      "action": "removed",
-      "entry_id": "cal_017",
-      "removal_reason": "canceled: work runover and I'm too tired to make class."
     }
   ]
 }

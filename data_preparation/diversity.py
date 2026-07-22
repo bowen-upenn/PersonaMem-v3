@@ -1,7 +1,7 @@
 """Deterministic per-user diversity assignments (seeded by user_id).
 
 Single-user persona generation collapses onto modal defaults — the 2026-06
-20-persona audit found 100% "Bachelor's degree", 😂 in 20/20 voice palettes,
+cohort audit found 100% "Bachelor's degree", 😂 in every voice palette,
 "just/kinda/honestly" idiolect everywhere, and 59% of sensitive-life-events
 being job_loss/parent_conflict. The LLM, asked per user with no view of the
 cohort, picks the safe center every time.
@@ -112,8 +112,8 @@ def intimate_interest_archetype(user_id) -> str:
 
 
 # ---- Big Five (break the personality collapse → MBTI follows) -----------
-# Audit: 7 distinct big_five signatures / 20, modal high-O/high-C/med-E/med-A/
-# low-N in 9/20, ALL high-openness; MBTI 70% I-S-J, 100% introvert. The LLM
+# Audit: few distinct big_five signatures across the cohort, modal high-O/high-C/med-E/med-A/
+# low-N in nearly half, ALL high-openness; MBTI 70% I-S-J, 100% introvert. The LLM
 # rates the "interesting open conscientious introvert" by default. Draw each
 # trait independently from a spread distribution so the cohort covers the
 # personality space (and MBTI, inferred downstream from big_five, spreads too).

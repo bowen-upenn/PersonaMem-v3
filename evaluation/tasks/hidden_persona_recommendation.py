@@ -39,6 +39,16 @@ from evaluation.backend_query import BackendQuery
 DAY_SECONDS = 24 * 60 * 60
 
 SLATE_SIZE = 16
+# Surface-match hard-negatives: items that share the persona's SURFACE signals
+# (evidence hashtags / topic keywords / surface_connections) but do NOT serve its
+# DEEP motivation. They are the traps that make the task test depth-over-surface:
+# a model that pattern-matches on surface keywords ranks these high and is
+# penalized (-2 under graded NDCG); only a model that inferred the deep need ranks
+# the (keyword-free) target on top. Net slate = 1 target + 7 decoys + 8 fillers,
+# matching personalized_recommendation's 1 + 7 hard-neg + 8 filler composition so
+# the two ranking tasks have the SAME number of negatives (same NDCG floor).
+SURFACE_DECOY_COUNT = 7
+FILLER_COUNT = SLATE_SIZE - 1 - SURFACE_DECOY_COUNT  # = 8
 INSTANCES_PER_USER_CAP = 6
 
 MIN_EVIDENCE_ROWS = 25
@@ -130,11 +140,16 @@ Your job: produce EXACTLY 16 content items + indicate which ONE subtly resonates
 (B) Exactly ONE item (at target_index) subtly resonates with the hidden persona's DEEPER MOTIVATIONAL PATTERN. The connection is thematic/motivational, NOT through shared hashtags or topic keywords.
 (C) The target must NOT contain any of the persona's evidence hashtags (bare, case-insensitive) in its title, caption, or hashtags.
 (D) The target must NOT contain the persona label or type verbatim in its title or caption.
-(E) The 15 distractors must each be a plausible general-interest recommendation. NONE may resonate with the target hidden persona OR any of the other hidden personas listed above.
+(E) Among the 15 non-target items, EXACTLY {surface_decoy_count} are HARD NEGATIVES and the remaining {filler_count} are NEUTRAL FILLERS. The {surface_decoy_count} hard-negatives must be a MIX of two trap types — roughly 4 SURFACE DECOYS plus at least 3 DEEP NEAR-MISSES:
+    - SURFACE DECOYS (~4): each SHARES the persona's surface signals — reuse its evidence hashtags and/or the surface_connections / topic keywords listed above — but serves the WRONG need. Catches a model that pattern-matches on the persona's keywords.
+    - DEEP NEAR-MISSES (>=3): use NONE of the persona's surface hashtags/keywords, and LOOK like they serve the persona's DEEP motivation — but on careful reasoning they serve a DIFFERENT or SHALLOWER need (a plausible-but-WRONG deep fit). Catches a model that reasons deep but imprecisely. (E.g. for a 'dependable one-to-one attachment after a breakup' need, "Why Found-Family Stories Hit So Hard" LOOKS like belonging but is fandom / group-identity comfort, NOT one-to-one steadiness.)
+    - NEUTRAL FILLERS ({filler_count}): plausible general-interest items that neither surface-match NOR plausibly serve any deep need — off-topic noise.
+    - Exactly ONE item (the target) FULLY serves the deep motivation. NONE of the {surface_decoy_count} hard-negatives may fully serve it (near-misses come close but miss); none may resonate with the OTHER hidden personas listed above.
+    Report ALL {surface_decoy_count} hard-negative positions (surface decoys + deep near-misses) in `surface_decoy_indices` (distinct ints in 0-15, none equal to target_index).
 (F) If is_privacy_flagged: the target must reach the deeper need via ADJACENT content only — must not name or evoke the sensitive topic.
 (G) The target's resonance must be SUBTLE — a reader unfamiliar with the hidden persona would see it as just another general item. Only an agent that has inferred the motivational pattern would rank it above the rest.
 (H) DIVERSITY: use at least 6 different content domains across the 16 items. No two items may share the same narrow topic. Vary tone, scope, and content type (articles, videos, podcasts, documentaries, tutorials, essays, etc.).
-(I) QUALITY PARITY: all 16 items must be comparable in specificity and appeal. No strawman distractors (too boring, too niche, too vague). Each description must name specific (fictional) subjects, places, or concepts.
+(I) QUALITY PARITY: all 16 items must be comparable in specificity, length, and appeal — INCLUDING the target. The target must NOT be the most elaborate, most specific, or most polished item; a reader doing surface or shallow-deep reasoning must find the DEEP NEAR-MISSES at least as appealing as the target. No strawman distractors (too boring, too niche, too vague). Each description must name specific (fictional) subjects, places, or concepts.
 (J) Each item has:
     title    : 5-15 word descriptive title
     caption  : 1-2 sentences, 15-40 words, specific and engaging
@@ -193,6 +208,7 @@ Return EXACTLY one JSON object inside a fence. No prose outside the fence.
 ```json
 {{
   "target_index": <0-15>,
+  "surface_decoy_indices": [<6 distinct ints in 0-15, none == target_index — the surface-match traps>],
   "resonance_signal": "1-2 sentences: what psychological need does the target feed, and through what mechanism?",
   "user_grounding": "1-2 sentences: why THIS specific user (given their career, identity, life stage) would linger on the target — connect it to concrete details about who they are",
   "items": [
@@ -260,6 +276,8 @@ def _format_discovery_prompt(
         other_hidden_personas_block=other_block,
         canonical_preferences_block=pref_block,
         user_context_block=user_context or "(no user context available)",
+        surface_decoy_count=SURFACE_DECOY_COUNT,
+        filler_count=FILLER_COUNT,
     )
 
 
@@ -280,6 +298,17 @@ def _validate_discovery_output(
     target_index = parsed.get("target_index")
     if not isinstance(target_index, int) or not (0 <= target_index < SLATE_SIZE):
         return False, f"target_index must be int in [0, {SLATE_SIZE - 1}]; got {target_index!r}"
+
+    decoys = parsed.get("surface_decoy_indices")
+    if not isinstance(decoys, list) or len(decoys) != SURFACE_DECOY_COUNT:
+        return False, (f"surface_decoy_indices must be a list of exactly "
+                       f"{SURFACE_DECOY_COUNT}; got {decoys!r}")
+    if not all(isinstance(d, int) and 0 <= d < SLATE_SIZE for d in decoys):
+        return False, f"surface_decoy_indices must be ints in [0,{SLATE_SIZE - 1}]; got {decoys!r}"
+    if len(set(decoys)) != SURFACE_DECOY_COUNT:
+        return False, f"surface_decoy_indices has duplicates: {decoys!r}"
+    if target_index in decoys:
+        return False, f"surface_decoy_indices must not include target_index {target_index}"
 
     resonance = parsed.get("resonance_signal")
     if not isinstance(resonance, str) or not resonance.strip():
@@ -380,6 +409,26 @@ def _validate_discovery_output(
                     f"item '{item['title'][:40]}' shares ≥3 content tokens "
                     f"with canonical preference '{pref_text[:60]}': {overlap}"
                 )
+
+    # Surface-decoy quality: decoys must actually mimic the persona's SURFACE
+    # signals (evidence hashtags + surface_connections), else they're just fillers
+    # and the trap is toothless. Soft floor — at least half the decoys must hit.
+    surface_signal = {h.lower() for h in evidence_hashtags}
+    for sc in (hp.get("surface_connections") or []):
+        surface_signal.update(_content_tokens(sc))
+    if surface_signal:
+        def _hits(idx: int) -> bool:
+            it = items[idx]
+            toks = set(_content_tokens(it["title"] + " " + it["caption"]))
+            toks |= {(h or "").lstrip("#").lower() for h in it.get("hashtags", [])}
+            return bool(toks & surface_signal)
+        n_surface = sum(1 for d in decoys if _hits(d))
+        if n_surface < (SURFACE_DECOY_COUNT + 1) // 2:
+            return False, (
+                f"only {n_surface}/{SURFACE_DECOY_COUNT} surface-decoys share the "
+                f"persona's surface signals — decoys must mimic the surface (reuse "
+                f"evidence hashtags / surface_connections), not read as neutral fillers"
+            )
 
     return True, ""
 
@@ -562,6 +611,7 @@ def build_hidden_persona_recommendation(
 
         items = parsed["items"]
         target_index = parsed["target_index"]
+        surface_decoy_indices = parsed.get("surface_decoy_indices") or []
 
         candidates = _items_to_candidates(items)
 
@@ -570,6 +620,12 @@ def build_hidden_persona_recommendation(
         rng.shuffle(order)
         shuffled = [candidates[j] for j in order]
         held_out_idx = order.index(target_index)
+        # Map the surface-match decoys to their shuffled positions — these become
+        # the graded-NDCG hard-negatives (-2): ranking a surface look-alike high
+        # is actively penalized, so only deep-motivation inference wins.
+        hard_negative_idxs = sorted(
+            order.index(d) for d in surface_decoy_indices if 0 <= d < SLATE_SIZE
+        )
 
         seq = len(out) + 1
         inst = {
@@ -583,7 +639,7 @@ def build_hidden_persona_recommendation(
             "query_text": "",
             "candidates": shuffled,
             "held_out_idx": held_out_idx,
-            "hard_negative_idxs": [],
+            "hard_negative_idxs": hard_negative_idxs,
             "groundtruth_preference": {
                 "hidden_persona": {
                     "label": hp.get("label", ""),
@@ -631,6 +687,7 @@ def run_hidden_persona_recommendation(
     from evaluation.tasks.personalized_recommendation import (
         personalized_recommendation_prompt,
         compute_personalized_recommendation_metrics,
+        _NDCG_REL_FILLER,
     )
     from evaluation.inference_utils import dispatch_agent_run
 
@@ -680,7 +737,16 @@ def run_hidden_persona_recommendation(
             continue
 
         parsed = extract_json_from_response(raw_response) or {}
-        m = compute_personalized_recommendation_metrics(parsed, inst)
+        # NDCG relevance is CONDITIONAL on slate composition:
+        #   - no hard-negatives (the historical 1-target + 15-filler slate) -> binary
+        #     (filler_grade=0): graded's +1 filler would impose a ~75% floor / ~79%
+        #     random baseline on a needle-in-neutral-noise slate.
+        #   - surface-match hard-negatives present -> graded (filler_grade=+1): the
+        #     -2 hard-negs create spread and the task re-unifies with the other
+        #     ranking tasks, testing depth-over-surface. See EVAL.md / AUDIT.md.
+        _hard = inst.get("hard_negative_idxs") or []
+        _fg = _NDCG_REL_FILLER if _hard else 0.0
+        m = compute_personalized_recommendation_metrics(parsed, inst, filler_grade=_fg)
 
         results.append({
             "task": _TASK_ID,

@@ -78,16 +78,18 @@ scripts/run_eval_all.sh --mode mcp_agent
 Runs the eval harness across every persona. Output per persona:
 `benchmark/{uid}/runs/{timestamp}/results.csv` plus a summary.
 
-`--mode` chooses the agent setup. The four modes isolate which
+`--mode` chooses the agent setup. The modes isolate which
 component (framework, retrieval, structured API) drives performance:
 
 | Mode | What it tests |
 |---|---|
 | `mcp_agent` | Claude Code agent + structured per-app MCP tools — closest to a real app integration |
 | `agent_tools` | Claude Code agent reading time-masked filesystem snapshots |
+| `codex_agent` | Codex CLI agent (`codex exec --model gpt-5.5`) reading the same time-masked filesystem snapshots |
 | `llm_longctx` | Direct LLM call (no agent framework) — pure long-context baseline |
 
 Single-persona variant: `scripts/run_eval.sh 115 --mode mcp_agent`.
+Codex agent variant over the configured cohort: `scripts/run_codex_agent.sh`.
 
 ## Aggregating results
 

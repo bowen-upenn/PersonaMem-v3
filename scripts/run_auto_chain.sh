@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Auto eval chain: gpt-5.5 + gemini-3.5-flash  x  llm_longctx + llm_memory, over
-# all 20 personas, judged by gpt-5.5. Per-model result roots so they don't collide:
+# the configured persona cohort, judged by gpt-5.5. Per-model result roots so they don't collide:
 #   gpt-5.5  -> results/{mode}/{uid}
 #   gemini   -> results_gemini/{mode}/{uid}
 # gpt (Azure) and gemini (Google) run in PARALLEL (different APIs); within each,
@@ -8,7 +8,10 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-PERSONAS="1 2 3 5 6 8 9 10 13 14 26 105 115 209 229 282 461 655 760 835"
+# Persona cohort is defined in a local, untracked file (see .gitignore).
+[ -f scripts/personas.local.sh ] && . scripts/personas.local.sh
+PERSONAS="${PERSONAS:-${PERSONAS_EXTENDED:-}}"
+[ -n "$PERSONAS" ] || { echo "ERROR: set PERSONAS=... or create scripts/personas.local.sh" >&2; exit 2; }
 JUDGE=gpt-5.5
 WORKERS=8
 CONC_GPT=3        # cross-persona concurrency for Azure gpt-5.5 (rate-limit safe)

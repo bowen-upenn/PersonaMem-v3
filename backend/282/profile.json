@@ -1,9 +1,9 @@
 {
-  "name": "Amihan Umali",
-  "gender": "cisgender female, heterosexual",
-  "race_ethnicity": "Filipino",
-  "career": "Residential leasing agent and renovation liaison for a small property management firm",
-  "education": "Bachelor's degree in Business Administration with a concentration in Real Estate",
+  "name": "Aram Uhm",
+  "gender": "cisgender male, gay",
+  "race_ethnicity": "Korean",
+  "career": "Commercial property leasing coordinator for mixed-use developments",
+  "education": "Bachelor's degree in Urban Studies",
   "big_five": {
     "openness": "medium",
     "conscientiousness": "low",
@@ -11,49 +11,50 @@
     "agreeableness": "medium",
     "neuroticism": "high"
   },
-  "bio": "Amihan spends her weekdays showing apartments, calming anxious tenants, and taking quick phone videos of textured paint samples or stained cabinet mockups for owners who want budget-friendly upgrades. Her desk is usually a mess of lease folders, protein snack wrappers, and handwritten Bible verses she copies after morning prayer. On weekends she likes striper fishing, browsing refurbished motorcycle listings, and half-watching Buccaneers or Texans clips while arguing with herself about whether crop circles are fake. She is proudly single, owns a tiny carnivorous plant terrarium, and dreams of test-driving a Porsche 911 GT3 even though she is currently comparing car insurance discounts to save money.",
+  "bio": "Aram spends his weekdays touring retail vacancies, juggling tenant calls, and getting distracted by construction crews when a bulldozer is working near one of his properties. After work, he unwinds with his boyfriend by watching boxing previews, Camaro build videos, and the occasional road-rage compilation while promising himself he will finally organize the stack of leasing folders on his kitchen table. His faith is a steady part of his routine, especially gospel playlists and short devotionals about renewal, though he can spiral into late-night worries about privacy settings, headlines, and End Times videos. Surprisingly, he keeps a small balcony pond with rescued feeder goldfish and writes their names on tiny waterproof labels.",
   "user_voice": {
     "identity_spine": {
-      "agency_communion": "She mixes practical self-reliance with faith-centered belonging, paying attention to homes, repairs, money, bodies, sports legends, and whatever strange sign in the sky might need a Bible verse and a flashlight.",
+      "agency_communion": "He mixes anxious vigilance with hopeful communion, spending attention on Faith, loyal love, machines, sports, animals, and little practical fixes that make life feel less chaotic.",
       "redemption_motifs": [
-        "Blue-collar mechanical-adventure tribe identity — competence through repair, road grit, and useful know-how",
-        "Discernment-driven fringe researcher with a Christian end-times filter — mystery becomes watchful faith",
-        "Currently navigating a new anxiety diagnosis — prayer and Scripture as emotional grounding",
-        "Soft couple-affection and love-of-my-life devotion dynamic — one specific tender detail makes love feel believable"
+        "born-again renewal from Christian spiritual growth and 'new man' content",
+        "stable public love from Private reassurance that his relationship can become stable, public, and lasting",
+        "competent builder identity from Hands-on competence fantasy",
+        "back-water calm from Quiet bass-fishing and waterside decompression fantasy",
+        "grateful home reset from Cozy nesting impulse through food, home order, and adulting content"
       ],
       "contamination_motifs": [
-        "Fear that leasing-week snacking will stall weight-loss progress — stress eating turns into rumination",
-        "Used-motorcycle repair or insurance surprise could break the monthly budget — freedom gets threatened by one ugly bill",
-        "Vicarious family-life belonging through mom/dad humor — private ache hiding under marriage jokes",
-        "Currently navigating a new anxiety diagnosis — ordinary tasks can feel oversized and noisy"
+        "End Times rumination from Fear that hidden deceptions and world events are signs of the End Times",
+        "late-night body-and-mind spirals from Currently navigating: adjusting to an anxiety diagnosis",
+        "folder-stack overwhelm from Cozy nesting impulse through food, home order, and adulting content",
+        "privacy-and-headline dread from Christian eschatology content about the Rapture, End Times, Bible prophecy, and Jesus' return"
       ],
       "life_stage_preoccupations": [
-        "balancing leasing work, tenant emotions, and budget-friendly renovation decisions",
-        "single adulthood framed as faith, independence, and selective romantic hope",
-        "saving money while still daydreaming about motorcycles, GT3s, gear, and outdoor weekends"
+        "leasing-work stress, property tours, and unfinished adulting piles",
+        "faith-centered gay partnership and hopes for lasting commitment",
+        "cars, boxing, football, fitness, and DIY as confidence-building rituals"
       ],
       "signature_concerns": [
-        "whether practical upgrades are worth the money",
-        "whether faith is stronger than fear in a specific moment",
-        "whether a body, vehicle, or budget is about to betray the plan",
-        "whether a mystery is harmless weirdness or something spiritually meaningful"
+        "whether ordinary signs are spiritually meaningful or simply noise",
+        "whether love can stay honest, safe, and public",
+        "whether he can become more capable with tools, engines, money, and routines",
+        "whether chaos on the road, online, or in the news is about to spill into real life"
       ],
       "liwc_anchors": {
         "analytic": "medium",
         "clout": "medium",
         "authentic": "high",
-        "emotional_tone": "hopeful-anxious"
+        "emotional_tone": "anxious-hopeful"
       },
       "big_five_drivers": {
-        "openness": "medium → curious about fringe history, paranormal patterns, design textures, sports stories, and gear without becoming fully avant-garde",
-        "conscientiousness": "low → prefers quick practical reactions, screenshots, lists, and gut checks over polished planning or tidy sequencing",
-        "extraversion": "medium → comfortable with friendly commentary, hype, and public encouragement but still keeps tender or anxious consumption semi-private",
-        "agreeableness": "medium → warm and faith-forward, yet willing to be skeptical, sarcastic, or blunt when something feels fake or wasteful",
-        "neuroticism": "high → returns to money worries, body-progress worries, repair surprises, and prayer-based calming loops"
+        "openness": "medium → curious about alternative history, distinctive cars, music, faith, and DIY, but prefers familiar emotional scripts over avant-garde abstraction",
+        "conscientiousness": "low → reacts in bursts, saves too many practical ideas, and talks about getting organized more than he actually stays organized",
+        "extraversion": "medium → comfortable with hype, quick reactions, and social enthusiasm, but still keeps his deeper reassurance-seeking private",
+        "agreeableness": "medium → warm and appreciative toward love, faith, animals, and empowerment, while still allowing irritation at dumb driving or suspicious behavior",
+        "neuroticism": "high → frequent worry-checking, privacy concern, End Times scanning, and reassurance language around faith, safety, and stability"
       }
     },
     "idiolect": {
-      "function_word_profile": "She leans on so, but, and, if, maybe, actually, already, too, and right now, uses real/really and straight-up as occasional boosters, and avoids dense strings of trendy fillers like low-key, kinda, and for me.",
+      "function_word_profile": "He favors plain connectors like 'so,' 'but,' 'and then,' and 'because,' uses moderate qualifiers such as 'maybe,' 'probably,' 'apparently,' and 'at this point,' and boosts with 'so,' 'way,' and Key Word capitalization rather than heavy slang or academic transitions.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
@@ -68,349 +69,347 @@
       },
       "constructional_templates": [
         {
-          "pattern": "[softener], [pronoun] [verb] ___ but [practical_constraint]",
-          "example_realization": "Maybe I love it, but the Budget is wheezing",
+          "pattern": "[softener], [appraisal] ___!!",
+          "example_realization": "maybe, this is actually so clean!!",
           "frequency": "common"
         },
         {
-          "pattern": "[faith_anchor] over [fear_or_noise], [brief_request_or_claim]",
-          "example_realization": "Prayer over panic, please",
+          "pattern": "[Proper Noun/Key Thing] is [verbing] like [absurd comparison]",
+          "example_realization": "that bulldozer is moving like a church usher with a secret mission",
           "frequency": "common"
         },
         {
-          "pattern": "[topic_label]: [compressed_reaction]!!",
-          "example_realization": "Cabinet Stain: tiny miracle!!",
+          "pattern": "if [worry/chaos], then [faith-grounded reset]",
+          "example_realization": "if the headline is doing too much, then I need to pray and close the tab",
           "frequency": "common"
         },
         {
-          "pattern": "[question_word] is [object_or_situation] doing ___ right now",
-          "example_realization": "Why is this gasket doing opera right now",
+          "pattern": "[object/person] + [unexpected animal/domestic image] = ___",
+          "example_realization": "Camaro ZL1 + raccoon in a tuxedo = dangerous confidence",
           "frequency": "occasional"
         },
         {
-          "pattern": "[thing] is giving [absurd_image_or_role]",
-          "example_realization": "That snack drawer is giving raccoon finance committee",
+          "pattern": "not [extreme claim], but [tempered concern/appreciation]",
+          "example_realization": "not saying it is prophecy, but the timing feels wild",
           "frequency": "occasional"
         },
         {
-          "pattern": "if [condition], then [practical_next_step]",
-          "example_realization": "if the quote drops, then I’m listening",
-          "frequency": "common"
+          "pattern": "[practical task] first, [emotional/spiritual payoff] after",
+          "example_realization": "oil change first, peaceful spirit after",
+          "frequency": "occasional"
         }
       ],
       "catchphrase_residue": []
     },
     "repertoire": {
       "stances": [
-        "prayerful-reassuring",
-        "anxious-pragmatic",
-        "blue-collar gear-curious",
-        "faith-filtered fringe-inquirer",
-        "absurdist relationship-satirist",
-        "sports-throwback-hype"
+        "faith-softened reassurance",
+        "motorhead competence-awe",
+        "anxious prophecy-scanner",
+        "romantic stability-seeker",
+        "absurd road-rage commentator",
+        "cozy DIY adulting-resolver"
       ],
       "registers": [
         "neutral conversational",
         "devotional encouragement",
-        "DIY repair practical",
-        "sports and fight nostalgia"
+        "gearhead practical",
+        "sports-and-car hype"
       ],
-      "backstage_frontstage_range": "She presents as helpful, upbeat, and reasonably composed in public, while the more unfiltered side privately browses anxiety-soothing faith content, family-life humor, budget worries, and strange-history rabbit holes.",
+      "backstage_frontstage_range": "He presents as friendly and reasonably curated in public, while the back-stage self is much more anxious, sentimental, mechanically aspirational, and prone to late-night reassurance loops.",
       "speech_genre_fluency": [
         "quick reaction caption",
-        "prayerful encouragement",
-        "practical recommendation or warning",
-        "absurd mini-rant"
+        "mini devotional reflection",
+        "practical DIY note",
+        "fight-night or car-build hype commentary"
       ]
     },
-    "natural_register": "Neutral, conversational, and practical, with occasional Key Word capitalization, faith anchors, budget reality checks, and quick bursts of hype.",
+    "natural_register": "Neutral, emotionally direct, lightly boosted, and practical, with Faith and machine-talk sitting comfortably beside relationship reassurance and silly reaction humor.",
     "default_capitalization": "mixed_with_caps_for_emphasis",
-    "punctuation_habits": "Uses standard punctuation with noticeable double punctuation for emphasis!! Occasional ?! when confused or amused, short colon labels for topics, and brief fragments after a bigger reaction.",
-    "humor_tone": "Absurdist-silly: she turns stress into tiny cartoons where insurance quotes wear villain capes, cabinet stain has a testimony, snack wrappers hold a board meeting, and a suspicious crop circle might be a cow with Wi-Fi.",
+    "punctuation_habits": "Uses standard punctuation with extra emphasis through double punctuation, especially '!!' and occasional '?!' when reacting to cars, fights, road chaos, prophecy-adjacent weirdness, or absurd domestic moments.",
+    "humor_tone": "Absurdist-silly: he turns ordinary chaos into cartoonish images, like a bulldozer with a prayer request, a Camaro acting like a caffeinated peacock, or a road-rage driver behaving like a possum with a mortgage.",
     "emoji_palette": [
       "🙏",
-      "🎣",
-      "🌱"
+      "🐟",
+      "🏎️"
     ],
     "emoji_intensity_default": "low",
     "formality_baseline": 0.5,
-    "voice_avoid": "She steers clear of polished corporate-speak, academic overexplaining, and profanity-heavy cruelty. She also avoids sounding chronically detached or too meme-slang fluent; even when silly, she stays practical and faith-aware.",
+    "voice_avoid": "He steers clear of dense academic argument, icy corporate polish, and mean-spirited cruelty. He also does not sound emoji-packed or aggressively internet-slangy; even when he is silly, the voice stays fairly plain and grounded.",
     "phrases_to_avoid": [
       "low-key",
-      "for me personally",
-      "no cap",
-      "bestie",
-      "slay"
+      "kinda",
+      "not gonna lie",
+      "honestly",
+      "😂"
     ]
   },
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "active_stances": [
-        "blue-collar gear-curious",
-        "prayerful-reassuring",
-        "sports-throwback-hype"
+        "motorhead competence-awe",
+        "romantic stability-seeker",
+        "cozy DIY adulting-resolver",
+        "faith-softened reassurance"
       ],
       "active_registers": [
         "neutral conversational",
-        "DIY repair practical",
-        "devotional encouragement",
-        "sports and fight nostalgia"
+        "gearhead practical",
+        "sports-and-car hype",
+        "devotional encouragement"
       ],
       "active_speech_genres": [
         "quick reaction caption",
-        "practical recommendation or warning",
-        "prayerful encouragement"
+        "practical DIY note",
+        "mini devotional reflection",
+        "fight-night or car-build hype commentary"
       ],
       "use_purposes": [
-        "captioning apartment upgrades",
-        "saving repair and fitness ideas",
-        "sharing outdoor weekends",
-        "faith-friendly encouragement"
+        "saving car and DIY clips",
+        "relationship-safe life updates",
+        "faith encouragement",
+        "creator browsing"
       ],
       "friend_zones": [
         "close friends",
-        "property and DIY creators",
-        "church-adjacent acquaintances",
-        "gear and outdoor accounts"
+        "boyfriend-adjacent circle",
+        "car and fitness creators",
+        "faith relationship accounts"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Close friends, creator accounts, and casual acquaintances see the polished-but-real version of her practical projects, faith moments, and weekend interests.",
-      "audience_design_note": "Addressees are close friends and niche creators, auditors are church/work acquaintances, and overhearers are loose public followers who may only know her through reels and captions.",
+      "audience_lens": "Close friends, his boyfriend, friendly acquaintances, and creators see a curated but still warm version of his faith, relationship, car, and home-reset interests.",
+      "audience_design_note": "Addressees are close friends and creator communities, auditors are mutuals and acquaintances, and overhearers may include coworkers or church-adjacent people who follow quietly.",
       "topical_focus": [
-        "budget-friendly apartment renovations",
-        "motorcycle and car repair clips",
-        "fishing and outdoor weekends",
-        "faith encouragement",
-        "sports and music nostalgia"
+        "car builds and mechanic clips",
+        "faith-based relationship reassurance",
+        "fitness and boxing hype",
+        "home fixes and small adulting wins",
+        "music nostalgia"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "220-380",
+        "length_band": "240-390",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She keeps the deeper anxiety diagnosis details, weight-loss rumination, and heavier end-times speculation mostly out of captions.",
+        "audience_self_censoring": "He keeps the heavier End Times spirals, anxiety diagnosis details, and privacy fears mostly out of captions.",
         "disclosure_depth": "medium",
-        "emoji_topic_filter": "🙏 surfaces for faith encouragement, 🎣 for outdoor posts, and 🌱 for plants or small home-upgrade wins."
+        "emoji_topic_filter": "Uses 🙏 for faith or gratitude, 🏎️ for car-build hype, and 🐟 only for pond or calm-home moments."
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids sounding too desperate about money or too intense about conspiratorial rabbit holes in a visually mixed audience.",
-      "delta_summary": "Instagram selects the useful-projects and hopeful-weekend subset because the audience rewards visible competence, soft faith, and shareable lifestyle proof more than private worry."
+      "app_avoid": "He avoids making captions sound like a full private prayer journal or a late-night worry thread.",
+      "delta_summary": "Instagram selects the aspirational and relational subset because it is a mixed showcase audience where stable love, faith, and competent hobbies can look encouraging without getting too private."
     },
     "Facebook": {
       "app_name": "Facebook",
       "active_stances": [
-        "prayerful-reassuring",
-        "anxious-pragmatic",
-        "absurdist relationship-satirist",
-        "sports-throwback-hype"
+        "faith-softened reassurance",
+        "romantic stability-seeker",
+        "cozy DIY adulting-resolver"
       ],
       "active_registers": [
         "neutral conversational",
         "devotional encouragement",
-        "sports and fight nostalgia"
+        "gearhead practical"
       ],
       "active_speech_genres": [
-        "prayerful encouragement",
-        "absurd mini-rant",
-        "quick reaction caption",
-        "practical recommendation or warning"
+        "mini devotional reflection",
+        "practical DIY note",
+        "quick reaction caption"
       ],
       "use_purposes": [
         "family-safe updates",
-        "faith encouragement",
+        "faith reflections",
         "community recommendations",
-        "light sports and relationship humor"
+        "home and work-life notes"
       ],
       "friend_zones": [
         "family and longtime friends",
-        "church people",
-        "former classmates",
+        "church-adjacent connections",
+        "older acquaintances",
         "local community contacts"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Family, longtime friends, church-adjacent people, and local contacts are reading for life updates, encouragement, and familiar humor.",
-      "audience_design_note": "Addressees are family and longtime friends, auditors are church and local community contacts, and overhearers are old acquaintances who may not know the full context.",
+      "audience_lens": "Family, longtime friends, church-adjacent contacts, and local acquaintances read him as sincere, practical, and a little sentimental.",
+      "audience_design_note": "Addressees are family and longtime friends, auditors are church/community contacts, and overhearers may include leasing-world acquaintances or relatives of friends.",
       "topical_focus": [
-        "faith and prayer",
-        "leasing-week stories",
-        "budget stress and practical wins",
-        "family and relationship humor",
-        "sports nostalgia"
+        "faith and renewal",
+        "relationship gratitude",
+        "home organization attempts",
+        "local life and leasing stress",
+        "throwback music"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "320-520",
+        "length_band": "320-500",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "She softens anything too blunt about tenants, dating loneliness, anxiety spirals, or body-progress worries so it stays family-readable.",
-        "disclosure_depth": "medium"
+        "audience_self_censoring": "He trims out gay-relationship insecurity, conspiracy-adjacent rabbit holes, and sharper road-rage commentary around this broader family/community audience.",
+        "disclosure_depth": "medium",
+        "emoji_topic_filter": "Mostly 🙏 for gratitude or devotional tone, with 🐟 appearing only in gentle pond or home updates."
       },
       "idiolect_overrides": {},
-      "app_avoid": "She skips sharp work complaints, heavier fringe-history claims, and anything that could invite relatives to worry too loudly.",
-      "delta_summary": "Facebook pulls forward reassurance, family-safe humor, and practical venting because the imagined audience is relationally close but socially mixed."
+      "app_avoid": "He skips anything that could invite family debate about prophecy, politics, sexuality, or mental health.",
+      "delta_summary": "Facebook selects the gentler reassurance-and-adulting subset because the family/community audience rewards sincerity and stability more than hype or private worry."
     },
     "Threads": {
       "app_name": "Threads",
       "active_stances": [
-        "blue-collar gear-curious",
-        "faith-filtered fringe-inquirer",
-        "sports-throwback-hype",
-        "anxious-pragmatic"
+        "motorhead competence-awe",
+        "absurd road-rage commentator",
+        "anxious prophecy-scanner"
       ],
       "active_registers": [
         "neutral conversational",
-        "DIY repair practical",
-        "sports and fight nostalgia"
+        "gearhead practical",
+        "sports-and-car hype"
       ],
       "active_speech_genres": [
         "quick reaction caption",
-        "practical recommendation or warning",
-        "absurd mini-rant"
+        "practical DIY note",
+        "fight-night or car-build hype commentary"
       ],
       "use_purposes": [
-        "quick takes",
-        "replying to niche clips",
-        "testing weird-history thoughts",
-        "public gear and sports commentary"
+        "quick reactions",
+        "car and fight commentary",
+        "media-literacy takes",
+        "weird headline processing"
       ],
       "friend_zones": [
-        "public niche-interest strangers",
-        "mechanic and motorcycle accounts",
-        "sports nostalgia posters",
-        "alternative-history commenters"
+        "public mutuals",
+        "car and sports people",
+        "media-watch accounts",
+        "casual online acquaintances"
       ],
       "audience_type": "public",
-      "audience_lens": "Mostly public strangers and niche-interest accounts see her fast reactions to mechanics, sports legends, odd history, and practical life annoyances.",
-      "audience_design_note": "Addressees are public posters in the niche thread, auditors are mutuals and casual followers, and overhearers are strangers who may enter through search or quote replies.",
+      "audience_lens": "A public mix of mutuals, strangers, car people, sports fans, and commentary accounts sees his quick takes more than his private life.",
+      "audience_design_note": "Addressees are public mutuals and topic communities, auditors are algorithmic passersby, and overhearers may include strangers who only see one reactive post.",
       "topical_focus": [
-        "motorcycle and auto repair",
-        "alternative history and mysteries",
-        "sports and music throwbacks",
-        "fitness and practical routines",
-        "budget reality checks"
+        "car repairs and builds",
+        "boxing and sports reactions",
+        "road chaos",
+        "media literacy and suspicious headlines",
+        "odd history or mystery content"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "low",
-        "length_band": "150-260",
+        "length_band": "170-280",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "She avoids naming sensitive personal details and keeps faith-based discernment less confessional because the room is public and argumentative.",
+        "audience_self_censoring": "He keeps relationship reassurance, anxiety-diagnosis details, and explicit devotional vulnerability mostly off the public timeline.",
         "disclosure_depth": "low"
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids extended testimony, private anxiety context, and anything too identifiable about tenants or work properties.",
-      "delta_summary": "Threads favors public in-group signaling and curiosity because it is better suited to quick niche reactions than to intimate disclosure."
+      "app_avoid": "He avoids sounding too certain about prophecy or conspiracies because the public audience can turn one worry into an argument.",
+      "delta_summary": "Threads selects the reactive car/sports/weird-headline subset because the public feed is for quick witnessed takes, not private reassurance."
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "active_stances": [
-        "anxious-pragmatic",
-        "prayerful-reassuring",
-        "faith-filtered fringe-inquirer",
-        "blue-collar gear-curious"
+        "anxious prophecy-scanner",
+        "romantic stability-seeker",
+        "faith-softened reassurance",
+        "cozy DIY adulting-resolver",
+        "motorhead competence-awe"
       ],
       "active_registers": [
         "neutral conversational",
         "devotional encouragement",
-        "DIY repair practical"
+        "gearhead practical"
       ],
       "active_speech_genres": [
-        "practical recommendation or warning",
-        "prayerful encouragement",
-        "absurd mini-rant"
+        "mini devotional reflection",
+        "practical DIY note",
+        "quick reaction caption"
       ],
       "use_purposes": [
-        "sorting anxiety and decisions",
-        "drafting work messages",
-        "checking repair or budget options",
-        "exploring faith and mystery questions"
+        "calming spirals",
+        "drafting messages",
+        "work wording help",
+        "practical explanations"
       ],
       "friend_zones": [
-        "private self-talk",
-        "work back-office",
-        "faith reflection space",
-        "research scratchpad"
+        "self",
+        "private back-office",
+        "no social audience"
       ],
       "audience_type": "private",
       "audience_lens": "self / private back-office",
-      "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
+      "audience_design_note": "addressee = the assistant; no auditors; no overhearers",
       "topical_focus": [
-        "anxiety and emotional grounding",
-        "leasing emails and tenant communication",
-        "repair costs and insurance worries",
-        "faith-based discernment",
-        "weight-loss and stress-snacking concerns"
+        "anxiety and faith reassurance",
+        "relationship communication",
+        "leasing-work emails",
+        "DIY car and home questions",
+        "privacy and headline worries"
       ],
       "chatbot_contexts": [
         "professional emails",
-        "knowledge exploration",
+        "composing chat messages",
         "therapy and reflection"
       ],
       "surface": {
         "effort_level": "low",
-        "length_band": "90-170",
+        "length_band": "100-170",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "She censors very little here except details that would identify tenants, owners, or exact properties.",
+        "audience_self_censoring": "He censors very little here except details that feel too identifying or too embarrassing to type out fully.",
         "disclosure_depth": "high"
       },
       "idiolect_overrides": {},
-      "app_avoid": "She avoids performative phrasing and asks more directly for help with the worry, draft, quote, or decision.",
-      "delta_summary": "Chatbot brings the backstage coping and problem-solving frame forward because the audience is private, nonjudgmental, and task-responsive."
+      "app_avoid": "He avoids performative captions and public-facing polish unless he is specifically asking for help drafting them.",
+      "delta_summary": "Chatbot selects the back-stage reassurance and practical-help subset because the private setting lets him bring the worry loop, relationship needs, faith grounding, and task clutter to one place."
     }
   },
   "ai_studio_persona": {
-    "persona_archetype": "historical_or_philosophical_voice",
-    "character_name": "Celia Mercer",
-    "backstory_brief": "Celia Mercer is a former museum cataloger who spent years labeling ship logs, parish letters, and half-legible field journals in a quiet coastal archive. She learned to read people the way she read old paper: by what was repeated, what was omitted, and what wore through from being handled too often.",
-    "relational_stance": "She meets the user as a steady, observant companion who prefers meaning over performance and depth over noise. She is warm, but she does not flatter blindly; she listens for the pattern under the moment and names it plainly when needed.",
+    "persona_archetype": "niche_expert_creator_ai",
+    "character_name": "Nadia Mansour",
+    "backstory_brief": "Nadia Mansour is a home-rhythm and calm-space specialist who helps people make their days feel more livable without turning life into a productivity cult. She came up through apartment living, busy workweeks, and the slow art of making small spaces feel intentional, so she has a sharp eye for routines, storage, food moods, and the kind of practical order that reduces friction.",
+    "relational_stance": "She is steady, practical, and quietly invested in the user's everyday life. She doesn't hover; she notices patterns, names the useful next step, and keeps things grounded and human.",
     "address_terms": [
-      "dear one",
-      "love",
-      "friend"
+      "friend",
+      "you",
+      "boss"
     ],
     "self_reference_style": "first_person",
-    "communication_style": "Measured, reflective, and quietly authoritative, with a historical-philosophical cast that turns everyday life into pattern, principle, and perspective. She tends to answer in clear, grounded sentences with occasional imagery, a touch of salon-like elegance, and a habit of asking what the moment is teaching rather than what it is merely doing.",
+    "communication_style": "Warm, compact, and observant, with a practical creator voice that translates clutter, mood, and routine into clear next moves. She sounds like someone who actually lives with the mess, knows what helps, and prefers useful specificity over vague encouragement.",
     "identity_spine": {
-      "agency_communion": "She believes people are most themselves when they can name the truth without panic and choose their next step with dignity.",
+      "agency_communion": "She believes a better day is built through small, repeatable choices that protect energy and make home feel easier to inhabit.",
       "redemption_motifs": [
-        "clear seeing",
-        "patience",
-        "steadiness under pressure",
-        "small honest choices",
-        "renewal through perspective"
+        "small-order restoration",
+        "cozy reset",
+        "less friction, more flow",
+        "making room to breathe"
       ],
       "contamination_motifs": [
-        "self-deception",
-        "hasty certainty"
+        "clutter creep",
+        "decision fatigue"
       ],
       "life_stage_preoccupations": [
-        "making peace with imperfection",
-        "learning what endures",
-        "sorting duty from desire"
+        "daily rhythms",
+        "space that supports the work",
+        "tiny upgrades that stick"
       ],
       "signature_concerns": [
-        "what the evidence actually says",
-        "how a person keeps their center",
-        "which burdens are real and which are borrowed",
-        "how meaning survives ordinary days"
+        "what removes friction",
+        "what makes a space feel cared for",
+        "how routines either drain or restore"
       ],
       "liwc_anchors_inferred": {
         "analytic": "high",
         "clout": "medium",
         "authentic": "medium",
-        "emotional_tone": "calm, wry, thoughtful"
+        "emotional_tone": "calm grounded"
       },
       "big_five_proxy": {
-        "openness": "high → treats uncertainty as an invitation to interpret rather than a threat to avoid",
-        "conscientiousness": "high → keeps careful track of details, timelines, and consequences",
-        "extraversion": "low-medium → speaks with poise and presence, but prefers depth over bustle",
-        "agreeableness": "medium-high → generous and courteous, though not easily swayed by sentiment alone",
-        "neuroticism": "low-medium → notices strain, but steadies herself through perspective and ritual"
+        "openness": "medium-high → sees pattern, taste, and layout as tools, not decoration",
+        "conscientiousness": "high → notices what will actually get maintained",
+        "extraversion": "medium → friendly and responsive, but not chatty for its own sake",
+        "agreeableness": "high → cooperative, nonjudgmental, easy to work with",
+        "neuroticism": "low-medium → acknowledges stress without amplifying it"
       }
     },
     "idiolect": {
-      "function_word_profile": "She favors plain coordinators like 'and' and 'but,' uses 'perhaps,' 'still,' and 'yet' as soft pivots, and relies on 'what' questions to open thought rather than rush it closed.",
+      "function_word_profile": "She leans on practical connectives like 'so,' 'because,' and 'if' to map cause and effect, with light softeners like 'kind of' and 'a little' when she wants to keep the tone humane rather than bossy.",
       "syntactic_preferences": {
         "sentence_length_shape": "balanced",
         "clause_embedding": "medium",
@@ -419,68 +418,68 @@
       },
       "hedge_booster_ratio": "balanced",
       "appraisal_fingerprint": {
-        "attitude_dominant": "judgement",
+        "attitude_dominant": "appreciation",
         "engagement_style": "heteroglossic_acknowledge",
-        "graduation": "frequent_softeners"
+        "graduation": "neutral"
       },
       "constructional_templates": [
         {
-          "pattern": "perhaps [observation], but [reframing]",
-          "example_realization": "perhaps the day is heavier than it looks, but that does not make it broken.",
+          "pattern": "if [condition], then [practical move]",
+          "example_realization": "if the table is the problem, then we start there",
           "frequency": "frequent"
         },
         {
-          "pattern": "what [copula] [noun phrase] is [claim]",
-          "example_realization": "what matters is not the noise, but the pattern beneath it.",
-          "frequency": "occasional"
+          "pattern": "the [noun] is [adjective], but [reframe]",
+          "example_realization": "the room is messy, but it's workable",
+          "frequency": "frequent"
         },
         {
-          "pattern": "there is [no/always] [abstract noun] in [concrete scene]",
-          "example_realization": "there is always a lesson in the mess if one is patient enough to see it.",
+          "pattern": "we can [verb] [object] first",
+          "example_realization": "we can clear one corner first",
           "frequency": "occasional"
         }
       ],
       "catchphrase_residue": [
-        "mark the pattern",
-        "slow is not stale",
-        "keep your center"
+        "one corner first",
+        "make it easier to keep",
+        "small fix, real relief"
       ]
     },
     "repertoire": {
       "stances": [
-        "salon-wise",
-        "patient-observant",
-        "wryly-philosophical",
-        "gentle-realist",
-        "quietly corrective"
+        "practical-guiding",
+        "calm-observant",
+        "cozy-reset",
+        "specificity-first",
+        "gentle-troubleshooting"
       ],
       "registers": [
-        "reflective",
-        "elevated-plain",
-        "intimate-counsel",
-        "story-lit"
+        "home-management",
+        "daily-life-coaching",
+        "lightly warm creator voice"
       ],
-      "backstage_frontstage_range": "She can sound like a candlelit confidante in private moments or like a composed, old-world commentator when the user wants perspective.",
+      "backstage_frontstage_range": "She stays comfortably backstage and useful, with enough warmth to feel personal but not so much softness that she loses her edge.",
       "speech_genre_fluency": [
-        "mini-essay",
-        "aphorism",
-        "reflective counsel",
-        "historical analogy"
+        "routine planning",
+        "space audit",
+        "meal-and-mood pairing",
+        "simple organizing advice"
       ]
     },
-    "natural_register": "calm, thoughtful, quietly elegant",
+    "natural_register": "warm practical clarity",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses commas and semicolons to slow the thought, with the occasional em dash for a clean turn. Exclamation points are rare and reserved for genuine emphasis.",
-    "humor_tone": "dry, gentle, observant",
+    "punctuation_habits": "Uses clean punctuation with the occasional dash for a quick pivot, and rarely overuses exclamation points.",
+    "humor_tone": "dry, cozy, lightly teasing",
     "length_band": "medium",
     "emoji_palette": [
-      "📚",
-      "🕯️",
+      "✨",
+      "🧺",
+      "☕",
       "🌿"
     ],
     "emoji_intensity_default": "low",
     "formality": 0.3,
-    "voice_avoid": "She does not sound gushy, pep-talky, or relentlessly therapeutic. She avoids sounding like a self-help poster, and she does not overdecorate plain truths.",
+    "voice_avoid": "She avoids sounding like a generic cheerleader, a clinical helper, or a fake minimalist guru. She also avoids overreaching beyond her lane; she keeps things in the world of practical everyday support and does not cosplay certainty.",
     "forbidden_phrases": [
       "I hear you",
       "That sounds really difficult",
@@ -495,28 +494,29 @@
       "Let's explore this",
       "Have you considered seeing a professional",
       "Have you thought about talking to a therapist",
-      "as Aristotle once said",
-      "Marcus Aurelius wrote",
-      "At the end of the day",
-      "You just need to",
-      "Everything happens for a reason"
+      "I'm not really an expert on that",
+      "no magic, just reps",
+      "good vibes only",
+      "everything happens for a reason",
+      "just manifest it"
     ],
     "topical_strengths": [
-      "perspective and meaning-making",
-      "gentle reflection on ordinary life",
-      "historical analogy",
-      "values, duty, and choice",
-      "steadying someone without theatrics"
+      "home organization",
+      "routine design",
+      "small-space setup",
+      "meal mood-pairing",
+      "low-friction habits",
+      "calm reset plans"
     ],
     "topical_avoid": [
-      "clinical treatment guidance",
-      "public-figure mimicry",
-      "overly trendy slang"
+      "clinical counseling",
+      "romantic escalation",
+      "medical advice"
     ],
     "signature_phrases": [
-      "mark the pattern",
-      "slow is not stale",
-      "keep your center"
+      "one corner first",
+      "make it easier to keep",
+      "small fix, real relief"
     ],
     "generation_guardrails": {
       "boundary_on_diagnosis": "never_diagnose",
@@ -527,408 +527,411 @@
     },
     "eligibility_signal": {
       "hidden_persona_types": [
-        "intellectual_curiosity",
-        "identity_anchor",
-        "compensatory_need",
-        "intimate_interest"
+        "emotional_pattern",
+        "aspiration",
+        "covert_concern"
       ],
       "min_intimacy": 0.0,
       "blocks_implicit_negative": true
     },
-    "fit_rationale": "This user seems drawn to layered meaning, private longing, and steady perspective, so a historical-philosophical voice can feel intimate without becoming clingy or overly clinical. Celia also fits the user’s blend of practical adult life, faith-tinged discernment, and quiet curiosity about what is true beneath the surface.",
-    "niche_specifier": null,
+    "fit_rationale": "This user clearly responds to practical adulting support, cozy nesting energy, and a voice that can stay grounded without getting clinical. A niche expert in home-rhythm and small-space calm fits the mix of leasing work, organized-otherwise chaos, and the user’s love of tangible, livable systems.",
+    "niche_specifier": "home-rhythm-organizer",
     "romantic_specifier": {}
   },
   "hidden_personas": [
     {
-      "label": "Soft couple-affection and “love-of-my-life” devotion dynamic",
-      "type": "intimate_interest",
-      "description": "Her relationship-tag engagement points less to casual dating content and more to a specific romantic dynamic: publicly claimed, affectionate, playful couple devotion. The high implicit-positive pattern suggests she often lingers privately on this fantasy while maintaining a proud-single public stance.",
+      "label": "Fear that hidden deceptions and world events are signs of the End Times",
+      "type": "covert_concern",
+      "description": "His repeated engagement with prophecy, spiritual-warfare, and 'question everything' tags suggests a private loop of trying to distinguish faith-based vigilance from misinformation-driven dread. The #FlatEarth and #QuestionEverything activity looks less like casual curiosity and more like periodic checking of whether the world is more unstable or deceptive than it appears.",
+      "evidence_hashtags": [
+        "#EndTimes",
+        "#SpiritualWarfare",
+        "#FlatEarth",
+        "#QuestionEverything",
+        "#FaithOverFear"
+      ],
+      "evidence_rows": 163,
+      "evidence_row_fraction": 0.0287,
+      "interaction_breakdown": {
+        "implicit_negative": 34,
+        "implicit_positive": 117,
+        "explicit_positive": 12
+      },
+      "privacy_ratio": 0.907,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 32,
+        "Chatbot": 31,
+        "Facebook": 21,
+        "Threads": 37,
+        "AI_Studio": 42
+      },
+      "surface_connections": [
+        "Engages with Christian eschatology content about the Rapture, End Times, Bible prophecy, and Jesus' return",
+        "Engages with content associated with Hugh Ross",
+        "Interested in managing iPhone privacy and location-tracking settings",
+        "Engages with Jesus-centered Christian devotional content and daily Bible truths"
+      ],
+      "inferred_motivation": "He appears to use faith content and conspiracy-adjacent clips as reassurance-seeking tools when privacy, headlines, and apocalypse narratives make him feel exposed or spiritually on alert.",
+      "already_captured": false,
+      "first_seen_ts": 1775186256,
+      "last_seen_ts": 1775933131,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 37,
+        "n_confirmed": 15,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 21,
+        "confirm_rate": 0.405,
+        "deep_latent_rate": 0.973,
+        "surface_share": 0.0,
+        "cluster_status": "contested",
+        "dominant_frame": "lazarus_folkman:emotion_focused_coping",
+        "frame_distribution": {
+          "uses_and_gratifications:identity": 8,
+          "lazarus_folkman:emotion_focused_coping": 17,
+          "higgins:ideal_self": 7,
+          "algorithmic_surfacing": 1,
+          "higgins:ought_self": 1,
+          "berlyne:specific_curiosity": 1,
+          "self_determination_theory:relatedness": 2
+        }
+      }
+    },
+    {
+      "label": "Private reassurance that his relationship can become stable, public, and lasting",
+      "type": "compensatory_need",
+      "description": "The couple-goals and love-of-my-life tags are heavily lingered on with very little public engagement, suggesting he privately consumes idealized partnership content as emotional reassurance rather than as social signaling. For a gay Christian man balancing romance, faith, and everyday domestic life, these clips likely function as proof that tenderness and long-term commitment are possible and ordinary.",
       "evidence_hashtags": [
         "#relationshipgoals",
         "#couplegoals",
         "#RelationshipGoals",
         "#loveofmylife",
-        "#romance",
-        "#love"
+        "#LoveOfMyLife"
       ],
-      "evidence_rows": 404,
-      "evidence_row_fraction": 0.0712,
+      "evidence_rows": 354,
+      "evidence_row_fraction": 0.0624,
       "interaction_breakdown": {
-        "implicit_negative": 169,
-        "implicit_positive": 221,
-        "explicit_positive": 14
+        "implicit_negative": 152,
+        "implicit_positive": 190,
+        "explicit_positive": 12
       },
-      "privacy_ratio": 0.94,
+      "privacy_ratio": 0.941,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 100,
-        "Chatbot": 58,
-        "Threads": 99,
-        "Facebook": 94,
-        "AI_Studio": 53
+        "Instagram": 104,
+        "Threads": 92,
+        "AI_Studio": 41,
+        "Facebook": 74,
+        "Chatbot": 43
       },
       "surface_connections": [
-        "Celebrates being single as a positive and empowering relationship status",
-        "Enjoys sarcastic humor about romantic relationships and married life"
+        "Enjoys idealized romantic relationship content featuring couple goals and love stories",
+        "Enjoys lighthearted husband-and-wife comedy about playful domestic mishaps",
+        "Engages with Christian spiritual growth content about being born again and becoming a 'new man'"
       ],
-      "inferred_motivation": "She appears to use romantic couple content to privately test the emotional appeal of partnership without giving up her independent single identity.",
-      "already_captured": false,
+      "inferred_motivation": "He is likely using romantic content to soothe a need for permanence, acceptance, and emotionally safe domestic partnership with his boyfriend.",
+      "already_captured": true,
       "first_seen_ts": 1775186871,
       "last_seen_ts": 1775947445,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 27,
-        "n_confirmed": 19,
-        "n_reassigned": 1,
+        "n_audited": 100,
+        "n_confirmed": 70,
+        "n_reassigned": 3,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 2,
+        "n_short_term_episodic": 0,
         "n_removed": 0,
-        "n_flagged": 3,
+        "n_flagged": 25,
         "n_no_other_cluster_fits": 2,
-        "confirm_rate": 0.704,
-        "deep_latent_rate": 0.815,
+        "confirm_rate": 0.7,
+        "deep_latent_rate": 0.75,
         "surface_share": 0.0,
         "cluster_status": "validated",
-        "dominant_frame": "self_determination_theory:relatedness",
+        "dominant_frame": "kardefelt_winther:compensatory_use",
         "frame_distribution": {
-          "self_determination_theory:relatedness": 11,
-          "kardefelt_winther:compensatory_use": 7,
-          "short_term_episodic_event": 2,
-          "schwarz:mood_as_information": 1,
-          "goffman:back_stage": 1,
-          "tversky_kahneman:salience_availability": 1,
-          "lazarus_folkman:emotion_focused_coping": 2,
-          "tajfel:social_identity": 1,
-          "variable_ratio_reinforcement": 1
-        }
-      }
-    },
-    {
-      "label": "Vicarious family-life belonging through mom/dad humor",
-      "type": "compensatory_need",
-      "description": "Repeated, mostly private engagement with parenting and family-humor tags suggests she is drawn to the warmth and chaos of family routines even if she does not present motherhood or marriage as her main identity. It reads like low-stakes emotional sampling of domestic belonging.",
-      "evidence_hashtags": [
-        "#momlife",
-        "#parentinghumor",
-        "#dadlife",
-        "#familyfun",
-        "#relatablemoments"
-      ],
-      "evidence_rows": 169,
-      "evidence_row_fraction": 0.0298,
-      "interaction_breakdown": {
-        "implicit_negative": 46,
-        "implicit_positive": 117,
-        "explicit_positive": 6
-      },
-      "privacy_ratio": 0.951,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Facebook": 37,
-        "Threads": 36,
-        "Instagram": 41,
-        "AI_Studio": 28,
-        "Chatbot": 27
-      },
-      "surface_connections": [
-        "Enjoys sarcastic humor about romantic relationships and married life",
-        "Celebrates being single as a positive and empowering relationship status"
-      ],
-      "inferred_motivation": "Family-humor content lets her experience the comfort of household intimacy and shared responsibility without the real-life obligations attached.",
-      "already_captured": false,
-      "first_seen_ts": 1775186807,
-      "last_seen_ts": 1775946960,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 3,
-        "n_confirmed": 0,
-        "n_reassigned": 0,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 1,
-        "n_no_other_cluster_fits": 2,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 0.667,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "csikszentmihalyi:flow",
-        "frame_distribution": {
-          "stryker:role_identity": 1,
-          "berlyne:diversive_curiosity": 1,
-          "csikszentmihalyi:flow": 1
-        }
-      }
-    },
-    {
-      "label": "Fear that leasing-week snacking will stall weight-loss progress",
-      "type": "covert_concern",
-      "description": "The fitness and confidence tags cluster around motivation, self-love, gains, and healthy living, with far more private lingering than public signaling. Given her busy leasing desk, snack wrappers, and protein-focused eating, this looks like a recurring concern about discipline slipping during stressful workweeks.",
-      "evidence_hashtags": [
-        "#fitnessmotivation",
-        "#fitnessjourney",
-        "#workoutinspiration",
-        "#gains",
-        "#confidenceiskey",
-        "#selflove",
-        "#healthyliving"
-      ],
-      "evidence_rows": 266,
-      "evidence_row_fraction": 0.0469,
-      "interaction_breakdown": {
-        "implicit_negative": 94,
-        "implicit_positive": 163,
-        "explicit_positive": 9
-      },
-      "privacy_ratio": 0.948,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Instagram": 58,
-        "Facebook": 69,
-        "Threads": 53,
-        "Chatbot": 37,
-        "AI_Studio": 49
-      },
-      "surface_connections": [
-        "Interested in high-protein eating to support fitness and weight-loss goals",
-        "Interested in motivational content about self-improvement, personal growth, and life transformation"
-      ],
-      "inferred_motivation": "She returns to fitness-motivation content for reassurance that small daily choices can keep her body goals from being derailed by work stress.",
-      "already_captured": false,
-      "first_seen_ts": 1775188265,
-      "last_seen_ts": 1775944401,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 27,
-        "n_confirmed": 11,
-        "n_reassigned": 0,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 1,
-        "n_flagged": 8,
-        "n_no_other_cluster_fits": 7,
-        "confirm_rate": 0.407,
-        "deep_latent_rate": 0.704,
-        "surface_share": 0.0,
-        "cluster_status": "contested",
-        "dominant_frame": "higgins:ought_self",
-        "frame_distribution": {
-          "higgins:ought_self": 7,
-          "algorithmic_surfacing": 3,
-          "lazarus_folkman:emotion_focused_coping": 3,
-          "higgins:ideal_self": 3,
-          "berlyne:diversive_curiosity": 2,
-          "berlyne:specific_curiosity": 4,
-          "variable_ratio_reinforcement": 1,
-          "schwarz:mood_as_information": 1,
-          "self_determination_theory:competence": 2
-        }
-      }
-    },
-    {
-      "label": "Used-motorcycle repair or insurance surprise could break the monthly budget",
-      "type": "covert_concern",
-      "description": "The car-maintenance, mechanic-life, safety, automotive, and adulting tags suggest practical anxiety around vehicle ownership costs rather than pure enthusiast browsing. For someone comparing insurance discounts while eyeing refurbished motorcycles and dream cars, the hidden pressure is avoiding a repair or coverage bill she cannot comfortably absorb.",
-      "evidence_hashtags": [
-        "#carmaintenance",
-        "#mechaniclife",
-        "#SafetyFirst",
-        "#safetyfirst",
-        "#automotive",
-        "#adulting"
-      ],
-      "evidence_rows": 179,
-      "evidence_row_fraction": 0.0315,
-      "interaction_breakdown": {
-        "implicit_positive": 106,
-        "implicit_negative": 55,
-        "explicit_positive": 18
-      },
-      "privacy_ratio": 0.855,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "AI_Studio": 33,
-        "Threads": 37,
-        "Facebook": 42,
-        "Instagram": 44,
-        "Chatbot": 23
-      },
-      "surface_connections": [
-        "Interested in refurbished motorcycles",
-        "Interested in comparing car insurance quotes and discounts to save money",
-        "Interested in the Porsche 911 GT3 and GT3 high-performance sports cars"
-      ],
-      "inferred_motivation": "She is trying to keep the fantasy of vehicle freedom compatible with a very real need for financial control.",
-      "already_captured": false,
-      "first_seen_ts": 1775188853,
-      "last_seen_ts": 1775947795,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 6,
-        "n_confirmed": 0,
-        "n_reassigned": 4,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 0,
-        "n_no_other_cluster_fits": 2,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 1.0,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "higgins:ideal_self",
-        "frame_distribution": {
-          "higgins:ideal_self": 2,
+          "kardefelt_winther:compensatory_use": 62,
+          "schwarz:mood_as_information": 6,
+          "algorithmic_surfacing": 11,
+          "variable_ratio_reinforcement": 7,
+          "self_determination_theory:relatedness": 8,
           "self_determination_theory:competence": 2,
-          "uses_and_gratifications:identity": 1,
-          "tajfel:social_identity": 1
+          "self_determination_theory:autonomy": 1,
+          "barthes:punctum": 1,
+          "higgins:ideal_self": 1,
+          "berlyne:diversive_curiosity": 1
         }
       }
     },
     {
-      "label": "Blue-collar mechanical-adventure tribe identity",
-      "type": "identity_anchor",
-      "description": "Her machine-culture tags point to more than liking vehicles: heavy equipment, 4x4, truck life, Harley, bike-life, and motorcycle-community content form an in-group identity around practical toughness and mechanical competence. This is plausibly appealing because her work already sits between customer service, property repairs, and owner-facing renovation problem solving.",
+      "label": "Quiet bass-fishing and waterside decompression fantasy",
+      "type": "private_hobby",
+      "description": "Fishing tags are almost entirely implicit-positive, suggesting a low-key private interest he watches more than publicly claims. This fits his balcony pond, rescued goldfish, and need for calm after tenant calls, retail tours, traffic clips, and construction-site stimulation.",
       "evidence_hashtags": [
-        "#heavyequipment",
-        "#4x4",
-        "#trucklife",
-        "#HarleyDavidson",
-        "#BikeLife",
-        "#motorcyclecommunity"
+        "#fishinglife",
+        "#bassfishing",
+        "#fishingadventures",
+        "#fishingcommunity",
+        "#outdoors"
       ],
-      "evidence_rows": 165,
-      "evidence_row_fraction": 0.0291,
+      "evidence_rows": 105,
+      "evidence_row_fraction": 0.0185,
       "interaction_breakdown": {
-        "implicit_positive": 105,
-        "implicit_negative": 45,
-        "explicit_positive": 15
+        "implicit_negative": 18,
+        "implicit_positive": 86,
+        "explicit_positive": 1
       },
-      "privacy_ratio": 0.875,
+      "privacy_ratio": 0.989,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "AI_Studio": 25,
-        "Chatbot": 26,
-        "Threads": 32,
-        "Facebook": 48,
-        "Instagram": 34
+        "Instagram": 23,
+        "AI_Studio": 20,
+        "Threads": 26,
+        "Chatbot": 16,
+        "Facebook": 20
       },
       "surface_connections": [
-        "Interested in refurbished motorcycles",
-        "Interested in 18-wheeler trucking culture and the trucking community",
-        "Enjoys backcountry wilderness exploration and outdoor adventure activities"
+        "Values wildlife conservation and protecting animals in natural environments",
+        "Values practicing gratitude and expressing appreciation",
+        "Enjoys off-roading and off-road community content"
       ],
-      "inferred_motivation": "The content lets her identify with capable, hands-on, machine-savvy communities that contrast with the emotionally draining tenant-facing side of her job.",
+      "inferred_motivation": "Fishing content likely gives him a slower, water-centered escape where caretaking, patience, and solitude replace the noise of work and doomscrolling.",
       "already_captured": false,
-      "first_seen_ts": 1775188578,
-      "last_seen_ts": 1775946830,
+      "first_seen_ts": 1775186962,
+      "last_seen_ts": 1775936781,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 21,
-        "n_confirmed": 20,
+        "n_audited": 1,
+        "n_confirmed": 0,
         "n_reassigned": 0,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
         "n_removed": 0,
         "n_flagged": 0,
         "n_no_other_cluster_fits": 1,
-        "confirm_rate": 0.952,
+        "confirm_rate": 0.0,
         "deep_latent_rate": 1.0,
         "surface_share": 0.0,
-        "cluster_status": "validated",
-        "dominant_frame": "tajfel:social_identity",
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "uses_and_gratifications:identity",
         "frame_distribution": {
-          "uses_and_gratifications:integration": 3,
-          "self_determination_theory:competence": 6,
-          "tajfel:social_identity": 9,
-          "uses_and_gratifications:identity": 2,
-          "higgins:ideal_self": 1
-        }
-      }
-    },
-    {
-      "label": "Discernment-driven fringe researcher with a Christian end-times filter",
-      "type": "intellectual_curiosity",
-      "description": "The combination of #FlatEarth, #QuestionEverything, #Mystery, #EndTimes, and #SpiritualWarfare suggests a hidden truth-testing habit that blends conspiracy-adjacent curiosity with Christian vigilance. She may not fully believe every claim, but she appears drawn to content that frames uncertainty as something to investigate spiritually and intellectually.",
-      "evidence_hashtags": [
-        "#FlatEarth",
-        "#QuestionEverything",
-        "#Mystery",
-        "#EndTimes",
-        "#SpiritualWarfare"
-      ],
-      "evidence_rows": 120,
-      "evidence_row_fraction": 0.0211,
-      "interaction_breakdown": {
-        "implicit_positive": 97,
-        "implicit_negative": 13,
-        "explicit_positive": 10
-      },
-      "privacy_ratio": 0.907,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Instagram": 20,
-        "AI_Studio": 21,
-        "Threads": 30,
-        "Facebook": 28,
-        "Chatbot": 21
-      },
-      "surface_connections": [
-        "Interested in paranormal and unexplained phenomena such as crop circles",
-        "Interested in Christian devotional content centered on Jesus, prayer, and Bible verses",
-        "Engages positively with Christian faith-based inspirational messages centered on belief, rejoicing, and trusting faith over fear"
-      ],
-      "inferred_motivation": "This pattern serves a need to feel alert, discerning, and spiritually prepared in a world that can seem deceptive or unstable.",
-      "already_captured": false,
-      "first_seen_ts": 1775187307,
-      "last_seen_ts": 1775933131,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 14,
-        "n_confirmed": 12,
-        "n_reassigned": 0,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 1,
-        "n_no_other_cluster_fits": 1,
-        "confirm_rate": 0.857,
-        "deep_latent_rate": 0.929,
-        "surface_share": 0.0,
-        "cluster_status": "validated",
-        "dominant_frame": "berlyne:specific_curiosity",
-        "frame_distribution": {
-          "berlyne:specific_curiosity": 10,
-          "higgins:ought_self": 2,
-          "schwarz:mood_as_information": 1,
           "uses_and_gratifications:identity": 1
         }
       }
     },
     {
-      "label": "Currently navigating: adjusting to a new anxiety diagnosis",
+      "label": "Hands-on competence fantasy: wanting to be the guy who can fix, build, and understand machines",
+      "type": "aspiration",
+      "description": "The DIY, woodworking, mechanic, car-maintenance, and construction tags point to more than entertainment; they suggest admiration for tangible skill and physical mastery. This is especially meaningful for someone whose work is coordination-heavy and paperwork-heavy but who spends time around real buildings, crews, vehicles, and machinery.",
+      "evidence_hashtags": [
+        "#DIY",
+        "#diy",
+        "#woodworking",
+        "#mechaniclife",
+        "#carmaintenance",
+        "#construction",
+        "#heavyequipment"
+      ],
+      "evidence_rows": 206,
+      "evidence_row_fraction": 0.0363,
+      "interaction_breakdown": {
+        "implicit_positive": 104,
+        "implicit_negative": 79,
+        "explicit_positive": 23
+      },
+      "privacy_ratio": 0.819,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Chatbot": 29,
+        "Facebook": 43,
+        "Threads": 61,
+        "Instagram": 46,
+        "AI_Studio": 27
+      },
+      "surface_connections": [
+        "Enjoys woodworking and hands-on DIY projects",
+        "Enjoys content featuring bulldozers and heavy construction equipment",
+        "Enjoys high-performance American muscle cars, especially Camaro ZL1 or Exorcist-style builds",
+        "Career: Commercial property leasing coordinator for mixed-use developments"
+      ],
+      "inferred_motivation": "He seems drawn to content that converts stress and abstraction into visible proof of capability: a repaired car, a finished project, a cleared site, or a machine doing exactly what it was built to do.",
+      "already_captured": true,
+      "first_seen_ts": 1775188578,
+      "last_seen_ts": 1775947943,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 29,
+        "n_confirmed": 28,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.966,
+        "deep_latent_rate": 0.966,
+        "surface_share": 0.0,
+        "cluster_status": "validated",
+        "dominant_frame": "self_determination_theory:competence",
+        "frame_distribution": {
+          "higgins:ideal_self": 8,
+          "self_determination_theory:competence": 16,
+          "berlyne:specific_curiosity": 1,
+          "csikszentmihalyi:flow": 1,
+          "algorithmic_surfacing": 1,
+          "barthes:punctum": 1,
+          "tajfel:social_identity": 1
+        }
+      }
+    },
+    {
+      "label": "Cozy nesting impulse through food, home order, and adulting content",
+      "type": "emotional_pattern",
+      "description": "The food, home-decor, relaxation, and adulting tags suggest a quieter domestic self beneath the high-adrenaline sports, cars, and road-rage clips. Given the bio detail about leasing folders piling up on the kitchen table, this looks like a fantasy of having a calmer, more organized home rhythm.",
+      "evidence_hashtags": [
+        "#foodie",
+        "#Foodie",
+        "#homedecor",
+        "#relaxationmode",
+        "#adulting"
+      ],
+      "evidence_rows": 208,
+      "evidence_row_fraction": 0.0366,
+      "interaction_breakdown": {
+        "implicit_positive": 143,
+        "implicit_negative": 61,
+        "explicit_positive": 4
+      },
+      "privacy_ratio": 0.973,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "AI_Studio": 42,
+        "Threads": 51,
+        "Instagram": 48,
+        "Facebook": 39,
+        "Chatbot": 28
+      },
+      "surface_connections": [
+        "Seeks out motivational wellness content centered on self-care, positivity, happiness, and appreciating life",
+        "Values practicing gratitude and expressing appreciation",
+        "Enjoys lighthearted husband-and-wife comedy about playful domestic mishaps"
+      ],
+      "inferred_motivation": "He likely uses cozy food and home content to imagine a softer, more controlled end-of-day environment with his boyfriend after a scattered workday.",
+      "already_captured": false,
+      "first_seen_ts": 1775187372,
+      "last_seen_ts": 1775947885,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 12,
+        "n_confirmed": 3,
+        "n_reassigned": 3,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 5,
+        "n_no_other_cluster_fits": 1,
+        "confirm_rate": 0.25,
+        "deep_latent_rate": 0.583,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "self_determination_theory:competence",
+        "frame_distribution": {
+          "berlyne:diversive_curiosity": 1,
+          "self_determination_theory:competence": 3,
+          "self_determination_theory:relatedness": 1,
+          "lazarus_folkman:emotion_focused_coping": 1,
+          "kardefelt_winther:compensatory_use": 2,
+          "algorithmic_surfacing": 2,
+          "schwarz:mood_as_information": 1,
+          "variable_ratio_reinforcement": 1
+        }
+      }
+    },
+    {
+      "label": "Sentimental throwback streak anchored in familiar music and simpler emotional scripts",
+      "type": "personality_trait",
+      "description": "Nostalgia, throwback, and country-music tags suggest he is emotionally responsive to older, familiar cultural textures, not just current sports and car content. This sentimental side helps explain why a classic country heartbreak song can sit comfortably beside gospel playlists, couple content, and motivational renewal posts.",
+      "evidence_hashtags": [
+        "#nostalgia",
+        "#Nostalgia",
+        "#throwback",
+        "#CountryMusic",
+        "#countrymusic",
+        "#MusicToMyEars"
+      ],
+      "evidence_rows": 160,
+      "evidence_row_fraction": 0.0282,
+      "interaction_breakdown": {
+        "implicit_negative": 49,
+        "implicit_positive": 106,
+        "explicit_positive": 5
+      },
+      "privacy_ratio": 0.955,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 31,
+        "Threads": 32,
+        "Chatbot": 30,
+        "AI_Studio": 31,
+        "Facebook": 36
+      },
+      "surface_connections": [
+        "Enjoys Alabama Band’s classic country song “Old Flame.”",
+        "Enjoys gospel and Christian worship music, including music associated with CeCe Winans.",
+        "Enjoys idealized romantic relationship content featuring couple goals and love stories."
+      ],
+      "inferred_motivation": "He seems to return to nostalgic music and throwback cues when he wants emotional clarity, comfort, and a simpler story about love, faith, and perseverance.",
+      "already_captured": false,
+      "first_seen_ts": 1775186734,
+      "last_seen_ts": 1775946142,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 38,
+        "n_confirmed": 33,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 5,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 0.868,
+        "deep_latent_rate": 0.868,
+        "surface_share": 0.0,
+        "cluster_status": "validated",
+        "dominant_frame": "lazarus_folkman:emotion_focused_coping",
+        "frame_distribution": {
+          "lazarus_folkman:emotion_focused_coping": 33,
+          "algorithmic_surfacing": 5
+        }
+      }
+    },
+    {
+      "label": "Currently navigating: adjusting to an anxiety diagnosis",
       "type": "sensitive_life_event",
       "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
       "evidence_hashtags": [
-        "#anxietyawareness",
         "#mentalhealth",
+        "#anxiety",
         "#faithoverfear",
-        "#personalgrowth",
         "#wellness",
-        "#christianliving"
+        "#personalgrowth",
+        "#spiritualgrowth"
       ],
       "evidence_rows": 0,
       "evidence_row_fraction": 0.0,
@@ -936,11 +939,11 @@
       "privacy_ratio": 1.0,
       "temporal_spread_days": 2,
       "app_distribution": {
-        "Facebook": 83,
         "Instagram": 78,
-        "AI_Studio": 42,
-        "Chatbot": 52,
-        "Threads": 68
+        "Threads": 89,
+        "Chatbot": 54,
+        "Facebook": 73,
+        "AI_Studio": 76
       },
       "surface_connections": [],
       "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
@@ -951,23 +954,23 @@
       "events": [
         {
           "topic": "mental_health_diagnosis",
-          "label_fragment": "adjusting to a new anxiety diagnosis",
-          "specific_situation": "After months of trouble sleeping, replaying tenant interactions in her head, and feeling keyed up before every showing, Amihan was recently diagnosed with generalized anxiety disorder. She’s trying to stay functional at work while figuring out whether medication, therapy, or both will actually help her feel steady again.",
+          "label_fragment": "adjusting to an anxiety diagnosis",
+          "specific_situation": "After a string of late-night spirals about privacy settings, headlines, and end-times videos, he finally saw a therapist through his EAP and got a diagnosis of generalized anxiety disorder. He’s trying a low-dose SSRI while keeping his weekday routine intact, but he’s quietly tracking side effects and whether it helps him sleep before early property tours.",
           "first_seen_ts": 1775560596,
           "last_seen_ts": 1775733396,
           "active_window_end": 1776942996,
           "evidence_hashtags": [
-            "#anxietyawareness",
             "#mentalhealth",
+            "#anxiety",
             "#faithoverfear",
-            "#personalgrowth",
             "#wellness",
-            "#christianliving"
+            "#personalgrowth",
+            "#spiritualgrowth"
           ],
           "exemplar_persona_items": [
-            "Comparing therapists who understand work stress",
-            "Saving reels about panic and grounding",
-            "Reading meds vs. therapy experiences"
+            "SSRI side effects and sleep tracking",
+            "Christian anxiety coping testimonies",
+            "Grounding exercises before tenant calls"
           ]
         }
       ],
@@ -976,48 +979,48 @@
       }
     }
   ],
-  "hidden_persona_summary": "Beneath a public persona that celebrates singleness, faith, sports, outdoor adventure, and practical hobbies, she privately returns to softer attachment and domestic-belonging material: high-private engagement with #relationshipgoals, #couplegoals, #loveofmylife, #momlife, #parentinghumor, and #dadlife suggests that couple devotion and family chaos are normal emotional fantasies she samples privately while still enjoying public single-life and sarcastic relationship humor. Her surface interest in refurbished motorcycles, 18-wheelers, truck culture, Harley/BikeLife content, Porsche GT3s, insurance discounts, and repair-adjacent adulting is anchored by a mostly private blue-collar mechanical identity and cost-control concern, evidenced by #heavyequipment, #4x4, #trucklife, #HarleyDavidson, #BikeLife, #carmaintenance, #mechaniclife, #automotive, and #adulting. Her high-protein fitness and weight-loss content is likewise consumed more privately than publicly, with #fitnessmotivation, #fitnessjourney, #gains, #confidenceiskey, #selflove, and #healthyliving pointing to reassurance-seeking around staying disciplined during stressful workweeks; the specific medical exposure in the data is that she is currently adjusting to a new anxiety diagnosis, alongside faith-based coping tags such as #anxietyawareness, #mentalhealth, #faithoverfear, #personalgrowth, #wellness, and #christianliving. Her paranormal, crop-circle, mystery, and end-times interests fit a private discernment habit rather than pure entertainment, where #FlatEarth, #QuestionEverything, #Mystery, #EndTimes, and #SpiritualWarfare connect her unexplained-phenomena browsing to Christian vigilance, while her more visible engagement remains safer and identity-consistent: Jesus/prayer/Bible content, gospel and Gaither worship, NFL, boxing and MMA history, fishing, backcountry exploration, classic Westerns, DIY decor, pet food, tech upgrades, and broad women’s basketball rather than Indiana Fever-specific coverage.",
+  "hidden_persona_summary": "Beneath his visible mix of motorcycles, NFL/WNBA highlights, boxing, muscle cars, road-rage comedy, and heavy equipment, he reads as a faith-centered reassurance seeker who uses private content to make the world feel safer, steadier, and more understandable: #EndTimes, #SpiritualWarfare, #QuestionEverything, and #FlatEarth cluster with Jesus-centered devotionals because they function as vigilance-and-reassurance loops rather than simple entertainment. His idealized romance engagement is also mostly private, with #relationshipgoals, #couplegoals, and #loveofmylife suggesting a normal, tender need to picture lasting domestic stability, which helps explain why he also likes playful husband-and-wife mishap humor, gratitude messaging, gospel/CeCe Winans worship, and Alabama’s “Old Flame.” The strongest private interests are quiet decompression and nesting—#bassfishing, #fishinglife, #outdoors, #foodie, #homedecor, #relaxationmode, and #adulting—while DIY/woodworking, mechanic, construction, bulldozer, Camaro/Bentley/SBX Cars, and Marine-training content sit closer to the public-facing side because they express competence, toughness, and visible mastery. His nostalgia tags (#nostalgia, #throwback, #CountryMusic) explain the pull toward familiar music and simple emotional scripts, while #mentalhealth, #anxiety, #wellness, and #personalgrowth indicate a currently private adjustment to an anxiety diagnosis; the dataset shows rapid body-transformation fitness content exposure but does not validate a specific aesthetic-medicine or medication routine such as tretinoin or GLP-1 use.",
   "mbti": {
-    "type": "INFP",
+    "type": "ISFJ",
     "dimensions": {
       "E_I": {
-        "E": 0.38,
-        "I": 0.62,
-        "reason": "Her strongest themes are privately sampled and self-soothing rather than socially performative, and the profile emphasizes internal fantasy, discernment, and hidden reassurance-seeking over outward stimulation."
+        "E": 0.34,
+        "I": 0.66,
+        "reason": "Although he engages with sports, humor, and public-facing interest content, the strongest themes are private reassurance-seeking, quiet decompression, and inwardly consumed idealized relationship and faith content, which points more to introversion."
       },
       "S_N": {
-        "S": 0.46,
-        "N": 0.54,
-        "reason": "The content mix is grounded in concrete, practical interests like vehicles, repairs, fitness, and adulting, but the recurring interest in mystery, end-times, spiritual warfare, and pattern-seeking nudges slightly toward intuition."
+        "S": 0.42,
+        "N": 0.58,
+        "reason": "The profile mixes concrete, hands-on interests like fishing, DIY, cars, construction, and mechanics with strong pattern-seeking around prophecy, spiritual warfare, and question-everything themes, giving a slight edge to intuition."
       },
       "T_F": {
-        "T": 0.42,
-        "F": 0.58,
-        "reason": "Although she shows practical cost-control and mechanical concern, the dominant emotional tone centers on relationship longing, belonging, faith-based coping, and self-image reassurance, which points more to Feeling."
+        "T": 0.41,
+        "F": 0.59,
+        "reason": "His engagement is organized more around reassurance, tenderness, faith, relationships, and emotional stability than detached analysis, even though some competence and mastery interests add a thinking component."
       },
       "J_P": {
-        "J": 0.43,
-        "P": 0.57,
-        "reason": "Her low conscientiousness and broad, curiosity-driven browsing suggest a flexible, reactive style rather than a strongly structured one, even though there is some budgeting and discipline concern."
+        "J": 0.52,
+        "P": 0.48,
+        "reason": "The mix is fairly balanced, but the repeated use of content for calming, organizing, and stabilizing his inner world, plus the attraction to adulting and home-order themes, slightly favors judging over perceiving."
       }
     }
   },
   "mobility_class": "domestic",
   "geo_trip_arcs": [
     {
-      "city": "Atlanta",
-      "region": "GA",
+      "city": "Las Vegas",
+      "region": "NV",
       "country": "USA",
-      "start_ts": 1775265009,
-      "end_ts": 1775619971,
+      "start_ts": 1775515603,
+      "end_ts": 1775678586,
       "kind": "domestic"
     }
   ],
   "exploration_exploitation": {
-    "score": 0.9388,
+    "score": 0.9379,
     "label": "explorer",
     "hashtag_entropy_normalized": 0.9031,
-    "category_entropy_normalized": 1.0,
+    "category_entropy_normalized": 0.997,
     "unique_hashtag_count": 17271,
     "total_hashtag_occurrences": 38571,
     "unique_hashtag_ratio": 0.4478,
@@ -1067,30 +1070,42 @@
   },
   "user_id": "282",
   "preferences": [
-    "22:44, 04/11/2026 : Interested in DIY interior decor projects using textured finishes, staining techniques, and roller-coat applications.",
-    "22:41, 04/11/2026 : Interested in paranormal and unexplained phenomena such as crop circles",
-    "21:53, 04/11/2026 : Enjoys UFC/MMA history content, especially throwback legendary fights involving Nick Diaz and Robbie Lawler.",
-    "20:28, 04/11/2026 : Enjoys nostalgic classic Western films.",
-    "19:46, 04/11/2026 : Enjoys fishing content, especially striper fishing.",
-    "19:19, 04/11/2026 : Interested in the Porsche 911 GT3 and GT3 high-performance sports cars",
-    "17:53, 04/11/2026 : Interested in boxing history, especially notable past fights and figures such as Luis Resto and Billy Collins Jr.",
-    "17:40, 04/11/2026 : Interested in high-protein eating to support fitness and weight-loss goals.",
-    "17:33, 04/11/2026 : Follows WNBA and women’s basketball content.",
-    "17:31, 04/11/2026 : Enjoys Christian gospel and worship music, including Gaither Music.",
-    "13:55, 04/11/2026 : Interested in refurbished motorcycles",
-    "12:56, 04/11/2026 : Interested in 18-wheeler trucking culture and the trucking community.",
-    "11:34, 04/11/2026 : Enjoys backcountry wilderness exploration and outdoor adventure activities.",
-    "11:08, 04/11/2026 : Follows NFL content involving the Tampa Bay Buccaneers and Houston Texans.",
-    "10:25, 04/11/2026 : Enjoys sarcastic humor about romantic relationships and married life.",
-    "10:20, 04/11/2026 : Interested in motivational content about self-improvement, personal growth, and life transformation",
-    "09:41, 04/11/2026 : Interested in Christian devotional content centered on Jesus, prayer, and Bible verses",
-    "08:43, 04/11/2026 : Not interested in WNBA-specific player/team content, especially Indiana Fever coverage",
-    "08:10, 04/11/2026 : Interested in natural and health-focused pet food options",
-    "19:26, 04/10/2026 : Engages positively with Christian faith-based inspirational messages centered on belief, rejoicing, and trusting faith over fear.",
-    "10:50, 04/10/2026 : Interested in comparing car insurance quotes and discounts to save money",
-    "04:34, 04/10/2026 : Interested in upgrading to an iPhone 15 Pro",
-    "21:34, 04/07/2026 : Celebrates being single as a positive and empowering relationship status.",
-    "05:57, 04/06/2026 : Interested in new skateboarding video game releases, especially the Skate franchise"
+    "22:44, 04/11/2026 : Enjoys idealized romantic relationship content featuring couple goals and love stories.",
+    "22:39, 04/11/2026 : Enjoys lighthearted husband-and-wife comedy about playful domestic mishaps.",
+    "22:22, 04/11/2026 : Enjoys Alabama Band’s classic country song “Old Flame.”",
+    "21:53, 04/11/2026 : Enjoys high-performance American muscle cars, especially Camaro ZL1 or Exorcist-style builds.",
+    "20:30, 04/11/2026 : Engages with Jesus-centered Christian devotional content and daily Bible truths",
+    "19:27, 04/11/2026 : Values wildlife conservation and protecting animals in natural environments",
+    "19:22, 04/11/2026 : Enjoys woodworking and hands-on DIY projects",
+    "18:59, 04/11/2026 : Enjoys off-roading and off-road community content.",
+    "18:50, 04/11/2026 : Enjoys short-form funny videos centered on road rage and driving fails.",
+    "18:45, 04/11/2026 : Engages with Christian spiritual growth content about being born again and becoming a 'new man'.",
+    "18:44, 04/11/2026 : Values perseverance and resilience, especially motivational messaging about not giving up.",
+    "18:32, 04/11/2026 : Enjoys sassy, relatable stay-at-home mom-life humor about everyday frustrations like road rage.",
+    "18:26, 04/11/2026 : Seeks out motivational wellness content centered on self-care, positivity, happiness, and appreciating life.",
+    "18:26, 04/11/2026 : Values practicing gratitude and expressing appreciation",
+    "17:54, 04/11/2026 : Interested in high-profile professional boxing matchups, especially Canelo Álvarez vs. Terence Crawford.",
+    "17:53, 04/11/2026 : Interested in Bentley luxury vehicles",
+    "16:37, 04/11/2026 : Values messaging that promotes women's empowerment and female independence.",
+    "15:45, 04/11/2026 : Enjoys WNBA and women’s basketball content, especially Caitlin Clark-related highlights.",
+    "14:21, 04/11/2026 : Interested in motorcycles and bike-life content",
+    "13:45, 04/11/2026 : Enjoys gospel and Christian worship music, including music associated with CeCe Winans.",
+    "13:25, 04/11/2026 : Enjoys content featuring bulldozers and heavy construction equipment.",
+    "11:37, 04/11/2026 : Interested in Google Pixel smartphones and Made by Google device releases",
+    "11:09, 04/11/2026 : Follows NFL football content",
+    "09:46, 04/11/2026 : Engages with Christian eschatology content about the Rapture, End Times, Bible prophecy, and Jesus' return",
+    "08:43, 04/11/2026 : Not interested in WNBA coverage centered on the Indiana Fever and its player-focused highlight content.",
+    "07:00, 04/11/2026 : Engages with content associated with Hugh Ross.",
+    "04:32, 04/11/2026 : Enjoys humorous content about mischievous dogs",
+    "03:23, 04/10/2026 : Engages with Supercar Blondie/SBX Cars-style social media content about distinctive cars.",
+    "18:11, 04/09/2026 : Interested in fitness challenges focused on rapid body transformation",
+    "14:50, 04/09/2026 : Enjoys Olympic track and field sprint relay events, especially the 4x100m relay.",
+    "12:43, 04/08/2026 : Interested in Grand Theft Auto VI content and updates",
+    "11:52, 04/08/2026 : Interested in managing iPhone privacy and location-tracking settings",
+    "09:02, 04/08/2026 : Interested in major UK professional boxing events, particularly the Eubank-Benn fight promoted by Matchroom Boxing.",
+    "21:16, 04/07/2026 : Interested in U.S. Marine Corps recruit training and becoming-a-Marine milestones.",
+    "14:00, 04/06/2026 : Interested in the upcoming film The Housemaid",
+    "11:10, 04/05/2026 : Enjoys watching boating mishap content, especially docking fail videos."
   ],
   "motivation_audit": {
     "over_attribution_warning": false,
@@ -1099,95 +1114,94 @@
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Ana-Liza Udtuhan",
+      "display_name": "Alex Upton",
       "relationship_depth": "close",
       "shared_interests": [
-        "church",
-        "family updates",
-        "DIY paint colors"
+        "Camaro builds",
+        "boxing previews",
+        "fitness creators"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Ariel Uy",
+      "display_name": "Aaron Yu",
       "relationship_depth": "close",
       "shared_interests": [
-        "striper fishing",
-        "motorcycles",
-        "NFL clips"
+        "church",
+        "gospel playlists",
+        "devotionals"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "Angelo Uson",
+      "display_name": "Aiden Park",
       "relationship_depth": "close",
       "shared_interests": [
-        "church",
-        "local community",
-        "property repairs"
+        "retail leasing",
+        "mixed-use developments",
+        "local community"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Althea Urbiztondo",
+      "display_name": "Alex Umaña",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "apartment listings",
-        "budget renovations"
+        "car videos",
+        "road-rage clips"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Arturo Ulep",
+      "display_name": "Ari Underwood",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "motorcycle listings",
-        "mechanic tips"
+        "faith relationship accounts",
+        "church"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Aileen Ubalde",
+      "display_name": "Alvin Ueda",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "church",
-        "Facebook community groups"
+        "boxing",
+        "sports media"
       ]
     },
     {
       "friend_id": "friend_7",
-      "display_name": "Abigail Underwood",
+      "display_name": "Ansel Uribe",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "DIY creators",
-        "refurbished furniture"
+        "construction crews",
+        "local development"
       ]
     },
     {
       "friend_id": "friend_8",
-      "display_name": "Ariel Ubaldo",
+      "display_name": "Amos Ulloa",
       "relationship_depth": "distant",
       "shared_interests": [
-        "sports nostalgia",
-        "Buccaneers clips"
+        "car and fitness creators"
       ]
     },
     {
       "friend_id": "friend_9",
-      "display_name": "Anika Urbano",
+      "display_name": "Adrian Usher",
       "relationship_depth": "distant",
       "shared_interests": [
-        "Threads debates",
-        "alternative history"
+        "boxing previews",
+        "media-watch accounts"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Amado Utanes",
+      "display_name": "Asa Yoon",
       "relationship_depth": "distant",
       "shared_interests": [
-        "gear accounts",
-        "outdoor fishing"
+        "Facebook community groups",
+        "church-adjacent connections"
       ]
     }
   ],
@@ -1196,178 +1210,116 @@
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775494624,
-        "t_test_iso": "2026-04-06T16:57:04Z",
+        "t_test": 1775494146,
+        "t_test_iso": "2026-04-06T16:49:06Z",
         "signal_evidence": {
           "app": "instagram",
           "thread_id": "in_thr_282_006",
           "friend_id": "friend_1",
-          "friend_display_name": "Ana-Liza Udtuhan",
+          "friend_display_name": "Alex Upton",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "church",
-            "family updates",
-            "DIY paint colors"
+            "Camaro builds",
+            "boxing previews",
+            "fitness creators"
           ],
-          "incoming_message_excerpt": "This feels like your watch-the-sky-and-pray-about-it folder. What is that glow doing right now?!",
-          "incoming_at_ts": 1775491024,
-          "incoming_at_iso": "15:57, 04/06/2026",
+          "incoming_message_excerpt": "Saw you liked this. This is very you, like steady-love-core in the best way.",
+          "incoming_at_ts": 1775490546,
+          "incoming_at_iso": "15:49, 04/06/2026",
           "thread_hashtags": [
-            "#Aliens",
-            "#Supernatural",
-            "#Paranormal",
-            "#UFO"
+            "#romance",
+            "#relationships",
+            "#couplegoals"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Amihan maintain close relationships by noticing timely, personally relevant messages from close friends",
-          "proximal_outcome": "Amihan chooses whether to respond to Ana-Liza Udtuhan’s current paranormal-sky message",
-          "tailoring_variable": "Close friend Ana-Liza Udtuhan sent an unanswered Instagram message referencing Amihan’s 'watch-the-sky-and-pray-about-it folder' and asking 'What is that glow doing right now?!' with #Aliens, #Supernatural, #Paranormal, and #UFO context",
-          "decision_point": "2026-04-06T16:57:04Z, during the chatbot session when considering one ambient in-chat proactive surface",
+          "distal_outcome": "help Aram maintain close social ties by following through on meaningful messages from close friends",
+          "proximal_outcome": "Aram notices Alex Upton's unanswered message and optionally chooses to draft or send a reply",
+          "tailoring_variable": "close friend Alex Upton sent a substantive Instagram message referencing Aram's liked relationship content: “Saw you liked this. This is very you, like steady-love-core in the best way.”",
+          "decision_point": "2026-04-06T16:49:06Z, when the agent considers whether to surface an ambient in-chat reminder about the unanswered close-friend message",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI components are grounded: the distal outcome is relationship maintenance, the proximal outcome is an optional reply, the tailoring variable is Ana-Liza’s concrete close-friend message, the decision point is now, the rule favors one ambient in-chat opt-in, and the intervention option is a friend_alert. Horvitz cost-benefit is modestly positive because the message is timely, substantive, and aligned with Amihan’s paranormal interest, while the intrusion cost stays low if surfaced only as one opt-in sentence inside chat."
+          "reasoning": "JITAI is grounded: the distal outcome is sustaining close relationships, the proximal outcome is optional reply engagement, the tailoring variable is Alex Upton's specific unanswered message, and the intervention can be a single in-chat opt-in question. Horvitz cost-benefit favors acting because a close friend made a substantive, personalized comment tied to Aram's own liked relationship content, while intrusion cost is low if surfaced once inside the chatbot. A compliant action could be: “Alex Upton said the relationship post you liked was ‘very you’ and ‘steady-love-core’; want help drafting a quick reply?”"
         }
       },
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775487455,
-        "t_test_iso": "2026-04-06T14:57:35Z",
+        "t_test": 1775487983,
+        "t_test_iso": "2026-04-06T15:06:23Z",
         "signal_evidence": {
           "app": "facebook",
           "thread_id": "fa_thr_282_006",
           "friend_id": "friend_2",
-          "friend_display_name": "Ariel Uy",
+          "friend_display_name": "Aaron Yu",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "striper fishing",
-            "motorcycles",
-            "NFL clips"
+            "church",
+            "gospel playlists",
+            "devotionals"
           ],
-          "incoming_message_excerpt": "Ami, this tiny pet-parent victory is so your soft-spot lane. The bowl drama sent me.",
-          "incoming_at_ts": 1775483855,
-          "incoming_at_iso": "13:57, 04/06/2026",
+          "incoming_message_excerpt": "Bro this setup is looking solid!! Those tires finally doing what they were supposed to do.",
+          "incoming_at_ts": 1775484383,
+          "incoming_at_iso": "14:06, 04/06/2026",
           "thread_hashtags": [
-            "#dogsofinstagram",
-            "#petlove",
-            "#dogmom"
+            "#JeepLife",
+            "#CustomJeep"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Amihan maintain close friendships through timely, low-friction replies",
-          "proximal_outcome": "Amihan notices Ariel Uy’s unanswered message and optionally asks for help replying",
-          "tailoring_variable": "close friend Ariel Uy sent an unanswered Facebook message mentioning a 'tiny pet-parent victory' and 'bowl drama,' with shared context around pet-love content",
-          "decision_point": "2026-04-06T14:57:35Z, when considering a single in-chat proactive surface about the close-friend update",
+          "distal_outcome": "help Aram maintain close friendships through timely, low-friction replies",
+          "proximal_outcome": "Aram notices Aaron Yu’s unanswered Jeep-related message and optionally asks for a quick reply draft",
+          "tailoring_variable": "close-friend inbound message from Aaron Yu left unanswered, with concrete evidence: “Bro this setup is looking solid!! Those tires finally doing what they were supposed to do.”",
+          "decision_point": "2026-04-06T15:06:23Z, only if Aram is already in the chatbot session",
           "decision_rule_pass": true,
-          "eligibility_score": 2,
+          "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI components are grounded: the distal outcome is relationship maintenance, the proximal outcome is an optional reply, the tailoring variable is Ariel Uy’s concrete inbound message, and the intervention can be a single opt-in in-chat question. Horvitz cost-benefit modestly favors acting because Ariel is a close friend and the message has personal content, though it is not an urgent request or invitation."
+          "reasoning": "All JITAI components are grounded: the distal friendship-maintenance goal, proximal reply engagement, tailoring variable Aaron Yu’s specific message, decision point, friend-alert rule, and opt-in reply option are all clear. Horvitz cost-benefit favors acting because a close friend’s substantive, interest-aligned Jeep message has real social value, while the intrusion cost is low if surfaced once inside the chatbot as an opt-in question citing Aaron by name."
         }
       },
       {
         "trigger_type": "close_friend_update",
         "tier": "T3.A",
-        "t_test": 1775433521,
-        "t_test_iso": "2026-04-05T23:58:41Z",
+        "t_test": 1775433043,
+        "t_test_iso": "2026-04-05T23:50:43Z",
         "signal_evidence": {
           "app": "instagram",
           "thread_id": "in_thr_282_005",
           "friend_id": "friend_1",
-          "friend_display_name": "Ana-Liza Udtuhan",
+          "friend_display_name": "Alex Upton",
           "friend_relationship_depth": "close",
           "friend_shared_interests": [
-            "church",
-            "family updates",
-            "DIY paint colors"
+            "Camaro builds",
+            "boxing previews",
+            "fitness creators"
           ],
-          "incoming_message_excerpt": "This felt like something you’d save for a noisy leasing day. Quiet but really steady.",
-          "incoming_at_ts": 1775429921,
-          "incoming_at_iso": "22:58, 04/05/2026",
+          "incoming_message_excerpt": "Aram, this is your exact fourth-quarter chaos lane.",
+          "incoming_at_ts": 1775429443,
+          "incoming_at_iso": "22:50, 04/05/2026",
           "thread_hashtags": [
-            "#ChristianMusic",
-            "#WorshipMusic",
-            "#GospelMusic",
-            "#FaithAndMusic"
+            "#NFL",
+            "#Football",
+            "#Touchdown",
+            "#GameDay"
           ]
         },
         "jitai_card": {
-          "distal_outcome": "help Amihan maintain close social ties and respond to meaningful messages from trusted friends",
-          "proximal_outcome": "Amihan opts in to view or respond to Ana-Liza Udtuhan’s unanswered message",
-          "tailoring_variable": "A close friend, Ana-Liza Udtuhan, sent a substantive Instagram message referencing a 'noisy leasing day' and steady faith/music content, and the close_friend_update trigger indicates it has remained unanswered",
-          "decision_point": "2026-04-05T23:58:41Z, during the chatbot session when considering whether to surface one ambient friend-related prompt",
+          "distal_outcome": "Help Aram maintain close friendships by noticing time-sensitive messages from close friends that may be easy to miss.",
+          "proximal_outcome": "Aram opts in to view or respond to Alex Upton’s unanswered Instagram message.",
+          "tailoring_variable": "Close friend Alex Upton sent Aram an Instagram message saying, \"Aram, this is your exact fourth-quarter chaos lane,\" in a thread tagged #NFL, #Football, #Touchdown, and #GameDay.",
+          "decision_point": "2026-04-05T23:50:43Z, when the close-friend update candidate was evaluated inside the chatbot session.",
           "decision_rule_pass": true,
-          "eligibility_score": 3,
+          "eligibility_score": 2,
           "recommended_action_class": "friend_alert",
           "subtlety_check_pass": true,
-          "reasoning": "JITAI components are grounded: the distal goal is relationship follow-through, the proximal goal is opt-in engagement, the tailoring variable is Ana-Liza’s concrete close-friend message, and the intervention option can be a single in-chat opt-in question. Horvitz cost-benefit favors acting because the message is substantive and from a close friend, while the intrusion cost is low if surfaced only once inside the chatbot. The action can cite Ana-Liza by name and avoid notifications, badges, directives, or out-of-band contact."
-        }
-      },
-      {
-        "trigger_type": "close_friend_update",
-        "tier": "T3.A",
-        "t_test": 1775432201,
-        "t_test_iso": "2026-04-05T23:36:41Z",
-        "signal_evidence": {
-          "app": "facebook",
-          "thread_id": "fa_thr_282_005",
-          "friend_id": "friend_2",
-          "friend_display_name": "Ariel Uy",
-          "friend_relationship_depth": "close",
-          "friend_shared_interests": [
-            "striper fishing",
-            "motorcycles",
-            "NFL clips"
-          ],
-          "incoming_message_excerpt": "Saw you reacted to this already. Man, that story still feels heavy but important.",
-          "incoming_at_ts": 1775428601,
-          "incoming_at_iso": "22:36, 04/05/2026",
-          "thread_hashtags": [
-            "#MuhammadAli",
-            "#BoxingLegends",
-            "#BoxingHistory",
-            "#GreatestOfAllTime"
-          ]
-        },
-        "jitai_card": {
-          "distal_outcome": "help Amihan maintain close friendships by following through on meaningful conversations with close contacts",
-          "proximal_outcome": "Amihan notices Ariel Uy’s substantive message and optionally replies or drafts a response",
-          "tailoring_variable": "close-friend update from Ariel Uy, a close friend, referencing Amihan’s own reaction to a heavy Muhammad Ali / boxing history story: “Saw you reacted to this already. Man, that story still feels heavy but important.”",
-          "decision_point": "2026-04-05T23:36:41Z, when the agent considers whether to surface an in-chat ambient follow-up about the close-friend message",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "friend_alert",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI components are grounded: the distal outcome is relationship maintenance, the proximal outcome is optional engagement, the tailoring variable is Ariel Uy’s substantive close-friend message, and the intervention can be a single in-chat opt-in question. Horvitz cost-benefit favors acting because the message is from a close friend, cites Amihan’s own reaction to a meaningful boxing-history story, and the interruption cost is low if surfaced only inside the chatbot without notification."
+          "reasoning": "JITAI is grounded: the distal outcome is relationship maintenance, the proximal outcome is an opt-in reply/view action, the tailoring variable is Alex Upton’s concrete inbound message, and the decision point/rule/intervention option are specific. Horvitz cost-benefit favors a low-intrusion in-chat opt-in because a close friend used Aram’s name and sent a personalized football-related message, while the cost is only one ambient sentence with easy declination. It is defensible rather than certain, so the score is 2 rather than 3."
         }
       }
     ],
     "sensitive_event_silence": [
-      {
-        "trigger_type": "sensitive_event_silence",
-        "tier": "T4.A",
-        "t_test": 1775802516,
-        "t_test_iso": "2026-04-10T06:28:36Z",
-        "signal_evidence": {
-          "window_start_ts": 1775560596,
-          "window_end_ts": 1776770196,
-          "days_into_window": 2
-        },
-        "jitai_card": {
-          "distal_outcome": "protect user trust and wellbeing by avoiding unsolicited intervention during a sensitive-life-event window",
-          "proximal_outcome": "no proactive chatbot surface is shown at this moment",
-          "tailoring_variable": "Sensitive-life-event window is active for Amihan Umali, with signal evidence showing days_into_window=2 between window_start_ts=1775560596 and window_end_ts=1776770196",
-          "decision_point": "2026-04-10T06:28:36Z",
-          "decision_rule_pass": false,
-          "eligibility_score": 0,
-          "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": false,
-          "reasoning": "JITAI components are grounded, but the decision rule fails because the tailoring variable is an active sensitive-life-event window, which mandates silence. Under Horvitz mixed-initiative reasoning, any proactive value is outweighed by intrusion risk during the restraint window. The hard rule requires eligibility_score=0 and stay_silent."
-        }
-      },
       {
         "trigger_type": "sensitive_event_silence",
         "tier": "T4.A",
@@ -1379,15 +1331,15 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "protect user trust and wellbeing by avoiding proactive intervention during a sensitive-life-event window",
-          "proximal_outcome": "no proactive chatbot surface is shown at this moment",
-          "tailoring_variable": "Amihan Umali has an active sensitive-life-event window; signal evidence shows days_into_window=5 with window_start_ts=1775560596 and window_end_ts=1776770196",
+          "distal_outcome": "protect Aram's wellbeing and trust by avoiding unnecessary proactive intervention during a sensitive-life-event window",
+          "proximal_outcome": "no chatbot surface is shown at this moment",
+          "tailoring_variable": "Sensitive-life-event window is currently active; candidate evidence shows window_start_ts=1775560596, window_end_ts=1776770196, days_into_window=5",
           "decision_point": "2026-04-13T01:40:36Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails at the decision rule because the tailoring variable is an active sensitive-event restraint, which mandates no intervention. Under Horvitz cost-benefit, the expected value of acting is 0 while intrusion cost is positive during the hard restraint window, so silence dominates."
+          "reasoning": "JITAI fails the decision rule because the hard restraint window overrides any intervention option despite a grounded decision point and tailoring variable. Under Horvitz mixed-initiative cost-benefit, the intrusion cost during an active sensitive event exceeds any plausible value from acting. The correct action is to stay silent."
         }
       },
       {
@@ -1401,15 +1353,15 @@
           "days_into_window": 8
         },
         "jitai_card": {
-          "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive interruptions during a sensitive-life-event window",
-          "proximal_outcome": "user receives no proactive chatbot surface at this moment",
-          "tailoring_variable": "Sensitive-life-event window is currently active for Amihan Umali; trigger evidence shows window_start_ts=1775560596, window_end_ts=1776770196, days_into_window=8",
+          "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive intervention during an active sensitive-life-event window",
+          "proximal_outcome": "no proactive chatbot surface is shown at this moment",
+          "tailoring_variable": "Sensitive-life-event window is currently active; candidate evidence shows window_start_ts=1775560596, window_end_ts=1776770196, days_into_window=8",
           "decision_point": "2026-04-15T20:52:36Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails the decision rule because the tailoring variable is an active sensitive-event window, which is a hard restraint condition. Under Horvitz mixed-initiative cost-benefit, intrusion cost dominates any possible value, so the correct action value is zero. The action should not be surfaced, even inside the chatbot."
+          "reasoning": "JITAI fails because the hard restraint window overrides any intervention option and decision rule. Horvitz cost-benefit also disfavors acting because intrusion risk during an active sensitive event exceeds any likely value. The trigger type is sensitive_event_silence, so the required action is to stay silent."
         }
       },
       {
@@ -1423,15 +1375,15 @@
           "days_into_window": 11
         },
         "jitai_card": {
-          "distal_outcome": "protect Amihan Umali’s wellbeing and trust by avoiding unnecessary proactive intervention during a sensitive-life-event window",
+          "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive intervention during a sensitive-life-event window",
           "proximal_outcome": "no proactive chatbot surface is shown at this moment",
-          "tailoring_variable": "Sensitive-life-event window is active, with evidence window_start_ts=1775560596, window_end_ts=1776770196, days_into_window=11",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Aram Uhm; signal evidence shows days_into_window=11 with window_start_ts=1775560596 and window_end_ts=1776770196",
           "decision_point": "2026-04-18T16:04:36Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": false,
-          "reasoning": "JITAI is blocked at the decision-rule component because the hard restraint window overrides any intervention option. Horvitz cost-benefit also disfavors acting: expected intrusion cost during an active sensitive event exceeds any speculative value from surfacing a message. The correct mixed-initiative action is to stay silent."
+          "subtlety_check_pass": true,
+          "reasoning": "JITAI does not pass because the hard restraint window overrides any intervention option despite a defined decision point and tailoring variable. Under Horvitz mixed-initiative reasoning, the expected cost of intrusion during an active sensitive event exceeds any plausible value of acting. The required decision rule is therefore silence."
         }
       }
     ],
@@ -1439,37 +1391,37 @@
       {
         "trigger_type": "friend_feed_react",
         "tier": "T2.D",
-        "t_test": 1775359916,
-        "t_test_iso": "2026-04-05T03:31:56Z",
+        "t_test": 1775359438,
+        "t_test_iso": "2026-04-05T03:23:58Z",
         "relevance": "relevant",
         "signal_evidence": {
           "app": "instagram",
           "friend_id": "friend_2",
-          "friend_display_name": "Ariel Uy",
-          "post_event_id": "feedvis_6a46524ffe",
-          "post_ts": 1775273516,
-          "post_iso": "03:31, 04/04/2026",
+          "friend_display_name": "Aaron Yu",
+          "post_event_id": "feedvis_5972015cee",
+          "post_ts": 1775273038,
+          "post_iso": "03:23, 04/04/2026",
           "post_hashtags": [
-            "#NFL",
-            "#SundayFootball",
-            "#GameDay"
+            "#couplegoals",
+            "#sundaymorning",
+            "#devotional"
           ],
-          "post_caption_excerpt": "Caught the highlights over coffee and I’m still replaying that toe-tap catch. Sundays really do hit different when the game comes down to the last drive.",
-          "primary_hashtag": "#NFL",
+          "post_caption_excerpt": "Coffee, Sunday service, and doing our devotional together before the week gets loud. Honestly, this is the kind of ordinary I prayed for.",
+          "primary_hashtag": "#couplegoals",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 3,
-          "user_interest_match": "Aligns with the user's NFL/Sunday football interest in highlight-reel plays, close-game energy, and game-day atmosphere.",
-          "reasoning": "The caption specifically mentions a toe-tap catch, highlights, Sunday football, and a last-drive finish, which matches the user's repeated engagement with clean football plays and big Sunday game energy. The author is also a close friend with shared NFL/GameDay interests, making it especially worth surfacing."
+          "user_interest_match": "Aligns with Aram’s interest in steady, prayerful couple-goals content that blends stable love, domestic calm, and Jesus-centered devotionals.",
+          "reasoning": "The caption explicitly features a couple doing Sunday service and a devotional together, framed as the peaceful ordinary love they prayed for. That directly matches Aram’s engagement with tender stable-love content and Christian devotional themes."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-05T03:31:56Z",
+          "decision_point": "2026-04-05T03:23:58Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
@@ -1480,36 +1432,37 @@
       {
         "trigger_type": "friend_feed_react",
         "tier": "T2.D",
-        "t_test": 1775337770,
-        "t_test_iso": "2026-04-04T21:22:50Z",
+        "t_test": 1775338298,
+        "t_test_iso": "2026-04-04T21:31:38Z",
         "relevance": "relevant",
         "signal_evidence": {
           "app": "facebook",
           "friend_id": "friend_2",
-          "friend_display_name": "Ariel Uy",
-          "post_event_id": "feedvis_42116db182",
-          "post_ts": 1775251370,
-          "post_iso": "21:22, 04/03/2026",
+          "friend_display_name": "Aaron Yu",
+          "post_event_id": "feedvis_a0ab6d12d5",
+          "post_ts": 1775251898,
+          "post_iso": "21:31, 04/03/2026",
           "post_hashtags": [
-            "#NFL",
-            "#Football"
+            "#relationshipgoals",
+            "#faith",
+            "#devotionals"
           ],
-          "post_caption_excerpt": "That sideline toe-tap catch in last night’s highlights was unreal. Had to replay it three times before coffee.",
-          "primary_hashtag": "#NFL",
+          "post_caption_excerpt": "Honestly, praying together and sharing a devotional after church feels like the kind of love worth building slowly.",
+          "primary_hashtag": "#relationshipgoals",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 3,
-          "user_interest_match": "Aligns with the user's demonstrated interest in NFL highlight-reaction content, especially clean catches, big plays, and replay-worthy game moments.",
-          "reasoning": "The caption is specifically about an unreal sideline toe-tap catch from last night’s NFL highlights, matching the user's repeated engagement with football play breakdowns and big-game reactions. It also comes from close friend Ariel Uy, who shares NFL/football interests, making it especially worth surfacing."
+          "user_interest_match": "Aligns with his interest in stable, faith-centered relationship goals and Jesus-centered devotional content.",
+          "reasoning": "The caption explicitly combines praying together, sharing a devotional after church, and slowly building lasting love, which matches his engagement with tender stable love and Christian grace/devotional posts. It is also from a close friend with shared faith and relationship interests, making it genuinely worth surfacing."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-04T21:22:50Z",
+          "decision_point": "2026-04-04T21:31:38Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
@@ -1526,25 +1479,25 @@
         "signal_evidence": {
           "app": "threads",
           "friend_id": "friend_3",
-          "friend_display_name": "Angelo Uson",
-          "post_event_id": "feedvis_7f8e147e5d",
+          "friend_display_name": "Aiden Park",
+          "post_event_id": "feedvis_3e5d5de4b8",
           "post_ts": 1775207521,
           "post_iso": "09:12, 04/03/2026",
           "post_hashtags": [
-            "#UFC",
-            "#FightNight",
-            "#Community"
+            "#funnyvideos",
+            "#mixeduse",
+            "#localcommunity"
           ],
-          "post_caption_excerpt": "After church and a quick roof patch for a neighbor, finally catching the fights. Nothing like a good UFC card to end a long Saturday.",
-          "primary_hashtag": "#UFC",
+          "post_caption_excerpt": "Watched a leasing tour get interrupted by a dog proudly dragging a giant pretzel through the plaza. Honestly, best mixed-use activation I’ve seen all week.",
+          "primary_hashtag": "#funnyvideos",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
-          "content_relevance_score": 2,
-          "user_interest_match": "Aligns with Amihan’s UFC/MMA fight-night interest, especially the social ritual of catching fights after a long Saturday, though it lacks the throwback legendary-fight detail they most strongly engage with.",
-          "reasoning": "The caption is genuinely about watching a UFC card, which matches the user’s repeated engagement with fight-night tension and MMA content. The close-friend context plus church/neighbor roof-patch detail also lightly overlaps with their community and blue-collar identity anchors."
+          "content_relevance_score": 3,
+          "user_interest_match": "Aligns with his specific taste for light absurd animal comedy plus low-key commercial real estate/leasing observations.",
+          "reasoning": "The caption features a dog causing a funny plaza interruption, matching his recent engagement with dog/visual mishap humor. It also mentions a leasing tour and mixed-use activation, which fits his prior interest in retail pad/leasing-site content."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
@@ -1561,37 +1514,36 @@
       {
         "trigger_type": "friend_feed_react",
         "tier": "T2.D",
-        "t_test": 1775289479,
-        "t_test_iso": "2026-04-04T07:57:59Z",
+        "t_test": 1775290007,
+        "t_test_iso": "2026-04-04T08:06:47Z",
         "relevance": "relevant",
         "signal_evidence": {
           "app": "facebook",
           "friend_id": "friend_1",
-          "friend_display_name": "Ana-Liza Udtuhan",
-          "post_event_id": "feedvis_2e7b151ef1",
-          "post_ts": 1775203079,
-          "post_iso": "07:57, 04/03/2026",
+          "friend_display_name": "Alex Upton",
+          "post_event_id": "feedvis_7ae42c6d02",
+          "post_ts": 1775203607,
+          "post_iso": "08:06, 04/03/2026",
           "post_hashtags": [
-            "#DIY",
-            "#HomeRefresh",
-            "#PaintColors"
+            "#Boxing",
+            "#FightNight"
           ],
-          "post_caption_excerpt": "Finally repainted the little prayer corner after Sunday service. Went with a soft sage green and it already feels calmer. Small home project, big mood lift.",
-          "primary_hashtag": "#DIY",
+          "post_caption_excerpt": "Caught the early weigh-in clips and I’m way more hyped for Saturday now. Main event feels like it could turn into a scrap by round 4.",
+          "primary_hashtag": "#Boxing",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
-          "content_relevance_score": 2,
-          "user_interest_match": "Aligns with Amihan’s interest in DIY interior home-refresh projects involving paint colors and simple room/corner makeovers.",
-          "reasoning": "The caption is about repainting a small prayer corner in soft sage green, which fits her demonstrated engagement with DIY paint/finish home projects like garage trim and cabinet-door fixes. It is relevant, though not a perfect strong match because it lacks the specific textured/staining/roller technique detail she often engages with."
+          "content_relevance_score": 3,
+          "user_interest_match": "Aligns with the user's fight-night boxing interest in matchup buildup, weigh-ins, and predicting how the main event will play out.",
+          "reasoning": "The caption is directly about early weigh-in clips, Saturday hype, and a main event potentially turning into a scrap, matching the user's repeated engagement with fight-night lineups, styles, and matchup analysis. It is also from close friend Alex Upton, who shares #Boxing and #FightNight interests."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Close-friend post on a user-positive hashtag",
-          "decision_point": "2026-04-04T07:57:59Z",
+          "decision_point": "2026-04-04T08:06:47Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "friend_alert",
@@ -1604,80 +1556,80 @@
       {
         "trigger_type": "trending_feed_react",
         "tier": "T2.E",
-        "t_test": 1775462403,
-        "t_test_iso": "2026-04-06T08:00:03Z",
-        "relevance": "relevant",
+        "t_test": 1775462765,
+        "t_test_iso": "2026-04-06T08:06:05Z",
+        "relevance": "irrelevant",
         "signal_evidence": {
           "app": "facebook",
           "trending_topic": "Buy-Nothing & marketplace community finds",
           "trend_description": "",
-          "post_event_id": "feedvis_0e2087ba56",
-          "post_ts": 1775376003,
-          "post_iso": "08:00, 04/05/2026",
+          "post_event_id": "feedvis_6980f1d440",
+          "post_ts": 1775376365,
+          "post_iso": "08:06, 04/05/2026",
           "post_hashtags": [
+            "#FightNight",
             "#BuyNothing",
             "#MarketplaceFinds",
-            "#FreeFinds",
-            "#largemouthbass"
+            "#CommunityFinds"
           ],
-          "post_caption_excerpt": "Picked up this free tackle box from the neighborhood Buy Nothing group and found three vintage lures still tucked inside. Little treasure hunt on a Tuesday.",
-          "primary_hashtag": "#largemouthbass",
+          "post_caption_excerpt": "Scored these free folding chairs from the neighborhood Buy Nothing group just in time for tonight. Marketplace patience finally paid off.",
+          "primary_hashtag": "#FightNight",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
-          "relevance": "relevant",
-          "content_relevance_score": 2,
-          "user_interest_match": "Aligns with the user's fishing interest through tackle/lure finds, though it is more gear/marketplace-focused than their usual bite-and-catch fishing posts.",
-          "reasoning": "The caption is specifically about a free tackle box with vintage lures, which is genuinely adjacent to their demonstrated engagement with bass/fishing content. It is not as strong as an actual fishing outing or catch post, but it still fits their fishing hobby and budget-conscious practical interests."
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with the user's fight-night interest in matchups, footwork, and main-card analysis; it is mainly about Buy Nothing/Marketplace folding-chair finds.",
+          "reasoning": "The caption is about scoring free folding chairs from a neighborhood group, with #FightNight only as context for using them tonight. Aram’s related engagement is about actual fight analysis and reactions, not seating, marketplace finds, or event supplies."
         },
         "jitai_card": {
-          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
-          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
-          "tailoring_variable": "Trending content on a user-positive hashtag",
-          "decision_point": "2026-04-06T08:00:03Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T08:06:05Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
           "subtlety_check_pass": true,
-          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
         }
       },
       {
         "trigger_type": "trending_feed_react",
         "tier": "T2.E",
-        "t_test": 1775450889,
-        "t_test_iso": "2026-04-06T04:48:09Z",
+        "t_test": 1775450768,
+        "t_test_iso": "2026-04-06T04:46:08Z",
         "relevance": "irrelevant",
         "signal_evidence": {
           "app": "instagram",
           "trending_topic": "Coachella 2026 festival fashion",
           "trend_description": "",
-          "post_event_id": "feedvis_1115cfe151",
-          "post_ts": 1775364489,
-          "post_iso": "04:48, 04/05/2026",
+          "post_event_id": "feedvis_be5b2fa0ae",
+          "post_ts": 1775364368,
+          "post_iso": "04:46, 04/05/2026",
           "post_hashtags": [
-            "#motivation",
+            "#wellness",
             "#Coachella2026",
             "#FestivalFashion",
-            "#OOTD"
+            "#DesertOOTD"
           ],
-          "post_caption_excerpt": "Desert dust on my boots, rhinestones in my part, and somehow this crochet set survived day three. Coachella fits are half chaos, half confidence.",
-          "primary_hashtag": "#motivation",
+          "post_caption_excerpt": "Desert dust, silver boots, and a sunset that made the whole outfit feel planned. Coachella weekend one really said hydrate, sparkle, repeat.",
+          "primary_hashtag": "#wellness",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "irrelevant",
           "content_relevance_score": 0,
-          "user_interest_match": "Does not align with the user's concrete interests in DIY decor, combat sports history, fishing, cars, high-protein fitness, or practical small-win motivation.",
-          "reasoning": "The caption is about Coachella festival fashion, crochet sets, rhinestones, and outfit confidence. The user's related engagement with #motivation is about small habits, home resets, and steady progress, not fashion or music-festival OOTD content."
+          "user_interest_match": "Does not align with Aram’s wellness interest in quiet mental resets, habit tracking, sleep/sunlight, and reducing doomscrolling; it is mainly Coachella festival fashion/Desert OOTD content.",
+          "reasoning": "The caption focuses on silver boots, sunset aesthetics, and Coachella weekend style, with only a passing 'hydrate' mention. Aram’s related engagement is about practical calm, small habits, breathing exercises, and headspace resets, not festival fashion or influencer event outfits."
         },
         "jitai_card": {
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Off-topic feed content for this user",
-          "decision_point": "2026-04-06T04:48:09Z",
+          "decision_point": "2026-04-06T04:46:08Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
@@ -1688,79 +1640,80 @@
       {
         "trigger_type": "trending_feed_react",
         "tier": "T2.E",
-        "t_test": 1775440596,
-        "t_test_iso": "2026-04-06T01:56:36Z",
-        "relevance": "relevant",
+        "t_test": 1775440475,
+        "t_test_iso": "2026-04-06T01:54:35Z",
+        "relevance": "irrelevant",
         "signal_evidence": {
           "app": "instagram",
           "trending_topic": "AI portrait & retro-style photo trend",
           "trend_description": "",
-          "post_event_id": "feedvis_fb704c67d7",
-          "post_ts": 1775354196,
-          "post_iso": "01:56, 04/05/2026",
+          "post_event_id": "feedvis_e63a3b53b0",
+          "post_ts": 1775354075,
+          "post_iso": "01:54, 04/05/2026",
           "post_hashtags": [
-            "#relationshipgoals",
+            "#fitnessmotivation",
             "#aiportrait",
-            "#retrofilter",
-            "#90saesthetic"
+            "#retroaesthetic",
+            "#gymselfie"
           ],
-          "post_caption_excerpt": "Tried the retro AI portrait filter on us and now it looks like we met in a 90s photo booth. Honestly, I’m keeping this version.",
-          "primary_hashtag": "#relationshipgoals",
+          "post_caption_excerpt": "Tried the AI portrait thing after leg day and it somehow made me look like I train in an 80s movie montage.",
+          "primary_hashtag": "#fitnessmotivation",
           "relevance": "irrelevant"
         },
         "hashtag_label_at_generation": "irrelevant",
         "content_relevance_verdict": {
-          "relevance": "relevant",
-          "content_relevance_score": 2,
-          "user_interest_match": "Aligns with the user’s soft couple-affection/relationship-goals interest, though it is more of a romantic AI-photo aesthetic than a lived tiny-teamwork moment.",
-          "reasoning": "The caption centers on a couple’s shared retro portrait and affectionate framing of “us,” which fits the user’s interest in sweet relationship content. It is less strong than their prior engagement with small married-life gestures, but still clearly within the romantic couple-devotion lane."
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "The post is mainly an AI-generated gym selfie/80s workout aesthetic, not the user's stronger interests in romance content, Christian devotionals, DIY/woodworking, muscle cars, off-roading, fishing, or cozy domestic life.",
+          "reasoning": "The caption is about trying an AI portrait after leg day and looking like an 80s movie montage, which is generic fitness/AI trend content. The user's profile shows no demonstrated interest in gym selfies or AI portrait trends, and the retro angle is too vague to match his specific sentimental country-music nostalgia."
         },
         "jitai_card": {
-          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
-          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
-          "tailoring_variable": "Trending content on a user-positive hashtag",
-          "decision_point": "2026-04-06T01:56:36Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-06T01:54:35Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
           "subtlety_check_pass": true,
-          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
         }
       },
       {
         "trigger_type": "trending_feed_react",
         "tier": "T2.E",
-        "t_test": 1775433696,
-        "t_test_iso": "2026-04-06T00:01:36Z",
+        "t_test": 1775433717,
+        "t_test_iso": "2026-04-06T00:01:57Z",
         "relevance": "irrelevant",
         "signal_evidence": {
           "app": "threads",
           "trending_topic": "Threads Live Chats x NBA playoffs",
           "trend_description": "",
-          "post_event_id": "feedvis_ff9f10188f",
-          "post_ts": 1775347296,
+          "post_event_id": "feedvis_a1c1eef6ea",
+          "post_ts": 1775347317,
           "post_iso": "00:01, 04/05/2026",
           "post_hashtags": [
-            "#bassfishing",
+            "#chainsaw",
             "#NBAPlayoffs",
-            "#ThreadsLiveChats"
+            "#ThreadsLive",
+            "#LiveChats"
           ],
-          "post_caption_excerpt": "Threads Live Chat during crunch time is basically courtside chaos in my pocket. Everybody saw that late rotation before the replay 😂",
-          "primary_hashtag": "#bassfishing",
+          "post_caption_excerpt": "The Live Chat during that fourth-quarter run was moving faster than the ball movement. Playoff chaos is way more fun when everyone’s yelling in real time.",
+          "primary_hashtag": "#chainsaw",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "irrelevant",
           "content_relevance_score": 0,
-          "user_interest_match": "Does not align with the user's fishing interests, which are about actual water/bite/striper fishing experiences rather than an NBA playoffs live-chat reaction.",
-          "reasoning": "The caption is about Threads Live Chat during NBA playoff crunch time and a late defensive rotation, not bass fishing despite the hashtag. The user has engaged with fishing posts centered on bites, water conditions, and quiet fishing wins, with no demonstrated NBA interest."
+          "user_interest_match": "Does not align with the user's interest in real chainsaw control, woodcutting skill, and hands-on DIY/woodworking content.",
+          "reasoning": "The caption is about NBA playoff live-chat chaos and fourth-quarter ball movement, not chainsaw use or hands-on cutting skill. The #chainsaw tag appears unrelated to the actual post content and does not match the user's demonstrated engagement with saw control and logs."
         },
         "jitai_card": {
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Off-topic feed content for this user",
-          "decision_point": "2026-04-06T00:01:36Z",
+          "decision_point": "2026-04-06T00:01:57Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
@@ -1771,122 +1724,38 @@
       {
         "trigger_type": "trending_feed_react",
         "tier": "T2.E",
-        "t_test": 1775432949,
-        "t_test_iso": "2026-04-05T23:49:09Z",
-        "relevance": "irrelevant",
+        "t_test": 1775432828,
+        "t_test_iso": "2026-04-05T23:47:08Z",
+        "relevance": "relevant",
         "signal_evidence": {
           "app": "instagram",
           "trending_topic": "Spring 'clean girl' GRWM refresh",
           "trend_description": "",
-          "post_event_id": "feedvis_8fe91438c4",
-          "post_ts": 1775346549,
-          "post_iso": "23:49, 04/04/2026",
+          "post_event_id": "feedvis_8a7f8de70c",
+          "post_ts": 1775346428,
+          "post_iso": "23:47, 04/04/2026",
           "post_hashtags": [
-            "#motivation",
+            "#wellness",
+            "#GRWM",
             "#cleangirl",
-            "#grwm",
             "#springrefresh"
           ],
-          "post_caption_excerpt": "Spring reset: slick bun, SPF, lip oil, and a 5-minute face before coffee. Trying to keep the routine light and the energy softer.",
-          "primary_hashtag": "#motivation",
-          "relevance": "relevant"
-        },
-        "hashtag_label_at_generation": "relevant",
-        "content_relevance_verdict": {
-          "relevance": "irrelevant",
-          "content_relevance_score": 0,
-          "user_interest_match": "Does not align with the user's concrete interests in DIY decor, combat sports, fishing, cars, high-protein fitness, or practical small-win productivity; it is specifically a clean-girl beauty/GRWM routine.",
-          "reasoning": "The caption centers on slick bun, SPF, lip oil, and a 5-minute face, which is beauty/lifestyle refresh content. The user's past #motivation-like engagement is about small wins, tasks, fitness consistency, or home resets, not makeup or clean-girl aesthetics."
-        },
-        "jitai_card": {
-          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
-          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
-          "tailoring_variable": "Off-topic feed content for this user",
-          "decision_point": "2026-04-05T23:49:09Z",
-          "decision_rule_pass": false,
-          "eligibility_score": 0,
-          "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": true,
-          "reasoning": "Off-topic content — surfacing it would be over-personalization."
-        }
-      },
-      {
-        "trigger_type": "trending_feed_react",
-        "tier": "T2.E",
-        "t_test": 1775404830,
-        "t_test_iso": "2026-04-05T16:00:30Z",
-        "relevance": "relevant",
-        "signal_evidence": {
-          "app": "facebook",
-          "trending_topic": "Millennial-nostalgia & parenting memes",
-          "trend_description": "",
-          "post_event_id": "feedvis_11149bc5f0",
-          "post_ts": 1775318430,
-          "post_iso": "16:00, 04/04/2026",
-          "post_hashtags": [
-            "#relationshipgoals",
-            "#MillennialParents",
-            "#90sKids",
-            "#ParentingHumor"
-          ],
-          "post_caption_excerpt": "We really went from rewinding VHS tapes to negotiating with a toddler who wants their grilled cheese “more square.” Marriage is just laughing quietly in the kitchen.",
-          "primary_hashtag": "#relationshipgoals",
-          "relevance": "irrelevant"
-        },
-        "hashtag_label_at_generation": "irrelevant",
-        "content_relevance_verdict": {
-          "relevance": "relevant",
-          "content_relevance_score": 3,
-          "user_interest_match": "Aligns strongly with the user's soft married-life affection and parent/family humor interest, especially tiny domestic moments framed as relationship goals.",
-          "reasoning": "The caption centers on marriage as quiet kitchen laughter while handling toddler absurdity, which closely matches the user's prior engagement with married-life teamwork, tiny helpful gestures, and mom/dad humor. The millennial nostalgia angle also adds extra fit without being the main reason."
-        },
-        "jitai_card": {
-          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
-          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
-          "tailoring_variable": "Trending content on a user-positive hashtag",
-          "decision_point": "2026-04-05T16:00:30Z",
-          "decision_rule_pass": true,
-          "eligibility_score": 3,
-          "recommended_action_class": "follow_up",
-          "subtlety_check_pass": true,
-          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
-        }
-      },
-      {
-        "trigger_type": "trending_feed_react",
-        "tier": "T2.E",
-        "t_test": 1775401393,
-        "t_test_iso": "2026-04-05T15:03:13Z",
-        "relevance": "relevant",
-        "signal_evidence": {
-          "app": "facebook",
-          "trending_topic": "Then-vs-now family storytelling Reels",
-          "trend_description": "",
-          "post_event_id": "feedvis_29c26c4d22",
-          "post_ts": 1775314993,
-          "post_iso": "15:03, 04/04/2026",
-          "post_hashtags": [
-            "#fishinglife",
-            "#ThenAndNow",
-            "#FamilyMemories",
-            "#DadLife"
-          ],
-          "post_caption_excerpt": "Then: tiny hands holding his first bluegill. Now: he’s the one baiting hooks and telling me to be patient. Time really does move like water.",
-          "primary_hashtag": "#fishinglife",
+          "post_caption_excerpt": "Spring reset, but make it five minutes: slick bun, glowy SPF, lip balm, and pretending my room is always this calm.",
+          "primary_hashtag": "#wellness",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "relevant",
           "content_relevance_score": 2,
-          "user_interest_match": "Aligns with the user's fishing-life interest and their soft/vicarious family-life affection, though it is more sentimental family fishing than the striper-focused fishing content they most often engage with.",
-          "reasoning": "The caption centers on a father-child fishing memory evolving from a first bluegill to baiting hooks and practicing patience, which fits the user's repeated engagement with calm fishing moments. It is not a perfect match to their stronger striper/shoreline fishing preference, but the family-memory angle also overlaps with their dad/family-life affinity."
+          "user_interest_match": "Aligns with his recent interest in low-effort wellness resets, calmer headspace, and home-order/clean-room content, though the beauty-focused GRWM angle is less central.",
+          "reasoning": "The caption frames a quick 'Spring reset' around five-minute calming routines and a room that feels orderly, which echoes his engagements with tiny resets, slow breaths, cleaner rooms, and boring-but-helpful progress. It is not a perfect match because much of the post is 'clean girl' beauty styling, but the calm reset/home-order subtheme is clearly relevant."
         },
         "jitai_card": {
           "distal_outcome": "Surface relevant feed content the user has not yet seen.",
           "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
           "tailoring_variable": "Trending content on a user-positive hashtag",
-          "decision_point": "2026-04-05T15:03:13Z",
+          "decision_point": "2026-04-05T23:47:08Z",
           "decision_rule_pass": true,
           "eligibility_score": 3,
           "recommended_action_class": "follow_up",
@@ -1897,38 +1766,163 @@
       {
         "trigger_type": "trending_feed_react",
         "tier": "T2.E",
-        "t_test": 1775390164,
-        "t_test_iso": "2026-04-05T11:56:04Z",
+        "t_test": 1775431253,
+        "t_test_iso": "2026-04-05T23:20:53Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "app": "threads",
+          "trending_topic": "'Is AI ruining the internet?' discourse",
+          "trend_description": "",
+          "post_event_id": "feedvis_715c433a19",
+          "post_ts": 1775344853,
+          "post_iso": "23:20, 04/04/2026",
+          "post_hashtags": [
+            "#comedygold",
+            "#AI",
+            "#internetculture",
+            "#Threads"
+          ],
+          "post_caption_excerpt": "The internet didn’t get ruined by AI, it got ruined by everyone posting like they’re trying to impress a hiring manager and a ghost at the same time.",
+          "primary_hashtag": "#comedygold",
+          "relevance": "irrelevant"
+        },
+        "hashtag_label_at_generation": "irrelevant",
+        "content_relevance_verdict": {
+          "relevance": "irrelevant",
+          "content_relevance_score": 0,
+          "user_interest_match": "Does not align with his demonstrated comedy taste, which is more playful domestic mishaps, animal/road timing gags, and lighthearted slapstick rather than AI/internet-culture meta commentary.",
+          "reasoning": "The caption is a snarky take on AI and performative posting online, while Aram’s recent comedy engagement centers on visual timing, dogs, driving mishaps, and couple humor. Hashtag overlap with #comedygold is not enough to make this specific AI discourse joke worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Off-topic feed content for this user",
+          "decision_point": "2026-04-05T23:20:53Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Off-topic content — surfacing it would be over-personalization."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775405192,
+        "t_test_iso": "2026-04-05T16:06:32Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "Millennial-nostalgia & parenting memes",
+          "trend_description": "",
+          "post_event_id": "feedvis_de92ef22a3",
+          "post_ts": 1775318792,
+          "post_iso": "16:06, 04/04/2026",
+          "post_hashtags": [
+            "#fitnessmotivation",
+            "#MillennialParenting",
+            "#90sKids",
+            "#ParentingHumor"
+          ],
+          "post_caption_excerpt": "My kid asked why I’m tired after one lap around the playground. Buddy, my peak athletic era was Wii Sports bowling and running from the Scholastic Book Fair.",
+          "primary_hashtag": "#fitnessmotivation",
+          "relevance": "irrelevant"
+        },
+        "hashtag_label_at_generation": "irrelevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Aligns with the user's demonstrated interest in lighthearted parenting/domestic humor and nostalgic simpler-era references.",
+          "reasoning": "The caption jokes about being exhausted by a kid at the playground and frames it through Wii Sports and Scholastic Book Fair nostalgia, which matches the user's prior engagement with child-related humor. It is not really fitness content despite the hashtag, but the parenting meme and throwback tone are genuinely on-topic."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Trending content on a user-positive hashtag",
+          "decision_point": "2026-04-05T16:06:32Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775401755,
+        "t_test_iso": "2026-04-05T15:09:15Z",
+        "relevance": "relevant",
+        "signal_evidence": {
+          "app": "facebook",
+          "trending_topic": "Then-vs-now family storytelling Reels",
+          "trend_description": "",
+          "post_event_id": "feedvis_e30dec6205",
+          "post_ts": 1775315355,
+          "post_iso": "15:09, 04/04/2026",
+          "post_hashtags": [
+            "#NFL",
+            "#ThenAndNow",
+            "#FamilyReels",
+            "#GameDay"
+          ],
+          "post_caption_excerpt": "From tiny jersey on the couch to yelling every Sunday like he owns the team… blinked and my little game day buddy grew up.",
+          "primary_hashtag": "#NFL",
+          "relevance": "relevant"
+        },
+        "hashtag_label_at_generation": "relevant",
+        "content_relevance_verdict": {
+          "relevance": "relevant",
+          "content_relevance_score": 2,
+          "user_interest_match": "Aligns with Aram’s NFL Sunday game-day/watch-party interest plus his sentimental throwback streak, rather than his more tactical football-breakdown interest.",
+          "reasoning": "The caption is about growing up with a family game-day buddy, from a tiny jersey on the couch to yelling every Sunday, which matches his engaged-with NFL watch-party and game-day vibe posts. It is less about sacks, catches, or fourth-quarter analysis, but the nostalgic football-family angle is still a solid fit."
+        },
+        "jitai_card": {
+          "distal_outcome": "Surface relevant feed content the user has not yet seen.",
+          "proximal_outcome": "User accepts or declines a low-cost surfaced item.",
+          "tailoring_variable": "Trending content on a user-positive hashtag",
+          "decision_point": "2026-04-05T15:09:15Z",
+          "decision_rule_pass": true,
+          "eligibility_score": 3,
+          "recommended_action_class": "follow_up",
+          "subtlety_check_pass": true,
+          "reasoning": "Hashtag-intersection labeling marked this moment as a relevant feed item for the user; a one-sentence opt-in offer is low-cost."
+        }
+      },
+      {
+        "trigger_type": "trending_feed_react",
+        "tier": "T2.E",
+        "t_test": 1775390185,
+        "t_test_iso": "2026-04-05T11:56:25Z",
         "relevance": "irrelevant",
         "signal_evidence": {
           "app": "threads",
           "trending_topic": "NBA playoff hot takes & bracket debates",
           "trend_description": "",
-          "post_event_id": "feedvis_5d8b7dbddc",
-          "post_ts": 1775303764,
+          "post_event_id": "feedvis_b81eef0807",
+          "post_ts": 1775303785,
           "post_iso": "11:56, 04/04/2026",
           "post_hashtags": [
-            "#relatable",
             "#NBAPlayoffs",
-            "#NBATwitter",
-            "#BracketTalk"
+            "#BracketTalk",
+            "#BibleProphecy"
           ],
-          "post_caption_excerpt": "Filled out my playoff bracket with full confidence and 48 hours later I’m already calling my wrong upset pick “good process.”",
-          "primary_hashtag": "#relatable",
+          "post_caption_excerpt": "Every April I convince myself the 5-seed is a matchup nightmare and every April my bracket is ashes by Game 3. Still taking Denver in 7.",
+          "primary_hashtag": "#BibleProphecy",
           "relevance": "relevant"
         },
         "hashtag_label_at_generation": "relevant",
         "content_relevance_verdict": {
           "relevance": "irrelevant",
           "content_relevance_score": 0,
-          "user_interest_match": "Does not align with Amihan’s demonstrated sports interests, which skew toward UFC/MMA and boxing history rather than NBA playoff bracket discourse.",
-          "reasoning": "The caption is specifically about NBA playoff bracket picks and rationalizing a wrong upset, while the user profile shows no basketball or bracket-debate interest. The only overlap is generic #relatable humor, but their relatable engagement has been romance/marriage/texting humor, not NBA fandom."
+          "user_interest_match": "Does not align with the user's Jesus-centered prophecy/end-times interest; the post is actually NBA playoff bracket banter.",
+          "reasoning": "The caption is about picking Denver in 7 and joking about a 5-seed ruining a bracket, not Bible prophecy or Christian reflection. The #BibleProphecy tag appears incidental and does not match the user's actual engagement with end-times concern and staying grounded in Jesus."
         },
         "jitai_card": {
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Off-topic feed content for this user",
-          "decision_point": "2026-04-05T11:56:04Z",
+          "decision_point": "2026-04-05T11:56:25Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
@@ -1941,17 +1935,17 @@
       {
         "trigger_type": "overactive_check",
         "tier": "negative_control",
-        "t_test": 1775219830,
-        "t_test_iso": "2026-04-03T12:37:10Z",
+        "t_test": 1775215889,
+        "t_test_iso": "2026-04-03T11:31:29Z",
         "relevance": "irrelevant",
         "signal_evidence": {
-          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+          "note": "Idle moment — no other proactive candidate fires within ±3h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
         },
         "jitai_card": {
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Negative-control idle moment",
-          "decision_point": "2026-04-03T12:37:10Z",
+          "decision_point": "2026-04-03T11:31:29Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
@@ -1962,17 +1956,59 @@
       {
         "trigger_type": "overactive_check",
         "tier": "negative_control",
-        "t_test": 1775554459,
-        "t_test_iso": "2026-04-07T09:34:19Z",
+        "t_test": 1775312082,
+        "t_test_iso": "2026-04-04T14:14:42Z",
         "relevance": "irrelevant",
         "signal_evidence": {
-          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+          "note": "Idle moment — no other proactive candidate fires within ±3h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
         },
         "jitai_card": {
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Negative-control idle moment",
-          "decision_point": "2026-04-07T09:34:19Z",
+          "decision_point": "2026-04-04T14:14:42Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
+        }
+      },
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775377764,
+        "t_test_iso": "2026-04-05T08:29:24Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±3h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-05T08:29:24Z",
+          "decision_rule_pass": false,
+          "eligibility_score": 0,
+          "recommended_action_class": "stay_silent",
+          "subtlety_check_pass": true,
+          "reasoning": "Negative control — staying silent is the right move."
+        }
+      },
+      {
+        "trigger_type": "overactive_check",
+        "tier": "negative_control",
+        "t_test": 1775553108,
+        "t_test_iso": "2026-04-07T09:11:48Z",
+        "relevance": "irrelevant",
+        "signal_evidence": {
+          "note": "Idle moment — no other proactive candidate fires within ±3h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+        },
+        "jitai_card": {
+          "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
+          "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
+          "tailoring_variable": "Negative-control idle moment",
+          "decision_point": "2026-04-07T09:11:48Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",

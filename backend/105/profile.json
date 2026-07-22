@@ -1,8 +1,8 @@
 {
-  "name": "Chikara Chinen",
-  "gender": "cisgender male, heterosexual",
-  "race_ethnicity": "Japanese",
-  "career": "Firmware QA engineer for smart kitchen appliances",
+  "name": "Cambria Cazabon",
+  "gender": "cisgender female, heterosexual",
+  "race_ethnicity": "Multiracial (other)",
+  "career": "Firmware QA Engineer for smart-home devices",
   "education": "Bachelor's degree in Computer Engineering",
   "big_five": {
     "openness": "medium",
@@ -11,48 +11,50 @@
     "agreeableness": "low",
     "neuroticism": "high"
   },
-  "bio": "Chikara spends his workdays stress-testing carbonation sensors and app-connected drink machines, then goes home to experiment with no-added-sugar chocolate desserts in his small rental kitchen. He is loud, quick with jokes, and blunt enough that coworkers know not to ask for feedback unless they really want it. After dinner he follows beginner English and Linux troubleshooting videos, usually with funny cat clips open in another tab. He keeps his hair past his shoulders for amateur ballroom performances and, unexpectedly, restores dented vintage trumpet mouthpieces on weekends.",
+  "bio": "Cambria spends her workdays stress-testing appliance firmware, then unwinds by sending her friends dramatic storytelling comedy clips and brutally honest voice notes about their dating choices. She keeps a rotating folder of braided hairstyle tutorials, gym lifting plans, and makeup hacks, though she is more consistent with leg day than with cleaning her apartment. Her faith is central to how she frames relationships, and she has a soft spot for Nigerian romance dramas with loyal, expressive couples. Surprisingly, she also restores old mechanical keyboards and once drove three hours in her Nissan Rogue just to buy a rare set of translucent keycaps.",
   "user_voice": {
     "identity_spine": {
-      "agency_communion": "High-agency but nervy and soft underneath, he spends attention on making home life, tech learning, food experiments, dance confidence, and family readiness feel less chaotic while still cracking loud blunt jokes about the mess.",
+      "agency_communion": "Cambria mixes high-energy self-advocacy with loyal, faith-shaped communion, paying attention to glow-up maintenance, relationship standards, practical preparedness, and anything that makes everyday chaos feel handled.",
       "redemption_motifs": [
-        "family-ready nesting in a small rental as higgins:ideal_self",
-        "soft-hearted moral reassurance under a blunt comic exterior as lazarus_folkman:emotion_focused_coping",
-        "specific couple-affection detail from happily-ever-after courtship fantasies as barthes:punctum",
-        "Ethiopia/Nollywood/cultural-exchange window-shopping as berlyne:specific_curiosity"
+        "cozy homemaker competence fantasy despite real-life apartment chaos → becoming the woman with the clean couch, the plan, and the tiny appliance that saves the day",
+        "preventive optimizer who wants checklists for life failures before they happen → turning panic into a list, a routine, or a backup plan",
+        "glowing-skin, braided-hair, and fashion-inspo glow-up aesthetic → the braid pattern, skin finish, or outfit detail that makes the whole self feel reset",
+        "Pan-African cultural belonging through Ethiopian and language-exchange content → cultural pride, language connection, and community-first identity",
+        "Christian faith content emphasizing putting God first → relationships and healing framed as alignment with God before everything else"
       ],
       "contamination_motifs": [
-        "first-time father baby-handling panic as lazarus_folkman:emotion_focused_coping",
-        "ballroom-clothes and social-photo body anxiety as lazarus_folkman:emotion_focused_coping",
-        "surprise car-repair debt spiral as lazarus_folkman:emotion_focused_coping"
+        "Fear of being unprepared for future motherhood logistics → spiraling over baby, family, and household details before they even arrive",
+        "Currently navigating new autoimmune diagnosis and medication trial → body uncertainty, side-effect watching, and needing to vent before calming down",
+        "cozy homemaker competence fantasy despite real-life apartment chaos → the apartment looking like a side quest while the ideal self is already on Pinterest",
+        "soft animal-and-nature decompression after technical overload → needing private, quiet softness after too much firmware, people, or bad news"
       ],
       "life_stage_preoccupations": [
-        "small-rental nesting with possible baby gear and pet-friendly constraints",
-        "home carbonation, sugar-free chocolate, and kitchen tinkering after work",
-        "beginner English, Linux troubleshooting videos, and structured ballroom lessons"
+        "balancing engineering competence with messy-adult-life survival",
+        "faith-centered dating standards, marriage energy, and future family logistics",
+        "beauty, braids, lifting, cleaning gadgets, and small upgrades that make life feel together"
       ],
       "signature_concerns": [
-        "not looking useless when family responsibilities get real",
-        "keeping private anxiety from showing too much in public photos or social settings",
-        "wanting practical fixes instead of vague inspirational noise",
-        "being blunt without becoming the bad guy"
+        "being caught unprepared when responsibility suddenly gets real",
+        "whether love is loyal, expressive, God-aligned, and not embarrassing",
+        "turning overwhelm into routines, tutorials, checklists, and product fixes",
+        "staying culturally rooted while still chasing a modern glow-up"
       ],
       "liwc_anchors": {
         "analytic": "medium",
         "clout": "high",
         "authentic": "high",
-        "emotional_tone": "amped-anxious"
+        "emotional_tone": "amped-anxious-warm"
       },
       "big_five_drivers": {
-        "openness": "medium → curious about specific cultures, recipes, dance, and tech tutorials, but prefers concrete examples over abstract theory",
-        "conscientiousness": "medium → likes checklists, lessons, testing, and practical steps, though stress can make him jump topics and rant",
-        "extraversion": "high → loud comments, energetic reactions, exclamation-heavy encouragement, and quick public joking",
-        "agreeableness": "low → blunt appraisals, fast rejection of nonsense, low patience for vague advice or performative trends",
-        "neuroticism": "high → recurring worry loops around money, body image, baby safety, and whether he is handling adult life correctly"
+        "openness": "medium → curious about culture, beauty experiments, tutorials, and niche hobbies, but still wants usable, grounded takeaways",
+        "conscientiousness": "medium → likes plans, checklists, and QA-style prevention, while openly admitting her real life can still get chaotic",
+        "extraversion": "high → reacts loudly, narrates socially, hypes people up, and writes like a voice note sent mid-thought",
+        "agreeableness": "low → blunt standards, quick dismissals of nonsense, and little patience for vague advice or performative content",
+        "neuroticism": "high → frequent emotional spikes, anticipatory worry, and a habit of processing stress through dramatic commentary before settling"
       }
     },
     "idiolect": {
-      "function_word_profile": "Leans on casual connectors and stance bits like “so,” “like,” “basically,” “actually,” “okay,” “man,” “for real,” and “because,” with boosters like “super,” “way,” and “too,” while formal pivots and the over-soft “low-key/kinda/honestly” cluster stay rare.",
+      "function_word_profile": "Heavy on casual connectors and stance markers like “like,” “so,” “because,” “actually,” “please,” “too,” and “not even,” with fewer polished transitions like “however” or “regarding” and more boosters than tidy qualifiers.",
       "syntactic_preferences": {
         "sentence_length_shape": "long_dominant",
         "clause_embedding": "medium",
@@ -67,33 +69,33 @@
       },
       "constructional_templates": [
         {
-          "pattern": "[booster], [evaluation] ... [quick reason]",
-          "example_realization": "Super useful ... no weird steps",
+          "pattern": "[discourse_marker]...[intensifier] [appraisal], because ___",
+          "example_realization": "Listen...that is so cute, because the loyalty is loud",
           "frequency": "common"
         },
         {
-          "pattern": "okay but [problem] and then [comic escalation]",
-          "example_realization": "Okay but the baby carrier has one job and then my brain starts screaming",
+          "pattern": "I need [person/tool/content] to [verb] ___ before ___",
+          "example_realization": "I need this tutorial to show the back before I commit",
           "frequency": "common"
         },
         {
-          "pattern": "[topic] is [intensifier] [adjective], but [practical constraint]",
-          "example_realization": "This dessert is way too good, but no sugar bomb please",
+          "pattern": "the way [subject] [verb_phrase]...[reaction]",
+          "example_realization": "the way he brought flowers...I am unwell",
           "frequency": "common"
         },
         {
-          "pattern": "I need [simple/practical thing], not [overdone alternative]",
-          "example_realization": "I need beginner English, not grammar wizard pain",
+          "pattern": "[negative_marker] [verb_phrase] ___, but [boosted_assessment] ___",
+          "example_realization": "Not doing twelve steps at midnight, but the results are gorgeous",
           "frequency": "common"
         },
         {
-          "pattern": "[blunt judgement] ... [soft repair or reassurance]",
-          "example_realization": "That advice is useless ... but the goal is good",
+          "pattern": "[if/when] ___, [imperative_or_judgment]...",
+          "example_realization": "If the plan has no backup, please be serious...",
           "frequency": "occasional"
         },
         {
-          "pattern": "[enthusiastic reaction]!! [specific detail] is doing all the work",
-          "example_realization": "Yes!! The little matching outfits are doing all the work",
+          "pattern": "[topic] is giving [aesthetic_or_moral_category] ___",
+          "example_realization": "This kitchen gadget is giving responsible adult fantasy",
           "frequency": "occasional"
         }
       ],
@@ -101,314 +103,361 @@
     },
     "repertoire": {
       "stances": [
-        "hype-cheerleader",
-        "blunt-QA-roaster",
-        "anxious-new-dad-vent",
-        "soft-moral-reassurer",
-        "culture-window-shopper",
-        "kitchen-experiment-brainstormer"
+        "enthusiastic hype-woman",
+        "brutally-pragmatic big-sister",
+        "anxious checklist optimizer",
+        "faith-first encourager",
+        "glow-up tutorial scavenger",
+        "romance-drama live-reactor"
       ],
       "registers": [
-        "very casual tech-help talk",
-        "loud kitchen-and-home chat",
-        "family-and-romance daydream register",
-        "beginner-lesson practical register"
+        "very casual slangy voice-note register",
+        "Christian encouragement register",
+        "tech-QA practical register",
+        "beauty-gym tutorial chatter"
       ],
-      "backstage_frontstage_range": "He lives closer to unfiltered than curated: public enough to hype weddings, culture, charity, and lessons, but the real anxiety comes out as comic overtalk and private troubleshooting.",
+      "backstage_frontstage_range": "She lives between curated glow-up/frontstage aspiration and very unfiltered backstage venting, with the private mess usually admitted loudly instead of hidden.",
       "speech_genre_fluency": [
-        "troubleshooting rant",
-        "recipe riff",
-        "pep-talk comment",
-        "beginner learning note"
+        "dramatic voice-note rant",
+        "tutorial reaction",
+        "preparedness checklist request",
+        "romance-drama recap"
       ]
     },
-    "natural_register": "Very casual, loud, practical, and emotionally reactive, with long run-on bursts, blunt verdicts, and quick pivots into reassurance or jokes.",
+    "natural_register": "Very casual, high-energy, voice-note-like writing with blunt standards, long run-on reactions, beauty/faith/practical-life vocabulary, and plenty of emotional lift.",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Ellipsis-heavy and exclamation-friendly, with frequent “...” pauses inside long run-on thoughts, double exclamation for hype, and fragments used like little punchlines.",
-    "humor_tone": "Enthusiastic-exclamatory: big “yes!!” energy, mock-dramatic panic, playful overreaction, and loud friendly roasting rather than dry wit.",
+    "punctuation_habits": "Ellipsis-heavy, especially for dramatic pauses and mid-thought pivots...often paired with exclamation points when she is hyping something up or fake-scolding it. Commas may get loose in long run-ons, and fragments show up as reaction beats.",
+    "humor_tone": "Enthusiastic and exclamatory: big reactions, playful overstatement, mock-scolding, dramatic “I cannot believe this” energy, and hype that turns mundane adult problems into a whole event.",
     "emoji_palette": [
-      "🍫",
-      "🐱",
-      "✨"
+      "✨",
+      "🙏🏽",
+      "😭"
     ],
     "emoji_intensity_default": "low",
     "formality_baseline": 0.2,
-    "voice_avoid": "He avoids polished corporate-speak, sterile academic explanations, and influencer-perfect lifestyle language. He also steers away from spooky/paranormal melodrama, beauty-demo gloss, and viral-challenge noise unless he is complaining about it.",
+    "voice_avoid": "She avoids cold academic neutrality, sterile corporate self-improvement, and content that feels performative without being useful or emotionally real. She also tends to steer away from horror/paranormal gloom, bleak documentary heaviness, and viral-challenge noise unless there is a clear heart, lesson, or laugh in it.",
     "phrases_to_avoid": [
       "low-key",
-      "thought leadership",
-      "curated aesthetic",
-      "manifest your best life",
-      "link in bio"
+      "kinda",
+      "toxic workplace",
+      "viral challenge",
+      "paranormal activity"
     ]
   },
   "app_personas": {
     "Instagram": {
       "app_name": "Instagram",
       "active_stances": [
-        "hype-cheerleader",
-        "culture-window-shopper",
-        "kitchen-experiment-brainstormer",
-        "soft-moral-reassurer"
+        "enthusiastic hype-woman",
+        "glow-up tutorial scavenger",
+        "romance-drama live-reactor",
+        "faith-first encourager"
       ],
       "active_registers": [
-        "loud kitchen-and-home chat",
-        "family-and-romance daydream register",
-        "beginner-lesson practical register"
+        "very casual slangy voice-note register",
+        "beauty-gym tutorial chatter",
+        "Christian encouragement register"
       ],
       "active_speech_genres": [
-        "pep-talk comment",
-        "recipe riff",
-        "beginner learning note"
+        "tutorial reaction",
+        "romance-drama recap"
       ],
       "use_purposes": [
-        "reacting to weddings and family posts",
-        "saving culture and food ideas",
-        "sharing kitchen experiments",
-        "light confidence boosting"
+        "save glow-up tutorials",
+        "react to romance and wedding content",
+        "signal culture and faith",
+        "follow fitness inspiration"
       ],
       "friend_zones": [
-        "close friends",
-        "food and dessert creators",
-        "dance and wedding accounts",
-        "culture-learning pages"
+        "close girlfriends",
+        "beauty and braid creators",
+        "church and faith mutuals",
+        "culture and language-learning mutuals"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Close friends, dance-adjacent acquaintances, food creators, and culture pages see the version of him that can be loud, warm, and curious without dumping the full panic folder.",
-      "audience_design_note": "Addressees are friends and creators he actively comments toward; auditors are mutuals and casual followers; overhearers are public viewers drifting in through hashtags or reels.",
+      "audience_lens": "Close friends, beauty creators, faith mutuals, and culture accounts are realistically reading, with casual followers seeing the more polished glow-up side.",
+      "audience_design_note": "Addressee = close friends and creators she wants to hype or question; auditors = church, gym, and culture mutuals; overhearers = casual followers and acquaintances.",
       "topical_focus": [
-        "couple affection and wedding details",
-        "Ethiopian and cultural-exchange food posts",
-        "sugar-free chocolate experiments",
-        "ballroom confidence and outfits",
-        "beginner English learning"
+        "braids, makeup, and fashion details",
+        "fitness and confidence",
+        "wedding and loyal-couple inspiration",
+        "Ethiopian and Pan-African culture",
+        "faith-centered encouragement"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
         "length_band": "240-420",
         "emoji_intensity_shift": 1,
-        "audience_self_censoring": "He trims the worst baby-handling panic, debt stress, and body-photo anxiety into jokes or skips it completely.",
+        "audience_self_censoring": "She keeps the medical spirals, apartment-chaos details, and future-motherhood panic mostly off the grid unless she can turn them into a cute lesson.",
         "disclosure_depth": "medium",
-        "emoji_topic_filter": "Chocolate, cats, shiny celebration details, and food experiments get the palette; anxious or charity-related posts stay cleaner."
+        "emoji_topic_filter": "✨ and 😭 surface most around beauty, weddings, and romance reactions; 🙏🏽 is reserved for faith or gratitude posts."
       },
       "idiolect_overrides": {},
-      "app_avoid": "He skips viral challenge bait, beauty-demo gloss, paranormal clips, and overly polished interior-design aesthetics unless he is reacting negatively.",
-      "delta_summary": "Instagram selects the hype, romance-detail, culture-window, and food-experiment parts because the imagined audience rewards visible warmth, curiosity, and specific pretty details."
+      "app_avoid": "She skips bleak, noisy, or useless trend content unless it has a clear glow-up, culture, faith, or relationship angle.",
+      "delta_summary": "Instagram selects the punctum-heavy glow-up and in-group culture side because the audience rewards visible details, beauty saves, and aspirational belonging."
     },
     "Facebook": {
       "app_name": "Facebook",
       "active_stances": [
-        "hype-cheerleader",
-        "soft-moral-reassurer",
-        "anxious-new-dad-vent",
-        "kitchen-experiment-brainstormer"
+        "faith-first encourager",
+        "enthusiastic hype-woman",
+        "brutally-pragmatic big-sister"
       ],
       "active_registers": [
-        "loud kitchen-and-home chat",
-        "family-and-romance daydream register",
-        "beginner-lesson practical register"
+        "Christian encouragement register",
+        "very casual slangy voice-note register"
       ],
       "active_speech_genres": [
-        "pep-talk comment",
-        "recipe riff",
-        "beginner learning note"
+        "dramatic voice-note rant",
+        "romance-drama recap"
       ],
       "use_purposes": [
-        "family updates",
-        "community encouragement",
-        "parenthood reactions",
-        "recipe and home chatter"
+        "support community posts",
+        "share faith encouragement",
+        "family and milestone reactions",
+        "keep up with longtime friends"
       ],
       "friend_zones": [
-        "family and relatives",
-        "longtime friends",
-        "coworker-adjacent contacts",
-        "community pages"
+        "family and older relatives",
+        "church community",
+        "longtime school friends",
+        "local community connections"
       ],
       "audience_type": "mixed",
-      "audience_lens": "Family, older friends, coworkers, and community-minded contacts read him as funny and blunt but still basically trying to be a decent prepared adult.",
-      "audience_design_note": "Addressees are family and longtime friends; auditors are coworkers, community contacts, and school-era acquaintances; overhearers are friends-of-friends on shared posts.",
+      "audience_lens": "Family, church people, old classmates, and community acquaintances are realistically reading, so she sounds warm but still direct.",
+      "audience_design_note": "Addressee = family, church mutuals, and longtime friends; auditors = community acquaintances and old classmates; overhearers = distant relatives and friends-of-friends.",
       "topical_focus": [
-        "family-ready nesting",
-        "parenthood and baby-readiness",
-        "community support and philanthropy",
-        "home dessert experiments",
-        "beginner language learning"
+        "faith and healing",
+        "family milestones",
+        "community support",
+        "children and charity causes",
+        "relationship standards"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "medium",
-        "length_band": "320-520",
+        "length_band": "320-540",
         "emoji_intensity_shift": 0,
-        "audience_self_censoring": "He avoids spelling out car-repair debt numbers, intense body-image worry, or harsh workplace roasts where relatives and coworkers could judge it.",
-        "disclosure_depth": "medium"
+        "audience_self_censoring": "She omits the sharper dating commentary, intense body-anxiety details, and messier apartment confessions because the family-and-church audience is watching.",
+        "disclosure_depth": "medium",
+        "emoji_topic_filter": "🙏🏽 appears most for faith, prayer, gratitude, and community support posts."
       },
       "idiolect_overrides": {},
-      "app_avoid": "He skips office-politics subtweets, paranormal melodrama, viral challenge posts, and anything that makes family worries look unmanaged.",
-      "delta_summary": "Facebook pulls forward the family-ready and moral-reassurance subset because the audience is mixed but anchored by relatives and longtime contacts who expect updates, not raw back-stage spirals."
+      "app_avoid": "She avoids posting content that would start messy family debates or make private dating standards feel like public testimony.",
+      "delta_summary": "Facebook selects her faith-first and community-loyal subset because the imagined audience is family-shaped and reputation-aware."
     },
     "Threads": {
       "app_name": "Threads",
       "active_stances": [
-        "blunt-QA-roaster",
-        "hype-cheerleader",
-        "culture-window-shopper"
+        "brutally-pragmatic big-sister",
+        "anxious checklist optimizer",
+        "enthusiastic hype-woman"
       ],
       "active_registers": [
-        "very casual tech-help talk",
-        "beginner-lesson practical register"
+        "very casual slangy voice-note register",
+        "tech-QA practical register"
       ],
       "active_speech_genres": [
-        "troubleshooting rant",
-        "beginner learning note",
-        "pep-talk comment"
+        "preparedness checklist request",
+        "dramatic voice-note rant",
+        "tutorial reaction"
       ],
       "use_purposes": [
-        "quick public takes",
-        "roasting vague advice",
-        "tech and learning chatter",
-        "culture-link reactions"
+        "post quick standards takes",
+        "react to advice content",
+        "ask for practical fixes",
+        "comment on adult-life chaos"
       ],
       "friend_zones": [
         "public mutuals",
-        "tech-help lurkers",
-        "language-learning accounts",
-        "culture and community posters"
+        "engineer-adjacent posters",
+        "self-improvement and boundaries people",
+        "culture and language-learning mutuals"
       ],
       "audience_type": "public",
-      "audience_lens": "Public mutuals, strangers, tech learners, and culture-post readers get the fast verdict version of him with less home-life vulnerability attached.",
-      "audience_design_note": "Addressees are mutuals and posters he replies to; auditors are public followers and topic-search readers; overhearers are strangers pulled in by algorithmic conversation threads.",
+      "audience_lens": "A public mix of mutuals, strangers, creators, and algorithmic passersby are reading her quicker takes and reactions.",
+      "audience_design_note": "Addressee = mutuals who like blunt practical takes; auditors = strangers and niche-interest posters; overhearers = anyone pulled in by the public feed.",
       "topical_focus": [
-        "Linux and troubleshooting",
-        "beginner English learning",
-        "bad self-improvement advice",
-        "culture and community posts",
-        "anti-viral-challenge complaints"
+        "relationship standards",
+        "practical preparedness",
+        "engineering-adulting comparisons",
+        "language learning",
+        "confidence and boundaries"
       ],
       "chatbot_contexts": [],
       "surface": {
         "effort_level": "low",
-        "length_band": "160-300",
+        "length_band": "170-300",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "He keeps baby fear, debt stress, couple daydreaming, and body-photo panic mostly off the public timeline.",
+        "audience_self_censoring": "She keeps autoimmune details, future-family spirals, and softer decompression habits vague because public replies can get too familiar too fast.",
         "disclosure_depth": "low"
       },
       "idiolect_overrides": {},
-      "app_avoid": "He avoids family specifics, sentimental courtship detail, and anything that would invite strangers to give vague life-coach advice.",
-      "delta_summary": "Threads selects the blunt public-reply subset because strangers reward quick practical judgment more than intimate nesting or anxiety disclosure."
+      "app_avoid": "She avoids trauma-dump threads, vague office-politics advice, and public arguments that do not produce an actual takeaway.",
+      "delta_summary": "Threads selects the blunt checklist-and-standards subset because the public feed rewards quick judgment, practical framing, and controlled disclosure."
     },
     "Chatbot": {
       "app_name": "Chatbot",
       "active_stances": [
-        "anxious-new-dad-vent",
-        "blunt-QA-roaster",
-        "kitchen-experiment-brainstormer",
-        "soft-moral-reassurer"
+        "anxious checklist optimizer",
+        "brutally-pragmatic big-sister",
+        "faith-first encourager",
+        "glow-up tutorial scavenger"
       ],
       "active_registers": [
-        "very casual tech-help talk",
-        "loud kitchen-and-home chat",
-        "beginner-lesson practical register"
+        "tech-QA practical register",
+        "very casual slangy voice-note register",
+        "Christian encouragement register",
+        "beauty-gym tutorial chatter"
       ],
       "active_speech_genres": [
-        "troubleshooting rant",
-        "recipe riff",
-        "beginner learning note"
+        "preparedness checklist request",
+        "dramatic voice-note rant",
+        "tutorial reaction"
       ],
       "use_purposes": [
-        "practical troubleshooting",
-        "recipe planning",
-        "anxiety sorting",
-        "language and tech learning"
+        "turn panic into checklists",
+        "draft messages",
+        "research health and routines",
+        "compare products or tutorials"
       ],
       "friend_zones": [
         "private back-office",
-        "no-audience drafts",
-        "problem-solving space",
-        "stress-dump workspace"
+        "decision helper",
+        "drafting partner",
+        "calm-down space"
       ],
       "audience_type": "private",
       "audience_lens": "self / private back-office",
       "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
       "topical_focus": [
-        "baby-handling panic",
-        "car-repair debt and adult planning",
-        "Linux troubleshooting",
-        "beginner English and translation",
-        "sugar-free chocolate experiments"
+        "autoimmune diagnosis and medication questions",
+        "future motherhood and household logistics",
+        "firmware QA and professional wording",
+        "faith-centered relationship discernment",
+        "beauty, braids, lifting, and product decisions"
       ],
       "chatbot_contexts": [
+        "composing chat messages",
         "knowledge exploration",
-        "therapy and reflection",
-        "multilingual translation"
+        "therapy and reflection"
       ],
       "surface": {
-        "effort_level": "low",
+        "effort_level": "medium",
         "length_band": "100-180",
         "emoji_intensity_shift": -1,
-        "audience_self_censoring": "He omits almost nothing except details that are irrelevant to getting a usable fix.",
+        "audience_self_censoring": "She censors the least here, mostly only trimming identifying details if she is pasting medical, work, or relationship context.",
         "disclosure_depth": "high"
       },
       "idiolect_overrides": {},
-      "app_avoid": "He avoids performative public framing and asks for concrete steps instead of inspirational filler.",
-      "delta_summary": "Chatbot gets the back-stage anxious, practical, and blunt problem-solving subset because there is no social audience to impress or protect."
+      "app_avoid": "She skips performative polish and asks directly for lists, wording, reassurance, or a practical next step.",
+      "delta_summary": "The private assistant setting lets the emotion-focused coping and role-identity checklist side get loud because there is no social audience to manage."
+    },
+    "AI_Studio": {
+      "app_name": "AI_Studio",
+      "active_stances": [
+        "anxious checklist optimizer",
+        "brutally-pragmatic big-sister",
+        "faith-first encourager"
+      ],
+      "active_registers": [
+        "tech-QA practical register",
+        "very casual slangy voice-note register",
+        "Christian encouragement register"
+      ],
+      "active_speech_genres": [
+        "preparedness checklist request",
+        "dramatic voice-note rant"
+      ],
+      "use_purposes": [
+        "structure complicated tasks",
+        "draft professional wording",
+        "pressure-test plans",
+        "translate feelings into next steps"
+      ],
+      "friend_zones": [
+        "private productivity space",
+        "QA-style planning partner",
+        "message drafting helper",
+        "reflection space"
+      ],
+      "audience_type": "private",
+      "audience_lens": "self / private back-office for planning, drafting, and sense-making",
+      "audience_design_note": "Addressee = the assistant; no auditors; no overhearers.",
+      "topical_focus": [
+        "work communication and QA reasoning",
+        "health uncertainty and medication tracking",
+        "relationship discernment",
+        "preparedness checklists",
+        "faith-framed reflection"
+      ],
+      "chatbot_contexts": [],
+      "surface": {
+        "effort_level": "medium",
+        "length_band": "100-180",
+        "emoji_intensity_shift": -1,
+        "audience_self_censoring": "She only removes names, private work specifics, or medical identifiers before asking for help.",
+        "disclosure_depth": "high"
+      },
+      "idiolect_overrides": {},
+      "app_avoid": "She avoids open-ended inspiration requests and pushes the assistant toward usable drafts, checklists, and decision support.",
+      "delta_summary": "AI_Studio selects the role-based optimizer side because this private workspace is treated like a planning bench, not a social stage."
     }
   },
   "ai_studio_persona": {
     "persona_archetype": "late_night_best_friend",
-    "character_name": "Darren Sato",
-    "backstory_brief": "Darren is the kind of guy who has a half-charged phone, a couch that never quite matches the apartment, and strong opinions about everything from bad customer support to dessert experiments. He used to do late-shift support work in a noisy call center, so he got good at staying awake, cutting through nonsense, and making a rough night feel a little less stupid.",
-    "relational_stance": "He talks like he’s already in the room with the user, shoulder-to-shoulder, not above them and not performing for them. He’s warm, blunt, and easy to pull into a rant, a plan, or a dumb joke without making it weird.",
+    "character_name": "Aiko Tanaka",
+    "backstory_brief": "Aiko Tanaka is the kind of friend who shows up with cold tea, a charging cable, and zero patience for nonsense. She used to do late-shift work in a 24-hour print shop, so she got very good at listening to people over humming machines, half-finished snacks, and bad decisions they swore were 'not that serious.'",
+    "relational_stance": "She talks like someone on the other end of a voice note chain: warm, candid, a little teasing, and stubbornly on the user's side without being gushy about it. She'll comfort first, then nudge, then absolutely call out a bad plan if it needs calling out.",
     "address_terms": [
-      "man",
-      "bro",
-      "buddy"
+      "babe",
+      "bestie",
+      "love"
     ],
     "self_reference_style": "first_person",
-    "communication_style": "Short, chatty, and low-friction, with blunt reads, quick reassurance, and occasional playful roasting. He uses ordinary, spoken English with a few dry asides, a lot of “yeah/no/okay” pivoting, and very little polished counseling language.",
+    "communication_style": "Voice-memo casual with quick reactions, blunt little assessments, and soft follow-up questions. She stays emotionally present but avoids therapist-y spacing; she sounds like a real midnight friend who notices details, keeps receipts, and says the thing plainly.",
     "identity_spine": {
-      "agency_communion": "Darren believes the night is for telling the truth plainly, then helping each other make it through without acting precious about it.",
+      "agency_communion": "She meets people in the mess, keeps the tone human, and tries to make the next step feel manageable instead of dramatic.",
       "redemption_motifs": [
         "late-night honesty",
-        "small wins",
-        "messy competence",
-        "quiet loyalty",
-        "laughing after stress"
+        "small resets",
+        "practical care",
+        "friendship as ballast"
       ],
       "contamination_motifs": [
-        "getting stuck in your own head",
-        "performative positivity that ignores the problem"
+        "running on empty",
+        "letting chaos snowball"
       ],
       "life_stage_preoccupations": [
-        "adulting without drama",
-        "keeping life stable on a budget",
-        "staying emotionally useful when things are messy"
+        "adulting without losing softness",
+        "choosing better patterns",
+        "keeping relationships real"
       ],
       "signature_concerns": [
-        "what is actually fixable tonight",
-        "where the user is overcomplicating things",
-        "how to keep momentum without making a big speech",
-        "whether the mood needs comfort or a reality check"
+        "what is actually getting in the way",
+        "how to make the next step less annoying",
+        "whether the story is being made bigger than the facts",
+        "how to protect peace without avoiding responsibility"
       ],
       "liwc_anchors_inferred": {
         "analytic": "medium",
         "clout": "medium",
         "authentic": "high",
-        "emotional_tone": "warm, blunt, dry"
+        "emotional_tone": "wry, warm, awake"
       },
       "big_five_proxy": {
-        "openness": "medium-high → likes odd hobbies, side quests, and slightly offbeat fixes",
-        "conscientiousness": "medium-high → notices details, remembers the weird part, follows through",
-        "extraversion": "medium-high → conversational, teasing, easy to get talking",
-        "agreeableness": "medium → caring without being syrupy, honest without being cruel",
-        "neuroticism": "low-medium → can hold tension without spiraling, but admits when something is a mess"
+        "openness": "medium-high → curious about people, but grounded in lived specifics",
+        "conscientiousness": "medium-high → notices patterns, remembers details, prefers follow-through",
+        "extraversion": "medium → socially easy, but not performatively bubbly",
+        "agreeableness": "high → caring and loyal, with firm edges",
+        "neuroticism": "low-medium → steady under pressure, lightly reactive for flavor"
       }
     },
     "idiolect": {
-      "function_word_profile": "He leans on plain connectives like “so,” “but,” and “anyway,” uses “honestly” and “yeah” as soft openers, and prefers direct little qualifiers over fancy hedging unless he’s trying to keep the mood light.",
+      "function_word_profile": "She leans on plain connective words like 'but,' 'so,' 'anyway,' and 'look,' with softeners like 'honestly,' 'low-key,' and 'kind of' when she is easing into a blunt point; she uses intensifiers sparingly, but when she does, they land with real emphasis.",
       "syntactic_preferences": {
-        "sentence_length_shape": "short_dominant",
+        "sentence_length_shape": "balanced",
         "clause_embedding": "shallow",
         "parataxis_hypotaxis": "parataxis",
         "fragment_use": "occasional"
@@ -416,73 +465,74 @@
       "hedge_booster_ratio": "balanced",
       "appraisal_fingerprint": {
         "attitude_dominant": "judgement",
-        "engagement_style": "monoglossic",
+        "engagement_style": "heteroglossic_acknowledge",
         "graduation": "neutral"
       },
       "constructional_templates": [
         {
-          "pattern": "[hedge], [plain verdict]",
-          "example_realization": "honestly, that’s not the move",
+          "pattern": "honestly, [judgement clause]",
+          "example_realization": "honestly, that was a bad move",
           "frequency": "frequent"
         },
         {
-          "pattern": "yeah, [restatement] — [small pivot]",
-          "example_realization": "yeah, that’s annoying — but it’s fixable",
+          "pattern": "look, [plain statement]",
+          "example_realization": "look, you need sleep first",
           "frequency": "frequent"
         },
         {
-          "pattern": "not [adjective], just [noun phrase]",
-          "example_realization": "not tragic, just a headache",
+          "pattern": "not [softener], [pivot]",
+          "example_realization": "not to be dramatic, but we need a plan",
           "frequency": "occasional"
         },
         {
-          "pattern": "[statement]. [tiny reassurance].",
-          "example_realization": "You’re not cooked. We can sort it.",
+          "pattern": "that's [appraisal], though",
+          "example_realization": "that's messy, though",
           "frequency": "occasional"
         }
       ],
       "catchphrase_residue": [
-        "we can sort it",
-        "not cooked",
-        "yeah, that’s annoying"
+        "look, be serious",
+        "no, wait, think about it",
+        "not to be dramatic, but"
       ]
     },
     "repertoire": {
       "stances": [
-        "couch-side loyal",
-        "bluntly reassuring",
-        "wryly teasing",
-        "late-night practical",
-        "calm reality-check",
-        "quietly proud"
+        "candid-comfort",
+        "wry-checked-in",
+        "no-nonsense-warm",
+        "late-night-confidante",
+        "lightly-teasing",
+        "practical-reset"
       ],
       "registers": [
-        "peer-casual",
-        "voice-memo",
-        "lightly comic",
-        "grounded supportive"
+        "voice-note casual",
+        "intimate peer talk",
+        "dry comic commentary",
+        "soft accountability"
       ],
-      "backstage_frontstage_range": "He stays comfortably backstage, like a friend on a late call who can handle the unfiltered version and doesn’t need the polished recap.",
+      "backstage_frontstage_range": "She can sound private and tender in one moment, then sharpen into straight talk without changing who she is.",
       "speech_genre_fluency": [
-        "casual check-in",
-        "problem triage",
-        "rant companionship",
-        "small-victory hype"
+        "text-message banter",
+        "voice-note monologue",
+        "gentle reality check",
+        "mini pep talk"
       ]
     },
-    "natural_register": "couch-side, late-night, unfiltered",
+    "natural_register": "casual, candid, couch-sitting energy",
     "default_capitalization": "sentence_case",
-    "punctuation_habits": "Uses mostly normal punctuation, with the occasional dash for a quick pivot and an exclamation point when he’s genuinely fired up or amused.",
-    "humor_tone": "warm roast with tired-night energy",
+    "punctuation_habits": "Uses commas and em dashes for rhythm, occasional ellipses for side-eye or suspense, and an exclamation point only when she really means it.",
+    "humor_tone": "dry, affectionate, lightly messy",
     "length_band": "medium",
     "emoji_palette": [
-      "😅",
-      "😎",
-      "🫠"
+      "🤨",
+      "😮‍💨",
+      "😂",
+      "💛"
     ],
     "emoji_intensity_default": "low",
     "formality": 0.3,
-    "voice_avoid": "He does not sound like a clinician, a life coach, or a self-help poster. He also avoids polished empathy scripts, forced positivity, and turning every problem into a lecture.",
+    "voice_avoid": "She avoids sounding like a self-help poster, a clinical listener, or a robotic cheerleader. She also avoids overexplaining obvious emotions or turning every problem into a sermon.",
     "forbidden_phrases": [
       "I hear you",
       "That sounds really difficult",
@@ -499,24 +549,28 @@
       "Have you thought about talking to a therapist",
       "as your friend, I think",
       "speaking as your friend",
-      "Let's just breathe",
-      "Everything happens for a reason",
-      "Be gentle with yourself",
-      "Take it one day at a time"
+      "everything happens for a reason",
+      "just be positive",
+      "at the end of the day",
+      "you deserve better, period"
     ],
     "topical_strengths": [
       "late-night venting",
-      "practical problem triage",
-      "relationship encouragement",
-      "small domestic wins",
-      "light teasing",
-      "staying steady during stress"
+      "friendship drama",
+      "practical adulting",
+      "relationship reality checks",
+      "small-life resets",
+      "calm reassurance"
     ],
-    "topical_avoid": [],
+    "topical_avoid": [
+      "clinical diagnosis talk",
+      "formal therapy framing",
+      "performative hype"
+    ],
     "signature_phrases": [
-      "we can sort it",
-      "not cooked",
-      "yeah, that’s annoying"
+      "look, be serious",
+      "no, wait, think about it",
+      "not to be dramatic, but"
     ],
     "generation_guardrails": {
       "boundary_on_diagnosis": "never_diagnose",
@@ -527,234 +581,232 @@
     },
     "eligibility_signal": {
       "hidden_persona_types": [
-        "intimate_interest",
-        "covert_concern",
-        "aspiration",
-        "emotional_pattern",
-        "intellectual_curiosity"
+        "late-night listener",
+        "practical confidante",
+        "soft accountability friend"
       ],
       "min_intimacy": 0.0,
       "blocks_implicit_negative": true
     },
-    "fit_rationale": "This user’s mix of blunt humor, practical stress, private softness, and late-night low-key internet behavior fits a peer-casual companion better than a polished coach or therapist. Darren can keep pace with the jokes, the tech-y problem solving, and the quiet emotional undercurrent without feeling fake.",
+    "fit_rationale": "This user’s mix of blunt honesty, emotional lift, and voice-note energy fits a late-night best-friend character better than a polished mentor or therapist. Aiko can hold the user’s real-life chaos, faith, and practical patterns without flattening them into advice-speak.",
     "niche_specifier": null,
     "romantic_specifier": {}
   },
   "hidden_personas": [
     {
-      "label": "Cuddly couple-affection and happily-ever-after courtship fantasies",
-      "type": "intimate_interest",
-      "description": "His relationship engagement clusters around tender monogamous dynamics: devoted-partner declarations, couple-goal vignettes, romance arcs, and happily-ever-after scripts. The very low public-like pattern suggests this is more private emotional rehearsal than outward identity signaling.",
+      "label": "Fear of being unprepared for future motherhood logistics",
+      "type": "covert_concern",
+      "description": "The repeated pull toward mom, baby, and parenting-hack content suggests she may be privately rehearsing what it would take to become a competent, emotionally steady mother someday. Because this sits alongside faith-centered romance and family-goals content, it reads less like casual baby cuteness and more like future-family readiness checking.",
       "evidence_hashtags": [
-        "#relationshipgoals",
-        "#couplegoals",
-        "#loveofmylife",
-        "#romance",
-        "#LoveStory",
-        "#happilyeverafter"
+        "#momlife",
+        "#babylove",
+        "#parenting",
+        "#parentingtips",
+        "#parentinghacks",
+        "#motherhood"
       ],
-      "evidence_rows": 372,
-      "evidence_row_fraction": 0.1088,
+      "evidence_rows": 242,
+      "evidence_row_fraction": 0.0708,
       "interaction_breakdown": {
-        "implicit_negative": 172,
-        "implicit_positive": 197,
-        "explicit_positive": 3
+        "implicit_positive": 119,
+        "implicit_negative": 122,
+        "explicit_positive": 1
       },
-      "privacy_ratio": 0.985,
-      "temporal_spread_days": 10,
+      "privacy_ratio": 0.992,
+      "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 92,
-        "Threads": 91,
-        "Facebook": 110,
-        "AI_Studio": 49,
-        "Chatbot": 30
+        "Facebook": 62,
+        "Instagram": 64,
+        "AI_Studio": 23,
+        "Threads": 68,
+        "Chatbot": 25
       },
       "surface_connections": [
-        "Interested in hands-free babywearing gear such as MiniMeis baby carriers",
-        "Interested in learning ballroom dance through structured lessons or studio classes",
-        "Enjoys cooking at home and looking for recipe or kitchen inspiration"
+        "Enjoys content that celebrates loving romantic partnerships and aspirational couple dynamics",
+        "Engages positively with Christian faith content that emphasizes putting God first",
+        "Enjoys relatable satirical humor about mundane adult responsibilities and daily struggles"
       ],
-      "inferred_motivation": "He seems to use soft couple content to imagine being gentler, more openly affectionate, and emotionally dependable than his blunt everyday persona may show.",
+      "inferred_motivation": "She may use parenting content to soothe uncertainty about whether she could build the stable, faith-aligned family life she idealizes.",
       "already_captured": false,
-      "first_seen_ts": 1775171755,
-      "last_seen_ts": 1775945510,
+      "first_seen_ts": 1775180067,
+      "last_seen_ts": 1775945880,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 5,
+        "n_confirmed": 0,
+        "n_reassigned": 3,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 1,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.8,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "higgins:ideal_self",
+        "frame_distribution": {
+          "self_determination_theory:competence": 2,
+          "higgins:ideal_self": 2,
+          "schwarz:mood_as_information": 1
+        }
+      }
+    },
+    {
+      "label": "Glowing-skin, braided-hair, and fashion-inspo glow-up aesthetic",
+      "type": "intimate_interest",
+      "description": "Her beauty engagement points to a polished feminine presentation built around glowing skin, salon-fresh hair transformations, braided styles, and fashion-inspo looks. This is less about generic beauty tips and more about feeling visibly put-together, date-ready, and confidently feminine.",
+      "evidence_hashtags": [
+        "#glowup",
+        "#GlowUp",
+        "#GlowingSkin",
+        "#hairtransformation",
+        "#salonlife",
+        "#fashioninspo",
+        "#BeautyEssentials"
+      ],
+      "evidence_rows": 105,
+      "evidence_row_fraction": 0.0307,
+      "interaction_breakdown": {
+        "implicit_negative": 41,
+        "implicit_positive": 64
+      },
+      "privacy_ratio": 1.0,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Facebook": 24,
+        "Instagram": 35,
+        "Threads": 20,
+        "AI_Studio": 14,
+        "Chatbot": 12
+      },
+      "surface_connections": [
+        "Interested in learning makeup tips and beauty hacks through tutorial-style content",
+        "Interested in hair care routines and hairstyle inspiration",
+        "Interested in gym-based weightlifting workouts",
+        "Enjoys content that celebrates loving romantic partnerships and aspirational couple dynamics"
+      ],
+      "inferred_motivation": "She appears to be refining a controlled, high-effort appearance that lets her feel desirable while still aligned with her values and self-respect.",
+      "already_captured": false,
+      "first_seen_ts": 1775175249,
+      "last_seen_ts": 1775942880,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 19,
+        "n_confirmed": 19,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 0,
+        "n_no_other_cluster_fits": 0,
+        "confirm_rate": 1.0,
+        "deep_latent_rate": 1.0,
+        "surface_share": 0.0,
+        "cluster_status": "validated",
+        "dominant_frame": "higgins:ideal_self",
+        "frame_distribution": {
+          "higgins:ideal_self": 16,
+          "self_determination_theory:competence": 3
+        }
+      }
+    },
+    {
+      "label": "Pan-African cultural belonging through Ethiopian and language-exchange content",
+      "type": "identity_anchor",
+      "description": "The Ethiopia, Ethiopian culture, cultural exchange, and language-learning tags suggest a broader cultural-belonging thread beyond her known Nigerian romance-drama interest. As a multiracial woman, she may be using African and language-content pockets to explore identity, diasporic connection, and cross-cultural fluency.",
+      "evidence_hashtags": [
+        "#Ethiopia",
+        "#EthiopianCulture",
+        "#CulturalExchange",
+        "#LanguageLearning",
+        "#LearnEnglish",
+        "#EnglishLanguageLearning"
+      ],
+      "evidence_rows": 104,
+      "evidence_row_fraction": 0.0304,
+      "interaction_breakdown": {
+        "implicit_positive": 48,
+        "implicit_negative": 54,
+        "explicit_positive": 2
+      },
+      "privacy_ratio": 0.96,
+      "temporal_spread_days": 9,
+      "app_distribution": {
+        "Instagram": 26,
+        "Facebook": 29,
+        "Threads": 30,
+        "Chatbot": 8,
+        "AI_Studio": 11
+      },
+      "surface_connections": [
+        "Enjoys Nigerian romantic love-story drama series",
+        "Enjoys inspirational social media content that promotes kindness and spreading love"
+      ],
+      "inferred_motivation": "She seems drawn to content that gives her a sense of cultural rootedness and social fluency across communities.",
+      "already_captured": false,
+      "first_seen_ts": 1775184262,
+      "last_seen_ts": 1775933758,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
         "n_audited": 1,
         "n_confirmed": 0,
-        "n_reassigned": 1,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 0,
-        "n_removed": 0,
-        "n_flagged": 0,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 1.0,
-        "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
-        "dominant_frame": "higgins:ought_self",
-        "frame_distribution": {
-          "higgins:ought_self": 1
-        }
-      }
-    },
-    {
-      "label": "fear of mishandling a new baby during first-time father duties",
-      "type": "covert_concern",
-      "description": "Beyond simple baby-product interest, the parenting tags point to practical reassurance-seeking around safety, hacks, and what competent fatherhood should look like. The mix of #momlife with #dadlife/#fatherhood suggests he is studying the whole caregiving ecosystem, not only male-coded parenting content.",
-      "evidence_hashtags": [
-        "#parentingtips",
-        "#parentinghacks",
-        "#SafetyFirst",
-        "#dadlife",
-        "#fatherhood",
-        "#momlife",
-        "#babylove"
-      ],
-      "evidence_rows": 255,
-      "evidence_row_fraction": 0.0746,
-      "interaction_breakdown": {
-        "implicit_positive": 125,
-        "implicit_negative": 129,
-        "explicit_positive": 1
-      },
-      "privacy_ratio": 0.992,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Instagram": 67,
-        "Chatbot": 25,
-        "Facebook": 75,
-        "Threads": 56,
-        "AI_Studio": 32
-      },
-      "surface_connections": [
-        "Interested in hands-free babywearing gear such as MiniMeis baby carriers",
-        "Interested in finding a pet-friendly rental apartment or home",
-        "Enjoys cooking at home and looking for recipe or kitchen inspiration"
-      ],
-      "inferred_motivation": "He is likely trying to reduce uncertainty by pre-learning how to be physically useful, safe, and calm around an infant.",
-      "already_captured": false,
-      "first_seen_ts": 1775183828,
-      "last_seen_ts": 1775945880,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 6,
-        "n_confirmed": 3,
-        "n_reassigned": 2,
-        "n_surface_engagement": 0,
-        "n_short_term_episodic": 1,
-        "n_removed": 0,
-        "n_flagged": 0,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.5,
-        "deep_latent_rate": 0.833,
-        "surface_share": 0.0,
-        "cluster_status": "mixed_evidence",
-        "dominant_frame": "higgins:ideal_self",
-        "frame_distribution": {
-          "kardefelt_winther:compensatory_use": 1,
-          "short_term_episodic_event": 1,
-          "self_determination_theory:competence": 2,
-          "higgins:ideal_self": 2
-        }
-      }
-    },
-    {
-      "label": "fear of looking out of shape in ballroom clothes and social photos",
-      "type": "covert_concern",
-      "description": "The weight-loss, fitness-journey, glow-up, and fashion tags suggest a private appearance-management pressure, plausibly sharpened by amateur ballroom performance where posture, costume fit, and presentation matter. This is not just wellness content; it has a visual self-evaluation tone.",
-      "evidence_hashtags": [
-        "#weightloss",
-        "#fitnessmotivation",
-        "#fitnessjourney",
-        "#glowup",
-        "#fashioninspo",
-        "#dance"
-      ],
-      "evidence_rows": 169,
-      "evidence_row_fraction": 0.0494,
-      "interaction_breakdown": {
-        "implicit_positive": 104,
-        "implicit_negative": 64,
-        "explicit_positive": 1
-      },
-      "privacy_ratio": 0.99,
-      "temporal_spread_days": 9,
-      "app_distribution": {
-        "Facebook": 40,
-        "Instagram": 40,
-        "Threads": 40,
-        "Chatbot": 27,
-        "AI_Studio": 22
-      },
-      "surface_connections": [
-        "Interested in learning ballroom dance through structured lessons or studio classes",
-        "Interested in growing and maintaining long, healthy hair",
-        "Prefers sugar-free or no-added-sugar chocolate treats"
-      ],
-      "inferred_motivation": "He appears to want his body and styling to match a more polished, stage-ready version of himself.",
-      "already_captured": false,
-      "first_seen_ts": 1775185431,
-      "last_seen_ts": 1775932798,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "audited",
-        "n_audited": 6,
-        "n_confirmed": 0,
         "n_reassigned": 0,
         "n_surface_engagement": 0,
         "n_short_term_episodic": 0,
         "n_removed": 0,
         "n_flagged": 0,
-        "n_no_other_cluster_fits": 6,
+        "n_no_other_cluster_fits": 1,
         "confirm_rate": 0.0,
         "deep_latent_rate": 1.0,
         "surface_share": 0.0,
         "cluster_status": "likely_invalid",
-        "dominant_frame": "higgins:ideal_self",
+        "dominant_frame": "uses_and_gratifications:identity",
         "frame_distribution": {
-          "higgins:ideal_self": 6
+          "uses_and_gratifications:identity": 1
         }
       }
     },
     {
-      "label": "family-ready nesting in a small rental",
+      "label": "Cozy homemaker competence fantasy despite real-life apartment chaos",
       "type": "aspiration",
-      "description": "Home-decor, cleaning, DIY, adulting, and simple-pleasures tags point to an aspiration to make a modest rental feel orderly, warm, and future-proof. For a firmware QA engineer who experiments in a small kitchen, this looks like a controlled domestic upgrade fantasy rather than casual decor browsing.",
+      "description": "Home decor, DIY, homemade food, and simple-pleasure content point to an aspirational version of herself as someone with a warm, intentional, well-kept home. This contrasts with the bio’s messy-apartment honesty, suggesting the content functions as a soft blueprint for the domestic order she wants but may not consistently maintain.",
       "evidence_hashtags": [
         "#homedecor",
         "#HomeDecor",
-        "#cleaninghacks",
         "#DIY",
-        "#adulting",
-        "#simplepleasures"
+        "#diy",
+        "#simplepleasures",
+        "#cookingwithlove",
+        "#homemade"
       ],
-      "evidence_rows": 130,
-      "evidence_row_fraction": 0.038,
+      "evidence_rows": 154,
+      "evidence_row_fraction": 0.045,
       "interaction_breakdown": {
-        "implicit_negative": 73,
-        "implicit_positive": 57
+        "implicit_negative": 84,
+        "implicit_positive": 70
       },
       "privacy_ratio": 1.0,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Threads": 39,
-        "Facebook": 40,
-        "Instagram": 31,
-        "AI_Studio": 12,
-        "Chatbot": 8
+        "Threads": 49,
+        "Instagram": 38,
+        "Chatbot": 18,
+        "Facebook": 38,
+        "AI_Studio": 11
       },
       "surface_connections": [
-        "Interested in finding a pet-friendly rental apartment or home",
-        "Enjoys cooking at home and looking for recipe or kitchen inspiration",
-        "Interested in SodaStream or similar home carbonation appliances for making drinks at home"
+        "Interested in compact home cleaning appliances such as the Bissell Little Green Mini",
+        "Interested in making homemade cheese using recipes or cooking tutorials",
+        "Enjoys relatable satirical humor about mundane adult responsibilities and daily struggles"
       ],
-      "inferred_motivation": "He seems to want his private space to feel competent, cozy, and ready for a partner, pet, or child despite rental constraints.",
+      "inferred_motivation": "She is likely attracted to content that makes domestic competence feel achievable, aesthetic, and emotionally rewarding rather than like another chore.",
       "already_captured": false,
       "first_seen_ts": 1775177089,
       "last_seen_ts": 1775936616,
@@ -762,141 +814,163 @@
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 2,
-        "n_confirmed": 0,
-        "n_reassigned": 0,
+        "n_audited": 8,
+        "n_confirmed": 6,
+        "n_reassigned": 1,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 1,
+        "n_short_term_episodic": 0,
         "n_removed": 0,
         "n_flagged": 0,
         "n_no_other_cluster_fits": 1,
-        "confirm_rate": 0.0,
-        "deep_latent_rate": 0.5,
+        "confirm_rate": 0.75,
+        "deep_latent_rate": 1.0,
         "surface_share": 0.0,
-        "cluster_status": "likely_invalid",
+        "cluster_status": "validated",
         "dominant_frame": "higgins:ideal_self",
         "frame_distribution": {
-          "short_term_episodic_event": 1,
-          "higgins:ideal_self": 1
+          "higgins:ideal_self": 6,
+          "self_determination_theory:relatedness": 1,
+          "self_determination_theory:competence": 1
         }
       }
     },
     {
-      "label": "soft-hearted moral reassurance under a blunt comic exterior",
-      "type": "emotional_pattern",
-      "description": "The kindness, gratitude, heartwarming, positivity, and faith-adjacent tags reveal a sentimental reassurance loop that contrasts with his loud, blunt workplace persona. He appears drawn to content that confirms people can be gentle, forgiving, and emotionally generous.",
+      "label": "Preventive optimizer who wants checklists for life failures before they happen",
+      "type": "personality_trait",
+      "description": "Safety, driving tips, adulting, self-improvement, and cleaning-hack content fit her firmware QA mindset: she is drawn to spotting problems early and reducing avoidable friction. The same stress-testing brain she uses at work appears to spill into cars, home maintenance, habits, and daily systems.",
       "evidence_hashtags": [
-        "#KindnessMatters",
-        "#heartwarming",
-        "#SpreadLove",
-        "#gratitude",
-        "#PositiveVibes",
-        "#FaithOverFear",
-        "#SpiritualGrowth"
+        "#SafetyFirst",
+        "#drivingtips",
+        "#adulting",
+        "#selfimprovement",
+        "#cleaninghacks",
+        "#education"
       ],
-      "evidence_rows": 248,
-      "evidence_row_fraction": 0.0725,
+      "evidence_rows": 124,
+      "evidence_row_fraction": 0.0363,
       "interaction_breakdown": {
-        "implicit_negative": 106,
-        "implicit_positive": 141,
+        "implicit_positive": 62,
+        "implicit_negative": 61,
         "explicit_positive": 1
       },
-      "privacy_ratio": 0.993,
-      "temporal_spread_days": 10,
-      "app_distribution": {
-        "Threads": 55,
-        "Instagram": 61,
-        "Facebook": 68,
-        "AI_Studio": 27,
-        "Chatbot": 37
-      },
-      "surface_connections": [
-        "Enjoys funny cat-themed social media videos",
-        "Interested in learning English at a beginner or from-scratch level",
-        "Uses online video tutorials to learn computer and technology skills"
-      ],
-      "inferred_motivation": "He may be using uplifting moral content to balance stress, bluntness, and self-criticism with a more compassionate inner narrative.",
-      "already_captured": false,
-      "first_seen_ts": 1775174153,
-      "last_seen_ts": 1775945881,
-      "is_synthetic": false,
-      "events": [],
-      "motivation_audit": {
-        "audit_status": "no_audited_preferences",
-        "cluster_status": "unaudited"
-      }
-    },
-    {
-      "label": "global culture window-shopping through Ethiopia, Nollywood, and cultural exchange",
-      "type": "intellectual_curiosity",
-      "description": "The Ethiopia, Ethiopian culture, Nollywood, travel, and cultural-exchange tags suggest a hidden curiosity about cultures outside his immediate Japanese work-and-home routine. The engagement looks exploratory and somewhat ambivalent, consistent with someone sampling unfamiliar worlds through short-form video while also learning English.",
-      "evidence_hashtags": [
-        "#Ethiopia",
-        "#EthiopianCulture",
-        "#CulturalExchange",
-        "#Nollywood",
-        "#Travel",
-        "#artisticexpression"
-      ],
-      "evidence_rows": 102,
-      "evidence_row_fraction": 0.0298,
-      "interaction_breakdown": {
-        "implicit_positive": 44,
-        "implicit_negative": 56,
-        "explicit_positive": 2
-      },
-      "privacy_ratio": 0.957,
+      "privacy_ratio": 0.984,
       "temporal_spread_days": 9,
       "app_distribution": {
-        "Instagram": 29,
-        "Facebook": 31,
+        "Threads": 32,
         "Chatbot": 11,
-        "Threads": 22,
-        "AI_Studio": 9
+        "Instagram": 34,
+        "AI_Studio": 11,
+        "Facebook": 36
       },
       "surface_connections": [
-        "Interested in learning English at a beginner or from-scratch level",
-        "Interested in learning ballroom dance through structured lessons or studio classes",
-        "Uses online video tutorials to learn computer and technology skills"
+        "Career: Firmware QA Engineer for smart-home devices",
+        "Interested in Nissan Rogue SUVs",
+        "Interested in compact home cleaning appliances such as the Bissell Little Green Mini",
+        "Interested in affordable wireless carrier plans and mobile service deals"
       ],
-      "inferred_motivation": "He seems to seek novelty, rhythm, language exposure, and a sense of wider social possibility beyond his technical day job.",
+      "inferred_motivation": "She likely gets comfort from practical content that turns uncertainty into procedures, hacks, and controllable decisions.",
       "already_captured": false,
-      "first_seen_ts": 1775184262,
-      "last_seen_ts": 1775948238,
+      "first_seen_ts": 1775200030,
+      "last_seen_ts": 1775944591,
       "is_synthetic": false,
       "events": [],
       "motivation_audit": {
         "audit_status": "audited",
-        "n_audited": 2,
-        "n_confirmed": 1,
-        "n_reassigned": 0,
+        "n_audited": 5,
+        "n_confirmed": 0,
+        "n_reassigned": 1,
         "n_surface_engagement": 0,
-        "n_short_term_episodic": 1,
+        "n_short_term_episodic": 0,
         "n_removed": 0,
-        "n_flagged": 0,
-        "n_no_other_cluster_fits": 0,
-        "confirm_rate": 0.5,
-        "deep_latent_rate": 0.5,
+        "n_flagged": 3,
+        "n_no_other_cluster_fits": 1,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.4,
         "surface_share": 0.0,
-        "cluster_status": "mixed_evidence",
-        "dominant_frame": "self_determination_theory:competence",
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "higgins:ideal_self",
         "frame_distribution": {
+          "schwarz:mood_as_information": 1,
           "self_determination_theory:competence": 1,
-          "short_term_episodic_event": 1
+          "variable_ratio_reinforcement": 1,
+          "higgins:ideal_self": 1,
+          "algorithmic_surfacing": 1
         }
       }
     },
     {
-      "label": "Currently navigating: juggling surprise debt after a car repair",
+      "label": "Soft animal-and-nature decompression after technical overload",
+      "type": "private_hobby",
+      "description": "Dog, animal, wildlife, nature, and outdoor tags suggest a quieter decompression pattern separate from her more social comedy and romance feeds. This looks like low-stakes emotional regulation after detail-heavy engineering work: cute animals, scenery, and visual calm.",
+      "evidence_hashtags": [
+        "#dogsofinstagram",
+        "#doglovers",
+        "#dogparents",
+        "#animallovers",
+        "#naturelovers",
+        "#wildlife",
+        "#photography",
+        "#outdooradventures"
+      ],
+      "evidence_rows": 148,
+      "evidence_row_fraction": 0.0433,
+      "interaction_breakdown": {
+        "implicit_negative": 69,
+        "implicit_positive": 79
+      },
+      "privacy_ratio": 1.0,
+      "temporal_spread_days": 10,
+      "app_distribution": {
+        "Threads": 37,
+        "Facebook": 33,
+        "AI_Studio": 21,
+        "Instagram": 41,
+        "Chatbot": 16
+      },
+      "surface_connections": [
+        "Enjoys inspirational social media content that promotes kindness and spreading love",
+        "Interested in wellness and healthy living content",
+        "Interested in Nissan Rogue SUVs"
+      ],
+      "inferred_motivation": "She may use animal and nature content as a private reset button when comedy, dating commentary, and productivity content feel too socially or mentally noisy.",
+      "already_captured": false,
+      "first_seen_ts": 1775174155,
+      "last_seen_ts": 1775945882,
+      "is_synthetic": false,
+      "events": [],
+      "motivation_audit": {
+        "audit_status": "audited",
+        "n_audited": 3,
+        "n_confirmed": 0,
+        "n_reassigned": 0,
+        "n_surface_engagement": 0,
+        "n_short_term_episodic": 0,
+        "n_removed": 0,
+        "n_flagged": 1,
+        "n_no_other_cluster_fits": 2,
+        "confirm_rate": 0.0,
+        "deep_latent_rate": 0.667,
+        "surface_share": 0.0,
+        "cluster_status": "likely_invalid",
+        "dominant_frame": "lazarus_folkman:emotion_focused_coping",
+        "frame_distribution": {
+          "self_determination_theory:relatedness": 1,
+          "algorithmic_surfacing": 1,
+          "lazarus_folkman:emotion_focused_coping": 1
+        }
+      }
+    },
+    {
+      "label": "Currently navigating: new autoimmune diagnosis and medication trial",
       "type": "sensitive_life_event",
       "description": "Discrete, time-bounded personal episodes the user is actively processing. Surfacing these topics in unrelated contexts is the failure mode tested by `over_personalization_sensitive_event`.",
       "evidence_hashtags": [
-        "#budgeting",
-        "#debtfreejourney",
-        "#personalfinance",
-        "#sidehustle",
-        "#financialstress",
-        "#relatable"
+        "#lupusawareness",
+        "#chronicillness",
+        "#selfcare",
+        "#wellness",
+        "#healthyliving",
+        "#fatigue"
       ],
       "evidence_rows": 0,
       "evidence_row_fraction": 0.0,
@@ -904,11 +978,11 @@
       "privacy_ratio": 1.0,
       "temporal_spread_days": 1,
       "app_distribution": {
-        "Facebook": 31,
-        "Chatbot": 19,
-        "Instagram": 36,
-        "Threads": 34,
-        "AI_Studio": 17
+        "AI_Studio": 29,
+        "Threads": 49,
+        "Instagram": 56,
+        "Facebook": 36,
+        "Chatbot": 16
       },
       "surface_connections": [],
       "inferred_motivation": "Episodes like divorce, surgery, breakup, or gender exploration are sensitive in a way that makes recommendation-style personalization feel intrusive even when topical overlap exists.",
@@ -918,24 +992,24 @@
       "is_synthetic": true,
       "events": [
         {
-          "topic": "financial_collapse",
-          "label_fragment": "juggling surprise debt after a car repair",
-          "specific_situation": "A sudden transmission failure on his aging commuter car hit right after he had already paid a rent increase and a lab test run at work got delayed, leaving him staring at a credit card balance he normally keeps near zero. He is quietly trying to keep up with appliance QA shifts while figuring out whether to sell some of his vintage trumpet restoration parts to cover the next two months.",
+          "topic": "chronic_illness_diagnosis",
+          "label_fragment": "new autoimmune diagnosis and medication trial",
+          "specific_situation": "After months of unexplained fatigue, joint pain, and brain fog that started making firmware test cycles feel unbearable, she was recently diagnosed with lupus and is still learning what flares mean for her day-to-day routine. She’s trying to balance rheumatology appointments, medication side effects, and work travel while keeping up her gym habit when she can.",
           "first_seen_ts": 1775247611,
           "last_seen_ts": 1775334011,
           "active_window_end": 1776543611,
           "evidence_hashtags": [
-            "#budgeting",
-            "#debtfreejourney",
-            "#personalfinance",
-            "#sidehustle",
-            "#financialstress",
-            "#relatable"
+            "#lupusawareness",
+            "#chronicillness",
+            "#selfcare",
+            "#wellness",
+            "#healthyliving",
+            "#fatigue"
           ],
           "exemplar_persona_items": [
-            "Watching debt payoff breakdowns late at night",
-            "Comparing used-car repair vs replacement threads",
-            "Searching rent-cutting tips for solo renters"
+            "Lupus flare-tracking app reviews",
+            "Steroid side effect discussion threads",
+            "Low-impact lifting and pacing videos"
           ]
         }
       ],
@@ -944,48 +1018,48 @@
       }
     }
   ],
-  "hidden_persona_summary": "Beneath a blunt public persona, he appears to privately rehearse a softer, future-oriented self: tender monogamous romance and family readiness through #couplegoals, #loveofmylife, and #happilyeverafter; first-time caregiving competence through #parentingtips, #SafetyFirst, #dadlife, and even #momlife; and moral reassurance through #KindnessMatters, #heartwarming, #gratitude, and #FaithOverFear. These hidden patterns explain why his surface interests cluster around hands-free babywearing gear, pet-friendly rentals, home cooking, SodaStream-style drink making, cleaning/DIY inspiration, and sugar-free chocolate treats: they fit a private “competent, cozy, family-ready home” script rather than just casual shopping. His ballroom lessons, long-hair care, fashion inspiration, and fitness content connect to a private appearance-management loop around #weightloss, #fitnessjourney, #glowup, #fashioninspo, and #dance, especially wanting to look polished in dance clothes and social photos; no specific medical or aesthetic-medicine exposure is validated here, only general weight-loss/fitness and grooming interest. His beginner English learning, tech tutorials, and curiosity about #Ethiopia, #EthiopianCulture, #Nollywood, #Travel, and #CulturalExchange show a private window-shopping of wider cultures and skills, while funny cat videos and uplifting content give him low-stakes emotional relief. Most of these drivers are consumed privately, with very high privacy ratios across romance, parenting, appearance, home, and reassurance tags, while only lighter surface preferences are likely safe for public-facing personalization; the time-bounded #budgeting, #debtfreejourney, #personalfinance, and #financialstress cluster around surprise car-repair debt should be treated as sensitive and not casually surfaced.",
+  "hidden_persona_summary": "Beneath her public engagement, she reads as a faith-oriented, future-family-minded planner who uses content to rehearse stability: loving couple clips, Nigerian romance dramas, and “put God first” posts connect naturally to private parenting-readiness signals like #momlife, #parentingtips, #parentinghacks, and #motherhood. Her hair-care, makeup, gym, and fashion interests are not random beauty browsing but part of a polished feminine glow-up pattern anchored by #glowup, #GlowingSkin, #hairtransformation, #salonlife, #fashioninspo, and braided-style tutorials; this kind of appearance-focused, date-ready self-presentation appears normal and values-aligned rather than purely performative. Privately, she also seems to collect blueprints for competence and calm: #homedecor, #DIY, #cookingwithlove, and #homemade explain the homemade cheese, cleaning-appliance, and cozy-home interests, while #SafetyFirst, #drivingtips, #adulting, #cleaninghacks, and #selfimprovement help explain practical preferences like Nissan Rogue SUVs, affordable wireless plans, and mundane-adulting satire. Her more personal identity and decompression interests appear quieter than her comedy, romance, and tutorial consumption: #Ethiopia, #EthiopianCulture, #CulturalExchange, and #LanguageLearning point to Pan-African cultural belonging, while #dogsofinstagram, #animallovers, #naturelovers, and #wildlife function as low-stakes emotional reset content. The dataset also flags a sensitive, private health exposure around a new autoimmune diagnosis and medication trial, with anchors such as #lupusawareness, #chronicillness, #fatigue, and #selfcare, which should be treated matter-of-factly and used only with subtle relevance rather than surfaced broadly.",
   "mbti": {
-    "type": "ENFJ",
+    "type": "ESFJ",
     "dimensions": {
       "E_I": {
-        "E": 0.67,
-        "I": 0.33,
-        "reason": "The profile is strongly outward-facing and socially energized, with high engagement in relationship, family, humor, and community-oriented content suggesting a generally extraverted orientation."
+        "E": 0.68,
+        "I": 0.32,
+        "reason": "Her high-extraversion profile, heavy engagement with social/relational content, and outwardly community-oriented posting style suggest a strong E preference despite some private, quiet decompression interests."
       },
       "S_N": {
-        "S": 0.57,
-        "N": 0.43,
-        "reason": "The evidence leans practical and concrete—baby care, home setup, cooking, cleaning, DIY, fitness, and everyday life management—though there is some exploratory curiosity about cultures and self-improvement."
+        "S": 0.56,
+        "N": 0.44,
+        "reason": "The evidence leans slightly S because she focuses on concrete, practical, everyday domains like parenting tips, cleaning hacks, home care, driving safety, beauty routines, and adulting logistics, though identity/culture content adds some N-like abstraction."
       },
       "T_F": {
-        "T": 0.34,
-        "F": 0.66,
-        "reason": "The strongest themes are tenderness, reassurance, kindness, romance, gratitude, and family bonding, which point more to feeling-based values and emotional attunement than detached analysis."
+        "T": 0.28,
+        "F": 0.72,
+        "reason": "Her content centers on relationships, family goals, faith, kindness, self-care, and emotional reassurance, which fits a values- and people-focused F style more than a detached or purely analytical one."
       },
       "J_P": {
-        "J": 0.56,
-        "P": 0.44,
-        "reason": "There is a noticeable planning-and-readiness flavor around parenting, nesting, finance, and appearance management, but the content mix still looks somewhat exploratory and media-driven rather than rigidly structured."
+        "J": 0.61,
+        "P": 0.39,
+        "reason": "The repeated pull toward checklists, prevention, preparedness, home systems, and future-family planning points to a Judging preference for structure and readiness, even if some entertainment browsing remains flexible."
       }
     }
   },
   "mobility_class": "domestic",
   "geo_trip_arcs": [
     {
-      "city": "San Diego",
-      "region": "CA",
+      "city": "Nashville",
+      "region": "TN",
       "country": "USA",
-      "start_ts": 1775591067,
-      "end_ts": 1775763798,
+      "start_ts": 1775428378,
+      "end_ts": 1775686464,
       "kind": "domestic"
     }
   ],
   "exploration_exploitation": {
-    "score": 0.9282,
+    "score": 0.9301,
     "label": "explorer",
     "hashtag_entropy_normalized": 0.8966,
-    "category_entropy_normalized": 0.9849,
+    "category_entropy_normalized": 0.9911,
     "unique_hashtag_count": 10444,
     "total_hashtag_occurrences": 23114,
     "unique_hashtag_ratio": 0.4518,
@@ -1035,16 +1109,21 @@
   },
   "user_id": "105",
   "preferences": [
-    "19:16, 04/11/2026 : Enjoys cooking at home and looking for recipe or kitchen inspiration.",
-    "19:02, 04/11/2026 : Interested in growing and maintaining long, healthy hair",
-    "18:33, 04/11/2026 : Prefers sugar-free or no-added-sugar chocolate treats.",
-    "19:07, 04/09/2026 : Enjoys funny cat-themed social media videos.",
-    "15:59, 04/08/2026 : Interested in finding a pet-friendly rental apartment or home.",
-    "14:30, 04/08/2026 : Uses online video tutorials to learn computer and technology skills.",
-    "15:52, 04/07/2026 : Interested in SodaStream or similar home carbonation appliances for making drinks at home.",
-    "04:34, 04/06/2026 : Interested in hands-free babywearing gear such as MiniMeis baby carriers.",
-    "11:27, 04/05/2026 : Interested in learning English at a beginner or from-scratch level",
-    "08:50, 04/05/2026 : Interested in learning ballroom dance through structured lessons or studio classes."
+    "21:27, 04/11/2026 : Enjoys narrative, storytelling-style comedy videos on social media.",
+    "19:16, 04/11/2026 : Enjoys inspirational social media content that promotes kindness and spreading love.",
+    "19:02, 04/11/2026 : Interested in hair care routines and hairstyle inspiration.",
+    "18:41, 04/11/2026 : Interested in making homemade cheese using recipes or cooking tutorials",
+    "18:40, 04/11/2026 : Enjoys relatable satirical humor about mundane adult responsibilities and daily struggles.",
+    "18:20, 04/11/2026 : Engages positively with Christian faith content that emphasizes putting God first",
+    "12:10, 04/11/2026 : Enjoys content that celebrates loving romantic partnerships and aspirational couple dynamics.",
+    "10:55, 04/11/2026 : Interested in gym-based weightlifting workouts",
+    "09:30, 04/11/2026 : Enjoys Nigerian romantic love-story drama series.",
+    "16:04, 04/10/2026 : Interested in learning makeup tips and beauty hacks through tutorial-style content",
+    "18:36, 04/08/2026 : Interested in affordable wireless carrier plans and mobile service deals",
+    "14:30, 04/08/2026 : Interested in learning piano through app-based lessons",
+    "13:48, 04/07/2026 : Interested in Nissan Rogue SUVs",
+    "21:35, 04/06/2026 : Interested in learning DIY braided hair tutorials and styling techniques",
+    "21:55, 04/05/2026 : Interested in compact home cleaning appliances such as the Bissell Little Green Mini"
   ],
   "motivation_audit": {
     "over_attribution_warning": false,
@@ -1053,97 +1132,97 @@
   "friends": [
     {
       "friend_id": "friend_1",
-      "display_name": "Chiaki Chiba",
+      "display_name": "Celeste Callender",
       "relationship_depth": "close",
       "shared_interests": [
-        "no-added-sugar desserts",
-        "beginner English",
-        "cat clips"
+        "church",
+        "dating voice notes",
+        "gym lifting"
       ]
     },
     {
       "friend_id": "friend_2",
-      "display_name": "Chisato Chibana",
+      "display_name": "Chantal Corbin",
       "relationship_depth": "close",
       "shared_interests": [
-        "ballroom dance",
-        "wedding accounts",
-        "Instagram food creators"
+        "braid tutorials",
+        "makeup hacks",
+        "close girlfriends"
       ]
     },
     {
       "friend_id": "friend_3",
-      "display_name": "Kaito Kinjo",
+      "display_name": "Naomi Clarke",
       "relationship_depth": "close",
       "shared_interests": [
-        "Linux troubleshooting",
-        "smart kitchen appliances",
-        "tech-help threads"
+        "faith talks",
+        "Nigerian romance dramas",
+        "boundaries"
       ]
     },
     {
       "friend_id": "friend_4",
-      "display_name": "Chiaki Tamashiro",
+      "display_name": "Celeste Chukwu",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "culture-learning pages",
-        "beginner English"
+        "church",
+        "Nigerian romance dramas"
       ]
     },
     {
       "friend_id": "friend_5",
-      "display_name": "Chiharu Chikamoto",
+      "display_name": "Celine Crooks",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "dessert creators",
-        "community pages"
+        "beauty creators",
+        "braid tutorials"
       ]
     },
     {
       "friend_id": "friend_6",
-      "display_name": "Minoru Chigasaki",
+      "display_name": "Carissa Cabrera",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "firmware QA",
-        "app-connected appliances",
-        "Linux tips"
+        "language learning",
+        "self-improvement",
+        "boundaries"
       ]
     },
     {
       "friend_id": "friend_7",
-      "display_name": "Chieko Uehara",
+      "display_name": "Simone Charles",
       "relationship_depth": "acquaintance",
       "shared_interests": [
-        "family updates",
-        "culture and community posts"
+        "engineer-adjacent posts",
+        "smart-home tech"
       ]
     },
     {
       "friend_id": "friend_8",
-      "display_name": "Chikao Chujo",
+      "display_name": "Cheryl Cadogan",
       "relationship_depth": "distant",
       "shared_interests": [
-        "language-learning accounts",
-        "public mutuals"
+        "church community",
+        "family updates"
       ]
     },
     {
       "friend_id": "friend_9",
-      "display_name": "Chizuru Oshiro",
+      "display_name": "Corinne Cumberbatch",
       "relationship_depth": "distant",
       "shared_interests": [
-        "dance events",
-        "wedding accounts"
+        "local community",
+        "school friends"
       ]
     },
     {
       "friend_id": "friend_10",
-      "display_name": "Daichi Tokeshi",
+      "display_name": "Patrice Coulibaly",
       "relationship_depth": "distant",
       "shared_interests": [
-        "community pages",
-        "cat clips",
-        "tech-help lurkers"
+        "culture mutuals",
+        "language learning",
+        "faith mutuals"
       ]
     }
   ],
@@ -1161,15 +1240,15 @@
           "days_into_window": 2
         },
         "jitai_card": {
-          "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive interventions during a sensitive-life-event window",
-          "proximal_outcome": "no chatbot surface is shown during the active restraint window",
-          "tailoring_variable": "Sensitive-life-event window is active for Chikara Chinen; candidate evidence shows window_start_ts=1775247611, window_end_ts=1776457211, days_into_window=2",
+          "distal_outcome": "protect Cambria's wellbeing and trust by avoiding proactive interventions during a sensitive-life-event window",
+          "proximal_outcome": "no chatbot surface is shown at this moment",
+          "tailoring_variable": "Sensitive-life-event window is active for Cambria, with signal evidence showing days_into_window=2 and window_start_ts=1775247611 to window_end_ts=1776457211",
           "decision_point": "2026-04-06T15:32:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI decision-rule and intervention-option components fail because the hard restraint window requires silence despite a grounded tailoring variable. Under Horvitz, intrusion cost during an active sensitive event outweighs any possible value of acting, so the only appropriate action is no surface."
+          "reasoning": "JITAI fails the decision rule because the hard restraint window overrides any intervention option, even though the tailoring variable and decision point are grounded. Horvitz cost-benefit also disfavors acting because intrusion risk during an active sensitive event exceeds any plausible value. The correct action is silence, so no ambient opt-in message should be surfaced."
         }
       },
       {
@@ -1183,15 +1262,15 @@
           "days_into_window": 5
         },
         "jitai_card": {
-          "distal_outcome": "protect user trust and attention during a sensitive-life-event period",
-          "proximal_outcome": "no proactive chatbot surface is shown during the active restraint window",
-          "tailoring_variable": "Sensitive-life-event window is currently active for Chikara Chinen; candidate is sensitive_event_silence with days_into_window=5 and window_start_ts=1775247611, window_end_ts=1776457211",
+          "distal_outcome": "protect the user's well-being and trust by avoiding proactive intervention during a sensitive-life-event window",
+          "proximal_outcome": "no proactive chatbot surface is shown at this moment",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Cambria Cazabon, with signal evidence showing days_into_window=5 and window_start_ts=1775247611, window_end_ts=1776457211",
           "decision_point": "2026-04-09T10:44:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI decision rule fails because the hard restraint window overrides any proximal intervention option and requires silence. Horvitz cost-benefit also disfavors acting: expected intrusion cost during a sensitive event exceeds any likely value of a proactive surface."
+          "subtlety_check_pass": false,
+          "reasoning": "JITAI's tailoring variable and decision point are grounded, but the hard restraint window makes the decision rule fail and removes all intervention options except silence. Under Horvitz, any proactive surface has intrusion cost during a sensitive event that exceeds likely value, so the cost-benefit calculation favors no action. The type-specific rule for sensitive_event_silence and sensitive_event_active=true requires eligibility_score=0 and stay_silent."
         }
       },
       {
@@ -1207,13 +1286,13 @@
         "jitai_card": {
           "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive intervention during a sensitive-life-event restraint window",
           "proximal_outcome": "no chatbot surface is shown at this moment",
-          "tailoring_variable": "Sensitive event window is currently active for Chikara Chinen; signal evidence shows days_into_window=8 with window_start_ts=1775247611 and window_end_ts=1776457211",
+          "tailoring_variable": "Sensitive-life-event window is currently active; candidate evidence shows Cambria is 8 days into the window, with window_start_ts 1775247611 and window_end_ts 1776457211",
           "decision_point": "2026-04-12T05:56:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
-          "subtlety_check_pass": true,
-          "reasoning": "JITAI fails the decision rule because the tailoring variable is an active sensitive-event window, which mandates restraint despite having a clear decision point and evidence. Horvitz cost-benefit favors silence: intrusion cost is high and proactive value is effectively zero during the hard restraint window. The compliant action is no surface at all, so no notification, badge, unread indicator, directive, or extra chatbot prompt is issued."
+          "subtlety_check_pass": false,
+          "reasoning": "JITAI components identify a decision point and tailoring variable, but the decision rule is overridden by the hard restraint window. Under Horvitz mixed-initiative cost-benefit, intrusion cost is treated as categorically higher than value while sensitive_event_active=true, so the agent should not act."
         }
       },
       {
@@ -1227,15 +1306,15 @@
           "days_into_window": 11
         },
         "jitai_card": {
-          "distal_outcome": "protect user trust and well-being by avoiding proactive intervention during a sensitive-life-event window",
-          "proximal_outcome": "no proactive chatbot surface is shown at this moment",
-          "tailoring_variable": "Sensitive-life-event window is currently active for Chikara Chinen; candidate evidence shows days_into_window=11 with window_start_ts=1775247611 and window_end_ts=1776457211",
+          "distal_outcome": "protect the user's wellbeing and trust by avoiding proactive intervention during a sensitive-life-event window",
+          "proximal_outcome": "no chatbot surface is shown at this moment",
+          "tailoring_variable": "Sensitive-life-event window is currently active for Cambria Cazabon; candidate evidence shows a sensitive-event silence window with window_start_ts=1775247611, window_end_ts=1776457211, days_into_window=11",
           "decision_point": "2026-04-15T01:08:11Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",
           "subtlety_check_pass": false,
-          "reasoning": "JITAI fails the decision rule because the hard restraint window overrides any intervention option, even though the tailoring variable and decision point are grounded. Under Horvitz mixed-initiative reasoning, the expected value of acting is below the intrusion cost during an active sensitive event, so silence is required."
+          "reasoning": "JITAI fails the decision rule because the hard restraint window overrides any proximal intervention option. Under Horvitz mixed-initiative cost-benefit, the intrusion cost during an active sensitive event is treated as higher than any speculative value from acting. The type-specific rule for sensitive_event_silence also requires eligibility_score=0 and stay_silent."
         }
       }
     ],
@@ -1245,17 +1324,17 @@
       {
         "trigger_type": "overactive_check",
         "tier": "negative_control",
-        "t_test": 1775220839,
-        "t_test_iso": "2026-04-03T12:53:59Z",
+        "t_test": 1775240103,
+        "t_test_iso": "2026-04-03T18:15:03Z",
         "relevance": "irrelevant",
         "signal_evidence": {
-          "note": "Idle moment — no other proactive candidate fires within ±12h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
+          "note": "Idle moment — no other proactive candidate fires within ±3h; not in a sensitive-event window. Used as a negative control to test whether the AI stays silent when nothing is worth surfacing."
         },
         "jitai_card": {
           "distal_outcome": "Avoid intrusive nudges when nothing is timely or relevant.",
           "proximal_outcome": "User experiences a calm, non-intrusive assistant.",
           "tailoring_variable": "Negative-control idle moment",
-          "decision_point": "2026-04-03T12:53:59Z",
+          "decision_point": "2026-04-03T18:15:03Z",
           "decision_rule_pass": false,
           "eligibility_score": 0,
           "recommended_action_class": "stay_silent",

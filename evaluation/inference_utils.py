@@ -784,6 +784,7 @@ def dispatch_agent_run(
     Returns `(text, tool_call_count, subagent_stats_dict)`.
 
     - `agent_tools`: Claude Code subagent with filesystem Read on a snapshot.
+    - `codex_agent`: Codex CLI subagent with filesystem Read on a snapshot.
     - `mcp_agent`:   Claude Code subagent with MCP tools (writes to overlay).
     - `llm_longctx`: single QueryLLM call (non-Claude provider baseline).
     """
@@ -801,6 +802,16 @@ def dispatch_agent_run(
             timeout_seconds=600, task_type=task_type,
         )
         return sub.text, sub.turns, _pack_stats(sub, include_denials=True)
+
+    if mode == "codex_agent":
+        from evaluation.codex_subagent import run_codex_subagent
+
+        snap = materialize_snapshot(bq, user_id, t)
+        sub = run_codex_subagent(
+            prompt=prompt, snapshot_dir=snap, model=claude_model,
+            timeout_seconds=600, task_type=task_type,
+        )
+        return sub.text, sub.turns, _pack_stats(sub, include_denials=False)
 
     if mode == "mcp_agent":
         from evaluation.mcp_config_builder import build_mcp_config, mcp_allowed_tools, write_mcp_config

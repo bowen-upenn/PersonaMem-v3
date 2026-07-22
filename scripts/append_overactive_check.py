@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Surgical append of extra proactive_overactive_check queries to test.json.
 
-WHY: the negative-control idle-moment supply was starved (n=6 across 5/20 users)
+WHY: the negative-control idle-moment supply was starved (n=6 across few users)
 by the old _gather_idle_moments (one-shot per stratum + cap 3 < quota). That code
 is now fixed; this script regenerates the overactive_check candidates with the
 fixed gather and APPENDS the resulting instances to each user's test.json WITHOUT

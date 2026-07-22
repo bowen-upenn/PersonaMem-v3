@@ -4,7 +4,7 @@ conversations) for a set of users, with a COORDINATED name blocklist so the
 re-rolled AI characters don't collide with each other or with the kept users.
 
 Why this exists: the cohort-diversity archetype router exposed a latent bug —
-the LLM defaults to "Vale" as a surname (9/20 users) and copies the prompt's
+the LLM defaults to "Vale" as a surname (many users) and copies the prompt's
 example first names ("Rowan"/"Wren"). The prompt is now fixed (forbid Vale /
 Rowan / Wren / Mira + a used_names blocklist), and this script re-rolls ONLY the
 AI Studio persona + conversations for the affected users — reusing all other
@@ -12,9 +12,9 @@ pipeline state from the existing backend JSONs (no full 28-step re-run).
 
 Usage:
     python scripts/rerun_ai_studio.py \
-        --input_csv data/all20_input.csv \
-        --user_ids 8,14,26,105,209,282,461,760,835 \
-        --keep_uids 1,2,3,5,6,9,10,13,115,229,655 \
+        --input_csv data/<your_input>.csv \
+        --user_ids <ids,to,re-roll> \
+        --keep_uids <ids,to,preserve> \
         --backend_dir backend [--verbose]
 
 Per-user steps:

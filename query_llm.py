@@ -593,6 +593,15 @@ class QueryLLM:
 
             try:
                 cache_key = self._current_cache_key
+                # Enable caching whenever possible: if no explicit key was set,
+                # derive a stable one from the (large) history prefix so a repeated
+                # history — e.g. every query for the same persona in long-context
+                # mode — reuses ONE CachedContent at the cached rate instead of
+                # re-billing the full ~300k-token prefix on every call.
+                if cache_key is None and len(gemini_messages) > 1:
+                    _pfx = json.dumps(gemini_messages[:-1], default=str, sort_keys=True)
+                    if len(_pfx) > 50_000:               # ~12k+ tokens: worth caching
+                        cache_key = "auto_" + hashlib.md5(_pfx.encode("utf-8")).hexdigest()[:16]
 
                 # Attempt cached generation: split into history prefix + final user turn
                 if cache_key and len(gemini_messages) > 1:

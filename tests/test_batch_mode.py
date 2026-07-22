@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from evaluation.cost_model import gemini_cost
 
 # Per-request usage the mock reports: a ~400K-token long-context prompt where
-# ~92% is a cache hit (matches the measured 10-persona long-context split).
+# ~92% is a cache hit (matches the measured long-context split).
 PROMPT_TOK = 400_000
 CACHED_TOK = 368_000     # 92% cache hits
 OUTPUT_TOK = 260

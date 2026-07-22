@@ -698,29 +698,38 @@ def chatbot_pref_overuse_rate(
         fatigue_restraint_score: mean of tail scores (0-10)
         fatigue_passed: bool -- True iff all tail scores >= 7
     """
+    # `None` entries are FAILED judge calls — ignore them (no auto-pass). The
+    # head/tail split is by POSITION in the original response sequence; only the
+    # unjudgeable responses within each zone are dropped. If no monitored (tail)
+    # response could be judged, the row has no headline (query_score_0_10 = None)
+    # and is dropped from aggregation rather than auto-passed.
     n_total = len(pref_invocation_scores)
     warmup_n = min(n_allowed_repetitions + 1, n_total)
-    head = pref_invocation_scores[:warmup_n]
-    tail = pref_invocation_scores[warmup_n:]
+    head = [x for x in pref_invocation_scores[:warmup_n] if x is not None]
+    tail = [x for x in pref_invocation_scores[warmup_n:] if x is not None]
+    n_judge_failed = sum(1 for x in pref_invocation_scores if x is None)
     warmup_invocations = sum(1 for x in head if x < 5)
     fatigue_violations = sum(1 for x in tail if x < 5)
     fatigue_overuse_rate = (
         sum((10.0 - s) / 10.0 for s in tail) / len(tail)
         if tail else 0.0
     )
-    fatigue_restraint_score = sum(tail) / len(tail) if tail else 10.0
+    fatigue_restraint_score = sum(tail) / len(tail) if tail else None
+    score_rounded = round(fatigue_restraint_score, 2) if fatigue_restraint_score is not None else None
     return {
         "n_total": n_total,
         "n_warmup": warmup_n,
         "n_monitored": len(tail),
+        "n_judge_failed": n_judge_failed,
         "warmup_invocations": warmup_invocations,
         "fatigue_violations": fatigue_violations,
         "fatigue_overuse_rate": round(fatigue_overuse_rate, 3),
-        "fatigue_restraint_score": round(fatigue_restraint_score, 2),
-        "fatigue_passed": all(s >= 7 for s in tail) if tail else True,
+        "fatigue_restraint_score": score_rounded,
+        "fatigue_passed": (all(s >= 7 for s in tail) if tail else None),
         # Unified per-query 0-10 headline: the tail restraint score (10 = the
         # agent stopped over-using the saturated pref, 0 = fully overused).
-        "query_score_0_10": round(fatigue_restraint_score, 2),
+        # None when no tail response could be judged → row dropped, not auto-passed.
+        "query_score_0_10": score_rounded,
     }
 
 

@@ -277,7 +277,12 @@ def run_subagent(
     cmd = [
         claude_bin,
         "-p", final_prompt,
-        "--output-format", "json",
+        # PM3_CAPTURE_DIR (unset by default → no behaviour change): use
+        # stream-json + verbose so the FULL tool-call transcript (every
+        # Grep/Read/Bash tool_use + tool_result) can be saved for offline
+        # tool-call-step failure analysis; the final result line is parsed below.
+        *(["--output-format", "stream-json", "--verbose"]
+          if os.getenv("PM3_CAPTURE_DIR") else ["--output-format", "json"]),
         "--model", model,
         "--setting-sources", "",
         "--permission-mode", "dontAsk",
@@ -315,7 +320,28 @@ def run_subagent(
 
     raw = {}
     text = ""
-    if proc.stdout:
+    _cap_dir = os.getenv("PM3_CAPTURE_DIR")
+    if _cap_dir and proc.stdout:
+        # Persist the full stream-json transcript, then parse the final result line.
+        try:
+            os.makedirs(_cap_dir, exist_ok=True)
+            _qid = os.getenv("PM3_QUERY_ID") or "row"
+            with open(os.path.join(_cap_dir, f"{_qid}.jsonl"), "w") as _tf:
+                _tf.write(proc.stdout)
+        except Exception:
+            pass
+        for _ln in proc.stdout.splitlines():
+            _ln = _ln.strip()
+            if not _ln:
+                continue
+            try:
+                _obj = json.loads(_ln)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(_obj, dict) and _obj.get("type") == "result":
+                raw = _obj
+        text = raw.get("result", "") or ""
+    elif proc.stdout:
         try:
             raw = json.loads(proc.stdout)
             text = raw.get("result", "") or ""

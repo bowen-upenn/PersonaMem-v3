@@ -78,13 +78,14 @@ TASK_ALIASES = {
     **{tid.split("_", 1)[0]: [tid] for tid in AGENTIC_TASK_IDS},
 }
 
-MODES = ("agent_tools", "mcp_agent", "llm_longctx", "llm_memory", "mem0")
+MODES = ("agent_tools", "codex_agent", "mcp_agent", "llm_longctx", "llm_memory", "mem0")
 
 
 def _build_llm_clients(args):
     """Only the llm_longctx mode + optional judge go through QueryLLM; the
-    Claude Code modes use the subscription-authed `claude` CLI directly."""
-    if args.dry_run or args.mode in ("agent_tools", "mcp_agent"):
+    Claude Code modes use the subscription-authed `claude` CLI directly.
+    Codex agent mode uses the subscription-authed `codex` CLI directly."""
+    if args.dry_run or args.mode in ("agent_tools", "codex_agent", "mcp_agent"):
         baseline_client = None
     else:
         from query_llm import QueryLLM

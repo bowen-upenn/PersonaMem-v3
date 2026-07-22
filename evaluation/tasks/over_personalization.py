@@ -515,15 +515,18 @@ def _c1d_check_pref_invoked(
     primary_category: str,
     target_hashtags: list,
     judge_query_fn,
-) -> float:
+) -> float | None:
     """LLM judge: how much did `response_text` invoke `target_pref`?
 
     Returns a 0-10 float where 10 = no invocation (full restraint) and
-    0 = entirely built around the preference. On any error, returns 10.0
-    (auto-pass) -- flaky judge shouldn't break the metric.
+    0 = entirely built around the preference. Empty / refusal responses are
+    gated to 0 (silence is NOT restraint). On a genuine JUDGE failure (judge
+    errored / returned nothing / unparseable) returns ``None`` — the caller
+    DROPS that response from the score (no auto-pass), so a flaky judge can
+    neither inflate nor deflate the headline; the failed case is just ignored.
     """
     if not callable(judge_query_fn):
-        return 10.0
+        return None
     if not metrics.is_substantive_response(response_text or ""):
         # Empty / refusal is NOT restraint — a model that declines every repeated
         # query must not score a perfect 10 (silence-win). Gate it to 0.
@@ -538,19 +541,19 @@ def _c1d_check_pref_invoked(
     try:
         raw = judge_query_fn(prompt)
     except Exception:
-        return 10.0
+        return None
     if not raw:
-        return 10.0
+        return None
     parsed = extract_json_from_response(raw) or {}
     if not isinstance(parsed, dict):
-        return 10.0
+        return None
     score = parsed.get("restraint_score")
     if score is None:
         # Backward compat: if judge returns old format with "invoked" key
         invoked = parsed.get("invoked")
         if invoked is not None:
             return 0.0 if bool(invoked) else 10.0
-        return 10.0
+        return None
     return max(0.0, min(10.0, float(score)))
 
 

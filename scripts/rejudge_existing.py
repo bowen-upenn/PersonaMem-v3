@@ -84,14 +84,58 @@ def main() -> int:
                          "pr.score output). A one-time backup of each touched "
                          "results.csv is taken under --backup_root first.")
     ap.add_argument("--backup_root", default="results/_prejudge_backup_20260612")
+    ap.add_argument("--dump_prompts", default=None,
+                    help="Capture mode: append every judge prompt to this JSONL "
+                         "(no LLM calls) for subagent fan-out.")
+    ap.add_argument("--replay_map", default=None,
+                    help="Replay mode: JSONL of {prompt, raw} subagent answers; "
+                         "fed back through pr.score for identical scoring.")
     args = ap.parse_args()
 
     users = [u.strip() for u in args.users.split(",") if u.strip()]
 
     judge_client = None
-    if args.judge:
-        from query_llm import QueryLLM
-        judge_client = QueryLLM({"models": {"llm_model": args.judge_model}}, rate_limit_per_min=50)
+    if args.dump_prompts:
+        # Capture mode: write every judge prompt pr.score builds (no LLM call),
+        # so harness subagents can answer them in parallel. Returns "" so the
+        # row produces no score this pass (we only want the prompts).
+        import threading as _th
+        _dlock = _th.Lock()
+        _dfh = open(args.dump_prompts, "a")
+
+        class _CaptureClient:
+            def query_llm(self, prompt, *a, **k):
+                with _dlock:
+                    _dfh.write(json.dumps({"prompt": prompt}, ensure_ascii=False) + "\n")
+                    _dfh.flush()
+                return ""
+        judge_client = _CaptureClient()
+    elif args.replay_map:
+        # Replay mode: feed precomputed subagent answers back through pr.score for
+        # IDENTICAL parsing/aggregation. Keyed by exact prompt text.
+        _rmap = {}
+        for _ln in open(args.replay_map):
+            _r = json.loads(_ln)
+            if _r.get("prompt") is not None:
+                _rmap[_r["prompt"]] = _r.get("raw", "") or ""
+
+        class _ReplayClient:
+            def query_llm(self, prompt, *a, **k):
+                return _rmap.get(prompt, "")
+        judge_client = _ReplayClient()
+        print(f"[replay] loaded {len(_rmap)} answers", file=sys.stderr)
+    elif args.judge:
+        jm = args.judge_model
+        if jm.startswith("claude") or jm in ("opus", "sonnet", "haiku"):
+            # Claude judges have no Azure/API deployment in this env; drive them
+            # through `claude -p` (same path the persona-1 judge study used).
+            sys.path.insert(0, str(ROOT / "results/_scripts"))
+            from run_qa_audit_opus import ClaudeLLM
+            alias = {"claude-opus-4.8": "opus", "claude-sonnet-4.6": "sonnet"}.get(jm, jm)
+            judge_client = ClaudeLLM(alias)
+        else:
+            from query_llm import QueryLLM
+            judge_client = QueryLLM({"models": {"llm_model": jm}}, rate_limit_per_min=50)
 
     scope = set(APPLICABILITY.keys())
     # cluster-based fatigue tasks aren't re-judgeable per-row here
@@ -253,6 +297,18 @@ def main() -> int:
                "by_task": rows}
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     Path(args.out).write_text(json.dumps(summary, indent=2))
+
+    # Per-item sidecar (for inter-judge agreement metrics): one row per scored
+    # item with its query_score_0_10, keyed by uid+qid+task.
+    if rescored:
+        side = str(args.out) + ".items.jsonl"
+        with open(side, "w") as fh:
+            for uid, qmap in sorted(rescored.items()):
+                for qid, o in qmap.items():
+                    s = o.get("query_score_0_10")
+                    if isinstance(s, (int, float)):
+                        fh.write(json.dumps({"uid": uid, "qid": qid,
+                                 "task": o.get("task_id"), "score": float(s)}) + "\n")
 
     print(f"\n{'task_type':42s} {'n':>4s} {'avg/10':>7s} {'avg%':>6s}")
     print("-" * 64)

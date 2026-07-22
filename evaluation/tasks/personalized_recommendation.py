@@ -372,12 +372,20 @@ _NDCG_REL_FILLER = 1.0
 _NDCG_REL_HARD_NEG = -2.0
 
 
-def _graded_ndcg_at_k(ranked: list[int], positives, hard_negs, k: int) -> float:
+def _graded_ndcg_at_k(ranked: list[int], positives, hard_negs, k: int,
+                      filler_grade: float = _NDCG_REL_FILLER) -> float:
     """Graded NDCG@K shared by every ranking task. Relevance grades:
 
         positive (held-out / directive-matching) = +2
-        neutral filler                            = +1
+        neutral filler                            = +1  (overridable via filler_grade)
         hard-negative (rejected / carve-out)      = -2
+
+    `filler_grade` defaults to +1 (graded). Tasks whose slates carry NO
+    hard-negatives (e.g. hidden_persona_recommendation: 1 resonant target +
+    neutral fillers, no rejected items) MUST pass `filler_grade=0` (binary
+    relevance) — otherwise the +1 filler with no -2 floor gives a ~75% NDCG
+    floor and ~79% random baseline, which is undiscriminating. See EVAL.md
+    "Hidden-persona NDCG" / AUDIT.md.
 
     A hard-negative ranked into a top slot contributes NEGATIVE discounted gain,
     so it actively drags the score down (the more so the higher it sits), on top
@@ -397,7 +405,7 @@ def _graded_ndcg_at_k(ranked: list[int], positives, hard_negs, k: int) -> float:
     def _rel(idx: int) -> float:
         if idx in pos:
             return _NDCG_REL_TARGET
-        return _NDCG_REL_HARD_NEG if idx in hard else _NDCG_REL_FILLER
+        return _NDCG_REL_HARD_NEG if idx in hard else filler_grade
 
     def _dcg(order: list[int]) -> float:
         return sum(_rel(idx) / math.log2(i + 2) for i, idx in enumerate(order[:k]))
@@ -408,15 +416,17 @@ def _graded_ndcg_at_k(ranked: list[int], positives, hard_negs, k: int) -> float:
     return max(0.0, _dcg(ranked) / idcg)
 
 
-def _ndcg_at_k(ranked: list[int], target: int, hard_negatives: list[int], k: int) -> float:
+def _ndcg_at_k(ranked: list[int], target: int, hard_negatives: list[int], k: int,
+               filler_grade: float = _NDCG_REL_FILLER) -> float:
     """Single-target wrapper around `_graded_ndcg_at_k` for the recsys slates
     (one held-out `target` + hard negatives). See it for the grading.
 
     NOTE: this previously credited only the target's own position and ignored
     `hard_negatives` entirely; then a no-penalty graded version (hard-neg = 0)
     only let them waste a slot. The shared helper now actively penalizes them.
+    `filler_grade=0` selects binary relevance for no-hard-neg slates.
     """
-    return _graded_ndcg_at_k(ranked, {target}, hard_negatives, k)
+    return _graded_ndcg_at_k(ranked, {target}, hard_negatives, k, filler_grade=filler_grade)
 
 
 def _tier_concordance(ranked: list[int], target: int, hard_negatives: list[int],
@@ -461,7 +471,8 @@ def _tier_concordance(ranked: list[int], target: int, hard_negatives: list[int],
     return round(correct / total, 4)
 
 
-def compute_personalized_recommendation_metrics(parsed: dict, instance: dict) -> dict:
+def compute_personalized_recommendation_metrics(parsed: dict, instance: dict,
+                                                filler_grade: float = _NDCG_REL_FILLER) -> dict:
     ranked = parsed.get("ranked_indexes") or []
     target = instance.get("held_out_idx")
     hard_negs = instance.get("hard_negative_idxs") or []
@@ -502,8 +513,8 @@ def compute_personalized_recommendation_metrics(parsed: dict, instance: dict) ->
         "recall_at_1": _recall_at_k(ranked, target, 1),
         "recall_at_3": _recall_at_k(ranked, target, 3),
         "recall_at_5": _recall_at_k(ranked, target, 5),
-        "ndcg_at_3":   round(_ndcg_at_k(ranked, target, hard_negs, 3), 4),
-        "ndcg_at_5":   round(_ndcg_at_k(ranked, target, hard_negs, 5), 4),
+        "ndcg_at_3":   round(_ndcg_at_k(ranked, target, hard_negs, 3, filler_grade=filler_grade), 4),
+        "ndcg_at_5":   round(_ndcg_at_k(ranked, target, hard_negs, 5, filler_grade=filler_grade), 4),
         "mrr":         round(_mrr(ranked, target), 4),
         "hit_at_1":    _hit_at_k(ranked, target, 1),
         "hit_at_3":    _hit_at_k(ranked, target, 3),

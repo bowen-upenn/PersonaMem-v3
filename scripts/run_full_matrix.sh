@@ -2,14 +2,17 @@
 # Full eval matrix (post audit-fix + query rebuild). User-authorized, no approval.
 #   gpt-5.5  × { llm_longctx, llm_memory, mem0 }   (Azure)
 #   opus-4.8 × { agent_tools }                     (Claude Code subagent)
-# All 20 personas → results/{mode}/{uid}; gpt-5.5 judge; --prune_invalid so the
-# headline is over COMPLETED rows only. The Azure-gpt chain (3 modes, serialized
+# The configured persona cohort → results/{mode}/{uid}; gpt-5.5 judge; --prune_invalid
+# so the headline is over COMPLETED rows only. The Azure-gpt chain (3 modes, serialized
 # to share the rate limit) runs in PARALLEL with the Claude agent chain. Ends
 # with a per-mode aggregate + cross-mode comparison.csv.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-PERSONAS="1 2 3 5 6 8 9 10 13 14 26 105 115 209 229 282 461 655 760 835"
+# Persona cohort is defined in a local, untracked file (see .gitignore).
+[ -f scripts/personas.local.sh ] && . scripts/personas.local.sh
+PERSONAS="${PERSONAS:-${PERSONAS_EXTENDED:-}}"
+[ -n "$PERSONAS" ] || { echo "ERROR: set PERSONAS=... or create scripts/personas.local.sh" >&2; exit 2; }
 GPT=gpt-5.5
 JUDGE=gpt-5.5
 OPUS=opus

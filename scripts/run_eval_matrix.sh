@@ -3,6 +3,7 @@
 #
 #   modes  : llm_longctx  llm_memory  mem0        (Azure gpt-5.5 baselines)
 #            agent_tools   mcp_agent              (Claude Code, opus 4.8)
+#            codex_agent                          (Codex CLI, GPT-5.5)
 #   judge  : gpt-5.5 (Azure) for all
 #   layout : results/{mode}/{uid}/results.csv   (+ per-(mode,uid) logs under results/_logs/)
 #
@@ -22,7 +23,10 @@
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-PERSONAS="1 2 3 5 6 8 9 10 13 14 26 105 115 209 229 282 461 655 760 835"
+# Persona cohort is defined in a local, untracked file (see .gitignore);
+# override per-run with --personas "...".
+[ -f scripts/personas.local.sh ] && . scripts/personas.local.sh
+PERSONAS="${PERSONAS:-${PERSONAS_EXTENDED:-}}"
 MODES="llm_longctx llm_memory mem0 agent_tools mcp_agent"
 GPT_MODEL="gpt-5.5"          # QueryLLM maps this to AZURE_OPENAI_DEPLOYMENT_NAME=gpt-5.5
 CLAUDE_MODEL="opus"             # alias -> latest opus (opus-4.8)
@@ -30,7 +34,7 @@ JUDGE_MODEL="gpt-5.5"
 GPT_WORKERS=8
 AGENT_WORKERS=1
 JOBS=1            # cross-persona concurrency for llm_memory (workers=8 intra-persona)
-MEM0_JOBS=20     # cross-persona concurrency for mem0 — DEFAULT: all 20 personas at once.
+MEM0_JOBS=20     # cross-persona concurrency for mem0 — DEFAULT: the whole cohort at once.
                  # mem0 is workers=1 (serial per persona) AND rate-light (~1 in-flight
                  # call/persona, ~36% of the Azure cap at 6-way), so run them all in
                  # parallel; backoff absorbs any overflow. REQUIRES per-persona
@@ -60,13 +64,15 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+[ -n "$PERSONAS" ] || { echo "ERROR: set --personas \"...\", PERSONAS=..., or create scripts/personas.local.sh" >&2; exit 2; }
+
 LOGDIR="results/_logs"
 mkdir -p "$LOGDIR"
 echo "[matrix] personas=[$PERSONAS]"
 echo "[matrix] modes=[$MODES]  gpt_model=$GPT_MODEL  claude_model=$CLAUDE_MODEL  judge=$JUDGE_MODEL"
 echo "[matrix] gpt_workers=$GPT_WORKERS agent_workers=$AGENT_WORKERS jobs=$JOBS limit='${LIMIT:-none}' resume='${RESUME:-off}'"
 
-is_agent_mode() { case "$1" in agent_tools|mcp_agent) return 0;; *) return 1;; esac; }
+is_agent_mode() { case "$1" in agent_tools|mcp_agent|codex_agent) return 0;; *) return 1;; esac; }
 
 run_one() {
   local mode="$1" uid="$2"
@@ -82,7 +88,11 @@ run_one() {
   [ -n "$LIMIT" ]  && args+=($LIMIT)
   [ -n "$RATE_LIMIT" ] && args+=(--rate_limit "$RATE_LIMIT")
   if is_agent_mode "$mode"; then
-    args+=(--claude_model "$CLAUDE_MODEL" --workers "$AGENT_WORKERS")
+    if [ "$mode" = "codex_agent" ]; then
+      args+=(--model "$GPT_MODEL" --workers "$AGENT_WORKERS")
+    else
+      args+=(--claude_model "$CLAUDE_MODEL" --workers "$AGENT_WORKERS")
+    fi
   else
     args+=(--model "$GPT_MODEL" --workers "$GPT_WORKERS")
   fi

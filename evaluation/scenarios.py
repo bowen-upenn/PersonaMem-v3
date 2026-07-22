@@ -94,7 +94,7 @@ def educated_rejection(bq: BackendQuery, user_id: str, since_timestamp: int, rng
 
 # Off-domain queries the user has no preference history in. `rng` is seeded
 # per-user, so each persona draws a DIFFERENT one — previously this arm shipped
-# one verbatim tax query for all 20 users, which can't discriminate (no model
+# one verbatim tax query for all users, which can't discriminate (no model
 # over-personalizes a tax form, so everyone passes → inflated mean).
 _OUT_OF_DOMAIN_QUERIES = [
     ("quarterly tax payment due in 2 weeks. which form do I file and what's safe-harbor?", "a factual tax question"),
@@ -315,7 +315,7 @@ def build_all_scenarios(
     # Seed per-user so the fixed-query scenarios (out_of_domain /
     # socially_inappropriate / ask_to_forget) draw DIFFERENT queries per persona.
     # Previously `random.Random(seed)` used the same global seed for everyone, so
-    # all 20 users got the identical out_of_domain query.
+    # all users got the identical out_of_domain query.
     rng = random.Random(f"{seed}:{user_id}")
     out: list[dict] = []
 

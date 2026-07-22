@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# Run gemini-3.5-flash eval on the 10 Sonnet-covered personas, WITH CACHE.
+# Run gemini-3.5-flash eval on the primary persona cohort, WITH CACHE.
 #   MODE=llm_longctx (default) or llm_memory
 # Cache requires --workers 1 per process (sequential ascending-T + in-process
 # API cost tracking). Personas run in PARALLEL at the shell level (independent
@@ -20,7 +20,10 @@ MODE="${MODE:-llm_longctx}"
 MODEL="${MODEL:-gemini-3.5-flash}"
 CONCURRENCY="${CONCURRENCY:-5}"
 JUDGE_FLAG="${JUDGE_FLAG:---enable_llm_judge}"      # default: JUDGE ON (gpt-5.5 judge). Scored runs are the norm.
-PERSONAS="${PERSONAS:-1 2 3 5 6 8 9 10 13 14}"
+# Persona cohort is defined in a local, untracked file (see .gitignore).
+[ -f scripts/personas.local.sh ] && . scripts/personas.local.sh
+PERSONAS="${PERSONAS:-${PERSONAS_PRIMARY:-}}"
+[ -n "$PERSONAS" ] || { echo "ERROR: set PERSONAS=... or create scripts/personas.local.sh" >&2; exit 2; }
 # OUT_ROOT overridable (e.g. results/llm_longctx_gpt5.5 for the gpt-5.5 reeval).
 OUT_ROOT="${OUT_ROOT:-results/${MODE}_gemini3.5flash}"
 LOG_DIR="/tmp/eval_gemini"

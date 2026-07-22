@@ -123,7 +123,7 @@ _THREAD_GUIDANCE = {
     ),
 }
 
-# Stranger cold-outreach archetypes — the audit found 18/20 personas got the
+# Stranger cold-outreach archetypes — the audit found nearly every persona got the
 # SAME "earn passive income from your phone" spam. Rotate per-thread (seeded)
 # so the cohort's spam varies like real inboxes.
 SPAM_ARCHETYPES = [
