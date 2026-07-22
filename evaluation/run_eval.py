@@ -122,8 +122,14 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--run_dir", required=True,
                    help="Output directory for results.csv + writes.jsonl + summary files")
     p.add_argument("--mode",
-                   choices=("llm_longctx", "llm_memory", "mem0", "mcp_agent", "agent_tools", "codex_agent"),
-                   default="llm_longctx")
+                   choices=("llm_longctx", "llm_memory", "mem0", "mcp_agent",
+                            "claude_code", "codex",
+                            # legacy aliases (kept so existing drivers/results layouts keep working)
+                            "agent_tools", "codex_agent"),
+                   default="llm_longctx",
+                   help="claude_code = Claude Code agent over filesystem snapshots "
+                        "(alias: agent_tools); codex = Codex CLI agent over the same "
+                        "snapshots (alias: codex_agent)")
     p.add_argument("--model", default=os.getenv("EVAL_MODEL", "gpt-5.5"),
                    help="Baseline LLM model for llm_longctx / llm_memory / mem0 modes")
     p.add_argument("--claude_model", default=os.getenv("EVAL_CLAUDE_MODEL", "sonnet"),
@@ -196,7 +202,11 @@ def _parse_args() -> argparse.Namespace:
                         "Agentic rows (T6-T19) always run sequentially in a "
                         "dedicated worker because they share writes.jsonl. "
                         "--workers 1 disables parallelism (original behavior).")
-    return p.parse_args()
+    args = p.parse_args()
+    # Canonical public names -> internal mode identifiers (results layouts,
+    # dispatch checks, and the matrix driver all use the internal names).
+    args.mode = {"claude_code": "agent_tools", "codex": "codex_agent"}.get(args.mode, args.mode)
+    return args
 
 
 def _build_llm_clients(args: argparse.Namespace):

@@ -1,5 +1,7 @@
 # PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
+![PersonaMem-v3](header.png)
+
 Third release in the PersonaMem series:
 
 - **PersonaMem (v1)** — [COLM 2025] *Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225)
@@ -21,27 +23,28 @@ Third release in the PersonaMem series:
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # fill in Azure OpenAI / Gemini credentials
+# download the source engagement data (facebook/gistbench) and sample N users into an input CSV:
+python scripts/download_and_sample_gistbench.py --sample 10   # → data/gistbench_sample_10users.csv
 ```
 
-Engagement-history CSVs (`data/`) and generated personas (`backend/`) are distributed separately (see the [dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)) — they are intentionally not tracked in git.
+Source data comes from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench); pre-built personas are distributed via the [PersonaMem-v3 dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3). Neither is tracked in git.
 
 ## 1. Build personas and their queries
 
 One persona, end to end (28-step generation pipeline → `backend/115/` with `profile.json`, five app histories, `calendar.json`, `persona.html`):
 
 ```bash
-python scripts/run_persona_pipeline.py --user_id 115 --input_csv data/all180_input.csv --verbose
+python scripts/run_persona_pipeline.py --user_id 115 --input_csv data/gistbench_sample_10users.csv --verbose
 python scripts/prepare_eval_data.py --user_id 115        # → backend/115/test.json (the eval queries)
 ```
 
-Multiple personas:
+Multiple personas — as many as you want, as long as the source data has the users:
 
 ```bash
-scripts/run_next80_personas.sh                            # batch driver: resumable, bounded concurrency
-python scripts/prepare_eval_data.py --user_range 17-118 --parallel 4
+bash scripts/run_persona_batch.sh                         # every user in the input CSV; resumable
+# knobs: INPUT_CSV=... NUM_USERS=25 USERS="17 18 19" CONCURRENCY=3
+python scripts/prepare_eval_data.py --all --parallel 4    # queries for every generated persona
 ```
-
-(Omit `--user_id` on `run_persona_pipeline.py` to process every user in the input CSV.)
 
 ## 2. Run evaluations and show results
 
@@ -52,7 +55,7 @@ python evaluation/run_eval.py --user_id 115 --mode llm_longctx \
     --model gpt-5.5 --judge_model gpt-5.5 --run_dir results/llm_longctx_gpt5.5/115
 ```
 
-`--mode` ∈ `llm_longctx` (long-context baseline) · `llm_memory` (textual memory) · `mem0` (mem0 memory) · `agent_tools` (Claude Code agent over filesystem snapshots) · `mcp_agent` (Claude Code agent over per-app MCP tools) · `codex_agent` (Codex CLI agent). The judge is always `gpt-5.5`.
+`--mode` ∈ `llm_longctx` (long-context baseline) · `llm_memory` (textual memory) · `mem0` (mem0 memory) · `claude_code` (Claude Code agent over time-masked filesystem snapshots) · `codex` (Codex CLI agent over the same snapshots). The judge is always `gpt-5.5`.
 
 Full matrix over a cohort of personas and modes:
 
