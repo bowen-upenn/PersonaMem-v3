@@ -4,8 +4,8 @@
 
 Third release in the PersonaMem series:
 
-- **PersonaMem (v1)** — [COLM 2025] *Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225)
-- **PersonaMem-v2** — *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688)
+- **PersonaMem (v1)** — [COLM 2025] *Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
+- **PersonaMem-v2** — *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
 
 ## What's new in v3
 
@@ -27,7 +27,7 @@ cp .env.example .env        # fill in Azure OpenAI / Gemini credentials
 python scripts/download_gistbench.py                # → data/gistbench_input.csv
 ```
 
-Source data comes from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench); pre-built personas are distributed via the [PersonaMem-v3 dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3). Neither is tracked in git.
+Source data comes from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench); pre-built personas are distributed via the [PersonaMem-v3 dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3). Neither is tracked in git — but a ready-made 10-user sample input ships with the repo at `data/gistbench_sample_10users.csv` for a quick start.
 
 ## 1. Build personas and their queries
 
