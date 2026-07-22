@@ -18,6 +18,7 @@ hashtags_*.tsv
 .cache/
 .claude/
 ray_*/
+docs/
 # All persona data (backend/ plus any backend_* experiment variant) stays off GitHub
 backend*/
 data/
