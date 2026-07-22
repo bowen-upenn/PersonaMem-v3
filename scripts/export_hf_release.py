@@ -671,10 +671,11 @@ dataset may still contain stereotypical biases or other imperfect content.
 ## 👀 Browse a persona in one click
 
 Each persona ships a self-contained HTML page with its full timeline, inferred
-preference profile, and sample test cards. HF does not render HTML in the
-browser, so the links download the file — open it locally with one click:
-{trio_links}, or any `backend/{{persona_id}}/persona.html`. Every CSV row
-carries its persona's download link in column 2 (`persona_html`).
+preference profile, and sample test cards. HF serves raw files without
+rendering HTML, so: open the link, save the page (Ctrl/Cmd-S), and open the
+saved file in your browser — {trio_links}, or any
+`backend/{{persona_id}}/persona.html`. Every CSV row carries its persona's
+page link in column 2 (`persona_html`).
 
 ## 🗂️ Dataset Contents
 
@@ -774,7 +775,7 @@ JSON-encoded strings.
 | Column | Description |
 |---|---|
 | `persona_id` | Persona identifier (also the `backend/{persona_id}/` folder name) |
-| `persona_html` | Link to this persona's one-page browsable view |
+| `persona_html` | Link to this persona's one-page browsable view (HF serves it raw — save the page and open locally) |
 | `event_id` | Source interaction id (unique per persona) |
 | `event_summary` | **Start here** — one auto-composed human sentence describing the row (e.g. `Viewed more than 75% of the reel: "Canelo-Crawford Hype Reel" (#Boxing)`) |
 | `source_file` | Repo path to the full JSON this row was flattened from |
