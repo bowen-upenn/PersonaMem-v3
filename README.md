@@ -23,8 +23,8 @@ Third release in the PersonaMem series:
 ```bash
 pip install -r requirements.txt
 cp .env.example .env        # fill in Azure OpenAI / Gemini credentials
-# download the source engagement data (facebook/gistbench) and sample N users into an input CSV:
-python scripts/download_and_sample_gistbench.py --sample 10   # → data/gistbench_sample_10users.csv
+# download the full source engagement data (facebook/gistbench) and convert it to the input CSV:
+python scripts/download_gistbench.py                # → data/gistbench_input.csv
 ```
 
 Source data comes from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench); pre-built personas are distributed via the [PersonaMem-v3 dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3). Neither is tracked in git.
@@ -34,11 +34,11 @@ Source data comes from [facebook/gistbench](https://huggingface.co/datasets/face
 One persona, end to end (28-step generation pipeline → `backend/115/` with `profile.json`, five app histories, `calendar.json`, `persona.html`):
 
 ```bash
-python scripts/run_persona_pipeline.py --user_id 115 --input_csv data/gistbench_sample_10users.csv --verbose
+python scripts/run_persona_pipeline.py --user_id 115 --input_csv data/gistbench_input.csv --verbose
 python scripts/prepare_eval_data.py --user_id 115        # → backend/115/test.json (the eval queries)
 ```
 
-Multiple personas — as many as you want, as long as the source data has the users:
+Multiple personas:
 
 ```bash
 bash scripts/run_persona_batch.sh                         # every user in the input CSV; resumable
@@ -47,6 +47,12 @@ python scripts/prepare_eval_data.py --all --parallel 4    # queries for every ge
 ```
 
 ## 2. Run evaluations and show results
+
+All artifacts are plain JSON/CSV/HTML on disk:
+
+- **Personas and their data** — `backend/{uid}/`: `profile.json` (persona definition), `instagram.json` / `facebook.json` / `threads.json` / `chatbot.json` / `ai_studio.json` (time-sorted interaction-event histories per app), `calendar.json` (calendar modification stream), `test.json` (the eval queries), `persona.html` (self-contained human-readable review page).
+- **Eval runs** — `results/{mode}/{uid}/`: `results.csv` (one row per query: `query_id, seq, user_id, task_type, ts, metrics_json, status, duration_ms, error, agent_response`), `writes.jsonl` (agentic write actions), `summary.json`.
+- **Aggregates** — `results/aggregate/` (per-mode CSV/JSON summaries); final comparison tables at `results/aggregate/html/results_tables.html`.
 
 Single persona, single mode:
 
@@ -63,12 +69,10 @@ Full matrix over a cohort of personas and modes:
 scripts/run_eval_matrix.sh --personas "1 2 3 5 6" --modes "llm_longctx llm_memory mem0"
 ```
 
-Results land in `results/{mode}/{uid}/results.csv`. Aggregate and render the summary tables:
+Aggregate and render the summary tables:
 
 ```bash
 python scripts/aggregate_eval.py --results_root results   # → results/aggregate/ (CSV/JSON summaries)
 ```
-
-Final comparison tables: `results/aggregate/html/results_tables.html`.
 
 > **Note for agents (Claude Code / Codex):** all commands above are directly runnable from the repo root; evaluation runs make real LLM API calls, so confirm with the user before launching them.

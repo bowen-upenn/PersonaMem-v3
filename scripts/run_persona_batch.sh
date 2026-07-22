@@ -5,7 +5,7 @@
 #
 # Generates backend/<uid>/ for every requested user in the input CSV. Generate
 # as many personas as you want, as long as the source data has the users
-# (see scripts/download_and_sample_gistbench.py to build an input CSV from
+# (see scripts/download_gistbench.py to build the input CSV from
 # https://huggingface.co/datasets/facebook/gistbench).
 #
 # Backend: Azure OpenAI
@@ -42,7 +42,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$REPO_ROOT"
 
-INPUT_CSV="${INPUT_CSV:-data/gistbench_sample_10users.csv}"
+INPUT_CSV="${INPUT_CSV:-data/gistbench_input.csv}"
 MODEL="${MODEL:-gpt-5.5}"
 MINI_MODEL="${MINI_MODEL:-gpt-5.4-mini}"
 PARALLEL="${PARALLEL:-30}"        # internal concurrent LLM calls per user

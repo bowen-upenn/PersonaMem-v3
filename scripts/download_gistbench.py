@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Download facebook/gistbench, inspect schema vs our expected CSV shape, and
-produce a 10-user sample CSV ready for the persona pipeline.
+convert it into the persona-pipeline input CSV (ALL users by default;
+--sample N builds a small subset for a quick smoke run).
 
 Uses ONLY pyarrow — numpy/pandas/datasets/huggingface_hub are intentionally
 not required (PEP 668 blocks `pip install --user` in this environment).
@@ -208,33 +209,37 @@ def write_csv(rows: list[dict], output_path: str) -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Download facebook/gistbench and produce a random user sample CSV."
+        description="Download facebook/gistbench and convert it to the persona-pipeline input CSV."
     )
     parser.add_argument(
         "--sample",
         type=int,
-        default=10,
-        help="Number of users to randomly sample. The only real input knob. Default: 10.",
+        default=None,
+        help="Optional: randomly sample only N users (smoke runs). Default: convert ALL users.",
     )
     parser.add_argument(
         "--output",
         default=None,
-        help="Output CSV path. Default: data/gistbench_sample_<N>users.csv",
+        help="Output CSV path. Default: data/gistbench_input.csv "
+             "(or data/gistbench_sample_<N>users.csv with --sample).",
     )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    n_sample = args.sample
-    output_csv = args.output or os.path.join(
-        REPO_ROOT, "data", f"gistbench_sample_{n_sample}users.csv"
-    )
 
     download_parquet()
     schema = inspect_schema()
     uids = load_user_ids()
-    selected = sample_users(uids, n_sample)
+    if args.sample is None:
+        selected = uids
+        log(f"[full] Converting all {len(uids)} users.")
+        default_name = "gistbench_input.csv"
+    else:
+        selected = sample_users(uids, args.sample)
+        default_name = f"gistbench_sample_{args.sample}users.csv"
+    output_csv = args.output or os.path.join(REPO_ROOT, "data", default_name)
     rows, _per_user = extract_rows(selected, schema)
     write_csv(rows, output_csv)
     log("[done]")
