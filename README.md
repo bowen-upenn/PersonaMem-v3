@@ -1,107 +1,71 @@
-# PersonaMem-v3
+# PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
-Cross-platform personalization benchmark. Three commands take you from
-raw interaction logs to evaluation results.
+Third release in the PersonaMem series:
+
+- **PersonaMem (v1)** — [COLM 2025] *Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225)
+- **PersonaMem-v2** — *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688)
+
+## What's new in v3
+
+| Dimension | PersonaMem-v1 | PersonaMem-v2 | PersonaMem-v3 |
+|---|---|---|---|
+| **Data source** | 20 fully synthetic users | 1000 fully synthetic users with more comprehensive personas | 200 anonymized **real-world** users with 4,000,000 engagement histories |
+| **Explicit vs. implicit** | Explicit user preferences | **Implicit** user preferences | Around 95% **implicit** user behavior signals |
+| **Scenarios** | Chatbot conversations | Chatbot conversations | **Omni-platform**, including chatbot, social media recommendation, **agentic tasks**, and proactiveness |
+| **Restraint** | Personalization | Personalization | Personalization and **over-personalization** |
+| **User privacy** | No mentioning of user private information | Including personally identifiable information and user-initiated ask-to-forget scenarios | Including psychology-anchored hidden persona and **socially inappropriate** scenarios |
+| **Dynamics** | Fully synthesized preference updates | Fully synthesized preference updates | Reinforced, emerging, diminishing, bursting, and varied attention shifts from the **real world** |
 
 ## Setup
 
 ```bash
-docker build -t personamem-v3 .
-docker run -it --gpus all -v /pool/bwjiang/personamem-v3:/workspace personamem-v3 /bin/bash
+pip install -r requirements.txt
+cp .env.example .env        # fill in Azure OpenAI / Gemini credentials
 ```
 
-For API mode, copy `.env.example` to `.env` and fill in your Azure OpenAI
-or OpenAI credentials.
+Engagement-history CSVs (`data/`) and generated personas (`backend/`) are distributed separately (see the [dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)) — they are intentionally not tracked in git.
 
-## Input
+## 1. Build personas and their queries
 
-Place your raw interaction CSV at `data/test_interactions.csv`. Required
-columns:
-
-| Column | Example |
-|---|---|
-| `interaction_type` | `explicit_positive`, `implicit_negative`, … |
-| `user_id` | `2124791` |
-| `object_id` | `122137823030860919` |
-| `interaction_time` | unix timestamp |
-| `object_text` | `#RelationshipGoals #exproblems …` |
-
-## The three commands
-
-### 1. Generate persona data
+One persona, end to end (28-step generation pipeline → `backend/115/` with `profile.json`, five app histories, `calendar.json`, `persona.html`):
 
 ```bash
-python scripts/run_persona_pipeline.py --input_csv data/test_interactions.csv
+python scripts/run_persona_pipeline.py --user_id 115 --input_csv data/all180_input.csv --verbose
+python scripts/prepare_eval_data.py --user_id 115        # → backend/115/test.json (the eval queries)
 ```
 
-Reads `data/test_interactions.csv`, runs the 28-step persona pipeline
-(see [skill.md](skill.md) for the spec), writes per-user files to
-`backend/{uid}/`:
-
-```
-backend/{uid}/
-├── profile.json      demographics + Big Five + sub-personas + flat preferences
-├── instagram.json    interaction events with nested preferences
-├── facebook.json
-├── threads.json
-├── chatbot.json      events + multi-turn conversations
-├── calendar.json     calendar add/update/remove stream
-└── persona.html      self-contained interactive visualization
-```
-
-### 2. Generate eval data
+Multiple personas:
 
 ```bash
-python scripts/prepare_eval_data.py --all
+scripts/run_next80_personas.sh                            # batch driver: resumable, bounded concurrency
+python scripts/prepare_eval_data.py --user_range 17-118 --parallel 4
 ```
 
-One command, every artifact. For each user with persona data, this
-writes the frozen test queries (~220 across 27 task types), a JSON
-dump for human review, a re-rendered HTML, and a structural audit:
+(Omit `--user_id` on `run_persona_pipeline.py` to process every user in the input CSV.)
 
-```
-benchmark/{uid}/queries.csv             frozen test queries (eval input)
-backend/{uid}/test.json                 same queries in human-readable JSON
-backend/{uid}/persona.html              re-rendered with the new test cards
-backend/{uid}/test_audit_snapshot.md    audit report (realism, label honesty,
-                                        distribution coverage)
-```
+## 2. Run evaluations and show results
 
-No follow-up commands needed — this scales cleanly to 1000+ personas.
-
-### 3. Run the evaluation
+Single persona, single mode:
 
 ```bash
-scripts/run_eval_matrix.sh
+python evaluation/run_eval.py --user_id 115 --mode llm_longctx \
+    --model gpt-5.5 --judge_model gpt-5.5 --run_dir results/llm_longctx_gpt5.5/115
 ```
 
-Runs the eval harness across the configured persona cohort and modes
-(single-persona / single-mode: `python evaluation/run_eval.py --user_id 115 --mode mcp_agent`).
-Output per persona and mode: `results/{mode}/{uid}/results.csv` plus a summary.
+`--mode` ∈ `llm_longctx` (long-context baseline) · `llm_memory` (textual memory) · `mem0` (mem0 memory) · `agent_tools` (Claude Code agent over filesystem snapshots) · `mcp_agent` (Claude Code agent over per-app MCP tools) · `codex_agent` (Codex CLI agent). The judge is always `gpt-5.5`.
 
-`--mode` chooses the agent setup. The modes isolate which
-component (framework, retrieval, structured API) drives performance:
-
-| Mode | What it tests |
-|---|---|
-| `mcp_agent` | Claude Code agent + structured per-app MCP tools — closest to a real app integration |
-| `agent_tools` | Claude Code agent reading time-masked filesystem snapshots |
-| `codex_agent` | Codex CLI agent (`codex exec --model gpt-5.5`) reading the same time-masked filesystem snapshots |
-| `llm_longctx` | Direct LLM call (no agent framework) — pure long-context baseline |
-
-Single-persona variant: `python evaluation/run_eval.py --user_id 115 --mode mcp_agent`.
-Codex agent variant over the configured cohort: `scripts/run_codex_agent.sh`.
-
-## Aggregating results
+Full matrix over a cohort of personas and modes:
 
 ```bash
-python scripts/aggregate_eval.py
+scripts/run_eval_matrix.sh --personas "1 2 3 5 6" --modes "llm_longctx llm_memory mem0"
 ```
 
-Writes `benchmark/_aggregate/` with per-task accuracy and the
-macro/micro headline numbers across all personas and modes.
+Results land in `results/{mode}/{uid}/results.csv`. Aggregate and render the summary tables:
 
-## More
+```bash
+python scripts/aggregate_eval.py --results_root results   # → results/aggregate/ (CSV/JSON summaries)
+```
 
-- [skill.md](skill.md) — full persona-pipeline specification (28 steps; final step seeds proactive-agent triggers).
-- [EVAL.md](EVAL.md) — task families, rubric dimensions, metric definitions.
+Final comparison tables: `results/aggregate/html/results_tables.html`.
+
+> **Note for agents (Claude Code / Codex):** all commands above are directly runnable from the repo root; evaluation runs make real LLM API calls, so confirm with the user before launching them.
