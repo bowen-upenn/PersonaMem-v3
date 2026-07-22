@@ -579,7 +579,7 @@ def write_card(out: Path, stats: dict):
         f"[persona {u}]({HF_RESOLVE}/backend/{u}/persona.html?download=true)" for u in TRIO)
 
     yaml = f"""---
-license: cc-by-4.0
+license: cc-by-nc-4.0
 task_categories:
 - question-answering
 - text-generation
@@ -729,6 +729,13 @@ lifecycle, sensitive-event restraint, geo shift), `proactive_actions`
 | Family | Task type | Rows (full dataset) | What it tests |
 |---|---|---|---|
 {task_table}
+
+## 📜 License
+
+The personas are derived from
+[facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench) and
+inherit its **CC-BY-NC-4.0** license (attribution, non-commercial). The
+[benchmark code](https://github.com/bowen-upenn/PersonaMem-v3) is MIT.
 
 ## Citation
 
