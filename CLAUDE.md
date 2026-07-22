@@ -1,5 +1,15 @@
 # Project Rules
 
+## Documentation Map (how the .md files in this repo fit together)
+- `CLAUDE.md` (this file) — session rules ONLY: high-level workflow, management policies, and critical reminders every Claude Code session must follow. Deep content lives in the files below; never duplicate it here.
+- `README.md` — public-facing quickstart: what the benchmark is, setup, building personas, running evals. Keep concise and free of internal run history.
+- `skill.md` — single source of truth for the persona pipeline: the step-by-step subagent specification + the "Design invariants & reference" section (canonical constants, gates, quotas, schemas). Read before any pipeline work.
+- `DESIGN.md` — design rationale: WHY each pipeline mechanism exists. Update on any design change (see Design Document below).
+- `EVAL.md` — evaluation methodology: task definitions, modes, scoring, judge protocol.
+- `AUDIT.md` — data-quality audit methodology: known failure modes, detection methods, existing automated checks. Methodology only — never findings from a specific run.
+- `results/RESULTS_SECTION.md` — paper results prose.
+- `docs/` — internal scratch notes; gitignored, never shipped.
+
 ## Auto-Commit
 - After completing a key milestone, create a git commit with a descriptive message
 - Do not batch multiple unrelated changes into one commit
@@ -50,10 +60,20 @@
   - If you intentionally chose not to fix a finding (by-design behavior), add it to "Known false positives — do not flag" with a one-line reason.
 - `AUDIT.md` is methodology only — it contains no findings from any specific audit run. Findings go in a separate report.
 
+## Data Quality Iteration (standing instruction)
+- Continuously improving generated-data quality is a standing user priority. REMEMBER every piece of user feedback about data quality — expectations, complaints, accepted fixes — and apply it across sessions (save non-obvious feedback to auto-memory so it persists).
+- Whenever the user is not satisfied with data quality (or flags a suspect sample), iterate:
+  1. **Diagnose** on concrete generated rows — read the actual backend data; never guess from code alone.
+  2. **Fix** — prefer BOTH a surgical script (in `scripts/`) that patches already-shipped data AND a pipeline fix (`persona_agent.py` / `prompts.py` / `skill.md`) so the failure cannot recur. Ask before any regen or eval run per the rules above.
+  3. **Iterate into `AUDIT.md`** — add the symptom + detection method (and any new automated check) per the Audit Document section, so future audits catch this failure mode automatically.
+  4. **Sync the other docs** — update `DESIGN.md` if the design changed, and `skill.md` if constants/gates/schemas changed.
+- Repeat the loop until the user confirms satisfaction; each round's failure mode must land in `AUDIT.md` before the loop closes.
+
 ## Persona Pipeline
-- Default mode is Claude Code subagents (not API). See skill.md for the full 28-step specification (the final step seeds proactive-agent trigger candidates that the eval consumes).
+- Default mode is Claude Code subagents (not API). `skill.md` is the single source of truth for the pipeline: the full step-by-step specification (its final step seeds proactive-agent trigger candidates that the eval consumes) AND the "Design invariants & reference" section (all canonical constants, thresholds, gates, quotas, and schemas). Read it before any pipeline work; do not duplicate its content here.
 - When asked to "reprocess persona data", spawn one subagent per user in parallel.
-- **Cross-referencing** only applies across different interaction rows (different source_object_id), never within the same row. Identical persona_items are merged into a canonical BEFORE cross-referencing.
+- Input CSV schema matches `facebook/gistbench` columns only: `interaction_type, user_id, object_id, interaction_time, object_text`.
+- Output layout: `backend/{user_id}/` with `profile.json`, five app JSONs (`instagram/facebook/threads/chatbot/ai_studio.json`), and `calendar.json` — full schemas in `skill.md`.
 - **`confidence_cross_referenced`** = weighted corroboration score starting at 1.0 (base). Each distinct corroborating explicit row adds 1.0, implicit adds 0.5. After the LLM cross-ref step discovers `similar`/`contradictory` relationships, similar canonicals' base scores are added and contradictory canonicals' scores are subtracted (clamped to ≥0).
 - **Init filter**: `MIN_PERSONA_INIT_CONFIDENCE = 0.65`. Anything below 0.65 is dropped after cross-ref, regardless of cross_ref score or relationship type. This is the **survival** floor only — it is a DIFFERENT constant from `HIGH_CONFIDENCE_INIT_THRESHOLD` (0.75) below. They both read 0.75 before R18; the survival floor was lowered to 0.65 once the merge-time evidence-coherence gate (`_merge_coheres`) made extra richness safe, so histories carry ~2× the canonicals while eval-critical selection stays at the strict 0.75 bar.
 - **Merge gate (R18)**: a `similar` cross-ref union only fires if the two canonicals share a concrete topical hashtag (generic/platform tags excluded) or content token, or one subsumes the other. Union-find is transitive, so without this an `A~B~C` chain fuses unrelated siblings and the representative fans out onto every member event.
