@@ -72,11 +72,12 @@ No follow-up commands needed — this scales cleanly to 1000+ personas.
 ### 3. Run the evaluation
 
 ```bash
-scripts/run_eval_all.sh --mode mcp_agent
+scripts/run_eval_matrix.sh
 ```
 
-Runs the eval harness across every persona. Output per persona:
-`benchmark/{uid}/runs/{timestamp}/results.csv` plus a summary.
+Runs the eval harness across the configured persona cohort and modes
+(single-persona / single-mode: `python evaluation/run_eval.py --user_id 115 --mode mcp_agent`).
+Output per persona and mode: `results/{mode}/{uid}/results.csv` plus a summary.
 
 `--mode` chooses the agent setup. The modes isolate which
 component (framework, retrieval, structured API) drives performance:
@@ -88,7 +89,7 @@ component (framework, retrieval, structured API) drives performance:
 | `codex_agent` | Codex CLI agent (`codex exec --model gpt-5.5`) reading the same time-masked filesystem snapshots |
 | `llm_longctx` | Direct LLM call (no agent framework) — pure long-context baseline |
 
-Single-persona variant: `scripts/run_eval.sh 115 --mode mcp_agent`.
+Single-persona variant: `python evaluation/run_eval.py --user_id 115 --mode mcp_agent`.
 Codex agent variant over the configured cohort: `scripts/run_codex_agent.sh`.
 
 ## Aggregating results

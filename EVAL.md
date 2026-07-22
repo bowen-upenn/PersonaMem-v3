@@ -232,8 +232,9 @@ them up.
   changed.
 
 - **Per-query LLM auto-QA script** — `scripts/audit_benchmark_queries.py`
-  + `evaluation/audit_query_quality.py` provide a mini-tier per-query
-  quality audit. Dimensions per query (when applicable), driven by
+  (since retired with the `benchmark/queries.csv` store; superseded by
+  `results/_scripts/run_qa_audit.py`) + `evaluation/audit_query_quality.py`
+  provide a mini-tier per-query quality audit. Dimensions per query (when applicable), driven by
   ~5 mini-tier LLM calls each: schema_sanity (deterministic),
   sensitive_probe_placement (deterministic), telegraph_avoidance
   (deterministic), naturalness, context_required (response shouldn't be
@@ -286,8 +287,8 @@ them up.
   benchmark build (`scripts/prepare_eval_data.py`) now produces correct
   foils on the first pass.
 
-  Usage: `python scripts/audit_benchmark_queries.py --user_id 115
-  [--task X] [--limit N] [--dry_run] [--no_regen] [--max_regen_calls N]`.
+  Usage (historical; script since retired): `python scripts/audit_benchmark_queries.py
+  --user_id 115 [--task X] [--limit N] [--dry_run] [--no_regen] [--max_regen_calls N]`.
 
 - **Task-distribution rebalance (v3.1)** — to free room for the +25
   `personalized_recommendation` instances inside the same ~150 budget,
@@ -1116,33 +1117,19 @@ Total prompt = `input_tokens + cache_read_tokens`. `cache_hit_rate = cache_read 
 **Per-query cost caps (standing defaults).** Each subagent runs with a **per-task** `--max-turns` (15 default / 30 heavy) and a **model-scaled** `--max-budget-usd` (sonnet baseline $0.30 default / $0.60 heavy; ×5/3 on opus 4.8 → $0.50 / $1.00), plus a system prompt forbidding whole-`*.json` reads. The 6 heavy tasks (repetition_recsys/chatbot, active_mistake_prevention, agentic_auto_reply, agentic_vague_refind, personalized_recommendation) get the doubled values — at the flat base budget they were cut off mid-answer, producing empty rows. Measured on `agent_tools_sonnet` vs the old uncapped run (`--max-turns 40`, no cap): on **completed (non-empty)** answers, matched-by-task accuracy held/slightly improved while per-query cost and wall-clock dropped sharply; the one regression was empty rows concentrated in the heavy tasks (4.0% → 7.9% at the full per-persona sample), which the per-task turn+budget headroom is designed to recover. Always compare modes on the non-empty subset — empty rows are cap artifacts, not answer-quality signal.
 ```
 
-## Per-query quality audit (`scripts/audit_benchmark_queries.py`)
+## Per-query quality audit (retired script)
 
-Distinct from `scripts/audit_test_queries.py` (deterministic, schema-level
-distribution audit, no LLM calls). The new script is a per-query LLM-based
-quality audit that reads `benchmark/{uid}/queries.csv` and runs eight
-dimensions against each query using `gpt-5.4-mini` (default).
+`scripts/audit_benchmark_queries.py` was the per-query LLM-based quality
+audit over the legacy `benchmark/{uid}/queries.csv` store. Both the store
+and the script are retired; the audit lives on as
+`results/_scripts/run_qa_audit.py` (same rubric, current `test.json`
+layout), with the underlying dimension logic in
+`evaluation/audit_query_quality.py`. Distinct from
+`scripts/audit_test_queries.py` (deterministic, schema-level distribution
+audit, no LLM calls).
 
 **Canonical dimension spec, applicability rules, and per-task flaw-kind
 allocation live in [DESIGN.md § 19 — Per-query Benchmark Audit](DESIGN.md#19-per-query-benchmark-audit-automated-quality-gate).**
-This section just covers usage and outputs.
-
-### Usage
-
-```bash
-python scripts/audit_benchmark_queries.py --user_id 115
-# or smoke-test on a subset:
-python scripts/audit_benchmark_queries.py --user_id 115 --task personalized_recommendation --limit 5
-# or wire-check the script without spending tokens:
-python scripts/audit_benchmark_queries.py --user_id 115 --dry_run
-```
-
-### Outputs
-
-`benchmark/{uid}/runs/{ts}/audit_queries.jsonl` — per-row dim results +
-reasons. `audit_queries_summary.json` + `audit_queries_summary.md` — per-task
-per-dim pass-rate table. Cost ≈ 5 mini-tier calls per applicable query ×
-~140 queries ≈ ~700 calls/user.
 
 ## Interpreting metrics
 
@@ -1232,7 +1219,7 @@ Feed-react tasks (`proactive_friend_feed_react`, `proactive_trending_feed_react`
 
 ## Extending the harness
 
-- **New task**: add `evaluation/tasks/<name>.py` with a `run_task_*` function matching the common signature in [evaluation/run_inference.py](evaluation/run_inference.py); register it in `_run_task` and `TASK_ALIASES`.
+- **New task**: add `evaluation/tasks/<name>.py` with a `run_task_*` function matching the common signature used by [evaluation/run_eval_dispatch.py](evaluation/run_eval_dispatch.py); register it there and in `TASK_ALIASES`.
 - **New scenario (Task C)**: add a builder to [evaluation/scenarios.py](evaluation/scenarios.py) `SCENARIO_BUILDERS`. Each builder reads from `BackendQuery` and returns `{name, query, notes, forbidden_items, carve_out}`.
 - **New mode**: add a branch in the task drivers' `if mode == ...` blocks and register the name in `MODES`. Both tool-driven and long-context modes reuse the same `SnapshotCache`.
 - **New judge dimension**: add a rubric function to [evaluation/judges.py](evaluation/judges.py) and wire it into the relevant task driver. Judges always receive the focused evidence slice from `build_judge_evidence` — never the full history.

@@ -190,7 +190,7 @@ def _run_audit(uid: str, phase: str, benchmark_dir: str, backend_dir: str) -> tu
     test_json = os.path.join(backend_dir, str(uid), "test.json")
     if not os.path.exists(test_json):
         raise FileNotFoundError(
-            f"{test_json} not found. Run `python scripts/dump_test_json.py --user_id {uid}` first."
+            f"{test_json} not found. Run `python scripts/prepare_eval_data.py --user_id {uid}` first."
         )
     records = _load_records(test_json)
     findings: list[Finding] = []
