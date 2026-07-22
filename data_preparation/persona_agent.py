@@ -783,9 +783,9 @@ MIN_IMPLICIT_NEGATIVE_REPETITION = 15  # distinct source rows for implicit-only 
 # user's activity level so the promotion bar is comparable across users.
 #
 # MIN_TEMPORAL_DAYS and IMPL_NEG_DAILY_CAP still apply on top.
-# Calibrated on the 10-user gistbench sample so that users with distinct
-# durable-dislike patterns (755, 655, 760) get 5–15 promoted hashtags,
-# users with positive-dominant browsing (115, 143, 229) get 0–3, and
+# Calibrated on real gistbench data so that users with distinct
+# durable-dislike patterns get 5–15 promoted hashtags,
+# users with positive-dominant browsing get 0–3, and
 # no-signal users (251) stay at 0.
 NEG_PROMOTION_RATIO: float = 0.008
 
@@ -6325,7 +6325,7 @@ class PersonaAgent:
     # heavy AI Studio users vs. light ones is a real-world distribution
     # signal the benchmark should preserve.
     #
-    # Heavy users (e.g. user 115's 2566 input rows) otherwise produce 200+
+    # Heavy users (2000+ input rows) otherwise produce 200+
     # events at AI_STUDIO_CANONICAL_TARGET=0.18, which makes Step 18B the
     # pipeline bottleneck. When the candidate pool exceeds the per-user
     # target, the kept set is chosen by content-aware time-bucketed
@@ -8663,7 +8663,7 @@ class PersonaAgent:
            5. temporal contradiction graph
            6. build update histories
            7. resolve cross-polarity contradictions (temporal-precedent gate
-              — fixes the 115-boxing stance-flip bug by requiring prior
+              — fixes the stance-flip precedent bug by requiring prior
               same-polarity evidence before admitting an opposing stance)
            8. generate user profile (demographics + big_five + bio + mobility_class)
            9. infer hidden personas (cross-row hashtag clustering)
@@ -8778,7 +8778,7 @@ class PersonaAgent:
         # enough source rows this is a likely pipeline regression; for a thin
         # source it is expected sparsity. Either way, surface it LOUDLY so a
         # degenerate persona is never silently folded into a large batch (the
-        # 2026-05 batch shipped users 7/15 with 0 hidden personas / 0 chatbot /
+        # an early batch shipped several users with 0 hidden personas / 0 chatbot /
         # 0 AI-Studio). The ~2500-row floor matches the empirical point below
         # which chatbot/AI-Studio routing starves; selection should avoid it.
         _MIN_COMPLETE_SOURCE_ROWS = 2500
@@ -11078,8 +11078,8 @@ class PersonaAgent:
 
         NB: the exclusion window was ±12h, but with ~20-30 other triggers
         across an ~8-day history that covered almost the entire timeline, so
-        only ~1 in 20 users got ANY overactive_check candidate (audit
-        2026-05-31). ±3h still guarantees the idle moment has nothing else
+        almost no users got ANY overactive_check candidate (audit
+        finding). ±3h still guarantees the idle moment has nothing else
         firing nearby while letting most users yield candidates.
         """
         import random as _random
@@ -11116,7 +11116,7 @@ class PersonaAgent:
         stratum_size = max((hi - lo) // n_strata, 1)
         # Match the overactive_check quota max (4, 6). The previous cap of 3 sat
         # BELOW the min-4 quota, so even an ideal yield came up short
-        # (audit 2026-06-05: task starved to roughly a quarter of users, n=6 total).
+        # (audit finding: the task starved to a small fraction of users).
         MAX_PICKS = 6
 
         def _valid(t: int, chosen: list[int]) -> bool:

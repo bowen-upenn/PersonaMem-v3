@@ -120,7 +120,9 @@ LABELS = {
 }
 RMID = 37.5   # ring mid-radius as % of donut box (hole inset 25%)
 GAP = 0.45    # white separator width between slices, in %
-MATCHED = {1, 2, 3, 5, 6, 8, 9, 10, 13, 14}
+import os
+MATCHED = {int(u) for u in os.environ.get("PERSONAS", "").split()} or \
+          {int(u) for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 FAIL_THRESHOLD = 60.0
 CODEX_RUN = os.path.join(ROOT, "results/codex_agent_gpt5.5")
 
@@ -370,7 +372,7 @@ def codex_audit_html(audit):
         ("Visible rubric hard-fails among low agentic rows",
          f'avoid {audit["hard"]["avoid"]}; privacy {audit["hard"]["privacy"]}; stale {audit["hard"]["stale"]}',
          "The rubric catches some leakage, but not the tool cause: wrong source, broad search, missing action, or blocked write path."),
-        ("Fresh persona-1 trajectory attempt", "2 transport failures",
+        ("Fresh single-persona trajectory attempt", "2 transport failures",
          "Separate fresh run attempts stopped before a usable trajectory because the Codex response stream was blocked in sandbox."),
     ]
     body = "".join(
@@ -406,7 +408,7 @@ def lead_html(F):
 def build_pairs(S, F, stats, audit=None):
     blocks = [CSS, '<div class="ea-wrap">',
               '<div class="ea-suptitle">PersonaMem: why each system fails, and what it gets right</div>',
-              '<div class="ea-sub">same 10 simulated users &nbsp;&middot;&nbsp; each FAILURE ring shows WHY the model got it wrong '
+              '<div class="ea-sub">same simulated users &nbsp;&middot;&nbsp; each FAILURE ring shows WHY the model got it wrong '
               '(the reason, not the task) &nbsp;&middot;&nbsp; each SUCCESS ring shows what it did well</div>']
     for g, models in enumerate(GROUPS):
         head_notes = {}
@@ -430,7 +432,7 @@ def build_pairs(S, F, stats, audit=None):
 def build_pies(F, stats):
     blocks = ['<div class="ea-wrap">',
               '<div class="ea-suptitle">PersonaMem: why each system gets answers wrong</div>',
-              '<div class="ea-sub">same 10 simulated users &nbsp;&middot;&nbsp; each ring shows WHY the model&rsquo;s wrong answers were wrong '
+              '<div class="ea-sub">same simulated users &nbsp;&middot;&nbsp; each ring shows WHY the model&rsquo;s wrong answers were wrong '
               '(the reason, not the task)</div>']
     for g, models in enumerate(GROUPS):
         blocks.append(headers_row(models, stats, with_acc=False))
@@ -456,7 +458,7 @@ def main():
 
     section = f"""{START}
 <section>
-<div class="cap"><h2>Error analysis: what each system gets right vs wrong</h2><span class="unit">same 10 users</span><span class="note">every wrong answer is labelled by why it was wrong, not by task</span></div>
+<div class="cap"><h2>Error analysis: what each system gets right vs wrong</h2><span class="unit">same users</span><span class="note">every wrong answer is labelled by why it was wrong, not by task</span></div>
 {lead_html(F)}
 {pairs_html}
 {audit_html}

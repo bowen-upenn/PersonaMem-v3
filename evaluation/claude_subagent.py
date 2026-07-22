@@ -352,7 +352,7 @@ def run_subagent(
     # Rate/usage-limit guard: a limited CLI emits a short limit notice either
     # as bare plain text (non-JSON path) OR as the `result` field of otherwise
     # valid JSON ("You've hit your limit · resets 1:40am" — observed poisoning
-    # personas 13/14 after the first, non-JSON-only version of this guard).
+    # two personas' runs after the first, non-JSON-only version of this guard).
     # Check the final text on BOTH paths; the short-length gate avoids
     # false-positives on real answers that merely mention rate limits.
     if text:

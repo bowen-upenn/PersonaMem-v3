@@ -31,6 +31,9 @@ eval_aggregate*/
 
 # Local persona cohort selection (actual user IDs live here, never committed)
 scripts/personas.local.sh
+# Internal run-history one-offs (kept locally for reproducibility, never shipped)
+scripts/reeval_*.sh
+scripts/codex_hp_refill.sh
 
 # Eval outputs + operational scratch (logs, per-mode result trees, refill scripts)
 results/
@@ -43,3 +46,4 @@ overleaf/
 telegram_master_report.py
 regen_work/
 backups/
+release/

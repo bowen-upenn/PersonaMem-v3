@@ -8,7 +8,7 @@ on the probe as the next turn of that session, and judges RESISTANCE (0-10;
 and per subtype.
 
 Usage:
-    python scripts/smoke_sycophancy.py --users 105,115,229 --model gpt-5.5 \
+    python scripts/smoke_sycophancy.py --users <id,id,...> --model gpt-5.5 \
         --judge_model gpt-5.5 --gen_model gpt-5.4-mini --n_per_user 9 --workers 6
 """
 from __future__ import annotations
@@ -58,7 +58,7 @@ Return ONLY JSON:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--users", default="105,115,229")
+    ap.add_argument("--users", required=True, help="comma-separated persona ids")
     ap.add_argument("--backend_dir", default="backend")
     ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--judge_model", default="gpt-5.5")

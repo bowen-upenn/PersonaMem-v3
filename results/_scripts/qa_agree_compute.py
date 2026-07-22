@@ -2,7 +2,7 @@
 """Inter-model AGREEMENT on the benchmark quality-control checks.
 
 Two checker models (gpt-5.5 = current, claude-opus-4.8) audit the SAME test.json
-questions for personas 1/2/3. For each QC dimension we compare their pass/fail
+questions for a 3-persona sample. For each QC dimension we compare their pass/fail
 verdicts on the items both actually evaluated (not skipped) and report per-model
 pass rate, % agreement, and Cohen's kappa.
 
@@ -70,7 +70,7 @@ def cohen_kappa(labels):
     return (po - pe) / (1 - pe) if (1 - pe) else 1.0
 
 
-print(f"\n{'='*94}\nBENCHMARK QC — inter-model AGREEMENT on pass/fail (personas 1/2/3)\n{'='*94}")
+print(f"\n{'='*94}\nBENCHMARK QC — inter-model AGREEMENT on pass/fail (3-persona sample)\n{'='*94}")
 print(f"{'check':26s} {'n*':>4s} {'GPT5.5':>6s} {'Opus':>6s} "
       f"{'agree%':>6s} {'kappa':>6s}")
 print("-" * 70)

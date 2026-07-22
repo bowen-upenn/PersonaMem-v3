@@ -7,16 +7,18 @@ Two value bugs are fixed at once, ONLY in the Latency <section>:
      n_total.
   2. The gemini-mem column was rendered from older (≈2x slower) data and is
      stale across every cell — recompute from current results.csv.
-Every cell = mean over matched-10 personas of (duration_ms/1000)/n_total;
+Every cell = mean over the evaluated personas of (duration_ms/1000)/n_total;
 Overall = micro mean over all rows. best = LOWEST latency. Shade = linear
 white -> rgb(176,209,243) (the legend endpoint) by value/max. Other sections
 (Accuracy / tokens / cost) are untouched.
 """
+import os
 import csv, glob, json, re
 csv.field_size_limit(10**9)
 
 HTML = "results/aggregate/html/results_tables.html"
-MATCHED = {1, 2, 3, 5, 6, 8, 9, 10, 13, 14}
+MATCHED = {int(u) for u in os.environ.get("PERSONAS", "").split()} or \
+          {int(u) for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 COLS = ["llm_longctx_gpt5.5_judged", "llm_memory_gpt5.5", "mem0_gpt5.5",
         "codex_agent_gpt5.5", "llm_longctx_gemini3.5flash_judged",
         "llm_memory_gemini3.5flash_judged", "agent_tools_opus4.8",

@@ -750,7 +750,7 @@ def personalization_removal_delta(
     Headline `removal_success` is now **relative**: a 50 % drop counts as
     success at any starting magnitude. The previous absolute threshold
     (`orig - regen >= 0.5`) was unreachable for users whose original
-    response barely personalized to begin with — user 115's orig_score was
+    response barely personalized to begin with — one user's orig_score was
     ≈ 0.009, so a relative score of 1.0 would still register as failure
     under the old rule. We also emit a `removal_status` of
     `skipped_low_personalization` when `orig_score < _REMOVAL_LOW_ORIG_FLOOR`

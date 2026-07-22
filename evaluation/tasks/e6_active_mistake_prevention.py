@@ -452,7 +452,7 @@ def build_e6_active_mistake_prevention(
     # A single unlucky generation can ground 0 candidates (they exist but cite
     # signals that don't resolve) — stochastic, not sparsity. Retry the
     # generation a few times before giving up so a user isn't randomly left
-    # with 0 AMP instances (observed on the parallel-run for users 105 / 26).
+    # with 0 AMP instances (observed on prior parallel generation runs).
     harvested = {"t_anchor": t_anchor}
     surviving: list[dict] = []
     last_n_candidates = 0

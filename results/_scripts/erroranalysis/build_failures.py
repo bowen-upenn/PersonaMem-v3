@@ -19,7 +19,9 @@ sys.path.insert(0, ROOT)
 from scripts.aggregate_eval import _accuracy_value
 from evaluation.task_registry import get_capability_axis
 
-MATCHED = {1, 2, 3, 5, 6, 8, 9, 10, 13, 14}
+import os
+MATCHED = {int(u) for u in os.environ.get("PERSONAS", "").split()} or \
+          {int(u) for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 FAIL_THRESHOLD = 60.0
 
 RUNS = {

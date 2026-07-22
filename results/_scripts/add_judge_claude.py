@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score the fixed persona-1 judge-agreement prompts with a Claude judge
+"""Score the fixed single-persona judge-agreement prompts with a Claude judge
 (sonnet/opus via `claude -p`) and merge into all_scores.jsonl. Idempotent."""
 import argparse, json, sys, time, threading
 from concurrent.futures import ThreadPoolExecutor, as_completed

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Run the Codex-harness GPT-5.5 filesystem-agent eval on the primary persona
-# cohort used for matched cross-model comparison (agent_tools_sonnet4.6 / _opus4.8).
+# Run the Codex-harness GPT-5.5 filesystem-agent eval on the configured
+# persona cohort (same personas as the agent_tools runs being compared).
 #
 # This launches real Codex CLI calls. It sends each row's time-masked snapshot
 # prompt to the Codex/OpenAI service via `codex exec`.

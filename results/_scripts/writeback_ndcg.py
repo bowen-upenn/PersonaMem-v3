@@ -12,7 +12,7 @@ import csv, json, os, sys, glob
 csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
 sys.path.insert(0, ".")
 sys.path.insert(0, "results/_scripts")
-from recompute_ndcg_matched10 import _labels_for_user, _ranking
+from recompute_ndcg import _labels_for_user, _ranking
 from evaluation.tasks.personalized_recommendation import _graded_ndcg_at_k, _NDCG_REL_FILLER
 
 THREE = {"personalized_recommendation", "at_ai_directive_followup", "hidden_persona_recommendation"}

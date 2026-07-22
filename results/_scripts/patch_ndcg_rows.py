@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Re-render the 3 ranking-task rows + Overall in results_tables.html with the
-new graded-NDCG@5 headline, matched-10. Values from recompute_ndcg_matched10
+new graded-NDCG@5 headline, the evaluated personas. Values from recompute_ndcg
 (offline join of test.json labels + results.csv rankings). Colors looked up
 from the existing table's value->rgb map; row "best" recomputed. Run from repo root.
 """
 import re, sys, os
 sys.path.insert(0, "results/_scripts")
 sys.path.insert(0, ".")
-from recompute_ndcg_matched10 import get_tables, MODES
+from recompute_ndcg import get_tables, MODES
 
 HTML = "results/aggregate/html/results_tables.html"
 VDIV_IDX = {3, 5}

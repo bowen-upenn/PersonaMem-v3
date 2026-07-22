@@ -1,6 +1,6 @@
 #!/bin/bash
 # ============================================================================
-# Scheduled gpt-5.5 llm_longctx RE-eval on the current benchmark (primary cohort).
+# Scheduled gpt-5.5 llm_longctx RE-eval on the current benchmark (configured persona cohort).
 # Waits until the gemini-3.5-flash run_eval processes (both modes) have exited,
 # then clears the STALE old-benchmark results in results/llm_longctx_gpt5.5 and
 # launches a fresh gpt-5.5 long-context run on the SAME cohort.

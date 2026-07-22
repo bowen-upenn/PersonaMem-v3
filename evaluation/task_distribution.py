@@ -117,7 +117,7 @@ TASK_TARGETS: dict[str, dict[str, int]] = {
     # agentic_group_dm_summary removed — sampled threads degenerate to empty
     # newly-created DMs (nothing to summarize), so models substitute stored
     # profile data and the telegraph-avoidance rubric collapses the score to
-    # ~0; only personas 1 & 13 carried the task (n=2, noise-dominated). The
+    # ~0; the task landed on almost no personas (noise-dominated). The
     # rubric's preference_alignment primary dim also conflicts with the
     # restraint an empty thread demands. Kept code paths intact (parse/score)
     # in case it is re-fixtured; commenting out the target stops emission.

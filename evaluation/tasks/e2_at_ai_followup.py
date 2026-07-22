@@ -23,7 +23,7 @@ from evaluation.backend_query import _LEAK_FIELDS_EVENT, _LEAK_FIELDS_PREF, Back
 
 # Hashtag Jaccard threshold for "matches directive". 0.05 is permissive
 # enough to surface the high-overlap tail for users with broad / non-
-# overlapping hashtag clusters (e.g. user 115's max-observed Jaccard
+# overlapping hashtag clusters (the max Jaccard observed in real data
 # between an @ai directive's tag set and a candidate event is ~0.04),
 # while still excluding rows that share zero hashtags.
 _E2_MATCH_THRESHOLD: float = 0.05

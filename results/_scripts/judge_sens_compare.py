@@ -5,7 +5,7 @@
 Baseline = pr_query_score_0_10 in each live results.csv (GPT-5.5, identical
 rejudge_existing code path). Alt judges = the by_task avg_pct in
 /tmp/eval_regen/judge_sens/{judge}.{cfg}.json. Both are row-weighted means over
-the matched-10 personas, scored on the SAME saved responses, so the delta is a
+the evaluated personas, scored on the SAME saved responses, so the delta is a
 clean judge-only effect.
 
 Reports, per config: each pr.score task's accuracy under the 3 judges + deltas,
@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 from evaluation.personalization_rubric import APPLICABILITY
 
 OUT = Path("/tmp/eval_regen/judge_sens/p3")
-MATCHED = ["1", "2", "3"]  # 3-persona agreement scope
+MATCHED = ["1", "2", "3"]  # 3-persona agreement sample
 CFGS = ["llm_longctx_gpt5.5_judged", "llm_memory_gpt5.5", "mem0_gpt5.5",
         "codex_agent_gpt5.5", "llm_longctx_gemini3.5flash_judged",
         "llm_memory_gemini3.5flash_judged", "agent_tools_opus4.8",
@@ -32,7 +32,7 @@ SCOPE = set(APPLICABILITY) - {"over_personalization_repetition_recsys",
 
 
 def baseline_by_task(cfg):
-    """Row-weighted GPT-5.5 avg_pct per task from the live csvs (matched-10)."""
+    """Row-weighted GPT-5.5 avg_pct per task from the live csvs (evaluated personas)."""
     vals = defaultdict(list)
     for u in MATCHED:
         rf = ROOT / "results" / cfg / u / "results.csv"
@@ -64,7 +64,7 @@ def alt_by_task(judge, cfg):
 
 
 report = {}
-print(f"\n{'='*92}\nJUDGE SENSITIVITY — accuracy (avg rubric x10) per pr.score task, matched-10\n{'='*92}")
+print(f"\n{'='*92}\nJUDGE SENSITIVITY — accuracy (avg rubric x10) per pr.score task, evaluated personas\n{'='*92}")
 for cfg in CFGS:
     base, ns = baseline_by_task(cfg)
     alts = {j: alt_by_task(j, cfg) for j in ALT}

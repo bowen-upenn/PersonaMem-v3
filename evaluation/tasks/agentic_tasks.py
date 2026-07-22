@@ -984,7 +984,7 @@ def build_t8_dm_digest(bq: BackendQuery, user_id: str, t_anchor: int) -> list[di
             # an empty 24h window asks the agent to digest an empty inbox; a
             # correct "no DMs today" answer then gets graded as a
             # personalization miss and the judge coin-flips (observed: same
-            # answer scored 9.2 / 4.0 / 2.0 across modes on persona 1).
+            # answer scored 9.2 / 4.0 / 2.0 across modes on one persona).
             in_window = [t for t in threads if (t.get("latest_ts") or 0) >= win_start]
             n_relevant = sum(1 for t in in_window if _text_touches_persona(t, idx))
             if n_relevant < 1:
@@ -1475,7 +1475,7 @@ ALL_BUILDERS: dict[str, Callable] = {
     # agentic_wrong_recipient_check retired (task_distribution.py:108). The
     # builder (build_t17_wrong_recipient) + runner code paths are kept, but it
     # must NOT be in ALL_BUILDERS or it leaks ~1 untargeted row per user into
-    # test.json (caught in the 2026-05-30 validation regen of user 105).
+    # test.json (caught in a validation regen).
     "agentic_proactive_daily_catchup":  build_t18_proactive_daily,
     "agentic_trending_alert":           build_t19_trending_alert,
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Backfill empty @ai `user_message` fields in the shipped 20 eval personas.
+"""Backfill empty @ai `user_message` fields in the backend personas.
 
 The R18 regen left ~28 @ai comment events (out of 220) with an empty
 `interaction_format.user_message` — the mini-LLM message generator failed under
@@ -23,7 +23,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from data_preparation import prompts, utils  # noqa: E402
 from data_preparation.persona_agent import AT_AI_ACTIONS, PLATFORM_INTERACTION_FORMATS  # noqa: E402
 
-USERS = [1, 2, 3, 5, 6, 8, 9, 10, 13, 14, 26, 105, 115, 209, 229, 282, 461, 655, 760, 835]
+USERS = [int(u) for u in os.environ.get("PERSONAS", "").split()] or \
+        sorted(int(d) for d in os.listdir("backend") if d.isdigit())
 SOCIAL_APPS = ["instagram", "facebook", "threads"]
 
 

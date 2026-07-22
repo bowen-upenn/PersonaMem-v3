@@ -1,7 +1,8 @@
-"""Deterministic dry-run of the 3 zero-emit task builders over the matched-10
+"""Deterministic dry-run of the 3 zero-emit task builders over the selected
 personas. Reports where each builder falls to zero WITHOUT any LLM calls
 (the gold-content/answerability LLM steps are stubbed/skipped) so we can tell
 data-sparsity from a builder bug."""
+import os
 import sys, traceback
 sys.path.insert(0, ".")
 from evaluation.backend_query import BackendQuery
@@ -13,7 +14,9 @@ from evaluation.tasks.e5_horizon_lifecycle import (
     _collect_short_term_canonicals, build_e5_horizon_lifecycle,
 )
 
-MATCHED = [1, 2, 3, 5, 6, 8, 9, 10, 13, 14]
+MATCHED = [int(u) for u in os.environ.get("PERSONAS", "").split()] or \
+          sorted(int(d) for d in os.listdir("backend")
+                 if d.isdigit() and os.path.exists(f"backend/{d}/test.json"))
 BASE = "backend"
 
 def load_test_items(bq, uid):

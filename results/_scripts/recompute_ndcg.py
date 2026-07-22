@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Offline recompute of the new graded-NDCG@5 headline for the 3 ranking tasks
-on the matched-10 personas, for every model/mode. No eval run, no LLM:
+on the evaluated personas, for every model/mode. No eval run, no LLM:
 joins backend/{uid}/test.json (relevance labels in instance_full) with each
 run's results.csv (the model's ranking), and recomputes NDCG@5 with the shared
 _graded_ndcg_at_k. Prints per-task NDCG@5 + Overall micro per model.
@@ -14,7 +14,18 @@ from data_preparation.utils import extract_json_from_response
 from evaluation.tasks.personalized_recommendation import _graded_ndcg_at_k
 from scripts.aggregate_eval import _accuracy_value
 
-MATCHED = [1, 2, 3, 5, 6, 8, 9, 10, 13, 14]
+import os as _os
+def _cohort():
+    """Personas to score: $PERSONAS env override, else those present in every mode dir."""
+    env = _os.environ.get("PERSONAS", "").split()
+    if env:
+        return sorted(int(u) for u in env)
+    sets = []
+    for m, _lbl in MODES:
+        d = _os.path.join("results", m)
+        if _os.path.isdir(d):
+            sets.append({int(u) for u in _os.listdir(d) if u.isdigit()})
+    return sorted(set.intersection(*sets)) if sets else []
 THREE = {"personalized_recommendation", "at_ai_directive_followup", "hidden_persona_recommendation"}
 MODES = [
     ("llm_longctx_gpt5.5_judged", "GPT-LC"), ("llm_memory_gpt5.5", "GPT-Mem"),
@@ -22,6 +33,7 @@ MODES = [
     ("llm_longctx_gemini3.5flash_judged", "Gem-LC"), ("llm_memory_gemini3.5flash_judged", "Gem-Mem"),
     ("agent_tools_opus4.8", "OPUS-CC"), ("agent_tools_sonnet4.6", "Sonnet-CC"),
 ]
+MATCHED = _cohort()
 
 
 def _labels_for_user(uid):

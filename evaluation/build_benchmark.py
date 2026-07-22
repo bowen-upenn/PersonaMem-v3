@@ -3227,9 +3227,9 @@ _C1E_FUTURE_TRUTH_LOOKBACK_DAYS = 7
 _C1E_FUTURE_TRUTH_LOOKAHEAD_HOURS = 72
 _C1E_FATIGUE_WINDOW_SECONDS = 3 * 3600
 _C1E_FATIGUE_MIN_ENGAGEMENTS = 5
-# 8 chatbot instances per persona (was 2). With 5 matched personas that yields
-# ~40/config, so the binary `passed` headline averages on a fine grid instead of
-# the coarse 10% steps a n=10 sample forced. The query bank above (12 distinct
+# 8 chatbot instances per persona (was 2), so the binary `passed` headline
+# averages on a fine per-config grid instead of the coarse steps a tiny
+# per-persona sample forced. The query bank above (12 distinct
 # natural openers) keeps these from repeating the same user turn.
 _C1E_TARGET_INSTANCES_PER_SURFACE = 8
 _C1E_SLATE_SIZE = 16
@@ -4169,7 +4169,7 @@ def build_c4_instances(b_proactive_instances: list[dict]) -> list[dict]:
     overlap the model has no obvious cue to personalize on, so the original
     response barely mentions the preference (`orig_score` ~ 0) and the
     "removal" metric becomes degenerate — we observed orig_score ≈ 0.009
-    across all 5 rows of user 115 before this filter was added. Defensive:
+    across every row of one user before this filter was added. Defensive:
     the runtime metric also emits a `skipped_low_personalization` status
     when orig_score falls below 0.05.
     """
@@ -4426,8 +4426,8 @@ def build_sensitive_event_instances(
     # Never anchor a probe before the 20%-engagement-history mark: t_test is
     # set just after the planted evidence row, but when the sensitive episode
     # sits at the very start of the window (early-episode users) that lands
-    # before the mark and prepare_eval_data drops every probe (observed for
-    # user 105). Clamp forward — the agent still sees the planted row (it's
+    # before the mark and prepare_eval_data drops every probe (observed on
+    # real data). Clamp forward — the agent still sees the planted row (it's
     # before the clamped t_test) and the episode is still inside its active
     # window. No-op when the planted row is already past the mark.
     engagement_mark = bq.engagement_history_mark(user_id)

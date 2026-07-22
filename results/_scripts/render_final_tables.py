@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Final matched-10 render of the changed rows (Overall + chatbot + the 3
+"""Final render of the changed rows (Overall + chatbot + the 3
 ranking tasks) using the SAME `_accuracy_value` path as aggregate_eval, so the
-HTML matches the aggregate pipeline exactly for the matched-10 modes. ndcg is
+HTML matches the aggregate pipeline exactly for the compared modes. ndcg is
 read from the written-back metrics_json. Colors from the existing table's
 value->rgb map; "best" recomputed. Run from repo root.
 """
@@ -13,7 +13,18 @@ from evaluation.task_registry import DROPPED_TASK_TYPES, normalize_task_type
 from _htmllock import html_lock  # single-writer lock for results_tables.html
 
 HTML = "results/aggregate/html/results_tables.html"
-MATCHED = {1, 2, 3, 5, 6, 8, 9, 10, 13, 14}
+def _cohort():
+    """Personas to render: $PERSONAS env override, else the personas present in every mode dir."""
+    import os as _os
+    env = _os.environ.get("PERSONAS", "").split()
+    if env:
+        return {int(u) for u in env}
+    sets = []
+    for m, _lbl in MODES:
+        d = _os.path.join("results", m)
+        if _os.path.isdir(d):
+            sets.append({int(u) for u in _os.listdir(d) if u.isdigit()})
+    return set.intersection(*sets) if sets else set()
 VDIV_IDX = {3, 5}
 MODES = [
     ("llm_longctx_gpt5.5_judged", "GPT-LC"), ("llm_memory_gpt5.5", "GPT-Mem"),
@@ -21,6 +32,7 @@ MODES = [
     ("llm_longctx_gemini3.5flash_judged", "Gem-LC"), ("llm_memory_gemini3.5flash_judged", "Gem-Mem"),
     ("agent_tools_opus4.8", "OPUS-CC"), ("agent_tools_sonnet4.6", "Sonnet-CC"),
 ]
+MATCHED = _cohort()
 # HTML row label -> task_type (None = Overall micro over all tasks)
 ROWS = {
     "Overall": None,
@@ -32,7 +44,7 @@ ROWS = {
 
 
 def mode_vals(mode):
-    """task_type -> mean accuracy_pct (matched-10), plus '_overall'."""
+    """task_type -> mean accuracy_pct over the evaluated personas, plus '_overall'."""
     by_task = {}
     all_acc = []
     for p in glob.glob(f"results/{mode}/*/results.csv"):

@@ -18,7 +18,7 @@ c1e (new_suggestions) needs the discovery LLM (Azure gpt-5.5, the default
 BUILDER_LLM_MODEL); e5 (short_vs_long) is LLM-free.
 
 Usage:
-  python scripts/add_missing_tasks_surgical.py --users "1 2 3 5 6 8 9 10 13 14" [--apply]
+  python scripts/add_missing_tasks_surgical.py --users "<id id ...>" [--apply]
 Without --apply: DRY (builds everything incl. LLM, reports counts, writes nothing).
 """
 import argparse

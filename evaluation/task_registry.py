@@ -145,7 +145,7 @@ DROPPED_TASK_TYPES: set[str] = {
     # Removed 2026-06-13 — sampled threads degenerate to empty newly-created
     # group DMs (nothing to summarize), so models substitute stored profile
     # data and the telegraph-avoidance rubric collapses the score to ~0; the
-    # task only landed on personas 1 & 13 (n=2, noise-dominated), and its
+    # task landed on almost no personas (noise-dominated), and its
     # preference_alignment primary dim conflicts with the restraint an empty
     # thread demands. Generation target commented out in task_distribution;
     # scoring/parse code paths kept so historical rows still resolve.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 5-config evaluation matrix over the PersonaMem-v3 personas.
+# Evaluation matrix over the PersonaMem-v3 personas.
 #
 #   modes  : llm_longctx  llm_memory  mem0        (Azure gpt-5.5 baselines)
 #            agent_tools   mcp_agent              (Claude Code, opus 4.8)
@@ -34,7 +34,7 @@ JUDGE_MODEL="gpt-5.5"
 GPT_WORKERS=8
 AGENT_WORKERS=1
 JOBS=1            # cross-persona concurrency for llm_memory (workers=8 intra-persona)
-MEM0_JOBS=20     # cross-persona concurrency for mem0 — DEFAULT: the whole cohort at once.
+MEM0_JOBS=20     # cross-persona concurrency for mem0 — DEFAULT: all selected personas at once.
                  # mem0 is workers=1 (serial per persona) AND rate-light (~1 in-flight
                  # call/persona, ~36% of the Azure cap at 6-way), so run them all in
                  # parallel; backoff absorbs any overflow. REQUIRES per-persona

@@ -1,5 +1,6 @@
-"""Per-gate drop trace for build_e5_horizon_lifecycle across matched-10."""
+"""Per-gate drop trace for build_e5_horizon_lifecycle across the selected personas."""
 import sys
+import os
 sys.path.insert(0, ".")
 from evaluation.backend_query import BackendQuery
 from evaluation.tasks import e5_horizon_lifecycle as E5
@@ -9,7 +10,9 @@ from evaluation.tasks.e5_horizon_lifecycle import (
 )
 import random as _random
 
-MATCHED = [1, 2, 3, 5, 6, 8, 9, 10, 13, 14]
+MATCHED = [int(u) for u in os.environ.get("PERSONAS", "").split()] or \
+          sorted(int(d) for d in os.listdir("backend")
+                 if d.isdigit() and os.path.exists(f"backend/{d}/test.json"))
 bq = BackendQuery("backend")
 
 agg = {"canon": 0, "stop_le_first": 0, "t_active_ge_stop": 0, "no_dir_tags": 0,

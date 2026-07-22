@@ -12,7 +12,9 @@ import json, glob, re, statistics, collections
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-MATCHED = {"1", "2", "3", "5", "6", "8", "9", "10", "13", "14"}
+import os
+MATCHED = set(os.environ.get("PERSONAS", "").split()) or \
+          {u for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 MEM_DIR = "llm_memory_gpt5.5"
 
 

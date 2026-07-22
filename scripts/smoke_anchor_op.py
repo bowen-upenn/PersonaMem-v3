@@ -17,7 +17,7 @@ Both arms run the SAME model under test (llm_longctx) and are judged against
 privacy_leak hard rules). The contrast isolates the effect of P-freshness.
 
 Usage:
-    python scripts/smoke_anchor_op.py --users 105,115,229 \
+    python scripts/smoke_anchor_op.py --users <id,id,...> \
         --model gpt-5.5 --judge_model gpt-5.5 --pick_model gpt-5.4-mini \
         --limit_per_user 6 --workers 6 --out /tmp/eval_regen/anchor_ab.json
 """
@@ -58,7 +58,7 @@ def _parse_response(raw: str) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--users", default="105,115,229,282,760")
+    ap.add_argument("--users", required=True, help="comma-separated persona ids")
     ap.add_argument("--backend_dir", default="backend")
     ap.add_argument("--model", default="gpt-5.5", help="Model under test (llm_longctx baseline).")
     ap.add_argument("--judge_model", default="gpt-5.5")

@@ -51,7 +51,7 @@ Index from the paper's Section 3 tables to the internal task code-names used in 
 | Personalized DM reply | `agentic_auto_reply` |
 | Vague memory refind | `agentic_vague_refind` |
 | Post composition † | `agentic_composed_post` (subsumes `agentic_send_post` / `t13_chatbot_dispatch`) |
-| Group thread brief † | `agentic_group_dm_summary` (REMOVED 2026-06-13 — sampled threads degenerate to empty newly-created DMs, so models substitute stored profile data and the telegraph-avoidance rubric collapses the score; only personas 1 & 13 carried it, n=2. Generation target commented out; historical rows dropped at aggregation via `DROPPED_TASK_TYPES`.) |
+| Group thread brief † | `agentic_group_dm_summary` (REMOVED 2026-06-13 — sampled threads degenerate to empty newly-created DMs, so models substitute stored profile data and the telegraph-avoidance rubric collapses the score; it landed on almost no personas (noise-dominated). Generation target commented out; historical rows dropped at aggregation via `DROPPED_TASK_TYPES`.) |
 | Wrong-recipient guardrail | `agentic_wrong_recipient_check` |
 | Proactive daily catch-up | `agentic_proactive_daily_catchup` |
 | Personalized trend alert | `agentic_trending_alert` |
@@ -68,7 +68,7 @@ Index from the paper's Section 3 tables to the internal task code-names used in 
 | Idle-moment silence * | `proactive_overactive_check` |
 | Understanding hidden persona (NEW, Step 4.6) | `hidden_persona_implicit_qa` |
 
-### Task tightening (v3 post-115 audit)
+### Task tightening (v3 sample-persona audit)
 
 A first full mcp_agent run on user 115 surfaced several degenerate scores
 (100 % saturation on three tasks, 0 % on one). Diagnosis: the *tasks* were
@@ -151,11 +151,11 @@ them up.
     violated). This is `pr_combined` with the `telegraph_avoidance` penalty
     removed — that 5-pt penalty fires on transparent phrasing ("since you
     already like X"), a *style* choice rather than a personalization failure,
-    and was firing on ~half of the agentic-harness rows (Opus 24/51, Sonnet,
+    and was firing on ~half of the agentic-harness rows (Opus, Sonnet,
     and Codex all telegraph more than the single-pass long-context models). It
     inverted the comparison even where `preference_alignment` itself was
     higher (e.g. Opus-CC 6.79 vs GPT-LC 6.52). Hard-rule gates are kept, so a
-    privacy leak still scores 0. Effect on the 10-persona table: Opus-CC
+    privacy leak still scores 0. Effect on the published comparison table: Opus-CC
     44.0 → 48.9, GPT-LC 46.4 → 46.6 (Opus now ahead).
   - **`at_ai_directive_followup`** — headline migrated `recall@5` →
     (briefly) `recall@3` → **graded `ndcg_at_5`** (see the ranking-task
@@ -210,14 +210,14 @@ them up.
     is penalised (−2); only deep-motivation inference wins. Scoring is now
     **conditional**: binary (`filler=0`) while a slate has no hard-negs, GRADED
     (`filler=+1`) once they're present — so hidden-persona re-unifies on graded
-    NDCG@5 with the other two ranking tasks. After the 20-user slate regen +
+    NDCG@5 with the other two ranking tasks. After the slate regen +
     re-eval, hidden-persona dropped to **15–62** (was 84–94), now at/below
     `personalized_recommendation` for most configs — intuition restored.
   - **Recompute**: existing stored `ndcg_at_3/5` were computed by the old
-    formula (and @ai emitted none), so they're stale. The matched-10 table was
+    formula (and @ai emitted none), so they're stale. The published comparison table was
     refreshed by an **offline** recompute that joins `backend/{uid}/test.json`
     (relevance labels in `instance_full`) with each run's `results.csv` ranking
-    — no eval run, no LLM (`results/_scripts/recompute_ndcg_matched10.py`). To
+    — no eval run, no LLM (`results/_scripts/recompute_ndcg.py`). To
     make the `aggregate_eval` stored-data path match, re-score via
     `run_eval --replay_from` (reuses model outputs; only re-runs scoring).
 
@@ -345,11 +345,9 @@ them up.
   **non-empty subset only**, and report `kept` vs `dropped` per cohort so the
   exclusion is auditable. Empty rows are cap/timeout artifacts, not
   answer-quality signal: a setting that shifts the empty rate would otherwise
-  masquerade as an accuracy change. (Measured on `agent_tools_sonnet`, the
-  40→15-turn / flat-$0.30 change pushed the empty rate 4.0%→7.0%, concentrated
-  in the heavy multi-turn tasks; on the **non-empty** subset, matched-by-task
-  accuracy held/rose 50.4%→55.6% micro while per-query cost and wall-clock both
-  dropped ~20%.) Cross-**model** comparisons have one further requirement: a
+  masquerade as an accuracy change. (In practice, tightening turn/budget caps raises the empty rate
+  — concentrated in the heavy multi-turn tasks — while non-empty accuracy holds
+  or rises and per-query cost and wall-clock both drop.) Cross-**model** comparisons have one further requirement: a
   **shared judge** — compare only the `*_judged` gpt-5.5 judge-replay re-scores,
   never native self-judged runs, since self-judging differs across models (raw
   gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
@@ -379,7 +377,7 @@ them up.
 
 ### Query quality audit (v3.2 — post-eval deep audit)
 
-A full per-query audit of `benchmark/115/queries.csv` (211 rows, 29 task types) after the first dual-model eval (Sonnet 4.6 agent_tools + GPT-5.4 llm_longctx) revealed that many extreme scores (0%, 10%, 100%) reflect **test data quality problems**, not model capabilities. The benchmark should have every task in the 20–80% range to reflect genuine real-world personalization trade-offs; scores at the extremes indicate the test is too easy, too hard, or structurally broken.
+A full per-query audit of one sample persona's queries after an early dual-model eval revealed that many extreme scores (0%, 10%, 100%) reflect **test data quality problems**, not model capabilities. The benchmark should have every task in the 20–80% range to reflect genuine real-world personalization trade-offs; scores at the extremes indicate the test is too easy, too hard, or structurally broken.
 
 **Score landscape (Sonnet 4.6 / GPT-5.4, user 115):**
 
@@ -496,7 +494,7 @@ python -m evaluation.run_eval --user_id 115 --mode agent_tools \
 python scripts/aggregate_eval.py
 
 # Run N personas in parallel at the shell level:
-for uid in 105 115 229 282 760; do
+for uid in $PERSONAS; do   # space-separated persona ids
     python -m evaluation.run_eval --user_id $uid --mode agent_tools \
         --run_dir benchmark/$uid/runs/$(date +%s) \
         --claude_model sonnet --judge_model gpt-5.5 --workers 16 &
@@ -629,7 +627,7 @@ Four new top-level tasks keyed to PersonaMem-v3's new data-gen signals. Each pic
 
 - **E3 `daily_personalized_briefing`** — **REMOVED in Step 4.3**. Duplicated `agentic_proactive_daily_catchup` (T18 — the agentic version is strictly more general: cross-app tool actions instead of read-only chatbot text). Historical CSV rows are dropped at aggregation time via `task_registry.DROPPED_TASK_TYPES`.
 
-- **T16 `agentic_group_dm_summary`** — **REMOVED 2026-06-13**. The task ("catch the user up on a group chat — per-participant summary + draft reply, don't send") is a faithful-retrieval + voice-match test, but the sampled DM threads degenerated to **empty newly-created group DMs** with no messages to summarize. With nothing to retrieve, every mode substituted stored relationship/profile data, which the `pr_combined` rubric's telegraph-avoidance / over-personalization penalties collapse to ~0 (the `preference_alignment` primary dim also conflicts with the restraint an empty thread demands). Only personas 1 & 13 carried the task (n=2 per mode — noise-dominated). Generation target commented out in `task_distribution.TASK_TARGETS`; scoring/parse code paths kept intact in case it is re-fixtured with seeded threads. **Aggregation drop is now actually enforced:** `aggregate_eval._load_rows` filters every `DROPPED_TASK_TYPES` row at ingestion (previously the set was documentary-only, so the historical dropped tasks above were never truly excluded — this also corrects that).
+- **T16 `agentic_group_dm_summary`** — **REMOVED 2026-06-13**. The task ("catch the user up on a group chat — per-participant summary + draft reply, don't send") is a faithful-retrieval + voice-match test, but the sampled DM threads degenerated to **empty newly-created group DMs** with no messages to summarize. With nothing to retrieve, every mode substituted stored relationship/profile data, which the `pr_combined` rubric's telegraph-avoidance / over-personalization penalties collapse to ~0 (the `preference_alignment` primary dim also conflicts with the restraint an empty thread demands). The task landed on almost no personas (noise-dominated). Generation target commented out in `task_distribution.TASK_TARGETS`; scoring/parse code paths kept intact in case it is re-fixtured with seeded threads. **Aggregation drop is now actually enforced:** `aggregate_eval._load_rows` filters every `DROPPED_TASK_TYPES` row at ingestion (previously the set was documentary-only, so the historical dropped tasks above were never truly excluded — this also corrects that).
 
 - **`personalized_recommendation` — proactive recsys feed-push slate ranking.** At each `t_test` (7 UTC hour anchors per active day, 3-hour window each), the agent is shown a 16-item slate (1 held-out positive + 7 hard negatives + 8 fillers) and ranks them as if it were the recsys deciding what to surface next in the user's feed. There is no user-typed query — the `query_text` field is empty so the runner skips the chat preamble. Held-out is a real positive engagement the user has inside the anchor window; hard negatives are drawn pre-`t_test` (negative-engagement events with hashtag overlap to held-out, with fallback to zero-engagement adjacent items); fillers are random pre-`t_test` events with NO hashtag overlap (noise). Deterministic metrics — no LLM judge; **headline = graded `ndcg_at_5`** (default for all recommendation/ranking tasks — see the ranking-task unification section), with `recall@{1,3,5}`, `ndcg@3`, `mrr`, `hit@{1,3}` kept as diagnostics. Included in the default `all` alias.
 
@@ -728,7 +726,7 @@ Net effect on the long-context set: ~92% of input tokens become cache-eligible r
 
 `QueryLLM.query_many(prompts)` routes Gemini through the **Batch API** (`query_llm_batch`: one inlined `batches.create` job, polled to completion, responses remapped to input order via `metadata.idx`) for a flat **50% discount** on non-cached tokens. ON by default for Gemini (`use_batch`); `EVAL_GEMINI_BATCH=0` forces per-row synchronous calls; non-Gemini backends fall back to sequential `query_llm`. Discounts do **not** multiply — a cache hit bills at the cache rate with no further batch discount; batch's 50% applies only to the remaining non-cached tokens. Rates + the discount math live in `evaluation/cost_model.py`; smoke test: `tests/test_batch_mode.py` (mock savings asserts + opt-in `PM3_BATCH_LIVE=1` real submission).
 
-**Cost impact (gemini-3.5-flash, full cohort, ~1,250 long-context queries):** standard $765 → +batch $382 → +cache $137 → **+cache+batch $103** (7.4× cheaper). Best-case caching assumes per-persona ascending-`T_test` dispatch so each query is a prefix-extension; realized savings depend on implicit-cache hit rate. NOTE: `query_many`/batch is implemented in `QueryLLM` but the `run_eval` per-row loop still calls `query_llm` synchronously — wiring the loop to collect-then-batch is the remaining step before batch savings are realized end-to-end.
+**Cost impact (gemini-3.5-flash, long-context):** relative to standard pricing, batching alone cuts cost ~2×, caching alone ~5.6×, and **cache+batch ~7.4×**. Best-case caching assumes per-persona ascending-`T_test` dispatch so each query is a prefix-extension; realized savings depend on implicit-cache hit rate. NOTE: `query_many`/batch is implemented in `QueryLLM` but the `run_eval` per-row loop still calls `query_llm` synchronously — wiring the loop to collect-then-batch is the remaining step before batch savings are realized end-to-end.
 
 ### Judge policy: ON by default + judge-replay
 
@@ -829,11 +827,11 @@ for uid in $PERSONAS; do
 done
 ```
 
-This cut a full-cohort @4096 build from ~50 min (throttled at the answer-sized concurrency, where only ~3 build calls were ever in flight) to **~10 min** (built all-personas-in-parallel, which saturates the ~50 calls/min rate cap — the build is rate-bound, not concurrency-bound, once you stop under-subscribing the cap). **Caveat:** the ledger is cached, so it is NOT rebuilt on `--resume`. Changing the cap or builder model requires a fresh build — delete `{run_dir}/memory_states/` (and `results.csv` if you also want fresh answers) or `--build_only` into a fresh `--run_dir`. A known shutdown wedge (the process can hang on a pooled Azure socket *after* writing its last artifact) means a robust launcher should detect completion (the `--build_only: ledger built` line, or `summary.json` for an answer run) and kill the process rather than relying on a clean exit. `mem0` has no decoupled build — its qdrant store is rebuilt fresh (`fresh=True`) each run.
+This cut an all-personas @4096 build from ~50 min (throttled at the answer-sized concurrency, where only ~3 build calls were ever in flight) to **~10 min** (built all-personas-in-parallel, which saturates the ~50 calls/min rate cap — the build is rate-bound, not concurrency-bound, once you stop under-subscribing the cap). **Caveat:** the ledger is cached, so it is NOT rebuilt on `--resume`. Changing the cap or builder model requires a fresh build — delete `{run_dir}/memory_states/` (and `results.csv` if you also want fresh answers) or `--build_only` into a fresh `--run_dir`. A known shutdown wedge (the process can hang on a pooled Azure socket *after* writing its last artifact) means a robust launcher should detect completion (the `--build_only: ledger built` line, or `summary.json` for an answer run) and kill the process rather than relying on a clean exit. `mem0` has no decoupled build — its qdrant store is rebuilt fresh (`fresh=True`) each run.
 
 ### Reference results: accuracy vs token cost (gpt-5.5)
 
-Snapshot from a single full-cohort run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`. Cross-**model** accuracy (e.g. gemini-3.5-flash vs gpt-5.5) is only comparable under a shared judge — use the `*_judged` gpt-5.5 judge-replay re-scores — since native self-judging differs (raw gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
+Snapshot from a single full run (judge = gpt-5.5; micro = row-weighted accuracy, the sole headline). Treat per-task deltas as indicative, not definitive — agentic tasks are LLM-judged and carry run-to-run variance, and `llm_longctx`/`mem@2048` predate the `proactive_overactive_check` supply append so their benchmark differs slightly from `mem@4096`. Cross-**model** accuracy (e.g. gemini-3.5-flash vs gpt-5.5) is only comparable under a shared judge — use the `*_judged` gpt-5.5 judge-replay re-scores — since native self-judging differs (raw gemini self-judge scored ~24% vs 54–57% under the shared gpt-5.5 judge).
 
 **Accuracy (micro %) + context size:**
 
@@ -858,7 +856,7 @@ Full long-context beats the compressed ledger by ~5 micro points; doubling the c
 | answer output tokens / query | ~250 | ~250 |
 | **memory update / day** (one `update_step`) | — | **~16.6k** (12.9k in + 3.7k out) |
 | one-time build / persona (~14 active-day updates) | — | ~236k (183k in + 53k out) |
-| **end-to-end input / persona** (build + ~129 queries) | **~55M** | **~0.9M** |
+| **end-to-end input / persona** (build + all queries) | **~55M** | **~0.9M** |
 
 So `llm_memory` is **~85× cheaper per query** and **~60× cheaper end-to-end** than `llm_longctx`, for a ~5-point accuracy cost. The per-day update tokens grow with ledger size — each `update_step` rewrites the whole ≤4096-token memory plus that day's events — which is why @4096 costs ~1k more input/query and a larger build than @2048. The biggest long-context blow-ups are the multi-turn `over_personalization_repetition_*` tasks (3.7–4.3M input tokens/query), which the ledger compresses to 28–44k. Per-task token columns live in `results/aggregate/{mode}/token_accuracy_table.csv` (`mean_input_tokens` / `mean_output_tokens` / `mean_cost_usd` / `mean_duration_ms`).
 
@@ -866,10 +864,9 @@ So `llm_memory` is **~85× cheaper per query** and **~60× cheaper end-to-end** 
 
 From the shared-judge (`*_judged` gpt-5.5) re-scores: on `over_personalization_sensitive_event`,
 gemini-3.5-flash trips the `privacy_leak` hard-fail on **21.5%** of rows vs gpt-5.5's
-**11.8%** — ~1.8×. Denominators: Gemini's 21.5% pools its two judged configs (40/186 = 6/93
-memory + 34/93 longctx); gpt-5.5's 11.8% is the single `llm_longctx_gpt5.5_judged` config
-(11/93). gpt-5.5's other (self-judged) configs run 11.4–14.6% on the same metric (`llm_memory`
-21/185, `mem0` 27/185), so the gap is robust to config choice. 90% of Gemini's privacy-leak
+**11.8%** — ~1.8×. Gemini's 21.5% pools its two judged configs; gpt-5.5's 11.8% is the single
+`llm_longctx_gpt5.5_judged` config. gpt-5.5's other (self-judged) configs run 11.4–14.6%
+on the same metric, so the gap is robust to config choice. 90% of Gemini's privacy-leak
 hard-fails pair with LOW `over_personalization` judge scores (judge consensus, not a detector
 artifact), and spot-reads confirm genuine subtle leaks — e.g. "herbal tea" surfacing a wellness
 preference during a rumination query, or a "clinic trip" surfacing medical context in a stress
@@ -883,9 +880,9 @@ benchmark signal (no task change).
 
 `over_personalization_repetition_chatbot` / `over_personalization_repetition_recsys` average ~2M
 input tokens per query in `llm_longctx` mode (the multi-turn cluster re-injects the full history
-every turn; up to 3.7–4.3M on the full-cohort gpt-5.5 run above). In the matched-cohort shared-judge
-(`*_judged`) comparison configs these rows came back as empty answers scoring 0. The full-cohort
-`llm_longctx_gpt5.5` run is NOT all-empty: half the repetition rows (50/100) returned
+every turn; up to 3.7–4.3M on the full gpt-5.5 run above). In the shared-judge
+(`*_judged`) comparison configs these rows came back as empty answers scoring 0. That
+`llm_longctx_gpt5.5` run is NOT all-empty: about half the repetition rows returned
 non-empty answers (mean ~1,151 output tokens, per-row judge scores 3.3–10; published accuracy
 43.91/37.06), while the other half are `status=error` from a harness TypeError at
 `evaluation/metrics.py:64` (`tokenize` received a dict — a separate fix is landing for it). On
@@ -899,18 +896,18 @@ gemini-memory failures share only the metrics.py:64 crash. Mitigation: `run_eval
 when the flag is unset (see `evaluation/run_eval.py`); pass `--context_budget` explicitly to
 override.
 
-### Running the full 5-config matrix
+### Running the full eval matrix
 
 `scripts/run_eval_matrix.sh` runs every `{mode} × {persona}` into `results/{mode}/{uid}/results.csv` (logs under `results/_logs/`), then aggregates per-mode + a cross-mode `results/aggregate/comparison.csv` via `scripts/aggregate_eval.py --results_root results`. GPT API modes (`llm_longctx`/`llm_memory`/`mem0`) use Azure gpt-5.5; Claude agent modes use Claude Code opus (4.8); `codex_agent` uses GPT-5.5 through the Codex CLI harness. gpt-5.5 is the judge for all. `--resume` is on by default, so a stopped run picks up where it left off (per-`query_id`).
 
 **Concurrency model (rate-limit-aware).** Defaults: `--gpt-workers 8`, `--agent-workers 1`, `--jobs 1`, `--mem0-jobs 20`.
 - `llm_longctx` / `llm_memory` parallelize *intra-persona* with `$GPT_WORKERS` (8) and run personas one at a time — so concurrency stays ≈ 8 regardless of `--jobs`.
-- **`mem0`: run the whole cohort in parallel by default (`--mem0-jobs 20`).** It is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable) AND rate-light — only ~1 in-flight Azure call per persona, measured at ~36% of the rate cap when running 6-way — so it is concurrency-bound, not rate-bound. Running the whole cohort at once saturates the cap (backoff absorbs any overflow) and cuts mem0 wall-time the most. **Required for `--mem0-jobs > 1`:** each persona must get its own `MEM0_DIR` (the matrix's `run_one` sets `MEM0_DIR=$rundir/.mem0dir` per persona). Without it, concurrent personas collide on mem0's **global** `$HOME/.mem0/migrations_qdrant` lock and fail with `portalocker.AlreadyLocked` — the per-persona qdrant *store* dir is isolated, but the migrations folder is not. Do NOT isolate via `HOME` (that breaks the Python env); use `MEM0_DIR`. `mem0`'s `--mem0-jobs` is kept SEPARATE from `llm_memory`'s `--jobs` because `llm_memory` is workers=8 intra-persona, so high `--jobs` there would blow `$JOBS × $GPT_WORKERS` past the rate limit.
+- **`mem0`: run all selected personas in parallel by default (`--mem0-jobs N`).** It is intra-persona **serial** (`--workers` forced to 1: its qdrant store is single-process / unpicklable) AND rate-light — only ~1 in-flight Azure call per persona, measured at ~36% of the rate cap when running 6-way — so it is concurrency-bound, not rate-bound. Running all personas at once saturates the cap (backoff absorbs any overflow) and cuts mem0 wall-time the most. **Required for `--mem0-jobs > 1`:** each persona must get its own `MEM0_DIR` (the matrix's `run_one` sets `MEM0_DIR=$rundir/.mem0dir` per persona). Without it, concurrent personas collide on mem0's **global** `$HOME/.mem0/migrations_qdrant` lock and fail with `portalocker.AlreadyLocked` — the per-persona qdrant *store* dir is isolated, but the migrations folder is not. Do NOT isolate via `HOME` (that breaks the Python env); use `MEM0_DIR`. `mem0`'s `--mem0-jobs` is kept SEPARATE from `llm_memory`'s `--jobs` because `llm_memory` is workers=8 intra-persona, so high `--jobs` there would blow `$JOBS × $GPT_WORKERS` past the rate limit.
 - Agent modes (`agent_tools` / `mcp_agent` / `codex_agent`) default to conservative concurrency. `mcp_agent` is sequential within a persona for write-overlay safety; filesystem-only `agent_tools` and `codex_agent` can parallelize read-only rows, but launcher defaults should stay modest to protect subscription/service limits.
 
-### GPT-5.5 Codex-harness run (matched cohort)
+### GPT-5.5 Codex-harness run
 
-For the direct comparison against `agent_tools_sonnet4.6`, `agent_tools_opus4.8`, and the shared-judge `llm_longctx_gpt5.5_judged`, run over the same primary cohort (defined in `scripts/personas.local.sh`):
+For the direct comparison against `agent_tools_sonnet4.6`, `agent_tools_opus4.8`, and the shared-judge `llm_longctx_gpt5.5_judged`, run over the same personas as the runs being compared (configure via `scripts/personas.local.sh`):
 
 ```bash
 CODEX_WORKERS=2 scripts/run_codex_agent.sh
@@ -921,7 +918,7 @@ This writes `results/codex_agent_gpt5.5/{uid}/results.csv` and then aggregates:
 ```bash
 python scripts/aggregate_eval.py --results_root results \
   --modes agent_tools_sonnet4.6,agent_tools_opus4.8,llm_longctx_gpt5.5_judged,codex_agent_gpt5.5
-python results/aggregate/_matched_comparison_script.py
+# then compare the per-config summaries under results/aggregate/
 ```
 
 Methodology: `codex_agent` is not the direct GPT-5.5 API baseline. It shells out to `codex exec --model gpt-5.5` per query, with a writable temporary `CODEX_HOME` under `/tmp` (auth copied from the user's real Codex home, generated state kept out of the repo), `--ephemeral`, `--sandbox read-only`, and plugin/app/browser/image/multi-agent feature flags disabled. The agent sees the same time-masked filesystem snapshot as Claude `agent_tools`; it does not see `profile.json`, `persona.html`, examples, inferiors, or judge rubrics.
@@ -1114,7 +1111,7 @@ In `agent_tools` mode, each query spawns a Claude Code subagent that autonomousl
 
 Total prompt = `input_tokens + cache_read_tokens`. `cache_hit_rate = cache_read / total_prompt`. With prompt caching, the snapshot + Claude Code system prompt are served from cache, so **`cache_read_tokens` dominates (~97% of per-query token volume; measured median ~87K, tail ~970K)** while fresh `input_tokens` stays tiny (often <1K). Every agentic turn re-reads the whole accumulated context from cache, so cost scales with **turns × context size** — an agent that reads narrow slices over few turns is far cheaper than one that reads whole files over many turns.
 
-**Per-query cost caps (standing defaults).** Each subagent runs with a **per-task** `--max-turns` (15 default / 30 heavy) and a **model-scaled** `--max-budget-usd` (sonnet baseline $0.30 default / $0.60 heavy; ×5/3 on opus 4.8 → $0.50 / $1.00), plus a system prompt forbidding whole-`*.json` reads. The 6 heavy tasks (repetition_recsys/chatbot, active_mistake_prevention, agentic_auto_reply, agentic_vague_refind, personalized_recommendation) get the doubled values — at the flat base budget they were cut off mid-answer, producing empty rows. Measured on `agent_tools_sonnet` vs the old uncapped run (`--max-turns 40`, no cap): on **completed (non-empty)** answers, matched-by-task accuracy held/slightly improved while per-query cost and wall-clock dropped sharply; the one regression was empty rows concentrated in the heavy tasks (4.0% → 7.9% at the full per-persona sample), which the per-task turn+budget headroom is designed to recover. Always compare modes on the non-empty subset — empty rows are cap artifacts, not answer-quality signal.
+**Per-query cost caps (standing defaults).** Each subagent runs with a **per-task** `--max-turns` (15 default / 30 heavy) and a **model-scaled** `--max-budget-usd` (sonnet baseline $0.30 default / $0.60 heavy; ×5/3 on opus 4.8 → $0.50 / $1.00), plus a system prompt forbidding whole-`*.json` reads. The 6 heavy tasks (repetition_recsys/chatbot, active_mistake_prevention, agentic_auto_reply, agentic_vague_refind, personalized_recommendation) get the doubled values — at the flat base budget they were cut off mid-answer, producing empty rows. Measured on `agent_tools_sonnet` vs the old uncapped run (`--max-turns 40`, no cap): on **completed (non-empty)** answers, matched-by-task accuracy held/slightly improved while per-query cost and wall-clock dropped sharply; the one regression was empty rows concentrated in the heavy tasks, which the per-task turn+budget headroom is designed to recover. Always compare modes on the non-empty subset — empty rows are cap artifacts, not answer-quality signal.
 ```
 
 ## Per-query quality audit (retired script)

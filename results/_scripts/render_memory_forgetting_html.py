@@ -273,7 +273,7 @@ def main():
                'same curve at the <b>concept</b> level (a line survives if the saturated memory contains a semantically '
                f'equivalent line, cosine&ge;{SEM_THRESHOLD} on text-embedding-3-large) shows survival is <b>flat at '
                f'~{sem_mean:.0f}%</b> regardless of when the content was added &mdash; the middle is <b>not</b> forgotten. '
-               '(matched 10 personas.)</p>')
+               '(fixed persona subset.)</p>')
 
     # --- a real example of the consolidated memory ---
     sec.append(memory_example_html())
@@ -343,7 +343,7 @@ def main():
                'retention failure: long context keeps the full history and still dips, and memory keeps the facts and '
                'still dips. The bottleneck is <b>using</b> mid-window-emerging interests (weaker, more ambiguous signal), '
                'which a better/larger store does not address by retention alone. &nbsp;'
-               '<b>Method.</b> Daily GPT-5.5 memory snapshots (10 personas); a concept = a cluster of bullet lines within '
+               '<b>Method.</b> Daily GPT-5.5 memory snapshots (fixed persona subset); a concept = a cluster of bullet lines within '
                f'cosine&ge;{SEM_THRESHOLD}; first_day = the day its first member appears; survives = a member appears in the '
                'FINAL memory. Robust across cosine 0.40&ndash;0.55 (mean 81&ndash;85%). Embeddings cached. &nbsp;'
                '<b>Why the x-axis ends at ~day 10, not 30:</b> note this x-axis is &ldquo;day a fact was first ADDED to the '
@@ -360,7 +360,7 @@ def main():
     DBL = next(s for s in abl if "Double" in s["label"])
     HLF = next(s for s in abl if "Half" in s["label"])
     sec.append('<div class="cap" style="margin-top:26px"><h2 style="font-size:10.5px">Direct test &mdash; does a bigger memory close the middle dip?</h2>'
-               '<span class="note">GPT-5.5 textual memory rebuilt at half / baseline / double the token cap, all tasks, matched 10</span></div>')
+               '<span class="note">GPT-5.5 textual memory rebuilt at half / baseline / double the token cap, all tasks</span></div>')
     # table (fine-near / wide-middle / 10d+ bins, all tasks)
     FL = nd.MIDBIN_LABELS
     bl = "".join("<col class='cval'>" for _ in FL)

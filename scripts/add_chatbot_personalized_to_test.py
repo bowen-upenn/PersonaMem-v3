@@ -117,7 +117,7 @@ def process(uid: str, target: int, backend: str, limit: int | None, dry: bool) -
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--users", default="1,2,3,5,6,8,9,10,13,14")
+    ap.add_argument("--users", required=True, help="comma-separated persona ids")
     ap.add_argument("--target", type=int, default=26, help="desired chatbot_personalized_response rows per persona")
     ap.add_argument("--backend_dir", default="backend")
     ap.add_argument("--limit", type=int, default=None, help="cap builder candidates (blind_check_limit) for speed")

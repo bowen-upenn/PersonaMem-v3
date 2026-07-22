@@ -248,7 +248,7 @@ def rerun_user(uid: str, rows: list, llm_client, llm_client_mini,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--input_csv", default="data/all20_input.csv")
+    ap.add_argument("--input_csv", default="data/gistbench_input.csv")
     ap.add_argument("--user_ids", required=True, help="comma-separated uids to re-roll")
     ap.add_argument("--keep_uids", default="", help="comma-separated uids whose names seed the blocklist")
     ap.add_argument("--backend_dir", default="backend")

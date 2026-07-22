@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Score the FIXED persona-1 judge-agreement prompts with an extra judge
+"""Score the FIXED single-persona judge-agreement prompts with an extra judge
 (gpt-5.4-mini by default) and merge into all_scores.jsonl. Idempotent: any prior
 rows for this judge are dropped before the fresh ones are written. 50-way parallel."""
 import json, sys, time, threading, argparse

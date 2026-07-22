@@ -21,7 +21,9 @@ sys.path.insert(0, str(ROOT))
 from evaluation.inference_utils import _compact_event, count_tokens   # noqa: E402
 from evaluation.backend_query import APPS as BQ_APPS                  # noqa: E402
 
-MATCHED = ["1", "2", "3", "5", "6", "8", "9", "10", "13", "14"]
+import os
+MATCHED = sorted(set(os.environ.get("PERSONAS", "").split()) or
+          {u for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}, key=int)
 CACHE = ROOT / "results/_scripts/_cache_niah.jsonl"
 POSITIONS = [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0]
 

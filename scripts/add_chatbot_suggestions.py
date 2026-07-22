@@ -6,7 +6,7 @@ preserved. Idempotent: existing new_suggestions_* rows are dropped before
 re-appending. Gold is built with the discovery LLM (Azure gpt-5.5).
 
 Usage:
-  python scripts/add_chatbot_suggestions.py --users "1 2 3 5 6 8 9 10 13 14" [--apply]
+  python scripts/add_chatbot_suggestions.py --users "<id id ...>" [--apply]
 """
 import argparse
 import importlib.util

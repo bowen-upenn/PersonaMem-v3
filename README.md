@@ -1,7 +1,7 @@
 # PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
-<!-- TODO: replace the arXiv badge target/ID once the v3 paper is up -->
-[![Paper](https://img.shields.io/badge/arXiv-coming--soon-b31b1b.svg)](https://arxiv.org/abs/)
+<!-- TODO: point the Paper badge at the arXiv abs page once the v3 paper is up -->
+[![Paper](https://img.shields.io/badge/Paper-preview-b31b1b.svg)](PersonaMem_v3.pdf)
 [![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v3-ffd21e.svg)](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
@@ -12,7 +12,7 @@ A collaboration between **Meta Recommendation Systems**, **University of Pennsyl
 
 Third release in the PersonaMem series:
 
-- **PersonaMem (v1)** — [COLM 2025] *Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
+- **PersonaMem (v1)** — *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
 - **PersonaMem-v2** — *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
 
 ## What's new in v3
@@ -76,7 +76,7 @@ python evaluation/run_eval.py --user_id 115 --mode llm_longctx \
 Full matrix over a cohort of personas and modes:
 
 ```bash
-scripts/run_eval_matrix.sh --personas "1 2 3 5 6" --modes "llm_longctx llm_memory mem0"
+scripts/run_eval_matrix.sh --personas "101 102 103" --modes "llm_longctx llm_memory mem0"
 ```
 
 Aggregate and render the summary tables:

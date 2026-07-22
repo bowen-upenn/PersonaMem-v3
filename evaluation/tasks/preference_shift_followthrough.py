@@ -47,7 +47,7 @@ T_TEST_MIN_LAG_DAYS = 1
 DAY_SECONDS = 24 * 60 * 60
 
 # Hard cap on emitted instances per user (chatbot + recsys combined).
-# Bumped from 4 → 6 because audit found 3/5 users were emitting only
+# Bumped from 4 → 6 because audit found most users were emitting only
 # 0-1 surviving rows after `_pick_t_test` + discovery-LLM attrition.
 INSTANCES_PER_USER_CAP = 6
 # Require this many distinct categories per user before emitting.
@@ -200,7 +200,7 @@ def _pick_t_test(t_shift: int, t_now: int, rng: random.Random) -> int:
     for expiration follow-through: at every observable moment the preference is
     still active, yet the GT template labels it "expired — no replacement" and
     penalizes an on-topic, still-active pref. An audit (2026-05-28) fallback
-    tested such candidates at `t_now - 1h` to salvage coverage for user 760, but
+    tested such candidates at `t_now - 1h` to salvage coverage for sparse users, but
     that shipped mislabeled "expired-when-active" rows (audit 2026-07-16, T2-4,
     confirmed personas 2/5/6). Correctness over coverage: skip future stops
     (return 0 → the caller drops the candidate). A user with only future stops

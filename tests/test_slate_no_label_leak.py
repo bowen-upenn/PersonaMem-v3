@@ -4,7 +4,7 @@ which one is the held-out target.
 
 Run: `pytest tests/test_slate_no_label_leak.py -v`
 
-This test loads every persona-115 slate instance from queries.csv (when
+This test loads every slate instance of one sample persona from queries.csv (when
 present) and inspects each candidate dict in `instance_json["slate"]`. If
 any leak field appears, the test fails — preventing future builder
 regressions that accidentally expose ground truth.

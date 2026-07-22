@@ -16,7 +16,7 @@ Distance metric (locked with user): OLDEST supporting in-context event.
 Correctness: the SAME per-query headline used by the published tables
   (scripts.aggregate_eval._accuracy_value + task_registry.PRIMARY_METRIC).
 
-Rows: the two long-context configs. Columns: depth bins. Matched-10 personas.
+Rows: the two long-context configs. Columns: depth bins. Evaluated personas.
 """
 import csv, json, glob, sys, collections, statistics
 from pathlib import Path
@@ -30,10 +30,12 @@ from evaluation.task_registry import normalize_task_type    # noqa: E402
 from evaluation.inference_utils import _compact_event, count_tokens  # noqa: E402
 from evaluation.backend_query import APPS as BQ_APPS        # noqa: E402
 
-MATCHED = {"1", "2", "3", "5", "6", "8", "9", "10", "13", "14"}
+import os
+MATCHED = set(os.environ.get("PERSONAS", "").split()) or \
+          {u for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 # Sources carry the objective + judge dims the headline tables use (judged
 # variant where one exists, else judge dims are in-place). collect() filters to
-# the matched-10 personas regardless of how many a dir contains.
+# the evaluated personas regardless of how many a dir contains.
 #
 # MODELS = the two LONG-CONTEXT configs. ONLY these load the flat chronological
 # history prompt, so the token-offset position is defined for them. The other
@@ -104,7 +106,7 @@ MIDBINS = [(0, 1), (1, 2), (2, 3), (3, 5), (5, 7), (7, 10), (10, 1e12)]
 MIDBIN_LABELS = ["0–1d", "1–2d", "2–3d", "3–5d", "5–7d", "7–10d", "10d+"]
 
 # Performance-ranked gradient: each model's colour is its Overall-accuracy rank
-# (matched-10), rose (best) -> sage green (worst) along the rgb(226,140,164)->
+# (evaluated personas), rose (best) -> sage green (worst) along the rgb(226,140,164)->
 # rgb(169,210,164) ramp, saturation +30% and lightness -15% for a deeper, elegant
 # dusty set that still separates. Colour encodes rank, not family.
 PALETTE = {
@@ -377,7 +379,7 @@ def main():
             print(line)
 
     print("\n    SCOPE = Personalization + Recommendation tasks (no hidden-persona / hallucination / restraint)")
-    print(">>> BY DAYS — coarse — cell = acc% / n  [all 8 configs]")
+    print(">>> BY DAYS — coarse — cell = acc% / n  [all configs]")
     print_table("Personalization + Recommendation", POOL_TASKS, "depth", BINS, BIN_LABELS, DAYS_MODELS_L)
     print("\n>>> BY DAYS (fine, 1-day bins)")
     print_table("Personalization + Recommendation", POOL_TASKS, "depth", DBINS, DBIN_LABELS, DAYS_MODELS_L)

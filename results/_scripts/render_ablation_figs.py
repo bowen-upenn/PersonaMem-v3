@@ -227,7 +227,7 @@ def build_qa_section() -> str:
         "<!-- QA_AUDIT_START -->\n"
         "<section>\n"
         "<div class=\"cap\"><h2>Benchmark quality control: automatic checks</h2>"
-        f"<span class=\"note\">persona&nbsp;1 QC audit + GPT-5.5/Opus overlap &middot; {nq} questions</span></div>\n"
+        f"<span class=\"note\">single-persona QC audit + GPT-5.5/Opus overlap &middot; {nq} questions</span></div>\n"
         f"{stat_row}\n{svg}\n{note}\n"
         "</section>\n"
         "<!-- QA_AUDIT_END -->"
@@ -471,7 +471,7 @@ def build_judge_section() -> str:
     )
     lead = (
         f"<p style='font-size:11px;color:{MUTED};margin:0 2px 12px;line-height:1.5;max-width:940px'>"
-        f"Persona&nbsp;1&rsquo;s real GPT-5.5 long-context replies and matched foils are re-scored on the "
+        f"A held-out persona&rsquo;s real GPT-5.5 long-context replies and matched foils are re-scored on the "
         f"<b style='color:{INK2}'>identical</b> chatbot rubric by "
         f"<b style='color:{JUDGE_COLOR['gpt-5.5']}'>GPT-5.5</b> and "
         f"<b style='color:{JUDGE_COLOR['claude-opus-4.8']}'>Claude&nbsp;Opus&nbsp;4.8</b>. "

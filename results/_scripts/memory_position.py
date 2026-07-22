@@ -19,7 +19,9 @@ csv.field_size_limit(10**9)
 from scripts.aggregate_eval import _accuracy_value          # noqa: E402
 from evaluation.task_registry import normalize_task_type    # noqa: E402
 
-MATCHED = {"1", "2", "3", "5", "6", "8", "9", "10", "13", "14"}
+import os
+MATCHED = set(os.environ.get("PERSONAS", "").split()) or \
+          {u for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 # (label, accuracy_dir, snapshot_dir) — each model builds its OWN memory, so the
 # snapshots differ; Gemini accuracy lives in the judged dir.
 MEM_MODES = [

@@ -208,11 +208,11 @@ def main():
                '<span class="note">all tasks &middot; distance from the query back to the FIRST appearance of its source information</span></div>')
     sec.append(f'<p class="lead" style="margin:0 0 18px">Each query is binned by the <b>distance from when it is asked back '
                'to the first appearance (first evidence) of its source information</b> in the context &mdash; fine near the '
-               'query, wider through the middle, and a <b>10d+</b> bin for the late-tested probes. Across all 8 configs, '
+               'query, wider through the middle, and a <b>10d+</b> bin for the late-tested probes. Across all configs, '
                'accuracy is highest when the first evidence is recent or at the very start of the window and <b>dips '
                'through the middle</b>. The dip appears even for the memory and agentic modes &mdash; which never read the '
                'flat history &mdash; so it is largely <b>source recency / query difficulty</b>, not literal in-context '
-               f'position. ({n_pool} queries/model, matched 10 personas; <b>bold</b> = each row’s peak bin.)</p>')
+               f'position. ({n_pool} queries/model; <b>bold</b> = each row’s peak bin.)</p>')
 
     # --- BY DAYS (fine near query, wider middle, 10d+) ---
     sec.append('<div class="cap"><h2 style="font-size:10.5px">By days &mdash; accuracy vs. query&rarr;source distance</h2></div>')

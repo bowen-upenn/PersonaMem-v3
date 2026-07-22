@@ -14,7 +14,9 @@ from evaluation.task_registry import get_capability_axis
 
 HERE = os.path.join(ROOT, "results/_scripts/erroranalysis")
 WF = "/vast/home/b/bwjiang/.claude/projects/-vast-projects-cjtaylor-occam-bwjiang-PersonaMem-v3/ae19265c-09b7-4b87-9e4b-32ee660be97a/subagents/workflows/wf_519ff5a4-660"
-MATCHED = {1, 2, 3, 5, 6, 8, 9, 10, 13, 14}
+import os
+MATCHED = {int(u) for u in os.environ.get("PERSONAS", "").split()} or \
+          {int(u) for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 FAIL = 60.0
 
 RUNS = {

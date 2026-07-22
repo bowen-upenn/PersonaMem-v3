@@ -80,8 +80,8 @@ def _split_by_polarity_for_quota(
         picked.extend((remaining_act + remaining_restrain)[: mx - len(picked)])
 
     # Flag polarity imbalance — happens when one arm has < 2 candidates
-    # in the trigger catalog (e.g. user 115 had 0 act-arm trending alerts
-    # at the time of the test).
+    # in the trigger catalog (e.g. a user can have 0 act-arm trending
+    # alerts at the test moment).
     n_act_picked = sum(1 for c in picked
                        if (c.get("relevance") or "").lower() == "relevant")
     n_restrain_picked = len(picked) - n_act_picked

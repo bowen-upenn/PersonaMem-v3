@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Inter-judge AGREEMENT metrics on the per-item accuracy scores (personas 1/2/3).
+"""Inter-judge AGREEMENT metrics on the per-item accuracy scores (3-persona sample).
 
 Baseline = GPT-5.5 per-item pr_query_score_0_10 from each live results.csv.
 Alt judges = the .items.jsonl sidecars from rejudge_existing (gpt-5.4-mini, opus).
@@ -105,7 +105,7 @@ def cohen_kappa_binary(a, b):
     return float((po - pe) / (1 - pe)) if (1 - pe) else float("nan")
 
 
-print(f"\n{'='*78}\nACCURACY — inter-judge AGREEMENT vs GPT-5.5 (per-item, personas 1/2/3)\n{'='*78}")
+print(f"\n{'='*78}\nACCURACY — inter-judge AGREEMENT vs GPT-5.5 (per-item, 3-persona sample)\n{'='*78}")
 report = {}
 for judge in ALT:
     xs, ys = [], []

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build gemini-3.5-flash's OWN textual memory (not reusing gpt5.5 prebuilt),
-for the matched 10 personas. Boundaries come from the existing gpt5.5
+for the evaluated personas. Boundaries come from the existing gpt5.5
 memory_states so the build is apples-to-apples. Captures real build tokens +
 gemini cost. Writes nothing outside results/_gemini_own_memory/.
 
@@ -17,7 +17,8 @@ from evaluation.memory_builder import build_checkpoints, default_memory_config
 from evaluation.cost_model import gemini_cost
 from query_llm import QueryLLM
 
-ALL = [1, 2, 3, 5, 6, 8, 9, 10, 13, 14]
+ALL = sorted({int(u) for u in os.environ.get("PERSONAS", "").split()} or
+             {int(u) for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()})
 MODEL = "gemini-3.5-flash"
 OUTBASE = f"{REPO}/results/_gemini_own_memory"
 

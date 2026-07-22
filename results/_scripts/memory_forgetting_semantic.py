@@ -17,7 +17,9 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-MATCHED = {"1", "2", "3", "5", "6", "8", "9", "10", "13", "14"}
+import os
+MATCHED = set(os.environ.get("PERSONAS", "").split()) or \
+          {u for u in os.listdir("results/agent_tools_opus4.8") if u.isdigit()}
 MEM_DIR = "llm_memory_gpt5.5"
 THRESHOLD = 0.45
 EMB_CACHE = ROOT / "results/_scripts/_cache_mem_line_emb.pkl"

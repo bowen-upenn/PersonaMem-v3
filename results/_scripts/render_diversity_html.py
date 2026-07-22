@@ -714,11 +714,11 @@ def main():
                f'{d["n_stances"]:,} tone descriptions</span></div>')
     sec.append(row(
         chart("Capital letters", hbar(d["voice_cap"], C["voice_style"], topn=5, pretty=lambda s: s.replace('_', ' ')),
-              sub="100 personas"),
+              sub="all personas"),
         chart("Formality", hbar(d["voice_formality"], C["voice_style"], topn=5),
-              sub="100 personas"),
+              sub="all personas"),
         chart("Emoji use", hbar(d["voice_emoji"], C["voice_emoji"], topn=5, pretty=lambda s: s or 'none'),
-              sub="100 personas"),
+              sub="all personas"),
     ))
     sec.append(row(
         chart("Sentence length", hbar(d["voice_sent_shape"], C["voice_style"], topn=5,
@@ -727,7 +727,7 @@ def main():
               pretty=lambda s: {"booster_dominant": "more direct",
                                 "hedge_dominant": "more cautious",
                                 "balanced": "balanced"}.get(s, s.replace('_', ' '))),
-              sub="100 personas"),
+              sub="all personas"),
         chart("Tone descriptions", hbar(d["voice_stances"], C["voice_tone"], topn=12,
               lblw=158, clip=False), sub=f"{d['n_stances']:,} total"),
     ))
@@ -758,7 +758,7 @@ def main():
         sec.append(f'<div style="font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;'
                    f'color:{MUT};margin:16px 0 2px">Attention shifts within a persona</div>'
                    f'<div style="font-size:9px;color:{FAINT};margin:0 0 6px">one interest fades (↘) as another rises (↗); '
-                   '→ = a steady anchor &middot; six personas</div>')
+                   '→ = a steady anchor &middot; several personas</div>')
         sec.append(focus_gallery(fs_list))
     pc = traj["counts"]
     sec.append(f'<div class="abldefs" style="max-width:820px;margin-top:10px">Preferences are <b>not static</b>: of '

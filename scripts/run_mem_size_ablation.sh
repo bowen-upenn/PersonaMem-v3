@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Memory-size ablation (GPT-5.5 only): rebuild the textual memory at HALF (2048)
-# and DOUBLE (8192) the default 4096 token cap, eval ALL tasks, matched-10
+# and DOUBLE (8192) the default 4096 token cap, eval ALL tasks, configured personas
 # personas. Baseline = existing results/llm_memory_gpt5.5 (cap 4096). Throttled
 # parallel pool.
 set -u
-PERS="1 2 3 5 6 8 9 10 13 14"
+[ -f scripts/personas.local.sh ] && . scripts/personas.local.sh
+PERS="${PERSONAS:?set PERSONAS (space-separated ids) or scripts/personas.local.sh}"
 CAPS="2048 8192"
 LOG=/tmp/eval_regen; mkdir -p "$LOG"
 MAXJ="${MAXJ:-5}"            # concurrent run_eval processes (each uses --workers 8)

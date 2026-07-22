@@ -148,7 +148,7 @@ def main():
     fig.suptitle("PersonaMem — why each system fails (and what it gets right)",
                  fontsize=23, fontweight="bold", y=0.987)
     fig.text(0.5, 0.953,
-             "same 10 simulated users · each FAILURE ring shows WHY the model got it wrong (the underlying reason, "
+             "same simulated users · each FAILURE ring shows WHY the model got it wrong (the underlying reason, "
              "not the task) · each SUCCESS ring shows what it did well",
              ha="center", fontsize=13, color="#666")
     fig.add_artist(plt.Line2D([0.02, 0.995], [0.498, 0.498], color="#dddddd", lw=1.3))

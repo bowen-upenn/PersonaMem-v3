@@ -36,7 +36,7 @@ IMG = ('display:block;width:100%;max-width:1180px;margin:0;'
 
 SECTION = f"""{START}
 <section>
-<div class="cap"><h2>Error analysis &mdash; why each system gets answers wrong</h2><span class="unit">same 10 users</span><span class="note">every wrong answer labelled by the underlying reason it was wrong (read from the saved judge notes + model responses), not by the task</span></div>
+<div class="cap"><h2>Error analysis &mdash; why each system gets answers wrong</h2><span class="unit">same users</span><span class="note">every wrong answer labelled by the underlying reason it was wrong (read from the saved judge notes + model responses), not by the task</span></div>
 <p class="lead" style="margin:0 0 12px">A row counts as <b>wrong</b> when its answer scored below 60/100. We sort each wrong answer by <b>why</b> the model got it wrong, in plain terms. The biggest reason everywhere is picking the wrong things for the user &mdash; either it <b>couldn&rsquo;t find</b> the relevant info, or it <b>found it but ranked the wrong things on top</b>. The split is revealing: memory- and agent-based systems fail more by <i>not finding</i> the info (Claude Code 28&ndash;29%, Mem0 23%) while Long Context, which has everything in front of it, fails more by <i>finding it but mis-ranking</i> (29%). <b>Codex</b> never ignores the request (0%), but instead <b>over-shares private info</b> and <b>makes details up</b>. <b>Gemini</b> systems make things up the most. The success rings (left/top of each pair) look alike &mdash; every system does well at the same things; they differ in <i>how</i> they fail.</p>
 <figure style="margin:0 0 18px">
 <img src="{PAIRS_URI}" alt="Per-system success and failure donut pairs" style="{IMG}">

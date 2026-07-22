@@ -103,7 +103,7 @@ def main():
     fig.suptitle("PersonaMem — why each system gets answers wrong",
                  fontsize=23, fontweight="bold", y=0.975)
     fig.text(0.5, 0.918,
-             "same 10 simulated users · each ring shows WHY the model's wrong answers were wrong — the underlying reason, not the task",
+             "same simulated users · each ring shows WHY the model's wrong answers were wrong — the underlying reason, not the task",
              ha="center", fontsize=13, color="#666")
     fig.subplots_adjust(left=0.006, right=0.995, top=0.84, bottom=0.02,
                         wspace=0.03, hspace=0.40)

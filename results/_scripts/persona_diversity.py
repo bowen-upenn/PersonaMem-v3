@@ -416,4 +416,4 @@ if __name__ == "__main__":
     print("horizon:", dict(e["horizon"]))
     print("emerge by day:", [e["emerge"][i] for i in range(9)])
     print("recur   by day:", [e["recur"][i] for i in range(9)])
-    print("example persona 1 top cats:", e["example"]["cats"])
+    print("example persona top cats:", e["example"]["cats"])

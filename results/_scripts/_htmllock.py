@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Single-writer lock for results/aggregate/html/results_tables.html.
 
-The shared report is written by MANY scripts (render_matched10_final.py, the
+The shared report is written by MANY scripts (render_final_tables.py, the
 NIAH/memory section renderers, ad-hoc patch_*.py). With no lock, two concurrent
 writers race -> the file gets duplicated or one writer carries a STALE copy of
 another section forward (this is how the Hidden-persona Accuracy row kept

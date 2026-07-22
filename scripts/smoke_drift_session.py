@@ -82,7 +82,7 @@ Return ONLY JSON:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--users", default="105")
+    ap.add_argument("--users", required=True, help="comma-separated persona ids")
     ap.add_argument("--backend_dir", default="backend")
     ap.add_argument("--model", default="gpt-5.5")
     ap.add_argument("--judge_model", default="gpt-5.5")
