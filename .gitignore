@@ -29,9 +29,9 @@ eval_aggregate*/
 *.pid
 *.csv
 
-# Local persona cohort selection (actual user IDs live here, never committed)
+# Optional local persona selection for the run scripts
 scripts/personas.local.sh
-# Internal run-history one-offs (kept locally for reproducibility, never shipped)
+# One-off maintenance scripts
 scripts/reeval_*.sh
 scripts/codex_hp_refill.sh
 
@@ -48,6 +48,6 @@ regen_work/
 backups/
 release/
 
-# Agent-workflow docs (kept local, not part of the public release)
+# Local agent config
 CLAUDE.md
 skill.md
