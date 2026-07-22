@@ -7191,6 +7191,42 @@ class PersonaAgent:
         mods.sort(key=lambda m: m["ts"])
         return mods
 
+    @staticmethod
+    def _topic_phrase_for_fallback(cr) -> str:
+        """Short topic phrase derived from a canonical's persona_item, used to
+        build a deterministic fallback user_message when LLM generation fails."""
+        text = (getattr(cr, "persona_item", "") or "").strip()
+        low = text.lower()
+        for v in ("is passionate about", "is a fan of", "is interested in",
+                  "identifies with", "responds positively to", "responds to",
+                  "engages with", "interested in", "passionate about",
+                  "enjoys", "likes", "loves", "follows", "prefers", "values",
+                  "seeks", "supports"):
+            if low.startswith(v):
+                text = text[len(v):].strip()
+                break
+        text = text.rstrip(".").strip()
+        words = text.split()
+        if len(words) > 8:
+            text = " ".join(words[:8])
+        return text or (getattr(cr, "category", "") or "this").replace("_", " ")
+
+    def _fallback_user_message(self, action_id: str, cr) -> str:
+        """Deterministic natural-language fallback so an @ai comment / chatbot
+        turn never ships with an empty user_message when the mini-LLM call
+        fails or returns malformed JSON (guards the ~13% failure rate seen
+        under heavy parallel regen load)."""
+        topic = self._topic_phrase_for_fallback(cr)
+        if action_id in AT_AI_ACTIONS:
+            return {
+                "at_ai_recommend_more": f"@ai recommend more like this — more {topic}.",
+                "at_ai_focus_topic": f"@ai focus on {topic}.",
+                "at_ai_not_interested": f"@ai not interested in {topic}.",
+                "at_ai_stop_recommending": f"@ai stop recommending {topic}.",
+                "at_ai_feels_off": f"@ai this feels off — less {topic}.",
+            }.get(action_id, f"@ai focus on {topic}.")
+        return f"Can you tell me more about {topic}?"
+
     def generate_interaction_formats(self) -> None:
         """For each routed preference, sample a concrete interaction_format
         from this user's perturbed catalog and generate a user_message if
@@ -7257,6 +7293,17 @@ class PersonaAgent:
                     parsed = utils.extract_json_from_response(response)
                     if isinstance(parsed, dict):
                         user_message = parsed.get("user_message")
+                # Never ship an empty @ai / chatbot message: fall back to a
+                # deterministic voiced template when the LLM failed or returned
+                # a blank message.
+                if not (user_message and str(user_message).strip()):
+                    user_message = self._fallback_user_message(action_id, cr)
+                # Enforce the "@ai " prefix on comment actions (the LLM
+                # occasionally drops it).
+                if action_id in AT_AI_ACTIONS:
+                    user_message = str(user_message).strip()
+                    if not user_message.lower().startswith("@ai"):
+                        user_message = f"@ai {user_message}"
             format_obj = {
                 "app": app,
                 "action": action_id,
