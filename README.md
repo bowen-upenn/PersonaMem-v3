@@ -3,15 +3,10 @@
 <!-- TODO: replace the arXiv badge target/ID once the v3 paper is up -->
 [![Paper](https://img.shields.io/badge/arXiv-coming--soon-b31b1b.svg)](https://arxiv.org/abs/)
 [![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v3-ffd21e.svg)](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)
-[![PersonaMem v2](https://img.shields.io/badge/GitHub-PersonaMem--v2-0075b6.svg?logo=github)](https://github.com/bowen-upenn/PersonaMem-v2)
-[![PersonaMem v1](https://img.shields.io/badge/GitHub-PersonaMem--v1-0075b6.svg?logo=github)](https://github.com/bowen-upenn/PersonaMem)
-[![Meta](https://img.shields.io/badge/Meta-AI-0467df.svg?logo=meta&logoColor=white)](https://ai.meta.com)
-[![UPenn](https://img.shields.io/badge/UPenn-011f5b.svg)](https://www.upenn.edu)
-[![MIT](https://img.shields.io/badge/MIT-a31f34.svg)](https://www.mit.edu)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
-A collaboration between **Meta**, the **University of Pennsylvania**, and **MIT**.
+A collaboration between **Meta Recommendation Systems**, **University of Pennsylvania**, and **MIT**.
 
 ![PersonaMem-v3](header.png)
 
