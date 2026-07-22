@@ -29,7 +29,7 @@ python scripts/download_gistbench.py                # → data/gistbench_input.c
 
 Source data comes from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench); pre-built personas are distributed via the [PersonaMem-v3 dataset](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3). Neither is tracked in git — but a ready-made 10-user sample input ships with the repo at `data/gistbench_sample_10users.csv` for a quick start.
 
-## 1. Build personas and their queries
+## 1. Build personas, user histories, their queries
 
 One persona, end to end (28-step generation pipeline → `backend/115/` with `profile.json`, five app histories, `calendar.json`, `persona.html`):
 
