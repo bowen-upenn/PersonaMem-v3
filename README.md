@@ -8,7 +8,7 @@ Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregor
 
 A collaboration between <img src="assets/meta.png" height="16" alt="Meta"> **Meta Recommendation Systems**, <img src="assets/upenn.png" height="16" alt="UPenn"> **University of Pennsylvania**, and <img src="assets/mit.png" height="16" alt="MIT"> **MIT**.
 
-![PersonaMem-v3](header.png)
+![PersonaMem-v3](assets/header.png)
 
 Third release in the PersonaMem series:
 
