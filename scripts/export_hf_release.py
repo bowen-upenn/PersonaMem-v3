@@ -1093,12 +1093,6 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 |---|---|---|
 {task_rows}
 
-## ⚠️ Warning
-
-All data are LLM-generated (synthetic personas; no real users appear in this dataset)
-with automated quality gates and audits, but we cannot manually verify every sample;
-the dataset may still contain stereotypical biases or other imperfect content.
-
 ## 📜 License
 
 The personas derive from
