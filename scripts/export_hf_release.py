@@ -720,6 +720,9 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     samples.mkdir(parents=True, exist_ok=True)
     (out / "backend").mkdir(exist_ok=True)
     (out / "assets").mkdir(exist_ok=True)
+    header = REPO_ROOT / "assets" / "header.png"
+    if header.exists():
+        shutil.copy2(header, out / "assets" / "header.png")
     for logo in ("meta.png", "upenn.png", "mit.png"):
         src_logo = REPO_ROOT / "assets" / logo
         if src_logo.exists():
@@ -920,6 +923,8 @@ A collaboration between:
     <td><img src="assets/mit.png" alt="MIT"></td><td>MIT</td>
   </tr>
 </table>
+
+![PersonaMem-v3](assets/header.png)
 
 Third release in the PersonaMem series:
 
