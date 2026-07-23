@@ -996,15 +996,15 @@ The benchmark's coverage spans five connected capability areas:
 
 Think of each persona as one simulated person's complete digital life:
 
-- What they did: every scroll, like, skip, save, comment, post, DM, ad click,
+- **What they did**: every scroll, like, skip, save, comment, post, DM, ad click,
   and trending item across Instagram, Facebook, and Threads, with the full content
   of everything they touched
-- What they said: their chats with an AI assistant (Chatbot) and their ongoing
+- **What they said**: their chats with an AI assistant (Chatbot) and their ongoing
   companion-character relationship (AI Studio)
-- Their calendar and whereabouts: appointments added, moved, and removed over time, plus per-session geolocation (home city and trips) stamped on their activity
-- What can be learned about them: the preferences inferred from those events,
+- **Their calendar and whereabouts**: appointments added, moved, and removed over time, plus per-session geolocation (home city and trips) stamped on their activity
+- **What can be learned about them**: the preferences inferred from those events,
   each with confidence scores, a category, and a timeline of how it evolved
-- The exam: benchmark queries that ask an AI system to personalize, recommend,
+- **The exam**: benchmark queries that ask an AI system to personalize, recommend,
   act on the person's behalf, or deliberately avoid over-personalization, each with
   ground truth and scoring materials
 
