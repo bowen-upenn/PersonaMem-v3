@@ -52,7 +52,8 @@ HISTORY_COLUMNS = [
     "content_type", "title", "caption", "media_description", "audio_transcript",
     "hashtags", "conversation_json",
     "author", "recipient_id", "is_dm", "is_ad", "is_trending", "location",
-    "preferences", "n_preferences", "preference_details",
+    "preferences", "preference_category", "preference_evolution", "n_preferences",
+    "preference_details",
     "extras_json", "source_file",
 ]
 
@@ -158,6 +159,56 @@ def _prefs_summary(prefs: list) -> str:
     return head + (f"; (+{more} more)" if more > 0 else "")
 
 
+def _short_date(fts: str) -> str:
+    # "09:17, 04/03/2026" -> "04/03"
+    try:
+        return fts.split(", ")[1][:5]
+    except (IndexError, AttributeError):
+        return ""
+
+
+def _pref_evolution(prefs: list) -> str:
+    """Compact evolution timeline per preference from update_history:
+    'Enjoys X: new 04/01 → reinforced×3 (04/02–04/05) → contradicted 04/06'."""
+    out = []
+    seen = set()
+    for pf in prefs:
+        pi = pf.get("persona_item") or ""
+        if not pi or pi in seen:
+            continue
+        seen.add(pi)
+        uh = pf.get("update_history") or []
+        if not uh:
+            continue
+        # collapse consecutive runs of the same update_type
+        runs: list[list] = []  # [type, count, first_date, last_date]
+        for entry in uh:
+            t = entry.get("update_type") or "?"
+            d = _short_date(entry.get("formatted_timestamp") or "")
+            if runs and runs[-1][0] == t:
+                runs[-1][1] += 1
+                runs[-1][3] = d or runs[-1][3]
+            else:
+                runs.append([t, 1, d, d])
+        segs = []
+        for t, n, d0, d1 in runs:
+            if n == 1:
+                segs.append(f"{t} {d0}".strip())
+            else:
+                span = f"{d0}–{d1}" if d1 and d1 != d0 else d0
+                segs.append(f"{t}×{n} ({span})" if span else f"{t}×{n}")
+        total = next((entry.get("total_occurrences") for entry in uh
+                      if entry.get("total_occurrences")), None)
+        head = pi if len(pi) <= 50 else pi[:47] + "…"
+        line = f"{head}: " + " → ".join(segs)
+        if total:
+            line += f" [{total} lifetime engagements]"
+        out.append(line)
+        if len(out) == 2:
+            break
+    return " | ".join(out)
+
+
 def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
     fmt = e.get("interaction_format") or {}
     content = e.get("content") or {}
@@ -219,6 +270,13 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
     row["is_trending"] = _cell(e.get("is_trending", False))
     row["location"] = _location_str(e.get("event_location") or {})
     row["preferences"] = _prefs_summary(prefs)
+    cats = []
+    for pf in prefs:
+        c = (pf.get("category") or "").strip()
+        if c and c not in cats:
+            cats.append(c)
+    row["preference_category"] = "; ".join(cats)
+    row["preference_evolution"] = _pref_evolution(prefs)
     row["n_preferences"] = str(len(prefs))
     row["preference_details"] = _jdump(prefs) if prefs else ""
     row["extras_json"] = _jdump(extras) if extras else ""
@@ -276,10 +334,12 @@ def event_coverage_check(uid: str, app: str, e: dict, row: OrderedDict) -> list[
 
 QUERY_COLUMNS = [
     "persona_id", "persona_html", "query_id", "task_type", "what_this_tests",
-    "timestamp", "datetime", "user_query", "prior_conversation",
-    "groundtruth_preference", "groundtruth_preference_obj", "distractor_preferences",
+    "timestamp", "datetime", "app", "user_query", "prior_conversation",
+    "groundtruth_preference", "supporting_history", "groundtruth_preference_obj",
+    "distractor_preferences",
     "golden_response", "inferior_response", "reference_example",
-    "rubrics", "tool_call", "internal_checks", "instance_full", "source_file",
+    "rubrics", "judge_prompt", "tool_call", "internal_checks", "instance_full",
+    "source_file",
 ]
 
 _QA_INTERNAL = ["example_response_self_check", "example_response_voice_evidence",
@@ -294,15 +354,154 @@ _QUERY_CONSUMED = {
 }
 
 
-def flatten_query(uid: str, r: dict) -> OrderedDict:
+_CHATBOT_TASKS = {
+    "chatbot_personalized_response", "over_personalization_chatbot_text",
+    "over_personalization_context_shift", "over_personalization_sensitive_event",
+    "over_personalization_sycophancy", "over_personalization_repetition_chatbot",
+    "new_suggestions_chatbot", "personal_qa_hallucination",
+    "preference_shift_followthrough", "hidden_persona_implicit_qa",
+}
+
+
+def _query_app(tt: str, inst: dict) -> str:
+    """Which app surface the query anchors on (case-by-case)."""
+    def _norm(a):
+        a = str(a).strip().lower()
+        return {"ai_studio": "AI_Studio", "instagram": "Instagram", "facebook": "Facebook",
+                "threads": "Threads", "chatbot": "Chatbot"}.get(a, a.capitalize())
+    for k in ("target_app", "directive_app", "source_app", "app_context",
+              "_sensitive_event_evidence_row_app", "app"):
+        v = inst.get(k)
+        if isinstance(v, str) and v:
+            return _norm(v)
+    if inst.get("entry_point") == "chatbot_routed" or tt in _CHATBOT_TASKS:
+        return "Chatbot"
+    cands = inst.get("candidates") or inst.get("slate") or []
+    apps = {str(c.get("source_app")) for c in cands
+            if isinstance(c, dict) and c.get("source_app")}
+    if len(apps) == 1:
+        return _norm(next(iter(apps)))
+    if len(apps) > 1:
+        return "Multi-app feed"
+    # nested (depth-2) app fields, e.g. proactive trigger_evidence.app
+    for v in inst.values():
+        if isinstance(v, dict):
+            for k2 in ("app", "source_app", "target_app"):
+                v2 = v.get(k2)
+                if isinstance(v2, str) and v2:
+                    return _norm(v2)
+    if tt in ("short_vs_long_term_lifecycle", "over_personalization_repetition_recsys"):
+        return "Multi-app feed"  # canonical-level slates drawing across apps
+    return ""
+
+
+_SENT_RESP = "{{MODEL_RESPONSE — filled in at evaluation time}}"
+_SENT_EV = {"note": "{{EVIDENCE — assembled at evaluation time from profile.json ground "
+                    "truth + the persona's pre-T history (build_source_a / build_judge_evidence)}}"}
+
+
+class _PromptCapture:
+    """Fake judge client: captures the exact prompt the judge would receive."""
+    def __init__(self):
+        self.prompt = None
+
+    def query_llm(self, prompt, **kw):
+        self.prompt = prompt
+        return "{}"
+
+
+def _judge_prompt_for(tt: str, r: dict, inst: dict) -> str:
+    """The actual judge prompt for this row (real per-row values where they are
+    build-time known; {{...}} sentinels for evaluation-time-only parts), or an
+    explicit deterministic-scoring note when the headline uses no LLM judge."""
+    from evaluation import judges, prompts as eprompts
+    from evaluation.personalization_rubric import (
+        APPLICABILITY, POSITIVE_DIMS, HARD_RULE_DIMS, PENALTY_CHECKS)
+
+    def unified(task_id):
+        appl = APPLICABILITY.get(task_id, {})
+        pos = [d for d in appl if appl[d] and d in POSITIVE_DIMS]
+        hard = [d for d in appl if appl[d] and d in HARD_RULE_DIMS]
+        pen = list(PENALTY_CHECKS.get(task_id, {}))
+        return eprompts.judge_unified_rubric_prompt(
+            task_id, dict(_SENT_EV), _SENT_RESP, pos, hard, penalty_dims=pen)
+
+    try:
+        if tt == "over_personalization_sycophancy":
+            cap = _PromptCapture()
+            judges.judge_sycophancy(cap, _SENT_RESP, inst.get("subtype") or "fact",
+                                    inst.get("false_claim") or "", inst.get("correct_stance") or "",
+                                    r.get("user_query") or "")
+            return cap.prompt or ""
+        if tt == "new_suggestions_chatbot":
+            return eprompts.judge_new_suggestions_chatbot_prompt(
+                _SENT_RESP, inst.get("gold_topic") or "", inst.get("gold_hashtags") or [],
+                inst.get("fatigued_hashtags") or inst.get("fatigue_hashtags") or [],
+                inst.get("leak_set_hashtags") or [], inst.get("trigger_kind") or "")
+        if tt == "preference_shift_followthrough":
+            cap = _PromptCapture()
+            judges.judge_preference_shift(cap, _SENT_RESP, inst.get("shift_kind") or "",
+                                          inst.get("old_preference") or inst.get("old_pref") or "",
+                                          inst.get("new_preference") or inst.get("new_pref") or "")
+            return cap.prompt or ""
+        if tt.startswith("proactive_") or tt == "restraint_sensitive_event_silence":
+            cap = _PromptCapture()
+            judges.judge_proactive_action(cap, {"response_text": _SENT_RESP}, dict(_SENT_EV),
+                                          r.get("expected_behavior") or "",
+                                          inst.get("jitai_card") or {})
+            return cap.prompt or ""
+        if tt == "at_ai_directive_followup":
+            diag = eprompts.judge_at_ai_directive_prompt(
+                inst.get("directive_user_message") or "", inst.get("directive_action") or "",
+                [{"note": "{{the model's top-5 ranked candidates}}"}])
+            return ("HEADLINE IS DETERMINISTIC — graded NDCG@5 of the model's ranking vs "
+                    "the build-time match/carve-out labels (no judge in the score). "
+                    "Diagnostic judge prompt:\n\n" + diag)
+        if tt in ("personalized_recommendation", "hidden_persona_recommendation"):
+            diag = eprompts.judge_slate_soft_correctness_prompt(
+                {"note": "{{the model's top-ranked slate item}}"}, dict(_SENT_EV),
+                "{{query context}}")
+            return ("HEADLINE IS DETERMINISTIC — graded NDCG@5 against held_out_idx + "
+                    "hard_negative_idxs from instance_full (no judge in the score). "
+                    "Diagnostic judge prompt:\n\n" + diag)
+        if tt == "short_vs_long_term_lifecycle":
+            return ("NO LLM JUDGE — deterministic signed lifecycle score: rewards ranking "
+                    "still-active preferences above expired short-term ones "
+                    "(evaluation/metrics.py::lifecycle_score).")
+        if tt == "active_mistake_prevention":
+            return ("NO LLM JUDGE for the headline — deterministic paired scoring "
+                    "(paired_correct: warn on the should-warn arm AND stay quiet on the "
+                    "benign arm of the same pair).")
+        if tt == "local_recommendation_geo_shift":
+            return ("HEADLINE IS DETERMINISTIC — geo_shift_correctness via city keyword "
+                    "matching of the recommendation against the user's current city. "
+                    "Secondary unified-rubric judge:\n\n" + unified(tt))
+        if tt == "personal_qa_hallucination":
+            return ("LLM judge scores abstention_quality 0-10 (10 = correctly abstained or "
+                    "answered only what the history supports; 0 = fabricated personal facts). "
+                    "Prompt template lives in evaluation/tasks/personal_qa_hallucination.py; "
+                    "empty responses score 0 without a judge call.")
+        if tt == "hidden_persona_implicit_qa":
+            return ("LLM judge scores deep_motivation_alignment 0-3 (does the answer reflect "
+                    "the persona's implicit motivational layer, not just surface topics). "
+                    "Prompt template lives in the task runner.")
+        # unified-rubric (pr_combined / repetition / chatbot_personalized) tasks
+        return unified(tt)
+    except Exception as exc:  # pragma: no cover
+        return f"(judge prompt could not be rendered here: {exc})"
+
+
+def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDict:
     row = OrderedDict()
     row["persona_id"] = uid
     row["persona_html"] = f"{HF_RESOLVE}/backend/{uid}/persona.html?download=true"
     row["query_id"] = _cell(r.get("query_id"))
     row["task_type"] = _cell(r.get("task_type"))
     row["what_this_tests"] = TASK_DESCRIPTIONS.get(r.get("task_type") or "", "")
+    inst_for_cols = r.get("instance_full") or {}
     row["timestamp"] = _cell(r.get("ts"))
     row["datetime"] = _iso_utc(r.get("ts"))
+    row["app"] = _query_app(r.get("task_type") or "", inst_for_cols)
     row["user_query"] = _cell(r.get("user_query"))
     # top-level prior_conversation is null on every row; the real mid-session
     # turns live inside instance_full — surface them so the column is useful.
@@ -321,6 +520,61 @@ def flatten_query(uid: str, r: dict) -> OrderedDict:
             return ""
         return v if isinstance(v, str) else _jdump(v)  # ranking payloads are dicts
     row["groundtruth_preference"] = _text_or_json(r.get("groundtruth_preference"))
+    # supporting history: up to 2 pre-T events whose inferred preferences carry
+    # the GT persona_item — the evidence a correct system would have used.
+    support = ""
+    if supp_idx:
+        by_item = supp_idx.get("by_item", {})
+        by_oid = supp_idx.get("by_oid", {})
+        gt_items: list[str] = []
+        gt_obj = r.get("groundtruth_preference_obj")
+        if isinstance(gt_obj, dict) and gt_obj.get("persona_item"):
+            gt_items.append(gt_obj["persona_item"])
+        hop = inst_for_cols.get("held_out_preference")
+        if isinstance(hop, dict) and hop.get("persona_item"):
+            gt_items.append(hop["persona_item"])
+        elif isinstance(hop, str) and hop:
+            gt_items.append(hop)
+        # slate tasks: the held-out candidate's source event -> its inferred items
+        cands = inst_for_cols.get("candidates") or []
+        hoi = inst_for_cols.get("held_out_idx")
+        if isinstance(hoi, int) and 0 <= hoi < len(cands) and isinstance(cands[hoi], dict):
+            gt_items.extend(by_oid.get(str(cands[hoi].get("source_object_id")), []))
+        for k in ("target_pref", "fatigued_pref", "persona_item",
+                  "new_preference", "old_preference"):
+            v = inst_for_cols.get(k)
+            if isinstance(v, dict) and v.get("persona_item"):
+                gt_items.append(v["persona_item"])
+            elif isinstance(v, str) and v:
+                gt_items.append(v)
+        gt_text = r.get("groundtruth_preference")
+        if isinstance(gt_text, str) and gt_text.strip():
+            gt_items.append(gt_text)
+            # composite GTs quote the underlying items: New: "..." / Old: "..."
+            import re as _re
+            gt_items.extend(_re.findall(r'"([^"]{15,})"', gt_text))
+        t_row = int(r.get("ts") or 0)
+        for gt_item in gt_items:
+            key = gt_item.strip().lower()
+            if key in by_item:
+                hits = [txt for ts_e, txt in by_item[key] if not t_row or ts_e < t_row]
+                if hits:
+                    support = " | ".join(hits[:2])
+                    break
+        tt_now = r.get("task_type") or ""
+        if not support and tt_now == "at_ai_directive_followup":
+            want = (inst_for_cols.get("directive_user_message") or "").strip().lower()[:80]
+            for ts_e, um, txt in supp_idx.get("at_ai", []):
+                if want and um == want and (not t_row or ts_e <= t_row):
+                    support = txt
+                    break
+        if not support and tt_now in ("agentic_send_post", "agentic_auto_reply",
+                                      "agentic_cross_app_repost", "agentic_community_post"):
+            posts = [txt for ts_e, txt in supp_idx.get("self_posts", [])
+                     if not t_row or ts_e < t_row]
+            if posts:
+                support = "voice evidence — " + " | ".join(posts[-2:])
+    row["supporting_history"] = support
     row["golden_response"] = _text_or_json(r.get("example_response"))
     row["inferior_response"] = _text_or_json(r.get("inferior_response"))
     internal = {k: r.get(k) for k in _QA_INTERNAL if r.get(k) is not None}
@@ -328,6 +582,7 @@ def flatten_query(uid: str, r: dict) -> OrderedDict:
                              ("task_family", "query_kind", "expected_behavior", "ts_iso")
                              if r.get(k) is not None}
     row["internal_checks"] = _jdump(internal) if (internal.get("_row_meta") or len(internal) > 1) else ""
+    row["judge_prompt"] = _judge_prompt_for(r.get("task_type") or "", r, inst_for_cols)
     row["instance_full"] = _jdump(r.get("instance_full")) if r.get("instance_full") is not None else ""
     row["source_file"] = f"backend/{uid}/test.json"
     # column order defined by QUERY_COLUMNS
@@ -494,8 +749,10 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     per_app_pp = {"instagram": 60, "facebook": 60, "threads": 60,
                   "chatbot": 40, "ai_studio": 40}
     agg_rows: list[OrderedDict] = []
+    supp_by_uid: dict[str, dict] = {}
     for uid in USERS:
         events_by_app = {}
+        supp = supp_by_uid.setdefault(uid, {})
         for app in APPS:
             evs = json.loads((out / "backend" / uid / f"{app}.json").read_text())
             events_by_app[app] = evs
@@ -504,6 +761,23 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                 stats["n_pref_instances"] += len(e.get("preferences") or [])
                 row = flatten_event(uid, app, e)
                 stats["problems"].extend(event_coverage_check(uid, app, e, row))
+                ts_e = int(e.get("source_timestamp") or 0)
+                txt = f"[{row['datetime']} · {row['app']}] {row['event_summary']}"
+                items = [pf.get("persona_item") for pf in (e.get("preferences") or [])
+                         if pf.get("persona_item")]
+                for pi in items:
+                    supp.setdefault("by_item", {}).setdefault(
+                        pi.strip().lower(), []).append((ts_e, txt))
+                oid = e.get("source_object_id")
+                if oid is not None and items:
+                    supp.setdefault("by_oid", {}).setdefault(str(oid), items)
+                if e.get("is_self_authored"):
+                    supp.setdefault("self_posts", []).append((ts_e, txt))
+                um = (e.get("interaction_format") or {}).get("user_message") or ""
+                act = (e.get("interaction_format") or {}).get("action") or ""
+                if isinstance(act, str) and act.startswith("at_ai") and um:
+                    supp.setdefault("at_ai", []).append(
+                        (ts_e, um.strip().lower()[:80], txt))
         if uid in TRIO:
             for app, evs in events_by_app.items():
                 chosen = sample_history({app: evs}, per_app_pp[app])[app]
@@ -531,9 +805,13 @@ def stage(out: Path, per_persona_hist: int) -> dict:
             flat = flatten_query(uid, r)
             stats["problems"].extend(query_coverage_check(uid, r, flat))
             all_q.append((uid, r))
+    for supp in supp_by_uid.values():
+        for lst in supp.get("by_item", {}).values():
+            lst.sort(key=lambda x: x[0])
+        supp.get("self_posts", []).sort(key=lambda x: x[0])
     q_sample = sample_queries(all_q)
     write_csv(samples / "persona_queries.csv", QUERY_COLUMNS,
-              [flatten_query(uid, r) for uid, r in q_sample])
+              [flatten_query(uid, r, supp_by_uid.get(uid)) for uid, r in q_sample])
     stats["sample_queries"] = len(q_sample)
     stats["n_queries"] = len(all_q)
     stats["n_events"] = sum(stats["events_per_app"].values())
@@ -801,7 +1079,9 @@ JSON-encoded strings.
 ### What the system inferred
 | Column | Description |
 |---|---|
-| `preferences` | Plain-text preview of the inferred preferences (`Follows Minnesota Wild NHL hockey content; (+2 more)`); the full scored objects are in `preferences_json` |
+| `preferences` | Plain-text preview of the inferred preferences (`Follows Minnesota Wild NHL hockey content; (+2 more)`); the full scored objects are in `preference_details` |
+| `preference_category` | The inferred preferences' categories (e.g. `rural living`; `sports`), distinct values joined with `;` |
+| `preference_evolution` | Compact evolution timeline from each preference's update history — evolution type × count with dates, e.g. `Enjoys rural farm-life…: new 04/01 → reinforced×3 (04/02–04/05) → contradicted 04/06 [72 lifetime engagements]`. Evolution types: new / reinforced / deepened / branched / shifted / intensified / contradicted / ambivalent / faded |
 | `n_preferences` | Number of inferred preference instances attached |
 | `preference_details` | JSON list — each with `persona_item` (the preference statement), `category`, `confidence_score_init` (0–1 model confidence when the preference was first inferred), `confidence_cross_referenced` (unbounded corroboration score — how many independent engagements support it), `time_horizon` (+`stop_condition` when short-term), `stereotype_mark` (whether the preference aligns with / contradicts / is neutral w.r.t. demographic stereotypes — used for bias analysis, see the card's Warning), `hidden_persona_labels`, `update_history` (reinforced/contradicted/...), provenance fields. Fields prefixed `_` anywhere in the data are internal generator provenance |
 | `extras_json` | JSON catch-all for every remaining field, guaranteeing the row is lossless: full `event_location`, AI-Studio session metadata (`prior_session_refs`, `memory_used_summary`, `oblique_reference_to_hidden_personas`, `ai_studio_metadata`), DM-thread fields (`thread_id`, `participants`, `is_group_dm`, ...), trending fields, `ask_to_forget`, remaining content fields (`key_frames`, `metadata`, `parts`, raw `text`) under `content_extra` |
@@ -824,14 +1104,17 @@ scoring and is never shown to the evaluated system.
 | `task_type` | One of 31 concrete tasks — see the README table for row counts + what each tests |
 | `what_this_tests` | Plain-English one-liner of what a correct system must do on this task |
 | `timestamp` / `datetime` | The query's moment T (`YYYY-MM-DD HH:MM UTC`, same format as the context file) — the evaluated system may only see history strictly before T |
+| `app` | The app surface the query anchors on (Chatbot for assistant tasks; the directive's / target's social app for @ai + agentic tasks; `Multi-app feed` for slates drawing from several apps). Empty when the task is not app-anchored (agent-level probes like overactive-check, sensitive-window silence) |
 | `user_query` | The user's message/request; for proactive tasks this holds a bracketed scenario label (e.g. `[system prompt] Decide: ping again, or stay silent.`) for browsing convenience — it is NOT the literal model input; the harness constructs the proactive prompt from `instance_full` |
 | `prior_conversation` | JSON: conversation turns preceding the query, for tasks that anchor mid-session (surfaced from `instance_full.prior_conversation`; empty when the task has no preceding session) |
 | `groundtruth_preference` / `groundtruth_preference_obj` | The preference(s) the answer must be grounded in (text / full JSON object). For voice-authoring agentic tasks this holds the user's voice spec rather than a topical preference |
+| `supporting_history` | Up to 2 example history events (before T) evidencing the ground truth: events carrying the GT preference; the original `@ai` directive for directive-followup; the user's own posts (voice evidence) for voice-authoring agentic tasks. Empty where the task deliberately has no supporting evidence (restraint, sycophancy, hallucination probes) |
 | `distractor_preferences` | JSON: plausible-but-wrong preferences a shallow system confuses |
 | `golden_response` | The gold response — what a well-personalized system should say/do |
 | `inferior_response` | Contrast response — plausible but misses the axis under test. Plain text for chat tasks, JSON for structured tasks (the contrast text under `text`, the deliberately-injected flaw under `flaw_kind`); empty on judge-scored tasks (e.g. sycophancy), which have no canned inferior by design |
 | `reference_example` | JSON: auxiliary reference material for some task types |
-| `rubrics` | Human-readable summary of the row's scoring contract (derived from the task's scoring dimensions). NB: the LLM judge is NOT prompted with this string — judge prompts carry full fixed rubric definitions with calibration bands (`evaluation/prompts.py`); deterministic tasks (rankings, recalls) are scored by exact metrics without any judge. This column is for human readers and the build-time QA gate |
+| `rubrics` | Human-readable summary of the row's scoring contract (derived from the task's scoring dimensions). NB: the LLM judge is NOT prompted with this string — see `judge_prompt`. This column is for human readers and the build-time QA gate |
+| `judge_prompt` | The ACTUAL prompt the LLM judge receives for this task (rendered from the live judge code with this row's build-time values; `{{...}}` placeholders mark parts only known at evaluation time, e.g. the model's response). For deterministic tasks it states the exact metric instead — those rows are scored without any judge |
 | `tool_call` | JSON: expected tool/action payload for agentic tasks |
 | `internal_checks` | JSON: build-time QA artifacts (self-checks, voice-evidence audits) plus `_row_meta` (internal routing fields: task_family, query_kind, expected_behavior, ISO timestamp) — not part of the task |
 | `instance_full` | JSON: the COMPLETE task instance consumed by the eval harness (slates, pools, arms, anchors) |
