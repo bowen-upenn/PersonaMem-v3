@@ -338,8 +338,7 @@ QUERY_COLUMNS = [
     "groundtruth_preference", "supporting_history", "groundtruth_preference_obj",
     "distractor_preferences",
     "golden_response", "inferior_response", "reference_example",
-    "rubrics", "judge_prompt", "tool_call", "internal_checks", "instance_full",
-    "source_file",
+    "rubrics", "judge_prompt", "tool_call", "source_file",
 ]
 
 _QA_INTERNAL = ["example_response_self_check", "example_response_voice_evidence",
@@ -577,13 +576,8 @@ def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDic
     row["supporting_history"] = support
     row["golden_response"] = _text_or_json(r.get("example_response"))
     row["inferior_response"] = _text_or_json(r.get("inferior_response"))
-    internal = {k: r.get(k) for k in _QA_INTERNAL if r.get(k) is not None}
-    internal["_row_meta"] = {k: r.get(k) for k in
-                             ("task_family", "query_kind", "expected_behavior", "ts_iso")
-                             if r.get(k) is not None}
-    row["internal_checks"] = _jdump(internal) if (internal.get("_row_meta") or len(internal) > 1) else ""
+
     row["judge_prompt"] = _judge_prompt_for(r.get("task_type") or "", r, inst_for_cols)
-    row["instance_full"] = _jdump(r.get("instance_full")) if r.get("instance_full") is not None else ""
     row["source_file"] = f"backend/{uid}/test.json"
     # column order defined by QUERY_COLUMNS
     return OrderedDict((c, row[c]) for c in QUERY_COLUMNS)
@@ -591,8 +585,6 @@ def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDic
 
 def query_coverage_check(uid: str, r: dict, row: OrderedDict) -> list[str]:
     problems = [f"{uid}: query key {k!r} lost" for k in r if k not in _QUERY_CONSUMED]
-    if r.get("instance_full") is not None and json.loads(row["instance_full"]) != r["instance_full"]:
-        problems.append(f"{uid}/{r.get('query_id')}: instance_full drifted")
     for col, key in [("query_id", "query_id"), ("task_type", "task_type"),
                      ("user_query", "user_query")]:
         want = r.get(key)
@@ -1091,10 +1083,13 @@ JSON-encoded strings.
 **What the evaluated system sees vs. what is scorer-side:** at evaluation time
 the system under test receives the persona's history strictly BEFORE the
 query's `timestamp`, plus the query surface (`user_query`,
-`prior_conversation`, and — for ranking tasks — the candidate slate inside
-`instance_full`). Everything else (`groundtruth_*`, `example_response`,
-`inferior_response`, `rubric_tags`, `internal_checks`) is ground truth for
-scoring and is never shown to the evaluated system.
+`prior_conversation`, and — for ranking tasks — the candidate slate carried in
+the row's full record in `backend/{persona_id}/test.json`). Everything else
+(`groundtruth_*`, `golden_response`, `inferior_response`, `rubrics`) is ground
+truth for scoring and is never shown to the evaluated system. This CSV is a
+readable preview; the complete machine-readable rows — including the exact
+`instance_full` payload the eval harness executes and the build-time QA
+provenance — live in `backend/{persona_id}/test.json` (see `source_file`).
 
 
 | Column | Description |
@@ -1116,9 +1111,7 @@ scoring and is never shown to the evaluated system.
 | `rubrics` | Human-readable summary of the row's scoring contract (derived from the task's scoring dimensions). NB: the LLM judge is NOT prompted with this string — see `judge_prompt`. This column is for human readers and the build-time QA gate |
 | `judge_prompt` | The ACTUAL prompt the LLM judge receives for this task (rendered from the live judge code with this row's build-time values; `{{...}}` placeholders mark parts only known at evaluation time, e.g. the model's response). For deterministic tasks it states the exact metric instead — those rows are scored without any judge |
 | `tool_call` | JSON: expected tool/action payload for agentic tasks |
-| `internal_checks` | JSON: build-time QA artifacts (self-checks, voice-evidence audits) plus `_row_meta` (internal routing fields: task_family, query_kind, expected_behavior, ISO timestamp) — not part of the task |
-| `instance_full` | JSON: the COMPLETE task instance consumed by the eval harness (slates, pools, arms, anchors) |
-| `source_file` | `backend/{persona_id}/test.json` — all queries for the persona |
+| `source_file` | `backend/{persona_id}/test.json` — the persona's complete query records (incl. the `instance_full` payload the harness executes and build-time QA fields) |
 """
     (out / "column_descriptions.md").write_text(txt)
 
