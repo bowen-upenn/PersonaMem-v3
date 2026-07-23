@@ -928,7 +928,7 @@ Third release in the PersonaMem series:
 
 - PersonaMem-v1: *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
 - PersonaMem-v2: *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
-- PersonaMem-v3: this dataset · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper (PDF)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf)
+- PersonaMem-v3: *Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks* · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper (PDF)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf) · this dataset
 
 ## What is PersonaMem-v3?
 
