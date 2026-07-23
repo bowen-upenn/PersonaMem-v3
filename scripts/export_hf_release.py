@@ -1102,11 +1102,34 @@ its **CC-BY-NC-4.0** license (attribution, non-commercial). The
 
 ## Citation
 
-If you use PersonaMem-v3, please cite the series:
+If you use PersonaMem-v3, please cite:
 
-- **PersonaMem-v3**: *Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks* ([PDF](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf); arXiv forthcoming)
-- **PersonaMem-v2**: *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* ([arXiv:2512.06688](https://arxiv.org/abs/2512.06688))
-- **PersonaMem (v1)**, COLM 2025: *Know Me, Respond to Me* ([arXiv:2504.14225](https://arxiv.org/abs/2504.14225))
+```bibtex
+@misc{{jiang2026personamem3,
+  title={{PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}},
+  author={{Jiang, Bowen and Yuan, Yuan and Hao, Zhuoqun and Liu, Yuchen and Shen, Maohao and Chen, Sihao and Wornell, Gregory and Callison-Burch, Chris and Ungar, Lyle and Roth, Dan and Guo, Qi and Fan, Xiangjun and Taylor, Camillo J. and Yu, Hanchao}},
+  year={{2026}},
+  url={{https://github.com/bowen-upenn/PersonaMem-v3}}
+}}
+```
+
+Earlier releases in the series:
+
+```bibtex
+@article{{jiang2025personamem2,
+  title={{PersonaMem-v2: Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory}},
+  author={{Jiang, Bowen and Yuan, Yuan and Shen, Maohao and Hao, Zhuoqun and Xu, Zhangchen and Chen, Zichen and Liu, Ziyi and Vijjini, Anvesh Rao and He, Jiashu and Yu, Hanchao and Poovendran, Radha and Wornell, Gregory and Ungar, Lyle and Roth, Dan and Chen, Sihao and Taylor, Camillo Jose}},
+  journal={{arXiv preprint arXiv:2512.06688}},
+  year={{2025}}
+}}
+
+@article{{jiang2025know,
+  title={{Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale}},
+  author={{Jiang, Bowen and Hao, Zhuoqun and Cho, Young-Min and Li, Bryan and Yuan, Yuan and Chen, Sihao and Ungar, Lyle and Taylor, Camillo J and Roth, Dan}},
+  journal={{arXiv preprint arXiv:2504.14225}},
+  year={{2025}}
+}}
+```
 """
     (out / "README.md").write_text(yaml + body)
     # column docs are folded into README.md; remove any previously staged copy
