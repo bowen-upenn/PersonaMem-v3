@@ -897,13 +897,13 @@ configs:
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell,
 Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
-A collaboration between **Meta Recommendation Systems**, **University of Pennsylvania**, and **MIT**.
+A collaboration between Meta Recommendation Systems, University of Pennsylvania, and MIT.
 
 Third release in the PersonaMem series:
 
-- **PersonaMem (v1)**: *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
-- **PersonaMem-v2**: *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
-- **PersonaMem-v3**: this dataset · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper (PDF)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf)
+- PersonaMem (v1): *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
+- PersonaMem-v2: *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
+- PersonaMem-v3: this dataset · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper (PDF)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf)
 
 ## What is PersonaMem-v3?
 
@@ -913,14 +913,14 @@ about, how their interests evolve, what they want recommended next, and when to 
 out of the way. People reveal different facets of themselves across the digital
 contexts they use (feeds, messaging, chatbots, companion characters), yet today's
 systems personalize within individual apps, leaving their understanding of the user
-fragmented. PersonaMem-v3 measures **omni-platform personal intelligence**: whether an
+fragmented. PersonaMem-v3 measures omni-platform personal intelligence: whether an
 AI agent can build holistic, cross-context user understanding and act on it
 appropriately.
 
-Unlike fully synthetic persona benchmarks, PersonaMem-v3 is **grounded in real
-behavior**. It is seeded from [Meta's GIST-Bench](https://huggingface.co/datasets/facebook/gistbench),
+Unlike fully synthetic persona benchmarks, PersonaMem-v3 is grounded in real
+behavior. It is seeded from [Meta's GIST-Bench](https://huggingface.co/datasets/facebook/gistbench),
 a privacy-preserving collection of anonymized engagement histories derived from
-real-world social-media activity (about **95% of the signal is implicit**: lingering
+real-world social-media activity (about 95% of the signal is implicit: lingering
 views, high watch-through, scroll-pasts), resampled so no synthetic user traces back
 to any actual individual. Every persona claim and predicted preference in this dataset is anchored
 in multiple real engagement events, then curated through a three-stage pipeline
@@ -928,27 +928,27 @@ in multiple real engagement events, then curated through a three-stage pipeline
 more than twenty named frameworks from psychology, sociolinguistics, and behavioral
 science.
 
-Each released persona lives across **six connected surfaces generated from the same
-underlying behavioral history**: Instagram, Facebook, Threads, an AI Chatbot, AI
+Each released persona lives across six connected surfaces generated from the same
+underlying behavioral history: Instagram, Facebook, Threads, an AI Chatbot, AI
 Studio (companion-character chat with cross-session memory), and a Calendar.
 
 The benchmark's coverage spans five connected capability areas:
 
-- **Personalization**: free-form chatbot responses, personal QA, and
+- Personalization: free-form chatbot responses, personal QA, and
   preference-lifecycle reasoning (enduring tastes vs. expired short-term intents,
   preference shifts, geo-temporal changes) grounded in cross-platform evidence.
-- **LLM-powered recommendation**: reranking realistic content slates against
-  surface-similar distractors, plus **user-steerable recommendation** through natural
+- LLM-powered recommendation: reranking realistic content slates against
+  surface-similar distractors, plus user-steerable recommendation through natural
   language: `@ai` in-comment directives such as "more like this" or "stop
   recommending this" that the system must honor later.
-- **Agentic tasks**: acting on the user's behalf, in the user's own voice, with tool
+- Agentic tasks: acting on the user's behalf, in the user's own voice, with tool
   calling against the six backend surfaces: drafting auto-replies, composing and
   sending posts, reposting across apps with re-voicing, digesting DM threads,
   re-finding half-remembered posts, and assembling daily catch-ups.
-- **Proactiveness**: deciding when to step in (a close friend's update, a timely
+- Proactiveness: deciding when to step in (a close friend's update, a timely
   alert, a mistake about to happen) and when to hold back, including staying silent
   through a user's sensitive period.
-- **Over-personalization**: the over-personalization tax. As models get better at
+- Over-personalization: the over-personalization tax. As models get better at
   leveraging user context, they may invoke a user's interests too often, say "I know
   you like X" too explicitly, surface sensitive inferences, or inject personal
   context where none is needed. PersonaMem-v3 evaluates this restraint as a
@@ -958,30 +958,30 @@ The benchmark's coverage spans five connected capability areas:
 
 | Dimension | PersonaMem-v1 | PersonaMem-v2 | PersonaMem-v3 |
 |---|---|---|---|
-| **Data source** | 20 fully synthetic users | 1000 fully synthetic users with more comprehensive personas | 200 anonymized **real-world** users with 4,000,000 engagement histories |
-| **Explicit vs. implicit** | Explicit user preferences | **Implicit** user preferences | Around 95% **implicit** user behavior signals |
-| **Scenarios** | Chatbot conversations | Chatbot conversations | **Omni-platform**: chatbot, social-media recommendation, **agentic tasks**, and proactiveness |
-| **Restraint** | Personalization | Personalization | Personalization and **over-personalization** |
-| **User privacy** | No mention of user private information | Personally identifiable information and ask-to-forget scenarios | Psychology-anchored hidden personas and **socially inappropriate** scenarios |
-| **Dynamics** | Fully synthesized preference updates | Fully synthesized preference updates | Reinforced, emerging, diminishing, bursting, and varied attention shifts from the **real world** |
+| Data source | 20 fully synthetic users | 1000 fully synthetic users with more comprehensive personas | 200 anonymized real-world users with 4,000,000 engagement histories |
+| Explicit vs. implicit | Explicit user preferences | Implicit user preferences | Around 95% implicit user behavior signals |
+| Scenarios | Chatbot conversations | Chatbot conversations | Omni-platform: chatbot, social-media recommendation, agentic tasks, and proactiveness |
+| Restraint | Personalization | Personalization | Personalization and over-personalization |
+| User privacy | No mention of user private information | Personally identifiable information and ask-to-forget scenarios | Psychology-anchored hidden personas and socially inappropriate scenarios |
+| Dynamics | Fully synthesized preference updates | Fully synthesized preference updates | Reinforced, emerging, diminishing, bursting, and varied attention shifts from the real world |
 
 ## What this release contains
 
 Think of each persona as one simulated person's complete digital life:
 
-- **What they did**: every scroll, like, skip, save, comment, post, DM, ad click,
+- What they did: every scroll, like, skip, save, comment, post, DM, ad click,
   and trending item across Instagram, Facebook, and Threads, with the full content
   of everything they touched
-- **What they said**: their chats with an AI assistant (Chatbot) and their ongoing
+- What they said: their chats with an AI assistant (Chatbot) and their ongoing
   companion-character relationship (AI Studio)
-- **Their calendar**: appointments added, moved, and removed over time
-- **What can be learned about them**: the preferences inferred from those events,
+- Their calendar: appointments added, moved, and removed over time
+- What can be learned about them: the preferences inferred from those events,
   each with confidence scores, a category, and a timeline of how it evolved
-- **The exam**: benchmark queries that ask an AI system to personalize, recommend,
+- The exam: benchmark queries that ask an AI system to personalize, recommend,
   act on the person's behalf, or deliberately hold back, each with ground truth and
   scoring materials
 
-This is an initial release of **20 personas** (the cohort will grow in future
+This is an initial release of 20 personas (the cohort will grow in future
 updates): {stats['n_events']:,} engagement events ({ev['instagram']:,} Instagram /
 {ev['facebook']:,} Facebook / {ev['threads']:,} Threads / {ev['chatbot']:,} Chatbot /
 {ev['ai_studio']:,} AI Studio), {stats['n_pref_instances']:,} inferred preference
@@ -989,14 +989,14 @@ instances, and {stats['n_queries']:,} benchmark queries across {len(tt)} task ty
 
 Three ways in, ordered by effort:
 
-1. **Browse a persona in one click.** Each persona ships a self-contained HTML page
+1. Browse a persona in one click. Each persona ships a self-contained HTML page
    with its full timeline, inferred preference profile, and sample test cards:
    {trio_links}, or any `backend/{{persona_id}}/persona.html`. (HF serves raw files:
    open the link, save the page, open the saved file in your browser.)
-2. **Preview tables** (`samples/`, what the Dataset Viewer shows): two curated CSVs
-   documented column-by-column below. These are **samples for browsing**, centered on
+2. Preview tables (`samples/`, what the Dataset Viewer shows): two curated CSVs
+   documented column-by-column below. These are samples for browsing, centered on
    three showcase personas (3, 282, 835); the complete data lives in `backend/`.
-3. **The complete dataset** (`backend/{{persona_id}}/`, all 20 personas): verbatim
+3. The complete dataset (`backend/{{persona_id}}/`, all 20 personas): verbatim
    the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
    download runs the benchmark unmodified:
 
@@ -1010,7 +1010,7 @@ python evaluation/run_eval.py --backend_dir ../pm3_data/backend --user_id 8 --mo
 
 ## Preview table 1: `persona_context.csv` ({stats['sample_context']} rows)
 
-One row = **one engagement event** from a showcase persona's timeline, all five apps
+One row = one engagement event from a showcase persona's timeline, all five apps
 interleaved chronologically. Empty cells mean the field does not apply to that row;
 columns ending in `_json` hold JSON-encoded structures.
 
@@ -1021,7 +1021,7 @@ columns ending in `_json` hold JSON-encoded structures.
 | `event_id` | Source interaction id, unique per persona |
 | `timestamp` / `datetime` | Unix seconds / `YYYY-MM-DD HH:MM UTC` of the engagement (the original formatted string is kept in `extras_json.formatted_timestamp`) |
 | `app` | Instagram, Facebook, Threads, Chatbot, or AI_Studio |
-| `event_summary` | **Start here**: one auto-composed sentence describing the row, e.g. `Viewed more than 75% of the reel: "Canelo-Crawford Hype Reel" (#Boxing)` |
+| `event_summary` | Start here: one auto-composed sentence describing the row, e.g. `Viewed more than 75% of the reel: "Canelo-Crawford Hype Reel" (#Boxing)` |
 | `interaction_type` | Signal polarity, 5 values: `implicit_negative` (skipped / scrolled past; the majority, as in real feeds), `implicit_positive` (lingered, rewatched, viewed ≥75%), `explicit_positive` (liked, saved, shared), `explicit_negative` (hid, muted, dismissed), `feed_visible` (shown, no engagement recorded). Implicit-negative rows intentionally carry only hashtags and the skip action; they are negative-signal stubs, not missing data |
 | `action` | Concrete engagement from the platform's action catalog (`double_tapped`, `saved_to_collection`, Facebook reactions, `quote_repost`, `clicked_ad`, ...); the human phrasing leads `event_summary` and is kept in `extras_json.action_label`. AI-Studio rows carry `unknown` because the companion-chat session itself is the event |
 | `user_message` | Text the user typed: `@ai ...` comment directives on social apps, or the user's chat turn on the Chatbot |
@@ -1047,9 +1047,9 @@ columns ending in `_json` hold JSON-encoded structures.
 
 ## Preview table 2: `persona_queries.csv` ({stats['sample_queries']} rows)
 
-One row = **one benchmark query**, all {len(tt)} task types represented. At evaluation
-time the system under test receives the persona's history **strictly before the
-query's `timestamp`** plus the query surface; everything else is scorer-side ground
+One row = one benchmark query, all {len(tt)} task types represented. At evaluation
+time the system under test receives the persona's history strictly before the
+query's `timestamp` plus the query surface; everything else is scorer-side ground
 truth, never shown to the evaluated system. This CSV is a readable preview; the
 complete machine-readable rows (including the exact `instance_full` payload the eval
 harness executes) live in `backend/{{persona_id}}/test.json`.
@@ -1072,8 +1072,8 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 | `golden_response` | The gold response: what a well-personalized system should say or do |
 | `inferior_response` | Contrast response: plausible but misses the axis under test (`text` + the injected `flaw_kind`). Empty on judge-scored tasks, which have no canned inferior by design |
 | `reference_example` | Auxiliary reference material for some task types (JSON) |
-| `rubrics` | Human-readable summary of the row's scoring contract. The LLM judge is **not** prompted with this string (see `judge_prompt`) |
-| `judge_prompt` | The **actual prompt the LLM judge receives** for this task, rendered from the live judge code with this row's build-time values; `{{{{...}}}}` placeholders mark evaluation-time-only parts (the model's response, assembled evidence). For deterministically scored tasks it states the exact metric instead; those rows use no judge |
+| `rubrics` | Human-readable summary of the row's scoring contract |
+| `judge_prompt` | The actual prompt the LLM judge receives for this task, rendered from the live judge code with this row's build-time values; `{{{{...}}}}` placeholders mark evaluation-time-only parts (the model's response, assembled evidence). For deterministically scored tasks it states the exact metric instead; those rows use no judge |
 | `tool_call` | Expected tool/action payload for agentic tasks (JSON) |
 | `source_file` | `backend/{{persona_id}}/test.json`, the persona's complete query records |
 
@@ -1085,8 +1085,8 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 | `chatbot.json` | AI-assistant sessions: full conversation turns, utility requests, `ask_to_forget` events |
 | `ai_studio.json` | Companion-character sessions with cross-session memory: conversation turns plus `prior_session_refs`, `memory_used_summary`, `oblique_reference_to_hidden_personas`, and pacing metadata |
 | `calendar.json` | A modification stream (`added` / `updated` / `removed` entries with timestamps). Fold entries with `ts <= T` to obtain the user's calendar at time T (time-maskable like every other surface) |
-| `profile.json` | The ground-truth persona: demographics, Big-Five/MBTI, the user's writing voice, per-app personas, the AI-Studio companion character, **hidden personas** (deep motivational layers: aspirations, identity anchors, parasocial attachments, covert concerns, one sensitive-life-event episode), and the flat preference list. **Scorer-side only, never shown to the evaluated agent** |
-| `test.json` | Every benchmark query for this persona: the preview columns above **plus** the exact `instance_full` payload the harness executes (slates, pools, arms, anchors) and build-time QA fields |
+| `profile.json` | The ground-truth persona: demographics, Big-Five/MBTI, the user's writing voice, per-app personas, the AI-Studio companion character, hidden personas (deep motivational layers: aspirations, identity anchors, parasocial attachments, covert concerns, one sensitive-life-event episode), and the flat preference list. Scorer-side only, never shown to the evaluated agent |
+| `test.json` | Every benchmark query for this persona: the preview columns above plus the exact `instance_full` payload the harness executes (slates, pools, arms, anchors) and build-time QA fields |
 | `persona.html` | Self-contained human-browsable page rendering everything above |
 
 ## Task types
@@ -1099,7 +1099,7 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 
 The personas derive from
 [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench) and inherit
-its **CC-BY-NC-4.0** license (attribution, non-commercial).
+its CC-BY-NC-4.0 license (attribution, non-commercial).
 
 ## Citation
 
