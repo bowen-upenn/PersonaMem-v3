@@ -934,10 +934,10 @@ Studio (companion-character chat with cross-session memory), and a Calendar.
 
 The benchmark's coverage spans five connected capability areas:
 
-- Personalization: free-form chatbot responses, personal QA, and
+- Personalized responses: free-form chatbot responses, personal QA, and
   preference-lifecycle reasoning (enduring tastes vs. expired short-term intents,
   preference shifts, geo-temporal changes) grounded in cross-platform evidence.
-- LLM-powered recommendation: reranking realistic content slates against
+- Feed recommendation: reranking realistic content slates against
   surface-similar distractors, plus user-steerable recommendation through natural
   language: `@ai` in-comment directives such as "more like this" or "stop
   recommending this" that the system must honor later.
