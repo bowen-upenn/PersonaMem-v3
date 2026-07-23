@@ -719,6 +719,11 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     samples = out / "samples"
     samples.mkdir(parents=True, exist_ok=True)
     (out / "backend").mkdir(exist_ok=True)
+    (out / "assets").mkdir(exist_ok=True)
+    for logo in ("meta.png", "upenn.png", "mit.png"):
+        src_logo = REPO_ROOT / "assets" / logo
+        if src_logo.exists():
+            shutil.copy2(src_logo, out / "assets" / logo)
 
     stats: dict = {"events_per_app": Counter(), "n_pref_instances": 0,
                    "task_type_counts": Counter(), "task_family_counts": Counter(),
@@ -897,7 +902,7 @@ configs:
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell,
 Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
-A collaboration between Meta Recommendation Systems, University of Pennsylvania, and MIT.
+A collaboration between <img src="assets/meta.png" height="16" alt="Meta"> Meta Recommendation Systems, <img src="assets/upenn.png" height="16" alt="UPenn"> University of Pennsylvania, and <img src="assets/mit.png" height="16" alt="MIT"> MIT.
 
 Third release in the PersonaMem series:
 
