@@ -48,12 +48,12 @@ HF_RESOLVE = f"https://huggingface.co/datasets/{REPO_ID}/resolve/main"
 HISTORY_COLUMNS = [
     "persona_id", "persona_html", "event_id", "timestamp", "datetime", "app",
     "event_summary",
-    "interaction_type", "action", "action_label", "user_message",
+    "interaction_type", "action", "user_message",
     "content_type", "title", "caption", "media_description", "audio_transcript",
     "hashtags", "conversation_json",
     "author_id", "recipient_id", "relationship", "is_self_authored", "is_dm",
     "is_ad", "is_trending", "location",
-    "preferences_summary", "n_preferences", "preferences_json",
+    "preferences", "n_preferences", "preferences_json",
     "extras_json", "source_file",
 ]
 
@@ -169,6 +169,8 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
         extras["event_location"] = e["event_location"]
     if e.get("formatted_timestamp"):
         extras["formatted_timestamp"] = e["formatted_timestamp"]  # datetime col is re-rendered ISO
+    if fmt.get("action_label"):
+        extras["action_label"] = fmt["action_label"]  # human label; also embedded in event_summary
     if any((not isinstance(t, str)) or (" " in t) for t in hashtags):
         extras["source_hashtags_raw"] = hashtags
 
@@ -183,7 +185,6 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
     row["event_summary"] = _event_summary(e, fmt, content, conversation, caption)
     row["interaction_type"] = _cell(e.get("source_interaction_type"))
     row["action"] = _cell(fmt.get("action"))
-    row["action_label"] = _cell(fmt.get("action_label"))
     row["user_message"] = _cell(fmt.get("user_message"))
     row["content_type"] = _cell(e.get("content_type"))
     row["title"] = _cell(content.get("title"))
@@ -202,7 +203,7 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
     row["is_ad"] = _cell(e.get("is_ad", False))
     row["is_trending"] = _cell(e.get("is_trending", False))
     row["location"] = _location_str(e.get("event_location") or {})
-    row["preferences_summary"] = _prefs_summary(prefs)
+    row["preferences"] = _prefs_summary(prefs)
     row["n_preferences"] = str(len(prefs))
     row["preferences_json"] = _jdump(prefs) if prefs else ""
     row["extras_json"] = _jdump(extras) if extras else ""
@@ -791,7 +792,7 @@ JSON-encoded strings.
 |---|---|
 | `app` | Instagram, Facebook, Threads, Chatbot, or AI_Studio |
 | `interaction_type` | Signal polarity, 5 values: `implicit_negative` (skipped / scrolled past — the majority, as in real feeds), `implicit_positive` (lingered, rewatched, viewed ≥75%), `explicit_positive` (liked, saved, shared), `explicit_negative` (hid, muted, dismissed), `feed_visible` (shown in feed, no engagement recorded). `implicit_negative` rows intentionally carry only hashtags + the skip action and no content body — the user scrolled past, so nothing was dwelled on; they are negative-signal stubs, not missing data |
-| `action` / `action_label` | Concrete engagement from the platform's action catalog (e.g. `saved_to_collection`, Facebook reactions, `quote_repost`, `clicked_ad`). AI-Studio rows carry `unknown` — a companion-chat session IS the event; see `conversation_json` |
+| `action` | Concrete engagement from the platform's action catalog (e.g. `double_tapped`, `saved_to_collection`, Facebook reactions, `quote_repost`, `clicked_ad`); the human-readable phrasing appears in `event_summary` (and `extras_json.action_label`). AI-Studio rows carry `unknown` — a companion-chat session IS the event; see `conversation_json` |
 | `user_message` | Text the user typed: `@ai ...` comment directives on social apps, or the user's chat turn on the Chatbot |
 
 ### What the content was
@@ -814,7 +815,7 @@ JSON-encoded strings.
 ### What the system inferred
 | Column | Description |
 |---|---|
-| `preferences_summary` | Plain-text preview of the inferred preferences (`Follows Minnesota Wild NHL hockey content; (+2 more)`) |
+| `preferences` | Plain-text preview of the inferred preferences (`Follows Minnesota Wild NHL hockey content; (+2 more)`); the full scored objects are in `preferences_json` |
 | `n_preferences` | Number of inferred preference instances attached |
 | `preferences_json` | JSON list — each with `persona_item` (the preference statement), `category`, `confidence_score_init` (0–1 model confidence when the preference was first inferred), `confidence_cross_referenced` (unbounded corroboration score — how many independent engagements support it), `time_horizon` (+`stop_condition` when short-term), `stereotype_mark` (whether the preference aligns with / contradicts / is neutral w.r.t. demographic stereotypes — used for bias analysis, see the card's Warning), `hidden_persona_labels`, `update_history` (reinforced/contradicted/...), provenance fields. Fields prefixed `_` anywhere in the data are internal generator provenance |
 | `extras_json` | JSON catch-all for every remaining field, guaranteeing the row is lossless: full `event_location`, AI-Studio session metadata (`prior_session_refs`, `memory_used_summary`, `oblique_reference_to_hidden_personas`, `ai_studio_metadata`), DM-thread fields (`thread_id`, `participants`, `is_group_dm`, ...), trending fields, `ask_to_forget`, remaining content fields (`key_frames`, `metadata`, `parts`, raw `text`) under `content_extra` |
