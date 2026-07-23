@@ -1111,11 +1111,7 @@ If you use PersonaMem-v3, please cite:
   year={{2026}},
   url={{https://github.com/bowen-upenn/PersonaMem-v3}}
 }}
-```
 
-Earlier releases in the series:
-
-```bibtex
 @article{{jiang2025personamem2,
   title={{PersonaMem-v2: Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory}},
   author={{Jiang, Bowen and Yuan, Yuan and Shen, Maohao and Hao, Zhuoqun and Xu, Zhangchen and Chen, Zichen and Liu, Ziyi and Vijjini, Anvesh Rao and He, Jiashu and Yu, Hanchao and Poovendran, Radha and Wornell, Gregory and Ungar, Lyle and Roth, Dan and Chen, Sihao and Taylor, Camillo Jose}},
