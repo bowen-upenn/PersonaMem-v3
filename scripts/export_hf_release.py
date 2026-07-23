@@ -974,12 +974,12 @@ Think of each persona as one simulated person's complete digital life:
   of everything they touched
 - What they said: their chats with an AI assistant (Chatbot) and their ongoing
   companion-character relationship (AI Studio)
-- Their calendar: appointments added, moved, and removed over time
+- Their calendar and whereabouts: appointments added, moved, and removed over time, plus per-session geolocation (home city and trips) stamped on their activity
 - What can be learned about them: the preferences inferred from those events,
   each with confidence scores, a category, and a timeline of how it evolved
 - The exam: benchmark queries that ask an AI system to personalize, recommend,
-  act on the person's behalf, or deliberately hold back, each with ground truth and
-  scoring materials
+  act on the person's behalf, or deliberately avoid over-personalization, each with
+  ground truth and scoring materials
 
 This is an initial release of 20 personas (the cohort will grow in future
 updates): {stats['n_events']:,} engagement events ({ev['instagram']:,} Instagram /
