@@ -51,9 +51,8 @@ HISTORY_COLUMNS = [
     "interaction_type", "action", "user_message",
     "content_type", "title", "caption", "media_description", "audio_transcript",
     "hashtags", "conversation_json",
-    "author_id", "recipient_id", "relationship", "is_self_authored", "is_dm",
-    "is_ad", "is_trending", "location",
-    "preferences", "n_preferences", "preferences_json",
+    "author", "recipient_id", "is_dm", "is_ad", "is_trending", "location",
+    "preferences", "n_preferences", "preference_details",
     "extras_json", "source_file",
 ]
 
@@ -133,6 +132,20 @@ def _event_summary(e: dict, fmt: dict, content: dict, conversation, caption) -> 
     return prefix + out
 
 
+def _author_of(e: dict) -> str:
+    """Merged authorship view: who made this content, relative to the user.
+    self | close_friend | friend | stranger (public creators are strangers).
+    Raw author_id / relationship / is_self_authored stay in extras_json."""
+    if e.get("is_self_authored") or e.get("author_id") == "self":
+        return "self"
+    rel = (e.get("relationship") or "").strip()
+    if rel in ("close_friend", "friend"):
+        return rel
+    if rel in ("public", "stranger"):
+        return "stranger"
+    return rel  # "" for pure-conversation events (Chatbot / AI-Studio)
+
+
 def _prefs_summary(prefs: list) -> str:
     items = [p.get("persona_item", "") for p in prefs if p.get("persona_item")]
     seen, uniq = set(), []
@@ -171,6 +184,10 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
         extras["formatted_timestamp"] = e["formatted_timestamp"]  # datetime col is re-rendered ISO
     if fmt.get("action_label"):
         extras["action_label"] = fmt["action_label"]  # human label; also embedded in event_summary
+    # raw social-identity fields (the CSV column `author` is a merged view)
+    for k in ("author_id", "relationship", "is_self_authored"):
+        if k in e:
+            extras[k] = e[k]
     if any((not isinstance(t, str)) or (" " in t) for t in hashtags):
         extras["source_hashtags_raw"] = hashtags
 
@@ -193,19 +210,17 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
     row["audio_transcript"] = _cell(content.get("audio_transcript"))
     row["hashtags"] = " ".join(f"#{str(t).lstrip('#')}" for t in hashtags)
     row["conversation_json"] = _jdump(conversation) if conversation is not None else ""
-    row["author_id"] = _cell(e.get("author_id"))
+    row["author"] = _author_of(e)
     row["recipient_id"] = _cell(e.get("recipient_id"))
-    row["relationship"] = _cell(e.get("relationship"))
     # Emit literal booleans even when the source omits the key (Chatbot /
     # AI-Studio events) so every split types these columns identically.
-    row["is_self_authored"] = _cell(bool(e.get("is_self_authored")))
     row["is_dm"] = _cell(bool(e.get("is_dm")))
     row["is_ad"] = _cell(e.get("is_ad", False))
     row["is_trending"] = _cell(e.get("is_trending", False))
     row["location"] = _location_str(e.get("event_location") or {})
     row["preferences"] = _prefs_summary(prefs)
     row["n_preferences"] = str(len(prefs))
-    row["preferences_json"] = _jdump(prefs) if prefs else ""
+    row["preference_details"] = _jdump(prefs) if prefs else ""
     row["extras_json"] = _jdump(extras) if extras else ""
     row["source_file"] = f"backend/{uid}/{app}.json"
     return row
@@ -239,7 +254,7 @@ def event_coverage_check(uid: str, app: str, e: dict, row: OrderedDict) -> list[
         if want is not None and row[col] != str(want):
             problems.append(f"{uid}/{app}: column {col!r} mismatch")
     # 4. structured payloads survive
-    if (e.get("preferences") or []) and json.loads(row["preferences_json"]) != e["preferences"]:
+    if (e.get("preferences") or []) and json.loads(row["preference_details"]) != e["preferences"]:
         problems.append(f"{uid}/{app}: preferences drifted")
     if e.get("conversation") is not None and json.loads(row["conversation_json"]) != e["conversation"]:
         problems.append(f"{uid}/{app}: conversation drifted")
@@ -260,12 +275,11 @@ def event_coverage_check(uid: str, app: str, e: dict, row: OrderedDict) -> list[
 # ---------------------------------------------------------------- queries ----
 
 QUERY_COLUMNS = [
-    "persona_id", "persona_html", "query_id", "task_family", "task_type",
-    "what_this_tests", "query_kind", "expected_behavior", "timestamp", "datetime",
-    "user_query", "prior_conversation",
+    "persona_id", "persona_html", "query_id", "task_type", "what_this_tests",
+    "timestamp", "datetime", "user_query", "prior_conversation",
     "groundtruth_preference", "groundtruth_preference_obj", "distractor_preferences",
-    "example_response", "inferior_response", "reference_example",
-    "rubric_tags", "tool_call", "internal_checks", "instance_full", "source_file",
+    "golden_response", "inferior_response", "reference_example",
+    "rubrics", "tool_call", "internal_checks", "instance_full", "source_file",
 ]
 
 _QA_INTERNAL = ["example_response_self_check", "example_response_voice_evidence",
@@ -285,13 +299,10 @@ def flatten_query(uid: str, r: dict) -> OrderedDict:
     row["persona_id"] = uid
     row["persona_html"] = f"{HF_RESOLVE}/backend/{uid}/persona.html?download=true"
     row["query_id"] = _cell(r.get("query_id"))
-    row["task_family"] = _cell(r.get("task_family"))
     row["task_type"] = _cell(r.get("task_type"))
     row["what_this_tests"] = TASK_DESCRIPTIONS.get(r.get("task_type") or "", "")
-    row["query_kind"] = _cell(r.get("query_kind"))
-    row["expected_behavior"] = _cell(r.get("expected_behavior"))
     row["timestamp"] = _cell(r.get("ts"))
-    row["datetime"] = _cell(r.get("ts_iso"))
+    row["datetime"] = _iso_utc(r.get("ts"))
     row["user_query"] = _cell(r.get("user_query"))
     # top-level prior_conversation is null on every row; the real mid-session
     # turns live inside instance_full — surface them so the column is useful.
@@ -301,7 +312,7 @@ def flatten_query(uid: str, r: dict) -> OrderedDict:
                      ("groundtruth_preference_obj", "groundtruth_preference_obj"),
                      ("distractor_preferences", "distractor_preferences"),
                      ("reference_example", "reference_example"),
-                     ("rubric_tags", "rubric_tags"),
+                     ("rubrics", "rubric_tags"),
                      ("tool_call", "tool_call")]:
         v = r.get(key)
         row[col] = _jdump(v) if v not in (None, [], {}) else ""
@@ -310,10 +321,13 @@ def flatten_query(uid: str, r: dict) -> OrderedDict:
             return ""
         return v if isinstance(v, str) else _jdump(v)  # ranking payloads are dicts
     row["groundtruth_preference"] = _text_or_json(r.get("groundtruth_preference"))
-    row["example_response"] = _text_or_json(r.get("example_response"))
+    row["golden_response"] = _text_or_json(r.get("example_response"))
     row["inferior_response"] = _text_or_json(r.get("inferior_response"))
     internal = {k: r.get(k) for k in _QA_INTERNAL if r.get(k) is not None}
-    row["internal_checks"] = _jdump(internal) if internal else ""
+    internal["_row_meta"] = {k: r.get(k) for k in
+                             ("task_family", "query_kind", "expected_behavior", "ts_iso")
+                             if r.get(k) is not None}
+    row["internal_checks"] = _jdump(internal) if (internal.get("_row_meta") or len(internal) > 1) else ""
     row["instance_full"] = _jdump(r.get("instance_full")) if r.get("instance_full") is not None else ""
     row["source_file"] = f"backend/{uid}/test.json"
     # column order defined by QUERY_COLUMNS
@@ -329,8 +343,8 @@ def query_coverage_check(uid: str, r: dict, row: OrderedDict) -> list[str]:
         want = r.get(key)
         if want is not None and row[col] != str(want):
             problems.append(f"{uid}/{r.get('query_id')}: column {col!r} mismatch")
-    for col in ("example_response", "inferior_response", "groundtruth_preference"):
-        want = r.get(col)
+    for col in ("golden_response", "inferior_response", "groundtruth_preference"):
+        want = r.get("example_response" if col == "golden_response" else col)
         if want is None:
             continue
         got = row[col] if isinstance(want, str) else json.loads(row[col])
@@ -475,12 +489,10 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                 stats["problems"].append(f"MISSING source file backend/{uid}/{f}")
 
     # -- history flatten + coverage over ALL events; sample the trio ---------
-    # Per-app previews sample INDEPENDENTLY from the full per-app pools (the
-    # aggregate table's proportional quota would starve small apps like
-    # AI Studio, which is a flagship surface).
-    per_app_pp = {"instagram": 150, "facebook": 150, "threads": 150,
-                  "chatbot": 130, "ai_studio": 400}
-    all_rows_by_app: dict[str, list[OrderedDict]] = defaultdict(list)   # trio samples
+    # ONE context preview file. Explicit per-app quotas per persona so every
+    # surface (incl. the small AI Studio) is well represented.
+    per_app_pp = {"instagram": 60, "facebook": 60, "threads": 60,
+                  "chatbot": 40, "ai_studio": 40}
     agg_rows: list[OrderedDict] = []
     for uid in USERS:
         events_by_app = {}
@@ -493,12 +505,9 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                 row = flatten_event(uid, app, e)
                 stats["problems"].extend(event_coverage_check(uid, app, e, row))
         if uid in TRIO:
-            picked = sample_history(events_by_app, per_persona_hist)
-            for app, evs in picked.items():
-                agg_rows.extend(flatten_event(uid, app, e) for e in evs)
             for app, evs in events_by_app.items():
                 chosen = sample_history({app: evs}, per_app_pp[app])[app]
-                all_rows_by_app[app].extend(flatten_event(uid, app, e) for e in chosen)
+                agg_rows.extend(flatten_event(uid, app, e) for e in chosen)
     agg_rows.sort(key=lambda r: (TRIO.index(r["persona_id"]), int(r["timestamp"] or 0)))
 
     def write_csv(path: Path, cols: list[str], rows: list[OrderedDict]):
@@ -507,14 +516,10 @@ def stage(out: Path, per_persona_hist: int) -> dict:
             w.writeheader()
             w.writerows(rows)
 
-    write_csv(samples / "history_all_apps_sample.csv", HISTORY_COLUMNS, agg_rows)
-    per_app_caps = {"instagram": 450, "facebook": 450, "threads": 450,
-                    "chatbot": 400, "ai_studio": 400}
+    write_csv(samples / "persona_context.csv", HISTORY_COLUMNS, agg_rows)
+    stats["sample_context"] = len(agg_rows)
     for app in APPS:
-        rows = all_rows_by_app[app][:per_app_caps[app]]
-        write_csv(samples / f"history_{app}_sample.csv", HISTORY_COLUMNS, rows)
-        stats[f"sample_{app}"] = len(rows)
-    stats["sample_all_apps"] = len(agg_rows)
+        stats[f"sample_{app}"] = sum(1 for r in agg_rows if r["source_file"].endswith(f"{app}.json"))
 
     # -- queries flatten + coverage over ALL rows; trio-first sample ---------
     all_q: list[tuple[str, dict]] = []
@@ -527,7 +532,7 @@ def stage(out: Path, per_persona_hist: int) -> dict:
             stats["problems"].extend(query_coverage_check(uid, r, flat))
             all_q.append((uid, r))
     q_sample = sample_queries(all_q)
-    write_csv(samples / "queries_sample.csv", QUERY_COLUMNS,
+    write_csv(samples / "persona_queries.csv", QUERY_COLUMNS,
               [flatten_query(uid, r) for uid, r in q_sample])
     stats["sample_queries"] = len(q_sample)
     stats["n_queries"] = len(all_q)
@@ -597,35 +602,21 @@ pretty_name: PersonaMem-v3
 size_categories:
 - 10K<n<100K
 configs:
-- config_name: history_all_apps
+- config_name: persona_context
   default: true
   data_files:
   - split: sample
-    path: samples/history_all_apps_sample.csv
-- config_name: history_per_app
-  data_files:
-  - split: instagram
-    path: samples/history_instagram_sample.csv
-  - split: facebook
-    path: samples/history_facebook_sample.csv
-  - split: threads
-    path: samples/history_threads_sample.csv
-  - split: chatbot
-    path: samples/history_chatbot_sample.csv
-  - split: ai_studio
-    path: samples/history_ai_studio_sample.csv
-- config_name: queries
+    path: samples/persona_context.csv
+- config_name: persona_queries
   data_files:
   - split: sample
-    path: samples/queries_sample.csv
+    path: samples/persona_queries.csv
 ---
 """
 
     task_rows = []
-    for fam in sorted(tf):
-        fam_types = sorted(t for t in tt if _family_of(t, fam))
-        for t in fam_types:
-            task_rows.append(f"| {fam} | `{t}` | {tt[t]} | {TASK_DESCRIPTIONS.get(t, '')} |")
+    for t in sorted(tt):
+        task_rows.append(f"| `{t}` | {tt[t]} | {TASK_DESCRIPTIONS.get(t, '')} |")
     task_table = "\n".join(task_rows)
 
     body = f"""# PersonaMem-v3: Omni-Platform Personal Intelligence — Benchmark Data
@@ -692,9 +683,8 @@ complete data lives in `backend/`. One shared schema per table
 
 | File | Rows | What a row is |
 |---|---|---|
-| `samples/history_all_apps_sample.csv` | {stats['sample_all_apps']} | One engagement event, all 5 apps interleaved chronologically |
-| `samples/history_{{app}}_sample.csv` × 5 | {stats['sample_instagram']}/{stats['sample_facebook']}/{stats['sample_threads']}/{stats['sample_chatbot']}/{stats['sample_ai_studio']} | Same schema, split per app (load one split at a time — text columns that never apply to an app are empty in its split) |
-| `samples/queries_sample.csv` | {stats['sample_queries']} | One benchmark query with ground truth; most rows carry a gold + inferior response pair (judge-scored tasks ship without an inferior by design). All {len(tt)} task types represented |
+| `samples/persona_context.csv` | {stats['sample_context']} | One engagement event — all 5 apps interleaved chronologically ({stats['sample_instagram']} Instagram / {stats['sample_facebook']} Facebook / {stats['sample_threads']} Threads / {stats['sample_chatbot']} Chatbot / {stats['sample_ai_studio']} AI Studio) |
+| `samples/persona_queries.csv` | {stats['sample_queries']} | One benchmark query with ground truth; most rows carry a golden + inferior response pair (judge-scored tasks ship without an inferior by design). All {len(tt)} task types represented |
 
 ### Supplementary: the complete dataset (`backend/` — codebase-ready)
 
@@ -722,14 +712,8 @@ python evaluation/run_eval.py --backend_dir ../pm3_data/backend --user_id 8 --mo
 
 ## 📊 Task types
 
-Families: `personalization` (core recommendation), `chatbot_response`,
-`new_suggestions` (explorative recommendation), `over_personalization`
-(restraint), `e_followup` (time-anchored follow-up: @ai directives, preference
-lifecycle, sensitive-event restraint, geo shift), `proactive_actions`
-(act-vs-stay-silent judgment), `agentic` (voice-authoring + tool tasks).
-
-| Family | Task type | Rows (full dataset) | What it tests |
-|---|---|---|---|
+| Task type | Rows (full dataset) | What it tests |
+|---|---|---|
 {task_table}
 
 ## 📜 License
@@ -763,14 +747,14 @@ _TASK2FAM: dict = {}
 def write_column_descriptions(out: Path):
     txt = """# Column Descriptions
 
-The seven preview files form three tables — the queries table, the all-apps
-history table, and five per-app files sharing the history schema. Every table
-puts `persona_id` first and `persona_html` (a link to that persona's browsable
-HTML page inside this repo) second. Empty cells mean
+Two preview files: `persona_context.csv` (one row = one engagement event
+from the showcase personas' timelines) and `persona_queries.csv` (one row =
+one benchmark query). Both put `persona_id` first and `persona_html` (a link
+to that persona's browsable HTML page inside this repo) second. Empty cells mean
 the field does not apply to that row. Columns holding nested structures are
 JSON-encoded strings.
 
-## History tables (`history_all_apps_sample.csv` + the 5 per-app files, one shared schema)
+## `persona_context.csv` — the engagement history
 
 ### Identity & pointers
 | Column | Description |
@@ -808,19 +792,21 @@ JSON-encoded strings.
 ### Social context
 | Column | Description |
 |---|---|
-| `author_id` / `recipient_id` / `relationship` | Who authored/received it and their relation to the user (`self`, `close_friend`, ...) |
-| `is_self_authored` / `is_dm` | The user's own post / a direct message |
-| `is_ad` / `is_trending` | Sponsored content (sponsor + CTA details in `extras_json.content_extra.ad_metadata`) / platform-trending item |
+| `author` | Who made this content, relative to the user: `self` (the user's own post), `close_friend`, `friend`, or `stranger` (public creators). Empty for pure conversations (Chatbot / AI Studio). Raw ids (`author_id` like `friend_9`, `relationship`, `is_self_authored`) are preserved in `extras_json` |
+| `recipient_id` | For DMs: who received the message |
+| `is_dm` | This row is a direct-message thread (messages in `conversation_json`) |
+| `is_ad` | Sponsored content the user clicked/hid/dismissed (sponsor + CTA details in `extras_json.content_extra.ad_metadata`) |
+| `is_trending` | A platform-trending item surfaced in the user's feed |
 
 ### What the system inferred
 | Column | Description |
 |---|---|
 | `preferences` | Plain-text preview of the inferred preferences (`Follows Minnesota Wild NHL hockey content; (+2 more)`); the full scored objects are in `preferences_json` |
 | `n_preferences` | Number of inferred preference instances attached |
-| `preferences_json` | JSON list — each with `persona_item` (the preference statement), `category`, `confidence_score_init` (0–1 model confidence when the preference was first inferred), `confidence_cross_referenced` (unbounded corroboration score — how many independent engagements support it), `time_horizon` (+`stop_condition` when short-term), `stereotype_mark` (whether the preference aligns with / contradicts / is neutral w.r.t. demographic stereotypes — used for bias analysis, see the card's Warning), `hidden_persona_labels`, `update_history` (reinforced/contradicted/...), provenance fields. Fields prefixed `_` anywhere in the data are internal generator provenance |
+| `preference_details` | JSON list — each with `persona_item` (the preference statement), `category`, `confidence_score_init` (0–1 model confidence when the preference was first inferred), `confidence_cross_referenced` (unbounded corroboration score — how many independent engagements support it), `time_horizon` (+`stop_condition` when short-term), `stereotype_mark` (whether the preference aligns with / contradicts / is neutral w.r.t. demographic stereotypes — used for bias analysis, see the card's Warning), `hidden_persona_labels`, `update_history` (reinforced/contradicted/...), provenance fields. Fields prefixed `_` anywhere in the data are internal generator provenance |
 | `extras_json` | JSON catch-all for every remaining field, guaranteeing the row is lossless: full `event_location`, AI-Studio session metadata (`prior_session_refs`, `memory_used_summary`, `oblique_reference_to_hidden_personas`, `ai_studio_metadata`), DM-thread fields (`thread_id`, `participants`, `is_group_dm`, ...), trending fields, `ask_to_forget`, remaining content fields (`key_frames`, `metadata`, `parts`, raw `text`) under `content_extra` |
 
-## Queries table (`queries_sample.csv`)
+## `persona_queries.csv` — the benchmark queries
 
 **What the evaluated system sees vs. what is scorer-side:** at evaluation time
 the system under test receives the persona's history strictly BEFORE the
@@ -835,21 +821,19 @@ scoring and is never shown to the evaluated system.
 |---|---|
 | `persona_id` / `persona_html` | As above |
 | `query_id` | Unique query id (`{persona}:{seq}:{instance}`) |
-| `task_family` / `task_type` | Family (7) and concrete task (31) — see the README table |
+| `task_type` | One of 31 concrete tasks — see the README table for row counts + what each tests |
 | `what_this_tests` | Plain-English one-liner of what a correct system must do on this task |
-| `query_kind` | Surface form, 4 values: `user_query` (the user asks something), `proactive_recommendation` / `proactive_assistance` (no user turn — the system must decide whether/how to act), `agentic_task` (act on the user's behalf) |
-| `expected_behavior` | What a correct system does — 8 values: `personalize`, `proactive_recommend`, `proactive_assist`, `agentic_action`, `avoid_overpersonalization`, `resist_sycophancy`, `restrain`, `abstain` |
-| `timestamp` / `datetime` | The query's moment T — the evaluated system may only see history strictly before T |
+| `timestamp` / `datetime` | The query's moment T (`YYYY-MM-DD HH:MM UTC`, same format as the context file) — the evaluated system may only see history strictly before T |
 | `user_query` | The user's message/request; for proactive tasks this holds a bracketed scenario label (e.g. `[system prompt] Decide: ping again, or stay silent.`) for browsing convenience — it is NOT the literal model input; the harness constructs the proactive prompt from `instance_full` |
 | `prior_conversation` | JSON: conversation turns preceding the query, for tasks that anchor mid-session (surfaced from `instance_full.prior_conversation`; empty when the task has no preceding session) |
 | `groundtruth_preference` / `groundtruth_preference_obj` | The preference(s) the answer must be grounded in (text / full JSON object). For voice-authoring agentic tasks this holds the user's voice spec rather than a topical preference |
 | `distractor_preferences` | JSON: plausible-but-wrong preferences a shallow system confuses |
-| `example_response` | Gold response (what a well-personalized system should say/do) |
+| `golden_response` | The gold response — what a well-personalized system should say/do |
 | `inferior_response` | Contrast response — plausible but misses the axis under test. Plain text for chat tasks, JSON for structured tasks (the contrast text under `text`, the deliberately-injected flaw under `flaw_kind`); empty on judge-scored tasks (e.g. sycophancy), which have no canned inferior by design |
 | `reference_example` | JSON: auxiliary reference material for some task types |
-| `rubric_tags` | Scoring axes for the judge |
+| `rubrics` | Human-readable summary of the row's scoring contract (derived from the task's scoring dimensions). NB: the LLM judge is NOT prompted with this string — judge prompts carry full fixed rubric definitions with calibration bands (`evaluation/prompts.py`); deterministic tasks (rankings, recalls) are scored by exact metrics without any judge. This column is for human readers and the build-time QA gate |
 | `tool_call` | JSON: expected tool/action payload for agentic tasks |
-| `internal_checks` | JSON: build-time QA artifacts (self-checks, voice-evidence audits) — not part of the task |
+| `internal_checks` | JSON: build-time QA artifacts (self-checks, voice-evidence audits) plus `_row_meta` (internal routing fields: task_family, query_kind, expected_behavior, ISO timestamp) — not part of the task |
 | `instance_full` | JSON: the COMPLETE task instance consumed by the eval harness (slates, pools, arms, anchors) |
 | `source_file` | `backend/{persona_id}/test.json` — all queries for the persona |
 """
@@ -866,13 +850,13 @@ def validate(out: Path, stats: dict) -> list[str]:
             if not (out / "backend" / uid / f).exists():
                 problems.append(f"staged file missing: backend/{uid}/{f}")
     # CSVs parse + row counts + all task types present
-    for name in ["history_all_apps_sample"] + [f"history_{a}_sample" for a in APPS] + ["queries_sample"]:
+    for name in ["persona_context", "persona_queries"]:
         p = out / "samples" / f"{name}.csv"
         with p.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
         if not rows:
             problems.append(f"{name}.csv is empty")
-        if name == "queries_sample":
+        if name == "persona_queries":
             types = {r["task_type"] for r in rows}
             missing = set(stats["task_type_counts"]) - types
             if missing:
@@ -911,6 +895,7 @@ def upload(out: Path):
     from huggingface_hub import HfApi
     api = HfApi(token=token)
     api.upload_folder(repo_id=REPO_ID, repo_type="dataset", folder_path=str(out),
+                      delete_patterns=["samples/*"],
                       commit_message="PersonaMem-v3 release: 20 personas (histories + queries + card)")
     print(f"Uploaded to https://huggingface.co/datasets/{REPO_ID}")
 
@@ -936,9 +921,9 @@ def main():
     problems = validate(out, stats)
     print(f"\nEvents: {stats['n_events']:,}  pref instances: {stats['n_pref_instances']:,}  "
           f"queries: {stats['n_queries']:,} / {len(stats['task_type_counts'])} task types")
-    print(f"Samples: all_apps={stats['sample_all_apps']} " +
+    print(f"Samples: context={stats['sample_context']} (" +
           " ".join(f"{a}={stats[f'sample_{a}']}" for a in APPS) +
-          f" queries={stats['sample_queries']}")
+          f") queries={stats['sample_queries']}")
     if problems:
         print(f"\nVALIDATION: {len(problems)} problem(s):")
         for p in problems[:40]:
