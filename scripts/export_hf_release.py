@@ -941,6 +941,11 @@ The benchmark's coverage spans five connected capability areas:
   surface-similar distractors, plus user-steerable recommendation through natural
   language: `@ai` in-comment directives such as "more like this" or "stop
   recommending this" that the system must honor later.
+- Over-personalization: the over-personalization tax. As models get better at
+  leveraging user context, they may invoke a user's interests too often, say "I know
+  you like X" too explicitly, surface sensitive inferences, or inject personal
+  context where none is needed. PersonaMem-v3 evaluates this restraint as a
+  first-class capability next to personalization itself.
 - Agentic tasks: acting on the user's behalf, in the user's own voice, with tool
   calling against the six backend apps: drafting auto-replies, composing and
   sending posts, reposting across apps with re-voicing, digesting DM threads,
@@ -948,11 +953,6 @@ The benchmark's coverage spans five connected capability areas:
 - Proactiveness: deciding when to step in (a close friend's update, a timely
   alert, a mistake about to happen) and when to hold back, including staying silent
   through a user's sensitive period.
-- Over-personalization: the over-personalization tax. As models get better at
-  leveraging user context, they may invoke a user's interests too often, say "I know
-  you like X" too explicitly, surface sensitive inferences, or inject personal
-  context where none is needed. PersonaMem-v3 evaluates this restraint as a
-  first-class capability next to personalization itself.
 
 ## What's new in v3
 
