@@ -911,7 +911,7 @@ configs:
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell,
 Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
-A collaboration between <img src="assets/meta.png" height="16" alt="Meta"> Meta Recommendation Systems, <img src="assets/upenn.png" height="16" alt="UPenn"> University of Pennsylvania, and <img src="assets/mit.png" height="16" alt="MIT"> MIT.
+A collaboration between ![Meta](assets/meta.png) Meta Recommendation Systems, ![UPenn](assets/upenn.png) University of Pennsylvania, and ![MIT](assets/mit.png) MIT.
 
 Third release in the PersonaMem series:
 
