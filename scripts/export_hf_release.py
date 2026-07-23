@@ -985,12 +985,12 @@ The benchmark's coverage spans five connected capability areas:
 
 | Dimension | PersonaMem-v1 | PersonaMem-v2 | PersonaMem-v3 |
 |---|---|---|---|
-| Data source | 20 fully synthetic users | 1000 fully synthetic users with more comprehensive personas | 200 anonymized real-world users with 4,000,000 engagement histories |
-| Explicit vs. implicit | Explicit user preferences | Implicit user preferences | Around 95% implicit user behavior signals |
-| Scenarios | Chatbot conversations | Chatbot conversations | Omni-platform: chatbot, social-media recommendation, agentic tasks, and proactiveness |
-| Restraint | Personalization | Personalization | Personalization and over-personalization |
-| User privacy | No mention of user private information | Personally identifiable information and ask-to-forget scenarios | Psychology-anchored hidden personas and socially inappropriate scenarios |
-| Dynamics | Fully synthesized preference updates | Fully synthesized preference updates | Reinforced, emerging, diminishing, bursting, and varied attention shifts from the real world |
+| **Data source** | 20 fully synthetic users | 1000 fully synthetic users with more comprehensive personas | 200 anonymized **real-world** users with 4,000,000 engagement histories |
+| **Explicit vs. implicit** | Explicit user preferences | **Implicit** user preferences | Around 95% **implicit** user behavior signals |
+| **Scenarios** | Chatbot conversations | Chatbot conversations | **Omni-platform**: chatbot, social-media recommendation, **agentic tasks**, and proactiveness |
+| **Restraint** | Personalization | Personalization | Personalization and **over-personalization** |
+| **User privacy** | No mention of user private information | Personally identifiable information and ask-to-forget scenarios | Psychology-anchored hidden personas and **socially inappropriate** scenarios |
+| **Dynamics** | Fully synthesized preference updates | Fully synthesized preference updates | Reinforced, emerging, diminishing, bursting, and varied attention shifts from the **real world** |
 
 ## What this release contains
 
