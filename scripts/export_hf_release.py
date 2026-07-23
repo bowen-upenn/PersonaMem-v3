@@ -884,8 +884,10 @@ configs:
 ---
 """
 
+    n_q_total = sum(tt.values()) or 1
     task_rows = "\n".join(
-        f"| `{t}` | {tt[t]} | {TASK_DESCRIPTIONS.get(t, '')} |" for t in sorted(tt))
+        f"| `{t}` | {100 * tt[t] / n_q_total:.1f}% | {TASK_DESCRIPTIONS.get(t, '')} |"
+        for t in sorted(tt))
 
     body = f"""# PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
@@ -1087,9 +1089,9 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 | `test.json` | Every benchmark query for this persona: the preview columns above **plus** the exact `instance_full` payload the harness executes (slates, pools, arms, anchors) and build-time QA fields |
 | `persona.html` | Self-contained human-browsable page rendering everything above |
 
-## Task types ({len(tt)})
+## Task types
 
-| Task type | Rows (full dataset) | What it tests |
+| Task type | % of queries | What it tests |
 |---|---|---|
 {task_rows}
 
