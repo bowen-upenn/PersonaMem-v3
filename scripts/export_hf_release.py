@@ -951,7 +951,7 @@ social-media activity logs (about 95% of the signal is implicit: lingering views
 high watch-through, scroll-pasts), resampled so no synthetic user traces back to any
 actual individual. Every persona claim and predicted preference in this dataset is anchored
 in multiple real engagement events, then curated through a three-stage pipeline
-(candidate extraction → cross-validation → persona assembly → audit) constrained by
+(candidate extraction → cross-validation → persona assembly → quality audit) constrained by
 more than twenty named frameworks from psychology, sociolinguistics, and behavioral
 science.
 
