@@ -1097,8 +1097,7 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 
 The personas derive from
 [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench) and inherit
-its **CC-BY-NC-4.0** license (attribution, non-commercial). The
-[benchmark code](https://github.com/bowen-upenn/PersonaMem-v3) is MIT.
+its **CC-BY-NC-4.0** license (attribution, non-commercial).
 
 ## Citation
 
