@@ -924,8 +924,6 @@ A collaboration between:
   </tr>
 </table>
 
-![PersonaMem-v3](assets/header.png)
-
 Third release in the PersonaMem series:
 
 - PersonaMem (v1): *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
@@ -933,6 +931,8 @@ Third release in the PersonaMem series:
 - PersonaMem-v3: this dataset · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper (PDF)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf)
 
 ## What is PersonaMem-v3?
+
+![PersonaMem-v3](assets/header.png)
 
 Personal intelligence is becoming a central frontier for user-facing AI agents. To be
 helpful in everyday life, an agent must understand the whole person: what they care
