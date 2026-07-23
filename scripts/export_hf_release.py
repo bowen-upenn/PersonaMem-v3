@@ -909,7 +909,7 @@ configs:
     body = f"""# PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
 [![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf)
-[![Code](https://img.shields.io/badge/GitHub-PersonaMem--v3-181717.svg)](https://github.com/bowen-upenn/PersonaMem-v3)
+[![Code](https://img.shields.io/badge/GitHub-PersonaMem--v3-0866FF.svg)](https://github.com/bowen-upenn/PersonaMem-v3)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell,
 Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
