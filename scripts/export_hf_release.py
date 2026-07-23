@@ -817,7 +817,7 @@ TASK_DESCRIPTIONS = {
     "hidden_persona_recommendation": "Surface the item resonating with an implicit (never-stated) persona layer",
     "hidden_persona_implicit_qa": "Answer questions whose ground truth is an implicit persona signal",
     "chatbot_personalized_response": "Free-form chatbot reply personalized to the user's history and voice",
-    "new_suggestions_chatbot": "Propose something genuinely NEW that fits the persona (chatbot surface)",
+    "new_suggestions_chatbot": "Propose something genuinely NEW that fits the persona (chatbot app)",
     "personal_qa_hallucination": "Answer personal questions without inventing facts the history does not support",
     "short_vs_long_term_lifecycle": "Distinguish short-term intents (expired after their stop condition) from long-term tastes",
     "preference_shift_followthrough": "Follow the LATEST stance after a preference shift, not the outdated one",
@@ -928,7 +928,7 @@ in multiple real engagement events, then curated through a three-stage pipeline
 more than twenty named frameworks from psychology, sociolinguistics, and behavioral
 science.
 
-Each released persona lives across six connected surfaces generated from the same
+Each released persona lives across six connected apps generated from the same
 underlying behavioral history: Instagram, Facebook, Threads, an AI Chatbot, AI
 Studio (companion-character chat with cross-session memory), and a Calendar.
 
@@ -942,7 +942,7 @@ The benchmark's coverage spans five connected capability areas:
   language: `@ai` in-comment directives such as "more like this" or "stop
   recommending this" that the system must honor later.
 - Agentic tasks: acting on the user's behalf, in the user's own voice, with tool
-  calling against the six backend surfaces: drafting auto-replies, composing and
+  calling against the six backend apps: drafting auto-replies, composing and
   sending posts, reposting across apps with re-voicing, digesting DM threads,
   re-finding half-remembered posts, and assembling daily catch-ups.
 - Proactiveness: deciding when to step in (a close friend's update, a timely
@@ -1049,7 +1049,7 @@ columns ending in `_json` hold JSON-encoded structures.
 
 One row = one benchmark query, all {len(tt)} task types represented. At evaluation
 time the system under test receives the persona's history strictly before the
-query's `timestamp` plus the query surface; everything else is scorer-side ground
+query's `timestamp` plus the query itself; everything else is scorer-side ground
 truth, never shown to the evaluated system. This CSV is a readable preview; the
 complete machine-readable rows (including the exact `instance_full` payload the eval
 harness executes) live in `backend/{{persona_id}}/test.json`.
@@ -1062,7 +1062,7 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 | `task_type` | One of {len(tt)} concrete tasks (see the task table below) |
 | `what_this_tests` | Plain-English one-liner of what a correct system must do |
 | `timestamp` / `datetime` | The query's moment T; the evaluated system may only see history strictly before T |
-| `app` | The surface the query anchors on (Chatbot for assistant tasks; the directive's / target's social app for `@ai` + agentic tasks; `Multi-app feed` for cross-app slates; empty for agent-level probes not tied to one app) |
+| `app` | The app the query anchors on (Chatbot for assistant tasks; the directive's / target's social app for `@ai` + agentic tasks; `Multi-app feed` for cross-app slates; empty for agent-level probes not tied to one app) |
 | `user_query` | The user's message. For proactive tasks this holds a bracketed scenario label for browsing; the harness constructs the actual proactive prompt from the row's full record |
 | `prior_conversation` | JSON conversation turns preceding the query, for tasks that anchor mid-session |
 | `groundtruth_preference` | The preference(s) the answer must be grounded in. For voice-authoring agentic tasks this holds the user's voice spec instead |
@@ -1084,7 +1084,7 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 | `instagram.json` `facebook.json` `threads.json` | Social-feed engagement events (chronological). Each event = one content engagement with full content (title, caption, media description, transcript, hashtags), the concrete action, time + location, social context (author, DM fields, ads, trending), and the nested inferred `preferences` the pipeline distilled from it |
 | `chatbot.json` | AI-assistant sessions: full conversation turns, utility requests, `ask_to_forget` events |
 | `ai_studio.json` | Companion-character sessions with cross-session memory: conversation turns plus `prior_session_refs`, `memory_used_summary`, `oblique_reference_to_hidden_personas`, and pacing metadata |
-| `calendar.json` | A modification stream (`added` / `updated` / `removed` entries with timestamps). Fold entries with `ts <= T` to obtain the user's calendar at time T (time-maskable like every other surface) |
+| `calendar.json` | A modification stream (`added` / `updated` / `removed` entries with timestamps). Fold entries with `ts <= T` to obtain the user's calendar at time T (time-maskable like every other app) |
 | `profile.json` | The ground-truth persona: demographics, Big-Five/MBTI, the user's writing voice, per-app personas, the AI-Studio companion character, hidden personas (deep motivational layers: aspirations, identity anchors, parasocial attachments, covert concerns, one sensitive-life-event episode), and the flat preference list. Scorer-side only, never shown to the evaluated agent |
 | `test.json` | Every benchmark query for this persona: the preview columns above plus the exact `instance_full` payload the harness executes (slates, pools, arms, anchors) and build-time QA fields |
 | `persona.html` | Self-contained human-browsable page rendering everything above |
