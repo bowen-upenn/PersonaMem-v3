@@ -946,10 +946,10 @@ appropriately.
 
 Unlike fully synthetic persona benchmarks, PersonaMem-v3 is grounded in real
 behavior. It is seeded from [Meta's GIST-Bench](https://huggingface.co/datasets/facebook/gistbench),
-a privacy-preserving collection of anonymized engagement histories derived from
-real-world social-media activity (about 95% of the signal is implicit: lingering
-views, high watch-through, scroll-pasts), resampled so no synthetic user traces back
-to any actual individual. Every persona claim and predicted preference in this dataset is anchored
+a privacy-preserving collection of around 4,000,000 anonymized real-world
+social-media activity logs (about 95% of the signal is implicit: lingering views,
+high watch-through, scroll-pasts), resampled so no synthetic user traces back to any
+actual individual. Every persona claim and predicted preference in this dataset is anchored
 in multiple real engagement events, then curated through a three-stage pipeline
 (candidate extraction → cross-validation → persona assembly → audit) constrained by
 more than twenty named frameworks from psychology, sociolinguistics, and behavioral
