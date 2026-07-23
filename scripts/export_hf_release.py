@@ -723,7 +723,16 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     for logo in ("meta.png", "upenn.png", "mit.png"):
         src_logo = REPO_ROOT / "assets" / logo
         if src_logo.exists():
-            shutil.copy2(src_logo, out / "assets" / logo)
+            # Bake to one-text-row height: HF's card renderer ignores the img
+            # height attribute, so the file itself must be small.
+            try:
+                from PIL import Image
+                im = Image.open(src_logo)
+                h = 18
+                w = max(1, round(im.width * h / im.height))
+                im.convert("RGBA").resize((w, h), Image.LANCZOS).save(out / "assets" / logo)
+            except Exception:
+                shutil.copy2(src_logo, out / "assets" / logo)
 
     stats: dict = {"events_per_app": Counter(), "n_pref_instances": 0,
                    "task_type_counts": Counter(), "task_family_counts": Counter(),
