@@ -10192,6 +10192,21 @@ class PersonaAgent:
                             fmt["user_message"] = parsed_msg["user_message"]
                 except Exception:
                     pass
+            # R19b: this event-level path (independent of Step 17's canonical
+            # path) must ALSO never ship an empty @ai message — under parallel
+            # regen load the mini call fails ~15% of the time. Deterministic
+            # voiced fallback + "@ai " prefix enforcement, same as R19.
+            if sampled_entry["action"] in AT_AI_ACTIONS:
+                _msg = (fmt.get("user_message") or "").strip()
+                if not _msg:
+                    if first_cr is not None:
+                        _msg = self._fallback_user_message(sampled_entry["action"], first_cr)
+                    else:
+                        _tags = " ".join(f"#{str(t).lstrip('#')}" for t in (event_hashtags or [])[:2])
+                        _msg = f"@ai more like this{f' — {_tags}' if _tags else ''}."
+                if not _msg.lower().startswith("@ai"):
+                    _msg = f"@ai {_msg}"
+                fmt["user_message"] = _msg
 
             # Build event dict with preferences LAST for readability
             event = {
