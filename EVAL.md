@@ -1065,6 +1065,7 @@ The same LLM judge is used across all eval modes (`agent_tools`, `codex_agent`, 
 | `--limit` | _none_ | Cap total query rows (for quick smoke tests) |
 | `--rate_limit` | `50` | LLM rate limit per minute (each worker gets `max(rate_limit, workers)` RPM — the old `rate_limit // workers` split was removed as too conservative) |
 | `--context_budget` | _none_ | Token budget for long-context modes |
+| `--history_scope` | `full` | Cross-platform context ablation (single-call LLM modes). `current_platform` restricts each query's serialized history to the platform where the query happens (see "Cross-platform context ablation" below). Scoring/judging always see the full backend. |
 | `--resume` | off | Skip queries already in `{run_dir}/results.csv` (skips *all* present rows, including failed ones — use `--retry_failed` to re-run failures) |
 | `--retry_failed` | off | Drop non-ok rows (`error` / `failed_*` / `no_result`) from `results.csv`, then resume so only those failed/missing `query_id`s re-run (implies `--resume`). Completes a run that hit transient `429`s. |
 | `--prune_invalid` | off | After the run, remove any row still not `status=="ok"` so the aggregate has only completed rows (the "discard on 2nd failure" step). |
@@ -1209,6 +1210,37 @@ For `agent_tools` mode, the agent autonomously decides which files to Read. The 
 Feed-react tasks (`proactive_friend_feed_react`, `proactive_trending_feed_react`) have both act and restrain variants based on `relevance`. The builder enforces ≥2 instances per polarity when candidates exist; instances from users with insufficient candidates for one arm are tagged `polarity_imbalanced=True` and flagged in the aggregator. A model that always-acts collapses on irrelevant candidates; one that always-restrains collapses on relevant ones.
 
 **Known polarity gaps (v3.2 audit — since RESOLVED):** at the time of the audit, two proactive tasks lacked restrain candidates entirely on user 115: `proactive_close_friend_update` (6/6 act), `proactive_friend_feed_react` (5/5 act). The gaps have been remediated; current user-115 polarity: `proactive_close_friend_update` 3 act / 3 restrain, `proactive_friend_feed_react` 4 act / 3 restrain, `proactive_trending_feed_react` 2 act / 6 restrain, `restraint_sensitive_event_silence` 1 act / 4 restrain. See "Query quality audit" section for the original remediation plan.
+
+## Cross-platform context ablation
+
+Measures how much CROSS-platform history contributes on the two headline
+scenarios: for each query we know its current platform and hide every other
+platform's history from the model, then compare against the full-history run.
+
+- **Mechanism**: `run_eval.py --history_scope current_platform` stamps each row
+  with a per-row app list, exported as `PM3_HISTORY_APPS` before dispatch;
+  `serialize_history_for_context` serializes only those apps. The filter is
+  model-facing ONLY — GT slices, judge evidence, and all scoring read the full
+  backend, so both arms are scored identically. The `SnapshotCache` key
+  includes the scope so the shared sequential-path cache can't alias arms.
+  The calendar block is not filtered (the user's own schedule, not platform
+  content — constant across arms).
+- **Scenario → platform mapping** (tasks outside the two scenarios keep full
+  history): chatbot-scenario tasks (`chatbot_personalized_response`,
+  `new_suggestions_chatbot`, `local_recommendation_geo_shift`,
+  `personal_qa_hallucination`) → `chatbot` only. `at_ai_directive_followup` →
+  its recorded `directive_app`. The aggregated feed-slate tasks
+  (`personalized_recommendation`, `short_vs_long_term_lifecycle`) → the social
+  feed surface `instagram,facebook,threads`, because their slates are
+  cross-feed aggregates with no single host app (97% of
+  `personalized_recommendation` slates span all three social apps).
+- **Drivers**: `scripts/run_platform_ablation.sh {full_ctx|single_platform}`
+  runs one arm (llm_longctx gpt-5.5, judge gpt-5.5, workers 8, the 10 matched
+  personas) into `results/ablation_platform_context/{arm}/{uid}/`;
+  `scripts/compare_platform_ablation.py` pairs rows by `query_id` (dropping
+  rows non-ok/empty in either arm, reported) and writes per-task /
+  per-scenario / overall micro-accuracy deltas to
+  `results/ablation_platform_context/aggregate/`.
 
 ## Extending the harness
 

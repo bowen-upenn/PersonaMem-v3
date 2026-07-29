@@ -143,6 +143,18 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--enable_llm_judge", action=argparse.BooleanOptionalAction, default=True,
                    help="Run the LLM judge for pr_* dimensions (default: on). --no-enable_llm_judge to disable.")
     p.add_argument("--context_budget", type=int, default=None)
+    p.add_argument("--history_scope", choices=("full", "current_platform"),
+                   default="full",
+                   help="Cross-platform context ablation (single-call LLM modes). "
+                        "'full' (default): the serialized history spans all 5 apps. "
+                        "'current_platform': each query's history is restricted to "
+                        "the platform where the query happens — chatbot-scenario "
+                        "tasks see chatbot history only; at_ai_directive_followup "
+                        "sees its directive_app only; the aggregated feed-slate "
+                        "tasks (personalized_recommendation, "
+                        "short_vs_long_term_lifecycle) see the three social feeds. "
+                        "Tasks outside the two scenarios keep full history. "
+                        "Scoring/judging always see the full backend either way.")
     # --- memory mode knobs (only used when --mode memory) ---
     p.add_argument("--memory_token_cap", type=int, default=DEFAULT_MEMORY_TOKEN_CAP,
                    help="Max tokens for the consolidated memory injected per query (com/mem0 modes)")
@@ -296,6 +308,60 @@ def _load_queries(queries_path: Path) -> list[dict]:
     return rows
 
 
+# --- Cross-platform context ablation (--history_scope current_platform) -----
+# Scenario → current-platform mapping. The paper's two headline scenarios:
+#   §3.2.1 personalized chatbot responses  → the query happens on the chatbot.
+#   §3.2.2 personalized feed recommendations → the query happens on the social
+#          feed surface. at_ai_directive_followup records its exact app
+#          (directive_app); the two slate tasks rank an AGGREGATED cross-feed
+#          slate (candidates span instagram/facebook/threads), so their
+#          "current platform" is the social-feed surface as a whole.
+# Tasks outside these two scenarios return "" (= no filter, full history).
+_CHATBOT_SCENARIO_TASKS = frozenset({
+    "chatbot_personalized_response",
+    "new_suggestions_chatbot",
+    "local_recommendation_geo_shift",
+    "personal_qa_hallucination",
+})
+_SOCIAL_FEED_APPS = "instagram,facebook,threads"
+
+
+def _derive_history_apps(task_type: str, inst: dict) -> str:
+    """Comma-separated app list the model may see history from, "" = full."""
+    from evaluation.backend_query import APPS
+    from evaluation.task_registry import normalize_task_type
+    t = normalize_task_type(task_type or "")
+    if t in _CHATBOT_SCENARIO_TASKS:
+        return "chatbot"
+    if t == "at_ai_directive_followup":
+        app = str(inst.get("directive_app") or "").strip().lower()
+        return app if app in APPS else _SOCIAL_FEED_APPS
+    if t in ("personalized_recommendation", "short_vs_long_term_lifecycle"):
+        return _SOCIAL_FEED_APPS
+    return ""
+
+
+def _annotate_history_scope(rows: list[dict]) -> None:
+    """Stamp each row with `_history_apps` (parsed from instance_json once).
+
+    The value rides the row dict into both dispatch paths; `_set_query_env` /
+    `_run_one_in_worker` export it as PM3_HISTORY_APPS, which
+    `serialize_history_for_context` honors for the model-facing history.
+    """
+    from collections import Counter
+    dist: Counter = Counter()
+    for r in rows:
+        try:
+            inst = json.loads(r.get("instance_json") or "{}")
+        except Exception:
+            inst = {}
+        scope = _derive_history_apps(r.get("task_type", ""), inst)
+        r["_history_apps"] = scope
+        dist[scope or "<full>"] += 1
+    print("[run_eval] history_scope=current_platform per-row scopes: "
+          + ", ".join(f"{k}×{n}" for k, n in sorted(dist.items())))
+
+
 def _already_done(results_csv: Path) -> set[str]:
     """Return the set of query_ids already present in results.csv."""
     if not results_csv.exists():
@@ -366,6 +432,9 @@ def _set_query_env(row: dict, run_dir: Path, user_id: str, backend_dir: str) -> 
     os.environ["PM3_QUERY_ID"] = str(row.get("query_id") or "")
     os.environ["PM3_TASK_TYPE"] = str(row.get("task_type") or "")
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
+    # Cross-platform ablation: always (re)set — empty string means no filter.
+    # Must be assigned every row because the sequential path shares one process.
+    os.environ["PM3_HISTORY_APPS"] = str(row.get("_history_apps") or "")
 
 
 def _is_sequential(task_type: str, mode: str = "") -> bool:
@@ -493,6 +562,9 @@ def _run_one_in_worker(payload: dict) -> dict:
     os.environ["PM3_QUERY_ID"] = str(row.get("query_id") or "")
     os.environ["PM3_TASK_TYPE"] = str(row.get("task_type") or "")
     os.environ["PM3_OVERLAY_PATH"] = str(run_dir / "writes.jsonl")
+    # Cross-platform ablation: always (re)set — ProcessPoolExecutor REUSES
+    # worker processes across rows, so a stale value would leak between rows.
+    os.environ["PM3_HISTORY_APPS"] = str(row.get("_history_apps") or "")
 
     # Build per-worker LLM clients. Each worker keeps its own QueryLLM
     # connection — instantiation is cheap relative to the per-row wall
@@ -781,6 +853,11 @@ def main() -> int:
         print(f"[run_eval] --task filter {sorted(wanted)}: {pre} -> {len(rows)} rows")
     if args.limit:
         rows = rows[: args.limit]
+
+    # Cross-platform ablation: stamp each row's current-platform scope so both
+    # dispatch paths can export it as PM3_HISTORY_APPS (default scope: full).
+    if args.history_scope == "current_platform":
+        _annotate_history_scope(rows)
 
     done: set[str] = _already_done(results_csv) if args.resume else set()
     print(f"[run_eval] user={args.user_id}  mode={args.mode}  rows={len(rows)}  "
@@ -1281,6 +1358,7 @@ def main() -> int:
                 "user_id": args.user_id,
                 "mode": args.mode,
                 "model": args.model,
+                "history_scope": args.history_scope,
                 "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
                 "n_queries_run": len(summary_rows),
                 "persona_totals": persona_totals,

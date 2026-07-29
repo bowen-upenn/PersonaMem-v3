@@ -655,9 +655,24 @@ def serialize_history_for_context(
     # layout for A/B comparison.
     chrono = os.environ.get("EVAL_CHRONO_HISTORY", "1") != "0"
 
+    # Cross-platform context ablation (run_eval --history_scope current_platform):
+    # PM3_HISTORY_APPS (comma-separated app names, set per-row by the runner)
+    # restricts which platforms' events are serialized into the MODEL-FACING
+    # history. Scoring/judge paths never read this env var — they query
+    # BackendQuery directly — so ground truth and judging are identical across
+    # ablation arms. Empty/unset ⇒ all apps (default behavior). The calendar
+    # block below is deliberately NOT filtered: it is the user's own schedule,
+    # not platform content, and stays constant across arms.
+    _hist_filter = os.environ.get("PM3_HISTORY_APPS", "").strip()
+    if _hist_filter:
+        _allowed = {s.strip().lower() for s in _hist_filter.split(",") if s.strip()}
+        apps_in_scope: tuple[str, ...] = tuple(a for a in APPS if a in _allowed)
+    else:
+        apps_in_scope = APPS
+
     if chrono:
         timeline: list[tuple] = []
-        for app in APPS:
+        for app in apps_in_scope:
             events = bq.get_events(user_id=user_id, app=app, since_timestamp=since_timestamp)
             app_lines = [json.dumps({"app": app, **_compact_event(e)}, ensure_ascii=False) for e in events]
             per_app_stats[app] = {"events": len(events), "tokens": count_tokens("\n".join(app_lines), model)}
@@ -683,7 +698,7 @@ def serialize_history_for_context(
             sections.append(body)
         running_tokens = body_tokens
     else:
-        for app in APPS:
+        for app in apps_in_scope:
             events = bq.get_events(user_id=user_id, app=app, since_timestamp=since_timestamp)
             compacts = [_compact_event(e) for e in events]
             body = "\n".join(json.dumps(c, ensure_ascii=False) for c in compacts)
@@ -732,6 +747,8 @@ def serialize_history_for_context(
         "budget_tokens": budget_tokens,
         "truncated": truncated,
         "chrono": chrono,
+        # Provenance for the cross-platform ablation: which apps were serialized.
+        "history_apps": list(apps_in_scope),
     }
     # Mark as the hoist-able cache prefix; the dispatch layer moves it to the
     # FRONT of every single-call LLM-mode prompt (see _hoist_history_prefix).
@@ -970,7 +987,12 @@ class SnapshotCache:
         # t_test don't alias.
         eff_query = query if query is not None else self._pending_query
         qkey = eff_query if self.mode == "mem0" else None
-        key = (user_id, t_test, model, budget, self.mode, qkey)
+        # Cross-platform ablation: the per-row PM3_HISTORY_APPS filter changes
+        # what serialize_history_for_context returns, so it must be part of the
+        # cache key — otherwise the sequential path (one cache shared across
+        # rows) could serve a history scoped for a different row's platform.
+        hist_scope = os.environ.get("PM3_HISTORY_APPS", "").strip() or None
+        key = (user_id, t_test, model, budget, self.mode, qkey, hist_scope)
         with self._lock:
             if key in self._store:
                 self._store.move_to_end(key)
