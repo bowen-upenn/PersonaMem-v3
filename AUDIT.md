@@ -349,6 +349,8 @@ Each finding includes:
 Group findings by severity. Aim for ≤ 2000 words per slice. **Do not propose fixes inside the audit report** — fixes belong in a separate plan step gated on the user's review.
 
 ## Known false positives — do not flag
+- **AI-companion name duplicates across DIFFERENT personas (engagement-only cohort)** — e.g. two or three personas whose AI-Studio companions share a full name. ACCEPTED (2026-07-24): different users naming companions similarly is realistic, and a re-roll would require regenerating every conversation that mentions the name. Uniqueness is only enforced within the eval cohort.
+
 
 - **Self-authored posts, trending feed items, DM threads, ad events, and planted sensitive-event rows lacking camera/video-style content payloads** — their content schemas differ by design (extension-B and ad/planting generators, not Step 19); only ORGANIC engagement events are required to carry `parts`/`key_frames`+`metadata`.
 
