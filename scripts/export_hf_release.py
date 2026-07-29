@@ -685,10 +685,16 @@ def sample_queries(all_rows: list[tuple[str, dict]], per_type_floor: int = 5,
         pair = 0 if (r.get("example_response") and r.get("inferior_response")) else 1
         return (trio, pair, uid, r.get("query_id") or "")
 
+    # Featured families get a slightly larger sample so the front page can
+    # mix them generously.
+    _CAP_OVERRIDES = {"chatbot_personalized_response": 10,
+                      "personalized_recommendation": 10,
+                      "over_personalization_chatbot_text": 8}
     out: list[tuple[str, dict]] = []
     for tt in sorted(by_type):
         rows = sorted(by_type[tt], key=rank)
-        n_take = max(per_type_floor, min(per_type_cap, len(rows)))
+        cap = _CAP_OVERRIDES.get(tt, per_type_cap)
+        n_take = max(per_type_floor, min(cap, len(rows)))
         # Round-robin across personas (trio members first) so no single persona
         # dominates the preview; then guarantee >=1 mid-session row (non-empty
         # prior_conversation) per type when one exists.
@@ -703,6 +709,7 @@ def sample_queries(all_rows: list[tuple[str, dict]], per_type_floor: int = 5,
             for uid in order:
                 if by_uid[uid] and len(take) < n_take:
                     take.append(by_uid[uid].pop(0))
+        # (cap can exceed the old per_type_cap for featured families)
         def _pc(r):
             return r.get("prior_conversation") or (r.get("instance_full") or {}).get("prior_conversation")
         if not any(_pc(r) for _, r in take):
@@ -710,7 +717,48 @@ def sample_queries(all_rows: list[tuple[str, dict]], per_type_floor: int = 5,
             if mid:
                 take[-1] = mid
         out.extend(take)
-    return out
+    return _curate_front_page(out)
+
+
+# The Dataset Viewer shows the file top-down: open with the most engaging mix
+# (chatbot personalization, feed recommendation, chatbot over-personalization),
+# season with one hidden-persona row and the most interesting agentic tasks,
+# then the remaining task types follow grouped alphabetically.
+_FRONT_SPEC = [
+    "chatbot_personalized_response", "personalized_recommendation",
+    "over_personalization_chatbot_text", "chatbot_personalized_response",
+    "personalized_recommendation", "over_personalization_sycophancy",
+    "over_personalization_chatbot_text", "hidden_persona_recommendation",
+    "agentic_send_post", "chatbot_personalized_response",
+    "personalized_recommendation", "agentic_vague_refind",
+    "over_personalization_sensitive_event", "chatbot_personalized_response",
+    "agentic_cross_app_repost", "personalized_recommendation",
+    "over_personalization_chatbot_text", "chatbot_personalized_response",
+]
+
+
+def _curate_front_page(selected: list) -> list:
+    from collections import defaultdict as _dd
+    by_tt = _dd(list)
+    for uid, r in selected:
+        by_tt[r.get("task_type") or "?"].append((uid, r))
+
+    def quality(item):
+        uid, r = item
+        showcase = 0 if uid in SHOWCASE else 1
+        pair = 0 if (r.get("example_response") and r.get("inferior_response")) else 1
+        return (showcase, pair, uid)
+
+    for tt in by_tt:
+        by_tt[tt].sort(key=quality)
+    front: list = []
+    for tt in _FRONT_SPEC:
+        if by_tt.get(tt):
+            front.append(by_tt[tt].pop(0))
+    rest: list = []
+    for tt in sorted(by_tt):
+        rest.extend(by_tt[tt])
+    return front + rest
 
 
 # ---------------------------------------------------------------- staging ----
