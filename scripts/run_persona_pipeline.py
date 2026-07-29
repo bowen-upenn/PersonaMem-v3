@@ -93,6 +93,14 @@ def main():
         uid = result.get("user_id", "")
         if uid and "error" not in result:
             try:
+                from scrub_political_content import scrub_user
+                n_scrub = scrub_user(uid, args.backend_dir)
+                if n_scrub:
+                    print(f"{utils.Colors.OKBLUE}[User {uid}] Content-policy scrub: "
+                          f"{n_scrub} replacements.{utils.Colors.ENDC}")
+            except Exception as e:
+                print(f"{utils.Colors.WARNING}[User {uid}] Content-policy scrub failed: {e}{utils.Colors.ENDC}")
+            try:
                 generate_persona_html(uid, args.backend_dir)
             except Exception as e:
                 print(f"{utils.Colors.WARNING}[User {uid}] Visualization failed: {e}{utils.Colors.ENDC}")

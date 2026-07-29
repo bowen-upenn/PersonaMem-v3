@@ -49,6 +49,28 @@ FILES = ["instagram", "facebook", "threads", "chatbot", "ai_studio",
          "calendar", "profile", "test"]
 
 
+def scrub_user(uid: str, backend_dir: str = "backend") -> int:
+    """Scrub one persona's files in place. Returns replacement count.
+    Called by scripts/run_persona_pipeline.py after each persona is built
+    (BEFORE persona.html renders) so no regen can ship policy anchors."""
+    base = REPO_ROOT / backend_dir
+    total = 0
+    for f in FILES:
+        fp = base / str(uid) / f"{f}.json"
+        if not fp.exists():
+            continue
+        text = fp.read_text()
+        n_f = 0
+        for pat, rep in REPLACEMENTS:
+            text, n = pat.subn(rep, text)
+            n_f += n
+        if n_f:
+            json.loads(text)
+            fp.write_text(text)
+            total += n_f
+    return total
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--apply", action="store_true")
