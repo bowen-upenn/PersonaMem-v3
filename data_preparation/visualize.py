@@ -3363,21 +3363,48 @@ def _load_test_samples(
         except (ValueError, OSError):
             pass
 
-    # Row source: in-memory list (preferred) OR queries.csv (legacy).
+    # Row source: in-memory list (preferred), then backend/{uid}/test.json
+    # (the canonical eval artifact — its rows are `_project_row`-shaped, the
+    # same keys precomputed_rows carries), then queries.csv (legacy). Without
+    # the test.json path, a standalone re-render (generate_persona_html with
+    # no precomputed_rows) silently dropped every test-sample card.
     if precomputed_rows is not None:
         row_iter: list[dict] = precomputed_rows
     else:
+        tjson = os.path.join(backend_dir, str(uid), "test.json")
         qcsv = os.path.join(benchmark_dir, str(uid), "queries.csv")
-        if not os.path.exists(qcsv):
-            return out
-        csv.field_size_limit(10_000_000)
-        row_iter = []
-        with open(qcsv, "r", encoding="utf-8") as f:
-            first = f.readline()
-            if not first.startswith("#"):
-                f.seek(0)
-            for r in csv.DictReader(f):
+        if os.path.exists(tjson):
+            try:
+                with open(tjson, "r", encoding="utf-8") as f:
+                    rows = json.load(f)
+            except (OSError, ValueError):
+                return out
+            # Normalize to the CSV-row shape the loop expects: test.json
+            # carries two row generations — legacy rows with `instance_full`
+            # as a dict, appended rows with `instance_json` as a string.
+            row_iter = []
+            for r in rows:
+                if not isinstance(r, dict):
+                    continue
+                r = dict(r)
+                if not isinstance(r.get("instance_json"), str) or not r.get("instance_json"):
+                    inst = r.get("instance_full")
+                    r["instance_json"] = json.dumps(inst) if isinstance(inst, dict) else "{}"
+                for _k in ("rubric_tags", "display_rubric"):
+                    if isinstance(r.get(_k), list):
+                        r[_k] = ";".join(str(x) for x in r[_k])
                 row_iter.append(r)
+        elif os.path.exists(qcsv):
+            csv.field_size_limit(10_000_000)
+            row_iter = []
+            with open(qcsv, "r", encoding="utf-8") as f:
+                first = f.readline()
+                if not first.startswith("#"):
+                    f.seek(0)
+                for r in csv.DictReader(f):
+                    row_iter.append(r)
+        else:
+            return out
     for r in row_iter:
         if True:
             try:
