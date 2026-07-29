@@ -9,8 +9,8 @@ Stages a complete HF dataset repo under --out (default release/hf/):
     backend/{uid}/          COMPLETE data, verbatim codebase-ready JSONs
                             (profile, 5 app JSONs, calendar, test, persona.html)
 
-The preview CSVs center on the 3 most interesting personas (--trio, default
-3/282/835) and put the persona.html HF link in column #2 of every table.
+The preview CSVs center on the five showcase personas (SHOWCASE:
+3/8/229/282/835) and put the persona.html HF link in column #2 of every table.
 Full data lives only in backend/ — a download drops in at --backend_dir and
 evaluation/run_eval.py runs unmodified.
 
@@ -34,7 +34,7 @@ csv.field_size_limit(sys.maxsize)
 
 USERS = ["1", "2", "3", "5", "6", "8", "9", "10", "13", "14",
          "26", "105", "115", "209", "229", "282", "461", "655", "760", "835"]
-TRIO = ["3", "282", "835"]
+SHOWCASE = ["3", "8", "229", "282", "835"]
 APPS = ["instagram", "facebook", "threads", "chatbot", "ai_studio"]
 PER_PERSONA_FILES = ["profile.json", "instagram.json", "facebook.json", "threads.json",
                      "chatbot.json", "ai_studio.json", "calendar.json", "test.json",
@@ -681,7 +681,7 @@ def sample_queries(all_rows: list[tuple[str, dict]], per_type_floor: int = 5,
 
     def rank(item):
         uid, r = item
-        trio = 0 if uid in TRIO else 1
+        trio = 0 if uid in SHOWCASE else 1
         pair = 0 if (r.get("example_response") and r.get("inferior_response")) else 1
         return (trio, pair, uid, r.get("query_id") or "")
 
@@ -787,11 +787,11 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                 if isinstance(act, str) and act.startswith("at_ai") and um:
                     supp.setdefault("at_ai", []).append(
                         (ts_e, um.strip().lower()[:80], txt))
-        if uid in TRIO:
+        if uid in SHOWCASE:
             for app, evs in events_by_app.items():
                 chosen = sample_history({app: evs}, per_app_pp[app])[app]
                 agg_rows.extend(flatten_event(uid, app, e) for e in chosen)
-    agg_rows.sort(key=lambda r: (TRIO.index(r["persona_id"]), int(r["timestamp"] or 0)))
+    agg_rows.sort(key=lambda r: (SHOWCASE.index(r["persona_id"]), int(r["timestamp"] or 0)))
 
     def write_csv(path: Path, cols: list[str], rows: list[OrderedDict]):
         with path.open("w", newline="", encoding="utf-8") as f:
@@ -868,7 +868,7 @@ def write_card(out: Path, stats: dict):
     ev = stats["events_per_app"]
     tt = stats["task_type_counts"]
     trio_links = " · ".join(
-        f"[persona {u}]({HF_RESOLVE}/backend/{u}/persona.html?download=true)" for u in TRIO)
+        f"[persona {u}]({HF_RESOLVE}/backend/{u}/persona.html?download=true)" for u in SHOWCASE)
 
     yaml = f"""---
 license: cc-by-nc-4.0
@@ -1022,7 +1022,7 @@ Three ways in, ordered by effort:
    open the link, save the page, open the saved file in your browser.)
 2. Preview tables (`samples/`, what the Dataset Viewer shows): two curated CSVs
    documented column-by-column below. These are samples for browsing, centered on
-   three showcase personas (3, 282, 835); the complete data lives in `backend/`.
+   five showcase personas (3, 8, 229, 282, 835); the complete data lives in `backend/`.
 3. The complete dataset (`backend/{{persona_id}}/`, all 20 personas): verbatim
    the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
    download runs the benchmark unmodified:
