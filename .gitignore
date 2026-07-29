@@ -51,3 +51,5 @@ release/
 # Local agent config
 CLAUDE.md
 skill.md
+data/content_policy_rules.json
+scripts/reduce_christian_prevalence.py
