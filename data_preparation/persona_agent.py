@@ -937,6 +937,22 @@ CALENDAR_MOD_WEIGHTS: dict[str, float] = {
 }
 
 
+def content_payload_complete(content_type: str, content: dict) -> bool:
+    """True when a Step-19 synthetic content dict carries its full typed
+    payload — image: non-empty `parts` + `metadata`; short_video: non-empty
+    `key_frames` + `metadata`; text: non-empty `text`. Prose-only dicts
+    (title/caption/description without the typed payload) are incomplete."""
+    if not isinstance(content, dict):
+        return False
+    if content_type == "image":
+        return bool(content.get("parts")) and isinstance(content.get("metadata"), dict)
+    if content_type == "short_video":
+        return bool(content.get("key_frames")) and isinstance(content.get("metadata"), dict)
+    if content_type == "text":
+        return bool(content.get("text"))
+    return True
+
+
 def _sample_mobility_class(user_id: str | int) -> str:
     """Deterministic per-user mobility class. Seeded by user_id so two runs
     against the same cohort produce the same class distribution.
@@ -8093,6 +8109,18 @@ class PersonaAgent:
             return
 
         # --- Pass 3: parallel LLM calls ---
+        def _parse_content(response):
+            if not response:
+                return None
+            parsed = utils.extract_json_from_response(response)
+            if isinstance(parsed, dict):
+                # Accept either {content_type, content} or a flat content dict
+                if "content" in parsed and isinstance(parsed["content"], dict):
+                    return parsed["content"]
+                if set(parsed.keys()) >= {"text"} or set(parsed.keys()) >= {"caption"}:
+                    return parsed
+            return None
+
         def _gen_one(ev: dict):
             try:
                 prompt = prompts.generate_synthetic_content_prompt(
@@ -8107,16 +8135,15 @@ class PersonaAgent:
                     motivation_frame=ev.get("motivation_frame") or None,
                     motivation_frame_description=ev.get("motivation_frame_description") or None,
                 )
-                response = self._query_mini_with_retry(prompt)
-                content = None
-                if response:
-                    parsed = utils.extract_json_from_response(response)
-                    if isinstance(parsed, dict):
-                        # Accept either {content_type, content} or a flat content dict
-                        if "content" in parsed and isinstance(parsed["content"], dict):
-                            content = parsed["content"]
-                        elif set(parsed.keys()) >= {"text"} or set(parsed.keys()) >= {"caption"}:
-                            content = parsed
+                content = _parse_content(self._query_mini_with_retry(prompt))
+                # Completeness gate: the mini model sometimes returns only the
+                # prose fields (title/caption/description) and drops the typed
+                # payload (image parts+metadata, video key_frames+metadata).
+                # One extra attempt on incomplete output; keep the best result.
+                if content is not None and not content_payload_complete(ev["content_type"], content):
+                    retry = _parse_content(self._query_mini_with_retry(prompt))
+                    if retry is not None and content_payload_complete(ev["content_type"], retry):
+                        content = retry
                 return ev["oid"], ev["content_type"], content
             except Exception:
                 return ev["oid"], ev["content_type"], None

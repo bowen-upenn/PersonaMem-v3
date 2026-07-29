@@ -255,6 +255,12 @@ Each agentic task has a verifier that emits a checklist of `(check_name, pass / 
 | Hidden persona rec eligibility | `tasks/hidden_persona_recommendation.py:394` | distinct candidate pool requirements |
 | Preference-shift candidate harvester | `tasks/preference_shift_followthrough.py:_harvest_shift_candidates` | accepts `contradicted` (with `stance_shift_with_precedent` / `suppressed_insufficient_precedent`) and `shifted` update_types; also short_term_expirations whose t_test fits the window OR falls back to t_now - 1h for future stops |
 
+### Generation-time content gates in `data_preparation/persona_agent.py`
+
+| Check | Location | What it catches |
+|---|---|---|
+| Synthetic-content payload completeness | `content_payload_complete` + retry in `generate_synthetic_content._gen_one` | Step-19 mini-LLM returning prose-only content (title/caption/description) with an empty typed payload — image `parts`+`metadata`, short_video `key_frames`+`metadata`, text `text`. One extra attempt on incomplete output; partial output can no longer ship silently. Repair for already-shipped data: `scripts/backfill_content_fields.py` (organic events only; rollback JSONL under `backups/`). |
+
 ### Drop-log persistence
 
 Three durable logs per regen tell you what was lost:
@@ -304,6 +310,10 @@ Three durable logs per regen tell you what was lost:
 
 23. **Stored ranking-headline value inconsistent with the agent's actual ranking (per-mode scoring drift)**: a results.csv row can carry an `ndcg_at_5` that does NOT match the ranking the agent actually emitted — e.g. codex `hidden_persona_recommendation` stored `0.84` for a `ranked_indexes` that places the target at rank #9 with decoys in the top-5 (true graded NDCG ≈ `0.04`); across the task the stored mean was **75.9** vs a recompute of **16.7**. It was isolated to ONE mode×task (codex hidden_persona, freshly re-run) — codex's other two ranking tasks (`personalized_recommendation`, `at_ai_directive_followup`) recomputed identically, as did every other model's hidden_persona. Tell: an agentic/ranking row whose headline is implausibly high given that the same row's `ranked_indexes` buries the target. Detection (cheap, no eval): re-extract `ranked_indexes` from `agent_response`, recompute `_graded_ndcg_at_k` against `backend/{uid}/test.json` `held_out_idx`/`hard_negative_idxs`, and diff vs the stored `ndcg_at_5` — any mode×task with systematic mismatch (not just 1 empty-ranking row, which legitimately scores 0) has stored-value drift. Fix: re-run the deterministic writeback (`results/_scripts/writeback_ndcg.py <mode>`), which recomputes from slate + stored ranking; verify stored==recompute afterwards. NOTE: an EMPTY/invalid ranking row SHOULD score 0 (non-response gets no credit) — don't 'fix' it with an identity-order fallback, which spuriously inflates it (`hp_rec_5_001` false-positive 2026-06-14).
 
+24. **Synthetic-content payload dropped by the mini model (prose-only events)**: a minority of organic image/short_video events ship with `title`/`caption`/`overall_description` but an EMPTY typed payload (`parts: []` / `key_frames: []`, `metadata: null`) — the Step-19 mini-LLM occasionally returns partial JSON and the old parser accepted anything with a `caption` key (observed: ~7% of organic images, ~1% of short videos). Detection (no LLM): per-type required-key scan over the app JSONs — `image` needs non-empty `parts` + `metadata`, `short_video` needs non-empty `key_frames` + `metadata` — restricted to ORGANIC events (exclude `is_ad` / `is_dm` / `is_self_authored` / `is_trending` / planted sensitive-event rows, whose schemas differ by design). Guard: `content_payload_complete` gate + one retry in `_gen_one`; repair: `scripts/backfill_content_fields.py`.
+
+25. **Viewer-layer field stripping masquerades as a generation regression**: `persona.html` cards showed events WITHOUT camera/video metadata, key frames, or image parts while the backend JSONs carried all of them — a render-time slimming pass (`_slim_event_for_html`, since removed) stripped `metadata`/`key_frames`/`audio_transcript`/`parts` from the HTML embed while the page's own JS renderer still expected them (dead feature). Lesson: before blaming generation, diff the RAW backend JSON against the rendered surface — a complete-JSON + thin-HTML pair is a viewer bug, not a data bug. Detection: `grep -c '"key_frames"' backend/{uid}/persona.html` returns 0 while the app JSONs contain them; any such asymmetry means the render path is dropping fields.
+
 ## Severity rubric
 
 - **P0** — Blocks shipping. Schema break, silent task-type loss, un-substituted template visible to reviewer, internal jargon leak in human-visible text.
@@ -323,6 +333,8 @@ Each finding includes:
 Group findings by severity. Aim for ≤ 2000 words per slice. **Do not propose fixes inside the audit report** — fixes belong in a separate plan step gated on the user's review.
 
 ## Known false positives — do not flag
+
+- **Self-authored posts, trending feed items, DM threads, ad events, and planted sensitive-event rows lacking camera/video-style content payloads** — their content schemas differ by design (extension-B and ad/planting generators, not Step 19); only ORGANIC engagement events are required to carry `parts`/`key_frames`+`metadata`.
 
 - `at_ai_directive_followup` `example_response = "Ranked indexes: [...]"` — INTENTIONAL. `expected_response_kind: "ranking"` in `evaluation/task_registry.py:773`.
 - `[system prompt] …` query_text for ranking / proactive / agentic tasks — INTENTIONAL fallback for tasks with no live user message.

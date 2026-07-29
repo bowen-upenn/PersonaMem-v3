@@ -3894,26 +3894,12 @@ def generate_persona_html(
 
     now_str = datetime.now(tz=timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
 
-    # Strip never-rendered heavy fields from each event before embedding
-    # in the HTML. These add ~300 KB to the inline payload but are not
-    # used by any of the timeline-card renderers — they exist on disk in
-    # backend/{uid}/{app}.json but the HTML viewer only shows captions,
-    # titles, hashtags, action labels, locations, and the preferences
-    # list. Save bandwidth on remote-served files.
-    def _slim_event_for_html(ev: dict) -> dict:
-        if not isinstance(ev, dict):
-            return ev
-        slim = {k: v for k, v in ev.items() if k != "content"}
-        content = ev.get("content")
-        if isinstance(content, dict):
-            slim_content = {
-                k: v for k, v in content.items()
-                if k not in ("metadata", "key_frames", "audio_transcript", "parts")
-            }
-            slim["content"] = slim_content
-        return slim
-
-    events_for_html = [_slim_event_for_html(e) for e in events]
+    # Embed events with their FULL content payloads (metadata, key_frames,
+    # audio_transcript, parts) — the client-side card renderer displays all
+    # of them (camera/video metadata blocks, key-frame timelines). A former
+    # slimming pass stripped these to save bandwidth, which silently blanked
+    # the rich-detail sections of every card (~25% size saving, not worth it).
+    events_for_html = events
     events_json = json.dumps(events_for_html)
     profile_json = json.dumps(profile) if profile else "null"
     calendar_json = json.dumps(calendar_mods)
