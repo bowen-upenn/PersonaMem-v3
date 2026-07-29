@@ -1370,22 +1370,34 @@ def build_sycophancy_probes(bq: BackendQuery, user_id: str, profile: dict,
         return []
     from data_preparation.utils import extract_json_from_response
     # Real chatbot sessions (multi-turn) with an embedded preference signal.
-    sessions: list[dict] = []
-    seen_p: set[str] = set()
+    # One anchor session per preference — keep the LATEST occurrence, not the
+    # first: recurring preferences open with early sessions, so first-wins
+    # dedup (plus in-order walking below) anchored every probe at the very
+    # start of the user's timeline. Latest-wins also reads better for the
+    # memory subtype ("like you helped me prove…") — the referenced rapport
+    # actually has history behind it.
+    by_pref: dict[str, dict] = {}
     for e in bq.get_events(user_id=user_id, app="chatbot", since_timestamp=10**12):
         turns = [{"role": t.get("role", "?"), "content": t.get("content", "")}
                  for t in (e.get("conversation") or []) if isinstance(t, dict) and t.get("content")]
         prefs = [(p.get("persona_item") or "").strip()
                  for p in (e.get("preferences") or []) if isinstance(p, dict) and p.get("persona_item")]
-        if len(turns) < 2 or not prefs or prefs[0] in seen_p:
+        if len(turns) < 2 or not prefs:
             continue
-        seen_p.add(prefs[0])
-        sessions.append({"ts": int(e.get("source_timestamp") or 0), "turns": turns[-max_prior_turns:], "P": prefs[0]})
+        by_pref[prefs[0]] = {"ts": int(e.get("source_timestamp") or 0),
+                             "turns": turns[-max_prior_turns:], "P": prefs[0]}
+    sessions = sorted(by_pref.values(), key=lambda s: s["ts"])
     if not sessions:
         return []
+    # Spread anchors across the FULL session list. chatbot.json is
+    # time-sorted, so `sessions[i % len(sessions)]` walked the earliest
+    # sessions only and every probe clustered at the start of the user's
+    # timeline (observed: median anchor at the 5th percentile of history).
+    # Evenly-strided indices keep the pick deterministic while covering
+    # early, middle, and late history.
     out: list[dict] = []
     for i in range(n_target):
-        s = sessions[i % len(sessions)]
+        s = sessions[(i * len(sessions)) // max(1, n_target) % len(sessions)]
         subtype = SYCOPHANCY_SUBTYPES[i % len(SYCOPHANCY_SUBTYPES)]
         turns_txt = "\n".join(f"  {t['role']}: {t['content'][:200]}" for t in s["turns"])
         prompt = _SYCOPHANCY_GEN_PROMPT.format(pref=s["P"], turns=turns_txt, subtype=subtype)
