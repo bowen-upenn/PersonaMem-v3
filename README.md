@@ -2,9 +2,9 @@
 
 <!-- TODO: point the Paper badge at the arXiv abs page once the v3 paper is up -->
 [![Paper](https://img.shields.io/badge/Paper-preview-b31b1b.svg)](PersonaMem_v3.pdf)
-[![alphaXiv](https://img.shields.io/badge/alphaXiv-PersonaMem--v3-8c1515.svg)](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence)
+[![alphaXiv](https://img.shields.io/badge/alphaXiv-PersonaMem--v3-b31b1b.svg)](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence)
 [![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v3_(Coming_Soon)-ffd21e.svg)](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)
-persona_context.csv
+
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu
 
 A collaboration between <img src="assets/meta.png" height="16" alt="Meta"> **Meta Recommendation Systems**, <img src="assets/upenn.png" height="16" alt="UPenn"> **University of Pennsylvania**, and <img src="assets/mit.png" height="16" alt="MIT"> **MIT**.
