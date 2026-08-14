@@ -1107,7 +1107,7 @@ Think of each persona as one simulated person's complete digital life:
   act on the person's behalf, or deliberately avoid over-personalization, each with
   ground truth and scoring materials
 
-This release contains the full cohort of 100 personas: {stats['n_events']:,}
+This release contains the first cohort of 100 personas: {stats['n_events']:,}
 engagement events ({ev['instagram']:,} Instagram / {ev['facebook']:,} Facebook /
 {ev['threads']:,} Threads / {ev['chatbot']:,} Chatbot / {ev['ai_studio']:,} AI
 Studio), {stats['n_pref_instances']:,} inferred preference instances, and
