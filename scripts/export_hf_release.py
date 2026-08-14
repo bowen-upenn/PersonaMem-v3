@@ -958,9 +958,52 @@ configs:
 """
 
     n_q_total = sum(tt.values()) or 1
-    task_rows = "\n".join(
-        f"| `{t}` | {100 * tt[t] / n_q_total:.1f}% | {TASK_DESCRIPTIONS.get(t, '')} |"
-        for t in sorted(tt))
+    # Order follows the paper's Figure 4: rows grouped by task family
+    # (personalization, recommendation, over-personalization, agentic tasks,
+    # agentic proactiveness), tasks in the paper's table order within each.
+    FIG4 = [
+        ("Personalization", [
+            "chatbot_personalized_response", "local_recommendation_geo_shift",
+            "personal_qa_hallucination", "hidden_persona_implicit_qa",
+            "preference_shift_followthrough"]),
+        ("Recommendation", [
+            "personalized_recommendation", "at_ai_directive_followup",
+            "hidden_persona_recommendation", "short_vs_long_term_lifecycle",
+            "new_suggestions_chatbot"]),
+        ("Over-personalization", [
+            "over_personalization_chatbot_text", "over_personalization_sensitive_event",
+            "over_personalization_repetition_recsys", "over_personalization_repetition_chatbot",
+            "over_personalization_context_shift", "over_personalization_sycophancy"]),
+        ("Agentic tasks", [
+            "agentic_community_post", "agentic_send_post", "agentic_dm_digest",
+            "agentic_group_dm_summary", "agentic_cross_app_repost", "agentic_auto_reply",
+            "agentic_vague_refind", "agentic_proactive_daily_catchup", "agentic_trending_alert"]),
+        ("Agentic proactiveness", [
+            "proactive_close_friend_update", "restraint_sensitive_event_silence",
+            "proactive_friend_feed_react", "proactive_trending_feed_react",
+            "active_mistake_prevention", "proactive_overactive_check"]),
+    ]
+    ordered = [t for _, group in FIG4 for t in group if t in tt]
+    ordered += [t for t in sorted(tt) if t not in ordered]  # safety net
+    # largest-remainder rounding to one decimal so the column sums to 100.0
+    raw = [1000 * tt[t] / n_q_total for t in ordered]
+    floors = [int(x) for x in raw]
+    deficit = 1000 - sum(floors)
+    order_by_frac = sorted(range(len(raw)), key=lambda i: raw[i] - floors[i], reverse=True)
+    for i in order_by_frac[:deficit]:
+        floors[i] += 1
+    pct = {t: floors[i] / 10 for i, t in enumerate(ordered)}
+    lines = []
+    for fam, group in FIG4:
+        present = [t for t in group if t in tt]
+        if not present:
+            continue
+        lines.append(f"| **{fam}** | | |")
+        lines.extend(f"| `{t}` | {pct[t]:.1f}% | {TASK_DESCRIPTIONS.get(t, '')} |" for t in present)
+    for t in ordered:
+        if not any(t in g for _, g in FIG4):
+            lines.append(f"| `{t}` | {pct[t]:.1f}% | {TASK_DESCRIPTIONS.get(t, '')} |")
+    task_rows = "\n".join(lines)
 
     body = f"""# PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
@@ -1194,8 +1237,7 @@ If you use PersonaMem-v3, please cite:
   title = {{PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}},
   year = {{2026}},
   note = {{alphaXiv preprint}},
-  url = {{https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence}},
-  keywords = {{Machine Learning (cs.LG), Recommender Systems, Agents, Artificial Intelligence, FOS: Computer and information sciences}}
+  url = {{https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence}}
 }}
 
 @article{{jiang2025personamem2,
