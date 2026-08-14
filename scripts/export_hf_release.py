@@ -365,7 +365,7 @@ PROFILE_COLUMNS = [
     "persona_id", "persona_html", "name", "gender", "race_ethnicity", "career",
     "education", "mbti", "big_five", "bio", "voice_style",
     "layer1_identity_spine", "layer2_idiolect", "layer3_indexical_repertoire",
-    "voice_avoid", "per_app_personas", "ai_companion",
+    "voice_avoid", "per_app_personas", "meta_ai_companion_character",
     "top_interests", "n_interests",
     "aspiration", "identity_anchor", "compensatory_need", "covert_concern",
     "parasocial_attachment", "sensitive_life_event", "hidden_personas_other",
@@ -466,7 +466,7 @@ def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> O
     row["layer3_indexical_repertoire"] = layer3
     row["voice_avoid"] = avoid
     row["per_app_personas"] = per_app
-    row["ai_companion"] = comp
+    row["meta_ai_companion_character"] = comp
     row["top_interests"] = "; ".join(top)
     row["n_interests"] = str(len(prof.get("preferences") or []))
     for t in _HP_TYPED:
@@ -1361,7 +1361,7 @@ ranking as the other previews. Empty cells mean the field does not apply.
 | `layer3_indexical_repertoire` | Voice Layer 3, the indexical repertoire (Bakhtin/Goffman): the stances, registers, and speech genres this persona can deploy |
 | `voice_avoid` | The negatives axis: tones and literal phrases that would feel off-brand for this persona |
 | `per_app_personas` | How the same person presents on each app (per-app use purposes), `App: purpose | App: purpose` |
-| `ai_companion` | Their AI-Studio companion character: name (archetype) |
+| `meta_ai_companion_character` | Their AI-Studio companion character: name (archetype) |
 | `top_interests` | The five preferences with the most engagement events, plain text |
 | `n_interests` | Total canonical preferences in the profile |
 | `aspiration` | Hidden persona of type aspiration: label plus inferred motivation (empty when this persona has none) |
