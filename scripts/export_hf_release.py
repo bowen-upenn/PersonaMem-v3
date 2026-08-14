@@ -1372,7 +1372,13 @@ Three ways in, ordered by effort:
    the exact layout the codebase reads.
 3. 100 personas with their raw backend logs for evaluation (`backend/{{persona_id}}/`):
    verbatim the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
-   download runs the benchmark unmodified:
+   download runs the benchmark unmodified.
+
+We release the data generation and evaluation code at
+[github.com/bowen-upenn/PersonaMem-v3](https://github.com/bowen-upenn/PersonaMem-v3).
+Importantly, to keep your evaluation causal, mask out every user engagement event
+on or after each user query: the data is annotated with timestamps, and the
+evaluation code already includes this masking by default.
 
 ```bash
 pip install huggingface_hub
