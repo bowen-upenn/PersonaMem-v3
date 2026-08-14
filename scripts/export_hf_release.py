@@ -1254,12 +1254,12 @@ Three ways in, ordered by effort:
    with its full timeline, inferred preference profile, and sample test cards:
    {trio_links}, or any `backend/{{persona_id}}/persona.html`. (HF serves raw files:
    open the link, save the page, open the saved file in your browser.)
-2. Preview tables (`samples/`, what the Dataset Viewer shows): two curated CSVs
-   documented column-by-column below, plus a one-row-per-persona profiles table.
-   These are samples for browsing, centered on
-   twenty showcase personas; the complete data lives in `backend/`.
-3. The complete dataset (`backend/{{persona_id}}/`, all 100 personas): verbatim
-   the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
+2. Preview tables (`samples/`, what the Dataset Viewer shows): three curated CSVs
+   documented column-by-column below: an engagement-history sample and a query
+   sample centered on twenty showcase personas, plus a one-row-per-persona
+   profiles table. These are samples for browsing; the full data lives in `backend/`.
+3. 100 personas with their raw backend logs for evaluation (`backend/{{persona_id}}/`):
+   verbatim the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
    download runs the benchmark unmodified:
 
 ```bash
