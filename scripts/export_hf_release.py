@@ -585,19 +585,14 @@ def _judge_prompt_for(tt: str, r: dict, inst: dict) -> str:
                                           inst.get("jitai_card") or {})
             return cap.prompt or ""
         if tt == "at_ai_directive_followup":
-            diag = eprompts.judge_at_ai_directive_prompt(
-                inst.get("directive_user_message") or "", inst.get("directive_action") or "",
-                [{"note": "{{the model's top-5 ranked candidates}}"}])
-            return ("HEADLINE IS DETERMINISTIC — graded NDCG@5 of the model's ranking vs "
-                    "the build-time match/carve-out labels (no judge in the score). "
-                    "Diagnostic judge prompt:\n\n" + diag)
+            return ("NO LLM JUDGE in the score — graded NDCG@5 of the model's ranking vs "
+                    "the build-time match/carve-out labels. A diagnostic judge exists for "
+                    "analysis only (evaluation/prompts.py::judge_at_ai_directive_prompt).")
         if tt in ("personalized_recommendation", "hidden_persona_recommendation"):
-            diag = eprompts.judge_slate_soft_correctness_prompt(
-                {"note": "{{the model's top-ranked slate item}}"}, dict(_SENT_EV),
-                "{{query context}}")
-            return ("HEADLINE IS DETERMINISTIC — graded NDCG@5 against held_out_idx + "
-                    "hard_negative_idxs from instance_full (no judge in the score). "
-                    "Diagnostic judge prompt:\n\n" + diag)
+            return ("NO LLM JUDGE in the score — graded NDCG@5 against held_out_idx + "
+                    "hard_negative_idxs from instance_full. A diagnostic soft-correctness "
+                    "judge exists for analysis only "
+                    "(evaluation/prompts.py::judge_slate_soft_correctness_prompt).")
         if tt == "short_vs_long_term_lifecycle":
             return ("NO LLM JUDGE — deterministic signed lifecycle score: rewards ranking "
                     "still-active preferences above expired short-term ones "
@@ -625,6 +620,43 @@ def _judge_prompt_for(tt: str, r: dict, inst: dict) -> str:
         return f"(judge prompt could not be rendered here: {exc})"
 
 
+def _cand_delta(cand_ts, ref_ts) -> str:
+    """Compact +3d / -5h delta of a candidate vs the test moment (as in persona.html)."""
+    try:
+        cts, rts = int(cand_ts or 0), int(ref_ts or 0)
+    except (TypeError, ValueError):
+        return ""
+    if not cts or not rts:
+        return ""
+    d = cts - rts
+    sign = "+" if d > 0 else ("-" if d < 0 else "")
+    a = abs(d)
+    for unit, sec in (("d", 86400), ("h", 3600), ("m", 60)):
+        if a >= sec:
+            return f"{sign}{a // sec}{unit}"
+    return "0" if d == 0 else f"{sign}{a}s"
+
+
+def _candidate_block(inst: dict, row_ts) -> str:
+    """Numbered ranking slate for the user_query cell — without it a reader
+    cannot tell what the ranking tasks are ranking."""
+    cands = inst.get("candidates")
+    if not (isinstance(cands, list) and cands and isinstance(cands[0], dict)):
+        return ""
+    ref_ts = inst.get("t_test") or inst.get("source_timestamp") or row_ts
+    lines = []
+    for i, c in enumerate(cands):
+        text = (c.get("title") or c.get("caption") or c.get("overall_description") or "").strip().replace("\n", " ")
+        if len(text) > 110:
+            text = text[:110].rsplit(" ", 1)[0] + "…"
+        tags = " ".join(str(t) for t in (c.get("hashtags") or [])[:5])
+        app = c.get("source_app") or ""
+        tag = _cand_delta(c.get("source_timestamp"), ref_ts)
+        bits = [b for b in (f"[{tag}]" if tag else "", app, text, f"({tags})" if tags else "") if b]
+        lines.append(f"{i}. " + " ".join(bits))
+    return "\n\nCandidates to rank (index. [age vs test moment] item):\n" + "\n".join(lines)
+
+
 def _render_inferior(v):
     """Readable cell: response text + injected flaw kind; internals (flaw_evidence,
     regen provenance) stay in backend test.json only."""
@@ -646,7 +678,8 @@ def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDic
     row["timestamp"] = _cell(r.get("ts"))
     row["datetime"] = _iso_utc(r.get("ts"))
     row["app"] = _query_app(r.get("task_type") or "", inst_for_cols)
-    row["user_query"] = _cell(r.get("user_query"))
+    row["user_query"] = _cell(r.get("user_query")) + _candidate_block(
+        inst_for_cols, r.get("timestamp"))
     # top-level prior_conversation is null on every row; the real mid-session
     # turns live inside instance_full — surface them so the column is useful.
     pc = r.get("prior_conversation") or (r.get("instance_full") or {}).get("prior_conversation")
@@ -733,7 +766,10 @@ def query_coverage_check(uid: str, r: dict, row: OrderedDict) -> list[str]:
     for col, key in [("query_id", "query_id"), ("task_type", "task_type"),
                      ("user_query", "user_query")]:
         want = r.get(key)
-        if want is not None and row[col] != str(want):
+        got = row[col]
+        if col == "user_query":
+            got = got.split("\n\nCandidates to rank", 1)[0]
+        if want is not None and got != str(want):
             problems.append(f"{uid}/{r.get('query_id')}: column {col!r} mismatch")
     for col in ("golden_response", "inferior_response", "groundtruth_preference"):
         want = r.get("example_response" if col == "golden_response" else col)
@@ -1366,7 +1402,7 @@ This CSV is the readable view; the machine-readable rows (including the exact
 | `what_this_tests` | Plain-English one-liner of what a correct system must do |
 | `timestamp` / `datetime` | The query's moment T; the evaluated system may only see history strictly before T |
 | `app` | The app the query anchors on (Chatbot for assistant tasks; the directive's / target's social app for `@ai` + agentic tasks; `Multi-app feed` for cross-app slates; empty for agent-level probes not tied to one app) |
-| `user_query` | The user's message. For proactive tasks this holds a bracketed scenario label for browsing; the harness constructs the actual proactive prompt from the row's full record |
+| `user_query` | The user's message. Ranking rows append the numbered candidate slate being ranked, each item time-tagged relative to the test moment (e.g. `[-2h]`), mirroring `persona.html`. For proactive tasks this holds a bracketed scenario label for browsing; the harness constructs the actual proactive prompt from the row's full record |
 | `prior_conversation` | JSON conversation turns preceding the query, for tasks that anchor mid-session |
 | `groundtruth_preference` | The preference(s) the answer must be grounded in. For voice-authoring agentic tasks this holds the user's voice spec instead |
 | `supporting_history` | Up to 2 pre-T history events evidencing the ground truth: engagements carrying the GT preference, the original `@ai` directive for directive-followup, or the user's own posts (voice evidence) for voice-authoring tasks. Empty where the task deliberately has no supporting evidence (restraint / sycophancy / hallucination probes) |
@@ -1379,6 +1415,35 @@ This CSV is the readable view; the machine-readable rows (including the exact
 | `judge_prompt` | The actual prompt the LLM judge receives for this task, rendered from the live judge code with this row's build-time values; `{{{{...}}}}` placeholders mark evaluation-time-only parts (the model's response, assembled evidence). For deterministically scored tasks it states the exact metric instead; those rows use no judge |
 | `tool_call` | Expected tool/action payload for agentic tasks (JSON) |
 | `source_file` | `backend/{{persona_id}}/test.json`, the persona's complete query records |
+
+How the recommendation slates work: ranking rows (`personalized_recommendation`,
+`hidden_persona_recommendation`, `at_ai_directive_followup`,
+`short_vs_long_term_lifecycle`) embed the candidate pool being ranked directly in
+`user_query`. Each candidate carries a time tag relative to the test moment:
+`[-2h]` means the item comes from two hours before the test, `[+30m]` from shortly
+after. The pool mixes candidate types on purpose: one held-out positive (content
+this user genuinely engages with right after the test moment), hard negatives
+(topically similar items the user disliked or scrolled past), and neutral fillers,
+so a system that truly knows the user beats surface-level topic matching. The
+answer-key indexes (`held_out_idx`, `hard_negative_idxs`) live in
+`backend/{{persona_id}}/test.json`.
+
+What each `flaw_kind` in `inferior_response` means (the one deliberate mistake
+injected into the contrast response):
+
+| Flaw kind | The injected mistake |
+|---|---|
+| `ranking_inversion` | The correct slate order, deliberately inverted (best items buried) |
+| `missed_personalization` | Generic advice that ignores what the user's history clearly shows |
+| `over_personalization` | Drags personal details into an answer that should have stayed generic |
+| `voice_mismatch` | Right content, wrong tone: does not sound like this user or fit the target app |
+| `factual_error` | A detail the history contradicts (wrong sender, wrong count, wrong item) |
+| `restraint_violation` | Brings up something the system should have stayed quiet about |
+| `saturated_repetition` | Recommends the same over-served interest yet again |
+| `disliked_recent` | Pushes a topic the user just disliked |
+| `stale_geo_anchor` | Still anchored to the user's previous city after they have moved |
+| `missed_mistake` | Fails to warn when the user is about to act against their own plans |
+| `false_alarm` | Warns when nothing is actually wrong |
 
 ## Preview table 3: `persona_profiles.csv`
 
