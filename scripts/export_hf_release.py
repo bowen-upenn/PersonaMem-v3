@@ -625,6 +625,16 @@ def _judge_prompt_for(tt: str, r: dict, inst: dict) -> str:
         return f"(judge prompt could not be rendered here: {exc})"
 
 
+def _render_inferior(v):
+    """Readable cell: response text + injected flaw kind; internals (flaw_evidence,
+    regen provenance) stay in backend test.json only."""
+    if isinstance(v, dict):
+        txt = (v.get("text") or "").strip()
+        fk = (v.get("flaw_kind") or "").strip() if isinstance(v.get("flaw_kind"), str) else ""
+        return (txt + (f"\n\n(flaw_kind: {fk})" if fk else "")) if txt else ""
+    return "" if v is None else v if isinstance(v, str) else _jdump(v)
+
+
 def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDict:
     row = OrderedDict()
     row["persona_id"] = uid
@@ -648,7 +658,7 @@ def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDic
                      ("rubrics", "rubric_tags"),
                      ("tool_call", "tool_call")]:
         v = r.get(key)
-        row[col] = _jdump(v) if v not in (None, [], {}) else ""
+        row[col] = _jdump(v) if v not in (None, "", [], {}) else ""
     def _text_or_json(v):
         if v is None:
             return ""
@@ -710,7 +720,7 @@ def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDic
                 support = "voice evidence — " + " | ".join(posts[-2:])
     row["supporting_history"] = support
     row["golden_response"] = _text_or_json(r.get("example_response"))
-    row["inferior_response"] = _text_or_json(r.get("inferior_response"))
+    row["inferior_response"] = _render_inferior(r.get("inferior_response"))
 
     row["judge_prompt"] = _judge_prompt_for(r.get("task_type") or "", r, inst_for_cols)
     row["source_file"] = f"backend/{uid}/test.json"
@@ -728,6 +738,10 @@ def query_coverage_check(uid: str, r: dict, row: OrderedDict) -> list[str]:
     for col in ("golden_response", "inferior_response", "groundtruth_preference"):
         want = r.get("example_response" if col == "golden_response" else col)
         if want is None:
+            continue
+        if col == "inferior_response":
+            if row[col] != _render_inferior(want):
+                problems.append(f"{uid}/{r.get('query_id')}: column {col!r} drifted")
             continue
         got = row[col] if isinstance(want, str) else json.loads(row[col])
         if got != want:
@@ -1359,8 +1373,8 @@ This CSV is the readable view; the machine-readable rows (including the exact
 | `groundtruth_preference_obj` | The full GT preference object (JSON) |
 | `distractor_preferences` | Plausible-but-wrong preferences a shallow system confuses (JSON) |
 | `golden_response` | The gold response: what a well-personalized system should say or do |
-| `inferior_response` | Contrast response: plausible but misses the axis under test (`text` + the injected `flaw_kind`). Empty on judge-scored tasks, which have no canned inferior by design |
-| `reference_example` | Auxiliary reference material for some task types (JSON) |
+| `inferior_response` | Contrast response: plausible but deliberately misses the axis under test. The last line names the injected flaw, e.g. `(flaw_kind: missed_personalization)`; scorer-side flaw details stay in `backend/{{persona_id}}/test.json`. Empty on judge-scored tasks, which have no canned inferior by design |
+| `reference_example` | Only on `chatbot_personalized_response` rows: the source feed item the chat session is anchored to (source app, hashtags, content snippet), as JSON. Empty elsewhere |
 | `rubrics` | Human-readable summary of the row's scoring contract |
 | `judge_prompt` | The actual prompt the LLM judge receives for this task, rendered from the live judge code with this row's build-time values; `{{{{...}}}}` placeholders mark evaluation-time-only parts (the model's response, assembled evidence). For deterministically scored tasks it states the exact metric instead; those rows use no judge |
 | `tool_call` | Expected tool/action payload for agentic tasks (JSON) |
