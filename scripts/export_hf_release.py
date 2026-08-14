@@ -361,6 +361,58 @@ _QUERY_CONSUMED = {
 }
 
 
+PROFILE_COLUMNS = [
+    "persona_id", "persona_html", "name", "gender", "race_ethnicity", "career",
+    "education", "mbti", "big_five", "bio", "voice_style", "ai_companion",
+    "top_interests", "n_interests", "hidden_persona_glimpse", "mobility",
+    "n_events", "n_queries", "source_file",
+]
+
+
+def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> OrderedDict:
+    prof = json.loads((REPO_ROOT / "backend" / uid / "profile.json").read_text())
+    asp = prof.get("ai_studio_persona") or {}
+    uv = prof.get("user_voice") or {}
+    mbti = prof.get("mbti")
+    mbti_type = (mbti.get("type") if isinstance(mbti, dict) else mbti) or ""
+    bf = prof.get("big_five") or {}
+    big_five = "; ".join(f"{k} {v}" for k, v in bf.items()) if isinstance(bf, dict) else str(bf)
+    comp = ""
+    if asp.get("character_name"):
+        arch = (asp.get("persona_archetype") or "").replace("_", " ")
+        comp = f"{asp['character_name']} ({arch})" if arch else asp["character_name"]
+    top = [pi for pi, _ in pref_counts.most_common(5)]
+    trips = len(prof.get("geo_trip_arcs") or [])
+    mob = prof.get("mobility_class") or ""
+    if mob and trips:
+        mob = f"{mob}, {trips} trip" + ("s" if trips > 1 else "")
+    glimpse = (prof.get("hidden_persona_summary") or "").strip()
+    if len(glimpse) > 300:
+        cut = glimpse[:300]
+        glimpse = cut[:cut.rfind(" ")] + " ..."
+    row = OrderedDict()
+    row["persona_id"] = uid
+    row["persona_html"] = f"{HF_RESOLVE}/backend/{uid}/persona.html?download=true"
+    row["name"] = prof.get("name") or ""
+    row["gender"] = prof.get("gender") or ""
+    row["race_ethnicity"] = prof.get("race_ethnicity") or ""
+    row["career"] = prof.get("career") or ""
+    row["education"] = prof.get("education") or ""
+    row["mbti"] = mbti_type
+    row["big_five"] = big_five
+    row["bio"] = prof.get("bio") or ""
+    row["voice_style"] = uv.get("natural_register") or ""
+    row["ai_companion"] = comp
+    row["top_interests"] = "; ".join(top)
+    row["n_interests"] = str(len(prof.get("preferences") or []))
+    row["hidden_persona_glimpse"] = glimpse
+    row["mobility"] = mob
+    row["n_events"] = str(n_events)
+    row["n_queries"] = str(n_queries)
+    row["source_file"] = f"backend/{uid}/profile.json"
+    return row
+
+
 _CHATBOT_TASKS = {
     "chatbot_personalized_response", "over_personalization_chatbot_text",
     "over_personalization_context_shift", "over_personalization_sensitive_event",
@@ -815,9 +867,12 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                   "chatbot": 14, "ai_studio": 12}
     agg_rows: list[OrderedDict] = []
     supp_by_uid: dict[str, dict] = {}
+    pref_counts_by_uid: dict[str, Counter] = {}
+    events_by_uid: dict[str, int] = {}
     for uid in USERS:
         events_by_app = {}
         supp = supp_by_uid.setdefault(uid, {})
+        pref_counts_by_uid[uid] = Counter()
         for app in APPS:
             evs = json.loads((out / "backend" / uid / f"{app}.json").read_text())
             events_by_app[app] = evs
@@ -830,6 +885,7 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                 txt = f"[{row['datetime']} · {row['app']}] {row['event_summary']}"
                 items = [pf.get("persona_item") for pf in (e.get("preferences") or [])
                          if pf.get("persona_item")]
+                pref_counts_by_uid[uid].update(items)
                 for pi in items:
                     supp.setdefault("by_item", {}).setdefault(
                         pi.strip().lower(), []).append((ts_e, txt))
@@ -843,6 +899,7 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                 if isinstance(act, str) and act.startswith("at_ai") and um:
                     supp.setdefault("at_ai", []).append(
                         (ts_e, um.strip().lower()[:80], txt))
+        events_by_uid[uid] = sum(len(v) for v in events_by_app.values())
         if uid in SHOWCASE:
             for app, evs in events_by_app.items():
                 chosen = sample_history({app: evs}, per_app_pp[app])[app]
@@ -877,6 +934,12 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     q_sample = sample_queries(all_q)
     write_csv(samples / "persona_queries.csv", QUERY_COLUMNS,
               [flatten_query(uid, r, supp_by_uid.get(uid)) for uid, r in q_sample])
+    n_queries_by_uid = Counter(uid for uid, _ in all_q)
+    prof_rows = [build_profile_row(uid, pref_counts_by_uid.get(uid) or Counter(),
+                                   events_by_uid.get(uid, 0), n_queries_by_uid.get(uid, 0))
+                 for uid in RANKED]
+    write_csv(samples / "persona_profiles.csv", PROFILE_COLUMNS, prof_rows)
+    stats["sample_profiles"] = len(prof_rows)
     stats["sample_queries"] = len(q_sample)
     stats["n_queries"] = len(all_q)
     stats["n_events"] = sum(stats["events_per_app"].values())
@@ -954,6 +1017,10 @@ configs:
   data_files:
   - split: sample
     path: samples/persona_queries.csv
+- config_name: persona_profiles
+  data_files:
+  - split: sample
+    path: samples/persona_profiles.csv
 ---
 """
 
@@ -1120,7 +1187,8 @@ Three ways in, ordered by effort:
    {trio_links}, or any `backend/{{persona_id}}/persona.html`. (HF serves raw files:
    open the link, save the page, open the saved file in your browser.)
 2. Preview tables (`samples/`, what the Dataset Viewer shows): two curated CSVs
-   documented column-by-column below. These are samples for browsing, centered on
+   documented column-by-column below, plus a one-row-per-persona profiles table.
+   These are samples for browsing, centered on
    twenty showcase personas; the complete data lives in `backend/`.
 3. The complete dataset (`backend/{{persona_id}}/`, all 100 personas): verbatim
    the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
@@ -1203,6 +1271,33 @@ harness executes) live in `backend/{{persona_id}}/test.json`.
 | `tool_call` | Expected tool/action payload for agentic tasks (JSON) |
 | `source_file` | `backend/{{persona_id}}/test.json`, the persona's complete query records |
 
+## Preview table 3: `persona_profiles.csv`
+
+One row = one of the 100 personas, ordered best-first by the same quality
+ranking as the other previews. Empty cells mean the field does not apply.
+
+| Column | What it contains |
+|---|---|
+| `persona_id` | Persona identifier (= the `backend/{{persona_id}}/` folder name) |
+| `persona_html` | Link to this persona's one-page browsable view (save the file and open locally) |
+| `name` | The persona's full name |
+| `gender` | Gender identity and sexual orientation |
+| `race_ethnicity` | Race / ethnicity |
+| `career` | Occupation, one line |
+| `education` | Highest education |
+| `mbti` | MBTI type inferred from the persona's behavior |
+| `big_five` | Big-Five trait levels (openness; conscientiousness; extraversion; agreeableness; neuroticism) |
+| `bio` | The persona's short biography |
+| `voice_style` | The persona's natural writing register, one line |
+| `ai_companion` | Their AI-Studio companion character: name (archetype) |
+| `top_interests` | The five preferences with the most engagement events, plain text |
+| `n_interests` | Total canonical preferences in the profile |
+| `hidden_persona_glimpse` | Opening of the hidden-persona summary (deeper motivations; full text in `profile.json`) |
+| `mobility` | Mobility class and trip count (e.g. `domestic, 1 trip`) |
+| `n_events` | Total engagement events across the five apps |
+| `n_queries` | Benchmark queries for this persona |
+| `source_file` | `backend/{{persona_id}}/profile.json`, the complete ground-truth profile |
+
 ## The complete data: `backend/{{persona_id}}/`
 
 | File | Contents |
@@ -1272,7 +1367,7 @@ def validate(out: Path, stats: dict) -> list[str]:
             if not (out / "backend" / uid / f).exists():
                 problems.append(f"staged file missing: backend/{uid}/{f}")
     # CSVs parse + row counts + all task types present
-    for name in ["persona_context", "persona_queries"]:
+    for name in ["persona_context", "persona_queries", "persona_profiles"]:
         p = out / "samples" / f"{name}.csv"
         with p.open(newline="", encoding="utf-8") as f:
             rows = list(csv.DictReader(f))
