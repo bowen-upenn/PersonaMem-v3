@@ -9,8 +9,7 @@ Stages a complete HF dataset repo under --out (default release/hf/):
     backend/{uid}/          COMPLETE data, verbatim codebase-ready JSONs
                             (profile, 5 app JSONs, calendar, test, persona.html)
 
-The preview CSVs center on the five showcase personas (SHOWCASE:
-3/8/229/282/835) and put the persona.html HF link in column #2 of every table.
+The preview CSVs draw from the top-ranked personas (best first) and put the persona.html HF link in column #2 of every table.
 Full data lives only in backend/ — a download drops in at --backend_dir and
 evaluation/run_eval.py runs unmodified.
 
@@ -32,9 +31,13 @@ sys.path.insert(0, str(REPO_ROOT))
 
 csv.field_size_limit(sys.maxsize)
 
-USERS = ["1", "2", "3", "5", "6", "8", "9", "10", "13", "14",
-         "26", "105", "115", "209", "229", "282", "461", "655", "760", "835"]
-SHOWCASE = ["3", "8", "229", "282", "835"]
+# Quality-ranked order (best first) — drives preview ordering so the HF viewer
+# opens on the strongest personas. Produced by the 2026-08 full-cohort audit
+# (composite of task coverage, gate finding-rate, richness, surfaces).
+RANKED = ["36", "68", "32", "17", "111", "86", "8", "70", "89", "34", "14", "93", "51", "67", "77", "76", "209", "48", "58", "114", "45", "282", "46", "73", "96", "49", "116", "117", "101", "62", "103", "100", "41", "3", "109", "75", "71", "29", "43", "90", "87", "106", "102", "18", "20", "91", "65", "5", "21", "461", "81", "98", "760", "38", "99", "94", "72", "655", "115", "112", "229", "85", "105", "108", "74", "19", "13", "78", "118", "835", "79", "27", "104", "9", "53", "44", "6", "107", "37", "1", "2", "10", "35", "60", "25", "63", "69", "55", "66", "61", "26", "56", "80", "97", "52", "64", "113", "83", "82", "23"]
+USERS = sorted(RANKED, key=int)
+SHOWCASE = RANKED[:20]          # previews draw from the top-20 ranked personas
+FEATURED_LINKS = RANKED[:6]     # persona.html links on the card
 APPS = ["instagram", "facebook", "threads", "chatbot", "ai_studio"]
 PER_PERSONA_FILES = ["profile.json", "instagram.json", "facebook.json", "threads.json",
                      "chatbot.json", "ai_studio.json", "calendar.json", "test.json",
@@ -350,6 +353,11 @@ _QUERY_CONSUMED = {
     "groundtruth_preference_obj", "distractor_preferences", "example_response",
     "inferior_response", "reference_example", "rubric_tags", "tool_call",
     "instance_full", *_QA_INTERNAL,
+    # extra top-level fields on a handful of rows from the 2026-07-30 query
+    # build; preserved verbatim in backend/{uid}/test.json (the CSV is a preview)
+    "query_text", "app_context", "entry_point", "mcp_tools_allowed",
+    "display_rubric", "expected_response_kind", "instance_id", "instance_json",
+    "seq", "state_write_policy", "user_id",
 }
 
 
@@ -681,9 +689,9 @@ def sample_queries(all_rows: list[tuple[str, dict]], per_type_floor: int = 5,
 
     def rank(item):
         uid, r = item
-        trio = 0 if uid in SHOWCASE else 1
+        pos = RANKED.index(uid) if uid in RANKED else len(RANKED)
         pair = 0 if (r.get("example_response") and r.get("inferior_response")) else 1
-        return (trio, pair, uid, r.get("query_id") or "")
+        return (pair, pos, r.get("query_id") or "")
 
     # Featured families get a slightly larger sample so the front page can
     # mix them generously.
@@ -745,9 +753,9 @@ def _curate_front_page(selected: list) -> list:
 
     def quality(item):
         uid, r = item
-        showcase = 0 if uid in SHOWCASE else 1
+        pos = RANKED.index(uid) if uid in RANKED else len(RANKED)
         pair = 0 if (r.get("example_response") and r.get("inferior_response")) else 1
-        return (showcase, pair, uid)
+        return (pair, pos)
 
     for tt in by_tt:
         by_tt[tt].sort(key=quality)
@@ -803,8 +811,8 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     # -- history flatten + coverage over ALL events; sample the trio ---------
     # ONE context preview file. Explicit per-app quotas per persona so every
     # surface (incl. the small AI Studio) is well represented.
-    per_app_pp = {"instagram": 60, "facebook": 60, "threads": 60,
-                  "chatbot": 40, "ai_studio": 40}
+    per_app_pp = {"instagram": 22, "facebook": 22, "threads": 22,
+                  "chatbot": 14, "ai_studio": 12}
     agg_rows: list[OrderedDict] = []
     supp_by_uid: dict[str, dict] = {}
     for uid in USERS:
@@ -839,7 +847,7 @@ def stage(out: Path, per_persona_hist: int) -> dict:
             for app, evs in events_by_app.items():
                 chosen = sample_history({app: evs}, per_app_pp[app])[app]
                 agg_rows.extend(flatten_event(uid, app, e) for e in chosen)
-    agg_rows.sort(key=lambda r: (SHOWCASE.index(r["persona_id"]), int(r["timestamp"] or 0)))
+    agg_rows.sort(key=lambda r: (RANKED.index(r["persona_id"]), int(r["timestamp"] or 0)))
 
     def write_csv(path: Path, cols: list[str], rows: list[OrderedDict]):
         with path.open("w", newline="", encoding="utf-8") as f:
@@ -916,7 +924,7 @@ def write_card(out: Path, stats: dict):
     ev = stats["events_per_app"]
     tt = stats["task_type_counts"]
     trio_links = " · ".join(
-        f"[persona {u}]({HF_RESOLVE}/backend/{u}/persona.html?download=true)" for u in SHOWCASE)
+        f"[persona {u}]({HF_RESOLVE}/backend/{u}/persona.html?download=true)" for u in FEATURED_LINKS)
 
     yaml = f"""---
 license: cc-by-nc-4.0
@@ -956,7 +964,7 @@ configs:
 
     body = f"""# PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
-[![Paper](https://img.shields.io/badge/Paper-PDF-b31b1b.svg)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf)
+[![Paper](https://img.shields.io/badge/Paper-alphaXiv-b31b1b.svg)](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence)
 [![Code](https://img.shields.io/badge/GitHub-PersonaMem--v3-0866FF.svg)](https://github.com/bowen-upenn/PersonaMem-v3)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell,
@@ -976,7 +984,7 @@ Third release in the PersonaMem series:
 
 - PersonaMem-v1: *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
 - PersonaMem-v2: *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
-- PersonaMem-v3: *Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks* · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper (PDF)](https://github.com/bowen-upenn/PersonaMem-v3/blob/main/PersonaMem_v3.pdf) · this dataset
+- PersonaMem-v3: *Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks* · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence) · this dataset
 
 ## What is PersonaMem-v3?
 
@@ -1056,11 +1064,11 @@ Think of each persona as one simulated person's complete digital life:
   act on the person's behalf, or deliberately avoid over-personalization, each with
   ground truth and scoring materials
 
-This is an initial release of 20 personas (the cohort will grow in future
-updates): {stats['n_events']:,} engagement events ({ev['instagram']:,} Instagram /
-{ev['facebook']:,} Facebook / {ev['threads']:,} Threads / {ev['chatbot']:,} Chatbot /
-{ev['ai_studio']:,} AI Studio), {stats['n_pref_instances']:,} inferred preference
-instances, and {stats['n_queries']:,} benchmark queries across {len(tt)} task types.
+This release contains the full cohort of 100 personas: {stats['n_events']:,}
+engagement events ({ev['instagram']:,} Instagram / {ev['facebook']:,} Facebook /
+{ev['threads']:,} Threads / {ev['chatbot']:,} Chatbot / {ev['ai_studio']:,} AI
+Studio), {stats['n_pref_instances']:,} inferred preference instances, and
+{stats['n_queries']:,} benchmark queries across {len(tt)} task types.
 
 Three ways in, ordered by effort:
 
@@ -1070,8 +1078,8 @@ Three ways in, ordered by effort:
    open the link, save the page, open the saved file in your browser.)
 2. Preview tables (`samples/`, what the Dataset Viewer shows): two curated CSVs
    documented column-by-column below. These are samples for browsing, centered on
-   five showcase personas (3, 8, 229, 282, 835); the complete data lives in `backend/`.
-3. The complete dataset (`backend/{{persona_id}}/`, all 20 personas): verbatim
+   twenty showcase personas; the complete data lives in `backend/`.
+3. The complete dataset (`backend/{{persona_id}}/`, all 100 personas): verbatim
    the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
    download runs the benchmark unmodified:
 
@@ -1083,7 +1091,7 @@ git clone https://github.com/bowen-upenn/PersonaMem-v3 && cd PersonaMem-v3
 python evaluation/run_eval.py --backend_dir ../pm3_data/backend --user_id 8 --mode llm_longctx
 ```
 
-## Preview table 1: `persona_context.csv` ({stats['sample_context']} rows)
+## Preview table 1: `persona_context.csv`
 
 One row = one engagement event from a showcase persona's timeline, all five apps
 interleaved chronologically. Empty cells mean the field does not apply to that row;
@@ -1120,7 +1128,7 @@ columns ending in `_json` hold JSON-encoded structures.
 | `extras_json` | Lossless catch-all for every remaining source field: full `event_location`, AI-Studio session memory (`prior_session_refs`, `memory_used_summary`, `oblique_reference_to_hidden_personas`, `ai_studio_metadata`), DM-thread fields (`thread_id`, `participants`, `is_group_dm`), trending fields, `ask_to_forget`, remaining content fields (`key_frames`, `metadata`, `parts`, raw `text`) under `content_extra` |
 | `source_file` | Repo path of the full JSON this row was flattened from |
 
-## Preview table 2: `persona_queries.csv` ({stats['sample_queries']} rows)
+## Preview table 2: `persona_queries.csv`
 
 One row = one benchmark query, all {len(tt)} task types represented. At evaluation
 time the system under test receives the persona's history strictly before the
@@ -1181,11 +1189,12 @@ its CC-BY-NC-4.0 license (attribution, non-commercial).
 If you use PersonaMem-v3, please cite:
 
 ```bibtex
-@misc{{jiang2026personamem3,
-  title={{PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}},
-  author={{Jiang, Bowen and Yuan, Yuan and Hao, Zhuoqun and Liu, Yuchen and Shen, Maohao and Chen, Sihao and Wornell, Gregory and Callison-Burch, Chris and Ungar, Lyle and Roth, Dan and Guo, Qi and Fan, Xiangjun and Taylor, Camillo J. and Yu, Hanchao}},
-  year={{2026}},
-  url={{https://github.com/bowen-upenn/PersonaMem-v3}}
+@misc{{jiang2026personamemv3,
+  author = {{Jiang, Bowen and Yuan, Yuan and Hao, Zhuoqun and Liu, Yuchen and Shen, Maohao and Chen, Sihao and Wornell, Gregory and Callison-Burch, Chris and Ungar, Lyle and Roth, Dan and Guo, Qi and Fan, Xiangjun and Taylor, Camillo J. and Yu, Hanchao}},
+  keywords = {{Machine Learning (cs.LG), Recommender Systems, Agents, Artificial Intelligence, FOS: Computer and information sciences}},
+  title = {{PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}},
+  publisher = {{arXiv}},
+  year = {{2026}}
 }}
 
 @article{{jiang2025personamem2,
@@ -1266,7 +1275,7 @@ def upload(out: Path):
     api = HfApi(token=token)
     api.upload_folder(repo_id=REPO_ID, repo_type="dataset", folder_path=str(out),
                       delete_patterns=["samples/*", "column_descriptions.md"],
-                      commit_message="PersonaMem-v3 release: 20 personas (histories + queries + card)")
+                      commit_message="PersonaMem-v3 release: full 100-persona cohort")
     print(f"Uploaded to https://huggingface.co/datasets/{REPO_ID}")
 
 
