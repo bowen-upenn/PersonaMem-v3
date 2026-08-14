@@ -651,10 +651,45 @@ def _candidate_block(inst: dict, row_ts) -> str:
             text = text[:110].rsplit(" ", 1)[0] + "…"
         tags = " ".join(str(t) for t in (c.get("hashtags") or [])[:5])
         app = c.get("source_app") or ""
-        tag = _cand_delta(c.get("source_timestamp"), ref_ts)
-        bits = [b for b in (f"[{tag}]" if tag else "", app, text, f"({tags})" if tags else "") if b]
+        bits = [b for b in (app, text, f"({tags})" if tags else "") if b]
         lines.append(f"{i}. " + " ".join(bits))
-    return "\n\nCandidates to rank (index. [age vs test moment] item):\n" + "\n".join(lines)
+    return "\n\nCandidates to rank:\n" + "\n".join(lines)
+
+
+def _slate_key(inst: dict, row_ts) -> str:
+    """Scorer-side answer key for slate tasks: which index is what, with each
+    candidate's age tag relative to the test moment. Kept OUT of user_query,
+    where a future-age tag would leak the held-out ground truth."""
+    cands = inst.get("candidates")
+    if not (isinstance(cands, list) and cands and isinstance(cands[0], dict)):
+        return ""
+    ref_ts = inst.get("t_test") or inst.get("source_timestamp") or row_ts
+
+    def tagged(idxs):
+        out = []
+        for i in idxs:
+            if isinstance(i, int) and 0 <= i < len(cands):
+                d = _cand_delta(cands[i].get("source_timestamp"), ref_ts)
+                out.append(f"idx {i}" + (f" [{d}]" if d else ""))
+        return ", ".join(out)
+
+    parts = []
+    hoi = inst.get("held_out_idx")
+    if isinstance(hoi, int):
+        parts.append(f"held-out positive = {tagged([hoi])}")
+    hn = inst.get("hard_negative_idxs")
+    if isinstance(hn, list) and hn:
+        parts.append(f"hard negatives = {tagged(hn)}")
+    for key, label in (("positive_indices", "directive matches"),
+                       ("carveout_indices", "carve-outs"),
+                       ("matching_indices", "still-active matches")):
+        v = inst.get(key)
+        if isinstance(v, list) and v:
+            parts.append(f"{label} = {tagged(v)}")
+    if not parts:
+        return ""
+    return ("\n\nSlate key (scorer-side; ages are relative to the test moment): "
+            + "; ".join(parts) + "; remaining indexes are neutral fillers.")
 
 
 def _render_inferior(v):
@@ -696,7 +731,8 @@ def flatten_query(uid: str, r: dict, supp_idx: dict | None = None) -> OrderedDic
         if v is None:
             return ""
         return v if isinstance(v, str) else _jdump(v)  # ranking payloads are dicts
-    row["groundtruth_preference"] = _text_or_json(r.get("groundtruth_preference"))
+    row["groundtruth_preference"] = _text_or_json(r.get("groundtruth_preference")) \
+        + _slate_key(inst_for_cols, r.get("timestamp"))
     # supporting history: up to 2 pre-T events whose inferred preferences carry
     # the GT persona_item — the evidence a correct system would have used.
     support = ""
@@ -779,7 +815,10 @@ def query_coverage_check(uid: str, r: dict, row: OrderedDict) -> list[str]:
             if row[col] != _render_inferior(want):
                 problems.append(f"{uid}/{r.get('query_id')}: column {col!r} drifted")
             continue
-        got = row[col] if isinstance(want, str) else json.loads(row[col])
+        cell = row[col]
+        if col == "groundtruth_preference":
+            cell = cell.split("\n\nSlate key (scorer-side", 1)[0]
+        got = cell if isinstance(want, str) else json.loads(cell)
         if got != want:
             problems.append(f"{uid}/{r.get('query_id')}: column {col!r} drifted")
     return problems
@@ -1402,7 +1441,7 @@ This CSV is the readable view; the machine-readable rows (including the exact
 | `what_this_tests` | Plain-English one-liner of what a correct system must do |
 | `timestamp` / `datetime` | The query's moment T; the evaluated system may only see history strictly before T |
 | `app` | The app the query anchors on (Chatbot for assistant tasks; the directive's / target's social app for `@ai` + agentic tasks; `Multi-app feed` for cross-app slates; empty for agent-level probes not tied to one app) |
-| `user_query` | The user's message. Ranking rows append the numbered candidate slate being ranked, each item time-tagged relative to the test moment (e.g. `[-2h]`), mirroring `persona.html`. For proactive tasks this holds a bracketed scenario label for browsing; the harness constructs the actual proactive prompt from the row's full record |
+| `user_query` | The user's message. Ranking rows append the numbered candidate slate being ranked, exactly as the evaluated system sees it (no timestamps: a candidate's age would leak the held-out answer). For proactive tasks this holds a bracketed scenario label for browsing; the harness constructs the actual proactive prompt from the row's full record |
 | `prior_conversation` | JSON conversation turns preceding the query, for tasks that anchor mid-session |
 | `groundtruth_preference` | The preference(s) the answer must be grounded in. For voice-authoring agentic tasks this holds the user's voice spec instead |
 | `supporting_history` | Up to 2 pre-T history events evidencing the ground truth: engagements carrying the GT preference, the original `@ai` directive for directive-followup, or the user's own posts (voice evidence) for voice-authoring tasks. Empty where the task deliberately has no supporting evidence (restraint / sycophancy / hallucination probes) |
@@ -1419,14 +1458,15 @@ This CSV is the readable view; the machine-readable rows (including the exact
 How the recommendation slates work: ranking rows (`personalized_recommendation`,
 `hidden_persona_recommendation`, `at_ai_directive_followup`,
 `short_vs_long_term_lifecycle`) embed the candidate pool being ranked directly in
-`user_query`. Each candidate carries a time tag relative to the test moment:
-`[-2h]` means the item comes from two hours before the test, `[+30m]` from shortly
-after. The pool mixes candidate types on purpose: one held-out positive (content
-this user genuinely engages with right after the test moment), hard negatives
-(topically similar items the user disliked or scrolled past), and neutral fillers,
-so a system that truly knows the user beats surface-level topic matching. The
-answer-key indexes (`held_out_idx`, `hard_negative_idxs`) live in
-`backend/{{persona_id}}/test.json`.
+`user_query`, exactly as the evaluated system sees it. The pool mixes candidate
+types on purpose: one held-out positive (content this user genuinely engages with
+right after the test moment), hard negatives (topically similar items the user
+disliked or scrolled past), and neutral fillers, so a system that truly knows the
+user beats surface-level topic matching. Which index is which, plus each
+candidate's age relative to the test moment (`[-2h]` = engaged two hours before,
+`[+30m]` = shortly after), appears only in the scorer-side slate key appended to
+`groundtruth_preference` — never in `user_query`, where a future-age tag would
+give the answer away.
 
 What each `flaw_kind` in `inferior_response` means (the one deliberate mistake
 injected into the contrast response):
