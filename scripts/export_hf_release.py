@@ -1357,9 +1357,9 @@ ranking as the other previews. Empty cells mean the field does not apply.
 | `big_five` | Big-Five trait levels (openness; conscientiousness; extraversion; agreeableness; neuroticism) |
 | `bio` | The persona's short biography |
 | `voice_style` | The persona's natural writing register, one line |
-| `layer1_identity_spine` | Voice Layer 1, the identity spine (McAdams narrative identity): agency/communion stance plus signature concerns; stable, never modulates |
-| `layer2_idiolect` | Voice Layer 2, the idiolect (stylometry): function-word profile and hedge/booster balance; survives paraphrase |
-| `layer3_indexical_repertoire` | Voice Layer 3, the indexical repertoire (Bakhtin/Goffman): the stances, registers, and speech genres this persona can deploy |
+| `layer1_identity_spine` | Voice Layer 1: who this person is at their core. What drives them and the handful of things they consistently care about; it stays the same no matter where or to whom they are writing (narrative identity, McAdams 1993) |
+| `layer2_idiolect` | Voice Layer 2: how this person builds sentences. Their habitual small words, sentence shapes, and how much they hedge vs. state things flatly; these habits persist even when the topic changes (stylometric idiolect research) |
+| `layer3_indexical_repertoire` | Voice Layer 3: the range of tones this person can switch between. The stances, registers, and kinds of messages they know how to write, from which each app draws a subset (speech genres, Bakhtin 1986; self-presentation, Goffman 1959) |
 | `voice_avoid` | The negatives axis: tones and literal phrases that would feel off-brand for this persona |
 | `per_app_personas` | How the same person presents on each app (per-app use purposes), `App: purpose | App: purpose` |
 | `meta_ai_companion_character` | Their AI-Studio companion character: name (archetype) |
