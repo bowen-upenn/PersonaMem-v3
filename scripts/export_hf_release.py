@@ -1365,19 +1365,19 @@ ranking as the other previews. Empty cells mean the field does not apply.
 | `meta_ai_companion_character` | Their AI-Studio companion character: name (archetype) |
 | `top_interests` | The five preferences with the most engagement events, plain text |
 | `n_interests` | Total canonical preferences in the profile |
-| `hidden_persona_glimpse` | Opening of the hidden-persona summary (deeper motivations; full text in `profile.json`) |
-| `aspiration` | Hidden persona of type aspiration: label plus inferred motivation (empty when this persona has none) |
-| `identity_anchor` | Hidden persona of type identity anchor: label plus inferred motivation |
-| `compensatory_need` | Hidden persona of type compensatory need: label plus inferred motivation |
-| `covert_concern` | Hidden persona of type covert concern: label plus inferred motivation |
-| `parasocial_attachment` | Hidden persona of type parasocial attachment: label plus inferred motivation |
-| `sensitive_life_event` | The synthetic sensitive-life-event episode: label plus inferred motivation (scorer-side ground truth for restraint tasks) |
-| `private_hobby` | Hidden persona of type private hobby: label plus inferred motivation |
-| `emotional_pattern` | Hidden persona of type emotional pattern: label plus inferred motivation |
-| `intimate_interest` | Hidden persona of type intimate interest: label plus inferred motivation |
-| `personality_trait` | Hidden persona of type personality trait: label plus inferred motivation |
-| `intellectual_curiosity` | Hidden persona of type intellectual curiosity: label plus inferred motivation |
-| `mobility` | Mobility class and trip count (e.g. `domestic, 1 trip`) |
+| `hidden_persona_glimpse` | A short summary of what quietly drives this person beneath their visible interests (the full write-up is in `profile.json`). The eleven columns below break these deeper layers out one by one; each cell gives the layer plus a short "why", and is empty when this persona does not have that layer |
+| `aspiration` | Something this person quietly hopes to become or achieve, inferred from their behavior rather than stated anywhere |
+| `identity_anchor` | A community or identity they privately feel they belong to, which grounds who they are |
+| `compensatory_need` | Something missing in their daily life that their scrolling quietly tries to make up for |
+| `covert_concern` | A private worry they never post about directly, but that shows through what they engage with |
+| `parasocial_attachment` | A one-sided emotional bond with a creator, celebrity, or fictional character they follow |
+| `sensitive_life_event` | A hard thing currently happening in their life, such as a health issue or a loss. Synthetic, and used to test whether a system knows NOT to bring it up |
+| `private_hobby` | A hobby they genuinely enjoy but keep to themselves rather than posting about |
+| `emotional_pattern` | A recurring way they use content to manage their feelings, like comedy to decompress after stressful days |
+| `intimate_interest` | A romance- or intimacy-related interest they engage with only in private |
+| `personality_trait` | A stable character trait that shows up across their behavior without being stated anywhere |
+| `intellectual_curiosity` | A topic they keep digging into purely to understand it, not for any practical need |
+| `mobility` | How much this person travels: homebody, domestic, or international, plus how many trips appear in their history (e.g. `domestic, 1 trip`) |
 | `n_events` | Total engagement events across the five apps |
 | `n_queries` | Benchmark queries for this persona |
 | `source_file` | `backend/{{persona_id}}/profile.json`, the complete ground-truth profile |
