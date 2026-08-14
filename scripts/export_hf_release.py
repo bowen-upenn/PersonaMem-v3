@@ -363,10 +363,28 @@ _QUERY_CONSUMED = {
 
 PROFILE_COLUMNS = [
     "persona_id", "persona_html", "name", "gender", "race_ethnicity", "career",
-    "education", "mbti", "big_five", "bio", "voice_style", "ai_companion",
-    "top_interests", "n_interests", "hidden_persona_glimpse", "mobility",
-    "n_events", "n_queries", "source_file",
+    "education", "mbti", "big_five", "bio", "voice_style",
+    "layer1_identity_spine", "layer2_idiolect", "layer3_indexical_repertoire",
+    "voice_avoid", "per_app_personas", "ai_companion",
+    "top_interests", "n_interests",
+    "aspiration", "identity_anchor", "compensatory_need", "covert_concern",
+    "parasocial_attachment", "sensitive_life_event", "hidden_personas_other",
+    "hidden_persona_glimpse", "mobility", "n_events", "n_queries", "source_file",
 ]
+
+_HP_TYPED = ["aspiration", "identity_anchor", "compensatory_need",
+             "covert_concern", "parasocial_attachment", "sensitive_life_event"]
+
+
+def _hp_cell(entries) -> str:
+    out = []
+    for h in entries:
+        label = (h.get("label") or "").strip()
+        mot = (h.get("inferred_motivation") or h.get("description") or "").strip()
+        if len(mot) > 140:
+            mot = mot[:140][:mot[:140].rfind(" ")] + " ..."
+        out.append(f"{label}: {mot}" if mot else label)
+    return " | ".join(out)
 
 
 def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> OrderedDict:
@@ -386,6 +404,47 @@ def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> O
     mob = prof.get("mobility_class") or ""
     if mob and trips:
         mob = f"{mob}, {trips} trip" + ("s" if trips > 1 else "")
+    # voice layers (psychology-anchored: McAdams / stylometry / Bakhtin-Goffman)
+    isp = uv.get("identity_spine") or {}
+    concerns = "; ".join((isp.get("signature_concerns") or [])[:4])
+    layer1 = (isp.get("agency_communion") or "").strip()
+    if concerns:
+        layer1 = f"{layer1} Signature concerns: {concerns}." if layer1 else f"Signature concerns: {concerns}."
+    idl = uv.get("idiolect") or {}
+    layer2 = (idl.get("function_word_profile") or "").strip()
+    hb = idl.get("hedge_booster_ratio") or ""
+    if hb:
+        layer2 = f"{layer2} Hedge/booster balance: {hb}.".strip()
+    rpt = uv.get("repertoire") or {}
+    parts = []
+    if rpt.get("stances"):
+        parts.append("stances: " + ", ".join(rpt["stances"][:5]))
+    if rpt.get("registers"):
+        parts.append("registers: " + ", ".join(rpt["registers"][:4]))
+    if rpt.get("speech_genre_fluency"):
+        parts.append("speech genres: " + ", ".join(rpt["speech_genre_fluency"][:4]))
+    layer3 = "; ".join(parts)
+    avoid = (uv.get("voice_avoid") or "").strip()
+    pta = uv.get("phrases_to_avoid") or []
+    if pta:
+        avoid = (avoid + " Avoids phrases: " + ", ".join(f"\u201c{x}\u201d" for x in pta[:6]) + ".").strip()
+    apps_txt = []
+    for app_name, ap in (prof.get("app_personas") or {}).items():
+        if not isinstance(ap, dict):
+            continue
+        uses = "; ".join((ap.get("use_purposes") or [])[:2])
+        if uses:
+            apps_txt.append(f"{app_name}: {uses}")
+    per_app = " | ".join(apps_txt)
+    # hidden personas broken out by psychological type
+    hp = prof.get("hidden_personas") or []
+    by_type: dict = {}
+    for h in hp:
+        by_type.setdefault(h.get("type") or "?", []).append(h)
+    hp_cells = {t: _hp_cell(by_type.get(t, [])) for t in _HP_TYPED}
+    other = [h for t, hs in by_type.items() if t not in _HP_TYPED for h in hs]
+    hp_other = " | ".join(
+        f"[{(h.get('type') or '?').replace('_', ' ')}] {(h.get('label') or '').strip()}" for h in other)
     glimpse = (prof.get("hidden_persona_summary") or "").strip()
     if len(glimpse) > 300:
         cut = glimpse[:300]
@@ -402,9 +461,17 @@ def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> O
     row["big_five"] = big_five
     row["bio"] = prof.get("bio") or ""
     row["voice_style"] = uv.get("natural_register") or ""
+    row["layer1_identity_spine"] = layer1
+    row["layer2_idiolect"] = layer2
+    row["layer3_indexical_repertoire"] = layer3
+    row["voice_avoid"] = avoid
+    row["per_app_personas"] = per_app
     row["ai_companion"] = comp
     row["top_interests"] = "; ".join(top)
     row["n_interests"] = str(len(prof.get("preferences") or []))
+    for t in _HP_TYPED:
+        row[t] = hp_cells[t]
+    row["hidden_personas_other"] = hp_other
     row["hidden_persona_glimpse"] = glimpse
     row["mobility"] = mob
     row["n_events"] = str(n_events)
@@ -1289,9 +1356,21 @@ ranking as the other previews. Empty cells mean the field does not apply.
 | `big_five` | Big-Five trait levels (openness; conscientiousness; extraversion; agreeableness; neuroticism) |
 | `bio` | The persona's short biography |
 | `voice_style` | The persona's natural writing register, one line |
+| `layer1_identity_spine` | Voice Layer 1, the identity spine (McAdams narrative identity): agency/communion stance plus signature concerns; stable, never modulates |
+| `layer2_idiolect` | Voice Layer 2, the idiolect (stylometry): function-word profile and hedge/booster balance; survives paraphrase |
+| `layer3_indexical_repertoire` | Voice Layer 3, the indexical repertoire (Bakhtin/Goffman): the stances, registers, and speech genres this persona can deploy |
+| `voice_avoid` | The negatives axis: tones and literal phrases that would feel off-brand for this persona |
+| `per_app_personas` | How the same person presents on each app (per-app use purposes), `App: purpose | App: purpose` |
 | `ai_companion` | Their AI-Studio companion character: name (archetype) |
 | `top_interests` | The five preferences with the most engagement events, plain text |
 | `n_interests` | Total canonical preferences in the profile |
+| `aspiration` | Hidden persona of type aspiration: label plus inferred motivation (empty when this persona has none) |
+| `identity_anchor` | Hidden persona of type identity anchor: label plus inferred motivation |
+| `compensatory_need` | Hidden persona of type compensatory need: label plus inferred motivation |
+| `covert_concern` | Hidden persona of type covert concern: label plus inferred motivation |
+| `parasocial_attachment` | Hidden persona of type parasocial attachment: label plus inferred motivation |
+| `sensitive_life_event` | The synthetic sensitive-life-event episode: label plus inferred motivation (scorer-side ground truth for restraint tasks) |
+| `hidden_personas_other` | Remaining hidden-persona layers as `[type] label` (private hobby, emotional pattern, personality trait, intellectual curiosity, intimate interest) |
 | `hidden_persona_glimpse` | Opening of the hidden-persona summary (deeper motivations; full text in `profile.json`) |
 | `mobility` | Mobility class and trip count (e.g. `domestic, 1 trip`) |
 | `n_events` | Total engagement events across the five apps |
