@@ -1191,10 +1191,11 @@ If you use PersonaMem-v3, please cite:
 ```bibtex
 @misc{{jiang2026personamemv3,
   author = {{Jiang, Bowen and Yuan, Yuan and Hao, Zhuoqun and Liu, Yuchen and Shen, Maohao and Chen, Sihao and Wornell, Gregory and Callison-Burch, Chris and Ungar, Lyle and Roth, Dan and Guo, Qi and Fan, Xiangjun and Taylor, Camillo J. and Yu, Hanchao}},
-  keywords = {{Machine Learning (cs.LG), Recommender Systems, Agents, Artificial Intelligence, FOS: Computer and information sciences}},
   title = {{PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}},
-  publisher = {{arXiv}},
-  year = {{2026}}
+  year = {{2026}},
+  note = {{alphaXiv preprint}},
+  url = {{https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence}},
+  keywords = {{Machine Learning (cs.LG), Recommender Systems, Agents, Artificial Intelligence, FOS: Computer and information sciences}}
 }}
 
 @article{{jiang2025personamem2,
