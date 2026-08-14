@@ -367,13 +367,18 @@ PROFILE_COLUMNS = [
     "layer1_identity_spine", "layer2_idiolect", "layer3_indexical_repertoire",
     "voice_avoid", "per_app_personas", "meta_ai_companion_character",
     "top_interests", "n_interests",
+    "hidden_persona_glimpse",
     "aspiration", "identity_anchor", "compensatory_need", "covert_concern",
-    "parasocial_attachment", "sensitive_life_event", "hidden_personas_other",
-    "hidden_persona_glimpse", "mobility", "n_events", "n_queries", "source_file",
+    "parasocial_attachment", "sensitive_life_event", "private_hobby",
+    "emotional_pattern", "intimate_interest", "personality_trait",
+    "intellectual_curiosity",
+    "mobility", "n_events", "n_queries", "source_file",
 ]
 
 _HP_TYPED = ["aspiration", "identity_anchor", "compensatory_need",
-             "covert_concern", "parasocial_attachment", "sensitive_life_event"]
+             "covert_concern", "parasocial_attachment", "sensitive_life_event",
+             "private_hobby", "emotional_pattern", "intimate_interest",
+             "personality_trait", "intellectual_curiosity"]
 
 
 def _hp_cell(entries) -> str:
@@ -442,9 +447,6 @@ def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> O
     for h in hp:
         by_type.setdefault(h.get("type") or "?", []).append(h)
     hp_cells = {t: _hp_cell(by_type.get(t, [])) for t in _HP_TYPED}
-    other = [h for t, hs in by_type.items() if t not in _HP_TYPED for h in hs]
-    hp_other = " | ".join(
-        f"[{(h.get('type') or '?').replace('_', ' ')}] {(h.get('label') or '').strip()}" for h in other)
     glimpse = (prof.get("hidden_persona_summary") or "").strip()
     if len(glimpse) > 300:
         cut = glimpse[:300]
@@ -469,10 +471,9 @@ def build_profile_row(uid: str, pref_counts, n_events: int, n_queries: int) -> O
     row["meta_ai_companion_character"] = comp
     row["top_interests"] = "; ".join(top)
     row["n_interests"] = str(len(prof.get("preferences") or []))
+    row["hidden_persona_glimpse"] = glimpse
     for t in _HP_TYPED:
         row[t] = hp_cells[t]
-    row["hidden_personas_other"] = hp_other
-    row["hidden_persona_glimpse"] = glimpse
     row["mobility"] = mob
     row["n_events"] = str(n_events)
     row["n_queries"] = str(n_queries)
@@ -1364,14 +1365,18 @@ ranking as the other previews. Empty cells mean the field does not apply.
 | `meta_ai_companion_character` | Their AI-Studio companion character: name (archetype) |
 | `top_interests` | The five preferences with the most engagement events, plain text |
 | `n_interests` | Total canonical preferences in the profile |
+| `hidden_persona_glimpse` | Opening of the hidden-persona summary (deeper motivations; full text in `profile.json`) |
 | `aspiration` | Hidden persona of type aspiration: label plus inferred motivation (empty when this persona has none) |
 | `identity_anchor` | Hidden persona of type identity anchor: label plus inferred motivation |
 | `compensatory_need` | Hidden persona of type compensatory need: label plus inferred motivation |
 | `covert_concern` | Hidden persona of type covert concern: label plus inferred motivation |
 | `parasocial_attachment` | Hidden persona of type parasocial attachment: label plus inferred motivation |
 | `sensitive_life_event` | The synthetic sensitive-life-event episode: label plus inferred motivation (scorer-side ground truth for restraint tasks) |
-| `hidden_personas_other` | Remaining hidden-persona layers as `[type] label` (private hobby, emotional pattern, personality trait, intellectual curiosity, intimate interest) |
-| `hidden_persona_glimpse` | Opening of the hidden-persona summary (deeper motivations; full text in `profile.json`) |
+| `private_hobby` | Hidden persona of type private hobby: label plus inferred motivation |
+| `emotional_pattern` | Hidden persona of type emotional pattern: label plus inferred motivation |
+| `intimate_interest` | Hidden persona of type intimate interest: label plus inferred motivation |
+| `personality_trait` | Hidden persona of type personality trait: label plus inferred motivation |
+| `intellectual_curiosity` | Hidden persona of type intellectual curiosity: label plus inferred motivation |
 | `mobility` | Mobility class and trip count (e.g. `domestic, 1 trip`) |
 | `n_events` | Total engagement events across the five apps |
 | `n_queries` | Benchmark queries for this persona |
