@@ -21,6 +21,7 @@ import argparse
 import csv
 import json
 import os
+import random
 import shutil
 import sys
 from collections import Counter, OrderedDict, defaultdict
@@ -943,17 +944,22 @@ def stage(out: Path, per_persona_hist: int) -> dict:
     supp_by_uid: dict[str, dict] = {}
     pref_counts_by_uid: dict[str, Counter] = {}
     events_by_uid: dict[str, int] = {}
+    tail_rows: list[OrderedDict] = []
+    rng = random.Random(20260814)  # fixed seed: deterministic re-exports
     for uid in USERS:
         events_by_app = {}
+        rows_by_app: dict[str, list] = {}
         supp = supp_by_uid.setdefault(uid, {})
         pref_counts_by_uid[uid] = Counter()
         for app in APPS:
             evs = json.loads((out / "backend" / uid / f"{app}.json").read_text())
             events_by_app[app] = evs
             stats["events_per_app"][app] += len(evs)
+            app_rows = rows_by_app.setdefault(app, [])
             for e in evs:
                 stats["n_pref_instances"] += len(e.get("preferences") or [])
                 row = flatten_event(uid, app, e)
+                app_rows.append((e, row))
                 stats["problems"].extend(event_coverage_check(uid, app, e, row))
                 ts_e = int(e.get("source_timestamp") or 0)
                 txt = f"[{row['datetime']} · {row['app']}] {row['event_summary']}"
@@ -974,11 +980,16 @@ def stage(out: Path, per_persona_hist: int) -> dict:
                     supp.setdefault("at_ai", []).append(
                         (ts_e, um.strip().lower()[:80], txt))
         events_by_uid[uid] = sum(len(v) for v in events_by_app.values())
+        chosen_ids: set[int] = set()
         if uid in SHOWCASE:
             for app, evs in events_by_app.items():
-                chosen = sample_history({app: evs}, per_app_pp[app])[app]
-                agg_rows.extend(flatten_event(uid, app, e) for e in chosen)
+                chosen_ids.update(id(e) for e in sample_history({app: evs}, per_app_pp[app])[app])
+        for app in APPS:
+            for e, row in rows_by_app.get(app, []):
+                (agg_rows if id(e) in chosen_ids else tail_rows).append(row)
     agg_rows.sort(key=lambda r: (RANKED.index(r["persona_id"]), int(r["timestamp"] or 0)))
+    rng.shuffle(tail_rows)
+    agg_rows.extend(tail_rows)
 
     def write_csv(path: Path, cols: list[str], rows: list[OrderedDict]):
         with path.open("w", newline="", encoding="utf-8") as f:
@@ -1006,15 +1017,18 @@ def stage(out: Path, per_persona_hist: int) -> dict:
             lst.sort(key=lambda x: x[0])
         supp.get("self_posts", []).sort(key=lambda x: x[0])
     q_sample = sample_queries(all_q)
+    sampled_ids = {id(r) for _, r in q_sample}
+    q_tail = [(uid, r) for uid, r in all_q if id(r) not in sampled_ids]
+    rng.shuffle(q_tail)
     write_csv(samples / "persona_queries.csv", QUERY_COLUMNS,
-              [flatten_query(uid, r, supp_by_uid.get(uid)) for uid, r in q_sample])
+              [flatten_query(uid, r, supp_by_uid.get(uid)) for uid, r in q_sample + q_tail])
     n_queries_by_uid = Counter(uid for uid, _ in all_q)
     prof_rows = [build_profile_row(uid, pref_counts_by_uid.get(uid) or Counter(),
                                    events_by_uid.get(uid, 0), n_queries_by_uid.get(uid, 0))
                  for uid in RANKED]
     write_csv(samples / "persona_profiles.csv", PROFILE_COLUMNS, prof_rows)
     stats["sample_profiles"] = len(prof_rows)
-    stats["sample_queries"] = len(q_sample)
+    stats["sample_queries"] = len(q_sample) + len(q_tail)
     stats["n_queries"] = len(all_q)
     stats["n_events"] = sum(stats["events_per_app"].values())
     return stats
@@ -1085,15 +1099,15 @@ configs:
 - config_name: persona_context
   default: true
   data_files:
-  - split: sample
+  - split: full
     path: samples/persona_context.csv
 - config_name: persona_queries
   data_files:
-  - split: sample
+  - split: full
     path: samples/persona_queries.csv
 - config_name: persona_profiles
   data_files:
-  - split: sample
+  - split: full
     path: samples/persona_profiles.csv
 ---
 """
@@ -1260,10 +1274,13 @@ Three ways in, ordered by effort:
    with its full timeline, inferred preference profile, and sample test cards:
    {trio_links}, or any `backend/{{persona_id}}/persona.html`. (HF serves raw files:
    open the link, save the page, open the saved file in your browser.)
-2. Preview tables (`samples/`, what the Dataset Viewer shows): three curated CSVs
-   documented column-by-column below: an engagement-history sample and a query
-   sample centered on twenty showcase personas, plus a one-row-per-persona
-   profiles table. These are samples for browsing; the full data lives in `backend/`.
+2. Preview tables (`samples/`, what the Dataset Viewer shows): three CSVs
+   documented column-by-column below: the complete engagement history (one row
+   per event), the complete query set (one row per query), and a one-row-per-persona
+   profiles table. The first two cover every event and query for all 100
+   personas, ordered so a curated block from the best personas comes first and
+   the rest follows in a fixed random order; `backend/` holds the same data in
+   the exact layout the codebase reads.
 3. 100 personas with their raw backend logs for evaluation (`backend/{{persona_id}}/`):
    verbatim the layout the [codebase](https://github.com/bowen-upenn/PersonaMem-v3) reads, so a
    download runs the benchmark unmodified:
@@ -1278,9 +1295,11 @@ python evaluation/run_eval.py --backend_dir ../pm3_data/backend --user_id 8 --mo
 
 ## Preview table 1: `persona_context.csv`
 
-One row = one engagement event from a showcase persona's timeline, all five apps
-interleaved chronologically. Empty cells mean the field does not apply to that row;
-columns ending in `_json` hold JSON-encoded structures.
+One row = one engagement event; every event for all 100 personas is here
+({stats['n_events']:,} rows). A curated block from the top-ranked showcase personas
+comes first, each persona's five apps interleaved chronologically; the remaining
+rows follow in a fixed random order. Empty cells mean the field does not apply to
+that row; columns ending in `_json` hold JSON-encoded structures.
 
 | Column | What it contains |
 |---|---|
@@ -1315,12 +1334,14 @@ columns ending in `_json` hold JSON-encoded structures.
 
 ## Preview table 2: `persona_queries.csv`
 
-One row = one benchmark query, all {len(tt)} task types represented. At evaluation
-time the system under test receives the persona's history strictly before the
-query's `timestamp` plus the query itself; everything else is scorer-side ground
-truth, never shown to the evaluated system. This CSV is a readable preview; the
-complete machine-readable rows (including the exact `instance_full` payload the eval
-harness executes) live in `backend/{{persona_id}}/test.json`.
+One row = one benchmark query; every query for all 100 personas is here
+({stats['n_queries']:,} rows across {len(tt)} task types). A curated block picked for
+task-type coverage from the best personas comes first; the remaining rows follow
+in a fixed random order. At evaluation time the system under test receives the
+persona's history strictly before the query's `timestamp` plus the query itself;
+everything else is scorer-side ground truth, never shown to the evaluated system.
+This CSV is the readable view; the machine-readable rows (including the exact
+`instance_full` payload the eval harness executes) live in `backend/{{persona_id}}/test.json`.
 
 | Column | What it contains |
 |---|---|
