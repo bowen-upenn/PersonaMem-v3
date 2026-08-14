@@ -665,11 +665,14 @@ def _gt_irrelevant_query_restraint(inst: dict) -> dict:
     origins = inst.get("origin_by_idx") or []
     held_text = inst.get("held_out_persona_item") or ""
     irrels = inst.get("irrelevant_persona_items") or []
+    _ref_ts = inst.get("t_test") or inst.get("source_timestamp") or 0
     cand_list = [{
         "idx": i,
         "title": _truncate(c.get("persona_item") or c.get("title") or str(c), 100),
         "origin": origins[i] if i < len(origins) else "?",
         "is_held_out": (origins[i] == "held_out") if i < len(origins) else False,
+        "ts_delta_label": _ts_delta_label(
+            c.get("source_timestamp") if isinstance(c, dict) else None, _ref_ts),
     } for i, c in enumerate(cands)]
     surfaced = _inferior_surfaced_pref(inst)
     rubric_line = (
@@ -1186,23 +1189,50 @@ def _gt_personalized_recommendation(inst: dict) -> dict:
 
 
 def _gt_short_vs_long_term_lifecycle(inst: dict) -> dict:
-    horizon = inst.get('horizon_type', '?')
-    top_prefs = [pi for pi, _ in (_PERSONA_CONTEXT.get("top_prefs") or [])][:5]
-    pref_meta = _PERSONA_CONTEXT.get("pref_meta") or {}
-    short_examples = [pi for pi in top_prefs if (pref_meta.get(pi) or {}).get("time_horizon") == "short_term"][:2]
-    long_examples = [pi for pi in top_prefs if (pref_meta.get(pi) or {}).get("time_horizon") != "short_term"][:2]
+    horizon = inst.get("time_horizon") or inst.get("horizon_type") or "?"
+    phase = inst.get("phase") or "?"
+    item = inst.get("persona_item") or inst.get("canonical_id") or "(unknown intent)"
+    stop_desc = (inst.get("stop_condition_description") or "").strip()
+    stop_type = inst.get("stop_condition_type") or ""
+    stop_ts = inst.get("expected_stop_ts")
+    matching = inst.get("matching_indices") or []
+    try:
+        stop_iso = (datetime.fromtimestamp(int(stop_ts), tz=timezone.utc)
+                    .strftime("%m/%d/%Y")) if stop_ts else "?"
+    except Exception:
+        stop_iso = str(stop_ts)
+    if phase == "pre":
+        verdict = (f"Phase PRE (before the stop): the intent is still ACTIVE — its matching "
+                   f"candidates (indexes {matching}) belong at the TOP of the ranking.")
+    elif phase == "post":
+        verdict = (f"Phase POST (after the stop): the intent has EXPIRED — its matching "
+                   f"candidates (indexes {matching}) must NOT be surfaced; long-term "
+                   f"preferences win the top slots.")
+    else:
+        verdict = f"Matching candidate indexes: {matching}."
+    cands = inst.get("candidates") or []
+    ref_ts = inst.get("t_test") or inst.get("source_timestamp") or 0
+    match_set = set(matching)
+    cand_list = [{
+        "idx": i,
+        "title": _truncate(c.get("title") or c.get("caption") or
+                           " ".join(f"#{str(h).lstrip('#')}" for h in (c.get("hashtags") or [])[:3]), 90),
+        "hashtags": c.get("hashtags") or [],
+        "origin": ("target" if i in match_set else "filler"),
+        "is_held_out": False,
+        "ts_delta_label": _ts_delta_label(c.get("source_timestamp"), ref_ts),
+    } for i, c in enumerate(cands)]
     return {
         "example_response": (
             "Surface long-term preferences naturally; for short-term prefs "
             "past their expected_stop_ts, treat as expired and do not surface."
         ),
         "groundtruth_preference": (
-            f"Horizon: {horizon}\n"
-            "Long-term (persist):\n"
-            + ("\n".join(f"  - {pi}" for pi in long_examples) or "  (none labeled long-term)")
-            + "\nShort-term (fade after stop_condition):\n"
-            + ("\n".join(f"  - {pi}" for pi in short_examples) or "  (none labeled short-term)")
+            f"Tested intent ({horizon}): {item}\n"
+            f"Stop condition ({stop_type}): {stop_desc or '?'} — expected stop {stop_iso}\n"
+            + verdict
         ),
+        "candidates": cand_list,
         "rubric_tags": _registry_display_rubric("short_vs_long_term_lifecycle"),
     }
 
@@ -3259,7 +3289,9 @@ def _q_personalized_recommendation(inst: dict) -> str:
 
 
 def _q_short_vs_long_term_lifecycle(inst: dict) -> str:
-    return "[lifecycle ranking] short-term vs long-term preference test"
+    # Query-less ranking task — return "" so the card falls back to the real
+    # eval-time "[system prompt] …" directive like the other ranking tasks.
+    return ""
 
 
 TEST_QUERY_EXTRACTORS = {
@@ -3572,12 +3604,18 @@ def _load_test_samples(
             # multi-turn pattern, not a single response — they emit a
             # representative inferior from the GT extractor since the
             # LLM-rewrite path in llm_postprocess doesn't run for them.
-            if inst.get("inferior_response"):
-                sample["inferior_response"] = inst["inferior_response"]
-            elif gt.get("inferior_response"):
-                sample["inferior_response"] = gt["inferior_response"]
-            if inst.get("example_response_self_check"):
-                sample["example_response_self_check"] = inst["example_response_self_check"]
+            # Reviewer-facing embed only: keep the inferior's text + flaw label,
+            # drop internal provenance (regen_reason, flaw_evidence ids) and
+            # internal QA verdicts (self_check) — codemarks like
+            # "(regen: holistic_test_quality_failed)" must never render.
+            _inf = inst.get("inferior_response") or gt.get("inferior_response")
+            if _inf:
+                if isinstance(_inf, dict):
+                    sample["inferior_response"] = {
+                        k: v for k, v in _inf.items() if k in ("text", "flaw_kind")
+                    }
+                else:
+                    sample["inferior_response"] = _inf
             # Voice-evidence spans for compose tasks — drives bold rendering
             # of the gold so a reviewer can see WHY a voice_mismatch foil fails.
             # Both sides are surfaced so the renderer can union them and bold
@@ -5207,8 +5245,7 @@ if (eventsData.length === 0) {{
         // (`voice_evidence_smoke_check`) — kept on the instance for debugging
         // but intentionally NOT rendered on the user-facing test card.
         const smoke = '';
-        const regen = (_infObj.regen_reason)
-          ? ` <small style="color:#92400E;font-weight:normal;">(regen: ${{escapeHtml(_infObj.regen_reason)}})</small>` : '';
+        const regen = '';
         // Highlight violations (only daily_personalized_briefing for now —
         // the disliked_recent flaw injects a specific topic into the gold,
         // so the topic_hint / persona_item from flaw_evidence pinpoints
