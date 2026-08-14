@@ -2,7 +2,7 @@
 
 <!-- TODO: point the Paper badge at the arXiv abs page once the v3 paper is up -->
 [![Paper](https://img.shields.io/badge/Paper-Preview-b31b1b.svg)](PersonaMem_v3.pdf)
-[![alphaXiv](https://img.shields.io/badge/alphaXiv-PersonaMem--v3-b31b1b.svg)](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence)
+[![alphaXiv](https://img.shields.io/badge/alphaXiv-PersonaMem--v3-b31b1b.svg)](https://www.alphaxiv.org/pdf/2607.personamem-v3-omni-platform-personal-intelligencev1)
 [![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v3-ffd21e.svg)](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell, Chris Callison-Burch, Lyle Ungar, Dan Roth, Qi Guo, Xiangjun Fan, Camillo J. Taylor, Hanchao Yu

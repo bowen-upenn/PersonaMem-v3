@@ -1251,7 +1251,7 @@ configs:
 
     body = f"""# PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
-[![Paper](https://img.shields.io/badge/Paper-alphaXiv-b31b1b.svg)](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence)
+[![Paper](https://img.shields.io/badge/Paper-alphaXiv-b31b1b.svg)](https://www.alphaxiv.org/pdf/2607.personamem-v3-omni-platform-personal-intelligencev1)
 [![Code](https://img.shields.io/badge/GitHub-PersonaMem--v3-0866FF.svg)](https://github.com/bowen-upenn/PersonaMem-v3)
 
 Bowen Jiang, Yuan Yuan, Zhuoqun Hao, Yuchen Liu, Maohao Shen, Sihao Chen, Gregory Wornell,
@@ -1271,7 +1271,7 @@ Third release in the PersonaMem series:
 
 - PersonaMem-v1: *[COLM 2025] Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale* · [code](https://github.com/bowen-upenn/PersonaMem) · [paper](https://arxiv.org/abs/2504.14225) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v1)
 - PersonaMem-v2: *Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory* · [code](https://github.com/bowen-upenn/PersonaMem-v2) · [paper](https://arxiv.org/abs/2512.06688) · [data](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v2)
-- PersonaMem-v3: *Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks* · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper](https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence) · this dataset
+- PersonaMem-v3: *Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks* · [code](https://github.com/bowen-upenn/PersonaMem-v3) · [paper](https://www.alphaxiv.org/pdf/2607.personamem-v3-omni-platform-personal-intelligencev1) · this dataset
 
 ## What is PersonaMem-v3?
 
@@ -1568,7 +1568,7 @@ If you use PersonaMem-v3, please cite:
   title = {{PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}},
   year = {{2026}},
   note = {{alphaXiv preprint}},
-  url = {{https://www.alphaxiv.org/abs/2607.personamem-v3-omni-platform-personal-intelligence}}
+  url = {{https://www.alphaxiv.org/pdf/2607.personamem-v3-omni-platform-personal-intelligencev1}}
 }}
 
 @article{{jiang2025personamem2,
