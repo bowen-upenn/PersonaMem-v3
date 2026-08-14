@@ -387,6 +387,10 @@ Group findings by severity. Aim for ≤ 2000 words per slice. **Do not propose f
 
 The gold (`example_response`) for a `warn` instance MUST be a **proactive warning** that surfaces the specific mistake using the row's `cross_signal_signals` evidence + `expected_warning_frame.must_mention`, written as an agent that HAS calendar/geo/schedule access. It must NOT deflect ("I can't check your calendar") and the paired inferior must be the genuine failure (warn → misses the mistake / naive answer; foil → an over-eager false alarm). A deflecting gold or an inferior that only differs by a tacked-on distraction is a P0 — the example/inferior are produced by `synthesize_special_task_example_inferior` (NOT the generic personalization example-gen, which forbids self-reference and is wrong for this task).
 
+## Ranking slates — GT leakage via candidate age tags (failure mode)
+
+For slate-ranking tasks the held-out positive is a FUTURE engagement (inside the anchor window after `t_test`) while hard negatives and fillers are pre-`t_test` — so any per-candidate timestamp or age tag (`[-2d]`, `[+30m]`) in a **model-facing** rendering marks the answer: the one future-tagged item is the ground truth (caught 2026-08-14 in the HF `persona_queries.csv` `user_query` slate; fixed in `scripts/export_hf_release.py` by moving tags to a scorer-side slate key on `groundtruth_preference`). Age tags are fine in reviewer-side surfaces (`persona.html`, GT/explanation columns). Detection: `grep -E '\[[+-][0-9]+[dhms]\]'` over every model-facing text field (user_query, prompt assemblies) — must return 0.
+
 ## Verification commands
 
 After a regen, run these spot-checks before declaring the audit closed:
