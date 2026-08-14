@@ -366,6 +366,8 @@ Group findings by severity. Aim for ≤ 2000 words per slice. **Do not propose f
 - **AI-companion name duplicates across DIFFERENT personas (engagement-only cohort)** — e.g. two or three personas whose AI-Studio companions share a full name. ACCEPTED (2026-07-24): different users naming companions similarly is realistic, and a re-roll would require regenerating every conversation that mentions the name. Uniqueness is only enforced within the eval cohort.
 
 
+- **AI-Studio events with `interaction_format.action == "unknown"` / `action_label == "Unknown"`** — BY DESIGN: the AI-Studio surface has no engagement-action catalog (the chat session or engagement itself is the event), so the pipeline stamps a placeholder. Do not flag in backend data. The HF release exporter (`scripts/export_hf_release.py`) blanks the `action` cell and suppresses "Unknown" from `event_summary` in the preview CSV, keeping the raw placeholder in `extras_json.action`; only flag if the literal string "unknown"/"Unknown" resurfaces in a shipped preview column.
+
 - **Self-authored posts, trending feed items, DM threads, ad events, and planted sensitive-event rows lacking camera/video-style content payloads** — their content schemas differ by design (extension-B and ad/planting generators, not Step 19); only ORGANIC engagement events are required to carry `parts`/`key_frames`+`metadata`.
 
 - `at_ai_directive_followup` `example_response = "Ranked indexes: [...]"` — INTENTIONAL. `expected_response_kind: "ranking"` in `evaluation/task_registry.py:773`.

@@ -102,6 +102,8 @@ def _iso_utc(ts) -> str:
 def _event_summary(e: dict, fmt: dict, content: dict, conversation, caption) -> str:
     """One human-readable sentence describing the row — the PR column."""
     label = fmt.get("action_label") or fmt.get("action") or "Engaged"
+    if isinstance(label, str) and label.strip().lower() == "unknown":
+        label = "Engaged"  # AI-Studio has no action catalog; by-design placeholder
     tags = [str(t).lstrip("#") for t in (e.get("source_hashtags") or [])][:3]
     tag_str = " ".join(f"#{t}" for t in tags)
 
@@ -238,6 +240,8 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
         extras["formatted_timestamp"] = e["formatted_timestamp"]  # datetime col is re-rendered ISO
     if fmt.get("action_label"):
         extras["action_label"] = fmt["action_label"]  # human label; also embedded in event_summary
+    if isinstance(fmt.get("action"), str) and fmt["action"].lower() == "unknown":
+        extras["action"] = fmt["action"]  # raw placeholder; the action column is blanked
     # raw social-identity fields (the CSV column `author` is a merged view)
     for k in ("author_id", "relationship", "is_self_authored"):
         if k in e:
@@ -255,7 +259,8 @@ def flatten_event(uid: str, app: str, e: dict) -> OrderedDict:
     row["app"] = fmt.get("app") or app.replace("ai_studio", "AI_Studio").capitalize()
     row["event_summary"] = _event_summary(e, fmt, content, conversation, caption)
     row["interaction_type"] = _cell(e.get("source_interaction_type"))
-    row["action"] = _cell(fmt.get("action"))
+    _act = fmt.get("action")
+    row["action"] = "" if (isinstance(_act, str) and _act.lower() == "unknown") else _cell(_act)
     row["user_message"] = _cell(fmt.get("user_message"))
     row["content_type"] = _cell(e.get("content_type"))
     row["title"] = _cell(content.get("title"))
@@ -307,7 +312,8 @@ def event_coverage_check(uid: str, app: str, e: dict, row: OrderedDict) -> list[
         ("event_id", e.get("source_object_id")),
         ("timestamp", e.get("source_timestamp")),
         ("interaction_type", e.get("source_interaction_type")),
-        ("action", (e.get("interaction_format") or {}).get("action")),
+        ("action", (lambda a: None if (isinstance(a, str) and a.lower() == "unknown") else a)(
+            (e.get("interaction_format") or {}).get("action"))),
         ("title", content.get("title")),
         ("media_description", content.get("overall_description")),
     ]
@@ -1285,7 +1291,7 @@ columns ending in `_json` hold JSON-encoded structures.
 | `app` | Instagram, Facebook, Threads, Chatbot, or AI_Studio |
 | `event_summary` | Start here: one auto-composed sentence describing the row, e.g. `Viewed more than 75% of the reel: "Canelo-Crawford Hype Reel" (#Boxing)` |
 | `interaction_type` | Signal polarity, 5 values: `implicit_negative` (skipped / scrolled past; the majority, as in real feeds), `implicit_positive` (lingered, rewatched, viewed ≥75%), `explicit_positive` (liked, saved, shared), `explicit_negative` (hid, muted, dismissed), `feed_visible` (shown, no engagement recorded). Implicit-negative rows intentionally carry only hashtags and the skip action; they are negative-signal stubs, not missing data |
-| `action` | Concrete engagement from the platform's action catalog (`double_tapped`, `saved_to_collection`, Facebook reactions, `quote_repost`, `clicked_ad`, ...); the human phrasing leads `event_summary` and is kept in `extras_json.action_label`. AI-Studio rows carry `unknown` because the companion-chat session itself is the event |
+| `action` | Concrete engagement from the platform's action catalog (`double_tapped`, `saved_to_collection`, Facebook reactions, `quote_repost`, `clicked_ad`, ...); the human phrasing leads `event_summary` and is kept in `extras_json.action_label`. Empty for AI-Studio rows: that surface has no action catalog (the chat session or engagement itself is the event); the raw placeholder is kept in `extras_json.action` |
 | `user_message` | Text the user typed: `@ai ...` comment directives on social apps, or the user's chat turn on the Chatbot |
 | `content_type` | `short_video`, `image`, or `text`; empty for pure conversations |
 | `title` / `caption` | Content title / caption (text-post body also appears under caption) |
