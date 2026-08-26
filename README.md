@@ -1,7 +1,7 @@
 # PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks
 
 <!-- TODO: point the Paper badge at the arXiv abs page once the v3 paper is up -->
-[![Paper](https://img.shields.io/badge/Paper-Preview-b31b1b.svg)](PersonaMem_v3.pdf)
+[![arXiv](https://img.shields.io/badge/arXiv-PersonaMem--v3-b31b1b.svg)](https://arxiv.org/abs/2608.21381)
 [![alphaXiv](https://img.shields.io/badge/alphaXiv-PersonaMem--v3-b31b1b.svg)](https://www.alphaxiv.org/pdf/2607.personamem-v3-omni-platform-personal-intelligencev1)
 [![Dataset](https://img.shields.io/badge/HuggingFace-PersonaMem--v3-ffd21e.svg)](https://huggingface.co/datasets/bowen-upenn/PersonaMem-v3)
 
@@ -91,3 +91,32 @@ python scripts/aggregate_eval.py --results_root results   # → results/aggregat
 ## License
 
 Code is released under the [MIT License](LICENSE). The sample input data and all personas derived from [facebook/gistbench](https://huggingface.co/datasets/facebook/gistbench) inherit its **CC-BY-NC-4.0** license (attribution, non-commercial).
+
+## Citations
+
+If you find our work helpful, please consider cite them. Thank you!
+
+@misc{jiang2026personamemv3omniplatformpersonalintelligence,
+      title={PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}, 
+      author={Bowen Jiang and Yuan Yuan and Zhuoqun Hao and Yuchen Liu and Maohao Shen and Sihao Chen and Gregory Wornell and Chris Callison-Burch and Lyle Ungar and Dan Roth and Qi Guo and Xiangjun Fan and Camillo J. Taylor and Hanchao Yu},
+      year={2026},
+      eprint={2608.21381},
+      archivePrefix={arXiv},
+      primaryClass={cs.CY},
+      url={https://arxiv.org/abs/2608.21381}, 
+}
+
+@article{jiang2025personamem2,
+  title={PersonaMem-v2: Towards Personalized Intelligence via Learning Implicit User Personas and Agentic Memory},
+  author={Jiang, Bowen and Yuan, Yuan and Shen, Maohao and Hao, Zhuoqun and Xu, Zhangchen and Chen, Zichen and Liu, Ziyi and Vijjini, Anvesh Rao and He, Jiashu and Yu, Hanchao and Poovendran, Radha and Wornell, Gregory and Ungar, Lyle and Roth, Dan and Chen, Sihao and Taylor, Camillo Jose},
+  journal={arXiv preprint arXiv:2512.06688},
+  year={2025}
+}
+
+@article{jiang2025know,
+  title={Know Me, Respond to Me: Benchmarking LLMs for Dynamic User Profiling and Personalized Responses at Scale},
+  author={Jiang, Bowen and Hao, Zhuoqun and Cho, Young-Min and Li, Bryan and Yuan, Yuan and Chen, Sihao and Ungar, Lyle and Taylor, Camillo J and Roth, Dan},
+  journal={arXiv preprint arXiv:2504.14225},
+  year={2025}
+}
+
