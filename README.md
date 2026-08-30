@@ -96,6 +96,7 @@ Code is released under the [MIT License](LICENSE). The sample input data and all
 
 If you find our work helpful, please consider cite them. Thank you!
 
+```
 @article{jiang2026personamem,
   title={PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks},
   author={Jiang, Bowen and Yuan, Yuan and Hao, Zhuoqun and Liu, Yuchen and Shen, Maohao and Chen, Sihao and Wornell, Gregory and Callison-Burch, Chris and Ungar, Lyle and Roth, Dan and others},
@@ -116,4 +117,5 @@ If you find our work helpful, please consider cite them. Thank you!
   journal={arXiv preprint arXiv:2504.14225},
   year={2025}
 }
+```
 
