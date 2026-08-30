@@ -96,14 +96,11 @@ Code is released under the [MIT License](LICENSE). The sample input data and all
 
 If you find our work helpful, please consider cite them. Thank you!
 
-@misc{jiang2026personamemv3omniplatformpersonalintelligence,
-      title={PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks}, 
-      author={Bowen Jiang and Yuan Yuan and Zhuoqun Hao and Yuchen Liu and Maohao Shen and Sihao Chen and Gregory Wornell and Chris Callison-Burch and Lyle Ungar and Dan Roth and Qi Guo and Xiangjun Fan and Camillo J. Taylor and Hanchao Yu},
-      year={2026},
-      eprint={2608.21381},
-      archivePrefix={arXiv},
-      primaryClass={cs.CY},
-      url={https://arxiv.org/abs/2608.21381}, 
+@article{jiang2026personamem,
+  title={PersonaMem-v3: Toward Omni-Platform Personal Intelligence for Holistic User Understanding, Recommendation, and Agentic Tasks},
+  author={Jiang, Bowen and Yuan, Yuan and Hao, Zhuoqun and Liu, Yuchen and Shen, Maohao and Chen, Sihao and Wornell, Gregory and Callison-Burch, Chris and Ungar, Lyle and Roth, Dan and others},
+  journal={arXiv preprint arXiv:2608.21381},
+  year={2026}
 }
 
 @article{jiang2025personamem2,
