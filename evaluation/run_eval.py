@@ -901,10 +901,13 @@ def main() -> int:
         # Real mem0ai store (Azure LLM + text-embedding-3-large + local qdrant),
         # built ONCE over all events < max(T_test). Per-query top-k retrieval is
         # time-masked via a `ts < T_test` filter. Runs in-process (workers=1).
-        from evaluation.mem0_backend import Mem0Backend
+        from evaluation.mem0_backend import Mem0Backend, resolve_embedding_settings
         boundaries = sorted({int(r["ts"]) for r in rows})
         t_max = (boundaries[-1] + 1) if boundaries else 0
-        llm_dep = None if args.model in (None, "gpt-5.5") else args.model
+        builder_model = args.memory_builder_model or args.model
+        llm_dep = (builder_model if os.getenv("PM3_LLM_BASE_URL")
+                   else None if builder_model in (None, "gpt-5.5") else builder_model)
+        embed_model, embed_dims = resolve_embedding_settings()
         # Judge-replay reuses the existing on-disk store: generation is
         # disabled, so rebuilding (rm -rf + full re-ingest via Azure LLM +
         # embeddings) would be pure waste — retrieval only needs the vectors
@@ -920,10 +923,11 @@ def main() -> int:
         else:
             print(f"[run_eval] mem0 mode: building real-mem0 store up to T={t_max} "
                   f"(LLM={llm_dep or 'AZURE_OPENAI_DEPLOYMENT_NAME'}, "
-                  f"embed=text-embedding-3-large, cap={args.memory_token_cap})...", flush=True)
+                  f"embed={embed_model} ({embed_dims}-d), "
+                  f"cap={args.memory_token_cap})...", flush=True)
             m0 = Mem0Backend(args.user_id, run_dir, llm_deployment=llm_dep,
                              token_cap=args.memory_token_cap)
-            bstats = m0.build(bq, t_max, {"builder_model": args.model,
+            bstats = m0.build(bq, t_max, {"builder_model": builder_model,
                                           "chunk_k": args.memory_chunk_k})
         snapshot_cache.attach_mem0_backend(m0)
         memory_build_stats = {

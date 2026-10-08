@@ -1,4 +1,9 @@
-"""Real `mem0ai` memory baseline, configured fully on Azure OpenAI.
+"""Real `mem0ai` baseline with Azure or a local compatible LLM endpoint.
+
+With PM3_LLM_BASE_URL set, use the requested LLM (e.g. Qwen via vLLM)
+and local sentence-transformers/all-MiniLM-L6-v2 embeddings (384-d, CPU) by default.
+PM3_EMBED_MODEL and PM3_EMBED_DIMS override the embedding model and dimensions.
+Otherwise retain the original Azure configuration described below.
 
 This is the SECOND memory baseline (mode `mem0`), distinct from the in-house
 persona/preference text memory (`llm_memory`, in `memory_builder.py`). It wraps
@@ -102,6 +107,45 @@ def _azure_env() -> dict:
 
 
 def _mem0_config(store_dir: Path, collection: str, llm_deployment: str) -> dict:
+    local_base_url = os.getenv("PM3_LLM_BASE_URL")
+    embed_model, embed_dims = resolve_embedding_settings()
+    if local_base_url:
+        # mem0's OpenAI adapter speaks the protocol to our own model server.
+        # Guard against mem0's environment-based OpenRouter override.
+        if os.getenv("OPENROUTER_API_KEY"):
+            raise RuntimeError("Unset OPENROUTER_API_KEY when using PM3_LLM_BASE_URL")
+        return {
+            "version": "v1.1",
+            "llm": {
+                "provider": "openai",
+                "config": {
+                    "model": llm_deployment,
+                    "openai_base_url": local_base_url,
+                    "api_key": os.getenv("PM3_LLM_API_KEY") or "local",
+                    "temperature": 0.0,
+                    "max_tokens": 2048,
+                },
+            },
+            "embedder": {
+                "provider": "huggingface",
+                "config": {
+                    "model": embed_model,
+                    "embedding_dims": embed_dims,
+                    "model_kwargs": {"device": "cpu"},
+                },
+            },
+            "vector_store": {
+                "provider": "qdrant",
+                "config": {
+                    "collection_name": collection,
+                    "path": str(store_dir),
+                    "on_disk": True,
+                    "embedding_model_dims": embed_dims,
+                },
+            },
+            "custom_fact_extraction_prompt": None,
+            "custom_instructions": MEM0_CUSTOM_INSTRUCTIONS,
+        }
     env = _azure_env()
     missing = [k for k in ("key", "endpoint", "api_version") if not env[k]]
     if missing:
@@ -121,9 +165,9 @@ def _mem0_config(store_dir: Path, collection: str, llm_deployment: str) -> dict:
         "embedder": {
             "provider": "azure_openai",
             "config": {
-                "model": env["embed_deployment"],
-                "embedding_dims": EMBED_DIMS,
-                "azure_kwargs": azure(env["embed_deployment"]),
+                "model": embed_model,
+                "embedding_dims": embed_dims,
+                "azure_kwargs": azure(embed_model),
             },
         },
         "vector_store": {
@@ -132,12 +176,38 @@ def _mem0_config(store_dir: Path, collection: str, llm_deployment: str) -> dict:
                 "collection_name": collection,
                 "path": str(store_dir),
                 "on_disk": True,
-                "embedding_model_dims": EMBED_DIMS,
+                "embedding_model_dims": embed_dims,
             },
         },
         "custom_fact_extraction_prompt": None,  # use mem0 default + custom_instructions
         "custom_instructions": MEM0_CUSTOM_INSTRUCTIONS,
     }
+
+
+def resolve_embedding_settings() -> tuple[str, int]:
+    """Resolve the mem0 model/deployment and matching vector-store dimensions.
+
+    Provider selection retains the LLM endpoint's defaults: Hugging Face on CPU
+    for a local endpoint, Azure otherwise. A custom model needs explicit dims
+    so we never silently create a collection with the default model's size.
+    Legacy Azure deployment environment variables retain their 3072-d default.
+    """
+    local = bool(os.getenv("PM3_LLM_BASE_URL"))
+    default_model = ("sentence-transformers/all-MiniLM-L6-v2" if local
+                     else _azure_env()["embed_deployment"])
+    model = os.getenv("PM3_EMBED_MODEL") or default_model
+    raw_dims = os.getenv("PM3_EMBED_DIMS")
+    if raw_dims is None:
+        if model != default_model:
+            raise ValueError("Set PM3_EMBED_DIMS when selecting a custom PM3_EMBED_MODEL")
+        return model, 384 if local else EMBED_DIMS
+    try:
+        dims = int(raw_dims)
+    except ValueError as exc:
+        raise ValueError("PM3_EMBED_DIMS must be a positive integer") from exc
+    if dims <= 0:
+        raise ValueError("PM3_EMBED_DIMS must be a positive integer")
+    return model, dims
 
 
 class Mem0Backend:
@@ -147,7 +217,8 @@ class Mem0Backend:
 
     def __init__(self, user_id: str, store_dir, *, llm_deployment: str | None = None,
                  token_cap: int = DEFAULT_MEMORY_TOKEN_CAP, fresh: bool = True):
-        _register_gpt55_as_reasoning()
+        if not os.getenv("PM3_LLM_BASE_URL"):
+            _register_gpt55_as_reasoning()
         from mem0 import Memory  # imported lazily so non-mem0 modes don't need it
 
         self.user_id = str(user_id)

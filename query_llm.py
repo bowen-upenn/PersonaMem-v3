@@ -94,6 +94,17 @@ class QueryLLM:
     def _setup_client(self):
         """Setup OpenAI, Azure OpenAI, Gemini, or Claude client based on environment variables."""
         model_name = self.args['models']['llm_model']
+        # Explicit compatible endpoint takes precedence over cloud credentials.
+        local_base_url = os.getenv("PM3_LLM_BASE_URL")
+        if local_base_url:
+            self.client = OpenAI(
+                base_url=local_base_url,
+                api_key=os.getenv("PM3_LLM_API_KEY") or "local",
+                timeout=180.0, max_retries=0,
+            )
+            self.model = model_name
+            self.is_gemini = self.is_claude = False
+            return
         
         # Check if this is a Gemini model
         if re.search(r'gemini', model_name, re.IGNORECASE):
