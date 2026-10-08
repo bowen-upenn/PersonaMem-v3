@@ -717,6 +717,8 @@ def _summarize_by_task(rows: list[dict]) -> dict:
         # Derived counters
         non_substantive = 0
         n_non_ok = 0
+        ndcg_checked = 0
+        ndcg_valid_count = 0
         tok_sums = {k: 0.0 for k in _TOKEN_KEYS}
         tok_counts = {k: 0 for k in _TOKEN_KEYS}
         for r in task_rows:
@@ -730,6 +732,8 @@ def _summarize_by_task(rows: list[dict]) -> dict:
                 metrics = json.loads(mj)
             except Exception:
                 continue
+            ndcg_checked += int("ndcg_valid" in metrics)
+            ndcg_valid_count += int(metrics.get("ndcg_valid") is True)
             # Substantive-gate signal: many runners emit either
             # `non_substantive_response` (over_personalization) or
             # `response_is_substantive` (e6) — handle both.
@@ -747,6 +751,9 @@ def _summarize_by_task(rows: list[dict]) -> dict:
                         tok_counts[k] += 1
         for k, s in metric_sums.items():
             m[k] = s / max(1, metric_counts[k])
+        if ndcg_checked:
+            m["ndcg_valid_count"] = ndcg_valid_count
+            m["ndcg_invalid_count"] = ndcg_checked - m["ndcg_valid_count"]
         # Derived: error rate.
         m["error_rate"] = n_non_ok / max(1, len(task_rows))
         # Derived: non-substantive rate (silence-pass signal).

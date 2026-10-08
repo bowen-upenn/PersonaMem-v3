@@ -416,6 +416,65 @@ def _graded_ndcg_at_k(ranked: list[int], positives, hard_negs, k: int,
     return max(0.0, _dcg(ranked) / idcg)
 
 
+def _graded_ndcg_min_at_k(ranked: list[int], positives, hard_negs, k: int,
+                          n_candidates: int,
+                          filler_grade: float = _NDCG_REL_FILLER) -> float | None:
+    """Standalone min-max NDCG@K; not used by the evaluation pipeline.
+
+    Retains linear gains (+2 positive, +1 filler, -2 hard-negative) and the
+    log2 position discount. Pass filler_grade=0 for binary-relevance slates.
+    IDCG and WDCG are the best and worst DCG@K over ALL n_candidates indexes,
+    independently of the model's returned ranking:
+
+        score = (DCG@K - WDCG@K) / (IDCG@K - WDCG@K)
+
+    Only the first min(k, n_candidates) positions are required and validated;
+    any later positions are ignored. Raises ValueError for invalid inputs.
+    Returns None when IDCG == WDCG, since the slate cannot distinguish any
+    rankings. Otherwise the score is in [0, 1] without zero clipping.
+
+    Normalization: Gienapp et al. (CIKM 2020), "The Impact of Negative
+    Relevance Judgments on NDCG", https://doi.org/10.1145/3340531.3412123.
+    """
+    import math
+
+    if type(n_candidates) is not int or n_candidates <= 0:
+        raise ValueError("n_candidates must be a positive integer")
+    if type(k) is not int or k <= 0:
+        raise ValueError("k must be a positive integer")
+    if not math.isfinite(filler_grade):
+        raise ValueError("filler_grade must be finite")
+    pos = set(positives or [])
+    hard = set(hard_negs or [])
+    if any(type(idx) is not int or not 0 <= idx < n_candidates for idx in pos | hard):
+        raise ValueError("relevance indexes must be in-range integers")
+    if pos & hard:
+        raise ValueError("positive and hard-negative indexes must be disjoint")
+    cutoff = min(k, n_candidates)
+    if not isinstance(ranked, list) or len(ranked) < cutoff:
+        raise ValueError("ranking must contain enough indexes for the evaluated cutoff")
+    head = ranked[:cutoff]
+    if any(type(idx) is not int or not 0 <= idx < n_candidates for idx in head):
+        raise ValueError("top-k indexes must be in-range integers")
+    if len(set(head)) != len(head):
+        raise ValueError("top-k indexes must be distinct")
+
+    def _rel(idx: int) -> float:
+        if idx in pos:
+            return _NDCG_REL_TARGET
+        return _NDCG_REL_HARD_NEG if idx in hard else filler_grade
+
+    def _dcg(gains: list[float]) -> float:
+        return sum(gain / math.log2(i + 2) for i, gain in enumerate(gains[:cutoff]))
+
+    grades = [_rel(idx) for idx in range(n_candidates)]
+    idcg = _dcg(sorted(grades, reverse=True))
+    wdcg = _dcg(sorted(grades))
+    if idcg == wdcg:
+        return None
+    return (_dcg([_rel(idx) for idx in head]) - wdcg) / (idcg - wdcg)
+
+
 def _ndcg_at_k(ranked: list[int], target: int, hard_negatives: list[int], k: int,
                filler_grade: float = _NDCG_REL_FILLER) -> float:
     """Single-target wrapper around `_graded_ndcg_at_k` for the recsys slates
@@ -471,17 +530,50 @@ def _tier_concordance(ranked: list[int], target: int, hard_negatives: list[int],
     return round(correct / total, 4)
 
 
+def ranking_validation_error(ranked, n_candidates: int) -> str | None:
+    """A complete ranking must be a permutation of all candidate indexes."""
+    if not isinstance(ranked, list):
+        return "ranked_indexes must be a list"
+    if n_candidates <= 0:
+        return "no candidates"
+    if any(type(index) is not int for index in ranked):
+        return "indexes must be integers (not strings, floats or booleans)"
+    if any(index < 0 or index >= n_candidates for index in ranked):
+        return "index out of range"
+    if len(set(ranked)) != len(ranked):
+        return "duplicate indexes"
+    if len(ranked) != n_candidates:
+        return "missing candidate indexes"
+    return None
+
+
 def compute_personalized_recommendation_metrics(parsed: dict, instance: dict,
                                                 filler_grade: float = _NDCG_REL_FILLER) -> dict:
-    ranked = parsed.get("ranked_indexes") or []
+    ranked = parsed.get("ranked_indexes") if isinstance(parsed, dict) else None
+    n_candidates = len(instance.get("candidates") or [])
+    ranking_error = ranking_validation_error(ranked, n_candidates)
+    ndcg_metrics = {"ndcg_valid": ranking_error is None,
+                    "ndcg_invalid_reason": ranking_error,
+                    "ndcg_at_3": None, "ndcg_at_5": None}
     target = instance.get("held_out_idx")
     hard_negs = instance.get("hard_negative_idxs") or []
-    if not isinstance(target, int):
-        return {"n_ranked": len(ranked), "valid": False}
+    if type(target) is not int or not 0 <= target < n_candidates:
+        ndcg_metrics.update(ndcg_valid=False, ndcg_invalid_reason="invalid target index")
+        return {"n_ranked": len(ranked) if isinstance(ranked, list) else 0,
+                "valid": False, **ndcg_metrics}
+    if not isinstance(ranked, list) or any(type(index) is not int for index in ranked):
+        return {"n_ranked": len(ranked) if isinstance(ranked, list) else 0,
+                "valid": False, **ndcg_metrics}
+    if ranking_error is None:
+        # For a full permutation, sorting ranked by relevance uses the entire
+        # candidate set, so every valid answer has the same ideal denominator.
+        ndcg_metrics.update(
+            ndcg_at_3=round(_ndcg_at_k(ranked, target, hard_negs, 3, filler_grade=filler_grade), 4),
+            ndcg_at_5=round(_ndcg_at_k(ranked, target, hard_negs, 5, filler_grade=filler_grade), 4),
+        )
 
     # --- hard_neg_violation_rate ---
     # Fraction of hard negatives ranked above the lowest-ranked filler.
-    n_candidates = len(instance.get("candidates") or [])
     all_indices = set(range(n_candidates))
     excluded = {target} | set(hard_negs)
     filler_indices = all_indices - excluded
@@ -513,8 +605,7 @@ def compute_personalized_recommendation_metrics(parsed: dict, instance: dict,
         "recall_at_1": _recall_at_k(ranked, target, 1),
         "recall_at_3": _recall_at_k(ranked, target, 3),
         "recall_at_5": _recall_at_k(ranked, target, 5),
-        "ndcg_at_3":   round(_ndcg_at_k(ranked, target, hard_negs, 3, filler_grade=filler_grade), 4),
-        "ndcg_at_5":   round(_ndcg_at_k(ranked, target, hard_negs, 5, filler_grade=filler_grade), 4),
+        **ndcg_metrics,
         "mrr":         round(_mrr(ranked, target), 4),
         "hit_at_1":    _hit_at_k(ranked, target, 1),
         "hit_at_3":    _hit_at_k(ranked, target, 3),
